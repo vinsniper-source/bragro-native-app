@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mesma paleta de ui/theme/Theme.kt (BrGreen/BrYellow): fundo do
+         icone adaptativo (mipmap-anydpi-v26/ic_launcher.xml) e da tela de
+         splash (themes.xml), Task #38. -->
+    <color name="ic_launcher_background">#2F6F4F</color>
+    <color name="splash_background">#2F6F4F</color>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Task #42: pasta de cache privada do app onde a foto do ticket e salva
+     temporariamente antes do upload; nunca fica visivel/acessivel a
+     outros apps alem do de Camera (que recebe permissao temporaria via
+     grantUriPermissions no AndroidManifest). -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path name="romaneio_fotos" path="romaneio/" />
+</paths>

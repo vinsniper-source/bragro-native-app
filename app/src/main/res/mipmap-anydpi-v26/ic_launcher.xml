@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icone adaptativo (API 26+), Task #38: fundo solido (verde da bandeira,
+     ver colors.xml) + glifo de folha/broto amarelo, gerado via Pillow em
+     mipmap-*dpi/ic_launcher_foreground.png (sem depender do Android Studio
+     Image Asset). Fallback para API<26 (minSdk=24) fica em
+     mipmap-*dpi/ic_launcher.png (icone legado, ja com fundo+glifo
+     compostos, ver gen_icon.py no historico do projeto). -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+</adaptive-icon>

@@ -1,0 +1,16 @@
+<resources>
+    <!-- Tema base da Activity (o resto do visual, incluindo cores da
+         bandeira BR, vem do Compose Material3 em ui/theme/Theme.kt). -->
+    <style name="Theme.BRAgro" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Tela de splash (Task #38, androidx.core:core-splashscreen): fundo
+         verde da bandeira (mesma cor de ic_launcher_background) com o
+         glifo de folha/broto do icone no centro. "postSplashScreenTheme"
+         volta pro tema normal assim que a splash termina (chamado em
+         MainActivity.installSplashScreen()). -->
+    <style name="Theme.BRAgro.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.BRAgro</item>
+    </style>
+</resources>
