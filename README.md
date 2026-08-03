@@ -209,9 +209,13 @@ isso, não sobre novas telas.
   4. Pronto -- no próximo build o Firebase já inicializa sozinho e
      travamentos aparecem em Crashlytics no console do Firebase. Sem o
      arquivo, nada muda (nenhum erro, só continua sem relato).
-- **Ficha da Play Store**: ainda não rascunhada -- depende de você criar a
-  conta no Play Console primeiro; posso ajudar a escrever a descrição
-  curta/longa e um rascunho de política de privacidade quando quiser.
+- **Ficha da Play Store**: rascunho completo em
+  [`docs/play-store-listing.md`](docs/play-store-listing.md) -- nome,
+  descrição curta/longa, categoria, política de privacidade e guia do
+  formulário de Segurança de Dados. Preencha os campos entre colchetes
+  (CNPJ, e-mail de contato etc.) e hospede a política de privacidade numa
+  URL pública antes de submeter no Play Console (a conta em si você
+  precisa criar).
 
 ## Fase 2: lista original concluída
 
