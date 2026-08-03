@@ -171,6 +171,34 @@ anteriores ao Android 12. Para redesenhar o ícone, edite
 `scripts/gen_icon.py` e rode `python3 scripts/gen_icon.py` de dentro de
 `native-app/` (precisa de `pip install pillow`).
 
+## Fase 3: prontidão pra lançamento (em andamento)
+
+A Fase 1 e a Fase 2 deixaram o app funcionalmente completo, mas ele nunca
+foi de fato publicado/instalado por um usuário real -- a Fase 3 é sobre
+isso, não sobre novas telas.
+
+- **CI (GitHub Actions)**: a cada push/PR pro `main`, `.github/workflows/
+  android-build.yml` compila de verdade (`assembleDebug` + `lintDebug`) num
+  runner com JDK 17 + Android SDK reais. Antes disso, toda a verificação do
+  código desta sessão era manual (contagem de chaves/parênteses, releitura
+  de imports) -- não existia nenhum ambiente com o toolchain Android
+  disponível pra compilar de verdade.
+- **Build de release assinado**: `app/build.gradle.kts` já tem o
+  `signingConfig` do build type `release` pronto, lendo de um arquivo
+  `keystore.properties` (NUNCA commitado -- ver `.gitignore`) na raiz do
+  `native-app/`. Copie `keystore.properties.example` pra
+  `keystore.properties` e preencha com os dados do seu keystore (o arquivo
+  de exemplo explica como gerar um novo com `keytool`, caso ainda não
+  tenha). Sem esse arquivo, `release` continua compilando normalmente, só
+  gera um APK/AAB não assinado (não instala em nenhum aparelho até ser
+  assinado). `isMinifyEnabled` continua `false` de propósito -- ativar R8/
+  ProGuard exigiria testar num aparelho real antes (Room/kotlinx.
+  serialization/Retrofit usam reflexão que costuma precisar de regras de
+  "keep" específicas), e isso não dá pra validar sem um dispositivo físico
+  em mãos.
+- **Observabilidade e ficha da Play Store**: ainda não implementados --
+  dependem de você criar uma conta/projeto (Firebase, Play Console) antes.
+
 ## Fase 2: lista original concluída
 
 Todos os itens da lista original da Fase 2 (Dashboard, DRE com árvore de

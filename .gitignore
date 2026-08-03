@@ -14,3 +14,4 @@ app/debug/
 *.aab
 *.keystore
 *.jks
+/keystore.properties

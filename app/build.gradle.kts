@@ -1,8 +1,26 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
     kotlin("plugin.serialization") version "1.9.24"
+}
+
+// Fase 3: assinatura de release. O keystore em si (arquivo .jks/.keystore) e
+// as senhas NUNCA vao pro git (ver .gitignore) -- ficam so num arquivo local
+// "keystore.properties" (modelo em keystore.properties.example) que cada
+// maquina que for gerar um release assinado precisa criar por conta propria.
+// Sem esse arquivo (caso normal: CI, ou qualquer maquina que so vai rodar
+// "assembleDebug"/testes), o build type "release" simplesmente fica sem
+// signingConfig -- continua compilando normalmente, so gera um APK/AAB nao
+// assinado (que nao instala em aparelho nenhum ate ser assinado depois).
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
+val hasKeystoreConfig = keystorePropertiesFile.exists()
+if (hasKeystoreConfig) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
@@ -24,10 +42,32 @@ android {
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"sb_publishable_DTtsVk2VEVJjOzSFV8iANg_mE_7JBGt\"")
     }
 
+    signingConfigs {
+        if (hasKeystoreConfig) {
+            create("release") {
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // isMinifyEnabled continua false de proposito por enquanto:
+            // ativar R8/ProGuard exigiria testar manualmente num aparelho
+            // real (Room/kotlinx.serialization/Retrofit usam reflexao/
+            // proxies que costumam precisar de regras de "keep" especificas,
+            // e nao ha como validar isso sem rodar o app de verdade -- risco
+            // que nao vale a pena correr as cegas). Ativar isso e um bom
+            // proximo passo, mas so com um aparelho/emulador em maos pra
+            // testar o instalado antes de publicar.
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (hasKeystoreConfig) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
