@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fase 3: mesma exclusao de data_extraction_rules.xml, so que pro backup
+     automatico legado (Android 6 a 11, API 23-30). Ver comentario naquele
+     arquivo pro motivo. -->
+<full-backup-content>
+    <exclude domain="file" path="datastore/bragro_tokens.preferences_pb" />
+</full-backup-content>

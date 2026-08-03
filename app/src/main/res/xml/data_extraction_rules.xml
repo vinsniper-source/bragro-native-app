@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fase 3: regras de backup automatico (Android 12+, API 31+). Exclui o
+     DataStore de tokens (access/refresh token da sessao Supabase, ver
+     data/TokenStore.kt) tanto do backup na nuvem quanto da transferencia
+     direta entre aparelhos: um token restaurado num aparelho novo, ou
+     tempo depois num backup antigo, pode estar expirado/revogado, e nao
+     ha motivo pra guardar credencial de sessao fora do aparelho onde ela
+     foi criada. O cache offline dos lancamentos (Room) e as configuracoes
+     do app continuam sendo salvos normalmente. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="datastore/bragro_tokens.preferences_pb" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="datastore/bragro_tokens.preferences_pb" />
+    </device-transfer>
+</data-extraction-rules>

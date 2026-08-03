@@ -43,6 +43,9 @@ jobs:
       - name: Compilar (debug)
         run: ./gradlew assembleDebug --stacktrace
 
+      - name: Testes de unidade
+        run: ./gradlew testDebugUnitTest --stacktrace
+
       - name: Lint
         run: ./gradlew lintDebug --stacktrace
 
@@ -52,3 +55,10 @@ jobs:
         with:
           name: lint-report
           path: app/build/reports/lint-results-debug.html
+
+      - name: Publicar relatorio de testes (se falhar)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: app/build/reports/tests/testDebugUnitTest

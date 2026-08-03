@@ -171,18 +171,25 @@ anteriores ao Android 12. Para redesenhar o ícone, edite
 `scripts/gen_icon.py` e rode `python3 scripts/gen_icon.py` de dentro de
 `native-app/` (precisa de `pip install pillow`).
 
-## Fase 3: prontidão pra lançamento (em andamento)
+## Fase 3: prontidão pra lançamento
 
 A Fase 1 e a Fase 2 deixaram o app funcionalmente completo, mas ele nunca
 foi de fato publicado/instalado por um usuário real -- a Fase 3 é sobre
 isso, não sobre novas telas.
 
 - **CI (GitHub Actions)**: a cada push/PR pro `main`, `.github/workflows/
-  android-build.yml` compila de verdade (`assembleDebug` + `lintDebug`) num
-  runner com JDK 17 + Android SDK reais. Antes disso, toda a verificação do
-  código desta sessão era manual (contagem de chaves/parênteses, releitura
-  de imports) -- não existia nenhum ambiente com o toolchain Android
+  android-build.yml` compila de verdade (`assembleDebug`), roda os testes
+  de unidade (`testDebugUnitTest`) e faz lint (`lintDebug`) num runner com
+  JDK 17 + Android SDK reais. Antes disso, toda a verificação do código
+  desta sessão era manual (contagem de chaves/parênteses, releitura de
+  imports) -- não existia nenhum ambiente com o toolchain Android
   disponível pra compilar de verdade.
+- **Primeiro teste automatizado**: `RomaneioOcrParserTest`
+  (`app/src/test/.../RomaneioOcrParserTest.kt`) cobre a heurística de
+  leitura do ticket (rótulo + número, vírgula decimal, case-insensitive,
+  não cruzar linhas, texto sem rótulo conhecido). É lógica Kotlin pura
+  (sem Android), então roda como teste de unidade comum -- puxado pelo CI
+  acima.
 - **Build de release assinado**: `app/build.gradle.kts` já tem o
   `signingConfig` do build type `release` pronto, lendo de um arquivo
   `keystore.properties` (NUNCA commitado -- ver `.gitignore`) na raiz do
@@ -216,6 +223,20 @@ isso, não sobre novas telas.
   (CNPJ, e-mail de contato etc.) e hospede a política de privacidade numa
   URL pública antes de submeter no Play Console (a conta em si você
   precisa criar).
+- **Regras de backup**: `android:allowBackup="true"` já existia sem
+  nenhuma exclusão -- o backup automático do Android (nuvem e transferência
+  entre aparelhos) incluiria o DataStore com o access/refresh token da
+  sessão Supabase. `res/xml/data_extraction_rules.xml` (API 31+) e
+  `res/xml/backup_rules.xml` (API 24-30) agora excluem especificamente
+  esse arquivo -- o cache offline (Room) e as configurações continuam
+  sendo salvos normalmente, só a credencial de sessão fica de fora.
+- **`CHANGELOG.md`**: histórico de versões e convenção de
+  `versionCode`/`versionName` pra releases futuros.
+
+Com isso a Fase 3 está com todas as frentes propostas cobertas -- o que
+falta daqui pra frente (keystore de verdade, projeto Firebase, conta no
+Play Console, testar num aparelho físico) depende de ações fora do
+código/deste ambiente.
 
 ## Fase 2: lista original concluída
 
