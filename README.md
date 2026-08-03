@@ -196,8 +196,22 @@ isso, não sobre novas telas.
   serialization/Retrofit usam reflexão que costuma precisar de regras de
   "keep" específicas), e isso não dá pra validar sem um dispositivo físico
   em mãos.
-- **Observabilidade e ficha da Play Store**: ainda não implementados --
-  dependem de você criar uma conta/projeto (Firebase, Play Console) antes.
+- **Observabilidade (Crashlytics)**: o app já tem a dependência do Firebase
+  Crashlytics (relata travamentos/erros não tratados automaticamente,
+  sem precisar escrever nada a mais no código). Só falta você criar o
+  projeto:
+  1. Crie um projeto em https://console.firebase.google.com (gratuito).
+  2. Adicione um app Android com o pacote `com.bragro.mobile` (mesmo
+     `applicationId` do `app/build.gradle.kts`).
+  3. Baixe o `google-services.json` gerado e salve em `native-app/app/
+     google-services.json` (mesma pasta do `build.gradle.kts` do módulo
+     `app` -- esse arquivo fica de fora do git, ver `.gitignore`).
+  4. Pronto -- no próximo build o Firebase já inicializa sozinho e
+     travamentos aparecem em Crashlytics no console do Firebase. Sem o
+     arquivo, nada muda (nenhum erro, só continua sem relato).
+- **Ficha da Play Store**: ainda não rascunhada -- depende de você criar a
+  conta no Play Console primeiro; posso ajudar a escrever a descrição
+  curta/longa e um rascunho de política de privacidade quando quiser.
 
 ## Fase 2: lista original concluída
 

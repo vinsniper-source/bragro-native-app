@@ -162,7 +162,27 @@ dependencies {
     // sozinho pra OCR, mas a compressao manual abaixo nao).
     implementation("androidx.exifinterface:exifinterface:1.3.7")
 
+    // Fase 3: relato de erros (Crashlytics) -- so funciona de verdade
+    // depois que existir um app/google-services.json (ver bloco no fim
+    // deste arquivo e README). A dependencia em si e so uma biblioteca
+    // normal, nao exige o arquivo pra COMPILAR -- sem ele, o Firebase
+    // simplesmente nao inicializa em tempo de execucao (nenhum crash
+    // reportado, nenhum erro visivel, comportamento identico a hoje).
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+    implementation("com.google.firebase:firebase-crashlytics")
+
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+}
+
+// Fase 3: so aplica o plugin do google-services (que GERA os recursos que o
+// Firebase precisa pra inicializar sozinho, a partir do json) quando o
+// arquivo de verdade existir -- aplicar esse plugin sem o json quebraria a
+// configuracao do Gradle pra QUALQUER build (ate "assembleDebug"), entao
+// nao pode ser incondicional enquanto nem todo mundo (CI incluso) tem esse
+// arquivo. Ver keystore.properties acima pro mesmo padrao aplicado a
+// assinatura de release.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }
