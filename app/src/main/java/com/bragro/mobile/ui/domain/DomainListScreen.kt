@@ -13,11 +13,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -48,6 +51,13 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var refreshing = mutableStateOf(false)
         private set
+    // Fase 3: o ViewModel ja tinha "refreshing", mas nada na tela mostrava
+    // isso nem deixava o usuario puxar pra atualizar manualmente -- so
+    // atualizava sozinho ao abrir a tela. "offline" segue o mesmo padrao
+    // ja usado em Dashboard/DRE/Analises (true quando o ultimo refresh
+    // falhou, pra avisar que a lista pode estar desatualizada).
+    var offline = mutableStateOf(false)
+        private set
 
     fun load(domainId: String) {
         viewModelScope.launch {
@@ -60,7 +70,8 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
     fun refresh(domainId: String) {
         refreshing.value = true
         viewModelScope.launch {
-            recordRepository.refreshFromServer(domainId)
+            val ok = recordRepository.refreshFromServer(domainId)
+            offline.value = !ok
             refreshing.value = false
         }
     }
@@ -81,6 +92,8 @@ fun DomainListScreen(
     LaunchedEffect(domainId) { viewModel.load(domainId) }
     val config by viewModel.config
     val records by viewModel.records
+    val refreshing by viewModel.refreshing
+    val offline by viewModel.offline
     val context = LocalContext.current
 
     Scaffold(
@@ -91,6 +104,15 @@ fun DomainListScreen(
                     IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar") }
                 },
                 actions = {
+                    // Fase 3: o ViewModel ja tinha "refresh(domainId)"/
+                    // "refreshing" prontos desde a Fase 1, mas nada na tela
+                    // deixava o usuario disparar manualmente -- so
+                    // atualizava sozinho ao abrir. Mesmo padrao de botao de
+                    // atualizar ja usado em Dashboard/DRE/Analises.
+                    IconButton(onClick = { viewModel.refresh(domainId) }) {
+                        if (refreshing) CircularProgressIndicator(modifier = Modifier.padding(4.dp))
+                        else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
+                    }
                     // Fase 2 (Task #41): imprime/exporta em PDF a lista
                     // atual (registros ja cacheados no Room) via o dialogo
                     // de impressao nativo do Android -- mesmo principio do
@@ -118,11 +140,27 @@ fun DomainListScreen(
         }
         if (records.isEmpty()) {
             Column(modifier = Modifier.fillMaxSize().padding(padding), verticalArrangement = Arrangement.Center) {
+                if (offline) {
+                    Text(
+                        "Sem conexão -- não foi possível verificar se há lançamentos salvos no servidor.",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(horizontal = 24.dp),
+                    )
+                }
                 Text("Nenhum lançamento ainda. Toque em + para adicionar.", modifier = Modifier.padding(24.dp))
             }
             return@Scaffold
         }
         LazyColumn(contentPadding = PaddingValues(12.dp, padding.calculateTopPadding() + 4.dp, 12.dp, 80.dp)) {
+            if (offline) {
+                item {
+                    Text(
+                        "Sem conexão -- mostrando o último resultado salvo neste aparelho.",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(bottom = 8.dp),
+                    )
+                }
+            }
             items(records, key = { it["id"] ?: it.hashCode().toString() }) { record ->
                 val recordId = record["id"]
                 Card(

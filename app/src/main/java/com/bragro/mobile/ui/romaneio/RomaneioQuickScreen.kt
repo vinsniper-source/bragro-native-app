@@ -128,6 +128,13 @@ class RomaneioQuickViewModel(app: Application) : AndroidViewModel(app) {
     fun setFrota(v: String) { frotaVeiculo.value = v }
     fun setResponsavel(v: String) { responsavel.value = v }
 
+    /** Usuario cancelou a foto ou o aparelho nao tem app de Camera
+     * disponivel -- a foto e so opcional, entao isso nunca bloqueia o
+     * lancamento, so avisa o motivo em vez de nao acontecer nada visivel. */
+    fun onPhotoCancelled() {
+        ocrMensagem.value = "Nenhuma foto capturada -- você pode lançar sem foto ou tentar de novo."
+    }
+
     /** Chamado depois que a foto ja foi tirada e salva no Uri temporario
      * (content://...fileprovider): roda o OCR local (ML Kit) pra
      * pre-preencher os campos, comprime a imagem e sobe pro Storage. Nunca
@@ -318,7 +325,14 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
     var pendingPhotoUri by remember { mutableStateOf<Uri?>(null) }
     val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         val uri = pendingPhotoUri
-        if (success && uri != null) viewModel.onPhotoTaken(context, uri)
+        if (success && uri != null) {
+            viewModel.onPhotoTaken(context, uri)
+        } else if (!success) {
+            // Fase 3: antes ficava mudo quando o usuario cancelava a foto ou
+            // o aparelho nao tinha app de Camera -- agora avisa, em vez de
+            // parecer que travou.
+            viewModel.onPhotoCancelled()
+        }
     }
 
     fun launchCamera() {
