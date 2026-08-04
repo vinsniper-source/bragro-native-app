@@ -54,7 +54,7 @@ import java.util.Locale
 // que reaproveita as MESMAS Server Actions do site (confirmBankImportAction/
 // getExistingSignatures). Nenhuma lógica de negócio nova.
 
-internal data class PreviewRow(val row: ParsedBankRow, val include: Boolean, val duplicate: Boolean)
+data class PreviewRow(val row: ParsedBankRow, val include: Boolean, val duplicate: Boolean)
 
 class BankImportViewModel(app: Application) : AndroidViewModel(app) {
     private val repository = BankImportRepository(app)
