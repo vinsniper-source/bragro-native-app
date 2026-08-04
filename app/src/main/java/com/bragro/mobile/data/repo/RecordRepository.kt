@@ -39,6 +39,13 @@ class RecordRepository(private val context: Context) {
     suspend fun getRecord(domainId: String, id: String): Map<String, String?>? =
         db.recordDao().byId(domainId, id)?.let { jsonStringToMap(it.fieldsJson) }
 
+    /** "Copiar último lançamento" (Task #51/#77) -- mesmo mecanismo generico
+     * do site (data-table.tsx: abre o formulario de criacao pre-preenchido
+     * com os campos do registro mais recente do modulo). Funciona igual pra
+     * QUALQUER um dos ~18 dominios, sem excecao por modulo. */
+    suspend fun mostRecent(domainId: String): Map<String, String?>? =
+        db.recordDao().mostRecent(domainId)?.let { jsonStringToMap(it.fieldsJson) }
+
     /** Busca os registros do modulo no servidor e substitui o cache local
      * (preservando os que ainda estao pendentes de sincronizar). Chamar ao
      * abrir cada modulo, se houver internet. */

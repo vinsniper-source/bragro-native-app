@@ -2,6 +2,10 @@ package com.bragro.mobile.data.remote
 
 import com.bragro.mobile.data.model.AnalisesRequest
 import com.bragro.mobile.data.model.AnalisesResponse
+import com.bragro.mobile.data.model.BankImportConfirmRequest
+import com.bragro.mobile.data.model.BankImportConfirmResponse
+import com.bragro.mobile.data.model.BankImportSignaturesRequest
+import com.bragro.mobile.data.model.BankImportSignaturesResponse
 import com.bragro.mobile.data.model.BootstrapRequest
 import com.bragro.mobile.data.model.BootstrapResponse
 import com.bragro.mobile.data.model.ConfigResponse
@@ -9,6 +13,12 @@ import com.bragro.mobile.data.model.DashboardRequest
 import com.bragro.mobile.data.model.DashboardResponse
 import com.bragro.mobile.data.model.DreRequest
 import com.bragro.mobile.data.model.DreResponse
+import com.bragro.mobile.data.model.HomeRequest
+import com.bragro.mobile.data.model.HomeResponse
+import com.bragro.mobile.data.model.ModuleActionRequest
+import com.bragro.mobile.data.model.ModuleActionResponse
+import com.bragro.mobile.data.model.ModuleChartsRequest
+import com.bragro.mobile.data.model.ModuleChartsResponse
 import com.bragro.mobile.data.model.NfeImportRequest
 import com.bragro.mobile.data.model.NfeImportResponse
 import com.bragro.mobile.data.model.NfePreviewRequest
@@ -48,7 +58,7 @@ interface SupabaseAuthApi {
     ): Response<SupabaseLoginResponse>
 }
 
-/** Rotas /api/mobile/* do site publicado (Next.js) -- ver
+/** Rotas /api/mobile (varias) do site publicado (Next.js) -- ver
  * src/app/api/mobile/{config,bootstrap,records}/route.ts e
  * src/app/api/offline-sync/route.ts no repositorio do site. Reaproveitam
  * 100% da validacao/calculos/RLS ja existentes; este app nao duplica
@@ -62,6 +72,21 @@ interface MobileApi {
 
     @POST("api/mobile/dashboard")
     suspend fun dashboard(@Body body: DashboardRequest): Response<DashboardResponse>
+
+    @POST("api/mobile/home")
+    suspend fun home(@Body body: HomeRequest): Response<HomeResponse>
+
+    @POST("api/mobile/module-charts")
+    suspend fun moduleCharts(@Body body: ModuleChartsRequest): Response<ModuleChartsResponse>
+
+    @POST("api/mobile/module-actions")
+    suspend fun moduleActions(@Body body: ModuleActionRequest): Response<ModuleActionResponse>
+
+    @POST("api/mobile/bank-import")
+    suspend fun bankImportSignatures(@Body body: BankImportSignaturesRequest): Response<BankImportSignaturesResponse>
+
+    @POST("api/mobile/bank-import")
+    suspend fun bankImportConfirm(@Body body: BankImportConfirmRequest): Response<BankImportConfirmResponse>
 
     @POST("api/mobile/dre")
     suspend fun dre(@Body body: DreRequest): Response<DreResponse>

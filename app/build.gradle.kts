@@ -40,6 +40,18 @@ android {
         buildConfigField("String", "API_BASE_URL", "\"https://sistema-agro-bra.vercel.app\"")
         buildConfigField("String", "SUPABASE_URL", "\"https://njmycnbahhvodlhwqnfw.supabase.co\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"sb_publishable_DTtsVk2VEVJjOzSFV8iANg_mE_7JBGt\"")
+
+        // Restringe as bibliotecas nativas (.so) do ML Kit (OCR do Romaneio
+        // Rapido) so pra arm64-v8a -- sem isso, o APK carrega 4 copias
+        // (arm64-v8a, armeabi-v7a, x86, x86_64) dessas bibliotecas, quase 40MB
+        // so nisso, mesmo praticamente nenhum aparelho real usar armeabi-v7a/
+        // x86/x86_64 hoje em dia (minSdk 24 = Android 7+, ja majoritariamente
+        // 64-bit; x86/x86_64 servem so pra emulador). Necessario pra caber no
+        // limite de 50MB do bucket do Supabase Storage (plano Free) usado
+        // pelo Painel do Dono pra distribuir o app -- ver app-release-card.tsx.
+        ndk {
+            abiFilters += "arm64-v8a"
+        }
     }
 
     signingConfigs {
@@ -96,6 +108,16 @@ android {
 }
 
 dependencies {
+    // Versoes do Compose fixadas explicitamente (em vez de depender so do
+    // compose-bom) -- o build ja tentou resolver via BOM 2024.06.00 duas
+    // vezes (com Gradle 9.3.0 e depois 8.9) e em ambas o classpath resolvido
+    // acabou com uma versao de material3/foundation incompativel com o
+    // codigo (ExposedDropdownMenu "nao encontrado", weight "internal"),
+    // sintoma de a resolucao NAO estar respeitando a versao do BOM. Fixar a
+    // versao de cada artefato Compose aqui elimina essa ambiguidade: 1.6.8
+    // (ui/foundation) e 1.2.1 (material3) sao as versoes reais por tras do
+    // BOM 2024.06.00, compativeis com o Compose Compiler 1.5.14/Kotlin
+    // 1.9.24 usados neste projeto.
     val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)
@@ -110,12 +132,13 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
     implementation("androidx.activity:activity-compose:1.9.1")
 
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-graphics")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended")
-    debugImplementation("androidx.compose.ui:ui-tooling")
+    implementation("androidx.compose.ui:ui:1.6.8")
+    implementation("androidx.compose.ui:ui-graphics:1.6.8")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.6.8")
+    implementation("androidx.compose.foundation:foundation:1.6.8")
+    implementation("androidx.compose.material3:material3:1.2.1")
+    implementation("androidx.compose.material:material-icons-extended:1.6.8")
+    debugImplementation("androidx.compose.ui:ui-tooling:1.6.8")
 
     implementation("androidx.navigation:navigation-compose:2.7.7")
 

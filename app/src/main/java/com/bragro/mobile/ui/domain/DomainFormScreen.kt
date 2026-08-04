@@ -18,7 +18,6 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenu
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
@@ -63,6 +62,12 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var offlineNotice = mutableStateOf<String?>(null)
         private set
+    // "Copiar último lançamento" (Task #51/#77) -- só faz sentido ao CRIAR
+    // (recordId == null); guarda o registro mais recente do módulo pra poder
+    // pré-preencher o formulário com um toque, mesmo mecanismo genérico do
+    // site (data-table.tsx), sem exceção por domínio.
+    var lastRecord = mutableStateOf<Map<String, String?>?>(null)
+        private set
 
     val fields = mutableStateMapOf<String, String>()
 
@@ -82,11 +87,25 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
                 if (col.computed) continue
                 fields[col.key] = existing?.get(col.key) ?: ""
             }
+
+            lastRecord.value = if (recordId == null) recordRepository.mostRecent(domainId) else null
         }
     }
 
     fun setField(key: String, value: String) {
         fields[key] = value
+    }
+
+    /** Preenche todos os campos (exceto computados) com os valores do
+     * lançamento mais recente do módulo -- o usuário ainda pode editar
+     * qualquer campo antes de salvar, igual ao site. */
+    fun copyFromLastRecord() {
+        val last = lastRecord.value ?: return
+        val cfg = config.value ?: return
+        for (col in cfg.columns) {
+            if (col.computed) continue
+            fields[col.key] = last[col.key] ?: ""
+        }
     }
 
     fun save(domainId: String, recordId: String?, onDone: () -> Unit) {
@@ -129,6 +148,7 @@ fun DomainFormScreen(
     val saving by viewModel.saving
     val error by viewModel.errorMessage
     val offlineNotice by viewModel.offlineNotice
+    val lastRecord by viewModel.lastRecord
 
     Scaffold(
         topBar = {
@@ -155,6 +175,23 @@ fun DomainFormScreen(
         ) {
             if (cfg.notice != null) {
                 Text(cfg.notice, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 12.dp))
+            }
+
+            // "Copiar último lançamento" (Task #51/#77): só ao criar
+            // (recordId == null) e só quando já existe pelo menos um
+            // registro no módulo -- mesma condição do site.
+            if (recordId == null && lastRecord != null) {
+                androidx.compose.material3.OutlinedButton(
+                    onClick = { viewModel.copyFromLastRecord() },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                ) {
+                    androidx.compose.material3.Icon(
+                        androidx.compose.material.icons.Icons.Filled.ContentCopy,
+                        contentDescription = null,
+                        modifier = Modifier.padding(end = 8.dp),
+                    )
+                    Text("Copiar último lançamento")
+                }
             }
 
             for (col in cfg.columns) {

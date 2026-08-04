@@ -96,6 +96,13 @@ interface RecordDao {
     @Query("SELECT * FROM records WHERE domainId = :domainId AND id = :id LIMIT 1")
     suspend fun byId(domainId: String, id: String): RecordEntity?
 
+    // "Copiar último lançamento" (mesma ideia de records[0] em data-table.tsx,
+    // que ja vem ordenado por criadoEm DESC do servidor) -- usado pra
+    // pré-preencher um novo formulário com os valores do lançamento mais
+    // recente do módulo, em QUALQUER domínio (mecanismo genérico no site).
+    @Query("SELECT * FROM records WHERE domainId = :domainId ORDER BY criadoEmMillis DESC LIMIT 1")
+    suspend fun mostRecent(domainId: String): RecordEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(record: RecordEntity)
 

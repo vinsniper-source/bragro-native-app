@@ -2,8 +2,10 @@ package com.bragro.mobile.ui.domain
 
 import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -12,15 +14,23 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -28,6 +38,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -95,6 +108,33 @@ fun DomainListScreen(
     val refreshing by viewModel.refreshing
     val offline by viewModel.offline
     val context = LocalContext.current
+    // Abastecimento rápido (Frota): FAB extra que abre um Dialog com só o
+    // essencial preenchido -- espelho de quick-abastecimento-button.tsx.
+    var showQuickAbastecimento by remember { mutableStateOf(false) }
+
+    // Período genérico (espelho de genericPeriodoRange em data-table.tsx):
+    // janela de data pra trás sobre a 1ª coluna de data do domínio -- só
+    // aparece quando o domínio tem alguma coluna "date" (Financeiro tem seu
+    // próprio Período com regras de vencimento, ver FinanceiroScreen.kt).
+    var periodo by remember(domainId) { mutableStateOf<PeriodoCategoria?>(null) }
+    var intervalFrom by remember(domainId) { mutableStateOf("") }
+    var intervalTo by remember(domainId) { mutableStateOf("") }
+    val dateCol = config?.columns?.firstOrNull { it.type == "date" && !it.computed }
+    val filteredRecords = remember(records, periodo, intervalFrom, intervalTo, dateCol) {
+        if (dateCol == null) {
+            records
+        } else {
+            var result = records
+            if (periodo != null) {
+                val (from, to) = genericPeriodoRange(periodo!!)
+                result = filterByDateInterval(result, dateCol.key, from, to)
+            }
+            if (intervalFrom.isNotBlank() || intervalTo.isNotBlank()) {
+                result = filterByDateInterval(result, dateCol.key, intervalFrom, intervalTo)
+            }
+            result
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -119,8 +159,8 @@ fun DomainListScreen(
                     // botao "Exportar PDF" do site (tabela HTML + impressao
                     // do sistema, sem gerar PDF no servidor).
                     val cfg = config
-                    if (cfg != null && records.isNotEmpty()) {
-                        IconButton(onClick = { HtmlPrinter.printList(context, cfg, records) }) {
+                    if (cfg != null && filteredRecords.isNotEmpty()) {
+                        IconButton(onClick = { HtmlPrinter.printList(context, cfg, filteredRecords) }) {
                             Icon(Icons.Filled.Print, contentDescription = "Imprimir / exportar PDF")
                         }
                     }
@@ -128,7 +168,22 @@ fun DomainListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onNewRecord) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
+            // Frota ganha um segundo FAB menor -- "Abastecimento rápido"
+            // (espelho de QuickAbastecimentoButton no site), sem substituir
+            // o formulário completo de "Novo lançamento".
+            if (domainId == "frota") {
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    FloatingActionButton(
+                        onClick = { showQuickAbastecimento = true },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    ) {
+                        Icon(Icons.Filled.LocalGasStation, contentDescription = "Abastecimento rápido")
+                    }
+                    FloatingActionButton(onClick = onNewRecord) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
+                }
+            } else {
+                FloatingActionButton(onClick = onNewRecord) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
+            }
         },
     ) { padding ->
         val cfg = config
@@ -138,22 +193,39 @@ fun DomainListScreen(
             }
             return@Scaffold
         }
-        if (records.isEmpty()) {
-            Column(modifier = Modifier.fillMaxSize().padding(padding), verticalArrangement = Arrangement.Center) {
-                if (offline) {
-                    Text(
-                        "Sem conexão -- não foi possível verificar se há lançamentos salvos no servidor.",
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(horizontal = 24.dp),
-                    )
-                }
-                Text("Nenhum lançamento ainda. Toque em + para adicionar.", modifier = Modifier.padding(24.dp))
-            }
-            return@Scaffold
-        }
+        // Divisor tracejado entre lançamentos do MESMO Nº Pedido+Item, só em
+        // Pedidos -- espelho de pedidoItemBoundary (data-table.tsx). Os
+        // registros já chegam ordenados por criadoEmMillis DESC (mesmo
+        // critério do site: noPedido/item/criadoEm), então checar o
+        // (noPedido,item) do próximo registro na lista já visível basta.
+        val isPedidos = domainId == "pedidos"
         LazyColumn(contentPadding = PaddingValues(12.dp, padding.calculateTopPadding() + 4.dp, 12.dp, 80.dp)) {
+            // Calculadoras (Safra/Colheita) -- CalculatorsCard() não desenha
+            // nada nos outros domínios (mesmo "return null" do site).
+            item(key = "calculators") { CalculatorsCard(domainId) }
+            item(key = "charts") { ModuleChartsCard(domainId) }
+            if (domainId == "safra" || domainId == "frota") {
+                item(key = "recalcular-area") { RecalcularAreaButton(domainId) }
+            }
+            if (domainId == "frota") {
+                item(key = "fleet-efficiency") { FleetEfficiencyCard() }
+            }
+            if (dateCol != null) {
+                item(key = "periodo") {
+                    Row(modifier = Modifier.padding(bottom = 8.dp)) {
+                        GenericPeriodoDropdown(
+                            periodo = periodo,
+                            intervalFrom = intervalFrom,
+                            intervalTo = intervalTo,
+                            dateLabel = dateCol.label,
+                            onPeriodo = { periodo = it; if (it != null) { intervalFrom = ""; intervalTo = "" } },
+                            onInterval = { from, to -> intervalFrom = from; intervalTo = to; if (from.isNotBlank() || to.isNotBlank()) periodo = null },
+                        )
+                    }
+                }
+            }
             if (offline) {
-                item {
+                item(key = "offline-banner") {
                     Text(
                         "Sem conexão -- mostrando o último resultado salvo neste aparelho.",
                         style = MaterialTheme.typography.bodySmall,
@@ -161,21 +233,128 @@ fun DomainListScreen(
                     )
                 }
             }
-            items(records, key = { it["id"] ?: it.hashCode().toString() }) { record ->
-                val recordId = record["id"]
-                Card(
-                    onClick = { if (recordId != null) onEditRecord(recordId) },
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        cfg.columns.filter { !it.hideInTable }.take(4).forEach { col ->
-                            val value = record[col.key]
-                            if (!value.isNullOrBlank()) {
-                                Text("${col.label}: ${if (col.money) "R$ $value" else value}")
+            if (filteredRecords.isEmpty()) {
+                item(key = "empty") {
+                    val msg = if (records.isEmpty()) "Nenhum lançamento ainda. Toque em + para adicionar." else "Nenhum lançamento neste período."
+                    Text(msg, modifier = Modifier.padding(vertical = 24.dp))
+                }
+            } else {
+                items(filteredRecords, key = { it["id"] ?: it.hashCode().toString() }) { record ->
+                    val recordId = record["id"]
+                    val isLastOfGroup = isPedidos && run {
+                        val idx = filteredRecords.indexOf(record)
+                        val next = filteredRecords.getOrNull(idx + 1)
+                        next == null || next["noPedido"] != record["noPedido"] || next["item"] != record["item"]
+                    }
+                    Card(
+                        onClick = { if (recordId != null) onEditRecord(recordId) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .then(
+                                if (isLastOfGroup) Modifier.padding(bottom = 8.dp) else Modifier
+                            ),
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            cfg.columns.filter { !it.hideInTable }.take(4).forEach { col ->
+                                val value = record[col.key]
+                                if (!value.isNullOrBlank()) {
+                                    // Colunas "status-like" (status/acaoRh/confere/
+                                    // conferenNf/desvio) viram um pill colorido em
+                                    // vez de texto simples -- mesmo critério
+                                    // genérico do site (StatusCell em
+                                    // data-table.tsx), vale pros ~18 módulos.
+                                    if (isStatusLikeColumn(col.key)) {
+                                        StatusBadge(value)
+                                    } else {
+                                        Text("${col.label}: ${if (col.money) "R$ $value" else displayValueFor(col.key, value)}")
+                                    }
+                                }
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+
+    if (showQuickAbastecimento) {
+        QuickAbastecimentoDialog(
+            onDismiss = { showQuickAbastecimento = false },
+            onSaved = {
+                showQuickAbastecimento = false
+                viewModel.refresh(domainId)
+            },
+        )
+    }
+}
+
+/** Espelho genérico do dropdown Período do Financeiro (ver PeriodoDropdown em
+ * FinanceiroScreen.kt), aplicado aos demais ~17 módulos: 8 categorias como
+ * janela de data PARA TRÁS a partir de hoje + intervalo manual, sobre a 1ª
+ * coluna de data do domínio -- mesmo critério de genericPeriodoRange
+ * (data-table.tsx). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun GenericPeriodoDropdown(
+    periodo: PeriodoCategoria?,
+    intervalFrom: String,
+    intervalTo: String,
+    dateLabel: String,
+    onPeriodo: (PeriodoCategoria?) -> Unit,
+    onInterval: (String, String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var fromText by remember(intervalFrom) { mutableStateOf(intervalFrom) }
+    var toText by remember(intervalTo) { mutableStateOf(intervalTo) }
+    val hasFilter = periodo != null || intervalFrom.isNotBlank() || intervalTo.isNotBlank()
+    val label = periodo?.label ?: if (intervalFrom.isNotBlank() || intervalTo.isNotBlank()) "Intervalo" else "Período"
+
+    Box {
+        if (hasFilter) {
+            Button(onClick = { expanded = true }) {
+                Icon(Icons.Filled.CalendarMonth, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                Text(label)
+            }
+        } else {
+            OutlinedButton(onClick = { expanded = true }) {
+                Icon(Icons.Filled.CalendarMonth, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                Text(label)
+            }
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(text = { Text("Todos os períodos") }, onClick = { onPeriodo(null); expanded = false })
+            HorizontalDivider()
+            PeriodoCategoria.values().forEach { cat ->
+                DropdownMenuItem(text = { Text(cat.label) }, onClick = { onPeriodo(cat); expanded = false })
+            }
+            HorizontalDivider()
+            Text(
+                "Ou por intervalo de datas ($dateLabel)",
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+            )
+            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+                OutlinedTextField(
+                    value = fromText,
+                    onValueChange = { fromText = it },
+                    label = { Text("De") },
+                    placeholder = { Text("AAAA-MM-DD") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                )
+                OutlinedTextField(
+                    value = toText,
+                    onValueChange = { toText = it },
+                    label = { Text("Até") },
+                    placeholder = { Text("AAAA-MM-DD") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Button(
+                    onClick = { onInterval(fromText, toText); expanded = false },
+                    modifier = Modifier.padding(top = 6.dp),
+                ) { Text("Aplicar intervalo") }
             }
         }
     }

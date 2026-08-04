@@ -11,8 +11,8 @@ import kotlinx.coroutines.flow.map
 private val Context.dataStore by preferencesDataStore(name = "bragro_tokens")
 
 /** Guarda o access/refresh token da sessao Supabase no dispositivo -- e o
- * que permite o app funcionar offline (as chamadas a /api/mobile/* e
- * /api/offline-sync usam esses tokens, nao um cookie de navegador, ver
+ * que permite o app funcionar offline (as chamadas a /api/mobile (varias
+ * rotas) e /api/offline-sync usam esses tokens, nao um cookie de navegador, ver
  * data/repo/AuthRepository.kt). DataStore (nao SharedPreferences cru) por
  * ser a API atual recomendada pelo Android, baseada em coroutines/Flow. */
 class TokenStore(private val context: Context) {

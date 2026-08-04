@@ -9,7 +9,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.concurrent.TimeUnit
 
-/** Monta os clientes Retrofit -- um pro backend do site (api/mobile/*,
+/** Monta os clientes Retrofit -- um pro backend do site (api/mobile,
  * api/offline-sync) e outro pro Supabase Auth (login direto). Singletons
  * simples (sem framework de DI) pra manter o projeto enxuto na Fase 1. */
 object NetworkModule {

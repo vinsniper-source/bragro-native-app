@@ -98,6 +98,111 @@ data class DashboardResponse(
     val error: String? = null,
 )
 
+// Réplica mobile da tela "Início" do site (src/app/(app)/dashboard/page.tsx),
+// pedida pelo usuario ("mesmo padrao da plataforma, réplica completa") -- ver
+// POST /api/mobile/home no site (src/app/api/mobile/home/route.ts), que
+// reaproveita getDashboardStats() (KPIs + Central de Alertas) e
+// listNoticesForOrg() (Mural de Avisos) -- as MESMAS funcoes que a pagina web
+// usa. "recentActivity" é a única peça sem equivalente 1:1: no site é um
+// websocket do Supabase Realtime (ver realtime-monitor.tsx); aqui é um
+// retrato das ultimas alteracoes nas mesmas 6 tabelas, atualizado a cada
+// refresh -- ver comentario completo no route.ts.
+@Serializable
+data class HomeRequest(val accessToken: String, val refreshToken: String)
+
+@Serializable
+data class AlertData(
+    val id: String,
+    val tipo: String,
+    val severidade: String, // "alta" | "media"
+    val titulo: String,
+    val descricao: String,
+    val href: String,
+)
+
+@Serializable
+data class NoticeData(
+    val id: String,
+    val titulo: String,
+    val mensagem: String,
+    val fixado: Boolean,
+    val expiraEm: String? = null,
+)
+
+@Serializable
+data class ActivityEventData(
+    val id: String,
+    val table: String,
+    val tableLabel: String,
+    val type: String, // "criado" | "atualizado"
+    val at: String,
+)
+
+@Serializable
+data class HomeData(
+    val orgName: String,
+    val saldoFinanceiroAberto: Double,
+    val itensEstoque: Int,
+    val safrasAtivas: Int,
+    val colaboradoresAtivos: Int,
+    val culturaLider: String? = null,
+    val pedidosAtrasados: Int,
+    val alerts: List<AlertData> = emptyList(),
+    val notices: List<NoticeData> = emptyList(),
+    val recentActivity: List<ActivityEventData> = emptyList(),
+)
+
+@Serializable
+data class HomeResponse(
+    val ok: Boolean,
+    val home: HomeData? = null,
+    val error: String? = null,
+)
+
+// Réplica mobile do bloco "Gráficos" (ver ModuleChartsPanel/
+// module-extra-charts.ts) -- POST /api/mobile/module-charts no site. "extras"
+// fica como JSON bruto (kind "bar" | "table", formatos diferentes por
+// domínio) e é interpretado em ChartModels.kt, mesmo motivo de
+// AnalisesResponse.analises (JsonObject) acima: um domínio novo com um
+// formato de gráfico novo não quebra a serialização aqui.
+@Serializable
+data class ModuleChartsRequest(val accessToken: String, val refreshToken: String, val domainId: String, val safra: String? = null)
+
+@Serializable
+data class GenericChartPoint(val name: String, val value: Double)
+
+@Serializable
+data class GenericChartData(
+    val title: String,
+    val isMoney: Boolean,
+    val data: List<GenericChartPoint> = emptyList(),
+    val safrasDisponiveis: List<String> = emptyList(),
+)
+
+@Serializable
+data class ModuleChartsResponse(
+    val ok: Boolean,
+    val generic: GenericChartData? = null,
+    val extras: List<JsonObject> = emptyList(),
+    val error: String? = null,
+)
+
+// Réplica mobile dos botões "Recalcular Vencimentos" (Financeiro),
+// "Recalcular Área" (Safra/Frota) e do gráfico "Eficiência de Frota" -- POST
+// /api/mobile/module-actions no site. "result" varia por action (recalcular
+// devolve um resumo de quantos registros mudaram; fleet-efficiency devolve
+// {mediaGeral, maquinas[]}) -- fica como JsonObject bruto, interpretado só
+// onde faz sentido (ver FleetEfficiencyCard.kt).
+@Serializable
+data class ModuleActionRequest(val accessToken: String, val refreshToken: String, val action: String)
+
+@Serializable
+data class ModuleActionResponse(
+    val ok: Boolean,
+    val result: JsonObject? = null,
+    val error: String? = null,
+)
+
 // Fase 2 (Task #32/#33): DRE consolidado + arvore de custos -- ver POST
 // /api/mobile/dre no site (src/app/api/mobile/dre/route.ts), que so
 // serializa o retorno de getDreConsolidado() + getDreArvoresPorFazendas()
@@ -345,3 +450,28 @@ data class SupabaseLoginResponse(
     @SerialName("error_description") val errorDescription: String? = null,
     val msg: String? = null,
 )
+
+// -- Extrato bancário (aba "Extrato" dentro de Financeiro, ver
+// bank-import-panel.tsx) -- o parsing do CSV roda no aparelho
+// (BankImportParser.kt); o servidor só cobre dedup + gravação. --
+
+@Serializable
+data class BankImportRowDto(val data: String, val descricao: String, val valor: Double)
+
+@Serializable
+data class BankImportSignaturesRequest(val accessToken: String, val refreshToken: String, val action: String = "signatures", val banco: String)
+
+@Serializable
+data class BankImportSignaturesResponse(val ok: Boolean, val signatures: List<String> = emptyList(), val error: String? = null)
+
+@Serializable
+data class BankImportConfirmRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String = "confirm",
+    val banco: String,
+    val rows: List<BankImportRowDto>,
+)
+
+@Serializable
+data class BankImportConfirmResponse(val ok: Boolean, val imported: Int = 0, val error: String? = null)
