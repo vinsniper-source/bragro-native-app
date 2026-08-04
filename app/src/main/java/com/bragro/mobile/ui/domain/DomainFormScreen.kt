@@ -13,6 +13,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -185,8 +186,8 @@ fun DomainFormScreen(
                     onClick = { viewModel.copyFromLastRecord() },
                     modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
                 ) {
-                    androidx.compose.material3.Icon(
-                        androidx.compose.material.icons.Icons.Filled.ContentCopy,
+                    Icon(
+                        Icons.Filled.ContentCopy,
                         contentDescription = null,
                         modifier = Modifier.padding(end = 8.dp),
                     )
