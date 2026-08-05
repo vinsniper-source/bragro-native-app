@@ -141,7 +141,12 @@ fun BRAgroBottomBar(
         BOTTOM_TABS.forEach { tab ->
             val selected = tab.items.any { it is SectorTarget.Domain && it.domainId == currentDomainId }
             Box {
-                NavigationBarItem(
+                // NavigationBarItem só existe como extensão de RowScope (o
+                // escopo que NavigationBar { } dá pro seu conteúdo) -- o Box
+                // aqui dentro (âncora do DropdownMenu) cria um escopo novo
+                // (BoxScope) que esconde esse receiver implícito, por isso o
+                // "this@NavigationBar." explícito abaixo.
+                this@NavigationBar.NavigationBarItem(
                     selected = selected,
                     onClick = { openTabId = tab.id },
                     icon = { Icon(tab.icon, contentDescription = tab.label) },
@@ -170,7 +175,7 @@ fun BRAgroBottomBar(
             }
         }
         Box {
-            NavigationBarItem(
+            this@NavigationBar.NavigationBarItem(
                 selected = false,
                 onClick = { openTabId = if (openTabId == "sistema") null else "sistema" },
                 icon = { Icon(Icons.Filled.GridView, contentDescription = "Módulos") },
