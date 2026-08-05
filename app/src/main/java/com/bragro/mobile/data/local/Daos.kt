@@ -71,6 +71,15 @@ interface DashboardDao {
 }
 
 @Dao
+interface HomeDao {
+    @Query("SELECT * FROM home WHERE id = 'current' LIMIT 1")
+    fun observe(): Flow<HomeEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(home: HomeEntity)
+}
+
+@Dao
 interface DreDao {
     @Query("SELECT * FROM dre WHERE id = 'current' LIMIT 1")
     fun observe(): Flow<DreEntity?>

@@ -76,6 +76,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
@@ -157,6 +158,12 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     init {
         viewModelScope.launch { recordRepository.observePendingCount().collectLatest { pendingCount.value = it } }
         viewModelScope.launch { db.sessionDao().observe().collectLatest { session.value = it } }
+        // Mostra o último retrato salvo assim que a tela abre (mesmo antes
+        // da 1ª resposta de rede) -- é o que faz o Início aparecer offline
+        // em vez de "Sem dados ainda" (pedido do usuário: "quanto ao
+        // dashboard é possível colocá-lo para aparecer offline?"). Quando a
+        // rede responde, refresh() abaixo sobrescreve com o dado ao vivo.
+        viewModelScope.launch { homeRepository.observeCached().collectLatest { cached -> if (cached != null) home.value = cached } }
         refresh()
     }
 
@@ -665,7 +672,10 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>) {
                 Icon(Icons.Filled.Bolt, contentDescription = null, tint = BrGreen, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
                 Box(modifier = Modifier.weight(1f)) {
-                    CollapsibleHeader("Monitor em tempo real", expanded) { expanded = !expanded }
+                    // Contagem no título -- mesmo padrão da Central de
+                    // Alertas ("(N)"), pedido do usuário ("coloque a
+                    // quantidade do item").
+                    CollapsibleHeader("Monitor em tempo real (${events.size})", expanded) { expanded = !expanded }
                 }
             }
             if (expanded) {
@@ -702,24 +712,38 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>) {
     }
 }
 
-private data class Kpi(val label: String, val value: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val color: Color)
+// Distingue "quantidade" (contagem simples: itens, operações,
+// colaboradores) de "valor" (quantia em R$) -- pedido do usuário ("nos kpis
+// coloque os valores a direita, as quantidades no meio e os textos nomes a
+// esquerda"), mesmo padrão de alinhamento adotado em todo o app (ver
+// DomainListScreen.kt).
+private enum class KpiKind { QUANTIDADE, VALOR }
+private data class Kpi(
+    val label: String,
+    val value: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val color: Color,
+    val kind: KpiKind,
+)
 
 // Redesenho pedido pelo usuário ("melhore o visual dos kpis, não precisa
 // ser padronizado a largura apenas altura, deixe mais homogêneo... deixe o
-// visual mais limpo"): antes a altura só era igualada DENTRO da mesma
-// fileira (IntrinsicSize.Min por Row), então a 1ª fileira podia ficar com
-// altura diferente da 2ª. Trocado por `minLines = 2` no rótulo -- isso
-// reserva o mesmo espaço (2 linhas) em TODOS os cards, de qualquer fileira,
-// sem precisar medir irmãos. Ícone ganhou um "badge" circular com a cor do
-// KPI em baixa opacidade (mesmo padrão de destaque usado no resto do app),
-// mais limpo que o ícone solto de antes.
+// visual mais limpo... esquerda texto, centro quantidades e direita
+// valores... deixe espaço entre as linhas"): antes a altura só era igualada
+// DENTRO da mesma fileira (IntrinsicSize.Min por Row), então a 1ª fileira
+// podia ficar com altura diferente da 2ª -- agora `minLines = 2` no rótulo
+// reserva o mesmo espaço em TODOS os cards, de qualquer fileira. O rótulo
+// (texto) fica ancorado à esquerda, a coluna do meio mostra a quantidade (se
+// aplicável) e a da direita mostra o valor em R$ (se aplicável) -- cada KPI
+// só preenche a coluna que faz sentido pra ele, mas as 3 zonas ficam sempre
+// na mesma posição em todo card.
 @Composable
 private fun KpiGrid(data: HomeData) {
     val kpis = listOf(
-        Kpi("Em aberto (financeiro)", formatMoneyBrl(data.saldoFinanceiroAberto), Icons.Filled.AccountBalanceWallet, BrGreen),
-        Kpi("Itens no estoque", data.itensEstoque.toString(), Icons.Filled.Inventory2, BrYellow),
-        Kpi("Operações de safra em andamento", data.safrasAtivas.toString(), Icons.Filled.Eco, BrBlue),
-        Kpi("Colaboradores ativos", data.colaboradoresAtivos.toString(), Icons.Filled.Groups, BrGreen),
+        Kpi("Em aberto (financeiro)", formatMoneyBrl(data.saldoFinanceiroAberto), Icons.Filled.AccountBalanceWallet, BrGreen, KpiKind.VALOR),
+        Kpi("Itens no estoque", data.itensEstoque.toString(), Icons.Filled.Inventory2, BrYellow, KpiKind.QUANTIDADE),
+        Kpi("Operações de safra em andamento", data.safrasAtivas.toString(), Icons.Filled.Eco, BrBlue, KpiKind.QUANTIDADE),
+        Kpi("Colaboradores ativos", data.colaboradoresAtivos.toString(), Icons.Filled.Groups, BrGreen, KpiKind.QUANTIDADE),
     )
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         kpis.chunked(2).forEach { row ->
@@ -740,15 +764,33 @@ private fun KpiGrid(data: HomeData) {
                                 Icon(kpi.icon, contentDescription = null, tint = kpi.color, modifier = Modifier.size(20.dp))
                             }
                             Spacer(Modifier.width(10.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(kpi.value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                Text(
-                                    kpi.label,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 2,
-                                    minLines = 2,
-                                )
+                            // Esquerda: nome do KPI.
+                            Text(
+                                kpi.label,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2,
+                                minLines = 2,
+                                lineHeight = MaterialTheme.typography.bodySmall.lineHeight * 1.3,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            // Centro: quantidade (contagem simples).
+                            Box(modifier = Modifier.width(36.dp), contentAlignment = Alignment.Center) {
+                                if (kpi.kind == KpiKind.QUANTIDADE) {
+                                    Text(kpi.value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                            // Direita: valor em R$.
+                            Box(modifier = Modifier.widthIn(min = 4.dp), contentAlignment = Alignment.CenterEnd) {
+                                if (kpi.kind == KpiKind.VALOR) {
+                                    Text(
+                                        kpi.value,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        textAlign = TextAlign.End,
+                                    )
+                                }
                             }
                         }
                     }

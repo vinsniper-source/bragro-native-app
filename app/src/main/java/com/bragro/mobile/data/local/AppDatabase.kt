@@ -16,8 +16,9 @@ import androidx.room.RoomDatabase
         DashboardEntity::class,
         DreEntity::class,
         AnalisesEntity::class,
+        HomeEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -30,6 +31,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun dashboardDao(): DashboardDao
     abstract fun dreDao(): DreDao
     abstract fun analisesDao(): AnalisesDao
+    abstract fun homeDao(): HomeDao
 
     companion object {
         @Volatile private var instance: AppDatabase? = null

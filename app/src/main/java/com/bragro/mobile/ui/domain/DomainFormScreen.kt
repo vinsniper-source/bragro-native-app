@@ -86,7 +86,13 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             val existing = recordId?.let { recordRepository.getRecord(domainId, it) }
             for (col in cfg.columns) {
                 if (col.computed) continue
-                fields[col.key] = existing?.get(col.key) ?: ""
+                val raw = existing?.get(col.key) ?: ""
+                // Datas chegam do servidor como timestamp ISO completo
+                // ("2026-08-05T00:00:00.000Z") -- mostrar isso cru no campo
+                // de edição é o que o usuário reportou como "as datas estão
+                // incorretas junto com elas tem fuso horário". Corta pro
+                // "AAAA-MM-DD" que o próprio placeholder do campo promete.
+                fields[col.key] = if (col.type == "date") isoDateOnly(raw) else raw
             }
 
             lastRecord.value = if (recordId == null) recordRepository.mostRecent(domainId) else null
@@ -105,7 +111,8 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
         val cfg = config.value ?: return
         for (col in cfg.columns) {
             if (col.computed) continue
-            fields[col.key] = last[col.key] ?: ""
+            val raw = last[col.key] ?: ""
+            fields[col.key] = if (col.type == "date") isoDateOnly(raw) else raw
         }
     }
 
@@ -220,13 +227,11 @@ fun DomainFormScreen(
     }
 }
 
-private fun fieldLabel(col: ColumnConfig): String {
-    val suffix = buildString {
-        if (col.money) append(" (R$)")
-        if (col.required) append(" *")
-    }
-    return col.label + suffix
-}
+// col.label de toda coluna "money" JÁ vem com "(R$)" embutido (ver
+// lib/domains/registry.ts no site, ex.: "Valor (R$)", "Bruto (R$)") --
+// completar de novo aqui era a causa do "há 2 (R$) (R$)" relatado pelo
+// usuário. Só o "*" de obrigatório é acrescentado.
+private fun fieldLabel(col: ColumnConfig): String = col.label + if (col.required) " *" else ""
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -272,6 +277,12 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                 value = value,
                 onValueChange = { viewModel.setField(col.key, it) },
                 label = { Text(fieldLabel(col)) },
+                // Prefixo "R$" dentro do próprio campo pros monetários --
+                // mesmo padrão do site (record-form.tsx), pedido do usuário
+                // ("não tem valores convertidos em moedas"): antes só virava
+                // R$ formatado DEPOIS de salvo, sem nenhuma pista enquanto
+                // se digitava.
+                prefix = if (col.money) ({ Text("R$ ") }) else null,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,

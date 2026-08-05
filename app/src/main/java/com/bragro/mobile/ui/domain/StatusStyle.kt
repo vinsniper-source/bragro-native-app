@@ -58,6 +58,15 @@ fun isStatusLikeColumn(key: String): Boolean = STATUS_LIKE_KEY.containsMatchIn(k
 
 private val ISO_DATE_PREFIX = Regex("^(\\d{4})-(\\d{2})-(\\d{2})")
 
+/** Extrai só "AAAA-MM-DD" de um valor de data que pode chegar do servidor
+ * como timestamp ISO completo com fuso ("2026-08-05T00:00:00.000Z") --
+ * usado no formulário de edição (DomainFormScreen.kt), que antes mostrava
+ * esse timestamp cru no campo (pedido do usuário: "as datas estão
+ * incorretas junto com elas tem fuso horário"). Mesmo motivo do
+ * displayValueFor() acima: extrai o prefixo direto da string, sem passar
+ * por java.util.Date/fuso, pra nunca "voltar um dia". */
+fun isoDateOnly(raw: String): String = ISO_DATE_PREFIX.find(raw)?.value ?: raw
+
 /** Espelho de fmtValue() em data-table.tsx: colunas "origem" viram rótulo
  * amigável, colunas "date" viram dd/MM/yyyy (extraído direto da string ISO
  * -- sem passar por java.util.Date/fuso-horário, pra nunca "voltar um dia"

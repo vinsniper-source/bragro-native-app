@@ -401,13 +401,21 @@ data class WeatherResponse(
 // em vez de modelar 15 data classes que uma analise nova deixaria
 // desatualizadas.
 @Serializable
-data class AnalisesRequest(val accessToken: String, val refreshToken: String, val safra: String? = null)
+data class AnalisesRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val safra: String? = null,
+    // Filtro de Cultura ao lado do de Safra -- pedido do usuário ("análises
+    // coloque filtro cultura"), mesmo padrão já usado no DRE.
+    val cultura: String? = null,
+)
 
 @Serializable
 data class AnalisesResponse(
     val ok: Boolean,
     val analises: JsonObject? = null,
     val safrasDisponiveis: List<String> = emptyList(),
+    val culturasDisponiveis: List<String> = emptyList(),
     val error: String? = null,
 )
 

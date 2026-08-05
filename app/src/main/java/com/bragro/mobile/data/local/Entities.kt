@@ -70,6 +70,22 @@ data class DashboardEntity(
     val atualizadoEmMillis: Long,
 )
 
+/** Início (Mural de Avisos + Central de Alertas + Monitor de atividade +
+ * KPIs) -- só existe UMA linha aqui (id fixo "current"), sobrescrita a cada
+ * consulta bem-sucedida de /api/mobile/home. Antes o Início não tinha
+ * NENHUM cache (decisão de propósito: avisos/alertas desatualizados
+ * pareciam mais confusos que úteis) -- pedido do usuário mudou isso
+ * ("quanto ao dashboard é possível colocá-lo para aparecer offline?"): mesmo
+ * padrão de blob JSON do DreEntity/AnalisesEntity, sem criar uma tabela SQL
+ * por seção. "atualizadoEmMillis" aparece na tela pra deixar claro que pode
+ * estar desatualizado quando exibido offline. */
+@Entity(tableName = "home")
+data class HomeEntity(
+    @PrimaryKey val id: String = "current",
+    val homeJson: String,
+    val atualizadoEmMillis: Long,
+)
+
 /** DRE consolidado (Fase 2, Task #32) -- so existe UMA linha aqui (id fixo
  * "current"), sobrescrita a cada consulta bem-sucedida de /api/mobile/dre.
  * "dataJson" guarda o DreData inteiro serializado (varias fazendas, cada
@@ -96,8 +112,12 @@ data class DreEntity(
 data class AnalisesEntity(
     @PrimaryKey val id: String = "current",
     val safra: String?,
+    // Filtro de Cultura ao lado do de Safra -- pedido do usuário, mesmo
+    // padrão já usado no DRE.
+    val cultura: String? = null,
     val analisesJson: String,
     val safrasDisponiveisCsv: String,
+    val culturasDisponiveisCsv: String = "",
     val atualizadoEmMillis: Long,
 )
 

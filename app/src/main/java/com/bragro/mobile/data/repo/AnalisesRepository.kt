@@ -26,17 +26,20 @@ class AnalisesRepository(context: Context) {
     fun safras(entity: AnalisesEntity): List<String> =
         entity.safrasDisponiveisCsv.split(",").filter { it.isNotBlank() }
 
-    suspend fun refresh(safra: String?): Boolean {
+    fun culturas(entity: AnalisesEntity): List<String> =
+        entity.culturasDisponiveisCsv.split(",").filter { it.isNotBlank() }
+
+    suspend fun refresh(safra: String?, cultura: String? = null): Boolean {
         val tokens = tokenStore.current() ?: return false
         var (accessToken, refreshToken) = tokens
         return try {
-            var response = NetworkModule.mobileApi.analises(AnalisesRequest(accessToken, refreshToken, safra))
+            var response = NetworkModule.mobileApi.analises(AnalisesRequest(accessToken, refreshToken, safra, cultura))
             // Ver comentario equivalente em DashboardRepository (Task #37).
             if (response.code() == 401) {
                 val newAccess = TokenRefresher.refreshAccessToken(tokenStore, refreshToken)
                 if (newAccess != null) {
                     accessToken = newAccess
-                    response = NetworkModule.mobileApi.analises(AnalisesRequest(accessToken, refreshToken, safra))
+                    response = NetworkModule.mobileApi.analises(AnalisesRequest(accessToken, refreshToken, safra, cultura))
                 }
             }
             val body = response.body()
@@ -45,8 +48,10 @@ class AnalisesRepository(context: Context) {
             db.analisesDao().upsert(
                 AnalisesEntity(
                     safra = safra,
+                    cultura = cultura,
                     analisesJson = body.analises.toString(),
                     safrasDisponiveisCsv = body.safrasDisponiveis.joinToString(","),
+                    culturasDisponiveisCsv = body.culturasDisponiveis.joinToString(","),
                     atualizadoEmMillis = System.currentTimeMillis(),
                 )
             )

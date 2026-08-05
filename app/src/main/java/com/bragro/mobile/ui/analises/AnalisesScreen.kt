@@ -65,11 +65,18 @@ class AnalisesViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var safrasDisponiveis = mutableStateOf<List<String>>(emptyList())
         private set
+    // Filtro de Cultura ao lado do de Safra -- pedido do usuário ("análises
+    // coloque filtro cultura, dividindo a mesma linha com o filtro safra"),
+    // mesmo padrão já usado no DRE (DreScreen.kt).
+    var culturasDisponiveis = mutableStateOf<List<String>>(emptyList())
+        private set
     var loading = mutableStateOf(false)
         private set
     var offline = mutableStateOf(false)
         private set
     var safra = mutableStateOf<String?>(null)
+        private set
+    var cultura = mutableStateOf<String?>(null)
         private set
 
     init {
@@ -78,6 +85,7 @@ class AnalisesViewModel(app: Application) : AndroidViewModel(app) {
                 if (entity != null) {
                     analises.value = repository.parse(entity)
                     safrasDisponiveis.value = repository.safras(entity)
+                    culturasDisponiveis.value = repository.culturas(entity)
                 }
             }
         }
@@ -89,11 +97,16 @@ class AnalisesViewModel(app: Application) : AndroidViewModel(app) {
         refresh()
     }
 
+    fun setCultura(value: String?) {
+        cultura.value = value
+        refresh()
+    }
+
     fun refresh() {
         if (loading.value) return
         loading.value = true
         viewModelScope.launch {
-            val ok = repository.refresh(safra.value)
+            val ok = repository.refresh(safra.value, cultura.value)
             offline.value = !ok
             loading.value = false
         }
@@ -177,9 +190,11 @@ private fun FilterDropdown(label: String, value: String?, options: List<String>,
 fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel()) {
     val analises by viewModel.analises
     val safrasDisponiveis by viewModel.safrasDisponiveis
+    val culturasDisponiveis by viewModel.culturasDisponiveis
     val loading by viewModel.loading
     val offline by viewModel.offline
     val safra by viewModel.safra
+    val cultura by viewModel.cultura
 
     Scaffold(
         topBar = {
@@ -206,7 +221,18 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             item {
-                FilterDropdown("Safra", safra, safrasDisponiveis) { viewModel.setSafra(it) }
+                // Cultura ao lado de Safra, mesma linha, blocos separados --
+                // pedido do usuário ("análises coloque filtro cultura,
+                // dividindo a mesma linha com o filtro safra, blocos
+                // separados"), mesmo padrão do DRE (DreScreen.kt).
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        FilterDropdown("Safra", safra, safrasDisponiveis) { viewModel.setSafra(it) }
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        FilterDropdown("Cultura", cultura, culturasDisponiveis) { viewModel.setCultura(it) }
+                    }
+                }
             }
             if (offline) {
                 item {
