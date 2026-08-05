@@ -2,6 +2,8 @@ package com.bragro.mobile.data.remote
 
 import com.bragro.mobile.data.model.AnalisesRequest
 import com.bragro.mobile.data.model.AnalisesResponse
+import com.bragro.mobile.data.model.BackupRequest
+import com.bragro.mobile.data.model.BackupResponse
 import com.bragro.mobile.data.model.BankImportConfirmRequest
 import com.bragro.mobile.data.model.BankImportConfirmResponse
 import com.bragro.mobile.data.model.BankImportSignaturesRequest
@@ -23,6 +25,10 @@ import com.bragro.mobile.data.model.NfeImportRequest
 import com.bragro.mobile.data.model.NfeImportResponse
 import com.bragro.mobile.data.model.NfePreviewRequest
 import com.bragro.mobile.data.model.NfePreviewResponse
+import com.bragro.mobile.data.model.NoticesRequest
+import com.bragro.mobile.data.model.NoticesResponse
+import com.bragro.mobile.data.model.NotificationsRequest
+import com.bragro.mobile.data.model.NotificationsResponse
 import com.bragro.mobile.data.model.RecordsRequest
 import com.bragro.mobile.data.model.RecordsResponse
 import com.bragro.mobile.data.model.SupabaseLoginRequest
@@ -102,6 +108,15 @@ interface MobileApi {
 
     @POST("api/mobile/nfe-import")
     suspend fun nfeImport(@Body body: NfeImportRequest): Response<NfeImportResponse>
+
+    @POST("api/mobile/notifications")
+    suspend fun notifications(@Body body: NotificationsRequest): Response<NotificationsResponse>
+
+    @POST("api/mobile/backup")
+    suspend fun backup(@Body body: BackupRequest): Response<BackupResponse>
+
+    @POST("api/mobile/notices")
+    suspend fun notices(@Body body: NoticesRequest): Response<NoticesResponse>
 
     // Rota publica, sem token (ver comentario em WeatherResponse/route.ts).
     @GET("api/mobile/weather")

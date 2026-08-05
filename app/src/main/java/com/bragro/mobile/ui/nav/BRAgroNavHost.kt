@@ -19,14 +19,12 @@ import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import com.bragro.mobile.data.repo.AuthRepository
 import com.bragro.mobile.ui.analises.AnalisesScreen
-import com.bragro.mobile.ui.dashboard.DashboardScreen
 import com.bragro.mobile.ui.dre.DreScreen
 import com.bragro.mobile.ui.domain.BankImportScreen
 import com.bragro.mobile.ui.domain.DomainFormScreen
 import com.bragro.mobile.ui.domain.DomainListScreen
 import com.bragro.mobile.ui.domain.FinanceiroScreen
 import com.bragro.mobile.ui.home.HomeScreen
-import com.bragro.mobile.ui.home.ModulosScreen
 import com.bragro.mobile.ui.login.LoginScreen
 import com.bragro.mobile.ui.nfe.NfeImportScreen
 import com.bragro.mobile.ui.romaneio.RomaneioQuickScreen
@@ -34,8 +32,6 @@ import com.bragro.mobile.ui.romaneio.RomaneioQuickScreen
 private object Routes {
     const val LOGIN = "login"
     const val HOME = "home"
-    const val MODULOS = "modulos"
-    const val DASHBOARD = "dashboard"
     const val DRE = "dre"
     const val ANALISES = "analises"
     const val NFE_IMPORT = "nfe_import"
@@ -51,12 +47,14 @@ private object Routes {
 }
 
 // Telas "principais" (acessadas pela barra inferior -- ver
-// ui/nav/BottomNavBar.kt): Início, Módulos e a lista de qualquer domínio.
-// Telas mais "de fluxo" (formulário, Dashboard/atalhos, DRE, Análises,
+// ui/nav/BottomNavBar.kt): Início e a lista de qualquer domínio -- cada aba
+// da barra agora abre um dropdown com as atividades do setor (pedido do
+// usuário), em vez de navegar pra uma tela "Módulos" própria (removida daqui
+// -- ver BottomNavBar.kt). Telas mais "de fluxo" (formulário, DRE, Análises,
 // importação de NF-e, romaneio, login) ficam sem a barra, mesmo critério já
 // usado nelas de ter seu próprio botão "Voltar".
 private fun showsBottomBar(route: String?): Boolean =
-    route == Routes.HOME || route == Routes.MODULOS || route == Routes.DOMAIN_LIST
+    route == Routes.HOME || route == Routes.DOMAIN_LIST
 
 @Composable
 fun BRAgroNavHost() {
@@ -83,19 +81,16 @@ fun BRAgroNavHost() {
             if (showsBottomBar(currentRoute)) {
                 BRAgroBottomBar(
                     currentDomainId = currentDomainId,
-                    isOnModulos = currentRoute == Routes.MODULOS,
                     onNavigateDomain = { domainId ->
                         navController.navigate(Routes.domainList(domainId)) {
                             popUpTo(Routes.HOME)
                             launchSingleTop = true
                         }
                     },
-                    onNavigateModulos = {
-                        navController.navigate(Routes.MODULOS) {
-                            popUpTo(Routes.HOME)
-                            launchSingleTop = true
-                        }
-                    },
+                    onOpenDre = { navController.navigate(Routes.DRE) },
+                    onOpenAnalises = { navController.navigate(Routes.ANALISES) },
+                    onOpenNfeImport = { navController.navigate(Routes.NFE_IMPORT) },
+                    onOpenRomaneioQuick = { navController.navigate(Routes.ROMANEIO_QUICK) },
                 )
             }
         },
@@ -113,22 +108,7 @@ fun BRAgroNavHost() {
         composable(Routes.HOME) {
             HomeScreen(
                 onOpenDomain = { domainId -> navController.navigate(Routes.domainList(domainId)) },
-                onOpenDashboard = { navController.navigate(Routes.DASHBOARD) },
                 onLoggedOut = { navController.navigate(Routes.LOGIN) { popUpTo(Routes.HOME) { inclusive = true } } },
-            )
-        }
-        composable(Routes.MODULOS) {
-            ModulosScreen(
-                onOpenDomain = { domainId -> navController.navigate(Routes.domainList(domainId)) },
-            )
-        }
-        composable(Routes.DASHBOARD) {
-            DashboardScreen(
-                onBack = { navController.popBackStack() },
-                onOpenDre = { navController.navigate(Routes.DRE) },
-                onOpenAnalises = { navController.navigate(Routes.ANALISES) },
-                onOpenNfeImport = { navController.navigate(Routes.NFE_IMPORT) },
-                onOpenRomaneioQuick = { navController.navigate(Routes.ROMANEIO_QUICK) },
             )
         }
         composable(Routes.DRE) {

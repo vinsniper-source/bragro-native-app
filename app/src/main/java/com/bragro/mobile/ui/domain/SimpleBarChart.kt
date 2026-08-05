@@ -74,17 +74,38 @@ fun SimpleBarChart(
                         verticalAlignment = Alignment.Bottom,
                         horizontalArrangement = Arrangement.Center,
                     ) {
+                        // Série única (o caso mais comum: gráfico genérico do
+                        // módulo, Eficiência de Frota etc.) ganha o valor
+                        // escrito em cima da barra -- pedido do usuário
+                        // ("preciso que coloque valores no topo"). Com mais
+                        // de uma série o rótulo não cabe (barras finas lado a
+                        // lado), então mantém só a legenda de cores abaixo.
                         series.forEachIndexed { si, s ->
                             val v = s.values.getOrElse(i) { 0.0 }
                             val fraction = (v / maxValue).coerceIn(0.0, 1.0).toFloat()
-                            Box(
-                                modifier = Modifier
-                                    .padding(horizontal = 1.dp)
-                                    .width(if (series.size > 1) 8.dp else 18.dp)
-                                    .fillMaxHeight(if (fraction > 0f) fraction else 0.01f)
-                                    .clip(RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp))
-                                    .background(s.color),
-                            )
+                            Column(
+                                modifier = Modifier.fillMaxHeight(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Bottom,
+                            ) {
+                                if (series.size == 1 && v != 0.0) {
+                                    Text(
+                                        fmtChartValue(v, isMoney),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(bottom = 2.dp),
+                                    )
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .padding(horizontal = 1.dp)
+                                        .width(if (series.size > 1) 8.dp else 18.dp)
+                                        .fillMaxHeight(if (fraction > 0f) fraction else 0.01f)
+                                        .clip(RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp))
+                                        .background(s.color),
+                                )
+                            }
                         }
                     }
                     Text(

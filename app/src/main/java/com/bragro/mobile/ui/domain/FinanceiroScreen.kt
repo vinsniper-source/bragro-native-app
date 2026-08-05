@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Upload
@@ -127,10 +128,21 @@ fun FinanceiroScreen(
         }
         result
     }
-    val visibleKeys = FINANCEIRO_VIEW_COLUMN_KEYS[view]
+    val presetKeys = FINANCEIRO_VIEW_COLUMN_KEYS[view]
     val fluxoRows = remember(filtered, view) {
         if (view == FinanceiroView.FLUXO) computeFluxoRows(filtered.sortedBy { it["vcto"] ?: "" }) else null
     }
+
+    // Colunas do preset da visão atual (Pagar/Receber/Conciliado têm um
+    // subconjunto fixo, ver FINANCEIRO_VIEW_COLUMN_KEYS) -- é sobre ESSE
+    // conjunto que o botão "Colunas" (pedido do usuário) deixa escolher um
+    // subconjunto ainda menor, tanto pra tela quanto pro CSV/PDF exportado.
+    val viewColumns = remember(config, view) {
+        val c = config
+        if (c == null) emptyList() else presetKeys?.mapNotNull { key -> c.columns.find { it.key == key } } ?: c.columns.filter { !it.hideInTable }
+    }
+    var customColumnKeys by remember(view) { mutableStateOf<Set<String>?>(null) }
+    val effectiveColumns = customColumnKeys?.let { keys -> viewColumns.filter { keys.contains(it.key) } } ?: viewColumns
 
     Scaffold(
         topBar = {
@@ -151,9 +163,19 @@ fun FinanceiroScreen(
                         }
                     }
                     val cfg = config
-                    if (cfg != null && filtered.isNotEmpty()) {
-                        IconButton(onClick = { HtmlPrinter.printList(context, cfg, filtered) }) {
-                            Icon(Icons.Filled.Print, contentDescription = "Imprimir / exportar PDF")
+                    if (cfg != null) {
+                        ColumnsPickerButton(
+                            allColumns = viewColumns,
+                            visibleKeys = customColumnKeys ?: viewColumns.map { it.key }.toSet(),
+                            onChange = { customColumnKeys = it },
+                        )
+                        if (filtered.isNotEmpty()) {
+                            IconButton(onClick = { exportCsv(context, "financeiro-${view.name.lowercase()}", effectiveColumns, filtered) }) {
+                                Icon(Icons.Filled.FileDownload, contentDescription = "Exportar CSV")
+                            }
+                            IconButton(onClick = { HtmlPrinter.printList(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) }) {
+                                Icon(Icons.Filled.Print, contentDescription = "Imprimir / exportar PDF")
+                            }
                         }
                     }
                 },
@@ -238,7 +260,7 @@ fun FinanceiroScreen(
                             }
                         }
                     } else {
-                        val cols = (visibleKeys?.mapNotNull { key -> cfg.columns.find { it.key == key } } ?: cfg.columns.filter { !it.hideInTable })
+                        val cols = effectiveColumns
                         LazyColumn(contentPadding = PaddingValues(12.dp, 4.dp, 12.dp, 80.dp)) {
                             // Gráficos/Calculadoras/Recalcular Vencimentos só
                             // aparecem na visão "Todos" -- mesmo critério do
@@ -267,7 +289,7 @@ fun FinanceiroScreen(
                                                 when {
                                                     isStatusLikeColumn(col.key) -> StatusBadge(value)
                                                     else -> Text(
-                                                        "${col.label}: ${if (col.money) "R$ $value" else displayValueFor(col.key, value)}",
+                                                        "${col.label}: ${if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)}",
                                                         fontWeight = if (isFinanceiroBoldColumn(col.key)) FontWeight.Bold else FontWeight.Normal,
                                                     )
                                                 }
@@ -409,12 +431,12 @@ private fun FluxoCard(row: FluxoRow, onClick: () -> Unit) {
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text("${row.original["entidade"] ?: "—"} — ${row.original["categoria"] ?: "—"}", fontWeight = FontWeight.Medium)
-            Text("Data movimento: ${row.dataMovimento ?: "—"}", style = MaterialTheme.typography.bodySmall)
+            Text("Data movimento: ${row.dataMovimento?.let { displayValueFor("data", it, "date") } ?: "—"}", style = MaterialTheme.typography.bodySmall)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (row.entrada > 0) Text("Entrada: R$ %.2f".format(row.entrada), color = Color(0xFF2F6F4F))
-                if (row.saida > 0) Text("Saída: R$ %.2f".format(row.saida), color = MaterialTheme.colorScheme.error)
+                if (row.entrada > 0) Text("Entrada: ${formatMoneyValue(row.entrada.toString())}", color = Color(0xFF2F6F4F))
+                if (row.saida > 0) Text("Saída: ${formatMoneyValue(row.saida.toString())}", color = MaterialTheme.colorScheme.error)
             }
-            Text("Saldo acumulado: R$ %.2f".format(row.saldoAcumulado), fontWeight = FontWeight.Bold)
+            Text("Saldo acumulado: ${formatMoneyValue(row.saldoAcumulado.toString())}", fontWeight = FontWeight.Bold)
         }
     }
 }

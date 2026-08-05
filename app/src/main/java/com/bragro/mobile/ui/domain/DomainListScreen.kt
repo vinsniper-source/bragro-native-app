@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
@@ -120,6 +121,12 @@ fun DomainListScreen(
     var intervalFrom by remember(domainId) { mutableStateOf("") }
     var intervalTo by remember(domainId) { mutableStateOf("") }
     val dateCol = config?.columns?.firstOrNull { it.type == "date" && !it.computed }
+
+    // Botão "Colunas" (espelho do site) -- null = ainda não customizado pelo
+    // usuário, mostra todas as colunas não ocultas (comportamento de sempre).
+    var customVisibleKeys by remember(domainId) { mutableStateOf<Set<String>?>(null) }
+    val allNonHiddenKeys = config?.columns?.filter { !it.hideInTable }?.map { it.key }?.toSet().orEmpty()
+    val visibleKeys = customVisibleKeys ?: allNonHiddenKeys
     val filteredRecords = remember(records, periodo, intervalFrom, intervalTo, dateCol) {
         if (dateCol == null) {
             records
@@ -159,9 +166,24 @@ fun DomainListScreen(
                     // botao "Exportar PDF" do site (tabela HTML + impressao
                     // do sistema, sem gerar PDF no servidor).
                     val cfg = config
-                    if (cfg != null && filteredRecords.isNotEmpty()) {
-                        IconButton(onClick = { HtmlPrinter.printList(context, cfg, filteredRecords) }) {
-                            Icon(Icons.Filled.Print, contentDescription = "Imprimir / exportar PDF")
+                    if (cfg != null) {
+                        // Pedido do usuário: "coloque botão colunas como em
+                        // plataforma para selecionar o cabeçalho que quiser
+                        // e coloque botão csv/pdf" -- espelho do toolbar de
+                        // data-table.tsx (Colunas + CSV/PDF), afetando tanto
+                        // a lista na tela quanto os dois exports.
+                        ColumnsPickerButton(
+                            allColumns = cfg.columns.filter { !it.hideInTable },
+                            visibleKeys = visibleKeys,
+                            onChange = { customVisibleKeys = it },
+                        )
+                        if (filteredRecords.isNotEmpty()) {
+                            IconButton(onClick = { exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords) }) {
+                                Icon(Icons.Filled.FileDownload, contentDescription = "Exportar CSV")
+                            }
+                            IconButton(onClick = { HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys) }) {
+                                Icon(Icons.Filled.Print, contentDescription = "Imprimir / exportar PDF")
+                            }
                         }
                     }
                 },
@@ -206,9 +228,6 @@ fun DomainListScreen(
             item(key = "charts") { ModuleChartsCard(domainId) }
             if (domainId == "safra" || domainId == "frota") {
                 item(key = "recalcular-area") { RecalcularAreaButton(domainId) }
-            }
-            if (domainId == "frota") {
-                item(key = "fleet-efficiency") { FleetEfficiencyCard() }
             }
             if (dateCol != null) {
                 item(key = "periodo") {
@@ -256,7 +275,7 @@ fun DomainListScreen(
                             ),
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            cfg.columns.filter { !it.hideInTable }.take(4).forEach { col ->
+                            cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }.take(4).forEach { col ->
                                 val value = record[col.key]
                                 if (!value.isNullOrBlank()) {
                                     // Colunas "status-like" (status/acaoRh/confere/
@@ -267,7 +286,7 @@ fun DomainListScreen(
                                     if (isStatusLikeColumn(col.key)) {
                                         StatusBadge(value)
                                     } else {
-                                        Text("${col.label}: ${if (col.money) "R$ $value" else displayValueFor(col.key, value)}")
+                                        Text("${col.label}: ${if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)}")
                                     }
                                 }
                             }

@@ -5,4 +5,8 @@
      grantUriPermissions no AndroidManifest). -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <cache-path name="romaneio_fotos" path="romaneio/" />
+    <!-- Backup completo (JSON) e exportações CSV -- salvos temporariamente
+         aqui antes de abrir o Intent de compartilhamento (ver HomeScreen.kt
+         e ui/domain/CsvExporter.kt). -->
+    <cache-path name="exports" path="exports/" />
 </paths>

@@ -2,6 +2,7 @@ package com.bragro.mobile.data.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 // Espelho em Kotlin de src/lib/domains/types.ts (site Next.js) -- os campos
@@ -134,6 +135,11 @@ data class ActivityEventData(
     val id: String,
     val table: String,
     val tableLabel: String,
+    // Descrição da operação do evento (operacao/item/compradorDestino
+    // conforme a tabela -- ver ACTIVITY_DETAIL_FIELD em home/route.ts),
+    // pedido do usuário ("tem que especificar qual é a operação assim como
+    // a plataforma"). Pode faltar em registros antigos sem esse campo.
+    val detail: String? = null,
     val type: String, // "criado" | "atualizado"
     val at: String,
 )
@@ -202,6 +208,49 @@ data class ModuleActionResponse(
     val result: JsonObject? = null,
     val error: String? = null,
 )
+
+// Réplica mobile do sino de notificações (topbar), do botão "Backup" e do
+// mural de avisos com adição/remoção -- POST /api/mobile/notifications,
+// /api/mobile/backup e /api/mobile/notices no site. "result"/"backup" ficam
+// como JsonElement bruto (às vezes é um objeto, às vezes uma lista, conforme
+// a action) igual ao ModuleActionResponse acima, interpretado só na tela.
+@Serializable
+data class NotificationItemData(
+    val id: String,
+    val tipo: String,
+    val titulo: String,
+    val mensagem: String,
+    val link: String? = null,
+    val lida: Boolean,
+    val criadaEm: String,
+)
+
+@Serializable
+data class NotificationsRequest(val accessToken: String, val refreshToken: String, val action: String)
+
+@Serializable
+data class NotificationsResponse(val ok: Boolean, val result: JsonElement? = null, val error: String? = null)
+
+@Serializable
+data class BackupRequest(val accessToken: String, val refreshToken: String)
+
+@Serializable
+data class BackupResponse(val ok: Boolean, val backup: JsonElement? = null, val error: String? = null)
+
+@Serializable
+data class NoticesRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String,
+    val id: String? = null,
+    val titulo: String? = null,
+    val mensagem: String? = null,
+    val expiraEm: String? = null,
+    val fixado: Boolean? = null,
+)
+
+@Serializable
+data class NoticesResponse(val ok: Boolean, val result: JsonElement? = null, val error: String? = null)
 
 // Fase 2 (Task #32/#33): DRE consolidado + arvore de custos -- ver POST
 // /api/mobile/dre no site (src/app/api/mobile/dre/route.ts), que so

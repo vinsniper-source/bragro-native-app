@@ -140,6 +140,12 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.6.8")
     debugImplementation("androidx.compose.ui:ui-tooling:1.6.8")
 
+    // Carregamento de imagem por URL (logo da organização/avatar do usuário
+    // no cabeçalho do Início, ver ui/home/HomeScreen.kt) -- única biblioteca
+    // nova deste pacote de mudanças, precisa por não existir nenhum jeito
+    // built-in do Compose de carregar bitmap de rede direto num Image().
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
     // Persistencia local (Room) -- e o que faz o app funcionar OFFLINE de

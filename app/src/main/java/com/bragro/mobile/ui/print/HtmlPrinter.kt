@@ -7,6 +7,8 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.bragro.mobile.data.model.ColumnConfig
 import com.bragro.mobile.data.model.DomainConfig
+import com.bragro.mobile.ui.domain.displayValueFor
+import com.bragro.mobile.ui.domain.formatMoneyValue
 
 // Fase 2 do app nativo (Task #41): "Impressao" -- no site, o unico mecanismo
 // de impressao que existe hoje (ver components/domain/data-table.tsx,
@@ -27,8 +29,12 @@ object HtmlPrinter {
     // collector antes do callback disparar, numa tela mais lenta.
     private var activeWebView: WebView? = null
 
-    fun printList(context: Context, domain: DomainConfig, records: List<Map<String, String?>>) {
-        val cols = domain.columns.filter { !it.hideInTable }
+    // "visibleKeys" (opcional) restringe às colunas escolhidas no botão
+    // "Colunas" (ver ColumnsAndExport.kt) -- null mantém o comportamento
+    // antigo (todas as colunas não ocultas), mesmo critério do site (o botão
+    // Colunas também afeta o PDF/CSV exportado, não só a tela).
+    fun printList(context: Context, domain: DomainConfig, records: List<Map<String, String?>>, visibleKeys: Set<String>? = null) {
+        val cols = domain.columns.filter { !it.hideInTable && (visibleKeys == null || visibleKeys.contains(it.key)) }
         val html = buildListHtml(domain.label, cols, records)
         print(context, jobName = domain.label, html = html)
     }
@@ -71,7 +77,7 @@ private fun buildListHtml(title: String, cols: List<ColumnConfig>, records: List
     val rows = records.joinToString("") { record ->
         val cells = cols.joinToString("") { col ->
             val raw = record[col.key].orEmpty()
-            val text = if (col.money && raw.isNotBlank()) "R$ $raw" else raw
+            val text = if (col.money && raw.isNotBlank()) formatMoneyValue(raw) else displayValueFor(col.key, raw, col.type)
             "<td>${escapeHtml(text)}</td>"
         }
         "<tr>$cells</tr>"

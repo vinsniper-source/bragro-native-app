@@ -91,13 +91,18 @@ fun ModuleChartsCard(domainId: String, viewModel: ModuleChartsViewModel = viewMo
                     modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
+                    // Eficiência de Frota (L/h por máquina) mora dentro deste
+                    // mesmo bloco colapsável -- pedido do usuário ("esconda o
+                    // gráfico eficiência de frota dentro do bloco gráficos"),
+                    // em vez de um card próprio sempre visível na lista.
+                    if (domainId == "frota") FleetEfficiencyCard()
                     when {
                         loading && !loaded -> Text("Carregando gráficos...", style = MaterialTheme.typography.bodySmall)
                         data == null -> Text("Sem conexão -- não foi possível carregar os gráficos.", style = MaterialTheme.typography.bodySmall)
                         else -> {
                             val generic = data?.generic
                             val extras = data?.extras.orEmpty().mapNotNull { parseChartSpec(it) }
-                            if (generic == null && extras.isEmpty()) {
+                            if (generic == null && extras.isEmpty() && domainId != "frota") {
                                 Text("Nenhum gráfico disponível para este módulo ainda.", style = MaterialTheme.typography.bodySmall)
                             }
                             if (generic != null && generic.data.isNotEmpty()) {

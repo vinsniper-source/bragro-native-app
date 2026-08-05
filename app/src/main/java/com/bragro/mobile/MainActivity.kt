@@ -1,7 +1,9 @@
 package com.bragro.mobile
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,7 +22,19 @@ class MainActivity : ComponentActivity() {
         // a primeira tela desenhar.
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // SystemBarStyle.auto (o padrão de enableEdgeToEdge() sem argumentos)
+        // desenha um "scrim" semi-transparente atrás da barra de status/
+        // navegação no modo claro -- suficiente pra legibilidade, mas cria
+        // uma faixa com tom levemente diferente do resto do app, dando
+        // impressão de que o conteúdo não ocupa a tela inteira (pedido do
+        // usuário: "app tem que ocupar toda tela até acima da barra de
+        // status"). Transparent nos dois modos remove esse scrim -- o app
+        // desenha por baixo da barra de status/navegação sem nenhuma faixa
+        // visível, cor nenhuma "sobrando" no topo/rodapé.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
+        )
         setContent {
             BRAgroTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {

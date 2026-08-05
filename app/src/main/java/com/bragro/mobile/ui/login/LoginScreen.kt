@@ -1,10 +1,12 @@
 package com.bragro.mobile.ui.login
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -17,12 +19,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bragro.mobile.R
 import com.bragro.mobile.data.repo.AuthRepository
 import com.bragro.mobile.data.repo.LoginResult
 import kotlinx.coroutines.launch
@@ -68,8 +73,16 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
             .fillMaxSize()
             .padding(PaddingValues(24.dp)),
         verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.Start,
     ) {
-        Text("BRAgro", style = androidx.compose.material3.MaterialTheme.typography.headlineMedium)
+        // Logo BRAgro do lado esquerdo -- pedido do usuário ("coloque a logo
+        // BRAgro do lado esquerdo tanto no início como em login"), mesma
+        // imagem usada no cabeçalho do Início (ver HomeScreen.kt).
+        Image(
+            painter = painterResource(R.drawable.logo_oficial_header),
+            contentDescription = "BRAgro",
+            modifier = Modifier.height(56.dp),
+        )
         Text("Entre com sua conta", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium)
 
         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 24.dp))
