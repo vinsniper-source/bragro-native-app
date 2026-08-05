@@ -246,6 +246,24 @@ data class BridgeCodeRequest(val accessToken: String, val refreshToken: String)
 @Serializable
 data class BridgeCodeResponse(val ok: Boolean, val code: String? = null, val error: String? = null)
 
+// Persistir a URL da logo apos o upload direto pro Storage (ver
+// LogoUploadRepository.kt) -- pedido do usuario ("quando clicar em
+// adicionar a logo, coloque quando clicar a adicionar a logo por la
+// memo"), equivalente mobile de updateLogoAction no site.
+@Serializable
+data class UpdateLogoRequest(val accessToken: String, val refreshToken: String, val logoUrl: String)
+
+@Serializable
+data class UpdateLogoResponse(val ok: Boolean, val error: String? = null)
+
+// Mesma ideia da logo, só que pra foto de perfil do usuário -- pedido do
+// usuário ("coloque também no ícone usuário a opção de inserir foto").
+@Serializable
+data class UpdateAvatarRequest(val accessToken: String, val refreshToken: String, val avatarUrl: String)
+
+@Serializable
+data class UpdateAvatarResponse(val ok: Boolean, val error: String? = null)
+
 @Serializable
 data class NoticesRequest(
     val accessToken: String,
@@ -260,6 +278,70 @@ data class NoticesRequest(
 
 @Serializable
 data class NoticesResponse(val ok: Boolean, val result: JsonElement? = null, val error: String? = null)
+
+// As 3 telas administrativas nativas (Configurações/Base de Dados/Acessos,
+// Task #148) -- pedido explícito e repetido do usuário ("não use nada para
+// redirecionar, quero ele fixo nesse app"), substituindo o auth-bridge/
+// Custom Tabs. Mesmo padrão de "action" genérico de NoticesRequest/
+// NotificationsRequest: um request/response por tela, o `result` chega como
+// JsonElement cru e cada ViewModel re-parseia como JsonObject/JsonArray
+// (mesmo critério de AnalisesScreen.kt), evitando modelar ~15 DTOs
+// tipados só pra telas de administração usadas raramente.
+@Serializable
+data class SettingsRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String,
+    val name: String? = null,
+    val toleranciaPct: Double? = null,
+    val notifTelegramBotToken: String? = null,
+    val notifTelegramChatId: String? = null,
+    val notifWhatsappPhoneId: String? = null,
+    val notifWhatsappToken: String? = null,
+    val notifWhatsappTo: String? = null,
+    val notifChannelPush: Boolean? = null,
+    val notifChannelTelegram: Boolean? = null,
+    val notifChannelWhatsapp: Boolean? = null,
+    val notifFrotaManutencao: Boolean? = null,
+    val notifRomaneioDiario: Boolean? = null,
+    val notifEstoqueMinimo: Boolean? = null,
+    val channel: String? = null,
+    val plano: String? = null,
+)
+
+@Serializable
+data class SettingsResponse(val ok: Boolean, val result: JsonElement? = null, val error: String? = null)
+
+@Serializable
+data class BaseDeDadosRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String,
+    val category: String? = null,
+    val value: String? = null,
+    val id: String? = null,
+    val ativo: Boolean? = null,
+    val name: String? = null,
+    val areaHa: Double? = null,
+)
+
+@Serializable
+data class BaseDeDadosResponse(val ok: Boolean, val result: JsonElement? = null, val error: String? = null)
+
+@Serializable
+data class SecurityRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String,
+    val email: String? = null,
+    val role: String? = null,
+    val modulosPermitidos: List<String>? = null,
+    val membershipId: String? = null,
+    val ativo: Boolean? = null,
+)
+
+@Serializable
+data class SecurityResponse(val ok: Boolean, val result: JsonElement? = null, val error: String? = null)
 
 // Fase 2 (Task #32/#33): DRE consolidado + arvore de custos -- ver POST
 // /api/mobile/dre no site (src/app/api/mobile/dre/route.ts), que so

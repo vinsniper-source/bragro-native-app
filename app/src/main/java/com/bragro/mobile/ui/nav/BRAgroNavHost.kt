@@ -20,6 +20,7 @@ import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import com.bragro.mobile.data.repo.AuthRepository
 import com.bragro.mobile.ui.analises.AnalisesScreen
+import com.bragro.mobile.ui.basededados.BaseDeDadosScreen
 import com.bragro.mobile.ui.dre.DreScreen
 import com.bragro.mobile.ui.domain.BankImportScreen
 import com.bragro.mobile.ui.domain.DomainFormScreen
@@ -29,6 +30,8 @@ import com.bragro.mobile.ui.home.HomeScreen
 import com.bragro.mobile.ui.login.LoginScreen
 import com.bragro.mobile.ui.nfe.NfeImportScreen
 import com.bragro.mobile.ui.romaneio.RomaneioQuickScreen
+import com.bragro.mobile.ui.seguranca.SegurancaScreen
+import com.bragro.mobile.ui.settings.SettingsScreen
 
 private object Routes {
     const val LOGIN = "login"
@@ -38,6 +41,9 @@ private object Routes {
     const val NFE_IMPORT = "nfe_import"
     const val ROMANEIO_QUICK = "romaneio_quick"
     const val BANK_IMPORT = "bank_import"
+    const val SETTINGS = "settings"
+    const val BASE_DE_DADOS = "base_de_dados"
+    const val SEGURANCA = "seguranca"
     const val DOMAIN_LIST = "domain/{domainId}"
     const val DOMAIN_FORM_NEW = "domain/{domainId}/new"
     const val DOMAIN_FORM_EDIT = "domain/{domainId}/edit/{recordId}"
@@ -99,8 +105,9 @@ fun BRAgroNavHost() {
                     },
                     onOpenDre = { navController.navigate(Routes.DRE) },
                     onOpenAnalises = { navController.navigate(Routes.ANALISES) },
-                    onOpenNfeImport = { navController.navigate(Routes.NFE_IMPORT) },
-                    onOpenRomaneioQuick = { navController.navigate(Routes.ROMANEIO_QUICK) },
+                    onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                    onOpenBaseDeDados = { navController.navigate(Routes.BASE_DE_DADOS) },
+                    onOpenSeguranca = { navController.navigate(Routes.SEGURANCA) },
                 )
             }
         },
@@ -136,6 +143,15 @@ fun BRAgroNavHost() {
         composable(Routes.BANK_IMPORT) {
             BankImportScreen(onBack = { navController.popBackStack() })
         }
+        composable(Routes.SETTINGS) {
+            SettingsScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.BASE_DE_DADOS) {
+            BaseDeDadosScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.SEGURANCA) {
+            SegurancaScreen(onBack = { navController.popBackStack() })
+        }
         composable(
             Routes.DOMAIN_LIST,
             arguments = listOf(navArgument("domainId") { type = NavType.StringType }),
@@ -152,6 +168,7 @@ fun BRAgroNavHost() {
                     onNewRecord = { navController.navigate(Routes.domainFormNew(domainId)) },
                     onEditRecord = { recordId -> navController.navigate(Routes.domainFormEdit(domainId, recordId)) },
                     onOpenBankImport = { navController.navigate(Routes.BANK_IMPORT) },
+                    onOpenNfeImport = { navController.navigate(Routes.NFE_IMPORT) },
                 )
             } else {
                 DomainListScreen(
@@ -159,6 +176,25 @@ fun BRAgroNavHost() {
                     onBack = { navController.popBackStack() },
                     onNewRecord = { navController.navigate(Routes.domainFormNew(domainId)) },
                     onEditRecord = { recordId -> navController.navigate(Routes.domainFormEdit(domainId, recordId)) },
+                    onOpenRomaneioQuick = if (domainId == "romaneios") {
+                        { navController.navigate(Routes.ROMANEIO_QUICK) }
+                    } else null,
+                    // Cobranças e NFS-e unificados numa única entrada do
+                    // menu (ver BottomNavBar.kt) -- pedido do usuário
+                    // ("unifique e me um só módulo"): esta tela genérica
+                    // ganha um alternador pra trocar entre os 2 domínios
+                    // sem passar pelo menu de novo.
+                    linkedDomains = if (domainId == "cobrancas" || domainId == "nfse") {
+                        listOf("cobrancas" to "Cobranças", "nfse" to "NFS-e")
+                    } else null,
+                    onSwitchDomain = if (domainId == "cobrancas" || domainId == "nfse") {
+                        { target ->
+                            navController.navigate(Routes.domainList(target)) {
+                                popUpTo(Routes.HOME)
+                                launchSingleTop = true
+                            }
+                        }
+                    } else null,
                 )
             }
         }

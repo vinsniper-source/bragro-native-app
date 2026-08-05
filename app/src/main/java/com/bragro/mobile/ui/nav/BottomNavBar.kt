@@ -21,16 +21,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
-import com.bragro.mobile.data.repo.BridgeRepository
 import com.bragro.mobile.ui.home.domainIcon
 import com.bragro.mobile.ui.theme.BrGreen
-import com.bragro.mobile.ui.util.openInCustomTab
-import kotlinx.coroutines.launch
 
 // Pedido do usuário: "coloque o tom de verde da barra inferior dos botões em
 // todo app conforme o modo claro e escuro" -- o Material3 antes derivava a
@@ -75,8 +70,11 @@ private val BOTTOM_TABS = listOf(
             SectorTarget.Domain("safra", "Safra"),
             SectorTarget.Domain("planejamentosafra", "Planejamento de Safra"),
             SectorTarget.Domain("colheita", "Colheita"),
+            // "Romaneio rápido" saiu daqui -- virou um 2º FAB dentro do
+            // próprio módulo Romaneios (ver DomainListScreen.kt), pedido do
+            // usuário ("coloque romaneio rápido como um botão dentro de
+            // romaneio, unifique").
             SectorTarget.Domain("romaneios", "Romaneios"),
-            SectorTarget.Special("romaneio_quick", "Romaneio rápido (balança)"),
             SectorTarget.Domain("pragas", "Pragas"),
             SectorTarget.Domain("receituarios", "Receituários"),
             SectorTarget.Domain("clima", "Clima"),
@@ -97,12 +95,18 @@ private val BOTTOM_TABS = listOf(
             SectorTarget.Domain("financeiro", "Financeiro (Lançamentos)"),
             SectorTarget.Special("dre", "DRE"),
             SectorTarget.Special("analises", "Análises cruzadas"),
-            SectorTarget.Special("nfe_import", "Importar NF-e (XML)"),
+            // "Importar NF-e" saiu daqui -- virou o botão "Importar XML"
+            // dentro do próprio Financeiro (ver FinanceiroScreen.kt), pedido
+            // do usuário ("crie um botão importar xml e unifique esses dois
+            // módulos").
             SectorTarget.Domain("pedidos", "Pedidos"),
             SectorTarget.Domain("contratos", "Contratos"),
             SectorTarget.Domain("caixainterno", "Caixa Interno"),
-            SectorTarget.Domain("cobrancas", "Cobranças"),
-            SectorTarget.Domain("nfse", "NFS-e"),
+            // Cobranças e NFS-e unificados numa única entrada -- pedido do
+            // usuário ("no módulo cobranças e nfse unifique e me um só
+            // módulo"). Abre em Cobranças, com um alternador pra NFS-e
+            // dentro da própria tela (ver DomainListScreen.kt).
+            SectorTarget.Domain("cobrancas", "Cobranças / NFS-e"),
         ),
     ),
     BottomTab(
@@ -120,13 +124,12 @@ private val BOTTOM_TABS = listOf(
     ),
 )
 
-/** As 3 únicas telas administrativas do site que o app ainda não replica
- * nativamente (Configurações/Base de Dados/Acessos) -- pedido do usuário:
- * "no botão módulos deixe apenas na lista suspensa configurações base de
- * dados e acessos". Sem tela nativa própria ainda, abrem no navegador do
- * aparelho (exige estar logado no site também pelo navegador -- são telas
- * raras de usar fora do computador, então esse atalho já resolve o essencial
- * sem duplicar todo o CRUD de administração em Kotlin agora). */
+/** As 3 telas administrativas (Configurações/Base de Dados/Acessos) agora são
+ * 100% nativas (Task #148) -- pedido explícito e repetido do usuário ("não
+ * use nada para redirecionar, quero ele fixo nesse app"). Antes abriam via
+ * BridgeRepository/Custom Tabs no navegador do aparelho; substituído por
+ * navegação direta pras novas rotas Compose (ver SettingsScreen.kt/
+ * BaseDeDadosScreen.kt/SegurancaScreen.kt e Routes em BRAgroNavHost.kt). */
 private val SISTEMA_LINKS = listOf(
     "configuracoes" to "Configurações",
     "base-de-dados" to "Base de Dados",
@@ -139,12 +142,10 @@ fun BRAgroBottomBar(
     onNavigateDomain: (String) -> Unit,
     onOpenDre: () -> Unit,
     onOpenAnalises: () -> Unit,
-    onOpenNfeImport: () -> Unit,
-    onOpenRomaneioQuick: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onOpenBaseDeDados: () -> Unit,
+    onOpenSeguranca: () -> Unit,
 ) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val bridgeRepo = remember { BridgeRepository(context) }
     var openTabId by remember { mutableStateOf<String?>(null) }
 
     fun openSector(target: SectorTarget) {
@@ -154,8 +155,6 @@ fun BRAgroBottomBar(
             is SectorTarget.Special -> when (target.routeKey) {
                 "dre" -> onOpenDre()
                 "analises" -> onOpenAnalises()
-                "nfe_import" -> onOpenNfeImport()
-                "romaneio_quick" -> onOpenRomaneioQuick()
             }
         }
     }
@@ -219,20 +218,10 @@ fun BRAgroBottomBar(
                         leadingIcon = { Icon(Icons.Filled.Settings, contentDescription = null) },
                         onClick = {
                             openTabId = null
-                            // Antes: Intent.ACTION_VIEW direto pro link
-                            // simples, que (a) abria sem sessão nenhuma no
-                            // navegador (bearer token do app não é cookie) e
-                            // caía no /login, e (b) passava pela resolução de
-                            // "App Links" do Android, que podia entregar a
-                            // URL pra outro app instalado com esse domínio
-                            // verificado -- daí "estão sendo redirecionados
-                            // para o app anterior". Agora: código de ponte já
-                            // abre logado (BridgeRepository.kt) E Custom Tabs
-                            // abre direto no navegador, sem passar pela
-                            // resolução de App Links.
-                            scope.launch {
-                                val url = bridgeRepo.buildWebUrl(path)
-                                openInCustomTab(context, url)
+                            when (path) {
+                                "configuracoes" -> onOpenSettings()
+                                "base-de-dados" -> onOpenBaseDeDados()
+                                "seguranca" -> onOpenSeguranca()
                             }
                         },
                     )

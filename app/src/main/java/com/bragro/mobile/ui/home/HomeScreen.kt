@@ -1,7 +1,8 @@
 package com.bragro.mobile.ui.home
 
 import android.app.Application
-import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,10 +33,13 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.Agriculture
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.ExpandLess
@@ -47,11 +51,15 @@ import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.WarningAmber
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.Card
+import com.bragro.mobile.ui.theme.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -94,7 +102,9 @@ import com.bragro.mobile.data.model.NoticeData
 import com.bragro.mobile.data.model.NotificationItemData
 import com.bragro.mobile.data.model.WeatherResponse
 import com.bragro.mobile.data.repo.AuthRepository
+import com.bragro.mobile.data.repo.AvatarUploadRepository
 import com.bragro.mobile.data.repo.BackupRepository
+import com.bragro.mobile.data.repo.LogoUploadRepository
 import com.bragro.mobile.data.repo.HomeRepository
 import com.bragro.mobile.data.repo.NoticesRepository
 import com.bragro.mobile.data.repo.NotificationsRepository
@@ -102,6 +112,7 @@ import com.bragro.mobile.data.repo.RecordRepository
 import com.bragro.mobile.data.repo.WeatherRepository
 import com.bragro.mobile.ui.theme.BrBlue
 import com.bragro.mobile.ui.theme.BrGreen
+import com.bragro.mobile.ui.theme.BrOrange
 import com.bragro.mobile.ui.theme.BrYellow
 import com.bragro.mobile.ui.theme.ThemeToggle
 import com.bragro.mobile.ui.util.shareTextFile
@@ -137,6 +148,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     private val notificationsRepository = NotificationsRepository(app)
     private val backupRepository = BackupRepository(app)
     private val noticesRepository = NoticesRepository(app)
+    private val logoUploadRepository = LogoUploadRepository(app)
+    private val avatarUploadRepository = AvatarUploadRepository(app)
     private val db = AppDatabase.get(app)
 
     var home = mutableStateOf<HomeData?>(null)
@@ -154,6 +167,10 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     var notifications = mutableStateOf<List<NotificationItemData>>(emptyList())
         private set
     var unreadCount = mutableStateOf(0)
+        private set
+    var uploadingLogo = mutableStateOf(false)
+        private set
+    var uploadingAvatar = mutableStateOf(false)
         private set
 
     init {
@@ -247,6 +264,72 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             refresh()
         }
     }
+
+    // Upload nativo da logo da organização direto pelo app -- pedido do
+    // usuário ("quando clicar em adicionar a logo, coloque quando clicar a
+    // adicionar a logo por lá mesmo"), substituindo o Toast que só
+    // orientava a ir pro site. MESMO limite de 2MB do site
+    // (topbar.tsx/LOGO_MAX_SIZE).
+    fun uploadLogo(context: android.content.Context, uri: android.net.Uri, onResult: (String?) -> Unit) {
+        if (uploadingLogo.value) return
+        uploadingLogo.value = true
+        viewModelScope.launch {
+            val result = runCatching {
+                val resolver = context.contentResolver
+                val mimeType = resolver.getType(uri) ?: "image/jpeg"
+                val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+                    ?: throw IllegalStateException("Não foi possível ler a imagem selecionada.")
+                if (bytes.size > 2 * 1024 * 1024) throw IllegalStateException("Imagem maior que 2MB.")
+                val ext = when (mimeType) {
+                    "image/png" -> "png"
+                    "image/svg+xml" -> "svg"
+                    "image/webp" -> "webp"
+                    else -> "jpg"
+                }
+                logoUploadRepository.uploadLogo(bytes, mimeType, ext).getOrThrow()
+            }
+            uploadingLogo.value = false
+            onResult(result.getOrNull())
+            if (result.isFailure) {
+                val msg = result.exceptionOrNull()?.message ?: "Falha ao enviar a logo."
+                android.widget.Toast.makeText(getApplication(), msg, android.widget.Toast.LENGTH_LONG).show()
+            } else {
+                android.widget.Toast.makeText(getApplication(), "Logo atualizada.", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // Upload nativo da foto de perfil -- pedido do usuário ("coloque também
+    // no ícone usuário a opção de inserir foto"), mesma mecânica do upload
+    // de logo (mesmo limite de 2MB), só que qualquer usuário pode trocar a
+    // própria foto (sem checagem de OWNER/ADMIN).
+    fun uploadAvatar(context: android.content.Context, uri: android.net.Uri, onResult: (String?) -> Unit) {
+        if (uploadingAvatar.value) return
+        uploadingAvatar.value = true
+        viewModelScope.launch {
+            val result = runCatching {
+                val resolver = context.contentResolver
+                val mimeType = resolver.getType(uri) ?: "image/jpeg"
+                val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+                    ?: throw IllegalStateException("Não foi possível ler a imagem selecionada.")
+                if (bytes.size > 2 * 1024 * 1024) throw IllegalStateException("Imagem maior que 2MB.")
+                val ext = when (mimeType) {
+                    "image/png" -> "png"
+                    "image/webp" -> "webp"
+                    else -> "jpg"
+                }
+                avatarUploadRepository.uploadAvatar(bytes, mimeType, ext).getOrThrow()
+            }
+            uploadingAvatar.value = false
+            onResult(result.getOrNull())
+            if (result.isFailure) {
+                val msg = result.exceptionOrNull()?.message ?: "Falha ao enviar a foto."
+                android.widget.Toast.makeText(getApplication(), msg, android.widget.Toast.LENGTH_LONG).show()
+            } else {
+                android.widget.Toast.makeText(getApplication(), "Foto de perfil atualizada.", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 }
 
 private fun formatMoneyBrl(value: Double): String =
@@ -293,6 +376,21 @@ fun HomeScreen(
     val canManage = isAdminRole(session?.role)
     var userMenuOpen by remember { mutableStateOf(false) }
     var notificationsOpen by remember { mutableStateOf(false) }
+    val uploadingLogo by viewModel.uploadingLogo
+    val uploadingAvatar by viewModel.uploadingAvatar
+    val logoScreenContext = LocalContext.current
+
+    // Upload nativo da logo: abre o seletor de imagens do aparelho direto
+    // (sem passar pelo site) -- pedido do usuário ("coloque quando clicar
+    // adicionar a logo por lá mesmo").
+    val logoPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) viewModel.uploadLogo(logoScreenContext, uri) { }
+    }
+    // Upload nativo da foto de perfil -- pedido do usuário ("coloque também
+    // no ícone usuário a opção de inserir foto").
+    val avatarPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) viewModel.uploadAvatar(logoScreenContext, uri) { }
+    }
 
     Scaffold(
         topBar = {
@@ -325,9 +423,11 @@ fun HomeScreen(
                     }
                     ThemeToggle()
                     Box {
-                        IconButton(onClick = { userMenuOpen = true }) {
+                        IconButton(onClick = { userMenuOpen = true }, enabled = !uploadingAvatar) {
                             val avatarUrl = session?.avatarUrl
-                            if (!avatarUrl.isNullOrBlank()) {
+                            if (uploadingAvatar) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = BrGreen)
+                            } else if (!avatarUrl.isNullOrBlank()) {
                                 AsyncImage(
                                     model = avatarUrl,
                                     contentDescription = "Conta",
@@ -338,6 +438,14 @@ fun HomeScreen(
                             }
                         }
                         DropdownMenu(expanded = userMenuOpen, onDismissRequest = { userMenuOpen = false }) {
+                            // Trocar foto direto pelo app -- pedido do
+                            // usuário ("coloque também no ícone usuário a
+                            // opção de inserir foto").
+                            DropdownMenuItem(
+                                text = { Text("Alterar foto") },
+                                leadingIcon = { Icon(Icons.Filled.AddPhotoAlternate, contentDescription = null) },
+                                onClick = { userMenuOpen = false; avatarPickerLauncher.launch("image/*") },
+                            )
                             DropdownMenuItem(
                                 text = { Text("Sincronizar agora") },
                                 leadingIcon = { Icon(Icons.Filled.CloudSync, contentDescription = null) },
@@ -352,43 +460,53 @@ fun HomeScreen(
                     }
                     // Lugar reservado pra logo da organização (canto superior
                     // direito) -- pedido do usuário. Cada organização pode ter
-                    // uma (orgLogoUrl, cadastrada no site). Sem logo cadastrada,
-                    // o site mostra um botão "+" tracejado só pra quem é
-                    // OWNER/ADMIN (isAdmin, ver topbar.tsx) convidando a
-                    // cadastrar uma -- réplica aqui: ícone visível (antes era
-                    // uma Box vazia, sem nenhuma pista de que dava pra
-                    // adicionar logo). Upload em si continua feito pelo site
-                    // (Configurações > Identidade), então o toque aqui só
-                    // orienta pra lá por enquanto.
+                    // uma (orgLogoUrl). Sem logo cadastrada, quem é
+                    // OWNER/ADMIN (isAdmin, ver topbar.tsx) vê um botão "+"
+                    // convidando a cadastrar uma -- upload é feito DIRETO
+                    // aqui pelo app agora (pedido do usuário: "quando clicar
+                    // em adicionar a logo, coloque quando clicar a adicionar
+                    // a logo por lá mesmo"), sem redirecionar pro site. Com
+                    // logo já cadastrada, tocar nela também permite trocar
+                    // (só pra quem pode gerenciar).
                     val orgLogoUrl = session?.orgLogoUrl
-                    val logoContext = LocalContext.current
                     if (!orgLogoUrl.isNullOrBlank()) {
-                        AsyncImage(
-                            model = orgLogoUrl,
-                            contentDescription = "Logo da organização",
-                            modifier = Modifier.padding(end = 8.dp).size(32.dp).clip(RoundedCornerShape(4.dp)),
-                        )
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 8.dp)
+                                .size(32.dp)
+                                .then(if (canManage) Modifier.clickable(enabled = !uploadingLogo) { logoPickerLauncher.launch("image/*") } else Modifier),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (uploadingLogo) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = BrGreen)
+                            } else {
+                                AsyncImage(
+                                    model = orgLogoUrl,
+                                    contentDescription = "Logo da organização",
+                                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(4.dp)),
+                                )
+                            }
+                        }
                     } else if (canManage) {
                         // Sem círculo/borda -- pedido do usuário ("retire o
                         // círculo em volta do ícone da logo do cliente"). Tom
                         // de verde da marca (BrGreen) em vez do outline
                         // neutro de antes, mesma cor da barra inferior.
                         IconButton(
-                            onClick = {
-                                Toast.makeText(
-                                    logoContext,
-                                    "Envie a logo da empresa pelo site, em Configurações > Identidade",
-                                    Toast.LENGTH_LONG,
-                                ).show()
-                            },
+                            enabled = !uploadingLogo,
+                            onClick = { logoPickerLauncher.launch("image/*") },
                             modifier = Modifier.padding(end = 8.dp).size(32.dp),
                         ) {
-                            Icon(
-                                Icons.Filled.AddPhotoAlternate,
-                                contentDescription = "Adicionar logo da empresa",
-                                modifier = Modifier.size(20.dp),
-                                tint = BrGreen,
-                            )
+                            if (uploadingLogo) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = BrGreen)
+                            } else {
+                                Icon(
+                                    Icons.Filled.AddPhotoAlternate,
+                                    contentDescription = "Adicionar logo da empresa",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = BrGreen,
+                                )
+                            }
                         }
                     } else {
                         Box(modifier = Modifier.padding(end = 8.dp).size(32.dp))
@@ -535,6 +653,11 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, vie
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                // Ícone estilo KPI (badge circular colorido) no cabeçalho --
+                // pedido do usuário ("coloque um ícone como nos kpis abaixo
+                // nos blocos mural de avisos central de alertas").
+                SectionBadgeIcon(Icons.Filled.Campaign, BrBlue)
+                Spacer(Modifier.width(8.dp))
                 Text("Mural de Avisos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 // Botão de adicionar aviso -- o app antes não tinha NENHUM
                 // jeito de publicar um aviso (só o site tinha), pedido
@@ -621,12 +744,34 @@ private fun CollapsibleHeader(title: String, expanded: Boolean, onToggle: () -> 
     }
 }
 
+// Badge circular colorido, mesmo visual dos ícones dos KPIs (Box + fundo com
+// alpha 0.14 + ícone tintado no meio) -- reaproveitado nos cabeçalhos de
+// Mural de Avisos e Central de Alertas, pedido explícito do usuário.
+@Composable
+private fun SectionBadgeIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color, size: androidx.compose.ui.unit.Dp = 28.dp) {
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(color.copy(alpha = 0.14f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(size * 0.55f))
+    }
+}
+
 @Composable
 private fun AlertsCard(alerts: List<AlertData>, onOpenDomain: (String) -> Unit) {
     var expanded by remember { mutableStateOf(true) }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            CollapsibleHeader("Central de Alertas (${alerts.size})", expanded) { expanded = !expanded }
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                SectionBadgeIcon(Icons.Filled.WarningAmber, BrOrange)
+                Spacer(Modifier.width(8.dp))
+                Box(modifier = Modifier.weight(1f)) {
+                    CollapsibleHeader("Central de Alertas (${alerts.size})", expanded) { expanded = !expanded }
+                }
+            }
             if (expanded) {
                 if (alerts.isEmpty()) {
                     Text("Nenhum alerta no momento. Tudo em dia.", style = MaterialTheme.typography.bodySmall)
@@ -741,9 +886,11 @@ private data class Kpi(
 @Composable
 private fun KpiGrid(data: HomeData) {
     val kpis = listOf(
-        Kpi("Em aberto (financeiro)", formatMoneyBrl(data.saldoFinanceiroAberto), Icons.Filled.AccountBalanceWallet, BrGreen, KpiKind.VALOR),
+        // Cores dos ícones Safra/Financeiro invertidas -- pedido do usuário
+        // ("inverta as cores dos ícones dos kpis safra e financeiro").
+        Kpi("Em aberto (financeiro)", formatMoneyBrl(data.saldoFinanceiroAberto), Icons.Filled.AccountBalanceWallet, BrBlue, KpiKind.VALOR),
         Kpi("Itens no estoque", data.itensEstoque.toString(), Icons.Filled.Inventory2, BrYellow, KpiKind.QUANTIDADE),
-        Kpi("Operações de safra em andamento", data.safrasAtivas.toString(), Icons.Filled.Eco, BrBlue, KpiKind.QUANTIDADE),
+        Kpi("Operações de safra em andamento", data.safrasAtivas.toString(), Icons.Filled.Eco, BrGreen, KpiKind.QUANTIDADE),
         Kpi("Colaboradores ativos", data.colaboradoresAtivos.toString(), Icons.Filled.Groups, BrGreen, KpiKind.QUANTIDADE),
     )
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -782,7 +929,10 @@ private fun KpiGrid(data: HomeData) {
                                     Text(kpi.value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                 }
                             }
-                            // Direita: valor em R$.
+                            // Direita: valor em R$ -- sempre em UMA linha só,
+                            // não importa o número de caracteres (pedido do
+                            // usuário: "coloque o valor total em uma linha só
+                            // independente do número de caracteres").
                             Box(modifier = Modifier.widthIn(min = 4.dp), contentAlignment = Alignment.CenterEnd) {
                                 if (kpi.kind == KpiKind.VALOR) {
                                     Text(
@@ -790,6 +940,9 @@ private fun KpiGrid(data: HomeData) {
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
                                         textAlign = TextAlign.End,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                        overflow = TextOverflow.Visible,
                                     )
                                 }
                             }
@@ -811,11 +964,23 @@ private fun KpiGrid(data: HomeData) {
 // desmembre-os"), agora 3 cards separados, mesma divisão de
 // src/app/(app)/dashboard/page.tsx no site (Clima / Câmbio / Cotações
 // agrícolas / Destaques, cada um seu próprio <Card>).
+// Cabeçalho com badge de ícone + título, mesmo padrão em Clima/Câmbio/
+// Cotações/Destaques -- pedido do usuário ("coloque ícones em clima, câmbio,
+// cotações agrícolas e destaques").
+@Composable
+private fun MiniCardHeader(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color, titleStyle: androidx.compose.ui.text.TextStyle) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        SectionBadgeIcon(icon, color, size = 22.dp)
+        Spacer(Modifier.width(6.dp))
+        Text(title, style = titleStyle, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
 @Composable
 private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Clima (agora)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            MiniCardHeader("Clima (agora)", Icons.Filled.WbSunny, BrYellow, MaterialTheme.typography.titleMedium)
             Row {
                 Text("${clima.currentIcon} ${clima.currentTempC.toInt()}°C -- ")
                 Text("máx ${clima.todayMaxC.toInt()}° / mín ${clima.todayMinC.toInt()}°")
@@ -828,30 +993,33 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, modifier:
 private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Câmbio (agora)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            MiniCardHeader("Câmbio (agora)", Icons.Filled.CurrencyExchange, BrGreen, MaterialTheme.typography.titleMedium)
             Row { Text("Dólar: "); Text(fx.usdBrl?.let { formatMoneyBrl(it) } ?: "—", fontWeight = FontWeight.Bold) }
             Row { Text("Euro: "); Text(fx.eurBrl?.let { formatMoneyBrl(it) } ?: "—", fontWeight = FontWeight.Bold) }
         }
     }
 }
 
+// Cotações e Destaques agora replicam o MESMO layout/tamanho de fonte do
+// Câmbio -- pedido do usuário ("use o layout de câmbio para aplicar nos kpis
+// cotações e destaques pulando uma linha, alternando com negrito e sem
+// negrito"): título titleMedium, padding 16dp, uma Row por item com o rótulo
+// sem negrito seguido do valor em negrito, cada um na sua própria linha.
 @Composable
 private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, modifier: Modifier = Modifier.fillMaxWidth()) {
-    // padding/spacedBy menores + bodySmall + maxLines=1 -- cada linha
-    // ("Milho: R$ 60,40/sc 60kg") quebrava em 2 linhas na metade da largura
-    // da tela e deixava o card muito alto (pedido do usuário: "coloque a
-    // descrição de cada item em uma só linha" + "diminua a altura").
     Card(modifier = modifier) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("Cotações agrícolas", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            MiniCardHeader("Cotações agrícolas", Icons.Filled.Agriculture, BrGreen, MaterialTheme.typography.titleMedium)
             listOfNotNull(com.soja, com.milho, com.sorgo).forEach { q ->
-                Text(
-                    "${q.nome}: ${formatMoneyBrl(q.valor)}/${q.unidade}",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row {
+                    Text("${q.nome}: ")
+                    Text(
+                        "${formatMoneyBrl(q.valor)}/${q.unidade}",
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }
@@ -860,22 +1028,16 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
 @Composable
 private fun DestaquesCard(data: HomeData, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("Destaques", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            Text(
-                "Cultura líder: ${data.culturaLider ?: "—"}",
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                "Pedidos em atraso: ${data.pedidosAtrasados}",
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            MiniCardHeader("Destaques", Icons.Filled.Star, BrYellow, MaterialTheme.typography.titleMedium)
+            Row {
+                Text("Cultura líder: ")
+                Text(data.culturaLider ?: "—", fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Row {
+                Text("Pedidos em atraso: ")
+                Text(data.pedidosAtrasados.toString(), fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
         }
     }
 }

@@ -67,6 +67,35 @@ private val ISO_DATE_PREFIX = Regex("^(\\d{4})-(\\d{2})-(\\d{2})")
  * por java.util.Date/fuso, pra nunca "voltar um dia". */
 fun isoDateOnly(raw: String): String = ISO_DATE_PREFIX.find(raw)?.value ?: raw
 
+private val BR_DATE = Regex("^(\\d{2})/(\\d{2})/(\\d{4})$")
+
+/** Converte "AAAA-MM-DD" (formato que o servidor manda/espera) pro formato
+ * brasileiro "DD/MM/AAAA" -- pedido do usuário ("dentro do botão de
+ * adicionar novo lançamento as datas estão com padrão americano"): o campo
+ * de data do formulário mostrava/pedia AAAA-MM-DD, que embora seja ISO (não
+ * literalmente o padrão americano MM/DD/AAAA) tem a ordem ano-mês-dia que o
+ * usuário não reconhece como o formato usado no Brasil. Devolve o texto
+ * original se não bater no padrão esperado (nunca quebra em cima de um
+ * valor vazio/inesperado). */
+fun isoDateToBr(iso: String): String {
+    if (iso.isBlank()) return iso
+    val m = ISO_DATE_PREFIX.find(iso) ?: return iso
+    val (y, mo, d) = m.destructured
+    return "$d/$mo/$y"
+}
+
+/** Inverso de isoDateToBr() -- usado só na hora de montar o corpo enviado
+ * pro servidor (save()), nunca durante a digitação (evita brigar com o
+ * usuário no meio de uma data parcialmente digitada). Devolve o texto
+ * original se ainda não estiver completo/no formato DD/MM/AAAA (o servidor
+ * já validava e rejeitava datas malformadas antes disso existir, então não
+ * piora nada deixar passar como está). */
+fun brDateToIso(br: String): String {
+    val m = BR_DATE.find(br.trim()) ?: return br
+    val (d, mo, y) = m.destructured
+    return "$y-$mo-$d"
+}
+
 /** Espelho de fmtValue() em data-table.tsx: colunas "origem" viram rótulo
  * amigável, colunas "date" viram dd/MM/yyyy (extraído direto da string ISO
  * -- sem passar por java.util.Date/fuso-horário, pra nunca "voltar um dia"

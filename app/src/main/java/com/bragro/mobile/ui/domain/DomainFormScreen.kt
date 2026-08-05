@@ -1,7 +1,9 @@
 package com.bragro.mobile.ui.domain
 
 import android.app.Application
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -25,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -47,6 +51,7 @@ import com.bragro.mobile.data.model.DomainConfig
 import com.bragro.mobile.data.repo.ConfigRepository
 import com.bragro.mobile.data.repo.RecordRepository
 import com.bragro.mobile.data.repo.SaveResult
+import com.bragro.mobile.ui.theme.BrGreen
 import kotlinx.coroutines.launch
 
 class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
@@ -69,6 +74,15 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
     // site (data-table.tsx), sem exceção por domínio.
     var lastRecord = mutableStateOf<Map<String, String?>?>(null)
         private set
+    // Campos calculados pelo servidor (rateio, vencimento, líquido, status
+    // etc.) -- só leitura, NUNCA entram em `fields` (que é o que vai no
+    // corpo do save()), mesmo critério do site (record-form.tsx): aparecem
+    // na tela pra consulta, "—" até o primeiro Salvar num lançamento novo,
+    // mas quem preenche de verdade é o service layer do servidor. Pedido do
+    // usuário: "coloque todos os campos até os que são calculados
+    // automaticamente na ordem correta da operação em todos os módulos".
+    var computedValues = mutableStateOf<Map<String, String>>(emptyMap())
+        private set
 
     val fields = mutableStateMapOf<String, String>()
 
@@ -84,16 +98,24 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
 
             fields.clear()
             val existing = recordId?.let { recordRepository.getRecord(domainId, it) }
+            val computed = mutableMapOf<String, String>()
             for (col in cfg.columns) {
-                if (col.computed) continue
                 val raw = existing?.get(col.key) ?: ""
+                if (col.computed) {
+                    computed[col.key] = raw
+                    continue
+                }
                 // Datas chegam do servidor como timestamp ISO completo
                 // ("2026-08-05T00:00:00.000Z") -- mostrar isso cru no campo
-                // de edição é o que o usuário reportou como "as datas estão
-                // incorretas junto com elas tem fuso horário". Corta pro
-                // "AAAA-MM-DD" que o próprio placeholder do campo promete.
-                fields[col.key] = if (col.type == "date") isoDateOnly(raw) else raw
+                // de edição é o que o usuário reportou primeiro como "as
+                // datas estão incorretas junto com elas tem fuso horário", e
+                // depois como "as datas estão com padrão americano" (mesmo
+                // corte, só que AAAA-MM-DD ainda lê como ano-mês-dia, fora
+                // do costume brasileiro). Mostra em DD/MM/AAAA no campo; a
+                // conversão de volta pra ISO só acontece em save().
+                fields[col.key] = if (col.type == "date") isoDateToBr(isoDateOnly(raw)) else raw
             }
+            computedValues.value = computed
 
             lastRecord.value = if (recordId == null) recordRepository.mostRecent(domainId) else null
         }
@@ -112,7 +134,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
         for (col in cfg.columns) {
             if (col.computed) continue
             val raw = last[col.key] ?: ""
-            fields[col.key] = if (col.type == "date") isoDateOnly(raw) else raw
+            fields[col.key] = if (col.type == "date") isoDateToBr(isoDateOnly(raw)) else raw
         }
     }
 
@@ -121,7 +143,11 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
         errorMessage.value = null
         offlineNotice.value = null
         viewModelScope.launch {
-            val snapshot = fields.toMap()
+            // Campos de data são exibidos/digitados em DD/MM/AAAA (pedido do
+            // usuário) mas o servidor espera AAAA-MM-DD -- converte só aqui,
+            // na hora de montar o corpo, sem afetar o que está na tela.
+            val dateKeys = config.value?.columns?.filter { it.type == "date" }?.map { it.key }?.toSet().orEmpty()
+            val snapshot = fields.mapValues { (key, value) -> if (key in dateKeys) brDateToIso(value) else value }
             val result = if (recordId == null) recordRepository.createRecord(domainId, snapshot) else recordRepository.updateRecord(domainId, recordId, snapshot)
             saving.value = false
             when (result) {
@@ -157,6 +183,7 @@ fun DomainFormScreen(
     val error by viewModel.errorMessage
     val offlineNotice by viewModel.offlineNotice
     val lastRecord by viewModel.lastRecord
+    val computedValues by viewModel.computedValues
 
     Scaffold(
         topBar = {
@@ -202,9 +229,31 @@ fun DomainFormScreen(
                 }
             }
 
+            // Nota sobre os campos calculados -- mesmo aviso do site
+            // (record-form.tsx), só quando o módulo realmente tem algum.
+            val computedCols = cfg.columns.filter { it.computed }
+            if (computedCols.isNotEmpty()) {
+                Text(
+                    "Campos calculados (${computedCols.joinToString(", ") { it.label }}) são recalculados automaticamente ao salvar.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 12.dp),
+                )
+            }
+
+            // Mostra TODAS as colunas na ordem natural do domínio (mesma
+            // ordem de cfg.columns, que já reflete a ordem da operação em
+            // registry.ts) -- pedido do usuário ("coloque todos os campos
+            // até os que são calculados automaticamente na ordem correta da
+            // operação em todos os módulos"). Os computed viram uma caixa
+            // somente-leitura em vez de um campo editável.
             for (col in cfg.columns) {
-                if (col.computed) continue
-                FormField(col = col, options = col.lookupCategory?.let { lookups[it] }, viewModel = viewModel)
+                if (col.computed) {
+                    val optionLabels = col.lookupCategory?.let { cat -> lookups[cat]?.associate { it.value to it.label } } ?: emptyMap()
+                    ComputedFieldDisplay(col = col, raw = computedValues[col.key] ?: "", optionLabels = optionLabels)
+                } else {
+                    FormField(col = col, options = col.lookupCategory?.let { lookups[it] }, viewModel = viewModel)
+                }
                 androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
             }
 
@@ -233,15 +282,68 @@ fun DomainFormScreen(
 // usuário. Só o "*" de obrigatório é acrescentado.
 private fun fieldLabel(col: ColumnConfig): String = col.label + if (col.required) " *" else ""
 
+// Réplica de fmtComputed() em record-form.tsx: "—" enquanto vazio (registro
+// novo, ainda sem passar pelo servidor), money formatado com formatMoneyValue
+// (mesma função usada em toda a lista), select mapeado pro rótulo amigável
+// via lookup, e o resto pelo displayValueFor genérico (datas/números).
+private fun computedDisplayValue(col: ColumnConfig, raw: String, optionLabels: Map<String, String>): String {
+    if (raw.isBlank()) return "—"
+    if (col.money) return formatMoneyValue(raw)
+    if (col.type == "select") return optionLabels[raw] ?: raw
+    return displayValueFor(col.key, raw, col.type)
+}
+
+// Campo calculado (rateio, vencimento, líquido, status, numeração de O.S.
+// etc.) -- caixa cinza somente-leitura, NUNCA um input, mesmo tratamento
+// visual do site (record-form.tsx: "bg-muted/40" + rótulo "(calculado)").
+@Composable
+private fun ComputedFieldDisplay(col: ColumnConfig, raw: String, optionLabels: Map<String, String>) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            "${col.label} (calculado)",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+        ) {
+            Text(computedDisplayValue(col, raw, optionLabels), style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+// Tonalidade de verde da marca (mesma da barra inferior de navegação)
+// explícita em TODOS os campos de lançamento -- pedido do usuário ("aplique
+// a tonalidade de verde da barra inferior de botões em todos os campos de
+// lançamentos"). Sem isso, o campo focado usa `colorScheme.primary` por
+// padrão (que já é BrGreen desde o ajuste do Theme.kt), mas fixar aqui
+// garante o tom mesmo que o tema mude no futuro.
+@Composable
+private fun greenFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = BrGreen,
+    focusedLabelColor = BrGreen,
+    cursorColor = BrGreen,
+    focusedTrailingIconColor = BrGreen,
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel: DomainFormViewModel) {
     val value = viewModel.fields[col.key] ?: ""
+    val fieldColors = greenFieldColors()
 
     when (col.type) {
         "checkbox" -> {
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                Checkbox(checked = value == "true", onCheckedChange = { viewModel.setField(col.key, it.toString()) })
+                Checkbox(
+                    checked = value == "true",
+                    onCheckedChange = { viewModel.setField(col.key, it.toString()) },
+                    colors = androidx.compose.material3.CheckboxDefaults.colors(checkedColor = BrGreen),
+                )
                 Text(col.label + if (col.required) " *" else "")
             }
         }
@@ -257,6 +359,7 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                     label = { Text(fieldLabel(col)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    colors = fieldColors,
                 )
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     DropdownMenuItem(text = { Text("(vazio)") }, onClick = { viewModel.setField(col.key, ""); expanded = false })
@@ -286,6 +389,7 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                colors = fieldColors,
             )
         }
         "date" -> {
@@ -293,9 +397,11 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                 value = value,
                 onValueChange = { viewModel.setField(col.key, it) },
                 label = { Text(fieldLabel(col)) },
-                placeholder = { Text("AAAA-MM-DD") },
+                placeholder = { Text("DD/MM/AAAA") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                colors = fieldColors,
             )
         }
         "textarea" -> {
@@ -305,6 +411,7 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                 label = { Text(fieldLabel(col)) },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
+                colors = fieldColors,
             )
         }
         else -> {
@@ -314,6 +421,7 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                 label = { Text(fieldLabel(col)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                colors = fieldColors,
             )
         }
     }

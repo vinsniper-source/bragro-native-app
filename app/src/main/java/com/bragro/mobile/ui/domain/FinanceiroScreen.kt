@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,12 +23,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.UnfoldLess
+import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import com.bragro.mobile.ui.theme.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -93,6 +99,11 @@ fun FinanceiroScreen(
     onNewRecord: () -> Unit,
     onEditRecord: (String) -> Unit,
     onOpenBankImport: () -> Unit,
+    // Antes era um item separado no dropdown "Módulos" (Importar NF-e) --
+    // pedido do usuário ("no módulo financeiro crie um botão importar xml e
+    // unifique esses dois módulos"): agora vive DENTRO do Financeiro, ao
+    // lado do Extrato bancário.
+    onOpenNfeImport: () -> Unit,
     viewModel: DomainListViewModel = viewModel(),
     filtersViewModel: FinanceiroFiltersViewModel = viewModel(),
 ) {
@@ -118,6 +129,12 @@ fun FinanceiroScreen(
     var intervalTo by remember { mutableStateOf("") }
     var banco by remember { mutableStateOf<String?>(null) }
     val dateKey = if (view == FinanceiroView.PAGAR || view == FinanceiroView.RECEBER) "vcto" else "data"
+
+    // Recolher/expandir todos os cards de lançamento de uma vez -- mesmo
+    // controle do módulo genérico (DomainListScreen.kt), pedido do usuário
+    // ("mostre o bloco completo... recolha todos de uma vez").
+    var allExpanded by remember { mutableStateOf(false) }
+    val cardOverrides = remember { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
 
     val filtered = remember(allRecords, view, periodo, intervalFrom, intervalTo, banco) {
         var result = filterByFinanceiroView(allRecords, view)
@@ -154,12 +171,23 @@ fun FinanceiroScreen(
                         if (refreshing) CircularProgressIndicator(modifier = Modifier.padding(4.dp))
                         else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
                     }
+                    if (filtered.isNotEmpty()) {
+                        IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear() }) {
+                            Icon(
+                                if (allExpanded) Icons.Filled.UnfoldLess else Icons.Filled.UnfoldMore,
+                                contentDescription = if (allExpanded) "Recolher todos os lançamentos" else "Expandir todos os lançamentos",
+                            )
+                        }
+                    }
                     // "Extrato" (importação de CSV bancário) -- mesmo critério
                     // do site: vive dentro de Financeiro, escondido nas
                     // visões rápidas (ver page.tsx: aba só existe em "Todos").
                     if (!isQuickView) {
                         IconButton(onClick = onOpenBankImport) {
                             Icon(Icons.Filled.Upload, contentDescription = "Extrato bancário")
+                        }
+                        IconButton(onClick = onOpenNfeImport) {
+                            Icon(Icons.Filled.Description, contentDescription = "Importar XML (NF-e)")
                         }
                     }
                     val cfg = config
@@ -279,27 +307,45 @@ fun FinanceiroScreen(
                             }
                             items(filtered, key = { it["id"] ?: it.hashCode().toString() }) { record ->
                                 val recordId = record["id"]
+                                // Mostra TODAS as colunas (não só as 6
+                                // primeiras) -- mesmo pedido do usuário já
+                                // aplicado ao módulo genérico
+                                // (DomainListScreen.kt): "mostre o bloco
+                                // completo... com todas as informações dos
+                                // lançamentos", em 2 colunas quando expandido.
+                                val allCols = cols.filter { it.key == "conciliar" || !record[it.key].isNullOrBlank() }
+                                val summaryCols = allCols.take(6)
+                                val hasMore = allCols.size > summaryCols.size
+                                val expanded = cardOverrides[recordId ?: ""] ?: allExpanded
+                                val colsToShow = if (expanded) allCols else summaryCols
                                 Card(
                                     onClick = { if (recordId != null) onEditRecord(recordId) },
                                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                                 ) {
                                     Column(modifier = Modifier.padding(12.dp)) {
-                                        cols.take(6).forEach { col ->
-                                            val value = record[col.key]
-                                            if (col.key == "conciliar") {
-                                                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                                                    ConciliarDot(value == "true")
-                                                    Text(" ${col.label}", style = MaterialTheme.typography.bodySmall)
-                                                }
-                                            } else if (!value.isNullOrBlank()) {
-                                                when {
-                                                    isStatusLikeColumn(col.key) -> StatusBadge(value)
-                                                    else -> Text(
-                                                        "${col.label}: ${if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)}",
-                                                        fontWeight = if (isFinanceiroBoldColumn(col.key)) FontWeight.Bold else FontWeight.Normal,
+                                        if (hasMore) {
+                                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                                IconButton(
+                                                    onClick = { cardOverrides[recordId ?: ""] = !expanded },
+                                                    modifier = Modifier.size(28.dp),
+                                                ) {
+                                                    Icon(
+                                                        if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                                        contentDescription = if (expanded) "Recolher lançamento" else "Expandir lançamento",
+                                                        modifier = Modifier.size(20.dp),
                                                     )
                                                 }
                                             }
+                                        }
+                                        if (expanded) {
+                                            colsToShow.chunked(2).forEach { pair ->
+                                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                                    pair.forEach { col -> Column(modifier = Modifier.weight(1f)) { FinanceiroFieldLine(col, record[col.key]) } }
+                                                    if (pair.size == 1) Spacer(modifier = Modifier.weight(1f))
+                                                }
+                                            }
+                                        } else {
+                                            colsToShow.forEach { col -> FinanceiroFieldLine(col, record[col.key]) }
                                         }
                                     }
                                 }
@@ -309,6 +355,32 @@ fun FinanceiroScreen(
                 }
             }
         }
+    }
+}
+
+// Uma linha de campo dentro do card de lançamento do Financeiro -- trata o
+// caso especial "conciliar" (bolinha) + status-like (pill) + o negrito de
+// isFinanceiroBoldColumn, mesmo critério de antes, só que reaproveitado em
+// 1 ou 2 colunas.
+@Composable
+private fun FinanceiroFieldLine(col: com.bragro.mobile.data.model.ColumnConfig, value: String?) {
+    when {
+        col.key == "conciliar" -> {
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                ConciliarDot(value == "true")
+                Text(" ${col.label}", style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        value.isNullOrBlank() -> {}
+        isStatusLikeColumn(col.key) -> StatusBadge(value)
+        else -> Text(
+            "${col.label}: ${if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)}",
+            fontWeight = if (isFinanceiroBoldColumn(col.key)) FontWeight.Bold else FontWeight.Normal,
+            style = MaterialTheme.typography.bodySmall,
+            maxLines = 2,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            modifier = Modifier.padding(vertical = 2.dp),
+        )
     }
 }
 

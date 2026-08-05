@@ -8,6 +8,8 @@ import com.bragro.mobile.data.model.BankImportConfirmRequest
 import com.bragro.mobile.data.model.BankImportConfirmResponse
 import com.bragro.mobile.data.model.BankImportSignaturesRequest
 import com.bragro.mobile.data.model.BankImportSignaturesResponse
+import com.bragro.mobile.data.model.BaseDeDadosRequest
+import com.bragro.mobile.data.model.BaseDeDadosResponse
 import com.bragro.mobile.data.model.BootstrapRequest
 import com.bragro.mobile.data.model.BridgeCodeRequest
 import com.bragro.mobile.data.model.BridgeCodeResponse
@@ -33,10 +35,18 @@ import com.bragro.mobile.data.model.NotificationsRequest
 import com.bragro.mobile.data.model.NotificationsResponse
 import com.bragro.mobile.data.model.RecordsRequest
 import com.bragro.mobile.data.model.RecordsResponse
+import com.bragro.mobile.data.model.SecurityRequest
+import com.bragro.mobile.data.model.SecurityResponse
+import com.bragro.mobile.data.model.SettingsRequest
+import com.bragro.mobile.data.model.SettingsResponse
 import com.bragro.mobile.data.model.SupabaseLoginRequest
 import com.bragro.mobile.data.model.SupabaseLoginResponse
 import com.bragro.mobile.data.model.SyncRequest
 import com.bragro.mobile.data.model.SyncResponse
+import com.bragro.mobile.data.model.UpdateAvatarRequest
+import com.bragro.mobile.data.model.UpdateAvatarResponse
+import com.bragro.mobile.data.model.UpdateLogoRequest
+import com.bragro.mobile.data.model.UpdateLogoResponse
 import com.bragro.mobile.data.model.WeatherResponse
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -120,8 +130,31 @@ interface MobileApi {
     @POST("api/mobile/notices")
     suspend fun notices(@Body body: NoticesRequest): Response<NoticesResponse>
 
+    // 3 telas administrativas nativas (Task #148) -- ver comentário em
+    // Models.kt (SettingsRequest) pra contexto completo.
+    @POST("api/mobile/settings")
+    suspend fun settings(@Body body: SettingsRequest): Response<SettingsResponse>
+
+    @POST("api/mobile/base-de-dados")
+    suspend fun baseDeDados(@Body body: BaseDeDadosRequest): Response<BaseDeDadosResponse>
+
+    @POST("api/mobile/security")
+    suspend fun security(@Body body: SecurityRequest): Response<SecurityResponse>
+
     @POST("api/mobile/bridge-code")
     suspend fun bridgeCode(@Body body: BridgeCodeRequest): Response<BridgeCodeResponse>
+
+    // Persiste a URL da logo da organizacao apos o upload direto pro Storage
+    // (ver LogoUploadRepository.kt) -- equivalente mobile de updateLogoAction
+    // em configuracoes/actions.ts (mesma exigencia de OWNER/ADMIN no servidor).
+    @POST("api/mobile/update-logo")
+    suspend fun updateLogo(@Body body: UpdateLogoRequest): Response<UpdateLogoResponse>
+
+    // Persiste a URL da foto de perfil apos o upload direto pro Storage
+    // (ver AvatarUploadRepository.kt) -- equivalente mobile de
+    // updateAvatarAction em configuracoes/actions.ts.
+    @POST("api/mobile/update-avatar")
+    suspend fun updateAvatar(@Body body: UpdateAvatarRequest): Response<UpdateAvatarResponse>
 
     // Rota publica, sem token (ver comentario em WeatherResponse/route.ts).
     @GET("api/mobile/weather")
