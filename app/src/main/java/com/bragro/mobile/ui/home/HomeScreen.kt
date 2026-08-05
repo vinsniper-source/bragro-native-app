@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -771,7 +772,7 @@ private fun KpiGrid(data: HomeData) {
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 2,
                                 minLines = 2,
-                                lineHeight = MaterialTheme.typography.bodySmall.lineHeight * 1.3,
+                                lineHeight = MaterialTheme.typography.bodySmall.lineHeight * 1.3f,
                                 modifier = Modifier.weight(1f),
                             )
                             Spacer(Modifier.width(6.dp))
