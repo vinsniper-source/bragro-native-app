@@ -221,7 +221,14 @@ fun DomainListScreen(
         // critério do site: noPedido/item/criadoEm), então checar o
         // (noPedido,item) do próximo registro na lista já visível basta.
         val isPedidos = domainId == "pedidos"
-        LazyColumn(contentPadding = PaddingValues(12.dp, padding.calculateTopPadding() + 4.dp, 12.dp, 80.dp)) {
+        LazyColumn(
+            contentPadding = PaddingValues(12.dp, padding.calculateTopPadding() + 4.dp, 12.dp, 80.dp),
+            // Sem isso os blocos (Gráficos, Calculadoras, Recalcular Área,
+            // Período, cards de lançamento) ficavam grudados um no outro --
+            // pedido do usuário ("em todos módulos gráficos vem primeiro
+            // coloque um espaço entre os blocos").
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
             // Calculadoras (Safra/Colheita) -- CalculatorsCard() não desenha
             // nada nos outros domínios (mesmo "return null" do site).
             item(key = "calculators") { CalculatorsCard(domainId) }

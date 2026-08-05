@@ -6,9 +6,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -410,10 +412,31 @@ fun HomeScreen(
             item(key = "alertas") { AlertsCard(data.alerts, onOpenDomain) }
             item(key = "monitor") { ActivityMonitorCard(data.recentActivity) }
             item(key = "kpis") { KpiGrid(data) }
-            weather?.weather?.let { clima -> item(key = "clima") { ClimaCard(clima) } }
-            weather?.fx?.let { fx -> item(key = "cambio") { CambioCard(fx) } }
-            weather?.commodities?.let { com -> item(key = "cotacoes") { CotacoesCard(com) } }
-            item(key = "destaques") { DestaquesCard(data) }
+            // Clima ao lado de Câmbio, Cotações ao lado de Destaques -- cada
+            // par em blocos separados (Card) lado a lado, pedido do usuário
+            // ("coloque câmbio ao lado de clima separados por blocos").
+            val clima = weather?.weather
+            val fx = weather?.fx
+            if (clima != null || fx != null) {
+                item(key = "clima-cambio") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        if (clima != null) ClimaCard(clima, modifier = Modifier.weight(1f).fillMaxHeight())
+                        if (fx != null) CambioCard(fx, modifier = Modifier.weight(1f).fillMaxHeight())
+                    }
+                }
+            }
+            item(key = "cotacoes-destaques") {
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    weather?.commodities?.let { CotacoesCard(it, modifier = Modifier.weight(1f).fillMaxHeight()) }
+                    DestaquesCard(data, modifier = Modifier.weight(1f).fillMaxHeight())
+                }
+            }
         }
     }
 }
@@ -643,9 +666,17 @@ private fun KpiGrid(data: HomeData) {
     )
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         kpis.chunked(2).forEach { row ->
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // height(IntrinsicSize.Min) + fillMaxHeight nos cards -- sem
+            // isso "Operações de safra em andamento" (2 linhas) ficava mais
+            // alto que "Colaboradores ativos" (1 linha) na mesma fileira.
+            // Pedido do usuário ("alinhe os blocos colaboradores ativos à
+            // altura operações de safra").
+            Row(
+                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 row.forEach { kpi ->
-                    Card(modifier = Modifier.weight(1f)) {
+                    Card(modifier = Modifier.weight(1f).fillMaxHeight()) {
                         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(kpi.icon, contentDescription = null, tint = kpi.color, modifier = Modifier.padding(end = 8.dp))
                             Column {
@@ -666,8 +697,8 @@ private fun KpiGrid(data: HomeData) {
 // src/app/(app)/dashboard/page.tsx no site (Clima / Câmbio / Cotações
 // agrícolas / Destaques, cada um seu próprio <Card>).
 @Composable
-private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, modifier: Modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Clima (agora)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Row {
@@ -679,8 +710,8 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData) {
 }
 
 @Composable
-private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, modifier: Modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Câmbio (agora)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Row { Text("Dólar: "); Text(fx.usdBrl?.let { formatMoneyBrl(it) } ?: "—", fontWeight = FontWeight.Bold) }
@@ -690,8 +721,8 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData) {
 }
 
 @Composable
-private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, modifier: Modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Cotações agrícolas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             listOfNotNull(com.soja, com.milho, com.sorgo).forEach { q ->
@@ -702,8 +733,8 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData) 
 }
 
 @Composable
-private fun DestaquesCard(data: HomeData) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun DestaquesCard(data: HomeData, modifier: Modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Destaques", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Row { Text("Cultura líder: "); Text(data.culturaLider ?: "—", fontWeight = FontWeight.Bold) }

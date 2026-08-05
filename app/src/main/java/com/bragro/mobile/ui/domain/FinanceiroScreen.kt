@@ -254,14 +254,20 @@ fun FinanceiroScreen(
                     }
                     val fRows = fluxoRows
                     if (fRows != null) {
-                        LazyColumn(contentPadding = PaddingValues(12.dp, 4.dp, 12.dp, 80.dp)) {
+                        LazyColumn(
+                            contentPadding = PaddingValues(12.dp, 4.dp, 12.dp, 80.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
                             items(fRows, key = { it.original["id"] ?: it.hashCode().toString() }) { row ->
                                 FluxoCard(row, onClick = { row.original["id"]?.let(onEditRecord) })
                             }
                         }
                     } else {
                         val cols = effectiveColumns
-                        LazyColumn(contentPadding = PaddingValues(12.dp, 4.dp, 12.dp, 80.dp)) {
+                        LazyColumn(
+                            contentPadding = PaddingValues(12.dp, 4.dp, 12.dp, 80.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
                             // Gráficos/Calculadoras/Recalcular Vencimentos só
                             // aparecem na visão "Todos" -- mesmo critério do
                             // site ("visão rápida... sem Gráficos/

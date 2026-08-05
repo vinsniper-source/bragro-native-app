@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.nav
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -77,6 +78,15 @@ fun BRAgroNavHost() {
     val currentDomainId = if (currentRoute == Routes.DOMAIN_LIST) navBackStackEntry?.arguments?.getString("domainId") else null
 
     Scaffold(
+        // Cada tela (Início, lista de módulo etc.) já tem seu próprio
+        // Scaffold com TopAppBar, que já reserva o espaço da barra de
+        // status sozinho -- sem isso aqui o Scaffold "de fora" reservava
+        // esse espaço TAMBÉM (contentWindowInsets padrão cobre os 4 lados),
+        // dobrando o respiro no topo e "descendo" o cabeçalho (reportado
+        // pelo usuário: "eleve o cabeçalho"). A barra inferior continua
+        // recuada da barra de navegação sozinha (NavigationBar já cuida
+        // disso por conta própria).
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (showsBottomBar(currentRoute)) {
                 BRAgroBottomBar(

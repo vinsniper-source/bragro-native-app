@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import com.bragro.mobile.BuildConfig
@@ -140,12 +141,18 @@ fun BRAgroBottomBar(
     NavigationBar {
         BOTTOM_TABS.forEach { tab ->
             val selected = tab.items.any { it is SectorTarget.Domain && it.domainId == currentDomainId }
-            Box {
-                // NavigationBarItem só existe como extensão de RowScope (o
-                // escopo que NavigationBar { } dá pro seu conteúdo) -- o Box
-                // aqui dentro (âncora do DropdownMenu) cria um escopo novo
-                // (BoxScope) que esconde esse receiver implícito, por isso o
-                // "this@NavigationBar." explícito abaixo.
+            // NavigationBarItem só existe como extensão de RowScope (o
+            // escopo que NavigationBar { } dá pro seu conteúdo) -- o Box
+            // aqui dentro (âncora do DropdownMenu) cria um escopo novo
+            // (BoxScope) que esconde esse receiver implícito, por isso o
+            // "this@NavigationBar." explícito abaixo. E o próprio
+            // NavigationBarItem aplica ".weight(1f)" NELE MESMO, internamente
+            // -- como agora ele é neto do Row (não filho direto, por causa
+            // do Box no meio), esse weight interno é ignorado e a aba fica
+            // "encolhida" (só a 1ª aba parecia sobrar espaço pra aparecer
+            // inteira). Corrige pondo o weight(1f) direto no Box, que
+            // continua sendo filho direto do Row.
+            Box(modifier = Modifier.weight(1f)) {
                 this@NavigationBar.NavigationBarItem(
                     selected = selected,
                     onClick = { openTabId = tab.id },
@@ -174,7 +181,7 @@ fun BRAgroBottomBar(
                 }
             }
         }
-        Box {
+        Box(modifier = Modifier.weight(1f)) {
             this@NavigationBar.NavigationBarItem(
                 selected = false,
                 onClick = { openTabId = if (openTabId == "sistema") null else "sistema" },
