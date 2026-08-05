@@ -1,7 +1,5 @@
 package com.bragro.mobile.ui.nav
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
@@ -31,6 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.bragro.mobile.data.repo.BridgeRepository
 import com.bragro.mobile.ui.home.domainIcon
 import com.bragro.mobile.ui.theme.BrGreen
+import com.bragro.mobile.ui.util.openInCustomTab
 import kotlinx.coroutines.launch
 
 // Pedido do usuário: "coloque o tom de verde da barra inferior dos botões em
@@ -220,15 +219,20 @@ fun BRAgroBottomBar(
                         leadingIcon = { Icon(Icons.Filled.Settings, contentDescription = null) },
                         onClick = {
                             openTabId = null
-                            // Antes: Intent direto pro link simples, que abria
-                            // sem sessão nenhuma no navegador (bearer token do
-                            // app não é cookie) e caía no /login -- pedido do
-                            // usuário ("estão sendo redirecionados para o app
-                            // anterior"). Agora troca por um código de ponte
-                            // que já abre logado (ver BridgeRepository.kt).
+                            // Antes: Intent.ACTION_VIEW direto pro link
+                            // simples, que (a) abria sem sessão nenhuma no
+                            // navegador (bearer token do app não é cookie) e
+                            // caía no /login, e (b) passava pela resolução de
+                            // "App Links" do Android, que podia entregar a
+                            // URL pra outro app instalado com esse domínio
+                            // verificado -- daí "estão sendo redirecionados
+                            // para o app anterior". Agora: código de ponte já
+                            // abre logado (BridgeRepository.kt) E Custom Tabs
+                            // abre direto no navegador, sem passar pela
+                            // resolução de App Links.
                             scope.launch {
                                 val url = bridgeRepo.buildWebUrl(path)
-                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                                openInCustomTab(context, url)
                             }
                         },
                     )

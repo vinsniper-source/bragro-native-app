@@ -2,9 +2,8 @@ package com.bragro.mobile.ui.home
 
 import android.app.Application
 import android.widget.Toast
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,6 +32,7 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Backup
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.DoneAll
@@ -361,6 +361,10 @@ fun HomeScreen(
                             modifier = Modifier.padding(end = 8.dp).size(32.dp).clip(RoundedCornerShape(4.dp)),
                         )
                     } else if (canManage) {
+                        // Sem círculo/borda -- pedido do usuário ("retire o
+                        // círculo em volta do ícone da logo do cliente"). Tom
+                        // de verde da marca (BrGreen) em vez do outline
+                        // neutro de antes, mesma cor da barra inferior.
                         IconButton(
                             onClick = {
                                 Toast.makeText(
@@ -369,16 +373,13 @@ fun HomeScreen(
                                     Toast.LENGTH_LONG,
                                 ).show()
                             },
-                            modifier = Modifier
-                                .padding(end = 8.dp)
-                                .size(32.dp)
-                                .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outline), CircleShape),
+                            modifier = Modifier.padding(end = 8.dp).size(32.dp),
                         ) {
                             Icon(
                                 Icons.Filled.AddPhotoAlternate,
                                 contentDescription = "Adicionar logo da empresa",
-                                modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.outline,
+                                modifier = Modifier.size(20.dp),
+                                tint = BrGreen,
                             )
                         }
                     } else {
@@ -532,7 +533,7 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, vie
                 // explícito do usuário. Só OWNER/ADMIN vê, mesma regra do site.
                 if (canManage) {
                     IconButton(onClick = { showAddDialog = true }) {
-                        Icon(Icons.Filled.Add, contentDescription = "Adicionar aviso")
+                        Icon(Icons.Filled.Add, contentDescription = "Adicionar aviso", tint = BrGreen)
                     }
                 }
             }
@@ -649,35 +650,50 @@ private fun AlertsCard(alerts: List<AlertData>, onOpenDomain: (String) -> Unit) 
     }
 }
 
+// Réplica da RealtimeMonitor do site (realtime-monitor.tsx): lá cada evento
+// é UMA linha só ("tabela — tipo" à esquerda, hora à direita, sem quebrar).
+// Aqui juntamos "detail" (operação/item) e "type" (criado/atualizado) na
+// MESMA linha em vez de empilhar em 2 -- pedido do usuário ("aplique a
+// mesma lógica no monitor do app mobile e coloque toda descrição de um item
+// em uma linha só").
 @Composable
 private fun ActivityMonitorCard(events: List<ActivityEventData>) {
     var expanded by remember { mutableStateOf(true) }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            CollapsibleHeader("Monitor de atividade recente", expanded) { expanded = !expanded }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Bolt, contentDescription = null, tint = BrGreen, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Box(modifier = Modifier.weight(1f)) {
+                    CollapsibleHeader("Monitor em tempo real", expanded) { expanded = !expanded }
+                }
+            }
             if (expanded) {
                 if (events.isEmpty()) {
-                    Text("Nenhuma atividade recente.", style = MaterialTheme.typography.bodySmall)
+                    Text("Aguardando atividade da equipe...", style = MaterialTheme.typography.bodySmall)
                 } else {
                     events.forEach { e ->
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.Top,
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                // "detail" é a operação/item do evento (ex.:
-                                // "Adubação", "Diesel S10") -- pedido do
-                                // usuário ("tem que especificar qual é a
-                                // operação assim como a plataforma").
-                                Text(
-                                    if (e.detail != null) "${e.tableLabel} — ${e.detail}" else e.tableLabel,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Medium,
-                                )
-                                Text(e.type, style = MaterialTheme.typography.labelSmall)
-                            }
-                            Text(formatEventTime(e.at), style = MaterialTheme.typography.labelSmall)
+                            // "detail" é a operação/item do evento (ex.:
+                            // "Adubação", "Diesel S10") -- pedido do
+                            // usuário ("tem que especificar qual é a
+                            // operação assim como a plataforma").
+                            Text(
+                                buildString {
+                                    append(if (e.detail != null) "${e.tableLabel} — ${e.detail}" else e.tableLabel)
+                                    append(" · ${e.type}")
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f).padding(end = 8.dp),
+                            )
+                            Text(formatEventTime(e.at), style = MaterialTheme.typography.labelSmall, maxLines = 1)
                         }
                     }
                 }
@@ -688,6 +704,15 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>) {
 
 private data class Kpi(val label: String, val value: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val color: Color)
 
+// Redesenho pedido pelo usuário ("melhore o visual dos kpis, não precisa
+// ser padronizado a largura apenas altura, deixe mais homogêneo... deixe o
+// visual mais limpo"): antes a altura só era igualada DENTRO da mesma
+// fileira (IntrinsicSize.Min por Row), então a 1ª fileira podia ficar com
+// altura diferente da 2ª. Trocado por `minLines = 2` no rótulo -- isso
+// reserva o mesmo espaço (2 linhas) em TODOS os cards, de qualquer fileira,
+// sem precisar medir irmãos. Ícone ganhou um "badge" circular com a cor do
+// KPI em baixa opacidade (mesmo padrão de destaque usado no resto do app),
+// mais limpo que o ícone solto de antes.
 @Composable
 private fun KpiGrid(data: HomeData) {
     val kpis = listOf(
@@ -698,26 +723,41 @@ private fun KpiGrid(data: HomeData) {
     )
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         kpis.chunked(2).forEach { row ->
-            // height(IntrinsicSize.Min) + fillMaxHeight nos cards -- sem
-            // isso "Operações de safra em andamento" (2 linhas) ficava mais
-            // alto que "Colaboradores ativos" (1 linha) na mesma fileira.
-            // Pedido do usuário ("alinhe os blocos colaboradores ativos à
-            // altura operações de safra").
             Row(
-                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 row.forEach { kpi ->
-                    Card(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(kpi.icon, contentDescription = null, tint = kpi.color, modifier = Modifier.padding(end = 8.dp))
-                            Column {
+                    Card(modifier = Modifier.weight(1f)) {
+                        Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(kpi.color.copy(alpha = 0.14f)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(kpi.icon, contentDescription = null, tint = kpi.color, modifier = Modifier.size(20.dp))
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(kpi.value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                Text(kpi.label, style = MaterialTheme.typography.bodySmall, maxLines = 2)
+                                Text(
+                                    kpi.label,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 2,
+                                    minLines = 2,
+                                )
                             }
                         }
                     }
                 }
+                // Fileira ímpar (última sobra 1 KPI): Spacer no lugar do 2º
+                // card mantém a largura igual à fileira de cima, sem
+                // "padronizar" a largura de propósito -- só evita o card
+                // sozinho esticar até o fim.
+                if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
             }
         }
     }

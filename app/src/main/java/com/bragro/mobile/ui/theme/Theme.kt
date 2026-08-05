@@ -37,16 +37,44 @@ val BrBlue = Color(0xFF1E4B8A)
 // ("Pessoas") das outras 3, que ja usam verde/amarelo/azul.
 val BrOrange = Color(0xFFD9822B)
 
+// Antes só `primary/secondary/tertiary` eram definidos -- lightColorScheme()/
+// darkColorScheme() NÃO derivam os outros ~20 tokens (surface, surfaceVariant,
+// primaryContainer, outline etc.) a partir deles; o resto ficava no roxo
+// neutro padrão do Material3, sem nenhum verde -- exatamente o que o usuário
+// notou ("a tonalidade do verde... não foi aplicado nos blocos cinzas, kpis
+// e botão +"). Definindo esses tokens manualmente (mistura simples de
+// BrGreen com branco/preto, já que não temos a lib material-color-utilities
+// pra gerar a paleta tonal de verdade) pra todo Card/FAB/superfície do app
+// carregar o mesmo tom de verde da barra inferior, em vez do roxo genérico.
 private val LightColors = lightColorScheme(
     primary = BrGreen,
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFD1DFD8),
+    onPrimaryContainer = Color(0xFF12291F),
     secondary = BrYellow,
+    secondaryContainer = Color(0xFFFCEFCD),
+    onSecondaryContainer = Color(0xFF4D3C00),
     tertiary = BrBlue,
+    background = Color(0xFFF9FBFA),
+    surface = Color(0xFFF9FBFA),
+    surfaceVariant = Color(0xFFEAF1ED),
+    outline = Color(0xFF5F726E),
+    outlineVariant = Color(0xFFC3D0CB),
 )
 
 private val DarkColors = darkColorScheme(
     primary = BrGreen,
+    primaryContainer = Color(0xFF243A2F),
+    onPrimaryContainer = Color(0xFFB7D9C7),
     secondary = BrYellow,
+    secondaryContainer = Color(0xFF5E4F26),
+    onSecondaryContainer = Color(0xFFF4DFA5),
     tertiary = BrBlue,
+    background = Color(0xFF151B18),
+    surface = Color(0xFF151B18),
+    surfaceVariant = Color(0xFF1E2B23),
+    outline = Color(0xFF70847F),
+    outlineVariant = Color(0xFF3F4A46),
 )
 
 /** É "noite" (18h-6h) -- mesmo critério de isNightTime() em

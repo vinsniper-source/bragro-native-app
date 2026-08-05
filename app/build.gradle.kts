@@ -146,6 +146,17 @@ dependencies {
     // built-in do Compose de carregar bitmap de rede direto num Image().
     implementation("io.coil-kt:coil-compose:2.6.0")
 
+    // Custom Tabs (Chrome) pro botão Módulos abrir Configurações/Base de
+    // Dados/Acessos -- pedido do usuário ("habilite de verdade direto...
+    // não quero que seja redirecionado para o app anterior"). Um
+    // Intent.ACTION_VIEW comum passa pela resolução de "App Links" do
+    // Android, que pode entregar a URL pra QUALQUER app instalado que tenha
+    // esse domínio verificado (inclusive um app antigo/PWA do próprio site,
+    // se ainda estiver instalado no aparelho) -- exatamente o "app anterior"
+    // relatado. CustomTabsIntent abre direto no Chrome (ou outro navegador
+    // com suporte), sem passar por essa resolução.
+    implementation("androidx.browser:browser:1.8.0")
+
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
     // Persistencia local (Room) -- e o que faz o app funcionar OFFLINE de

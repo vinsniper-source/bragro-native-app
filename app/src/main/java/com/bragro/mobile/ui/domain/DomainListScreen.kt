@@ -229,10 +229,12 @@ fun DomainListScreen(
             // coloque um espaço entre os blocos").
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            // Gráficos sempre primeiro, no topo -- pedido explícito do
+            // usuário ("o bloco gráficos sempre será o primeiro do topo").
             // Calculadoras (Safra/Colheita) -- CalculatorsCard() não desenha
             // nada nos outros domínios (mesmo "return null" do site).
-            item(key = "calculators") { CalculatorsCard(domainId) }
             item(key = "charts") { ModuleChartsCard(domainId) }
+            item(key = "calculators") { CalculatorsCard(domainId) }
             if (domainId == "safra" || domainId == "frota") {
                 item(key = "recalcular-area") { RecalcularAreaButton(domainId) }
             }

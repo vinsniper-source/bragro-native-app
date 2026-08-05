@@ -27,9 +27,12 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bragro.mobile.BuildConfig
 import com.bragro.mobile.R
 import com.bragro.mobile.data.repo.AuthRepository
 import com.bragro.mobile.data.repo.LoginResult
+import com.bragro.mobile.ui.theme.BrGreen
+import com.bragro.mobile.ui.util.openInCustomTab
 import kotlinx.coroutines.launch
 import androidx.lifecycle.viewModelScope
 import android.app.Application
@@ -67,23 +70,41 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
     var password by remember { mutableStateOf("") }
     val loading by viewModel.loading
     val error by viewModel.errorMessage
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(PaddingValues(24.dp)),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.Start,
+        // Logo centralizada -- pedido do usuário ("centralise a logo"),
+        // mesmo layout do login do site (login/page.tsx: "items-center
+        // text-center").
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Logo BRAgro do lado esquerdo -- pedido do usuário ("coloque a logo
-        // BRAgro do lado esquerdo tanto no início como em login"), mesma
-        // imagem usada no cabeçalho do Início (ver HomeScreen.kt).
         Image(
             painter = painterResource(R.drawable.logo_oficial_header),
             contentDescription = "BRAgro",
             modifier = Modifier.height(56.dp),
         )
-        Text("Entre com sua conta", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium)
+        // Slogan abaixo da logo -- pedido do usuário ("coloque o slogan
+        // abaixo da logo"), mesmo texto/estilo do login do site (itálico,
+        // negrito, cor primária).
+        Text(
+            "Conectando a força da nossa terra, carregando o Brasil no coração.",
+            style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+            color = BrGreen,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+        Text(
+            "Entre com sua conta para continuar",
+            style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.padding(top = 4.dp),
+        )
 
         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 24.dp))
 
@@ -124,7 +145,19 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
             }
         }
 
-        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 12.dp))
+        // "Esqueci minha senha" -- embaixo, depois dos campos e do botão
+        // Entrar, pedido do usuário ("coloque embaixo depois dos campos
+        // esqueceu a senha"), mesma posição do login do site (login-form.tsx:
+        // logo após o botão de submit). O app nativo não tem tela própria de
+        // recuperação de senha -- abre a mesma página do site.
+        androidx.compose.material3.TextButton(
+            onClick = { openInCustomTab(context, "${BuildConfig.API_BASE_URL}/esqueci-senha") },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Esqueci minha senha", style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+        }
+
+        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 4.dp))
         Text(
             "Precisa de internet na primeira vez. Depois de logar, o app continua funcionando sem conexao.",
             style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
