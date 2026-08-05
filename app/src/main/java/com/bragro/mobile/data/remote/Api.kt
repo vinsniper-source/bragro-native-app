@@ -9,6 +9,8 @@ import com.bragro.mobile.data.model.BankImportConfirmResponse
 import com.bragro.mobile.data.model.BankImportSignaturesRequest
 import com.bragro.mobile.data.model.BankImportSignaturesResponse
 import com.bragro.mobile.data.model.BootstrapRequest
+import com.bragro.mobile.data.model.BridgeCodeRequest
+import com.bragro.mobile.data.model.BridgeCodeResponse
 import com.bragro.mobile.data.model.BootstrapResponse
 import com.bragro.mobile.data.model.ConfigResponse
 import com.bragro.mobile.data.model.DashboardRequest
@@ -117,6 +119,9 @@ interface MobileApi {
 
     @POST("api/mobile/notices")
     suspend fun notices(@Body body: NoticesRequest): Response<NoticesResponse>
+
+    @POST("api/mobile/bridge-code")
+    suspend fun bridgeCode(@Body body: BridgeCodeRequest): Response<BridgeCodeResponse>
 
     // Rota publica, sem token (ver comentario em WeatherResponse/route.ts).
     @GET("api/mobile/weather")

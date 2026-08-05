@@ -1,7 +1,10 @@
 package com.bragro.mobile.ui.home
 
 import android.app.Application
+import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,6 +31,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudSync
@@ -67,10 +71,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -338,17 +344,43 @@ fun HomeScreen(
                     }
                     // Lugar reservado pra logo da organização (canto superior
                     // direito) -- pedido do usuário. Cada organização pode ter
-                    // uma (orgLogoUrl, cadastrada no site); sem logo cadastrada
-                    // fica um espaço vazio em vez de um ícone genérico, mesmo
-                    // critério do site (topbar.tsx só mostra algo aqui quando
-                    // logoUrl existe).
+                    // uma (orgLogoUrl, cadastrada no site). Sem logo cadastrada,
+                    // o site mostra um botão "+" tracejado só pra quem é
+                    // OWNER/ADMIN (isAdmin, ver topbar.tsx) convidando a
+                    // cadastrar uma -- réplica aqui: ícone visível (antes era
+                    // uma Box vazia, sem nenhuma pista de que dava pra
+                    // adicionar logo). Upload em si continua feito pelo site
+                    // (Configurações > Identidade), então o toque aqui só
+                    // orienta pra lá por enquanto.
                     val orgLogoUrl = session?.orgLogoUrl
+                    val logoContext = LocalContext.current
                     if (!orgLogoUrl.isNullOrBlank()) {
                         AsyncImage(
                             model = orgLogoUrl,
                             contentDescription = "Logo da organização",
                             modifier = Modifier.padding(end = 8.dp).size(32.dp).clip(RoundedCornerShape(4.dp)),
                         )
+                    } else if (canManage) {
+                        IconButton(
+                            onClick = {
+                                Toast.makeText(
+                                    logoContext,
+                                    "Envie a logo da empresa pelo site, em Configurações > Identidade",
+                                    Toast.LENGTH_LONG,
+                                ).show()
+                            },
+                            modifier = Modifier
+                                .padding(end = 8.dp)
+                                .size(32.dp)
+                                .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outline), CircleShape),
+                        ) {
+                            Icon(
+                                Icons.Filled.AddPhotoAlternate,
+                                contentDescription = "Adicionar logo da empresa",
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.outline,
+                            )
+                        }
                     } else {
                         Box(modifier = Modifier.padding(end = 8.dp).size(32.dp))
                     }
@@ -722,11 +754,21 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, modifier: M
 
 @Composable
 private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, modifier: Modifier = Modifier.fillMaxWidth()) {
+    // padding/spacedBy menores + bodySmall + maxLines=1 -- cada linha
+    // ("Milho: R$ 60,40/sc 60kg") quebrava em 2 linhas na metade da largura
+    // da tela e deixava o card muito alto (pedido do usuário: "coloque a
+    // descrição de cada item em uma só linha" + "diminua a altura").
     Card(modifier = modifier) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Cotações agrícolas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("Cotações agrícolas", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             listOfNotNull(com.soja, com.milho, com.sorgo).forEach { q ->
-                Row { Text("${q.nome}: "); Text("${formatMoneyBrl(q.valor)}/${q.unidade}", fontWeight = FontWeight.Bold) }
+                Text(
+                    "${q.nome}: ${formatMoneyBrl(q.valor)}/${q.unidade}",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
     }
@@ -735,10 +777,22 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
 @Composable
 private fun DestaquesCard(data: HomeData, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Destaques", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Row { Text("Cultura líder: "); Text(data.culturaLider ?: "—", fontWeight = FontWeight.Bold) }
-            Row { Text("Pedidos em atraso: "); Text(data.pedidosAtrasados.toString(), fontWeight = FontWeight.Bold) }
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("Destaques", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(
+                "Cultura líder: ${data.culturaLider ?: "—"}",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                "Pedidos em atraso: ${data.pedidosAtrasados}",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }

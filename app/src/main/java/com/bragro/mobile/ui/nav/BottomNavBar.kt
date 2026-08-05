@@ -14,19 +14,40 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import com.bragro.mobile.BuildConfig
+import com.bragro.mobile.data.repo.BridgeRepository
 import com.bragro.mobile.ui.home.domainIcon
+import com.bragro.mobile.ui.theme.BrGreen
+import kotlinx.coroutines.launch
+
+// Pedido do usuário: "coloque o tom de verde da barra inferior dos botões em
+// todo app conforme o modo claro e escuro" -- o Material3 antes derivava a
+// cor do item selecionado automaticamente da paleta tonal (`primary` fica
+// bem esmaecido dentro do NavigationBarItem padrão), o que resultava numa
+// aba selecionada quase sem verde visível. Fixamos a cor explícita do
+// BrGreen (mesma em claro/escuro) pro ícone/rótulo/indicador da aba ativa.
+private val BottomNavColors: androidx.compose.material3.NavigationBarItemColors
+    @Composable
+    get() = NavigationBarItemDefaults.colors(
+        selectedIconColor = BrGreen,
+        selectedTextColor = BrGreen,
+        indicatorColor = BrGreen.copy(alpha = 0.18f),
+        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 
 // Pedido do usuário: "os botões inferiores devem aparecer uma lista
 // suspensa quando apertar de todas as operações e atividades de cada setor
@@ -123,6 +144,8 @@ fun BRAgroBottomBar(
     onOpenRomaneioQuick: () -> Unit,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val bridgeRepo = remember { BridgeRepository(context) }
     var openTabId by remember { mutableStateOf<String?>(null) }
 
     fun openSector(target: SectorTarget) {
@@ -161,6 +184,7 @@ fun BRAgroBottomBar(
                     // em 2 linhas com o espaçamento padrão -- pedido do
                     // usuário ("deixe apenas em uma linha").
                     label = { Text(tab.label, maxLines = 1, softWrap = false) },
+                    colors = BottomNavColors,
                 )
                 DropdownMenu(expanded = openTabId == tab.id, onDismissRequest = { openTabId = null }) {
                     tab.items.forEach { item ->
@@ -187,6 +211,7 @@ fun BRAgroBottomBar(
                 onClick = { openTabId = if (openTabId == "sistema") null else "sistema" },
                 icon = { Icon(Icons.Filled.GridView, contentDescription = "Módulos") },
                 label = { Text("Módulos", maxLines = 1, softWrap = false) },
+                colors = BottomNavColors,
             )
             DropdownMenu(expanded = openTabId == "sistema", onDismissRequest = { openTabId = null }) {
                 SISTEMA_LINKS.forEach { (path, label) ->
@@ -195,8 +220,16 @@ fun BRAgroBottomBar(
                         leadingIcon = { Icon(Icons.Filled.Settings, contentDescription = null) },
                         onClick = {
                             openTabId = null
-                            val url = "${BuildConfig.API_BASE_URL}/$path"
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                            // Antes: Intent direto pro link simples, que abria
+                            // sem sessão nenhuma no navegador (bearer token do
+                            // app não é cookie) e caía no /login -- pedido do
+                            // usuário ("estão sendo redirecionados para o app
+                            // anterior"). Agora troca por um código de ponte
+                            // que já abre logado (ver BridgeRepository.kt).
+                            scope.launch {
+                                val url = bridgeRepo.buildWebUrl(path)
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                            }
                         },
                     )
                 }

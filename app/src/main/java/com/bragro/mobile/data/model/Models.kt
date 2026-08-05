@@ -237,6 +237,15 @@ data class BackupRequest(val accessToken: String, val refreshToken: String)
 @Serializable
 data class BackupResponse(val ok: Boolean, val backup: JsonElement? = null, val error: String? = null)
 
+// "Ponte" pro botão Módulos (Configurações/Base de Dados/Acessos) abrir o
+// navegador do aparelho já autenticado -- ver BridgeRepository.kt e
+// /api/mobile/bridge-code + /api/mobile/bridge no backend.
+@Serializable
+data class BridgeCodeRequest(val accessToken: String, val refreshToken: String)
+
+@Serializable
+data class BridgeCodeResponse(val ok: Boolean, val code: String? = null, val error: String? = null)
+
 @Serializable
 data class NoticesRequest(
     val accessToken: String,
