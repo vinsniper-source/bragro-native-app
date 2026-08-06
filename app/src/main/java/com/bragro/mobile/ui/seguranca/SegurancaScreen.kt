@@ -64,10 +64,12 @@ private val MODULES = listOf(
     "financeiro" to "Financeiro", "pedidos" to "Pedidos", "estoque" to "Estoque",
     "safra" to "Safra", "planejamentosafra" to "Planejamento de Safra", "colheita" to "Colheita",
     "romaneios" to "Romaneios", "contratos" to "Contratos", "inventario" to "Inventário (Ativos)",
-    "frota" to "Frota", "rh" to "Recursos Humanos", "receituarios" to "Receituários",
-    "pragas" to "Pragas e Doenças", "controleinterno" to "Controle Interno (EPI)",
-    "clima" to "Clima (registro manual)", "caixainterno" to "Caixa Interno",
-    "cobrancas" to "Cobranças", "nfse" to "NFS-e (Serviços)",
+    // Labels encurtados -- pedido do usuário (retirar "Recursos Humanos",
+    // "e Doenças", "(EPI)", "(registro manual)", "(Serviços)").
+    "frota" to "Frota", "rh" to "RH", "receituarios" to "Receituários",
+    "pragas" to "Pragas", "controleinterno" to "Controle Interno",
+    "clima" to "Clima", "caixainterno" to "Caixa Interno",
+    "cobrancas" to "Cobranças", "nfse" to "NFS-e",
 )
 
 class SegurancaViewModel(app: Application) : AndroidViewModel(app) {

@@ -43,16 +43,33 @@ class ChartsRepository(context: Context) {
 class ModuleActionsRepository(context: Context) {
     private val tokenStore = TokenStore(context)
 
-    suspend fun run(action: String): JsonObject? {
+    // Campos extras opcionais -- só usados pelo Controle de Estoque por
+    // Fazenda ("estoque-transferir"/"estoque-devolver"); as demais actions
+    // (recalcular-*, fleet-efficiency) chamam run(action) sem eles.
+    suspend fun run(
+        action: String,
+        item: String? = null,
+        unidade: String? = null,
+        quantidade: Double? = null,
+        fazendaOrigemId: String? = null,
+        fazendaDestinoId: String? = null,
+        transferenciaEntradaId: String? = null,
+    ): JsonObject? {
         val tokens = tokenStore.current() ?: return null
         var (accessToken, refreshToken) = tokens
+        fun buildRequest(token: String) = ModuleActionRequest(
+            token, refreshToken, action,
+            item = item, unidade = unidade, quantidade = quantidade,
+            fazendaOrigemId = fazendaOrigemId, fazendaDestinoId = fazendaDestinoId,
+            transferenciaEntradaId = transferenciaEntradaId,
+        )
         return try {
-            var response = NetworkModule.mobileApi.moduleActions(ModuleActionRequest(accessToken, refreshToken, action))
+            var response = NetworkModule.mobileApi.moduleActions(buildRequest(accessToken))
             if (response.code() == 401) {
                 val newAccess = TokenRefresher.refreshAccessToken(tokenStore, refreshToken)
                 if (newAccess != null) {
                     accessToken = newAccess
-                    response = NetworkModule.mobileApi.moduleActions(ModuleActionRequest(accessToken, refreshToken, action))
+                    response = NetworkModule.mobileApi.moduleActions(buildRequest(accessToken))
                 }
             }
             val body = response.body()

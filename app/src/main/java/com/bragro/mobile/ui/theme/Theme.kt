@@ -147,5 +147,7 @@ fun BRAgroTheme(content: @Composable () -> Unit) {
         }
     }
     val colors = if (dark) DarkColors else LightColors
-    MaterialTheme(colorScheme = colors, content = content)
+    // Fonte Geist em todo o app -- pedido do usuario ("implemente a fonte
+    // Geist no app"), ver ui/theme/Type.kt (AppTypography/GeistFontFamily).
+    MaterialTheme(colorScheme = colors, typography = AppTypography, content = content)
 }

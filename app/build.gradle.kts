@@ -140,6 +140,14 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.6.8")
     debugImplementation("androidx.compose.ui:ui-tooling:1.6.8")
 
+    // Fonte Geist (pedido do usuario: "implemente a fonte Geist no app") --
+    // baixada em tempo de execucao via Google Fonts (Downloadable Fonts API,
+    // ver ui/theme/Type.kt), a mesma fonte ja usada no site (Geist Sans via
+    // next/font). Evita empacotar arquivos .ttf binarios no APK -- o Android
+    // baixa e faz cache da fonte pelo provedor do Google Play Services,
+    // precisando so das credenciais em res/values/font_certs.xml.
+    implementation("androidx.compose.ui:ui-text-google-fonts:1.6.8")
+
     // Carregamento de imagem por URL (logo da organização/avatar do usuário
     // no cabeçalho do Início, ver ui/home/HomeScreen.kt) -- única biblioteca
     // nova deste pacote de mudanças, precisa por não existir nenhum jeito

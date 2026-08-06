@@ -135,13 +135,16 @@ data class ActivityEventData(
     val id: String,
     val table: String,
     val tableLabel: String,
-    // Descrição da operação do evento (operacao/item/compradorDestino
-    // conforme a tabela -- ver ACTIVITY_DETAIL_FIELD em home/route.ts),
-    // pedido do usuário ("tem que especificar qual é a operação assim como
-    // a plataforma"). Pode faltar em registros antigos sem esse campo.
-    val detail: String? = null,
-    // Quantidade representativa do evento (ex.: "12 SC", "450 kg") -- pedido
-    // do usuário ("no bloco monitor colocar operação, tipo e qtde"). Nem
+    // Operação/Item/Status do evento -- ver ACTIVITY_OPERACAO_FIELD/
+    // ACTIVITY_ITEM_FIELD/ACTIVITY_STATUS_FIELD em home/route.ts. Nem toda
+    // tabela tem os 3 campos (ex.: Romaneios não tem operacao nem status),
+    // por isso todos são opcionais -- pedido do usuário ("monitor coloque
+    // nessa sequência: setor, operação, tipo, item, quantidade, status,
+    // horas").
+    val operacao: String? = null,
+    val item: String? = null,
+    val status: String? = null,
+    // Quantidade representativa do evento (ex.: "12 SC", "450 kg"). Nem
     // toda tabela tem uma quantidade natural (ex.: Financeiro), por isso é
     // opcional.
     val qtde: String? = null,
@@ -205,7 +208,21 @@ data class ModuleChartsResponse(
 // {mediaGeral, maquinas[]}) -- fica como JsonObject bruto, interpretado só
 // onde faz sentido (ver FleetEfficiencyCard.kt).
 @Serializable
-data class ModuleActionRequest(val accessToken: String, val refreshToken: String, val action: String)
+data class ModuleActionRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String,
+    // Campos extras só usados pelas actions "estoque-transferir"/
+    // "estoque-devolver" (Controle de Estoque por Fazenda) -- pedido do
+    // usuário ("como faço pra fazer esse controle interligando com a
+    // tabela estoque"). Ficam null/omitidos nas demais actions.
+    val item: String? = null,
+    val unidade: String? = null,
+    val quantidade: Double? = null,
+    val fazendaOrigemId: String? = null,
+    val fazendaDestinoId: String? = null,
+    val transferenciaEntradaId: String? = null,
+)
 
 @Serializable
 data class ModuleActionResponse(

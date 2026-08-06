@@ -3,17 +3,22 @@ package com.bragro.mobile.ui.domain
 import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import com.bragro.mobile.ui.theme.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -62,28 +67,35 @@ fun RecalcularAreaButton(domainId: String, viewModel: ModuleActionButtonViewMode
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Recalcular Área", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Recalcular Área", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                // So icone (sem texto no botao) -- pedido do usuario
+                // ("transforme os botoes de operacao em so icone"), o
+                // titulo acima ja diz o que o botao faz.
+                IconButton(onClick = { viewModel.run(action, "Área recalculada com sucesso.") }, enabled = !running) {
+                    if (running) CircularProgressIndicator(modifier = Modifier.padding(2.dp)) else Icon(Icons.Filled.Refresh, contentDescription = "Recalcular Área")
+                }
+            }
             Text(
                 "Reprocessa a Área (ha) de todo o histórico a partir do cadastro atual de Fazendas -- útil depois de corrigir uma fazenda cadastrada após o lançamento.",
                 style = MaterialTheme.typography.bodySmall,
             )
-            Button(onClick = { viewModel.run(action, "Área recalculada com sucesso.") }, enabled = !running) {
-                if (running) CircularProgressIndicator(modifier = Modifier.padding(2.dp)) else Text("Recalcular Área")
-            }
             if (message != null) Text(message!!, style = MaterialTheme.typography.bodySmall)
         }
     }
 }
 
-/** Botão "Recalcular Vencimentos" do Financeiro. */
+/** Botão "Recalcular Vencimentos" do Financeiro -- só ícone (sem texto no
+ * botão), pedido do usuário ("transforme os botões de operação em só
+ * ícone"); mesmo critério do site (recalcular-vencimentos-button.tsx). */
 @Composable
 fun RecalcularVencimentosButton(viewModel: ModuleActionButtonViewModel = viewModel()) {
     val running by viewModel.running
     val message by viewModel.resultMessage
 
     Column {
-        Button(onClick = { viewModel.run("recalcular-vencimentos", "Vencimentos recalculados com sucesso.") }, enabled = !running) {
-            if (running) CircularProgressIndicator(modifier = Modifier.padding(2.dp)) else Text("Recalcular Vencimentos")
+        IconButton(onClick = { viewModel.run("recalcular-vencimentos", "Vencimentos recalculados com sucesso.") }, enabled = !running) {
+            if (running) CircularProgressIndicator(modifier = Modifier.padding(2.dp)) else Icon(Icons.Filled.Refresh, contentDescription = "Recalcular Vencimentos")
         }
         if (message != null) Text(message!!, style = MaterialTheme.typography.bodySmall)
     }

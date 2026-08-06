@@ -20,13 +20,13 @@ import androidx.compose.foundation.shape.CircleShape
 import android.app.Application
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.UnfoldLess
@@ -43,6 +43,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -416,19 +417,17 @@ private fun PeriodoDropdown(
     var fromText by remember(intervalFrom) { mutableStateOf(intervalFrom) }
     var toText by remember(intervalTo) { mutableStateOf(intervalTo) }
     val hasFilter = periodo != null || intervalFrom.isNotBlank() || intervalTo.isNotBlank()
-    val label = periodo?.label ?: if (intervalFrom.isNotBlank() || intervalTo.isNotBlank()) "Intervalo" else "Período"
 
+    // Só ícone (sem texto) -- pedido do usuário ("período isolado, só o
+    // ícone"), mesmo critério do site (data-table.tsx) e do Período
+    // genérico dos demais módulos (DomainListScreen.kt).
     Box {
-        if (hasFilter) {
-            Button(onClick = { expanded = true }) {
-                Icon(Icons.Filled.CalendarMonth, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                Text(label)
-            }
-        } else {
-            OutlinedButton(onClick = { expanded = true }) {
-                Icon(Icons.Filled.CalendarMonth, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                Text(label)
-            }
+        IconButton(onClick = { expanded = true }) {
+            Icon(
+                Icons.Filled.CalendarMonth,
+                contentDescription = "Período",
+                tint = if (hasFilter) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+            )
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(text = { Text("Todos os períodos") }, onClick = { onPeriodo(null); expanded = false })
@@ -473,25 +472,24 @@ private fun PeriodoDropdown(
     }
 }
 
-/** Botão-dropdown "Banco" -- só na visão Conciliado, mesma lista de bancos
- * cadastrados (lookups categoria "bancos") usada no formulário de lançamento. */
+/** Botão-dropdown "Filtros" (Banco) -- só na visão Conciliado, mesma lista de
+ * bancos cadastrados (lookups categoria "bancos") usada no formulário de
+ * lançamento. Ícone de filtro em vez do específico de banco -- pedido do
+ * usuário ("consolide todos os filtros de coluna num bloco Filtros, só
+ * ícone"), mesmo critério do site (data-table.tsx). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BancoDropdown(banco: String?, options: List<LookupEntity>, onSelect: (String?) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    val label = banco?.takeIf { it.isNotBlank() } ?: "Banco"
+    val hasFilter = !banco.isNullOrBlank()
 
     Box {
-        if (!banco.isNullOrBlank()) {
-            Button(onClick = { expanded = true }) {
-                Icon(Icons.Filled.AccountBalance, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                Text(label)
-            }
-        } else {
-            OutlinedButton(onClick = { expanded = true }) {
-                Icon(Icons.Filled.AccountBalance, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                Text(label)
-            }
+        IconButton(onClick = { expanded = true }) {
+            Icon(
+                Icons.Filled.FilterAlt,
+                contentDescription = "Filtros",
+                tint = if (hasFilter) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+            )
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(text = { Text("Todos os bancos") }, onClick = { onSelect(null); expanded = false })

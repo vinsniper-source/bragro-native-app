@@ -82,10 +82,12 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
         // text-center").
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // Tamanho aumentado consideravelmente -- pedido do usuário ("trocar
+        // logo e aumentar o tamanho consideravelmente login e início").
         Image(
             painter = painterResource(R.drawable.logo_oficial_header),
             contentDescription = "BRAgro",
-            modifier = Modifier.height(56.dp),
+            modifier = Modifier.height(96.dp),
         )
         // Slogan abaixo da logo -- pedido do usuário ("coloque o slogan
         // abaixo da logo"), mesmo texto/estilo do login do site (itálico,

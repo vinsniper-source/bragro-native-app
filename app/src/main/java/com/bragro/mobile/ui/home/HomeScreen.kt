@@ -114,6 +114,7 @@ import com.bragro.mobile.ui.theme.BrGreen
 import com.bragro.mobile.ui.theme.BrOrange
 import com.bragro.mobile.ui.theme.BrYellow
 import com.bragro.mobile.ui.theme.ThemeToggle
+import com.bragro.mobile.ui.util.saveToDownloads
 import com.bragro.mobile.ui.util.shareTextFile
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -171,6 +172,10 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var uploadingAvatar = mutableStateOf(false)
         private set
+    // Timestamp do último fetch AO VIVO (não do cache offline) -- pedido do
+    // usuário ("implemente também em destaques atualização: data e hora").
+    var lastUpdatedAt = mutableStateOf<Long?>(null)
+        private set
 
     init {
         viewModelScope.launch { recordRepository.observePendingCount().collectLatest { pendingCount.value = it } }
@@ -188,7 +193,11 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         if (loading.value) return
         loading.value = true
         viewModelScope.launch {
-            home.value = homeRepository.fetch() ?: home.value
+            val fetched = homeRepository.fetch()
+            if (fetched != null) {
+                home.value = fetched
+                lastUpdatedAt.value = System.currentTimeMillis()
+            }
             loading.value = false
         }
         viewModelScope.launch { weather.value = weatherRepository.fetch() }
@@ -236,6 +245,12 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // Antes só abria o menu "Compartilhar" -- se o usuário fechasse sem
+    // escolher nada, nada era realmente salvo no aparelho (pedido do
+    // usuário: "o ícone nuvem... não está registando armazenamento").
+    // Agora GRAVA de verdade na pasta Downloads primeiro (saveToDownloads),
+    // e só then abre o compartilhar como opção extra -- onResult reporta se
+    // a gravação em Downloads deu certo, pra tela mostrar um aviso.
     fun downloadBackup(onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             val backup = backupRepository.fetch()
@@ -244,8 +259,10 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                 return@launch
             }
             val fileName = "sistema-agro-backup-${SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())}.json"
-            shareTextFile(getApplication(), fileName, "application/json", backup.toString())
-            onResult(true)
+            val app = getApplication<Application>()
+            val saved = saveToDownloads(app, fileName, "application/json", backup.toString())
+            shareTextFile(app, fileName, "application/json", backup.toString())
+            onResult(saved)
         }
     }
 
@@ -349,11 +366,13 @@ private fun todayLongBrazil(): String {
 // Converte o "at"/"criadaEm" ISO (formato de Date.toISOString() do
 // site/Prisma, sempre UTC) pra HH:mm no fuso do aparelho -- mesmo efeito de
 // toLocaleTimeString("pt-BR") usado em realtime-monitor.tsx.
+// Acrescenta dia/mês, não só hora -- pedido do usuário ("acrescente no
+// monitor também dia/mês").
 private fun formatEventTime(iso: String): String = try {
     val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
     parser.timeZone = TimeZone.getTimeZone("UTC")
     val date = parser.parse(iso)
-    if (date == null) "" else SimpleDateFormat("HH:mm", Locale("pt", "BR")).format(date)
+    if (date == null) "" else SimpleDateFormat("dd/MM HH:mm", Locale("pt", "BR")).format(date)
 } catch (e: Exception) {
     ""
 }
@@ -403,10 +422,13 @@ fun HomeScreen(
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Tamanho aumentado consideravelmente -- pedido do
+                        // usuário ("aumentar o tamanho consideravelmente
+                        // login e início").
                         Image(
                             painter = painterResource(R.drawable.logo_oficial_header),
                             contentDescription = "BRAgro",
-                            modifier = Modifier.height(32.dp),
+                            modifier = Modifier.height(48.dp),
                         )
                     }
                 },
@@ -415,7 +437,12 @@ fun HomeScreen(
                     // casinha"), era decorativo (onClick vazio, já estamos
                     // nesta tela).
                     if (canManage) {
-                        IconButton(onClick = { viewModel.downloadBackup { } }) {
+                        IconButton(onClick = {
+                            viewModel.downloadBackup { saved ->
+                                val msg = if (saved) "Backup salvo em Downloads" else "Não foi possível salvar o backup"
+                                android.widget.Toast.makeText(logoScreenContext, msg, android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }) {
                             Icon(Icons.Filled.Backup, contentDescription = "Backup completo")
                         }
                     }
@@ -496,25 +523,24 @@ fun HomeScreen(
                     } else if (canManage) {
                         // Sem círculo/borda -- pedido do usuário ("retire o
                         // círculo em volta do ícone da logo do cliente").
-                        // Antes usava BrGreen (mesma cor da barra inferior e
-                        // de quase todo o resto do cabeçalho) -- trocado pra
-                        // BrYellow (tom dourado da própria nova logo) pra
-                        // esse ícone se destacar em vez de se misturar com
-                        // os outros ícones verdes -- pedido do usuário
-                        // ("trocar a cor do ícone logo do cliente").
+                        // Sem tint próprio -- pedido do usuário ("logo
+                        // cliente acompanhar as cores dos outros ícones do
+                        // cabeçalho"): antes usava BrYellow pra se destacar,
+                        // agora usa a mesma cor padrão (LocalContentColor)
+                        // dos demais ícones do TopAppBar (Backup,
+                        // notificações, tema, conta).
                         IconButton(
                             enabled = !uploadingLogo,
                             onClick = { logoPickerLauncher.launch("image/*") },
                             modifier = Modifier.padding(end = 8.dp).size(32.dp),
                         ) {
                             if (uploadingLogo) {
-                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = BrYellow)
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             } else {
                                 Icon(
                                     Icons.Filled.AddPhotoAlternate,
                                     contentDescription = "Adicionar logo da empresa",
                                     modifier = Modifier.size(20.dp),
-                                    tint = BrYellow,
                                 )
                             }
                         }
@@ -603,7 +629,7 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     weather?.commodities?.let { CotacoesCard(it, modifier = Modifier.weight(1f).fillMaxHeight()) }
-                    DestaquesCard(data, modifier = Modifier.weight(1f).fillMaxHeight())
+                    DestaquesCard(data, viewModel.lastUpdatedAt.value, modifier = Modifier.weight(1f).fillMaxHeight())
                 }
             }
         }
@@ -855,19 +881,21 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>) {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            // "detail" é a operação/item do evento (ex.:
-                            // "Adubação", "Diesel S10") -- pedido do
-                            // usuário ("tem que especificar qual é a
-                            // operação assim como a plataforma"). "qtde"
-                            // (quando a tabela tem uma quantidade natural)
-                            // entra por último -- pedido do usuário
-                            // ("no bloco monitor colocar operação, tipo e
-                            // qtde").
+                            // Sequência pedida pelo usuário: setor, operação,
+                            // tipo, item, quantidade, status, horas (horas
+                            // fica na coluna da direita, ver Text abaixo).
+                            // "setor" é o próprio nome do módulo (tableLabel)
+                            // -- não há uma coluna "setor" comum às 6
+                            // tabelas. Cada pedaço só entra se a tabela
+                            // daquele evento realmente tiver o campo.
                             Text(
                                 buildString {
-                                    append(if (e.detail != null) "${e.tableLabel} — ${e.detail}" else e.tableLabel)
+                                    append(e.tableLabel)
+                                    if (!e.operacao.isNullOrBlank()) append(" · ${e.operacao}")
                                     append(" · ${e.type}")
+                                    if (!e.item.isNullOrBlank()) append(" · ${e.item}")
                                     if (!e.qtde.isNullOrBlank()) append(" · ${e.qtde}")
+                                    if (!e.status.isNullOrBlank()) append(" · ${e.status}")
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Medium,
@@ -929,7 +957,15 @@ private fun KpiGrid(data: HomeData) {
             ) {
                 row.forEach { kpi ->
                     Card(modifier = Modifier.weight(1f)) {
-                        Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        // Alignment.Top (não CenterVertically) -- pedido do
+                        // usuário ("no kpi financeiro coloque a descrição e
+                        // na mesma linha acrescente as duas casas depois da
+                        // vírgula"): com o rótulo forçado em 2 linhas
+                        // (minLines abaixo, pra manter os cards com a mesma
+                        // altura), centralizar verticalmente jogava o valor
+                        // pra entre as 2 linhas do rótulo -- alinhado no topo,
+                        // o valor sempre fica ao lado da 1ª linha do rótulo.
+                        Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), verticalAlignment = Alignment.Top) {
                             Box(
                                 modifier = Modifier
                                     .size(36.dp)
@@ -1067,7 +1103,7 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
 }
 
 @Composable
-private fun DestaquesCard(data: HomeData, modifier: Modifier = Modifier.fillMaxWidth()) {
+private fun DestaquesCard(data: HomeData, updatedAtMillis: Long?, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MiniCardHeader("Destaques", Icons.Filled.Star, BrYellow, MaterialTheme.typography.titleMedium)
@@ -1079,6 +1115,19 @@ private fun DestaquesCard(data: HomeData, modifier: Modifier = Modifier.fillMaxW
                 Text("Pedidos em atraso: ")
                 Text(data.pedidosAtrasados.toString(), fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+            // Data/hora da última busca ao vivo -- pedido do usuário
+            // ("implemente também em destaques atualização: data e hora").
+            if (updatedAtMillis != null) {
+                Text(
+                    "Atualizado em ${formatUpdatedAt(updatedAtMillis)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
         }
     }
 }
+
+private fun formatUpdatedAt(millis: Long): String =
+    SimpleDateFormat("dd/MM HH:mm", Locale("pt", "BR")).format(Date(millis))

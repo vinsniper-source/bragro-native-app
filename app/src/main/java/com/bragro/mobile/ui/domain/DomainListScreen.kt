@@ -37,6 +37,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -160,6 +161,16 @@ fun DomainListScreen(
     var intervalFrom by remember(domainId) { mutableStateOf("") }
     var intervalTo by remember(domainId) { mutableStateOf("") }
     val dateCol = config?.columns?.firstOrNull { it.type == "date" && !it.computed }
+    // Filtros de coluna (Local/Categoria/Safra etc.) -- espelho de
+    // filterableSelectCols em data-table.tsx, pedido do usuário ("consolide
+    // todos os filtros de cada módulo num bloco Filtros só, com ícone").
+    // Opções vêm dos próprios registros já carregados (não do catálogo de
+    // Base de Dados inteiro) -- só mostra valor que realmente aparece na
+    // lista, suficiente pra filtrar e evita outra chamada de rede aqui.
+    val filterableSelectCols = config?.columns?.filter {
+        it.type == "select" && !it.computed && (it.lookupCategory != null || !it.staticOptions.isNullOrEmpty())
+    } ?: emptyList()
+    val columnFilters = remember(domainId) { mutableStateMapOf<String, String>() }
 
     // Recolher/expandir todos os cards de uma vez -- pedido do usuário
     // ("recolha todos de uma vez"), além da seta individual de cada card.
@@ -168,10 +179,11 @@ fun DomainListScreen(
     // mesmo estado em todos de novo.
     var allExpanded by remember(domainId) { mutableStateOf(false) }
     val cardOverrides = remember(domainId) { mutableStateMapOf<String, Boolean>() }
-    // Bloco "Filtros" (Período) também colapsável, com sua própria setinha
-    // individual -- mas segue a seta única do cabeçalho (acima) quando o
-    // usuário não abriu/fechou ele na mão ainda, mesmo padrão de override
-    // pontual do `cardOverrides` para os cards de lançamento.
+    // Bloco "Filtros" (só os dropdowns de coluna agora -- Período saiu pra
+    // um ícone isolado, ver abaixo) também colapsável, com sua própria
+    // setinha individual -- mas segue a seta única do cabeçalho (acima)
+    // quando o usuário não abriu/fechou ele na mão ainda, mesmo padrão de
+    // override pontual do `cardOverrides` para os cards de lançamento.
     var filtrosOverride by remember(domainId) { mutableStateOf<Boolean?>(null) }
     val filtrosExpanded = filtrosOverride ?: allExpanded
 
@@ -180,11 +192,9 @@ fun DomainListScreen(
     var customVisibleKeys by remember(domainId) { mutableStateOf<Set<String>?>(null) }
     val allNonHiddenKeys = config?.columns?.filter { !it.hideInTable }?.map { it.key }?.toSet().orEmpty()
     val visibleKeys = customVisibleKeys ?: allNonHiddenKeys
-    val filteredRecords = remember(records, periodo, intervalFrom, intervalTo, dateCol) {
-        if (dateCol == null) {
-            records
-        } else {
-            var result = records
+    val filteredRecords = remember(records, periodo, intervalFrom, intervalTo, dateCol, columnFilters.toMap()) {
+        var result = records
+        if (dateCol != null) {
             if (periodo != null) {
                 val (from, to) = genericPeriodoRange(periodo!!)
                 result = filterByDateInterval(result, dateCol.key, from, to)
@@ -192,8 +202,11 @@ fun DomainListScreen(
             if (intervalFrom.isNotBlank() || intervalTo.isNotBlank()) {
                 result = filterByDateInterval(result, dateCol.key, intervalFrom, intervalTo)
             }
-            result
         }
+        columnFilters.forEach { (key, value) ->
+            if (value.isNotBlank()) result = result.filter { it[key] == value }
+        }
+        result
     }
 
     Scaffold(
@@ -244,12 +257,36 @@ fun DomainListScreen(
                             visibleKeys = visibleKeys,
                             onChange = { customVisibleKeys = it },
                         )
+                        // CSV + Imprimir/PDF unificados num só ícone (menu) --
+                        // pedido do usuário ("reorganize os ícones nas telas
+                        // com excesso deles"), mesmo critério já usado no
+                        // site (botão único "CSV/PDF" em data-table.tsx) em
+                        // vez de 2 IconButton separados disputando espaço no
+                        // cabeçalho ao lado de Colunas/Recolher/Atualizar.
                         if (filteredRecords.isNotEmpty()) {
-                            IconButton(onClick = { exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords) }) {
-                                Icon(Icons.Filled.FileDownload, contentDescription = "Exportar CSV")
-                            }
-                            IconButton(onClick = { HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys) }) {
-                                Icon(Icons.Filled.Print, contentDescription = "Imprimir / exportar PDF")
+                            var exportMenuOpen by remember { mutableStateOf(false) }
+                            Box {
+                                IconButton(onClick = { exportMenuOpen = true }) {
+                                    Icon(Icons.Filled.FileDownload, contentDescription = "Exportar (CSV/PDF)")
+                                }
+                                DropdownMenu(expanded = exportMenuOpen, onDismissRequest = { exportMenuOpen = false }) {
+                                    DropdownMenuItem(
+                                        text = { Text("Exportar CSV") },
+                                        leadingIcon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },
+                                        onClick = {
+                                            exportMenuOpen = false
+                                            exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Imprimir / exportar PDF") },
+                                        leadingIcon = { Icon(Icons.Filled.Print, contentDescription = null) },
+                                        onClick = {
+                                            exportMenuOpen = false
+                                            HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys)
+                                        },
+                                    )
+                                }
                             }
                         }
                     }
@@ -345,12 +382,38 @@ fun DomainListScreen(
             if (domainId == "safra" || domainId == "frota") {
                 item(key = "recalcular-area") { RecalcularAreaButton(domainId) }
             }
+            // Transferências entre Fazendas -- réplica nativa do
+            // TransferenciasFazendaPanel do site, só no módulo Estoque.
+            if (domainId == "estoque") {
+                item(key = "estoque-fazenda") { TransferenciasFazendaCard() }
+            }
+            // Período -- isolado do bloco Filtros abaixo, só ícone (sem
+            // texto) -- pedido do usuário ("período fica de fora do bloco
+            // filtros, só com o ícone"), mesmo critério aplicado no site
+            // (data-table.tsx). Fica numa linha própria, fora do Card de
+            // Filtros, alinhado à direita.
             if (dateCol != null) {
-                // Bloco "Filtros" colapsável (fechado por padrão) -- pedido
-                // do usuário ("crie um ícone de filtrar e coloque todos os
-                // filtros com setinha para recolher"), mesmo padrão visual
-                // do ClimaForecastCard (ícone + título + seta individual).
-                item(key = "periodo") {
+                item(key = "periodo-standalone") {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        GenericPeriodoDropdown(
+                            periodo = periodo,
+                            intervalFrom = intervalFrom,
+                            intervalTo = intervalTo,
+                            dateLabel = dateCol.label,
+                            onPeriodo = { periodo = it; if (it != null) { intervalFrom = ""; intervalTo = "" } },
+                            onInterval = { from, to -> intervalFrom = from; intervalTo = to; if (from.isNotBlank() || to.isNotBlank()) periodo = null },
+                        )
+                    }
+                }
+            }
+            // Bloco "Filtros" colapsável (fechado por padrão) -- agora só com
+            // os dropdowns de coluna (Local/Categoria/Safra etc.), Período
+            // saiu pra cima como ícone isolado -- pedido do usuário
+            // ("consolide todos os filtros de cada módulo num bloco Filtros
+            // só, com ícone de filtro"), mesmo padrão visual do
+            // ClimaForecastCard (ícone + título + seta individual).
+            if (filterableSelectCols.isNotEmpty()) {
+                item(key = "filtros") {
                     Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Row(
@@ -364,6 +427,13 @@ fun DomainListScreen(
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.weight(1f),
                                 )
+                                if (columnFilters.values.any { it.isNotBlank() }) {
+                                    Text(
+                                        "${columnFilters.values.count { it.isNotBlank() }}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        modifier = Modifier.padding(end = 4.dp),
+                                    )
+                                }
                                 IconButton(onClick = { filtrosOverride = !filtrosExpanded }) {
                                     Icon(
                                         if (filtrosExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
@@ -372,15 +442,18 @@ fun DomainListScreen(
                                 }
                             }
                             if (filtrosExpanded) {
-                                Row(modifier = Modifier.padding(top = 12.dp)) {
-                                    GenericPeriodoDropdown(
-                                        periodo = periodo,
-                                        intervalFrom = intervalFrom,
-                                        intervalTo = intervalTo,
-                                        dateLabel = dateCol.label,
-                                        onPeriodo = { periodo = it; if (it != null) { intervalFrom = ""; intervalTo = "" } },
-                                        onInterval = { from, to -> intervalFrom = from; intervalTo = to; if (from.isNotBlank() || to.isNotBlank()) periodo = null },
-                                    )
+                                Column(modifier = Modifier.padding(top = 12.dp)) {
+                                    filterableSelectCols.forEach { col ->
+                                        val options = remember(records, col.key) {
+                                            records.mapNotNull { it[col.key] }.filter { it.isNotBlank() }.distinct().sorted()
+                                        }
+                                        ColumnFilterRow(
+                                            col = col,
+                                            options = options,
+                                            selected = columnFilters[col.key] ?: "",
+                                            onSelect = { columnFilters[col.key] = it },
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -597,19 +670,18 @@ private fun GenericPeriodoDropdown(
     var fromText by remember(intervalFrom) { mutableStateOf(intervalFrom) }
     var toText by remember(intervalTo) { mutableStateOf(intervalTo) }
     val hasFilter = periodo != null || intervalFrom.isNotBlank() || intervalTo.isNotBlank()
-    val label = periodo?.label ?: if (intervalFrom.isNotBlank() || intervalTo.isNotBlank()) "Intervalo" else "Período"
 
+    // Só ícone (sem texto "Período"/categoria selecionada) -- pedido do
+    // usuário ("período isolado, só o ícone"), mesmo critério aplicado no
+    // site (data-table.tsx). O estado ativo continua visível pela cor
+    // preenchida do botão (igual a antes), só não escreve mais o rótulo.
     Box {
-        if (hasFilter) {
-            Button(onClick = { expanded = true }) {
-                Icon(Icons.Filled.CalendarMonth, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                Text(label)
-            }
-        } else {
-            OutlinedButton(onClick = { expanded = true }) {
-                Icon(Icons.Filled.CalendarMonth, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                Text(label)
-            }
+        IconButton(onClick = { expanded = true }) {
+            Icon(
+                Icons.Filled.CalendarMonth,
+                contentDescription = "Período",
+                tint = if (hasFilter) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+            )
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(text = { Text("Todos os períodos") }, onClick = { onPeriodo(null); expanded = false })
@@ -644,6 +716,35 @@ private fun GenericPeriodoDropdown(
                     onClick = { onInterval(fromText, toText); expanded = false },
                     modifier = Modifier.padding(top = 6.dp),
                 ) { Text("Aplicar intervalo") }
+            }
+        }
+    }
+}
+
+/** Uma linha do bloco "Filtros" -- um dropdown de coluna (Local/Categoria/
+ * Safra etc.), espelho do <Select> por coluna do site (filterableSelectCols
+ * em data-table.tsx). Opções vêm dos valores distintos já presentes nos
+ * registros carregados (sem chamada de rede extra). */
+@Composable
+private fun ColumnFilterRow(
+    col: com.bragro.mobile.data.model.ColumnConfig,
+    options: List<String>,
+    selected: String,
+    onSelect: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Column(modifier = Modifier.padding(bottom = 10.dp)) {
+        Text(col.label, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(bottom = 2.dp))
+        Box {
+            OutlinedButton(onClick = { expanded = true }) {
+                Text(selected.ifBlank { "Todos" })
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                DropdownMenuItem(text = { Text("Todos") }, onClick = { onSelect(""); expanded = false })
+                if (options.isNotEmpty()) HorizontalDivider()
+                options.forEach { opt ->
+                    DropdownMenuItem(text = { Text(opt) }, onClick = { onSelect(opt); expanded = false })
+                }
             }
         }
     }
