@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.bragro.mobile.sync.SyncWorker
 import com.bragro.mobile.ui.nav.BRAgroNavHost
 import com.bragro.mobile.ui.theme.BRAgroTheme
@@ -35,6 +37,18 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
         )
+        // Oculta de vez a barra de status (não só transparente) -- pedido
+        // do usuário ("ocultar barra de status do celular, suba mais o
+        // cabeçalho"): o cabeçalho de cada tela ganha o espaço todo que
+        // antes era reservado pro relógio/ícones do sistema. BEHAVIOR_SHOW_
+        // TRANSIENT_BY_SWIPE deixa o usuário arrastar uma vez a partir do
+        // topo pra ver a hora/notificações rapidamente, sem precisar sair
+        // do modo imersivo pra isso. A barra de navegação (botões de
+        // voltar/início do Android) continua igual -- só a de status muda.
+        WindowInsetsControllerCompat(window, window.decorView).let { controller ->
+            controller.hide(WindowInsetsCompat.Type.statusBars())
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BY_SWIPE
+        }
         setContent {
             BRAgroTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
@@ -50,5 +64,15 @@ class MainActivity : ComponentActivity() {
         // primeiro plano -- cobre o caso comum de campo: usuario lancou
         // dados sem sinal, saiu do app, e quando volta ja esta com internet.
         SyncWorker.enqueue(this)
+    }
+
+    // O Android às vezes devolve a barra de status sozinho (ex.: usuário
+    // trocou de app e voltou) -- reaplica o "hide" quando a janela recupera
+    // o foco, senão a barra reaparece de vez sem precisar de gesto nenhum.
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            WindowInsetsControllerCompat(window, window.decorView).hide(WindowInsetsCompat.Type.statusBars())
+        }
     }
 }

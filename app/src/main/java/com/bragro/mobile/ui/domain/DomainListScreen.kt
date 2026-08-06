@@ -21,12 +21,11 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.MonitorWeight
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.UnfoldLess
-import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
@@ -169,6 +168,12 @@ fun DomainListScreen(
     // mesmo estado em todos de novo.
     var allExpanded by remember(domainId) { mutableStateOf(false) }
     val cardOverrides = remember(domainId) { mutableStateMapOf<String, Boolean>() }
+    // Bloco "Filtros" (Período) também colapsável, com sua própria setinha
+    // individual -- mas segue a seta única do cabeçalho (acima) quando o
+    // usuário não abriu/fechou ele na mão ainda, mesmo padrão de override
+    // pontual do `cardOverrides` para os cards de lançamento.
+    var filtrosOverride by remember(domainId) { mutableStateOf<Boolean?>(null) }
+    val filtrosExpanded = filtrosOverride ?: allExpanded
 
     // Botão "Colunas" (espelho do site) -- null = ainda não customizado pelo
     // usuário, mostra todas as colunas não ocultas (comportamento de sempre).
@@ -208,13 +213,17 @@ fun DomainListScreen(
                         if (refreshing) CircularProgressIndicator(modifier = Modifier.padding(4.dp))
                         else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
                     }
-                    // "Recolher tudo de uma vez" -- pedido do usuário, além
-                    // da seta individual em cada card.
-                    if (filteredRecords.isNotEmpty()) {
-                        IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear() }) {
+                    // Seta única de recolher/expandir tudo de uma vez -- pedido
+                    // do usuário ("crie uma única seta para recolher e
+                    // expandir tudo de uma vez"), substitui o par de ícones
+                    // Unfold que existia antes. Controla tanto os cards de
+                    // lançamento quanto o bloco de Filtros abaixo; cada um
+                    // ainda tem sua própria setinha individual para exceções.
+                    if (filteredRecords.isNotEmpty() || dateCol != null) {
+                        IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear(); filtrosOverride = null }) {
                             Icon(
-                                if (allExpanded) Icons.Filled.UnfoldLess else Icons.Filled.UnfoldMore,
-                                contentDescription = if (allExpanded) "Recolher todos os lançamentos" else "Expandir todos os lançamentos",
+                                if (allExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                contentDescription = if (allExpanded) "Recolher tudo" else "Expandir tudo",
                             )
                         }
                     }
@@ -337,16 +346,44 @@ fun DomainListScreen(
                 item(key = "recalcular-area") { RecalcularAreaButton(domainId) }
             }
             if (dateCol != null) {
+                // Bloco "Filtros" colapsável (fechado por padrão) -- pedido
+                // do usuário ("crie um ícone de filtrar e coloque todos os
+                // filtros com setinha para recolher"), mesmo padrão visual
+                // do ClimaForecastCard (ícone + título + seta individual).
                 item(key = "periodo") {
-                    Row(modifier = Modifier.padding(bottom = 8.dp)) {
-                        GenericPeriodoDropdown(
-                            periodo = periodo,
-                            intervalFrom = intervalFrom,
-                            intervalTo = intervalTo,
-                            dateLabel = dateCol.label,
-                            onPeriodo = { periodo = it; if (it != null) { intervalFrom = ""; intervalTo = "" } },
-                            onInterval = { from, to -> intervalFrom = from; intervalTo = to; if (from.isNotBlank() || to.isNotBlank()) periodo = null },
-                        )
+                    Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(Icons.Filled.FilterAlt, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                                Text(
+                                    "Filtros",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                IconButton(onClick = { filtrosOverride = !filtrosExpanded }) {
+                                    Icon(
+                                        if (filtrosExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                        contentDescription = if (filtrosExpanded) "Recolher filtros" else "Expandir filtros",
+                                    )
+                                }
+                            }
+                            if (filtrosExpanded) {
+                                Row(modifier = Modifier.padding(top = 12.dp)) {
+                                    GenericPeriodoDropdown(
+                                        periodo = periodo,
+                                        intervalFrom = intervalFrom,
+                                        intervalTo = intervalTo,
+                                        dateLabel = dateCol.label,
+                                        onPeriodo = { periodo = it; if (it != null) { intervalFrom = ""; intervalTo = "" } },
+                                        onInterval = { from, to -> intervalFrom = from; intervalTo = to; if (from.isNotBlank() || to.isNotBlank()) periodo = null },
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -16,6 +17,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -218,7 +220,7 @@ fun DomainFormScreen(
             if (recordId == null && lastRecord != null) {
                 androidx.compose.material3.OutlinedButton(
                     onClick = { viewModel.copyFromLastRecord() },
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Icon(
                         Icons.Filled.ContentCopy,
@@ -226,6 +228,23 @@ fun DomainFormScreen(
                         modifier = Modifier.padding(end = 8.dp),
                     )
                     Text("Copiar último lançamento")
+                }
+                // "Copiar último lançamento" lê do banco local (Room), não
+                // do servidor -- funciona igual com ou sem internet -- pedido
+                // do usuário ("copiar último lançamento, para aparecer como
+                // offline/online").
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp, top = 4.dp)) {
+                    Icon(
+                        Icons.Filled.CloudDone,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp).padding(end = 4.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        "Funciona online e offline (usa o último lançamento salvo neste aparelho)",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
 

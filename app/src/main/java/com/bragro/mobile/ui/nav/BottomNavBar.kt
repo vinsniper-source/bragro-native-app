@@ -3,7 +3,9 @@ package com.bragro.mobile.ui.nav
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.GridView
@@ -24,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import com.bragro.mobile.ui.home.domainIcon
 import com.bragro.mobile.ui.theme.BrGreen
 
@@ -61,12 +64,22 @@ private sealed class SectorTarget {
     data class Special(val routeKey: String, val label: String) : SectorTarget()
 }
 
-private data class BottomTab(val id: String, val label: String, val icon: ImageVector, val items: List<SectorTarget>)
+// "directDomainId" != null => aba de acesso direto (toque único já navega
+// pro domínio, sem dropdown) -- pedido do usuário ("botão frota acesso
+// direto, retire as listas suspensas" / "botão estoque... deixe botão
+// direto"). Nesses casos "items" fica vazio e não é usado.
+private data class BottomTab(
+    val id: String,
+    val label: String,
+    val icon: ImageVector,
+    val items: List<SectorTarget> = emptyList(),
+    val directDomainId: String? = null,
+)
 
 private val BOTTOM_TABS = listOf(
     BottomTab(
         "safra", "Safra", Icons.Filled.Eco,
-        listOf(
+        items = listOf(
             SectorTarget.Domain("safra", "Safra"),
             SectorTarget.Domain("planejamentosafra", "Planejamento de Safra"),
             SectorTarget.Domain("colheita", "Colheita"),
@@ -80,18 +93,12 @@ private val BOTTOM_TABS = listOf(
             SectorTarget.Domain("clima", "Clima"),
         ),
     ),
-    BottomTab(
-        "frota", "Frota", Icons.Filled.DirectionsCar,
-        listOf(
-            SectorTarget.Domain("frota", "Frota"),
-            SectorTarget.Domain("estoque", "Estoque"),
-            SectorTarget.Domain("controleinterno", "Controle Interno"),
-            SectorTarget.Domain("inventario", "Inventário"),
-        ),
-    ),
+    // Acesso direto -- pedido do usuário ("botão frota acesso direto, retire
+    // as listas suspensas").
+    BottomTab("frota", "Frota", Icons.Filled.DirectionsCar, directDomainId = "frota"),
     BottomTab(
         "financeiro", "Financeiro", Icons.Filled.AccountBalanceWallet,
-        listOf(
+        items = listOf(
             SectorTarget.Domain("financeiro", "Financeiro (Lançamentos)"),
             SectorTarget.Special("dre", "DRE"),
             SectorTarget.Special("analises", "Análises cruzadas"),
@@ -107,20 +114,23 @@ private val BOTTOM_TABS = listOf(
             // módulo"). Abre em Cobranças, com um alternador pra NFS-e
             // dentro da própria tela (ver DomainListScreen.kt).
             SectorTarget.Domain("cobrancas", "Cobranças / NFS-e"),
-        ),
-    ),
-    BottomTab(
-        "estoque", "Estoque", Icons.Filled.Inventory2,
-        listOf(
-            SectorTarget.Domain("estoque", "Estoque"),
-            SectorTarget.Domain("frota", "Frota"),
-            SectorTarget.Domain("controleinterno", "Controle Interno"),
+            // Migrou aqui de Frota/Estoque (que perderam a lista suspensa) --
+            // pedido do usuário ("botão financeiro acrescente na lista
+            // suspensa inventário").
             SectorTarget.Domain("inventario", "Inventário"),
         ),
     ),
+    // Acesso direto -- pedido do usuário ("botão estoque retire a lista
+    // suspensa e deixe botão direto estoque").
+    BottomTab("estoque", "Estoque", Icons.Filled.Inventory2, directDomainId = "estoque"),
     BottomTab(
         "rh", "RH", Icons.Filled.People,
-        listOf(SectorTarget.Domain("rh", "RH")),
+        items = listOf(
+            SectorTarget.Domain("rh", "RH"),
+            // Migrou aqui de Frota/Estoque -- pedido do usuário ("botão rh
+            // acrescente na lista suspensa controle interno").
+            SectorTarget.Domain("controleinterno", "Controle Interno"),
+        ),
     ),
 )
 
@@ -129,11 +139,16 @@ private val BOTTOM_TABS = listOf(
  * use nada para redirecionar, quero ele fixo nesse app"). Antes abriam via
  * BridgeRepository/Custom Tabs no navegador do aparelho; substituído por
  * navegação direta pras novas rotas Compose (ver SettingsScreen.kt/
- * BaseDeDadosScreen.kt/SegurancaScreen.kt e Routes em BRAgroNavHost.kt). */
+ * BaseDeDadosScreen.kt/SegurancaScreen.kt e Routes em BRAgroNavHost.kt).
+ * Cada item com seu próprio ícone (antes os 3 usavam o mesmo ícone de
+ * engrenagem) -- pedido do usuário ("altere os ícones... coloque os ícones
+ * correspondentes a cada setor"). */
+private data class SistemaLink(val path: String, val label: String, val icon: ImageVector)
+
 private val SISTEMA_LINKS = listOf(
-    "configuracoes" to "Configurações",
-    "base-de-dados" to "Base de Dados",
-    "seguranca" to "Acessos",
+    SistemaLink("configuracoes", "Configurações", Icons.Filled.Settings),
+    SistemaLink("base-de-dados", "Base de Dados", Icons.Filled.Storage),
+    SistemaLink("seguranca", "Acessos", Icons.Filled.Security),
 )
 
 @Composable
@@ -161,7 +176,8 @@ fun BRAgroBottomBar(
 
     NavigationBar {
         BOTTOM_TABS.forEach { tab ->
-            val selected = tab.items.any { it is SectorTarget.Domain && it.domainId == currentDomainId }
+            val selected = tab.directDomainId == currentDomainId ||
+                tab.items.any { it is SectorTarget.Domain && it.domainId == currentDomainId }
             // NavigationBarItem só existe como extensão de RowScope (o
             // escopo que NavigationBar { } dá pro seu conteúdo) -- o Box
             // aqui dentro (âncora do DropdownMenu) cria um escopo novo
@@ -176,29 +192,36 @@ fun BRAgroBottomBar(
             Box(modifier = Modifier.weight(1f)) {
                 this@NavigationBar.NavigationBarItem(
                     selected = selected,
-                    onClick = { openTabId = tab.id },
-                    icon = { Icon(tab.icon, contentDescription = tab.label) },
-                    // maxLines/softWrap: rótulos como "Financeiro" quebravam
-                    // em 2 linhas com o espaçamento padrão -- pedido do
-                    // usuário ("deixe apenas em uma linha").
-                    label = { Text(tab.label, maxLines = 1, softWrap = false) },
+                    onClick = {
+                        if (tab.directDomainId != null) onNavigateDomain(tab.directDomainId)
+                        else openTabId = tab.id
+                    },
+                    icon = { Icon(tab.icon, contentDescription = tab.label, modifier = Modifier.size(22.dp)) },
+                    // maxLines/softWrap + labelSmall: rótulos como
+                    // "Financeiro" quebravam em 2 linhas ou saíam cortados
+                    // com o tamanho padrão -- pedido do usuário ("realoque
+                    // os espaços pra escrever a palavra Financeiro completa
+                    // em uma linha").
+                    label = { Text(tab.label, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) },
                     colors = BottomNavColors,
                 )
-                DropdownMenu(expanded = openTabId == tab.id, onDismissRequest = { openTabId = null }) {
-                    tab.items.forEach { item ->
-                        val label = when (item) {
-                            is SectorTarget.Domain -> item.label
-                            is SectorTarget.Special -> item.label
+                if (tab.directDomainId == null) {
+                    DropdownMenu(expanded = openTabId == tab.id, onDismissRequest = { openTabId = null }) {
+                        tab.items.forEach { item ->
+                            val label = when (item) {
+                                is SectorTarget.Domain -> item.label
+                                is SectorTarget.Special -> item.label
+                            }
+                            val icon = when (item) {
+                                is SectorTarget.Domain -> domainIcon(item.domainId)
+                                is SectorTarget.Special -> tab.icon
+                            }
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                leadingIcon = { Icon(icon, contentDescription = null) },
+                                onClick = { openSector(item) },
+                            )
                         }
-                        val icon = when (item) {
-                            is SectorTarget.Domain -> domainIcon(item.domainId)
-                            is SectorTarget.Special -> tab.icon
-                        }
-                        DropdownMenuItem(
-                            text = { Text(label) },
-                            leadingIcon = { Icon(icon, contentDescription = null) },
-                            onClick = { openSector(item) },
-                        )
                     }
                 }
             }
@@ -207,18 +230,18 @@ fun BRAgroBottomBar(
             this@NavigationBar.NavigationBarItem(
                 selected = false,
                 onClick = { openTabId = if (openTabId == "sistema") null else "sistema" },
-                icon = { Icon(Icons.Filled.GridView, contentDescription = "Módulos") },
-                label = { Text("Módulos", maxLines = 1, softWrap = false) },
+                icon = { Icon(Icons.Filled.GridView, contentDescription = "Módulos", modifier = Modifier.size(22.dp)) },
+                label = { Text("Módulos", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) },
                 colors = BottomNavColors,
             )
             DropdownMenu(expanded = openTabId == "sistema", onDismissRequest = { openTabId = null }) {
-                SISTEMA_LINKS.forEach { (path, label) ->
+                SISTEMA_LINKS.forEach { link ->
                     DropdownMenuItem(
-                        text = { Text(label) },
-                        leadingIcon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+                        text = { Text(link.label) },
+                        leadingIcon = { Icon(link.icon, contentDescription = null) },
                         onClick = {
                             openTabId = null
-                            when (path) {
+                            when (link.path) {
                                 "configuracoes" -> onOpenSettings()
                                 "base-de-dados" -> onOpenBaseDeDados()
                                 "seguranca" -> onOpenSeguranca()

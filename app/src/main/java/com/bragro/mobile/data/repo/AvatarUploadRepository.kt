@@ -14,7 +14,8 @@ private const val AVATAR_BUCKET = "avatars"
 /** Sobe a foto de perfil do próprio usuário direto pelo app -- pedido do
  * usuário ("coloque também no ícone usuário a opção de inserir foto"),
  * mesmo padrão de LogoUploadRepository.kt (upload direto no Storage com o
- * token do próprio usuário, depois persiste a URL numa rota /api/mobile/*).
+ * token do próprio usuário, depois persiste a URL numa rota /api/mobile,
+ * ver update-avatar/route.ts).
  * Diferença: bucket "avatars", caminho por USUÁRIO (não por organização,
  * ver topbar.tsx: `${userId}/avatar_${timestamp}.${ext}`), e qualquer
  * usuário pode trocar a própria foto (sem exigir OWNER/ADMIN, ao contrário

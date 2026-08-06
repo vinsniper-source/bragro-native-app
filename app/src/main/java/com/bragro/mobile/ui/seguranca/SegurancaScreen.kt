@@ -190,6 +190,7 @@ private fun CollapsibleCard(title: String, initiallyOpen: Boolean = false, conte
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RoleDropdown(selected: String, onSelect: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
@@ -199,7 +200,7 @@ private fun RoleDropdown(selected: String, onSelect: (String) -> Unit) {
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.menuAnchor(),
         )
-        androidx.compose.material3.ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             ROLES.forEach { role ->
                 DropdownMenuItem(text = { Text(role) }, onClick = { onSelect(role); expanded = false })
             }

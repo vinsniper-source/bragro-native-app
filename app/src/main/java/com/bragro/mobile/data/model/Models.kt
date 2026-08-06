@@ -140,6 +140,11 @@ data class ActivityEventData(
     // pedido do usuário ("tem que especificar qual é a operação assim como
     // a plataforma"). Pode faltar em registros antigos sem esse campo.
     val detail: String? = null,
+    // Quantidade representativa do evento (ex.: "12 SC", "450 kg") -- pedido
+    // do usuário ("no bloco monitor colocar operação, tipo e qtde"). Nem
+    // toda tabela tem uma quantidade natural (ex.: Financeiro), por isso é
+    // opcional.
+    val qtde: String? = null,
     val type: String, // "criado" | "atualizado"
     val at: String,
 )

@@ -45,7 +45,6 @@ import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.NotificationsActive
@@ -332,8 +331,15 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
+// minimum/maximumFractionDigits explícitos -- pedido do usuário ("no bloco
+// kpi financeiro tem que aparecer... o duas casas ,00 depois da vírgula"),
+// garante ",00" mesmo em valores redondos independente do locale/ICU do
+// aparelho (antes dependia só do padrão do NumberFormat de moeda).
 private fun formatMoneyBrl(value: Double): String =
-    NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(value)
+    NumberFormat.getCurrencyInstance(Locale("pt", "BR")).apply {
+        minimumFractionDigits = 2
+        maximumFractionDigits = 2
+    }.format(value)
 
 private fun todayLongBrazil(): String {
     val fmt = SimpleDateFormat("EEEE, dd 'de' MMMM 'de' yyyy", Locale("pt", "BR"))
@@ -405,9 +411,9 @@ fun HomeScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* já estamos no Início */ }) {
-                        Icon(Icons.Filled.Home, contentDescription = "Início")
-                    }
+                    // Ícone "Início" removido -- pedido do usuário ("retire a
+                    // casinha"), era decorativo (onClick vazio, já estamos
+                    // nesta tela).
                     if (canManage) {
                         IconButton(onClick = { viewModel.downloadBackup { } }) {
                             Icon(Icons.Filled.Backup, contentDescription = "Backup completo")
@@ -489,22 +495,26 @@ fun HomeScreen(
                         }
                     } else if (canManage) {
                         // Sem círculo/borda -- pedido do usuário ("retire o
-                        // círculo em volta do ícone da logo do cliente"). Tom
-                        // de verde da marca (BrGreen) em vez do outline
-                        // neutro de antes, mesma cor da barra inferior.
+                        // círculo em volta do ícone da logo do cliente").
+                        // Antes usava BrGreen (mesma cor da barra inferior e
+                        // de quase todo o resto do cabeçalho) -- trocado pra
+                        // BrYellow (tom dourado da própria nova logo) pra
+                        // esse ícone se destacar em vez de se misturar com
+                        // os outros ícones verdes -- pedido do usuário
+                        // ("trocar a cor do ícone logo do cliente").
                         IconButton(
                             enabled = !uploadingLogo,
                             onClick = { logoPickerLauncher.launch("image/*") },
                             modifier = Modifier.padding(end = 8.dp).size(32.dp),
                         ) {
                             if (uploadingLogo) {
-                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = BrGreen)
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = BrYellow)
                             } else {
                                 Icon(
                                     Icons.Filled.AddPhotoAlternate,
                                     contentDescription = "Adicionar logo da empresa",
                                     modifier = Modifier.size(20.dp),
-                                    tint = BrGreen,
+                                    tint = BrYellow,
                                 )
                             }
                         }
@@ -640,6 +650,9 @@ private fun NotificationsDialog(items: List<NotificationItemData>, onMarkAllRead
 @Composable
 private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, viewModel: HomeViewModel) {
     var showAddDialog by remember { mutableStateOf(false) }
+    // Fechado por padrão -- pedido do usuário ("os blocos mural, alertas e
+    // monitor tem que aparecer fechados"), expande só ao tocar na setinha.
+    var expanded by remember { mutableStateOf(false) }
 
     if (showAddDialog) {
         AddNoticeDialog(
@@ -658,7 +671,9 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, vie
                 // nos blocos mural de avisos central de alertas").
                 SectionBadgeIcon(Icons.Filled.Campaign, BrBlue)
                 Spacer(Modifier.width(8.dp))
-                Text("Mural de Avisos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Box(modifier = Modifier.weight(1f)) {
+                    CollapsibleHeader("Mural de Avisos (${notices.size})", expanded) { expanded = !expanded }
+                }
                 // Botão de adicionar aviso -- o app antes não tinha NENHUM
                 // jeito de publicar um aviso (só o site tinha), pedido
                 // explícito do usuário. Só OWNER/ADMIN vê, mesma regra do site.
@@ -668,24 +683,26 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, vie
                     }
                 }
             }
-            if (notices.isEmpty()) {
-                Text("Nenhum aviso publicado.", style = MaterialTheme.typography.bodySmall)
-            } else {
-                notices.forEachIndexed { i, n ->
-                    val tone = NOTICE_TONES[i % NOTICE_TONES.size]
-                    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.Top) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (n.fixado) {
-                                    Icon(Icons.Filled.PushPin, contentDescription = null, tint = BrYellow, modifier = Modifier.padding(end = 4.dp))
+            if (expanded) {
+                if (notices.isEmpty()) {
+                    Text("Nenhum aviso publicado.", style = MaterialTheme.typography.bodySmall)
+                } else {
+                    notices.forEachIndexed { i, n ->
+                        val tone = NOTICE_TONES[i % NOTICE_TONES.size]
+                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.Top) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    if (n.fixado) {
+                                        Icon(Icons.Filled.PushPin, contentDescription = null, tint = BrYellow, modifier = Modifier.padding(end = 4.dp))
+                                    }
+                                    Text(n.titulo, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = tone)
                                 }
-                                Text(n.titulo, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = tone)
+                                Text(n.mensagem, style = MaterialTheme.typography.bodySmall)
                             }
-                            Text(n.mensagem, style = MaterialTheme.typography.bodySmall)
-                        }
-                        if (canManage) {
-                            IconButton(onClick = { viewModel.deleteNotice(n.id) }, modifier = Modifier.size(28.dp)) {
-                                Icon(Icons.Filled.Close, contentDescription = "Excluir aviso", modifier = Modifier.size(16.dp))
+                            if (canManage) {
+                                IconButton(onClick = { viewModel.deleteNotice(n.id) }, modifier = Modifier.size(28.dp)) {
+                                    Icon(Icons.Filled.Close, contentDescription = "Excluir aviso", modifier = Modifier.size(16.dp))
+                                }
                             }
                         }
                     }
@@ -762,7 +779,9 @@ private fun SectionBadgeIcon(icon: androidx.compose.ui.graphics.vector.ImageVect
 
 @Composable
 private fun AlertsCard(alerts: List<AlertData>, onOpenDomain: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(true) }
+    // Fechado por padrão -- pedido do usuário ("os blocos mural, alertas e
+    // monitor tem que aparecer fechados").
+    var expanded by remember { mutableStateOf(false) }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -811,7 +830,9 @@ private fun AlertsCard(alerts: List<AlertData>, onOpenDomain: (String) -> Unit) 
 // em uma linha só").
 @Composable
 private fun ActivityMonitorCard(events: List<ActivityEventData>) {
-    var expanded by remember { mutableStateOf(true) }
+    // Fechado por padrão -- pedido do usuário ("os blocos mural, alertas e
+    // monitor tem que aparecer fechados").
+    var expanded by remember { mutableStateOf(false) }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -837,11 +858,16 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>) {
                             // "detail" é a operação/item do evento (ex.:
                             // "Adubação", "Diesel S10") -- pedido do
                             // usuário ("tem que especificar qual é a
-                            // operação assim como a plataforma").
+                            // operação assim como a plataforma"). "qtde"
+                            // (quando a tabela tem uma quantidade natural)
+                            // entra por último -- pedido do usuário
+                            // ("no bloco monitor colocar operação, tipo e
+                            // qtde").
                             Text(
                                 buildString {
                                     append(if (e.detail != null) "${e.tableLabel} — ${e.detail}" else e.tableLabel)
                                     append(" · ${e.type}")
+                                    if (!e.qtde.isNullOrBlank()) append(" · ${e.qtde}")
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Medium,
@@ -888,7 +914,9 @@ private fun KpiGrid(data: HomeData) {
     val kpis = listOf(
         // Cores dos ícones Safra/Financeiro invertidas -- pedido do usuário
         // ("inverta as cores dos ícones dos kpis safra e financeiro").
-        Kpi("Em aberto (financeiro)", formatMoneyBrl(data.saldoFinanceiroAberto), Icons.Filled.AccountBalanceWallet, BrBlue, KpiKind.VALOR),
+        // Descrição mais explícita -- pedido do usuário ("no bloco kpi
+        // financeiro tem que aparecer a descrição").
+        Kpi("Saldo em aberto (Financeiro)", formatMoneyBrl(data.saldoFinanceiroAberto), Icons.Filled.AccountBalanceWallet, BrBlue, KpiKind.VALOR),
         Kpi("Itens no estoque", data.itensEstoque.toString(), Icons.Filled.Inventory2, BrYellow, KpiKind.QUANTIDADE),
         Kpi("Operações de safra em andamento", data.safrasAtivas.toString(), Icons.Filled.Eco, BrGreen, KpiKind.QUANTIDADE),
         Kpi("Colaboradores ativos", data.colaboradoresAtivos.toString(), Icons.Filled.Groups, BrGreen, KpiKind.QUANTIDADE),
@@ -981,9 +1009,20 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, modifier:
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MiniCardHeader("Clima (agora)", Icons.Filled.WbSunny, BrYellow, MaterialTheme.typography.titleMedium)
-            Row {
-                Text("${clima.currentIcon} ${clima.currentTempC.toInt()}°C -- ")
-                Text("máx ${clima.todayMaxC.toInt()}° / mín ${clima.todayMinC.toInt()}°")
+            // Temperatura atual centralizada, máx/mín centralizado na linha
+            // debaixo -- pedido do usuário ("kpi clima colocar °C
+            // centralizado e max °C/ min ºC na linha debaixo centralizado").
+            Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    "${clima.currentIcon} ${clima.currentTempC.toInt()}°C",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    "máx ${clima.todayMaxC.toInt()}° / mín ${clima.todayMinC.toInt()}°",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
@@ -1009,7 +1048,9 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, modifier: M
 private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            MiniCardHeader("Cotações agrícolas", Icons.Filled.Agriculture, BrGreen, MaterialTheme.typography.titleMedium)
+            // Renomeado -- pedido do usuário ("altere o kpi cotações
+            // agrícolas para cotações grãos").
+            MiniCardHeader("Cotações Grãos", Icons.Filled.Agriculture, BrGreen, MaterialTheme.typography.titleMedium)
             listOfNotNull(com.soja, com.milho, com.sorgo).forEach { q ->
                 Row {
                     Text("${q.nome}: ")
