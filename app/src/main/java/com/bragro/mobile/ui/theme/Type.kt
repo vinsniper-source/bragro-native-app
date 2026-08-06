@@ -5,9 +5,9 @@ package com.bragro.mobile.ui.theme
 import com.bragro.mobile.R
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.ExperimentalTextApi
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.googlefonts.Font
 import androidx.compose.ui.text.googlefonts.GoogleFont
 
 // Fonte Geist -- pedido do usuario ("implemente a fonte Geist no app"),
