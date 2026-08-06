@@ -57,9 +57,9 @@ import kotlinx.serialization.json.jsonPrimitive
 // /api/mobile/module-actions (mesmas Server-side functions do site, ver
 // lib/services/estoque-fazenda.ts) -- sem tabela nova nenhuma.
 
-internal data class FazendaOpt(val id: String, val name: String)
-internal data class SaldoLinha(val fazendaNome: String, val item: String, val unidade: String?, val saldo: Double)
-internal data class TransferenciaRecebida(
+data class FazendaOpt(val id: String, val name: String)
+data class SaldoLinha(val fazendaNome: String, val item: String, val unidade: String?, val saldo: Double)
+data class TransferenciaRecebida(
     val id: String, val item: String, val unidade: String?, val quantidade: Double,
     val devolvido: Double, val fazendaNome: String,
 )
