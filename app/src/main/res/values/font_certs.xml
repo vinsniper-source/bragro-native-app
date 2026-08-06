@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   Certificados do provedor de fontes do Google Play Services (Downloadable
-  Fonts API) -- pedido do usuario ("implemente a fonte Geist no app").
+  Fonts API), pedido do usuario ("implemente a fonte Geist no app").
   Usados por ui/theme/Type.kt (GoogleFont("Geist")) pra baixar a fonte em
   tempo de execucao em vez de empacotar arquivos .ttf binarios no APK.
 
   Estes NAO sao segredos: sao os hashes publicos do certificado de
   assinatura do proprio app "Google Play services" (com.google.android.gms),
   copiados sem alteracao da amostra oficial do Google/AOSP
-  (github.com/android/user-interface-samples, pasta DownloadableFonts) --
+  (github.com/android/user-interface-samples, pasta DownloadableFonts),
   o mesmo arquivo usado, byte a byte, por qualquer app Android que consome
   Google Fonts via Downloadable Fonts API.
 
-  Copyright 2017 The Android Open Source Project
+  Copyright 2017 The Android Open Source Project.
   Licensed under the Apache License, Version 2.0.
 -->
 <resources>
