@@ -265,7 +265,7 @@ fun FinanceiroScreen(
             // usuário ("a única função será recolher todos os blocos
             // abertos completamente"), não afeta mais os cards de
             // lançamento (cada um já tem sua própria setinha).
-            val finBlocks = listOf(
+            val dadosBlock =
                 FinBlockSpec("Dados", MaterialTheme.typography.titleSmall, vertical = true) {
                     if (!isQuickView) {
                         ModuleIconButton(
@@ -289,7 +289,8 @@ fun FinanceiroScreen(
                     }) {
                         Icon(Icons.Filled.UnfoldLess, contentDescription = "Recolher tudo")
                     }
-                },
+                }
+            val operacoesBlock =
                 FinBlockSpec("Operações", MaterialTheme.typography.titleSmall, vertical = false) {
                     if (!isQuickView) {
                         ModuleIconButton(
@@ -318,7 +319,8 @@ fun FinanceiroScreen(
                         if (refreshing) CircularProgressIndicator(modifier = Modifier.padding(4.dp).size(20.dp))
                         else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
                     }
-                },
+                }
+            val arquivosBlock =
                 FinBlockSpec("Arquivos", MaterialTheme.typography.titleSmall, vertical = false) {
                     if (!isQuickView) {
                         IconButton(onClick = onOpenBankImport) {
@@ -339,7 +341,8 @@ fun FinanceiroScreen(
                             Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar PDF")
                         }
                     }
-                },
+                }
+            val armazenamentoBlock =
                 FinBlockSpec("Armazenamento", MaterialTheme.typography.bodySmall, vertical = false) {
                     // Só esse ícone no bloco -- pedido do usuário ("será
                     // apenas um ícone offline, troque o ícone por uma
@@ -351,7 +354,8 @@ fun FinanceiroScreen(
                     }) {
                         Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Armazenamento")
                     }
-                },
+                }
+            val distribuicaoBlock =
                 FinBlockSpec("Distribuição", MaterialTheme.typography.bodyMedium, vertical = false) {
                     if (cfg != null && filtered.isNotEmpty()) {
                         IconButton(onClick = { HtmlPrinter.printList(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) }) {
@@ -364,20 +368,26 @@ fun FinanceiroScreen(
                             Icon(Icons.Filled.IosShare, contentDescription = "Compartilhar")
                         }
                     }
-                },
-            )
-            // Pelo menos 2 blocos por linha -- pedido do usuário
-            // ("distribua esses blocos pelo menos dois em cada linha").
-            finBlocks.chunked(2).forEach { rowBlocks ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    rowBlocks.forEach { spec ->
-                        FinanceiroCategoryBlock(spec, modifier = Modifier.weight(1f))
-                    }
-                    if (rowBlocks.size == 1) Spacer(modifier = Modifier.weight(1f))
                 }
+            // Posições seguem o esboço do usuário: Dados sozinho, ocupando
+            // a linha toda (é o bloco maior/mais alto, vertical); depois
+            // Operações+Armazenamento numa linha (o 1º bem mais largo, o 2º
+            // só tem 1 ícone); depois Arquivos+Distribuição na linha
+            // seguinte, no mesmo critério.
+            FinanceiroCategoryBlock(dadosBlock, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FinanceiroCategoryBlock(operacoesBlock, modifier = Modifier.weight(1.6f))
+                FinanceiroCategoryBlock(armazenamentoBlock, modifier = Modifier.weight(1f))
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FinanceiroCategoryBlock(arquivosBlock, modifier = Modifier.weight(1.6f))
+                FinanceiroCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(1f))
             }
 
             when {
@@ -547,8 +557,9 @@ private fun ConciliarDot(conciliado: Boolean) {
 // bloco 2 segmentando esses blocos"): cada categoria vira um Card próprio
 // com título acima (proporcional ao tamanho/quantidade de ícones do bloco)
 // e o conteúdo em fileira (horizontal) ou coluna (vertical, só o bloco
-// "Dados"). Distribuídos pelo menos 2 por linha (ver finBlocks, mais abaixo,
-// dentro de FinanceiroScreen).
+// "Dados"). Posições seguem o esboço do usuário (ver dadosBlock/
+// operacoesBlock/arquivosBlock/armazenamentoBlock/distribuicaoBlock, mais
+// abaixo, dentro de FinanceiroScreen).
 private data class FinBlockSpec(
     val title: String,
     val titleStyle: androidx.compose.ui.text.TextStyle,
