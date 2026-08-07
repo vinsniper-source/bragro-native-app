@@ -18,10 +18,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.CompareArrows
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FileDownload
@@ -29,6 +31,7 @@ import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.MonitorWeight
 import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.Button
@@ -191,6 +194,32 @@ fun DomainListScreen(
     var filtrosOverride by remember(domainId) { mutableStateOf<Boolean?>(null) }
     val filtrosExpanded = filtrosOverride ?: allExpanded
 
+    // Estado de quais blocos "compatíveis com ícone" (Gráficos,
+    // Calculadoras, Clima, Estoque por Fazenda, Recalcular Área) estão
+    // abertos -- pedido do usuário ("reduza os blocos que são compatíveis a
+    // ícones"). Tudo começa fechado; tocar o ícone na fileira revela o
+    // bloco correspondente.
+    val expandedBlocks = remember(domainId) { mutableStateMapOf<String, Boolean>() }
+    // Nome de cada bloco, na mesma ordem em que aparecem na fileira de
+    // ícones -- usado só pra saber qual nome mostrar no título quando um
+    // bloco está aberto (ver título abaixo).
+    val iconRowLabels = remember(domainId) {
+        linkedMapOf(
+            "charts" to "Gráficos",
+            "calculators" to "Calculadoras",
+            "clima-weather" to "Previsão do tempo",
+            "estoque-fazenda" to "Transferências entre Fazendas",
+            "recalcular-area" to "Recalcular Área",
+            "filtros" to "Filtros",
+        )
+    }
+    // Título alterna pro nome do bloco aberto -- pedido do usuário ("quando
+    // clicar vai alternar o nome, por exemplo onde está a palavra
+    // financeiro"); sem nenhum bloco aberto, volta pro nome do módulo.
+    val activeBlockLabel = iconRowLabels.entries.firstOrNull { (key, _) ->
+        if (key == "filtros") filtrosExpanded else expandedBlocks[key] == true
+    }?.value
+
     // Botão "Colunas" (espelho do site) -- null = ainda não customizado pelo
     // usuário, mostra todas as colunas não ocultas (comportamento de sempre).
     var customVisibleKeys by remember(domainId) { mutableStateOf<Set<String>?>(null) }
@@ -216,7 +245,18 @@ fun DomainListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(config?.label ?: domainId) },
+                // "Pule uma linha para aparecer o nome de cada ícone quando
+                // clicado" -- o nome do módulo continua sempre visível na
+                // 1ª linha; o nome do bloco aberto aparece numa 2ª linha,
+                // menor, só enquanto ele estiver aberto.
+                title = {
+                    Column {
+                        Text(config?.label ?: domainId)
+                        if (activeBlockLabel != null) {
+                            Text(activeBlockLabel, style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar") }
                 },
@@ -343,11 +383,6 @@ fun DomainListScreen(
         // critério do site: noPedido/item/criadoEm), então checar o
         // (noPedido,item) do próximo registro na lista já visível basta.
         val isPedidos = domainId == "pedidos"
-        // Estado de quais blocos "compatíveis com ícone" estão abertos --
-        // pedido do usuário ("reduza os blocos que são compatíveis a
-        // ícones"). Tudo começa fechado; tocar o ícone na fileira revela o
-        // conteúdo do bloco correspondente.
-        val expandedBlocks = remember(domainId) { mutableStateMapOf<String, Boolean>() }
         LazyColumn(
             contentPadding = PaddingValues(12.dp, padding.calculateTopPadding() + 4.dp, 12.dp, 80.dp),
             // Sem isso os blocos (Gráficos, Calculadoras, Recalcular Área,
@@ -357,16 +392,24 @@ fun DomainListScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             // Alternador Cobranças/NFS-e -- fica ACIMA até de Gráficos de
-            // propósito (é navegação de tela, não conteúdo do módulo).
+            // propósito (é navegação de tela, não conteúdo do módulo). Virou
+            // ícone (em vez de botão com texto) dentro de um bloco com borda
+            // fina -- pedido do usuário ("transforme os botões [...] em
+            // ícones sem mexer na estrutura dos blocos, coloque uma borda
+            // fina em volta do bloco"). Toque no ícone já alterna o título
+            // pro nome do outro módulo, então dispensa o rótulo escrito.
             if (linkedDomains != null && onSwitchDomain != null) {
                 item(key = "linked-domain-switch") {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 4.dp)) {
-                        linkedDomains.forEach { (id, label) ->
-                            val active = id == domainId
-                            if (active) {
-                                Button(onClick = {}, enabled = false) { Text(label) }
-                            } else {
-                                OutlinedButton(onClick = { onSwitchDomain(id) }) { Text(label) }
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.padding(8.dp),
+                        ) {
+                            linkedDomains.forEach { (id, label) ->
+                                val active = id == domainId
+                                ModuleIconButton(
+                                    ModuleIconItem(id, linkedDomainIcon(id), label, active = active),
+                                ) { if (!active) onSwitchDomain(id) }
                             }
                         }
                     }
@@ -389,8 +432,12 @@ fun DomainListScreen(
             val showFiltros = filterableSelectCols.isNotEmpty()
             val activeFilterCountGeneric = columnFilters.values.count { it.isNotBlank() }
             item(key = "module-icon-row") {
+                // Borda fina em volta do bloco -- mesmo padrão de todos os
+                // outros Cards do app (Task #147) -- pedido do usuário
+                // ("coloque uma borda fina em volta do bloco").
+                Card(modifier = Modifier.fillMaxWidth()) {
                 FlowRow(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
@@ -413,8 +460,12 @@ fun DomainListScreen(
                         ) { expandedBlocks["estoque-fazenda"] = expandedBlocks["estoque-fazenda"] != true }
                     }
                     if (showRecalcularArea) {
+                        // Icone diferente do "Atualizar" da AppBar (Refresh)
+                        // -- mesmo icone pra acoes diferentes na mesma tela
+                        // confundia, pedido do usuario ("substitua icones
+                        // que estejam iguais mas com funcoes diferentes").
                         ModuleIconButton(
-                            ModuleIconItem("recalcular-area", Icons.Filled.Refresh, "Recalcular Área"),
+                            ModuleIconItem("recalcular-area", Icons.Filled.Autorenew, "Recalcular Área"),
                         ) { expandedBlocks["recalcular-area"] = expandedBlocks["recalcular-area"] != true }
                     }
                     if (showFiltros) {
@@ -432,6 +483,7 @@ fun DomainListScreen(
                             onInterval = { from, to -> intervalFrom = from; intervalTo = to; if (from.isNotBlank() || to.isNotBlank()) periodo = null },
                         )
                     }
+                }
                 }
             }
             if (expandedBlocks["charts"] == true) {
@@ -763,4 +815,13 @@ private fun ColumnFilterRow(
             }
         }
     }
+}
+
+/** Ícone de cada módulo "linkado" (Cobranças/NFS-e) no alternador -- só
+ * esses dois ids existem hoje (ver BRAgroNavHost.kt), cada um com um ícone
+ * bem distinto do outro pra não confundir. */
+private fun linkedDomainIcon(domainId: String) = when (domainId) {
+    "cobrancas" -> Icons.Filled.Receipt
+    "nfse" -> Icons.Filled.Description
+    else -> Icons.Filled.Description
 }

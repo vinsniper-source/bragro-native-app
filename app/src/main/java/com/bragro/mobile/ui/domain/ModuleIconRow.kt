@@ -1,7 +1,6 @@
 package com.bragro.mobile.ui.domain
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -17,7 +16,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
 /**
@@ -37,25 +35,21 @@ data class ModuleIconItem(
 )
 
 /**
- * Um ícone individual da fileira, com toque longo mostrando o nome num
- * Toast rápido -- pedido do usuário ("aparecer o nome do botão quando
- * passar o dedo em cima do ícone"), já que o texto não cabe mais do lado.
- * Exposto separado de [ModuleIconRow] pra poder ser misturado com outros
- * controles (ex.: o dropdown de Período) na mesma fileira, quando a tela
- * precisa montar a linha na mão em vez de usar a lista genérica.
+ * Um ícone individual da fileira. O nome do bloco não aparece mais num
+ * Toast ao tocar -- pedido do usuário ("retire aquele blazinho") -- em vez
+ * disso, o título do módulo (na barra do topo) alterna pro nome do bloco
+ * enquanto ele estiver aberto (ver DomainListScreen.kt). Exposto separado
+ * de [ModuleIconRow] pra poder ser misturado com outros controles (ex.: o
+ * dropdown de Período) na mesma fileira, quando a tela precisa montar a
+ * linha na mão em vez de usar a lista genérica.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ModuleIconButton(item: ModuleIconItem, onClick: () -> Unit) {
-    val context = LocalContext.current
     BadgedBox(
         badge = { if (item.badgeCount > 0) Badge { Text("${item.badgeCount}") } },
         modifier = Modifier
             .size(40.dp)
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = { android.widget.Toast.makeText(context, item.label, android.widget.Toast.LENGTH_SHORT).show() },
-            ),
+            .clickable(onClick = onClick),
     ) {
         Icon(
             item.icon,

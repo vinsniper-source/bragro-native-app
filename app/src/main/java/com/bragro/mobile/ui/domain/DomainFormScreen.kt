@@ -192,6 +192,18 @@ fun DomainFormScreen(
             TopAppBar(
                 title = { Text(if (recordId == null) "Novo lançamento" else "Editar lançamento") },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar") } },
+                actions = {
+                    // "Copiar último lançamento" (Task #51/#77) virou ícone
+                    // no topo à direita -- pedido do usuário ("transforme a
+                    // palavra copiar último lançamento em ícone, posicione-o
+                    // à direita"), em vez do botão largo que ocupava uma
+                    // linha inteira do formulário.
+                    if (recordId == null && lastRecord != null) {
+                        IconButton(onClick = { viewModel.copyFromLastRecord() }) {
+                            Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último lançamento")
+                        }
+                    }
+                },
             )
         },
     ) { padding ->
@@ -214,26 +226,12 @@ fun DomainFormScreen(
                 Text(cfg.notice, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 12.dp))
             }
 
-            // "Copiar último lançamento" (Task #51/#77): só ao criar
-            // (recordId == null) e só quando já existe pelo menos um
-            // registro no módulo -- mesma condição do site.
+            // "Copiar último lançamento" (Task #51/#77) agora é o ícone no
+            // topo à direita (ver TopAppBar acima) -- aqui fica só o aviso
+            // de que funciona offline, pra quem tocar no ícone entender o
+            // que aconteceu (preencheu os campos com o último lançamento).
             if (recordId == null && lastRecord != null) {
-                androidx.compose.material3.OutlinedButton(
-                    onClick = { viewModel.copyFromLastRecord() },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Icon(
-                        Icons.Filled.ContentCopy,
-                        contentDescription = null,
-                        modifier = Modifier.padding(end = 8.dp),
-                    )
-                    Text("Copiar último lançamento")
-                }
-                // "Copiar último lançamento" lê do banco local (Room), não
-                // do servidor -- funciona igual com ou sem internet -- pedido
-                // do usuário ("copiar último lançamento, para aparecer como
-                // offline/online").
-                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp, top = 4.dp)) {
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
                     Icon(
                         Icons.Filled.CloudDone,
                         contentDescription = null,
@@ -241,7 +239,7 @@ fun DomainFormScreen(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        "Funciona online e offline (usa o último lançamento salvo neste aparelho)",
+                        "Ícone de copiar no topo preenche com o último lançamento salvo neste aparelho (funciona online e offline)",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

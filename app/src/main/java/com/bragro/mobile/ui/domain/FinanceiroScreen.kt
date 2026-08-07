@@ -6,6 +6,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,8 +22,16 @@ import androidx.compose.foundation.shape.CircleShape
 import android.app.Application
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Autorenew
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CallSplit
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -29,23 +39,21 @@ import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.UnfoldLess
-import androidx.compose.material.icons.filled.UnfoldMore
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -53,6 +61,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -93,7 +102,7 @@ class FinanceiroFiltersViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun FinanceiroScreen(
     onBack: () -> Unit,
@@ -135,7 +144,21 @@ fun FinanceiroScreen(
     // controle do módulo genérico (DomainListScreen.kt), pedido do usuário
     // ("mostre o bloco completo... recolha todos de uma vez").
     var allExpanded by remember { mutableStateOf(false) }
-    val cardOverrides = remember { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
+    val cardOverrides = remember { mutableStateMapOf<String, Boolean>() }
+
+    // Blocos "compatíveis com ícone" (Gráficos, Calculadoras, Recalcular
+    // Vencimentos, Filtros) consolidados numa fileira só, mesmo padrão do
+    // módulo genérico (DomainListScreen.kt) -- pedido do usuário ("reduza os
+    // blocos que são compatíveis a ícones, distribua numa linha só").
+    val expandedBlocks = remember { mutableStateMapOf<String, Boolean>() }
+    val iconRowLabels = remember {
+        linkedMapOf(
+            "charts" to "Gráficos",
+            "calculators" to "Calculadoras",
+            "recalcular-vencimentos" to "Recalcular Vencimentos",
+        )
+    }
+    val activeBlockLabel = iconRowLabels.entries.firstOrNull { (key, _) -> expandedBlocks[key] == true }?.value
 
     val filtered = remember(allRecords, view, periodo, intervalFrom, intervalTo, banco) {
         var result = filterByFinanceiroView(allRecords, view)
@@ -165,7 +188,19 @@ fun FinanceiroScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isQuickView) "Financeiro — ${view.label}" else "Financeiro") },
+                // "Pule uma linha para aparecer o nome de cada ícone quando
+                // clicado" -- "Financeiro" (ou "Financeiro — visão") continua
+                // sempre na 1ª linha; o nome do bloco aberto (Gráficos,
+                // Calculadoras, Recalcular Vencimentos) aparece numa 2ª
+                // linha, menor, só enquanto ele estiver aberto.
+                title = {
+                    Column {
+                        Text(if (isQuickView) "Financeiro — ${view.label}" else "Financeiro")
+                        if (activeBlockLabel != null) {
+                            Text(activeBlockLabel, style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar") } },
                 actions = {
                     IconButton(onClick = { viewModel.refresh("financeiro") }) {
@@ -173,9 +208,14 @@ fun FinanceiroScreen(
                         else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
                     }
                     if (filtered.isNotEmpty()) {
+                        // Mesmo par de ícones do "recolher/expandir tudo" do
+                        // módulo genérico (DomainListScreen.kt) -- pedido do
+                        // usuário ("deixe os ícones bem intuitivos"), evita
+                        // ter dois pares parecidos (Unfold vs Expand) pra
+                        // conceitos de escopo diferente na mesma tela.
                         IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear() }) {
                             Icon(
-                                if (allExpanded) Icons.Filled.UnfoldLess else Icons.Filled.UnfoldMore,
+                                if (allExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
                                 contentDescription = if (allExpanded) "Recolher todos os lançamentos" else "Expandir todos os lançamentos",
                             )
                         }
@@ -222,36 +262,68 @@ fun FinanceiroScreen(
     ) { padding ->
         val cfg = config
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                FinanceiroView.values().forEach { v ->
-                    FilterChip(
-                        selected = v == view,
-                        onClick = { view = v },
-                        label = { Text(v.label) },
-                    )
+            // Seletor de visão (Todos/Contas a Pagar/Contas a Receber/
+            // Conciliado/Fluxo de Caixa/Rateio Direto/Rateio Indireto) virou
+            // ícone (em vez de chip com texto) dentro de um bloco com borda
+            // fina -- pedido do usuário ("transforme os botões [...] em
+            // ícones sem mexer na estrutura dos blocos, coloque uma borda
+            // fina em volta do bloco"); toque no ícone já alterna o título
+            // pro nome da visão (ver título acima), então dispensa o rótulo.
+            Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    FinanceiroView.values().forEach { v ->
+                        ModuleIconButton(
+                            ModuleIconItem(v.name, financeiroViewIcon(v), v.label, active = v == view),
+                        ) { view = v }
+                    }
                 }
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                PeriodoDropdown(
-                    periodo = periodo,
-                    view = view,
-                    intervalFrom = intervalFrom,
-                    intervalTo = intervalTo,
-                    onPeriodo = { periodo = it; if (it != null) { intervalFrom = ""; intervalTo = "" } },
-                    onInterval = { from, to -> intervalFrom = from; intervalTo = to; if (from.isNotBlank() || to.isNotBlank()) periodo = null },
-                )
-                if (view == FinanceiroView.CONCILIADO) {
-                    BancoDropdown(banco = banco, options = bancoOptions, onSelect = { banco = it })
+            Spacer(modifier = Modifier.size(8.dp))
+
+            // Gráficos, Calculadoras, Recalcular Vencimentos, Período e
+            // Filtros (Banco) -- antes cada um com seu próprio cabeçalho ou
+            // numa linha separada, agora numa fileira só de ícones dentro de
+            // um bloco com borda fina, igual ao módulo genérico
+            // (DomainListScreen.kt).
+            Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    if (!isQuickView) {
+                        ModuleIconButton(
+                            ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
+                        ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
+                        ModuleIconButton(
+                            ModuleIconItem("calculators", Icons.Filled.Calculate, "Calculadoras", active = expandedBlocks["calculators"] == true),
+                        ) { expandedBlocks["calculators"] = expandedBlocks["calculators"] != true }
+                        // Icone diferente do "Atualizar" da AppBar (Refresh)
+                        // -- mesmo icone pra acoes diferentes na mesma tela
+                        // confundia, pedido do usuario ("substitua icones
+                        // que estejam iguais mas com funcoes diferentes").
+                        ModuleIconButton(
+                            ModuleIconItem("recalcular-vencimentos", Icons.Filled.Autorenew, "Recalcular Vencimentos", active = expandedBlocks["recalcular-vencimentos"] == true),
+                        ) { expandedBlocks["recalcular-vencimentos"] = expandedBlocks["recalcular-vencimentos"] != true }
+                    }
+                    PeriodoDropdown(
+                        periodo = periodo,
+                        view = view,
+                        intervalFrom = intervalFrom,
+                        intervalTo = intervalTo,
+                        onPeriodo = { periodo = it; if (it != null) { intervalFrom = ""; intervalTo = "" } },
+                        onInterval = { from, to -> intervalFrom = from; intervalTo = to; if (from.isNotBlank() || to.isNotBlank()) periodo = null },
+                    )
+                    if (view == FinanceiroView.CONCILIADO) {
+                        BancoDropdown(banco = banco, options = bancoOptions, onSelect = { banco = it })
+                    }
                 }
             }
 
@@ -300,11 +372,17 @@ fun FinanceiroScreen(
                             // Gráficos/Calculadoras/Recalcular Vencimentos só
                             // aparecem na visão "Todos" -- mesmo critério do
                             // site ("visão rápida... sem Gráficos/
-                            // Calculadoras/Recalcular Vencimentos").
-                            if (!isQuickView) {
-                                item(key = "charts") { ModuleChartsCard("financeiro") }
-                                item(key = "calculators") { CalculatorsCard("financeiro") }
-                                item(key = "recalcular-vencimentos") { RecalcularVencimentosButton() }
+                            // Calculadoras/Recalcular Vencimentos") -- e só
+                            // quando o ícone correspondente na fileira acima
+                            // está aberto (ver Card com FlowRow acima).
+                            if (!isQuickView && expandedBlocks["charts"] == true) {
+                                item(key = "charts") { ModuleChartsCard("financeiro", showHeader = false) }
+                            }
+                            if (!isQuickView && expandedBlocks["calculators"] == true) {
+                                item(key = "calculators") { CalculatorsCard("financeiro", showHeader = false) }
+                            }
+                            if (!isQuickView && expandedBlocks["recalcular-vencimentos"] == true) {
+                                item(key = "recalcular-vencimentos") { RecalcularVencimentosButton(showHeader = false) }
                             }
                             items(filtered, key = { it["id"] ?: it.hashCode().toString() }) { record ->
                                 val recordId = record["id"]
@@ -500,6 +578,20 @@ private fun BancoDropdown(banco: String?, options: List<LookupEntity>, onSelect:
             }
         }
     }
+}
+
+/** Ícone de cada visão do Financeiro no seletor -- pedido do usuário
+ * ("transforme os botões [...] em ícones"), um bem diferente do outro pra
+ * não confundir (setas opostas pra Pagar/Receber, check pra Conciliado,
+ * tendência pra Fluxo de Caixa, split/árvore pros dois Rateios). */
+private fun financeiroViewIcon(v: FinanceiroView) = when (v) {
+    FinanceiroView.TODOS -> Icons.Filled.ViewList
+    FinanceiroView.PAGAR -> Icons.Filled.ArrowUpward
+    FinanceiroView.RECEBER -> Icons.Filled.ArrowDownward
+    FinanceiroView.CONCILIADO -> Icons.Filled.CheckCircle
+    FinanceiroView.FLUXO -> Icons.Filled.TrendingUp
+    FinanceiroView.RATEIO_DIRETO -> Icons.Filled.CallSplit
+    FinanceiroView.RATEIO_INDIRETO -> Icons.Filled.AccountTree
 }
 
 @Composable
