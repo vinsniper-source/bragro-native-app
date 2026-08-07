@@ -114,22 +114,26 @@ private val CALC_TITLES = mapOf(
  * site (safra/colheita/financeiro); em qualquer outro módulo não renderiza
  * nada, igual ao "return null" do componente web. */
 @Composable
-fun CalculatorsCard(domainId: String) {
+fun CalculatorsCard(domainId: String, showHeader: Boolean = true) {
     val title = CALC_TITLES[domainId] ?: return
-    var open by remember { mutableStateOf(false) }
+    // Sem cabeçalho, quem controla a visibilidade é a fileira de ícones do
+    // módulo (ModuleIconRow) -- já nasce aberto.
+    var open by remember { mutableStateOf(!showHeader) }
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { open = !open }
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.Filled.Calculate, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
+            if (showHeader) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { open = !open }
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.Calculate, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                    Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
+                }
             }
             if (open) {
                 Column(

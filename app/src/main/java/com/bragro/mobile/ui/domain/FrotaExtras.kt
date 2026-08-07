@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import com.bragro.mobile.ui.theme.Card
@@ -60,20 +61,30 @@ class ModuleActionButtonViewModel(app: Application) : AndroidViewModel(app) {
 /** Botão "Recalcular Área" -- reprocessa a Área(ha) de todo o histórico do
  * módulo a partir do cadastro ATUAL de Fazendas. Mesmo texto/motivo do site. */
 @Composable
-fun RecalcularAreaButton(domainId: String, viewModel: ModuleActionButtonViewModel = viewModel()) {
+fun RecalcularAreaButton(domainId: String, viewModel: ModuleActionButtonViewModel = viewModel(), showHeader: Boolean = true) {
     val running by viewModel.running
     val message by viewModel.resultMessage
     val action = if (domainId == "safra") "recalcular-area-safra" else "recalcular-area-frota"
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Recalcular Área", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                // So icone (sem texto no botao) -- pedido do usuario
-                // ("transforme os botoes de operacao em so icone"), o
-                // titulo acima ja diz o que o botao faz.
-                IconButton(onClick = { viewModel.run(action, "Área recalculada com sucesso.") }, enabled = !running) {
-                    if (running) CircularProgressIndicator(modifier = Modifier.padding(2.dp)) else Icon(Icons.Filled.Refresh, contentDescription = "Recalcular Área")
+            if (showHeader) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Recalcular Área", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    // So icone (sem texto no botao) -- pedido do usuario
+                    // ("transforme os botoes de operacao em so icone"), o
+                    // titulo acima ja diz o que o botao faz.
+                    IconButton(onClick = { viewModel.run(action, "Área recalculada com sucesso.") }, enabled = !running) {
+                        if (running) CircularProgressIndicator(modifier = Modifier.padding(2.dp)) else Icon(Icons.Filled.Refresh, contentDescription = "Recalcular Área")
+                    }
+                }
+            } else {
+                // Fileira de ícones do módulo já revelou este bloco -- aqui
+                // dispara a ação direto, sem precisar de outro toque.
+                LaunchedEffect(Unit) { viewModel.run(action, "Área recalculada com sucesso.") }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Recalcular Área", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    if (running) CircularProgressIndicator(modifier = Modifier.padding(2.dp).size(18.dp))
                 }
             }
             Text(

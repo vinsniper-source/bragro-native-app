@@ -68,8 +68,12 @@ class ModuleChartsViewModel(app: Application) : AndroidViewModel(app) {
 }
 
 @Composable
-fun ModuleChartsCard(domainId: String, viewModel: ModuleChartsViewModel = viewModel()) {
-    var open by remember { mutableStateOf(false) }
+fun ModuleChartsCard(domainId: String, viewModel: ModuleChartsViewModel = viewModel(), showHeader: Boolean = true) {
+    // Quando chamado sem cabeçalho (showHeader = false), quem controla se
+    // este bloco aparece ou não é a fileira de ícones do módulo
+    // (ModuleIconRow) -- então já nasce "aberto", sem precisar de um
+    // segundo toque no cabeçalho pra revelar o conteúdo.
+    var open by remember { mutableStateOf(!showHeader) }
     LaunchedEffect(open) { if (open) viewModel.load(domainId) }
 
     val data by viewModel.data
@@ -78,13 +82,15 @@ fun ModuleChartsCard(domainId: String, viewModel: ModuleChartsViewModel = viewMo
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column {
-            Row(
-                modifier = Modifier.fillMaxWidth().clickable { open = !open }.padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.Filled.BarChart, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                Text("Gráficos", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
+            if (showHeader) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable { open = !open }.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.BarChart, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                    Text("Gráficos", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
+                }
             }
             if (open) {
                 Column(

@@ -153,9 +153,11 @@ private fun FazendaDropdown(label: String, options: List<FazendaOpt>, placeholde
  * Estoque (ver DomainListScreen.kt). Fechado por padrão, mesmo critério do
  * bloco Filtros. */
 @Composable
-fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel()) {
+fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel(), showHeader: Boolean = true) {
     LaunchedEffect(Unit) { viewModel.load() }
-    var open by remember { mutableStateOf(false) }
+    // Sem cabeçalho, quem controla a visibilidade é a fileira de ícones do
+    // módulo (ModuleIconRow) -- já nasce aberto.
+    var open by remember { mutableStateOf(!showHeader) }
     var transferOpen by remember { mutableStateOf(false) }
     var devolverAlvo by remember { mutableStateOf<String?>(null) }
     val loading by viewModel.loading
@@ -166,11 +168,13 @@ fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel()) 
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.CompareArrows, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                Text("Transferências entre Fazendas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                IconButton(onClick = { open = !open }) {
-                    Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
+            if (showHeader) {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.CompareArrows, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                    Text("Transferências entre Fazendas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    IconButton(onClick = { open = !open }) {
+                        Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
+                    }
                 }
             }
             if (open) {

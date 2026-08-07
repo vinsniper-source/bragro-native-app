@@ -12,12 +12,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.CompareArrows
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FileDownload
@@ -120,7 +124,7 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
 /** Uma unica tela de lista serve TODOS os 16 modulos -- guiada pelo
  * DomainConfig (mesma ideia do motor generico do site, ver
  * components/domain/data-table.tsx). */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun DomainListScreen(
     domainId: String,
@@ -339,6 +343,11 @@ fun DomainListScreen(
         // critério do site: noPedido/item/criadoEm), então checar o
         // (noPedido,item) do próximo registro na lista já visível basta.
         val isPedidos = domainId == "pedidos"
+        // Estado de quais blocos "compatíveis com ícone" estão abertos --
+        // pedido do usuário ("reduza os blocos que são compatíveis a
+        // ícones"). Tudo começa fechado; tocar o ícone na fileira revela o
+        // conteúdo do bloco correspondente.
+        val expandedBlocks = remember(domainId) { mutableStateMapOf<String, Boolean>() }
         LazyColumn(
             contentPadding = PaddingValues(12.dp, padding.calculateTopPadding() + 4.dp, 12.dp, 80.dp),
             // Sem isso os blocos (Gráficos, Calculadoras, Recalcular Área,
@@ -363,38 +372,57 @@ fun DomainListScreen(
                     }
                 }
             }
-            // Gráficos sempre primeiro, no topo -- pedido explícito do
-            // usuário ("o bloco gráficos sempre será o primeiro do topo").
-            // Calculadoras (Safra/Colheita) -- CalculatorsCard() não desenha
-            // nada nos outros domínios (mesmo "return null" do site).
-            item(key = "charts") { ModuleChartsCard(domainId) }
-            item(key = "calculators") { CalculatorsCard(domainId) }
-            // Bloco de KPIs do Clima -- réplica de clima-card.tsx (previsão
-            // completa de 6 dias, colapsável e fechada por padrão, mesmo
-            // critério do site). Fica logo após Gráficos por causa da regra
-            // já estabelecida em todo o app ("Gráficos sempre primeiro no
-            // topo") -- no site esse card vem ANTES dos Gráficos só na rota
-            // própria de Clima, mas manter Gráficos em 1º lugar em TODOS os
-            // módulos evita uma exceção visual sozinha só aqui.
-            if (domainId == "clima") {
-                item(key = "clima-weather") { ClimaForecastCard(weather) }
-            }
-            if (domainId == "safra" || domainId == "frota") {
-                item(key = "recalcular-area") { RecalcularAreaButton(domainId) }
-            }
-            // Transferências entre Fazendas -- réplica nativa do
-            // TransferenciasFazendaPanel do site, só no módulo Estoque.
-            if (domainId == "estoque") {
-                item(key = "estoque-fazenda") { TransferenciasFazendaCard() }
-            }
-            // Período -- isolado do bloco Filtros abaixo, só ícone (sem
-            // texto) -- pedido do usuário ("período fica de fora do bloco
-            // filtros, só com o ícone"), mesmo critério aplicado no site
-            // (data-table.tsx). Fica numa linha própria, fora do Card de
-            // Filtros, alinhado à direita.
-            if (dateCol != null) {
-                item(key = "periodo-standalone") {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            // Blocos "compatíveis com ícone" (Gráficos, Calculadoras, Clima,
+            // Estoque por Fazenda, Recalcular Área, Filtros, Período) agora
+            // moram numa fileira só de ícones logo abaixo do título do
+            // módulo, em vez de cada um ocupar uma linha inteira só pro
+            // próprio cabeçalho -- pedido do usuário ("reduza os blocos que
+            // são compatíveis a ícones, distribua numa linha só abaixo do
+            // título"). Tocar um ícone revela o conteúdo do bloco
+            // correspondente logo abaixo desta fileira (Gráficos continua
+            // sendo o primeiro conteúdo a aparecer, mesma regra de sempre);
+            // toque longo mostra o nome do ícone.
+            val showCalc = domainId == "safra" || domainId == "colheita" || domainId == "financeiro"
+            val showClima = domainId == "clima"
+            val showEstoqueFazenda = domainId == "estoque"
+            val showRecalcularArea = domainId == "safra" || domainId == "frota"
+            val showFiltros = filterableSelectCols.isNotEmpty()
+            val activeFilterCountGeneric = columnFilters.values.count { it.isNotBlank() }
+            item(key = "module-icon-row") {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    ModuleIconButton(
+                        ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
+                    ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
+                    if (showCalc) {
+                        ModuleIconButton(
+                            ModuleIconItem("calculators", Icons.Filled.Calculate, "Calculadoras", active = expandedBlocks["calculators"] == true),
+                        ) { expandedBlocks["calculators"] = expandedBlocks["calculators"] != true }
+                    }
+                    if (showClima) {
+                        ModuleIconButton(
+                            ModuleIconItem("clima-weather", Icons.Filled.WbSunny, "Previsão do tempo", active = expandedBlocks["clima-weather"] == true),
+                        ) { expandedBlocks["clima-weather"] = expandedBlocks["clima-weather"] != true }
+                    }
+                    if (showEstoqueFazenda) {
+                        ModuleIconButton(
+                            ModuleIconItem("estoque-fazenda", Icons.Filled.CompareArrows, "Transferências entre Fazendas", active = expandedBlocks["estoque-fazenda"] == true),
+                        ) { expandedBlocks["estoque-fazenda"] = expandedBlocks["estoque-fazenda"] != true }
+                    }
+                    if (showRecalcularArea) {
+                        ModuleIconButton(
+                            ModuleIconItem("recalcular-area", Icons.Filled.Refresh, "Recalcular Área"),
+                        ) { expandedBlocks["recalcular-area"] = expandedBlocks["recalcular-area"] != true }
+                    }
+                    if (showFiltros) {
+                        ModuleIconButton(
+                            ModuleIconItem("filtros", Icons.Filled.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
+                        ) { filtrosOverride = !filtrosExpanded }
+                    }
+                    if (dateCol != null) {
                         GenericPeriodoDropdown(
                             periodo = periodo,
                             intervalFrom = intervalFrom,
@@ -406,55 +434,38 @@ fun DomainListScreen(
                     }
                 }
             }
-            // Bloco "Filtros" colapsável (fechado por padrão) -- agora só com
-            // os dropdowns de coluna (Local/Categoria/Safra etc.), Período
-            // saiu pra cima como ícone isolado -- pedido do usuário
-            // ("consolide todos os filtros de cada módulo num bloco Filtros
-            // só, com ícone de filtro"), mesmo padrão visual do
-            // ClimaForecastCard (ícone + título + seta individual).
-            if (filterableSelectCols.isNotEmpty()) {
+            if (expandedBlocks["charts"] == true) {
+                item(key = "charts") { ModuleChartsCard(domainId, showHeader = false) }
+            }
+            if (showCalc && expandedBlocks["calculators"] == true) {
+                item(key = "calculators") { CalculatorsCard(domainId, showHeader = false) }
+            }
+            if (showClima && expandedBlocks["clima-weather"] == true) {
+                item(key = "clima-weather") { ClimaForecastCard(weather, showHeader = false) }
+            }
+            if (showEstoqueFazenda && expandedBlocks["estoque-fazenda"] == true) {
+                item(key = "estoque-fazenda") { TransferenciasFazendaCard(showHeader = false) }
+            }
+            if (showRecalcularArea && expandedBlocks["recalcular-area"] == true) {
+                item(key = "recalcular-area") { RecalcularAreaButton(domainId, showHeader = false) }
+            }
+            // Bloco "Filtros" -- conteúdo (só os dropdowns de coluna) some
+            // se abre pelo ícone da fileira acima, sem cabeçalho próprio
+            // (o ícone já cumpre esse papel agora).
+            if (showFiltros && filtrosExpanded) {
                 item(key = "filtros") {
                     Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Icon(Icons.Filled.FilterAlt, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                                Text(
-                                    "Filtros",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.weight(1f),
+                            filterableSelectCols.forEach { col ->
+                                val options = remember(records, col.key) {
+                                    records.mapNotNull { it[col.key] }.filter { it.isNotBlank() }.distinct().sorted()
+                                }
+                                ColumnFilterRow(
+                                    col = col,
+                                    options = options,
+                                    selected = columnFilters[col.key] ?: "",
+                                    onSelect = { columnFilters[col.key] = it },
                                 )
-                                if (columnFilters.values.any { it.isNotBlank() }) {
-                                    Text(
-                                        "${columnFilters.values.count { it.isNotBlank() }}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        modifier = Modifier.padding(end = 4.dp),
-                                    )
-                                }
-                                IconButton(onClick = { filtrosOverride = !filtrosExpanded }) {
-                                    Icon(
-                                        if (filtrosExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                        contentDescription = if (filtrosExpanded) "Recolher filtros" else "Expandir filtros",
-                                    )
-                                }
-                            }
-                            if (filtrosExpanded) {
-                                Column(modifier = Modifier.padding(top = 12.dp)) {
-                                    filterableSelectCols.forEach { col ->
-                                        val options = remember(records, col.key) {
-                                            records.mapNotNull { it[col.key] }.filter { it.isNotBlank() }.distinct().sorted()
-                                        }
-                                        ColumnFilterRow(
-                                            col = col,
-                                            options = options,
-                                            selected = columnFilters[col.key] ?: "",
-                                            onSelect = { columnFilters[col.key] = it },
-                                        )
-                                    }
-                                }
                             }
                         }
                     }
@@ -579,23 +590,27 @@ private const val CLIMA_REGIAO_PADRAO = "Tupaciguara/MG"
  * (ícone, máx/mín, chuva prevista em mm) -- bem mais completo que o mini
  * card "Clima (agora)" do Início, que só mostra o resumo do dia atual. */
 @Composable
-private fun ClimaForecastCard(weather: WeatherResponse?) {
-    var open by remember { mutableStateOf(false) }
+private fun ClimaForecastCard(weather: WeatherResponse?, showHeader: Boolean = true) {
+    // Sem cabeçalho, quem controla a visibilidade é a fileira de ícones do
+    // módulo (ModuleIconRow) -- já nasce aberto.
+    var open by remember { mutableStateOf(!showHeader) }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.Filled.WbSunny, contentDescription = null, tint = BrYellow, modifier = Modifier.padding(end = 8.dp))
-                Text(
-                    "Clima — $CLIMA_REGIAO_PADRAO",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f),
-                )
-                IconButton(onClick = { open = !open }) {
-                    Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
+            if (showHeader) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.WbSunny, contentDescription = null, tint = BrYellow, modifier = Modifier.padding(end = 8.dp))
+                    Text(
+                        "Clima — $CLIMA_REGIAO_PADRAO",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = { open = !open }) {
+                        Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
+                    }
                 }
             }
             if (open) {
