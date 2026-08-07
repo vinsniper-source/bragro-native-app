@@ -369,25 +369,25 @@ fun FinanceiroScreen(
                         }
                     }
                 }
-            // Posições seguem o esboço do usuário: Dados sozinho, ocupando
-            // a linha toda (é o bloco maior/mais alto, vertical); depois
-            // Operações+Armazenamento numa linha (o 1º bem mais largo, o 2º
-            // só tem 1 ícone); depois Arquivos+Distribuição na linha
-            // seguinte, no mesmo critério.
-            FinanceiroCategoryBlock(dadosBlock, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp))
+            // Dados recolhido (mais estreito) pra caber do lado, com os
+            // blocos que antes ficavam abaixo dele agora ao seu lado --
+            // pedido do usuário ("recolha o bloco dados para caber os
+            // blocos abaixo, do lado do bloco dados").
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                FinanceiroCategoryBlock(operacoesBlock, modifier = Modifier.weight(1.6f))
-                FinanceiroCategoryBlock(armazenamentoBlock, modifier = Modifier.weight(1f))
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FinanceiroCategoryBlock(arquivosBlock, modifier = Modifier.weight(1.6f))
-                FinanceiroCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(1f))
+                FinanceiroCategoryBlock(dadosBlock, modifier = Modifier.weight(1f))
+                Column(modifier = Modifier.weight(2f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FinanceiroCategoryBlock(operacoesBlock, modifier = Modifier.weight(1.6f))
+                        FinanceiroCategoryBlock(armazenamentoBlock, modifier = Modifier.weight(1f))
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FinanceiroCategoryBlock(arquivosBlock, modifier = Modifier.weight(1.6f))
+                        FinanceiroCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(1f))
+                    }
+                }
             }
 
             when {
