@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -50,6 +51,7 @@ import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material.icons.filled.WbSunny
@@ -62,6 +64,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -424,25 +427,27 @@ fun HomeScreen(
             // junto, ficando todos na MESMA linha da logo -- pedido do
             // usuário ("a logo também deverá saltar uma linha para colocá-
             // la, os ícones saltam uma linha e ficam na mesma linha da
-            // logo"). A TopAppBar em si fica vazia, só mantendo a área de
-            // status bar/elevação; logo nova (logo_bragro) + ícones moram no
-            // bloco com borda logo abaixo.
-            Column {
-                TopAppBar(title = {}, actions = {})
-                Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        // Logo nova, bem maior que antes (48dp -> 64dp) --
-                        // pedido do usuário ("aumente o tamanho dela...
-                        // início").
-                        Image(
-                            painter = painterResource(R.drawable.logo_bragro),
-                            contentDescription = "BRAgro",
-                            modifier = Modifier.height(64.dp),
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
+            // logo"). Sem TopAppBar vazia acima (ocupava uma linha em
+            // branco) e sem bloco/preenchimento em volta -- pedido do
+            // usuário ("suba uma linha junto com a logo e os ícones...
+            // retire o bloco e o preenchimento e coloque um traço da mesma
+            // tonalidade do modo claro/escuro embaixo e acima"); statusBar
+            // ainda respeitada via statusBarsPadding, só sem a altura extra
+            // do Material3 TopAppBar vazio.
+            Column(modifier = Modifier.statusBarsPadding()) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // Logo nova, ainda maior que antes -- pedido do usuário
+                    // repetiu ("aumente o tamanho da logo, login e início").
+                    Image(
+                        painter = painterResource(R.drawable.logo_bragro),
+                        contentDescription = "BRAgro",
+                        modifier = Modifier.height(96.dp),
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
                     // Ícone "Início" removido -- pedido do usuário ("retire a
                     // casinha"), era decorativo (onClick vazio, já estamos
                     // nesta tela).
@@ -558,7 +563,7 @@ fun HomeScreen(
                             Box(modifier = Modifier.padding(end = 8.dp).size(32.dp))
                         }
                     }
-                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         },
     ) { padding ->
@@ -629,8 +634,8 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        if (clima != null) ClimaCard(clima, viewModel.lastUpdatedAt.value, modifier = Modifier.weight(1f).fillMaxHeight())
-                        if (fx != null) CambioCard(fx, viewModel.lastUpdatedAt.value, modifier = Modifier.weight(1f).fillMaxHeight())
+                        if (clima != null) ClimaCard(clima, onRefresh = { viewModel.refresh() }, modifier = Modifier.weight(1f).fillMaxHeight())
+                        if (fx != null) CambioCard(fx, onRefresh = { viewModel.refresh() }, modifier = Modifier.weight(1f).fillMaxHeight())
                     }
                 }
             }
@@ -639,7 +644,7 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    weather?.commodities?.let { CotacoesCard(it, viewModel.lastUpdatedAt.value, modifier = Modifier.weight(1f).fillMaxHeight()) }
+                    weather?.commodities?.let { CotacoesCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.weight(1f).fillMaxHeight()) }
                     DestaquesCard(data, viewModel.lastUpdatedAt.value, modifier = Modifier.weight(1f).fillMaxHeight())
                 }
             }
@@ -936,6 +941,10 @@ private data class Kpi(
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val color: Color,
     val kind: KpiKind,
+    // Legenda menor, numa 2ª linha, abaixo do nome -- pedido do usuário
+    // ("ainda não há a descrição dentro do kpi"): antes só existia o
+    // "label" (nome do KPI), sem nenhum texto explicativo separado.
+    val description: String? = null,
 )
 
 // Redesenho pedido pelo usuário ("melhore o visual dos kpis, não precisa
@@ -956,7 +965,14 @@ private fun KpiGrid(data: HomeData) {
         // ("inverta as cores dos ícones dos kpis safra e financeiro").
         // Descrição mais explícita -- pedido do usuário ("no bloco kpi
         // financeiro tem que aparecer a descrição").
-        Kpi("Saldo em aberto (Financeiro)", formatMoneyBrl(data.saldoFinanceiroAberto), Icons.Filled.AccountBalanceWallet, BrBlue, KpiKind.VALOR),
+        Kpi(
+            "Financeiro",
+            formatMoneyBrl(data.saldoFinanceiroAberto),
+            Icons.Filled.AccountBalanceWallet,
+            BrBlue,
+            KpiKind.VALOR,
+            description = "Saldo em aberto (a receber − a pagar)",
+        ),
         Kpi("Itens no estoque", data.itensEstoque.toString(), Icons.Filled.Inventory2, BrYellow, KpiKind.QUANTIDADE),
         Kpi("Operações de safra em andamento", data.safrasAtivas.toString(), Icons.Filled.Eco, BrGreen, KpiKind.QUANTIDADE),
         Kpi("Colaboradores ativos", data.colaboradoresAtivos.toString(), Icons.Filled.Groups, BrGreen, KpiKind.QUANTIDADE),
@@ -991,16 +1007,26 @@ private fun KpiGrid(data: HomeData) {
                                 Icon(kpi.icon, contentDescription = null, tint = kpi.color, modifier = Modifier.size(20.dp))
                             }
                             Spacer(Modifier.width(10.dp))
-                            // Esquerda: nome do KPI.
-                            Text(
-                                kpi.label,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 2,
-                                minLines = 2,
-                                lineHeight = MaterialTheme.typography.bodySmall.lineHeight * 1.3f,
-                                modifier = Modifier.weight(1f),
-                            )
+                            // Esquerda: nome do KPI (linha 1) + descrição
+                            // (linha 2, sempre presente -- mesmo espaço
+                            // reservado em todo card, com ou sem descrição,
+                            // pra manter a altura homogênea entre eles).
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    kpi.label,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Text(
+                                    kpi.description ?: " ",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
                             Spacer(Modifier.width(6.dp))
                             // Centro: quantidade (contagem simples).
                             Box(modifier = Modifier.width(36.dp), contentAlignment = Alignment.Center) {
@@ -1055,41 +1081,35 @@ private fun MiniCardHeader(title: String, icon: androidx.compose.ui.graphics.vec
     }
 }
 
-// Ícone da categoria (sol/câmbio/grãos) movido pra dentro do bloco de
-// "Atualizado em ..." no canto superior direito -- pedido do usuário ("kpi
-// clima, câmbio, cotações de grãos, coloque o ícone dentro do bloco de
-// atualizar, no lado superior direito"). Título fica solto à esquerda, sem
-// o ícone do lado (só esses 3 cards -- Destaques mantém o layout antigo,
-// que já tem sua própria linha de atualização embaixo).
+// Voltou pro layout original (ícone da categoria à esquerda, junto do
+// título, igual MiniCardHeader) -- pedido do usuário ("volte a posição
+// anterior do kpi"). Sem data/hora por extenso -- pedido do usuário ("tire
+// data e hora"); só um ícone pequeno de atualizar no canto superior
+// direito, clicável, dispara viewModel.refresh() (só esses 3 cards --
+// Destaques mantém seu próprio layout/atualização embaixo).
 @Composable
-private fun MiniCardHeaderTopRight(
+private fun MiniCardHeaderWithRefresh(
     title: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     color: Color,
     titleStyle: androidx.compose.ui.text.TextStyle,
-    updatedAtMillis: Long?,
+    onRefresh: () -> Unit,
 ) {
-    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        SectionBadgeIcon(icon, color, size = 22.dp)
+        Spacer(Modifier.width(6.dp))
         Text(title, style = titleStyle, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-        Column(horizontalAlignment = Alignment.End) {
-            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
-            if (updatedAtMillis != null) {
-                Text(
-                    formatUpdatedAt(updatedAtMillis),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                )
-            }
+        IconButton(onClick = onRefresh, modifier = Modifier.size(24.dp)) {
+            Icon(Icons.Filled.Refresh, contentDescription = "Atualizar", modifier = Modifier.size(16.dp))
         }
     }
 }
 
 @Composable
-private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, updatedAtMillis: Long? = null, modifier: Modifier = Modifier.fillMaxWidth()) {
+private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            MiniCardHeaderTopRight("Clima (agora)", Icons.Filled.WbSunny, BrYellow, MaterialTheme.typography.titleMedium, updatedAtMillis)
+            MiniCardHeaderWithRefresh("Clima (agora)", Icons.Filled.WbSunny, BrYellow, MaterialTheme.typography.titleMedium, onRefresh)
             // Temperatura atual centralizada, máx/mín centralizado na linha
             // debaixo -- pedido do usuário ("kpi clima colocar °C
             // centralizado e max °C/ min ºC na linha debaixo centralizado").
@@ -1110,10 +1130,10 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, updatedAt
 }
 
 @Composable
-private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, updatedAtMillis: Long? = null, modifier: Modifier = Modifier.fillMaxWidth()) {
+private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            MiniCardHeaderTopRight("Câmbio (agora)", Icons.Filled.CurrencyExchange, BrGreen, MaterialTheme.typography.titleMedium, updatedAtMillis)
+            MiniCardHeaderWithRefresh("Câmbio (agora)", Icons.Filled.CurrencyExchange, BrGreen, MaterialTheme.typography.titleMedium, onRefresh)
             Row { Text("Dólar: "); Text(fx.usdBrl?.let { formatMoneyBrl(it) } ?: "—", fontWeight = FontWeight.Bold) }
             Row { Text("Euro: "); Text(fx.eurBrl?.let { formatMoneyBrl(it) } ?: "—", fontWeight = FontWeight.Bold) }
         }
@@ -1126,12 +1146,12 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, updatedAtMi
 // negrito"): título titleMedium, padding 16dp, uma Row por item com o rótulo
 // sem negrito seguido do valor em negrito, cada um na sua própria linha.
 @Composable
-private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, updatedAtMillis: Long? = null, modifier: Modifier = Modifier.fillMaxWidth()) {
+private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             // Renomeado -- pedido do usuário ("altere o kpi cotações
             // agrícolas para cotações grãos").
-            MiniCardHeaderTopRight("Cotações Grãos", Icons.Filled.Agriculture, BrGreen, MaterialTheme.typography.titleMedium, updatedAtMillis)
+            MiniCardHeaderWithRefresh("Cotações Grãos", Icons.Filled.Agriculture, BrGreen, MaterialTheme.typography.titleMedium, onRefresh)
             listOfNotNull(com.soja, com.milho, com.sorgo).forEach { q ->
                 Row {
                     Text("${q.nome}: ")
