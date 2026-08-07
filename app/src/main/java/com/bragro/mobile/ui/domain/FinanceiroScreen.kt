@@ -2,7 +2,6 @@ package com.bragro.mobile.ui.domain
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,26 +16,30 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import android.app.Application
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CallMade
+import androidx.compose.material.icons.filled.CallReceived
 import androidx.compose.material.icons.filled.CallSplit
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.UnfoldLess
 import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.IosShare
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.TrendingUp
@@ -227,17 +230,23 @@ fun FinanceiroScreen(
             // Seletor de visão (Todos/Contas a Pagar/Contas a Receber/
             // Conciliado/Fluxo de Caixa/Rateio Direto/Rateio Indireto) virou
             // ícone (em vez de chip com texto) dentro de um bloco com borda
-            // fina -- pedido do usuário ("transforme os botões [...] em
-            // ícones sem mexer na estrutura dos blocos, coloque uma borda
-            // fina em volta do bloco"); toque no ícone já alterna o título
-            // pro nome da visão (ver título acima), então dispensa o rótulo.
+            // fina, título "Gestão Financeira" acima -- pedido do usuário
+            // ("no bloco 1 acima dele crie o título gestão financeira e
+            // distribua os ícones dentro do bloco que chegue até o final do
+            // bloco"). Sem scroll horizontal -- SpaceEvenly espalha os 7
+            // ícones pela largura toda do bloco; toque no ícone já alterna o
+            // título pro nome da visão (ver título acima), dispensando o
+            // rótulo escrito.
+            Text(
+                "Gestão Financeira",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 2.dp),
+            )
             Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
                 ) {
                     FinanceiroView.values().forEach { v ->
                         ModuleIconButton(
@@ -249,28 +258,47 @@ fun FinanceiroScreen(
 
             Spacer(modifier = Modifier.size(8.dp))
 
-            // Gráficos, Calculadoras, Recalcular Vencimentos, Período e
-            // Filtros (Banco) -- antes cada um com seu próprio cabeçalho ou
-            // numa linha separada, agora numa fileira só de ícones dentro de
-            // um bloco com borda fina, igual ao módulo genérico
-            // (DomainListScreen.kt).
-            Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                ) {
+            // Bloco 2 desmembrado em 5 categorias -- pedido do usuário
+            // ("desmembre todo bloco 2 segmentando esses blocos"). Recolher
+            // tudo agora só fecha os blocos de Gráficos/Calculadoras/
+            // Recalcular Vencimentos que estiverem abertos -- pedido do
+            // usuário ("a única função será recolher todos os blocos
+            // abertos completamente"), não afeta mais os cards de
+            // lançamento (cada um já tem sua própria setinha).
+            val finBlocks = listOf(
+                FinBlockSpec("Dados", MaterialTheme.typography.titleSmall, vertical = true) {
                     if (!isQuickView) {
                         ModuleIconButton(
                             ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
                         ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
+                    }
+                    if (cfg != null) {
+                        ColumnsPickerButton(
+                            allColumns = viewColumns,
+                            visibleKeys = customColumnKeys ?: viewColumns.map { it.key }.toSet(),
+                            onChange = { customColumnKeys = it },
+                        )
+                    }
+                    // Ícone diferente de ExpandLess/ExpandMore (usados nos
+                    // cards de lançamento) -- mesmo motivo de sempre
+                    // (ícones iguais, funções diferentes, confundia).
+                    IconButton(onClick = {
+                        expandedBlocks["charts"] = false
+                        expandedBlocks["calculators"] = false
+                        expandedBlocks["recalcular-vencimentos"] = false
+                    }) {
+                        Icon(Icons.Filled.UnfoldLess, contentDescription = "Recolher tudo")
+                    }
+                },
+                FinBlockSpec("Operações", MaterialTheme.typography.titleSmall, vertical = false) {
+                    if (!isQuickView) {
                         ModuleIconButton(
                             ModuleIconItem("calculators", Icons.Filled.Calculate, "Calculadoras", active = expandedBlocks["calculators"] == true),
                         ) { expandedBlocks["calculators"] = expandedBlocks["calculators"] != true }
-                        // Icone diferente do "Atualizar" da AppBar (Refresh)
-                        // -- mesmo icone pra acoes diferentes na mesma tela
-                        // confundia, pedido do usuario ("substitua icones
-                        // que estejam iguais mas com funcoes diferentes").
+                        // Icone diferente do "Atualizar" -- mesmo icone pra
+                        // acoes diferentes na mesma tela confundia, pedido
+                        // do usuario ("substitua icones que estejam iguais
+                        // mas com funcoes diferentes").
                         ModuleIconButton(
                             ModuleIconItem("recalcular-vencimentos", Icons.Filled.Autorenew, "Recalcular Vencimentos", active = expandedBlocks["recalcular-vencimentos"] == true),
                         ) { expandedBlocks["recalcular-vencimentos"] = expandedBlocks["recalcular-vencimentos"] != true }
@@ -286,23 +314,12 @@ fun FinanceiroScreen(
                     if (view == FinanceiroView.CONCILIADO) {
                         BancoDropdown(banco = banco, options = bancoOptions, onSelect = { banco = it })
                     }
-                    // A partir daqui: ícones que antes moravam na AppBar
-                    // (Atualizar/Recolher-Expandir/Extrato/Importar XML/
-                    // Colunas/Exportar) -- pedido do usuário ("os ícones que
-                    // couberem no mesmo bloco unifique os blocos"). Mesmo
-                    // comportamento de antes, só mudou de lugar.
                     IconButton(onClick = { viewModel.refresh("financeiro") }) {
                         if (refreshing) CircularProgressIndicator(modifier = Modifier.padding(4.dp).size(20.dp))
                         else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
                     }
-                    if (filtered.isNotEmpty()) {
-                        IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear() }) {
-                            Icon(
-                                if (allExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                contentDescription = if (allExpanded) "Recolher todos os lançamentos" else "Expandir todos os lançamentos",
-                            )
-                        }
-                    }
+                },
+                FinBlockSpec("Arquivos", MaterialTheme.typography.titleSmall, vertical = false) {
                     if (!isQuickView) {
                         IconButton(onClick = onOpenBankImport) {
                             Icon(Icons.Filled.Upload, contentDescription = "Extrato bancário")
@@ -311,21 +328,55 @@ fun FinanceiroScreen(
                             Icon(Icons.Filled.Description, contentDescription = "Importar XML (NF-e)")
                         }
                     }
-                    if (cfg != null) {
-                        ColumnsPickerButton(
-                            allColumns = viewColumns,
-                            visibleKeys = customColumnKeys ?: viewColumns.map { it.key }.toSet(),
-                            onChange = { customColumnKeys = it },
-                        )
-                        if (filtered.isNotEmpty()) {
-                            IconButton(onClick = { exportCsv(context, "financeiro-${view.name.lowercase()}", effectiveColumns, filtered) }) {
-                                Icon(Icons.Filled.FileDownload, contentDescription = "Exportar CSV")
-                            }
-                            IconButton(onClick = { HtmlPrinter.printList(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) }) {
-                                Icon(Icons.Filled.Print, contentDescription = "Imprimir / exportar PDF")
-                            }
+                    if (cfg != null && filtered.isNotEmpty()) {
+                        IconButton(onClick = { exportCsv(context, "financeiro-${view.name.lowercase()}", effectiveColumns, filtered) }) {
+                            Icon(Icons.Filled.FileDownload, contentDescription = "Exportar CSV")
+                        }
+                        // Ícone próprio pra PDF (antes compartilhava o
+                        // "Print" com Imprimir) -- pedido do usuário
+                        // ("criar ícone pdf").
+                        IconButton(onClick = { HtmlPrinter.printList(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) }) {
+                            Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar PDF")
                         }
                     }
+                },
+                FinBlockSpec("Armazenamento", MaterialTheme.typography.bodySmall, vertical = false) {
+                    // Só esse ícone no bloco -- pedido do usuário ("será
+                    // apenas um ícone offline, troque o ícone por uma
+                    // nuvem"). Reflete o estado de conexão (offline usa os
+                    // dados salvos no aparelho).
+                    IconButton(onClick = {
+                        val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                        android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                    }) {
+                        Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Armazenamento")
+                    }
+                },
+                FinBlockSpec("Distribuição", MaterialTheme.typography.bodyMedium, vertical = false) {
+                    if (cfg != null && filtered.isNotEmpty()) {
+                        IconButton(onClick = { HtmlPrinter.printList(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) }) {
+                            Icon(Icons.Filled.Print, contentDescription = "Imprimir")
+                        }
+                        // Ícone trocado (não é mais o "Share" padrão) --
+                        // pedido do usuário ("troque o ícone de
+                        // compartilhar").
+                        IconButton(onClick = { shareFinanceiroResumo(context, view, effectiveColumns, filtered) }) {
+                            Icon(Icons.Filled.IosShare, contentDescription = "Compartilhar")
+                        }
+                    }
+                },
+            )
+            // Pelo menos 2 blocos por linha -- pedido do usuário
+            // ("distribua esses blocos pelo menos dois em cada linha").
+            finBlocks.chunked(2).forEach { rowBlocks ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    rowBlocks.forEach { spec ->
+                        FinanceiroCategoryBlock(spec, modifier = Modifier.weight(1f))
+                    }
+                    if (rowBlocks.size == 1) Spacer(modifier = Modifier.weight(1f))
                 }
             }
 
@@ -492,6 +543,72 @@ private fun ConciliarDot(conciliado: Boolean) {
     )
 }
 
+// Bloco 2 desmembrado em 5 categorias -- pedido do usuário ("desmembre todo
+// bloco 2 segmentando esses blocos"): cada categoria vira um Card próprio
+// com título acima (proporcional ao tamanho/quantidade de ícones do bloco)
+// e o conteúdo em fileira (horizontal) ou coluna (vertical, só o bloco
+// "Dados"). Distribuídos pelo menos 2 por linha (ver finBlocks, mais abaixo,
+// dentro de FinanceiroScreen).
+private data class FinBlockSpec(
+    val title: String,
+    val titleStyle: androidx.compose.ui.text.TextStyle,
+    val vertical: Boolean,
+    val content: @Composable () -> Unit,
+)
+
+@Composable
+private fun FinanceiroCategoryBlock(spec: FinBlockSpec, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Text(
+            spec.title,
+            style = spec.titleStyle,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+        )
+        Card(modifier = Modifier.fillMaxWidth()) {
+            if (spec.vertical) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) { spec.content() }
+            } else {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) { spec.content() }
+            }
+        }
+    }
+}
+
+/** "Compartilhar" (bloco Distribuição) -- pedido do usuário ("no bloco
+ * Distribuição... imprimir e compartilhar"): monta um resumo em texto puro
+ * (rótulo: valor por lançamento) e abre o menu de compartilhar do Android --
+ * mesma infraestrutura já usada por exportCsv (ver shareTextFile). */
+private fun shareFinanceiroResumo(
+    context: android.content.Context,
+    view: FinanceiroView,
+    columns: List<com.bragro.mobile.data.model.ColumnConfig>,
+    records: List<Map<String, String?>>,
+) {
+    val texto = buildString {
+        appendLine("Financeiro — ${view.label}")
+        appendLine()
+        records.forEach { record ->
+            columns.forEach { col ->
+                val v = record[col.key]
+                if (!v.isNullOrBlank()) {
+                    appendLine("${col.label}: ${if (col.money) formatMoneyValue(v) else displayValueFor(col.key, v, col.type)}")
+                }
+            }
+            appendLine("—")
+        }
+    }
+    val fileName = "financeiro-${view.name.lowercase()}-resumo.txt"
+    com.bragro.mobile.ui.util.shareTextFile(context, fileName, "text/plain", texto)
+}
+
 /** Botão-dropdown "Período" -- 8 categorias de recorrência/vencimento + um
  * intervalo de datas manual (De/Até), espelho do dropdown Período do site
  * (data-table.tsx). Em Contas a Pagar/Receber as categorias viram janela de
@@ -599,10 +716,16 @@ private fun BancoDropdown(banco: String?, options: List<LookupEntity>, onSelect:
  * ("transforme os botões [...] em ícones"), um bem diferente do outro pra
  * não confundir (setas opostas pra Pagar/Receber, check pra Conciliado,
  * tendência pra Fluxo de Caixa, split/árvore pros dois Rateios). */
+// Pagar/Receber trocados de ArrowUpward/ArrowDownward pra CallMade/
+// CallReceived -- pedido do usuário ("substitua os ícones de a pagar e
+// receber, não está intuitivo"): setas simples de cima/baixo confundiam
+// (pareciam ordenação, não fluxo de caixa); CallMade/CallReceived (seta
+// saindo/entrando de um canto) é o par clássico de "saída"/"entrada" de
+// dinheiro, bem mais claro.
 private fun financeiroViewIcon(v: FinanceiroView) = when (v) {
     FinanceiroView.TODOS -> Icons.Filled.ViewList
-    FinanceiroView.PAGAR -> Icons.Filled.ArrowUpward
-    FinanceiroView.RECEBER -> Icons.Filled.ArrowDownward
+    FinanceiroView.PAGAR -> Icons.Filled.CallMade
+    FinanceiroView.RECEBER -> Icons.Filled.CallReceived
     FinanceiroView.CONCILIADO -> Icons.Filled.CheckCircle
     FinanceiroView.FLUXO -> Icons.Filled.TrendingUp
     FinanceiroView.RATEIO_DIRETO -> Icons.Filled.CallSplit
