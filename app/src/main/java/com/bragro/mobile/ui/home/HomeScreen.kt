@@ -4,7 +4,7 @@ import android.app.Application
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -419,20 +419,30 @@ fun HomeScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Tamanho aumentado consideravelmente -- pedido do
-                        // usuário ("aumentar o tamanho consideravelmente
-                        // login e início").
+            // Início tem regra diferente do resto do app: aqui a logo (e não
+            // um título em texto) que salta uma linha, e os ícones saltam
+            // junto, ficando todos na MESMA linha da logo -- pedido do
+            // usuário ("a logo também deverá saltar uma linha para colocá-
+            // la, os ícones saltam uma linha e ficam na mesma linha da
+            // logo"). A TopAppBar em si fica vazia, só mantendo a área de
+            // status bar/elevação; logo nova (logo_bragro) + ícones moram no
+            // bloco com borda logo abaixo.
+            Column {
+                TopAppBar(title = {}, actions = {})
+                Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        // Logo nova, bem maior que antes (48dp -> 64dp) --
+                        // pedido do usuário ("aumente o tamanho dela...
+                        // início").
                         Image(
-                            painter = painterResource(R.drawable.logo_oficial_header),
+                            painter = painterResource(R.drawable.logo_bragro),
                             contentDescription = "BRAgro",
-                            modifier = Modifier.height(48.dp),
+                            modifier = Modifier.height(64.dp),
                         )
-                    }
-                },
-                actions = {
+                        Spacer(modifier = Modifier.weight(1f))
                     // Ícone "Início" removido -- pedido do usuário ("retire a
                     // casinha"), era decorativo (onClick vazio, já estamos
                     // nesta tela).
@@ -544,11 +554,12 @@ fun HomeScreen(
                                 )
                             }
                         }
-                    } else {
-                        Box(modifier = Modifier.padding(end = 8.dp).size(32.dp))
+                        } else {
+                            Box(modifier = Modifier.padding(end = 8.dp).size(32.dp))
+                        }
                     }
-                },
-            )
+                }
+            }
         },
     ) { padding ->
         val data = home
@@ -618,8 +629,8 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        if (clima != null) ClimaCard(clima, modifier = Modifier.weight(1f).fillMaxHeight())
-                        if (fx != null) CambioCard(fx, modifier = Modifier.weight(1f).fillMaxHeight())
+                        if (clima != null) ClimaCard(clima, viewModel.lastUpdatedAt.value, modifier = Modifier.weight(1f).fillMaxHeight())
+                        if (fx != null) CambioCard(fx, viewModel.lastUpdatedAt.value, modifier = Modifier.weight(1f).fillMaxHeight())
                     }
                 }
             }
@@ -628,7 +639,7 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    weather?.commodities?.let { CotacoesCard(it, modifier = Modifier.weight(1f).fillMaxHeight()) }
+                    weather?.commodities?.let { CotacoesCard(it, viewModel.lastUpdatedAt.value, modifier = Modifier.weight(1f).fillMaxHeight()) }
                     DestaquesCard(data, viewModel.lastUpdatedAt.value, modifier = Modifier.weight(1f).fillMaxHeight())
                 }
             }
@@ -787,16 +798,17 @@ private fun CollapsibleHeader(title: String, expanded: Boolean, onToggle: () -> 
     }
 }
 
-// Badge circular colorido, mesmo visual dos ícones dos KPIs (Box + fundo com
-// alpha 0.14 + ícone tintado no meio) -- reaproveitado nos cabeçalhos de
-// Mural de Avisos e Central de Alertas, pedido explícito do usuário.
+// Badge circular colorido -- pedido do usuário ("retire o preenchimento
+// verde e deixe apenas a borda em verde, em todo app"): era um círculo com
+// fundo colorido (alpha 0.14), agora é só o contorno fino, sem
+// preenchimento, mesmo critério da borda dos Cards (AppCard.kt).
 @Composable
 private fun SectionBadgeIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color, size: androidx.compose.ui.unit.Dp = 28.dp) {
     Box(
         modifier = Modifier
             .size(size)
             .clip(CircleShape)
-            .background(color.copy(alpha = 0.14f)),
+            .border(1.dp, color, CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(size * 0.55f))
@@ -966,11 +978,14 @@ private fun KpiGrid(data: HomeData) {
                         // pra entre as 2 linhas do rótulo -- alinhado no topo,
                         // o valor sempre fica ao lado da 1ª linha do rótulo.
                         Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                            // Só contorno, sem preenchimento -- pedido do
+                            // usuário ("retire o preenchimento verde e deixe
+                            // apenas a borda em verde, em todo app").
                             Box(
                                 modifier = Modifier
                                     .size(36.dp)
                                     .clip(CircleShape)
-                                    .background(kpi.color.copy(alpha = 0.14f)),
+                                    .border(1.dp, kpi.color, CircleShape),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Icon(kpi.icon, contentDescription = null, tint = kpi.color, modifier = Modifier.size(20.dp))
@@ -1040,11 +1055,41 @@ private fun MiniCardHeader(title: String, icon: androidx.compose.ui.graphics.vec
     }
 }
 
+// Ícone da categoria (sol/câmbio/grãos) movido pra dentro do bloco de
+// "Atualizado em ..." no canto superior direito -- pedido do usuário ("kpi
+// clima, câmbio, cotações de grãos, coloque o ícone dentro do bloco de
+// atualizar, no lado superior direito"). Título fica solto à esquerda, sem
+// o ícone do lado (só esses 3 cards -- Destaques mantém o layout antigo,
+// que já tem sua própria linha de atualização embaixo).
 @Composable
-private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, modifier: Modifier = Modifier.fillMaxWidth()) {
+private fun MiniCardHeaderTopRight(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    color: Color,
+    titleStyle: androidx.compose.ui.text.TextStyle,
+    updatedAtMillis: Long?,
+) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+        Text(title, style = titleStyle, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        Column(horizontalAlignment = Alignment.End) {
+            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
+            if (updatedAtMillis != null) {
+                Text(
+                    formatUpdatedAt(updatedAtMillis),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, updatedAtMillis: Long? = null, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            MiniCardHeader("Clima (agora)", Icons.Filled.WbSunny, BrYellow, MaterialTheme.typography.titleMedium)
+            MiniCardHeaderTopRight("Clima (agora)", Icons.Filled.WbSunny, BrYellow, MaterialTheme.typography.titleMedium, updatedAtMillis)
             // Temperatura atual centralizada, máx/mín centralizado na linha
             // debaixo -- pedido do usuário ("kpi clima colocar °C
             // centralizado e max °C/ min ºC na linha debaixo centralizado").
@@ -1065,10 +1110,10 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, modifier:
 }
 
 @Composable
-private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, modifier: Modifier = Modifier.fillMaxWidth()) {
+private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, updatedAtMillis: Long? = null, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            MiniCardHeader("Câmbio (agora)", Icons.Filled.CurrencyExchange, BrGreen, MaterialTheme.typography.titleMedium)
+            MiniCardHeaderTopRight("Câmbio (agora)", Icons.Filled.CurrencyExchange, BrGreen, MaterialTheme.typography.titleMedium, updatedAtMillis)
             Row { Text("Dólar: "); Text(fx.usdBrl?.let { formatMoneyBrl(it) } ?: "—", fontWeight = FontWeight.Bold) }
             Row { Text("Euro: "); Text(fx.eurBrl?.let { formatMoneyBrl(it) } ?: "—", fontWeight = FontWeight.Bold) }
         }
@@ -1081,12 +1126,12 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, modifier: M
 // negrito"): título titleMedium, padding 16dp, uma Row por item com o rótulo
 // sem negrito seguido do valor em negrito, cada um na sua própria linha.
 @Composable
-private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, modifier: Modifier = Modifier.fillMaxWidth()) {
+private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, updatedAtMillis: Long? = null, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             // Renomeado -- pedido do usuário ("altere o kpi cotações
             // agrícolas para cotações grãos").
-            MiniCardHeader("Cotações Grãos", Icons.Filled.Agriculture, BrGreen, MaterialTheme.typography.titleMedium)
+            MiniCardHeaderTopRight("Cotações Grãos", Icons.Filled.Agriculture, BrGreen, MaterialTheme.typography.titleMedium, updatedAtMillis)
             listOfNotNull(com.soja, com.milho, com.sorgo).forEach { q ->
                 Row {
                     Text("${q.nome}: ")

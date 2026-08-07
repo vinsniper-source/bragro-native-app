@@ -58,8 +58,11 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -260,81 +263,11 @@ fun DomainListScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar") }
                 },
-                actions = {
-                    // Fase 3: o ViewModel ja tinha "refresh(domainId)"/
-                    // "refreshing" prontos desde a Fase 1, mas nada na tela
-                    // deixava o usuario disparar manualmente -- so
-                    // atualizava sozinho ao abrir. Mesmo padrao de botao de
-                    // atualizar ja usado em Dashboard/DRE/Analises.
-                    IconButton(onClick = { viewModel.refresh(domainId) }) {
-                        if (refreshing) CircularProgressIndicator(modifier = Modifier.padding(4.dp))
-                        else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
-                    }
-                    // Seta única de recolher/expandir tudo de uma vez -- pedido
-                    // do usuário ("crie uma única seta para recolher e
-                    // expandir tudo de uma vez"), substitui o par de ícones
-                    // Unfold que existia antes. Controla tanto os cards de
-                    // lançamento quanto o bloco de Filtros abaixo; cada um
-                    // ainda tem sua própria setinha individual para exceções.
-                    if (filteredRecords.isNotEmpty() || dateCol != null) {
-                        IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear(); filtrosOverride = null }) {
-                            Icon(
-                                if (allExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                contentDescription = if (allExpanded) "Recolher tudo" else "Expandir tudo",
-                            )
-                        }
-                    }
-                    // Fase 2 (Task #41): imprime/exporta em PDF a lista
-                    // atual (registros ja cacheados no Room) via o dialogo
-                    // de impressao nativo do Android -- mesmo principio do
-                    // botao "Exportar PDF" do site (tabela HTML + impressao
-                    // do sistema, sem gerar PDF no servidor).
-                    val cfg = config
-                    if (cfg != null) {
-                        // Pedido do usuário: "coloque botão colunas como em
-                        // plataforma para selecionar o cabeçalho que quiser
-                        // e coloque botão csv/pdf" -- espelho do toolbar de
-                        // data-table.tsx (Colunas + CSV/PDF), afetando tanto
-                        // a lista na tela quanto os dois exports.
-                        ColumnsPickerButton(
-                            allColumns = cfg.columns.filter { !it.hideInTable },
-                            visibleKeys = visibleKeys,
-                            onChange = { customVisibleKeys = it },
-                        )
-                        // CSV + Imprimir/PDF unificados num só ícone (menu) --
-                        // pedido do usuário ("reorganize os ícones nas telas
-                        // com excesso deles"), mesmo critério já usado no
-                        // site (botão único "CSV/PDF" em data-table.tsx) em
-                        // vez de 2 IconButton separados disputando espaço no
-                        // cabeçalho ao lado de Colunas/Recolher/Atualizar.
-                        if (filteredRecords.isNotEmpty()) {
-                            var exportMenuOpen by remember { mutableStateOf(false) }
-                            Box {
-                                IconButton(onClick = { exportMenuOpen = true }) {
-                                    Icon(Icons.Filled.FileDownload, contentDescription = "Exportar (CSV/PDF)")
-                                }
-                                DropdownMenu(expanded = exportMenuOpen, onDismissRequest = { exportMenuOpen = false }) {
-                                    DropdownMenuItem(
-                                        text = { Text("Exportar CSV") },
-                                        leadingIcon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },
-                                        onClick = {
-                                            exportMenuOpen = false
-                                            exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
-                                        },
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("Imprimir / exportar PDF") },
-                                        leadingIcon = { Icon(Icons.Filled.Print, contentDescription = null) },
-                                        onClick = {
-                                            exportMenuOpen = false
-                                            HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys)
-                                        },
-                                    )
-                                }
-                            }
-                        }
-                    }
-                },
+                // Sem "actions" aqui -- Atualizar/Recolher-Expandir/Colunas/
+                // Exportar mudaram pra fileira de ícones abaixo do título
+                // (item "module-icon-row"), pedido do usuário ("os ícones
+                // que estavam do lado do título, coloque-os saltando uma
+                // linha abaixo do título, e os insira no bloco").
             )
         },
         floatingActionButton = {
@@ -483,6 +416,56 @@ fun DomainListScreen(
                             onInterval = { from, to -> intervalFrom = from; intervalTo = to; if (from.isNotBlank() || to.isNotBlank()) periodo = null },
                         )
                     }
+                    // A partir daqui: ícones que antes moravam na AppBar
+                    // (Atualizar/Recolher-Expandir/Colunas/Exportar) --
+                    // pedido do usuário ("os ícones que estavam do lado do
+                    // título, saltando uma linha, insira-os no bloco"; "os
+                    // ícones que couberem no mesmo bloco unifique os
+                    // blocos"). Mesmo comportamento de antes, só mudou de
+                    // lugar.
+                    IconButton(onClick = { viewModel.refresh(domainId) }) {
+                        if (refreshing) CircularProgressIndicator(modifier = Modifier.padding(4.dp).size(20.dp))
+                        else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
+                    }
+                    if (filteredRecords.isNotEmpty() || dateCol != null) {
+                        IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear(); filtrosOverride = null }) {
+                            Icon(
+                                if (allExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                contentDescription = if (allExpanded) "Recolher tudo" else "Expandir tudo",
+                            )
+                        }
+                    }
+                    ColumnsPickerButton(
+                        allColumns = cfg.columns.filter { !it.hideInTable },
+                        visibleKeys = visibleKeys,
+                        onChange = { customVisibleKeys = it },
+                    )
+                    if (filteredRecords.isNotEmpty()) {
+                        var exportMenuOpen by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { exportMenuOpen = true }) {
+                                Icon(Icons.Filled.FileDownload, contentDescription = "Exportar (CSV/PDF)")
+                            }
+                            DropdownMenu(expanded = exportMenuOpen, onDismissRequest = { exportMenuOpen = false }) {
+                                DropdownMenuItem(
+                                    text = { Text("Exportar CSV") },
+                                    leadingIcon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },
+                                    onClick = {
+                                        exportMenuOpen = false
+                                        exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Imprimir / exportar PDF") },
+                                    leadingIcon = { Icon(Icons.Filled.Print, contentDescription = null) },
+                                    onClick = {
+                                        exportMenuOpen = false
+                                        HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys)
+                                    },
+                                )
+                            }
+                        }
+                    }
                 }
                 }
             }
@@ -508,16 +491,26 @@ fun DomainListScreen(
                 item(key = "filtros") {
                     Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            filterableSelectCols.forEach { col ->
-                                val options = remember(records, col.key) {
-                                    records.mapNotNull { it[col.key] }.filter { it.isNotBlank() }.distinct().sorted()
+                            // 3 colunas por linha -- pedido do usuário
+                            // ("os filtros coloquem em tres colunas dentro
+                            // do mesmo bloco"); quebra pra linha de baixo
+                            // se sobrar filtro.
+                            filterableSelectCols.chunked(3).forEach { rowCols ->
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    rowCols.forEach { col ->
+                                        val options = remember(records, col.key) {
+                                            records.mapNotNull { it[col.key] }.filter { it.isNotBlank() }.distinct().sorted()
+                                        }
+                                        ColumnFilterRow(
+                                            col = col,
+                                            options = options,
+                                            selected = columnFilters[col.key] ?: "",
+                                            onSelect = { columnFilters[col.key] = it },
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                    }
+                                    repeat(3 - rowCols.size) { Spacer(Modifier.weight(1f)) }
                                 }
-                                ColumnFilterRow(
-                                    col = col,
-                                    options = options,
-                                    selected = columnFilters[col.key] ?: "",
-                                    onSelect = { columnFilters[col.key] = it },
-                                )
                             }
                         }
                     }
@@ -620,8 +613,15 @@ private fun RecordFieldLine(col: com.bragro.mobile.data.model.ColumnConfig, valu
     if (isStatusLikeColumn(col.key)) {
         StatusBadge(value)
     } else {
+        val displayValue = if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)
+        // Negrito só no valor preenchido, cabeçalho fica normal/mais claro --
+        // pedido do usuário ("coloque ou o cabeçalho ou o campo preenchido em
+        // negrito"), assim a linha não fica toda em negrito nem toda plana.
         Text(
-            "${col.label}: ${if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)}",
+            buildAnnotatedString {
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) { append("${col.label}: ") }
+                withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(displayValue) }
+            },
             style = MaterialTheme.typography.bodySmall,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
@@ -798,13 +798,20 @@ private fun ColumnFilterRow(
     options: List<String>,
     selected: String,
     onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    Column(modifier = Modifier.padding(bottom = 10.dp)) {
-        Text(col.label, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(bottom = 2.dp))
-        Box {
-            OutlinedButton(onClick = { expanded = true }) {
-                Text(selected.ifBlank { "Todos" })
+    Column(modifier = modifier.padding(bottom = 10.dp)) {
+        Text(
+            col.label,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(bottom = 2.dp),
+        )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
+                Text(selected.ifBlank { "Todos" }, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 DropdownMenuItem(text = { Text("Todos") }, onClick = { onSelect(""); expanded = false })

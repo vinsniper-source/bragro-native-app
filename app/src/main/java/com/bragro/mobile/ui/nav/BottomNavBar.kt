@@ -42,7 +42,12 @@ private val BottomNavColors: androidx.compose.material3.NavigationBarItemColors
     get() = NavigationBarItemDefaults.colors(
         selectedIconColor = BrGreen,
         selectedTextColor = BrGreen,
-        indicatorColor = BrGreen.copy(alpha = 0.18f),
+        // Sem preenchimento verde atrás do ícone selecionado -- pedido do
+        // usuário ("retire o preenchimento verde e deixe apenas a borda em
+        // verde, em todo app"); o Material3 não tem um "indicador com só
+        // borda" pronto, então a seleção fica só pela cor do ícone/rótulo
+        // (já em BrGreen acima), sem a pílula de fundo.
+        indicatorColor = androidx.compose.ui.graphics.Color.Transparent,
         unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
         unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
     )

@@ -69,7 +69,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -202,52 +205,11 @@ fun FinanceiroScreen(
                     }
                 },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar") } },
-                actions = {
-                    IconButton(onClick = { viewModel.refresh("financeiro") }) {
-                        if (refreshing) CircularProgressIndicator(modifier = Modifier.padding(4.dp))
-                        else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
-                    }
-                    if (filtered.isNotEmpty()) {
-                        // Mesmo par de ícones do "recolher/expandir tudo" do
-                        // módulo genérico (DomainListScreen.kt) -- pedido do
-                        // usuário ("deixe os ícones bem intuitivos"), evita
-                        // ter dois pares parecidos (Unfold vs Expand) pra
-                        // conceitos de escopo diferente na mesma tela.
-                        IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear() }) {
-                            Icon(
-                                if (allExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                contentDescription = if (allExpanded) "Recolher todos os lançamentos" else "Expandir todos os lançamentos",
-                            )
-                        }
-                    }
-                    // "Extrato" (importação de CSV bancário) -- mesmo critério
-                    // do site: vive dentro de Financeiro, escondido nas
-                    // visões rápidas (ver page.tsx: aba só existe em "Todos").
-                    if (!isQuickView) {
-                        IconButton(onClick = onOpenBankImport) {
-                            Icon(Icons.Filled.Upload, contentDescription = "Extrato bancário")
-                        }
-                        IconButton(onClick = onOpenNfeImport) {
-                            Icon(Icons.Filled.Description, contentDescription = "Importar XML (NF-e)")
-                        }
-                    }
-                    val cfg = config
-                    if (cfg != null) {
-                        ColumnsPickerButton(
-                            allColumns = viewColumns,
-                            visibleKeys = customColumnKeys ?: viewColumns.map { it.key }.toSet(),
-                            onChange = { customColumnKeys = it },
-                        )
-                        if (filtered.isNotEmpty()) {
-                            IconButton(onClick = { exportCsv(context, "financeiro-${view.name.lowercase()}", effectiveColumns, filtered) }) {
-                                Icon(Icons.Filled.FileDownload, contentDescription = "Exportar CSV")
-                            }
-                            IconButton(onClick = { HtmlPrinter.printList(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) }) {
-                                Icon(Icons.Filled.Print, contentDescription = "Imprimir / exportar PDF")
-                            }
-                        }
-                    }
-                },
+                // Sem "actions" aqui -- Atualizar/Recolher-Expandir/Extrato/
+                // Importar XML/Colunas/Exportar mudaram pra fileira de ícones
+                // abaixo do título, pedido do usuário ("os ícones que
+                // estavam do lado do título, saltando uma linha, insira-os
+                // no bloco").
             )
         },
         floatingActionButton = {
@@ -323,6 +285,46 @@ fun FinanceiroScreen(
                     )
                     if (view == FinanceiroView.CONCILIADO) {
                         BancoDropdown(banco = banco, options = bancoOptions, onSelect = { banco = it })
+                    }
+                    // A partir daqui: ícones que antes moravam na AppBar
+                    // (Atualizar/Recolher-Expandir/Extrato/Importar XML/
+                    // Colunas/Exportar) -- pedido do usuário ("os ícones que
+                    // couberem no mesmo bloco unifique os blocos"). Mesmo
+                    // comportamento de antes, só mudou de lugar.
+                    IconButton(onClick = { viewModel.refresh("financeiro") }) {
+                        if (refreshing) CircularProgressIndicator(modifier = Modifier.padding(4.dp).size(20.dp))
+                        else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
+                    }
+                    if (filtered.isNotEmpty()) {
+                        IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear() }) {
+                            Icon(
+                                if (allExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                contentDescription = if (allExpanded) "Recolher todos os lançamentos" else "Expandir todos os lançamentos",
+                            )
+                        }
+                    }
+                    if (!isQuickView) {
+                        IconButton(onClick = onOpenBankImport) {
+                            Icon(Icons.Filled.Upload, contentDescription = "Extrato bancário")
+                        }
+                        IconButton(onClick = onOpenNfeImport) {
+                            Icon(Icons.Filled.Description, contentDescription = "Importar XML (NF-e)")
+                        }
+                    }
+                    if (cfg != null) {
+                        ColumnsPickerButton(
+                            allColumns = viewColumns,
+                            visibleKeys = customColumnKeys ?: viewColumns.map { it.key }.toSet(),
+                            onChange = { customColumnKeys = it },
+                        )
+                        if (filtered.isNotEmpty()) {
+                            IconButton(onClick = { exportCsv(context, "financeiro-${view.name.lowercase()}", effectiveColumns, filtered) }) {
+                                Icon(Icons.Filled.FileDownload, contentDescription = "Exportar CSV")
+                            }
+                            IconButton(onClick = { HtmlPrinter.printList(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) }) {
+                                Icon(Icons.Filled.Print, contentDescription = "Imprimir / exportar PDF")
+                            }
+                        }
                     }
                 }
             }
@@ -452,14 +454,27 @@ private fun FinanceiroFieldLine(col: com.bragro.mobile.data.model.ColumnConfig, 
         }
         value.isNullOrBlank() -> {}
         isStatusLikeColumn(col.key) -> StatusBadge(value)
-        else -> Text(
-            "${col.label}: ${if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)}",
-            fontWeight = if (isFinanceiroBoldColumn(col.key)) FontWeight.Bold else FontWeight.Normal,
-            style = MaterialTheme.typography.bodySmall,
-            maxLines = 2,
-            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-            modifier = Modifier.padding(vertical = 2.dp),
-        )
+        else -> {
+            val displayValue = if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)
+            // Mesmo critério do módulo genérico: negrito só no valor
+            // preenchido, cabeçalho normal -- "vcto" (isFinanceiroBoldColumn)
+            // ganha um destaque extra de cor, sem dobrar o negrito na linha.
+            Text(
+                buildAnnotatedString {
+                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) { append("${col.label}: ") }
+                    withStyle(
+                        SpanStyle(
+                            fontWeight = FontWeight.Bold,
+                            color = if (isFinanceiroBoldColumn(col.key)) MaterialTheme.colorScheme.primary else Color.Unspecified,
+                        ),
+                    ) { append(displayValue) }
+                },
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.padding(vertical = 2.dp),
+            )
+        }
     }
 }
 
