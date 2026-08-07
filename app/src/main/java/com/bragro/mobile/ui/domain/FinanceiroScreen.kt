@@ -556,6 +556,7 @@ private data class FinBlockSpec(
     val content: @Composable () -> Unit,
 )
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FinanceiroCategoryBlock(spec: FinBlockSpec, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
