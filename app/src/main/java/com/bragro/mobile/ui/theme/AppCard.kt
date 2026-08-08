@@ -31,7 +31,9 @@ import androidx.compose.ui.unit.dp
 @Composable
 private fun cardBorderColor(): androidx.compose.ui.graphics.Color {
     val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-    return if (isDark) BrGreen.copy(alpha = 0.55f) else BrGreen.copy(alpha = 0.35f)
+    // Verde mais escuro no modo escuro, mais claro no modo claro -- pedido
+    // do usuário (antes usava o mesmo BrGreen nos dois, só variando o alpha).
+    return if (isDark) BrGreenDark.copy(alpha = 0.85f) else BrGreenLight.copy(alpha = 0.55f)
 }
 
 @Composable

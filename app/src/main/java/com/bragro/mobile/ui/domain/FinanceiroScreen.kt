@@ -402,7 +402,7 @@ fun FinanceiroScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 FinanceiroCategoryBlock(dadosBlock, modifier = Modifier.weight(1f).fillMaxHeight())
-                Column(modifier = Modifier.weight(2.4f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(modifier = Modifier.weight(4f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FinanceiroCategoryBlock(operacoesBlock, modifier = Modifier.weight(3f).fillMaxHeight())
                         FinanceiroCategoryBlock(armazenamentoBlock, modifier = Modifier.weight(1f).fillMaxHeight())
