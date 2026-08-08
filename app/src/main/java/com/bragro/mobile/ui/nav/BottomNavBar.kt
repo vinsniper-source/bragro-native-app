@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
@@ -105,7 +107,9 @@ private val BOTTOM_TABS = listOf(
     BottomTab(
         "financeiro", "Financeiro", Icons.Filled.AccountBalanceWallet,
         items = listOf(
-            SectorTarget.Domain("financeiro", "Financeiro (Lançamentos)"),
+            // Renomeado -- pedido do usuário ("renomeie o nome financeiro
+            // (lançamentos) apenas para lançamentos").
+            SectorTarget.Domain("financeiro", "Lançamentos"),
             SectorTarget.Special("dre", "DRE"),
             SectorTarget.Special("analises", "Análises cruzadas"),
             // "Importar NF-e" saiu daqui -- virou o botão "Importar XML"
@@ -220,7 +224,17 @@ fun BRAgroBottomBar(
                             }
                             val icon = when (item) {
                                 is SectorTarget.Domain -> domainIcon(item.domainId)
-                                is SectorTarget.Special -> tab.icon
+                                // Antes cada "Special" caía no ícone da aba
+                                // pai (tab.icon) -- DRE e Análises cruzadas
+                                // ficavam iguais entre si e iguais ao item
+                                // "Financeiro"/"Lançamentos" -- pedido do
+                                // usuário ("troque icone dre e icone
+                                // analises cruzadas").
+                                is SectorTarget.Special -> when (item.routeKey) {
+                                    "dre" -> Icons.Filled.Assessment
+                                    "analises" -> Icons.Filled.Analytics
+                                    else -> tab.icon
+                                }
                             }
                             DropdownMenuItem(
                                 text = { Text(label) },

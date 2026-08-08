@@ -7,11 +7,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -35,8 +38,9 @@ import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.FileDownload
-import androidx.compose.material.icons.filled.UnfoldLess
+import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.PictureAsPdf
@@ -200,8 +204,15 @@ fun FinanceiroScreen(
                 // Calculadoras, Recalcular Vencimentos) aparece numa 2ª
                 // linha, menor, só enquanto ele estiver aberto.
                 title = {
+                    // "Financeiro" só aparece com Todos selecionado; ao
+                    // clicar em outro ícone da Gestão Financeira, o nome da
+                    // visão substitui a palavra "Financeiro" por completo
+                    // (não mais "Financeiro — X") -- pedido do usuário.
+                    // Título desce uma linha de fato -- mesmo padrão do
+                    // Início: 1ª linha em branco, texto na linha de baixo.
                     Column {
-                        Text(if (isQuickView) "Financeiro — ${view.label}" else "Financeiro")
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(if (isQuickView) view.label else "Financeiro")
                         if (activeBlockLabel != null) {
                             Text(activeBlockLabel, style = MaterialTheme.typography.labelSmall)
                         }
@@ -266,7 +277,7 @@ fun FinanceiroScreen(
             // abertos completamente"), não afeta mais os cards de
             // lançamento (cada um já tem sua própria setinha).
             val dadosBlock =
-                FinBlockSpec("Dados", MaterialTheme.typography.titleSmall, vertical = true) {
+                FinBlockSpec("Dados", MaterialTheme.typography.titleSmall, vertical = false) {
                     if (!isQuickView) {
                         ModuleIconButton(
                             ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
@@ -279,19 +290,25 @@ fun FinanceiroScreen(
                             onChange = { customColumnKeys = it },
                         )
                     }
-                    // Ícone diferente de ExpandLess/ExpandMore (usados nos
-                    // cards de lançamento) -- mesmo motivo de sempre
-                    // (ícones iguais, funções diferentes, confundia).
-                    IconButton(onClick = {
-                        expandedBlocks["charts"] = false
-                        expandedBlocks["calculators"] = false
-                        expandedBlocks["recalcular-vencimentos"] = false
-                    }) {
-                        Icon(Icons.Filled.UnfoldLess, contentDescription = "Recolher tudo")
+                    // Função única, esclarecida pelo usuário: só expande/
+                    // recolhe os CARDS DE LANÇAMENTO (não Gráficos/
+                    // Calculadoras/Recalcular Vencimentos/Período/nenhum
+                    // outro ícone) -- volta a controlar "allExpanded", mesmo
+                    // comportamento de antes da reorganização em blocos.
+                    // Ícone trocado pro par usado na demonstração (mais
+                    // intuitivo, e visualmente diferente do
+                    // ExpandMore/ExpandLess de cada card individual).
+                    if (filtered.isNotEmpty()) {
+                        IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear() }) {
+                            Icon(
+                                if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                                contentDescription = if (allExpanded) "Recolher todos os lançamentos" else "Expandir todos os lançamentos",
+                            )
+                        }
                     }
                 }
             val operacoesBlock =
-                FinBlockSpec("Operações", MaterialTheme.typography.titleSmall, vertical = false) {
+                FinBlockSpec("Operações", MaterialTheme.typography.titleSmall, vertical = true) {
                     if (!isQuickView) {
                         ModuleIconButton(
                             ModuleIconItem("calculators", Icons.Filled.Calculate, "Calculadoras", active = expandedBlocks["calculators"] == true),
@@ -321,7 +338,7 @@ fun FinanceiroScreen(
                     }
                 }
             val arquivosBlock =
-                FinBlockSpec("Arquivos", MaterialTheme.typography.titleSmall, vertical = false) {
+                FinBlockSpec("Arquivos", MaterialTheme.typography.titleSmall, vertical = true) {
                     if (!isQuickView) {
                         IconButton(onClick = onOpenBankImport) {
                             Icon(Icons.Filled.Upload, contentDescription = "Extrato bancário")
@@ -332,7 +349,11 @@ fun FinanceiroScreen(
                     }
                     if (cfg != null && filtered.isNotEmpty()) {
                         IconButton(onClick = { exportCsv(context, "financeiro-${view.name.lowercase()}", effectiveColumns, filtered) }) {
-                            Icon(Icons.Filled.FileDownload, contentDescription = "Exportar CSV")
+                            // Ícone trocado pra planilha/tabela -- pedido do
+                            // usuário ("use os ícones da demonstração...
+                            // ficaram mais intuitivos"), em vez de um
+                            // download genérico.
+                            Icon(Icons.Filled.TableChart, contentDescription = "Exportar CSV")
                         }
                         // Ícone próprio pra PDF (antes compartilhava o
                         // "Print" com Imprimir) -- pedido do usuário
@@ -343,7 +364,9 @@ fun FinanceiroScreen(
                     }
                 }
             val armazenamentoBlock =
-                FinBlockSpec("Armazenamento", MaterialTheme.typography.bodySmall, vertical = false) {
+                // Renomeado de "Armazenamento" pra "Registros" -- pedido do
+                // usuário no esboço mais recente.
+                FinBlockSpec("Registros", MaterialTheme.typography.bodySmall, vertical = false) {
                     // Só esse ícone no bloco -- pedido do usuário ("será
                     // apenas um ícone offline, troque o ícone por uma
                     // nuvem"). Reflete o estado de conexão (offline usa os
@@ -369,25 +392,26 @@ fun FinanceiroScreen(
                         }
                     }
                 }
-            // Dados recolhido (mais estreito) pra caber do lado, com os
-            // blocos que antes ficavam abaixo dele agora ao seu lado --
-            // pedido do usuário ("recolha o bloco dados para caber os
-            // blocos abaixo, do lado do bloco dados").
+            // Novo esboço: Dados horizontal sozinho no topo (linha cheia);
+            // Operações e Arquivos como colunas verticais lado a lado;
+            // Registros e Distribuição embaixo -- pedido do usuário
+            // ("uma coluna vertical, as outras horizontais, alinhadas em
+            // cima e embaixo, delimitada"). IntrinsicSize.Min + fillMaxHeight
+            // alinha o topo/base de cada par (mesma altura na linha).
+            FinanceiroCategoryBlock(dadosBlock, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp))
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).height(IntrinsicSize.Min),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                FinanceiroCategoryBlock(dadosBlock, modifier = Modifier.weight(1f))
-                Column(modifier = Modifier.weight(2f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FinanceiroCategoryBlock(operacoesBlock, modifier = Modifier.weight(1.6f))
-                        FinanceiroCategoryBlock(armazenamentoBlock, modifier = Modifier.weight(1f))
-                    }
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FinanceiroCategoryBlock(arquivosBlock, modifier = Modifier.weight(1.6f))
-                        FinanceiroCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(1f))
-                    }
-                }
+                FinanceiroCategoryBlock(operacoesBlock, modifier = Modifier.weight(1f).fillMaxHeight())
+                FinanceiroCategoryBlock(arquivosBlock, modifier = Modifier.weight(1f).fillMaxHeight())
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FinanceiroCategoryBlock(armazenamentoBlock, modifier = Modifier.weight(1f).fillMaxHeight())
+                FinanceiroCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(1f).fillMaxHeight())
             }
 
             when {
@@ -577,7 +601,11 @@ private fun FinanceiroCategoryBlock(spec: FinBlockSpec, modifier: Modifier = Mod
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
         )
-        Card(modifier = Modifier.fillMaxWidth()) {
+        // fillMaxHeight -- não só fillMaxWidth -- pra o card esticar e
+        // ocupar o resto da altura do bloco, alinhando a base com o vizinho
+        // da mesma linha (ver height(IntrinsicSize.Min) no chamador); sem
+        // efeito quando o bloco é isolado (altura não forçada por fora).
+        Card(modifier = Modifier.fillMaxWidth().fillMaxHeight()) {
             if (spec.vertical) {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(8.dp),

@@ -10,15 +10,16 @@ import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Eco
-import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Warehouse
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -75,7 +76,10 @@ private val DOMAIN_SECTION_ID: Map<String, String> = mapOf(
 // Escolhidos pra corresponder ao espirito dos icones lucide-react usados no
 // site (nomes diferentes, mesma ideia visual) -- nao ha lucide no Compose.
 private val DOMAIN_ICON: Map<String, ImageVector> = mapOf(
-    "financeiro" to Icons.Filled.AccountBalanceWallet,
+    // Trocado de AccountBalanceWallet -- pedido do usuário ("mude o ícone
+    // do módulo lançamentos"); esse ícone era igual ao da própria aba
+    // "Financeiro" e ao de DRE/Análises no dropdown, confundia.
+    "financeiro" to Icons.Filled.Receipt,
     "pedidos" to Icons.Filled.ShoppingCart,
     "contratos" to Icons.Filled.Description,
     "caixainterno" to Icons.Filled.Payments,
@@ -89,7 +93,11 @@ private val DOMAIN_ICON: Map<String, ImageVector> = mapOf(
     "pragas" to Icons.Filled.BugReport,
     "clima" to Icons.Filled.WbSunny,
     "estoque" to Icons.Filled.Inventory2,
-    "inventario" to Icons.Filled.Inventory,
+    // Trocado de Inventory (caixa única) -- pedido do usuário ("trocar
+    // ícone inventário"); parecia demais com o ícone de "Estoque"
+    // (Inventory2, caixas empilhadas), confundia. Warehouse (galpão) é
+    // bem mais distinto visualmente.
+    "inventario" to Icons.Filled.Warehouse,
     "frota" to Icons.Filled.DirectionsCar,
     "controleinterno" to Icons.Filled.Security,
     "rh" to Icons.Filled.People,
