@@ -1,14 +1,23 @@
 package com.bragro.mobile.ui.print
 
+import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.Intent
+import android.os.CancellationSignal
+import android.os.ParcelFileDescriptor
+import android.print.PageRange
 import android.print.PrintAttributes
+import android.print.PrintDocumentAdapter
+import android.print.PrintDocumentInfo
 import android.print.PrintManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.core.content.FileProvider
 import com.bragro.mobile.data.model.ColumnConfig
 import com.bragro.mobile.data.model.DomainConfig
 import com.bragro.mobile.ui.domain.displayValueFor
 import com.bragro.mobile.ui.domain.formatMoneyValue
+import java.io.File
 
 // Fase 2 do app nativo (Task #41): "Impressao" -- no site, o unico mecanismo
 // de impressao que existe hoje (ver components/domain/data-table.tsx,
@@ -53,6 +62,67 @@ object HtmlPrinter {
             }
         }
         webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
+    }
+
+    // Ícone "PDF" -- pedido do usuário ("faça que no ícone pdf já seja
+    // direcionado pro Adobe ou similares"): em vez de abrir o diálogo de
+    // impressão do sistema (como o ícone "Imprimir" continua fazendo), gera
+    // o PDF de verdade num arquivo (mesmo PrintDocumentAdapter do WebView,
+    // só que escrito direto num arquivo em vez de mandado pro PrintManager)
+    // e abre com o app de PDF instalado (Adobe Acrobat, Google PDF etc.) via
+    // ACTION_VIEW -- sem diálogo nenhum no meio.
+    fun exportPdfDirect(context: Context, domain: DomainConfig, records: List<Map<String, String?>>, visibleKeys: Set<String>? = null) {
+        val cols = domain.columns.filter { !it.hideInTable && (visibleKeys == null || visibleKeys.contains(it.key)) }
+        val html = buildListHtml(domain.label, cols, records)
+        val webView = WebView(context)
+        activeWebView = webView
+        webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView, url: String?) {
+                val adapter = view.createPrintDocumentAdapter(domain.label)
+                val attrs = PrintAttributes.Builder()
+                    .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
+                    .setResolution(PrintAttributes.Resolution("pdf", "pdf", 300, 300))
+                    .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
+                    .build()
+                adapter.onLayout(null, attrs, null, object : PrintDocumentAdapter.LayoutResultCallback() {
+                    override fun onLayoutFinished(info: PrintDocumentInfo?, changed: Boolean) {
+                        val dir = File(context.cacheDir, "exports").apply { mkdirs() }
+                        val safeTitle = domain.label.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
+                        val file = File(dir, "$safeTitle.pdf")
+                        val pfd = ParcelFileDescriptor.open(
+                            file,
+                            ParcelFileDescriptor.MODE_CREATE or ParcelFileDescriptor.MODE_TRUNCATE or ParcelFileDescriptor.MODE_READ_WRITE,
+                        )
+                        adapter.onWrite(arrayOf(PageRange.ALL_PAGES), pfd, CancellationSignal(), object : PrintDocumentAdapter.WriteResultCallback() {
+                            override fun onWriteFinished(pages: Array<PageRange>?) {
+                                pfd.close()
+                                openPdf(context, file)
+                                activeWebView = null
+                            }
+                        })
+                    }
+                }, null)
+            }
+        }
+        webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
+    }
+
+    private fun openPdf(context: Context, file: File) {
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "application/pdf")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        try {
+            context.startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            // Nenhum app associado a PDF -- mostra o menu "Abrir com" (mesmo
+            // padrão de shareTextFile) em vez de travar sem feedback.
+            val chooser = Intent.createChooser(intent, "Abrir PDF")
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(chooser)
+        }
     }
 }
 

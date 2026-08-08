@@ -26,13 +26,19 @@ import androidx.compose.material.icons.filled.CompareArrows
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.MonitorWeight
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
@@ -182,20 +188,19 @@ fun DomainListScreen(
     } ?: emptyList()
     val columnFilters = remember(domainId) { mutableStateMapOf<String, String>() }
 
-    // Recolher/expandir todos os cards de uma vez -- pedido do usuário
-    // ("recolha todos de uma vez"), além da seta individual de cada card.
-    // `cardOverrides` guarda exceções pontuais (usuário abriu/fechou UM card
-    // na mão); "Recolher/Expandir tudo" reseta essas exceções pra valer o
-    // mesmo estado em todos de novo.
-    var allExpanded by remember(domainId) { mutableStateOf(false) }
+    // Recolher/expandir todos os LANÇAMENTOS de uma vez -- pedido do usuário
+    // ("a setinha só mexe nos cards de registro, sem abrir/fechar Filtros,
+    // Gráficos, Calculadoras"; "os cards não ocultam" -- antes esse estado só
+    // trocava entre resumo/completo, nunca escondia a lista de fato).
+    // `allExpanded = false` esconde a lista inteira de lançamentos (tela
+    // limpa); `true` mostra todos de novo, cada card começando no resumo.
+    var allExpanded by remember(domainId) { mutableStateOf(true) }
     val cardOverrides = remember(domainId) { mutableStateMapOf<String, Boolean>() }
-    // Bloco "Filtros" (só os dropdowns de coluna agora -- Período saiu pra
-    // um ícone isolado, ver abaixo) também colapsável, com sua própria
-    // setinha individual -- mas segue a seta única do cabeçalho (acima)
-    // quando o usuário não abriu/fechou ele na mão ainda, mesmo padrão de
-    // override pontual do `cardOverrides` para os cards de lançamento.
-    var filtrosOverride by remember(domainId) { mutableStateOf<Boolean?>(null) }
-    val filtrosExpanded = filtrosOverride ?: allExpanded
+    // Bloco "Filtros" -- colapsável só pela própria setinha (ModuleIconButton
+    // "filtros"), independente da seta de recolher/expandir lançamentos
+    // acima (que não deve abrir/fechar Filtros, Gráficos ou Calculadoras).
+    var filtrosOverride by remember(domainId) { mutableStateOf(false) }
+    val filtrosExpanded = filtrosOverride
 
     // Estado de quais blocos "compatíveis com ícone" (Gráficos,
     // Calculadoras, Clima, Estoque por Fazenda, Recalcular Área) estão
@@ -248,16 +253,14 @@ fun DomainListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                // "Pule uma linha para aparecer o nome de cada ícone quando
-                // clicado" -- o nome do módulo continua sempre visível na
-                // 1ª linha; o nome do bloco aberto aparece numa 2ª linha,
-                // menor, só enquanto ele estiver aberto.
+                // Título desce uma linha (mesmo ajuste do Financeiro) e
+                // alterna: sem nenhum ícone/bloco aberto mostra o nome do
+                // módulo; com um bloco aberto mostra SÓ o nome dele, sem
+                // repetir o nome do módulo junto -- pedido do usuário.
                 title = {
                     Column {
-                        Text(config?.label ?: domainId)
-                        if (activeBlockLabel != null) {
-                            Text(activeBlockLabel, style = MaterialTheme.typography.labelSmall)
-                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(activeBlockLabel ?: (config?.label ?: domainId))
                     }
                 },
                 navigationIcon = {
@@ -427,11 +430,14 @@ fun DomainListScreen(
                         if (refreshing) CircularProgressIndicator(modifier = Modifier.padding(4.dp).size(20.dp))
                         else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
                     }
-                    if (filteredRecords.isNotEmpty() || dateCol != null) {
-                        IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear(); filtrosOverride = null }) {
+                    if (filteredRecords.isNotEmpty()) {
+                        // Só mexe nos cards de lançamento -- não fecha Filtros
+                        // nem os outros blocos (Gráficos/Calculadoras/etc.),
+                        // pedido do usuário.
+                        IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear() }) {
                             Icon(
-                                if (allExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                contentDescription = if (allExpanded) "Recolher tudo" else "Expandir tudo",
+                                if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                                contentDescription = if (allExpanded) "Recolher todos os lançamentos" else "Expandir todos os lançamentos",
                             )
                         }
                     }
@@ -441,30 +447,38 @@ fun DomainListScreen(
                         onChange = { customVisibleKeys = it },
                     )
                     if (filteredRecords.isNotEmpty()) {
-                        var exportMenuOpen by remember { mutableStateOf(false) }
-                        Box {
-                            IconButton(onClick = { exportMenuOpen = true }) {
-                                Icon(Icons.Filled.FileDownload, contentDescription = "Exportar (CSV/PDF)")
-                            }
-                            DropdownMenu(expanded = exportMenuOpen, onDismissRequest = { exportMenuOpen = false }) {
-                                DropdownMenuItem(
-                                    text = { Text("Exportar CSV") },
-                                    leadingIcon = { Icon(Icons.Filled.FileDownload, contentDescription = null) },
-                                    onClick = {
-                                        exportMenuOpen = false
-                                        exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Imprimir / exportar PDF") },
-                                    leadingIcon = { Icon(Icons.Filled.Print, contentDescription = null) },
-                                    onClick = {
-                                        exportMenuOpen = false
-                                        HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys)
-                                    },
-                                )
-                            }
+                        // Ícones separados (mesmo padrão do Financeiro) em vez
+                        // de um menu único -- pedido do usuário ("implemente
+                        // nos módulos que não tiverem... csv, pdf, imprimir,
+                        // compartilhar, nuvem").
+                        IconButton(onClick = {
+                            exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
+                        }) {
+                            Icon(Icons.Filled.TableChart, contentDescription = "Exportar CSV")
                         }
+                        IconButton(onClick = {
+                            HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys)
+                        }) {
+                            Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar PDF")
+                        }
+                        IconButton(onClick = {
+                            HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys)
+                        }) {
+                            Icon(Icons.Filled.Print, contentDescription = "Imprimir")
+                        }
+                        IconButton(onClick = {
+                            shareRecordsResumo(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
+                        }) {
+                            Icon(Icons.Filled.IosShare, contentDescription = "Compartilhar")
+                        }
+                    }
+                    // Ícone nuvem (armazenamento/offline) -- reflete o estado
+                    // de conexão, mesmo padrão do Financeiro ("Registros").
+                    IconButton(onClick = {
+                        val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                        android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                    }) {
+                        Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Armazenamento")
                     }
                 }
                 }
@@ -530,7 +544,7 @@ fun DomainListScreen(
                     val msg = if (records.isEmpty()) "Nenhum lançamento ainda. Toque em + para adicionar." else "Nenhum lançamento neste período."
                     Text(msg, modifier = Modifier.padding(vertical = 24.dp))
                 }
-            } else {
+            } else if (allExpanded) {
                 items(filteredRecords, key = { it["id"] ?: it.hashCode().toString() }) { record ->
                     val recordId = record["id"]
                     val isLastOfGroup = isPedidos && run {
@@ -548,7 +562,11 @@ fun DomainListScreen(
                     val allVisibleCols = cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) && !record[it.key].isNullOrBlank() }
                     val summaryCols = allVisibleCols.take(4)
                     val hasMore = allVisibleCols.size > summaryCols.size
-                    val expanded = cardOverrides[recordId ?: ""] ?: allExpanded
+                    // Nível de detalhe do card (resumo x completo) é só o
+                    // controle individual dele -- sempre começa no resumo; o
+                    // `allExpanded` do topo agora só mostra/esconde a lista
+                    // inteira (ver `if (allExpanded)` que envolve este `items`).
+                    val expanded = cardOverrides[recordId ?: ""] ?: false
                     val colsToShow = if (expanded) allVisibleCols else summaryCols
                     Card(
                         onClick = { if (recordId != null) onEditRecord(recordId) },

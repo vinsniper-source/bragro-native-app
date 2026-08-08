@@ -96,3 +96,27 @@ fun exportCsv(context: Context, title: String, columns: List<ColumnConfig>, reco
     val fileName = "$safeTitle-${SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())}.csv"
     shareTextFile(context, fileName, "text/csv", csv)
 }
+
+/** Ícone "Compartilhar" genérico pra qualquer módulo -- mesma ideia de
+ * shareFinanceiroResumo (FinanceiroScreen.kt), só que sem depender do enum
+ * FinanceiroView, pra dar pra reusar no módulo genérico (DomainListScreen.kt)
+ * e em qualquer outro. Monta um resumo em texto (campo: valor por
+ * lançamento) e abre o menu "Compartilhar" do Android.
+ */
+fun shareRecordsResumo(context: Context, title: String, columns: List<ColumnConfig>, records: List<Map<String, String?>>) {
+    val texto = buildString {
+        appendLine(title)
+        appendLine()
+        records.forEach { record ->
+            columns.forEach { col ->
+                val v = record[col.key]
+                if (!v.isNullOrBlank()) {
+                    appendLine("${col.label}: ${cellText(col, v)}")
+                }
+            }
+            appendLine("—")
+        }
+    }
+    val safeTitle = title.lowercase(Locale.US).replace(Regex("[^a-z0-9]+"), "-").trim('-')
+    shareTextFile(context, "$safeTitle-resumo.txt", "text/plain", texto)
+}

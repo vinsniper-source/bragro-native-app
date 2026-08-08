@@ -150,10 +150,16 @@ fun FinanceiroScreen(
     var banco by remember { mutableStateOf<String?>(null) }
     val dateKey = if (view == FinanceiroView.PAGAR || view == FinanceiroView.RECEBER) "vcto" else "data"
 
-    // Recolher/expandir todos os cards de lançamento de uma vez -- mesmo
-    // controle do módulo genérico (DomainListScreen.kt), pedido do usuário
-    // ("mostre o bloco completo... recolha todos de uma vez").
-    var allExpanded by remember { mutableStateOf(false) }
+    // Recolher/expandir todos os lançamentos de uma vez -- pedido do usuário
+    // ("os cards não ocultam"). ANTES esse estado só trocava o card entre
+    // "resumo" (6 campos) e "completo" (todos os campos) -- ele nunca
+    // escondia o card de fato, por isso parecia não funcionar. Agora
+    // `allExpanded = false` esconde a lista inteira (tela limpa) e
+    // `allExpanded = true` mostra todos os cards de novo, cada um começando
+    // no modo resumo (o nível de detalhe de cada card continua sendo
+    // controlado card a card por `cardOverrides`, sem depender mais deste
+    // estado).
+    var allExpanded by remember { mutableStateOf(true) }
     val cardOverrides = remember { mutableStateMapOf<String, Boolean>() }
 
     // Blocos "compatíveis com ícone" (Gráficos, Calculadoras, Recalcular
@@ -355,10 +361,13 @@ fun FinanceiroScreen(
                             // download genérico.
                             Icon(Icons.Filled.TableChart, contentDescription = "Exportar CSV")
                         }
-                        // Ícone próprio pra PDF (antes compartilhava o
-                        // "Print" com Imprimir) -- pedido do usuário
-                        // ("criar ícone pdf").
-                        IconButton(onClick = { HtmlPrinter.printList(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) }) {
+                        // Ícone próprio pra PDF -- antes chamava a mesma
+                        // função do "Imprimir" (HtmlPrinter.printList, abre o
+                        // diálogo de impressão do sistema), então os dois
+                        // ícones faziam exatamente a mesma coisa. Agora gera
+                        // o PDF direto e abre no leitor instalado (Adobe ou
+                        // similar) -- pedido do usuário.
+                        IconButton(onClick = { HtmlPrinter.exportPdfDirect(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) }) {
                             Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar PDF")
                         }
                     }
@@ -471,6 +480,7 @@ fun FinanceiroScreen(
                             if (!isQuickView && expandedBlocks["recalcular-vencimentos"] == true) {
                                 item(key = "recalcular-vencimentos") { RecalcularVencimentosButton(showHeader = false) }
                             }
+                            if (allExpanded) {
                             items(filtered, key = { it["id"] ?: it.hashCode().toString() }) { record ->
                                 val recordId = record["id"]
                                 // Mostra TODAS as colunas (não só as 6
@@ -482,7 +492,12 @@ fun FinanceiroScreen(
                                 val allCols = cols.filter { it.key == "conciliar" || !record[it.key].isNullOrBlank() }
                                 val summaryCols = allCols.take(6)
                                 val hasMore = allCols.size > summaryCols.size
-                                val expanded = cardOverrides[recordId ?: ""] ?: allExpanded
+                                // Nível de detalhe do card (resumo x completo) é
+                                // só o controle individual do próprio card agora --
+                                // sempre começa no resumo, independente do estado
+                                // de recolher/expandir tudo (que só mostra/esconde
+                                // a lista inteira, ver comentário acima).
+                                val expanded = cardOverrides[recordId ?: ""] ?: false
                                 val colsToShow = if (expanded) allCols else summaryCols
                                 Card(
                                     onClick = { if (recordId != null) onEditRecord(recordId) },
@@ -515,6 +530,7 @@ fun FinanceiroScreen(
                                         }
                                     }
                                 }
+                            }
                             }
                         }
                     }

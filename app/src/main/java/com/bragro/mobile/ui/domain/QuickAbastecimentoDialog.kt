@@ -13,7 +13,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -134,12 +133,20 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
         title = { Text("Abastecimento rápido") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Só o essencial -- data, unidade e operação já ficam prontos automaticamente.")
-                OutlinedButton(onClick = {
-                    viewModel.copyFromLastAbastecimento { found ->
-                        copyMessage = if (found) "Campos preenchidos com o último abastecimento -- confira antes de lançar." else "Nenhum abastecimento lançado ainda para copiar."
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                    Text("Só o essencial -- data, unidade e operação já ficam prontos automaticamente.", modifier = Modifier.weight(1f))
+                    // "Copiar último abastecimento" virou ícone -- pedido do
+                    // usuário ("dentro dos lançamentos rápidos converta
+                    // apenas a um ícone copiar"), mesmo padrão do ícone de
+                    // copiar em Novo Lançamento (DomainFormScreen.kt).
+                    androidx.compose.material3.IconButton(onClick = {
+                        viewModel.copyFromLastAbastecimento { found ->
+                            copyMessage = if (found) "Campos preenchidos com o último abastecimento -- confira antes de lançar." else "Nenhum abastecimento lançado ainda para copiar."
+                        }
+                    }) {
+                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Filled.ContentCopy, contentDescription = "Copiar último abastecimento")
                     }
-                }) { Text("Copiar último abastecimento") }
+                }
                 if (copyMessage != null) Text(copyMessage!!, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
 
                 LookupDropdown("Máquina/Frota *", frotas, viewModel.frota) { viewModel.frota = it }
