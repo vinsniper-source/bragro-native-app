@@ -277,7 +277,7 @@ fun FinanceiroScreen(
             // abertos completamente"), não afeta mais os cards de
             // lançamento (cada um já tem sua própria setinha).
             val dadosBlock =
-                FinBlockSpec("Dados", MaterialTheme.typography.titleSmall, vertical = false) {
+                FinBlockSpec("Dados", MaterialTheme.typography.titleSmall, vertical = true) {
                     if (!isQuickView) {
                         ModuleIconButton(
                             ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
@@ -308,7 +308,7 @@ fun FinanceiroScreen(
                     }
                 }
             val operacoesBlock =
-                FinBlockSpec("Operações", MaterialTheme.typography.titleSmall, vertical = true) {
+                FinBlockSpec("Operações", MaterialTheme.typography.titleSmall, vertical = false) {
                     if (!isQuickView) {
                         ModuleIconButton(
                             ModuleIconItem("calculators", Icons.Filled.Calculate, "Calculadoras", active = expandedBlocks["calculators"] == true),
@@ -338,7 +338,7 @@ fun FinanceiroScreen(
                     }
                 }
             val arquivosBlock =
-                FinBlockSpec("Arquivos", MaterialTheme.typography.titleSmall, vertical = true) {
+                FinBlockSpec("Arquivos", MaterialTheme.typography.titleSmall, vertical = false) {
                     if (!isQuickView) {
                         IconButton(onClick = onOpenBankImport) {
                             Icon(Icons.Filled.Upload, contentDescription = "Extrato bancário")
@@ -392,26 +392,26 @@ fun FinanceiroScreen(
                         }
                     }
                 }
-            // Novo esboço: Dados horizontal sozinho no topo (linha cheia);
-            // Operações e Arquivos como colunas verticais lado a lado;
-            // Registros e Distribuição embaixo -- pedido do usuário
-            // ("uma coluna vertical, as outras horizontais, alinhadas em
-            // cima e embaixo, delimitada"). IntrinsicSize.Min + fillMaxHeight
-            // alinha o topo/base de cada par (mesma altura na linha).
-            FinanceiroCategoryBlock(dadosBlock, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp))
+            // Layout final acertado com o usuário via prévia (mockup): Dados
+            // estreito, ocupando a altura toda, à esquerda; à direita, 2
+            // linhas -- Operações+Registros e Arquivos+Distribuição --, o
+            // bloco de 4 ícones bem mais largo que o de 1/2 ícones, mesma
+            // altura dentro do par (IntrinsicSize.Min + fillMaxHeight).
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).height(IntrinsicSize.Min),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                FinanceiroCategoryBlock(operacoesBlock, modifier = Modifier.weight(1f).fillMaxHeight())
-                FinanceiroCategoryBlock(arquivosBlock, modifier = Modifier.weight(1f).fillMaxHeight())
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).height(IntrinsicSize.Min),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FinanceiroCategoryBlock(armazenamentoBlock, modifier = Modifier.weight(1f).fillMaxHeight())
-                FinanceiroCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(1f).fillMaxHeight())
+                FinanceiroCategoryBlock(dadosBlock, modifier = Modifier.weight(1f).fillMaxHeight())
+                Column(modifier = Modifier.weight(2.4f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FinanceiroCategoryBlock(operacoesBlock, modifier = Modifier.weight(3f).fillMaxHeight())
+                        FinanceiroCategoryBlock(armazenamentoBlock, modifier = Modifier.weight(1f).fillMaxHeight())
+                    }
+                    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FinanceiroCategoryBlock(arquivosBlock, modifier = Modifier.weight(3f).fillMaxHeight())
+                        FinanceiroCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(1f).fillMaxHeight())
+                    }
+                }
             }
 
             when {
