@@ -47,12 +47,17 @@ val BrOrange = Color(0xFFD9822B)
 // pra gerar a paleta tonal de verdade) pra todo Card/FAB/superfície do app
 // carregar o mesmo tom de verde da barra inferior, em vez do roxo genérico.
 // Revertido -- pedido do usuário ("volte a letra preta e branca no modo
-// escuro/claro"): a troca fundo<->texto da rodada anterior ficou ilegível
-// nos testes, então fundo/texto voltam ao padrão convencional (claro = fundo
-// claro + letra escura, escuro = fundo escuro + letra clara). O que fica
-// mesmo ajustado agora é só o VERDE (BrGreenLight/BrGreenDark abaixo,
-// usados na borda dos Cards em AppCard.kt): mais claro no modo claro, mais
-// escuro no modo escuro -- pedido explícito do usuário.
+// escuro/claro"): a troca fundo<->texto de uma rodada anterior ficou
+// ilegível nos testes, então letra/ícone voltam ao padrão convencional
+// (claro = letra escura, escuro = letra clara).
+//
+// Textura invertida -- pedido do usuário ("inverta as texturas do modo
+// claro e modo escuro"): antes `background` (fundo da tela) e `surface`
+// (fundo dos blocos/Card) eram a MESMA cor, sem nenhum contraste entre
+// tela e bloco. Agora `background` usa o tom que antes só existia em
+// `surfaceVariant` e vice-versa -- os blocos ficam mais CLAROS que o fundo
+// no modo claro, e mais ESCUROS que o fundo no modo escuro (inversão
+// confirmada por imagem). `surface` continua com o mesmo valor de sempre.
 private val LightColors = lightColorScheme(
     primary = BrGreen,
     onPrimary = Color(0xFFFFFFFF),
@@ -62,9 +67,9 @@ private val LightColors = lightColorScheme(
     secondaryContainer = Color(0xFFFCEFCD),
     onSecondaryContainer = Color(0xFF4D3C00),
     tertiary = BrBlue,
-    background = Color(0xFFF9FBFA),
+    background = Color(0xFFEAF1ED),
     surface = Color(0xFFF9FBFA),
-    surfaceVariant = Color(0xFFEAF1ED),
+    surfaceVariant = Color(0xFFF9FBFA),
     outline = Color(0xFF5F726E),
     outlineVariant = Color(0xFFC3D0CB),
 )
@@ -77,20 +82,23 @@ private val DarkColors = darkColorScheme(
     secondaryContainer = Color(0xFF5E4F26),
     onSecondaryContainer = Color(0xFFF4DFA5),
     tertiary = BrBlue,
-    background = Color(0xFF151B18),
+    background = Color(0xFF1E2B23),
     surface = Color(0xFF151B18),
-    surfaceVariant = Color(0xFF1E2B23),
+    surfaceVariant = Color(0xFF151B18),
     outline = Color(0xFF70847F),
     outlineVariant = Color(0xFF3F4A46),
 )
 
-// Variantes de verde por tema -- pedido do usuário ("no modo escuro
-// escureça mais a cor verde, e no modo claro clareie a cor verde"). Usadas
-// só na borda dos Cards (AppCard.kt), sem tocar no BrGreen "base" (que
-// continua igual em primary/bottom-nav/ícones de módulo em todo o resto
-// do app, pra não mudar nada fora do que foi pedido aqui).
-val BrGreenLight = Color(0xFF4CAF7D)
-val BrGreenDark = Color(0xFF1E4A34)
+// Variantes de verde por tema -- ajustadas em várias rodadas ("no modo
+// escuro escureça mais a cor verde, e no modo claro clareie a cor verde",
+// depois "aumente só um pouquinho", depois "volte a cor anterior"). A
+// borda verde dos Cards foi removida (pedido "retire a cor das bordas" --
+// ver AppCard.kt, agora usa outlineVariant neutro), então estas duas
+// constantes ficam definidas e prontas, mas SEM nenhum ponto de uso no app
+// no momento -- avise se quiser aplicá-las em algum lugar específico
+// (ex.: botão +, ícones de destaque).
+val BrGreenLight = Color(0xFF8FE0B5)
+val BrGreenDark = Color(0xFF0C2317)
 
 /** É "noite" (18h-6h) -- mesmo critério de isNightTime() em
  * theme-toggle.tsx, usado no modo Automático em conjunto com a preferência

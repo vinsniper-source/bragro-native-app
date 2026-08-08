@@ -9,32 +9,24 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 
-/** Borda fina verde em TODO Card do app -- pedido do usuário ("borda verde
- * bem fina de acordo com o modo claro/escuro para não dar problema em todos
- * os blocos de toda app"). Em vez de editar centenas de chamadas Card(...)
+/** Borda fina em TODO Card do app -- pedido do usuário ("borda verde bem
+ * fina de acordo com o modo claro/escuro para não dar problema em todos os
+ * blocos de toda app"). Em vez de editar centenas de chamadas Card(...)
  * espalhadas pelas telas, cada arquivo troca só o import de
  * androidx.compose.material3.Card por este (MESMA assinatura, MESMOS nomes
  * de parâmetro -- nenhuma chamada existente precisa mudar) e o app inteiro
  * ganha a borda de uma vez, sem duplicar o Card do Material3 (ele só
  * delega, acrescentando o `border` como default).
  *
- * A cor do traço é derivada da luminância de `colorScheme.surface` (em vez
- * de `isSystemInDarkTheme()`) porque o app tem um seletor de tema próprio
- * (Automático/Claro/Escuro, ver Theme.kt/ThemeController) que pode divergir
- * do tema do sistema -- ler a luminância do scheme REALMENTE ativo garante
- * contraste correto em qualquer combinação, exatamente a preocupação do
- * usuário ("para não dar problema").
+ * Cor neutra (outlineVariant do tema ativo) -- pedido do usuário ("retire a
+ * cor das bordas"), que removeu o verde que essa borda usava antes. Como
+ * `outlineVariant` já muda sozinho por tema (ver Theme.kt), não precisa de
+ * lógica extra de claro/escuro aqui.
  */
 @Composable
-private fun cardBorderColor(): androidx.compose.ui.graphics.Color {
-    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-    // Verde mais escuro no modo escuro, mais claro no modo claro -- pedido
-    // do usuário (antes usava o mesmo BrGreen nos dois, só variando o alpha).
-    return if (isDark) BrGreenDark.copy(alpha = 0.85f) else BrGreenLight.copy(alpha = 0.55f)
-}
+private fun cardBorderColor(): androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.outlineVariant
 
 @Composable
 fun Card(
