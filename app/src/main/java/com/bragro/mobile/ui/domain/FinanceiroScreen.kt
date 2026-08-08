@@ -158,8 +158,9 @@ fun FinanceiroScreen(
     // `allExpanded = true` mostra todos os cards de novo, cada um começando
     // no modo resumo (o nível de detalhe de cada card continua sendo
     // controlado card a card por `cardOverrides`, sem depender mais deste
-    // estado).
-    var allExpanded by remember { mutableStateOf(true) }
+    // estado). Começa fechado -- pedido do usuário ("ao clicar no módulo a
+    // tela deverá estar vazia").
+    var allExpanded by remember { mutableStateOf(false) }
     val cardOverrides = remember { mutableStateMapOf<String, Boolean>() }
 
     // Blocos "compatíveis com ícone" (Gráficos, Calculadoras, Recalcular
@@ -218,7 +219,21 @@ fun FinanceiroScreen(
                     // Início: 1ª linha em branco, texto na linha de baixo.
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text(if (isQuickView) view.label else "Financeiro")
+                        // Setinha de recolher/expandir alinhada ao lado do
+                        // título -- pedido do usuário -- além da cópia dentro
+                        // do bloco Dados (mesma ação nos dois lugares).
+                        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            Text(if (isQuickView) view.label else "Financeiro")
+                            if (filtered.isNotEmpty()) {
+                                IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear() }, modifier = Modifier.size(28.dp)) {
+                                    Icon(
+                                        if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                                        contentDescription = if (allExpanded) "Recolher todos os lançamentos" else "Expandir todos os lançamentos",
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                }
+                            }
+                        }
                         if (activeBlockLabel != null) {
                             Text(activeBlockLabel, style = MaterialTheme.typography.labelSmall)
                         }
@@ -282,12 +297,18 @@ fun FinanceiroScreen(
             // usuário ("a única função será recolher todos os blocos
             // abertos completamente"), não afeta mais os cards de
             // lançamento (cada um já tem sua própria setinha).
+            // Dados virou o bloco largo do topo (horizontal) -- pedido do
+            // usuário no desenho mais recente -- e ganhou o filtro (Banco)
+            // que estava em Operações e tinha ficado faltando aqui.
             val dadosBlock =
-                FinBlockSpec("Dados", MaterialTheme.typography.titleSmall, vertical = true) {
+                FinBlockSpec("Dados", MaterialTheme.typography.titleSmall, vertical = false) {
                     if (!isQuickView) {
                         ModuleIconButton(
                             ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
                         ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
+                    }
+                    if (view == FinanceiroView.CONCILIADO) {
+                        BancoDropdown(banco = banco, options = bancoOptions, onSelect = { banco = it })
                     }
                     if (cfg != null) {
                         ColumnsPickerButton(
@@ -299,11 +320,9 @@ fun FinanceiroScreen(
                     // Função única, esclarecida pelo usuário: só expande/
                     // recolhe os CARDS DE LANÇAMENTO (não Gráficos/
                     // Calculadoras/Recalcular Vencimentos/Período/nenhum
-                    // outro ícone) -- volta a controlar "allExpanded", mesmo
-                    // comportamento de antes da reorganização em blocos.
-                    // Ícone trocado pro par usado na demonstração (mais
-                    // intuitivo, e visualmente diferente do
-                    // ExpandMore/ExpandLess de cada card individual).
+                    // outro ícone). Mesma ação da setinha ao lado do título
+                    // (ver TopAppBar acima) -- pedido do usuário, os dois
+                    // controlam o mesmo estado.
                     if (filtered.isNotEmpty()) {
                         IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear() }) {
                             Icon(
@@ -335,9 +354,6 @@ fun FinanceiroScreen(
                         onPeriodo = { periodo = it; if (it != null) { intervalFrom = ""; intervalTo = "" } },
                         onInterval = { from, to -> intervalFrom = from; intervalTo = to; if (from.isNotBlank() || to.isNotBlank()) periodo = null },
                     )
-                    if (view == FinanceiroView.CONCILIADO) {
-                        BancoDropdown(banco = banco, options = bancoOptions, onSelect = { banco = it })
-                    }
                     IconButton(onClick = { viewModel.refresh("financeiro") }) {
                         if (refreshing) CircularProgressIndicator(modifier = Modifier.padding(4.dp).size(20.dp))
                         else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
@@ -388,7 +404,10 @@ fun FinanceiroScreen(
                     }
                 }
             val distribuicaoBlock =
-                FinBlockSpec("Distribuição", MaterialTheme.typography.bodyMedium, vertical = false) {
+                // Vertical agora -- pedido do usuário no desenho mais
+                // recente: cobre a altura combinada de Operações+Arquivos,
+                // à direita deles.
+                FinBlockSpec("Distribuição", MaterialTheme.typography.bodyMedium, vertical = true) {
                     if (cfg != null && filtered.isNotEmpty()) {
                         IconButton(onClick = { HtmlPrinter.printList(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) }) {
                             Icon(Icons.Filled.Print, contentDescription = "Imprimir")
@@ -401,25 +420,25 @@ fun FinanceiroScreen(
                         }
                     }
                 }
-            // Layout final acertado com o usuário via prévia (mockup): Dados
-            // estreito, ocupando a altura toda, à esquerda; à direita, 2
-            // linhas -- Operações+Registros e Arquivos+Distribuição --, o
-            // bloco de 4 ícones bem mais largo que o de 1/2 ícones, mesma
-            // altura dentro do par (IntrinsicSize.Min + fillMaxHeight).
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).height(IntrinsicSize.Min),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FinanceiroCategoryBlock(dadosBlock, modifier = Modifier.weight(1f).fillMaxHeight())
-                Column(modifier = Modifier.weight(4f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FinanceiroCategoryBlock(operacoesBlock, modifier = Modifier.weight(3f).fillMaxHeight())
-                        FinanceiroCategoryBlock(armazenamentoBlock, modifier = Modifier.weight(1f).fillMaxHeight())
+            // Layout final acertado com o usuário via prévia (mockup v2):
+            // linha 1 -- Dados (largo) + Registros (estreito); linha 2 --
+            // Operações e Arquivos empilhados à esquerda (mesma largura de
+            // Dados) e Distribuição à direita (mesma largura de Registros)
+            // cobrindo a altura combinada dos dois. Todas as 3 "linhas"
+            // (Dados, Operações, Arquivos) com a mesma altura -- pedido do
+            // usuário ("as linhas tem que ser delimitadas, não podem ficar
+            // desproporcional a altura e a largura").
+            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FinanceiroCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight())
+                    FinanceiroCategoryBlock(armazenamentoBlock, modifier = Modifier.weight(1f).fillMaxHeight())
+                }
+                Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(modifier = Modifier.weight(3f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        FinanceiroCategoryBlock(operacoesBlock, modifier = Modifier.fillMaxWidth())
+                        FinanceiroCategoryBlock(arquivosBlock, modifier = Modifier.fillMaxWidth())
                     }
-                    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FinanceiroCategoryBlock(arquivosBlock, modifier = Modifier.weight(3f).fillMaxHeight())
-                        FinanceiroCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(1f).fillMaxHeight())
-                    }
+                    FinanceiroCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(1f).fillMaxHeight())
                 }
             }
 

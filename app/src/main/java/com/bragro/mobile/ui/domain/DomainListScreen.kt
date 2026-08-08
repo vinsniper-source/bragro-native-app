@@ -195,7 +195,9 @@ fun DomainListScreen(
     // trocava entre resumo/completo, nunca escondia a lista de fato).
     // `allExpanded = false` esconde a lista inteira de lançamentos (tela
     // limpa); `true` mostra todos de novo, cada card começando no resumo.
-    var allExpanded by remember(domainId) { mutableStateOf(true) }
+    // Começa fechado -- pedido do usuário ("ao clicar no módulo a tela
+    // deverá estar vazia").
+    var allExpanded by remember(domainId) { mutableStateOf(false) }
     val cardOverrides = remember(domainId) { mutableStateMapOf<String, Boolean>() }
     // Bloco "Filtros" -- colapsável só pela própria setinha (ModuleIconButton
     // "filtros"), independente da seta de recolher/expandir lançamentos
@@ -261,7 +263,21 @@ fun DomainListScreen(
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text(activeBlockLabel ?: (config?.label ?: domainId))
+                        // Setinha de recolher/expandir ao lado do título --
+                        // pedido do usuário -- além da cópia que já existe na
+                        // fileira de ícones (mesma ação nos dois lugares).
+                        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            Text(activeBlockLabel ?: (config?.label ?: domainId))
+                            if (filteredRecords.isNotEmpty()) {
+                                IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear() }, modifier = Modifier.size(28.dp)) {
+                                    Icon(
+                                        if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                                        contentDescription = if (allExpanded) "Recolher todos os lançamentos" else "Expandir todos os lançamentos",
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                }
+                            }
+                        }
                     }
                 },
                 navigationIcon = {
