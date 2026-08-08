@@ -105,6 +105,21 @@ class RecordRepository(private val context: Context) {
         return trySyncOne(pendingId) ?: SaveResult.SavedOffline
     }
 
+    /** Ícone Excluir por lançamento (pedido do usuário -- "crie
+     * individualmente em cada bloco ícone ver, editar e excluir"). Some da
+     * tela IMEDIATAMENTE (mesmo princípio de createRecord/updateRecord) e
+     * entra na fila de sincronização; trySyncOne já sabe lidar com
+     * kind="delete" (rota /api/offline-sync no site, ver route.ts) sem
+     * nenhuma mudança extra nela. Sem "fields" -- não há nenhum campo pra
+     * excluir, só o id. */
+    suspend fun deleteRecord(domainId: String, recordId: String): SaveResult {
+        db.recordDao().deleteById(domainId, recordId)
+        val pendingId = db.pendingSyncDao().insert(
+            PendingSyncEntity(domainId = domainId, kind = "delete", localRecordId = recordId, serverRecordId = recordId, fieldsJson = mapToJson(emptyMap()), criadoEmMillis = System.currentTimeMillis())
+        )
+        return trySyncOne(pendingId) ?: SaveResult.SavedOffline
+    }
+
     /** Processa TODA a fila pendente, em ordem -- chamado pelo SyncWorker
      * (WorkManager) quando a conexao volta, e tambem manualmente (botao
      * "Sincronizar agora"). */

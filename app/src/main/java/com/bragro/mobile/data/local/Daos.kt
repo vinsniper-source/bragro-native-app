@@ -129,6 +129,12 @@ interface RecordDao {
 
     @Delete
     suspend fun delete(record: RecordEntity)
+
+    // Ícone Excluir por lançamento (DomainListScreen.kt) -- exclusão local
+    // imediata, mesmo princípio de createRecord/updateRecord (o app nunca
+    // espera rede pra refletir a ação do usuário na tela).
+    @Query("DELETE FROM records WHERE domainId = :domainId AND id = :id")
+    suspend fun deleteById(domainId: String, id: String)
 }
 
 @Dao

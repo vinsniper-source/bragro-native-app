@@ -26,7 +26,9 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.CompareArrows
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
@@ -41,7 +43,10 @@ import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -58,6 +63,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -133,6 +139,14 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
             refreshing.value = false
         }
     }
+
+    // Ícone Excluir por lançamento -- pedido do usuário. `records` já é
+    // observado via Flow (observeRecords, em load()), então a lista na tela
+    // atualiza sozinha depois que o Room reflete a exclusão local -- não
+    // precisa recarregar nada manualmente aqui.
+    fun deleteRecord(domainId: String, recordId: String) {
+        viewModelScope.launch { recordRepository.deleteRecord(domainId, recordId) }
+    }
 }
 
 /** Uma unica tela de lista serve TODOS os 16 modulos -- guiada pelo
@@ -200,6 +214,10 @@ fun DomainListScreen(
     // deverá estar vazia").
     var allExpanded by remember(domainId) { mutableStateOf(false) }
     val cardOverrides = remember(domainId) { mutableStateMapOf<String, Boolean>() }
+    // Confirmação antes de excluir um lançamento (ícone Excluir, pedido do
+    // usuário) -- guarda o id do lançamento aguardando confirmação; null =
+    // nenhum diálogo aberto.
+    var recordPendingDelete by remember(domainId) { mutableStateOf<String?>(null) }
     // Bloco "Filtros" -- colapsável só pela própria setinha (ModuleIconButton
     // "filtros"), independente da seta de recolher/expandir lançamentos
     // acima (que não deve abrir/fechar Filtros, Gráficos ou Calculadoras).
@@ -587,9 +605,14 @@ fun DomainListScreen(
                                 ModuleCategoryBlock(climaBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
                                 ModuleCategoryBlock(nuvemBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
                             }
+                            // Operações ganha mais largura que Arquivos --
+                            // Safra/Colheita/Frota têm 3-4 ícones nesse bloco
+                            // (Arquivos só tem 2), o peso igual de antes
+                            // (2f/2f) quebrava linha -- corrigido comparando
+                            // com o mockup aprovado.
                             Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                ModuleCategoryBlock(operacoesBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
-                                ModuleCategoryBlock(arquivosBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
+                                ModuleCategoryBlock(operacoesBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
+                                ModuleCategoryBlock(arquivosBlock, modifier = Modifier.weight(1.5f).fillMaxHeight(), fillHeight = true)
                                 ModuleCategoryBlock(imprimirBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
                             }
                         }
@@ -602,9 +625,12 @@ fun DomainListScreen(
                                 ModuleCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
                                 ModuleCategoryBlock(nuvemBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
                             }
+                            // Operações mais largo que Arquivos -- mesmo
+                            // ajuste do Clima acima (3 a 4 ícones em
+                            // Operações contra só 2 em Arquivos).
                             Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                ModuleCategoryBlock(operacoesBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
-                                ModuleCategoryBlock(arquivosBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
+                                ModuleCategoryBlock(operacoesBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
+                                ModuleCategoryBlock(arquivosBlock, modifier = Modifier.weight(1.5f).fillMaxHeight(), fillHeight = true)
                                 ModuleCategoryBlock(imprimirBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
                             }
                         }
@@ -809,8 +835,17 @@ fun DomainListScreen(
                     // inteira (ver `if (allExpanded)` que envolve este `items`).
                     val expanded = cardOverrides[recordId ?: ""] ?: false
                     val colsToShow = if (expanded) allVisibleCols else summaryCols
+                    // Card não tem mais onClick pra editar -- pedido do
+                    // usuário ("crie individualmente em cada bloco ícone
+                    // ver, editar e excluir no lado direito, na vertical").
+                    // Ver/Editar/Excluir substituem o toque no bloco
+                    // inteiro; a setinha de expandir/recolher (que só
+                    // existia quando `hasMore`) foi incorporada ao ícone
+                    // Ver, agora sempre visível. Esses 3 ícones só existem
+                    // aqui (Composable da tela) -- HtmlPrinter/exportCsv
+                    // leem os registros direto do banco/lista, nunca essa
+                    // árvore de UI, então nunca aparecem no CSV/PDF/impressão.
                     Card(
-                        onClick = { if (recordId != null) onEditRecord(recordId) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
@@ -818,38 +853,65 @@ fun DomainListScreen(
                                 if (isLastOfGroup) Modifier.padding(bottom = 8.dp) else Modifier
                             ),
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            if (hasMore) {
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                                    IconButton(
-                                        onClick = { cardOverrides[recordId ?: ""] = !expanded },
-                                        modifier = Modifier.size(28.dp),
-                                    ) {
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.weight(1f).padding(12.dp)) {
+                                if (expanded) {
+                                    colsToShow.chunked(2).forEach { pair ->
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                            pair.forEach { col ->
+                                                Column(modifier = Modifier.weight(1f)) { RecordFieldLine(col, record[col.key]!!) }
+                                            }
+                                            if (pair.size == 1) Spacer(Modifier.weight(1f))
+                                        }
+                                    }
+                                } else {
+                                    colsToShow.forEach { col -> RecordFieldLine(col, record[col.key]!!) }
+                                }
+                            }
+                            Column(
+                                modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp),
+                                verticalArrangement = Arrangement.spacedBy(0.dp),
+                            ) {
+                                if (hasMore) {
+                                    IconButton(onClick = { cardOverrides[recordId ?: ""] = !expanded }, modifier = Modifier.size(28.dp)) {
                                         Icon(
-                                            if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                            contentDescription = if (expanded) "Recolher lançamento" else "Expandir lançamento",
-                                            modifier = Modifier.size(20.dp),
+                                            if (expanded) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                            contentDescription = if (expanded) "Recolher lançamento" else "Ver lançamento completo",
+                                            modifier = Modifier.size(18.dp),
                                         )
                                     }
                                 }
-                            }
-                            if (expanded) {
-                                colsToShow.chunked(2).forEach { pair ->
-                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                        pair.forEach { col ->
-                                            Column(modifier = Modifier.weight(1f)) { RecordFieldLine(col, record[col.key]!!) }
-                                        }
-                                        if (pair.size == 1) Spacer(Modifier.weight(1f))
-                                    }
+                                IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
+                                    Icon(Icons.Filled.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp))
                                 }
-                            } else {
-                                colsToShow.forEach { col -> RecordFieldLine(col, record[col.key]!!) }
+                                IconButton(onClick = { recordPendingDelete = recordId }, modifier = Modifier.size(28.dp)) {
+                                    Icon(Icons.Filled.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                                }
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    // Confirmação antes de excluir -- ação destrutiva, pedido implícito de
+    // segurança (excluir não pode ser desfeito depois de sincronizar).
+    if (recordPendingDelete != null) {
+        AlertDialog(
+            onDismissRequest = { recordPendingDelete = null },
+            title = { Text("Excluir lançamento?") },
+            text = { Text("Essa ação não pode ser desfeita.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteRecord(domainId, recordPendingDelete!!)
+                    recordPendingDelete = null
+                }) { Text("Excluir") }
+            },
+            dismissButton = {
+                TextButton(onClick = { recordPendingDelete = null }) { Text("Cancelar") }
+            },
+        )
     }
 
     if (showQuickAbastecimento) {

@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -441,11 +442,12 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     // Logo nova, ainda maior que antes -- pedido do usuário
-                    // repetiu ("aumente o tamanho da logo, login e início").
+                    // repetiu ("aumente mais o tamanho da logo, login e
+                    // início"). 96dp -> 120dp.
                     Image(
                         painter = painterResource(R.drawable.logo_bragro),
                         contentDescription = "BRAgro",
-                        modifier = Modifier.height(96.dp),
+                        modifier = Modifier.height(120.dp),
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     // Ícone "Início" removido -- pedido do usuário ("retire a
@@ -598,11 +600,27 @@ fun HomeScreen(
                         modifier = Modifier.padding(top = 2.dp),
                     )
                     if (pending > 0) {
-                        Text(
-                            "$pending lançamento(s) aguardando conexão para sincronizar.",
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(top = 4.dp),
-                        )
+                        // Virou um banner destacado (ícone + fundo tonal em
+                        // âmbar) em vez de texto simples -- pedido do
+                        // usuário (apontou esse aviso numa captura de tela
+                        // como algo que precisa chamar mais atenção).
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp)
+                                .background(BrOrange.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(Icons.Filled.CloudSync, contentDescription = null, tint = BrOrange, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "$pending lançamento(s) aguardando conexão para sincronizar.",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = BrOrange,
+                            )
+                        }
                     }
                 }
             }
@@ -621,8 +639,13 @@ fun HomeScreen(
 
             item(key = "mural") { BulletinBoardCard(data.notices, canManage, viewModel) }
             item(key = "alertas") { AlertsCard(data.alerts, onOpenDomain) }
-            item(key = "monitor") { ActivityMonitorCard(data.recentActivity) }
-            item(key = "kpis") { KpiGrid(data) }
+            // KPIs (Financeiro/Estoque/Safra/RH) entraram dentro do Monitor
+            // em tempo real, em vez de uma seção própria -- pedido do
+            // usuário ("teria uma alternativa mais eficiente a esses kpis
+            // lembrando que já tenho avisos, alertas, monitor, clima,
+            // câmbio, cotações, destaques"), recomendação escolhida em vez
+            // de manter mais uma seção separada na tela.
+            item(key = "monitor") { ActivityMonitorCard(data) }
             // Clima ao lado de Câmbio, Cotações ao lado de Destaques -- cada
             // par em blocos separados (Card) lado a lado, pedido do usuário
             // ("coloque câmbio ao lado de clima separados por blocos").
@@ -872,7 +895,8 @@ private fun AlertsCard(alerts: List<AlertData>, onOpenDomain: (String) -> Unit) 
 // mesma lógica no monitor do app mobile e coloque toda descrição de um item
 // em uma linha só").
 @Composable
-private fun ActivityMonitorCard(events: List<ActivityEventData>) {
+private fun ActivityMonitorCard(data: HomeData) {
+    val events = data.recentActivity
     // Fechado por padrão -- pedido do usuário ("os blocos mural, alertas e
     // monitor tem que aparecer fechados").
     var expanded by remember { mutableStateOf(false) }
@@ -884,8 +908,9 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>) {
                 Box(modifier = Modifier.weight(1f)) {
                     // Contagem no título -- mesmo padrão da Central de
                     // Alertas ("(N)"), pedido do usuário ("coloque a
-                    // quantidade do item").
-                    CollapsibleHeader("Monitor em tempo real (${events.size})", expanded) { expanded = !expanded }
+                    // quantidade do item"); soma os KPIs também agora que
+                    // eles moram aqui dentro (ver KpiGrid abaixo).
+                    CollapsibleHeader("Monitor em tempo real (${events.size + KPI_COUNT})", expanded) { expanded = !expanded }
                 }
             }
             if (expanded) {
@@ -924,6 +949,14 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>) {
                         }
                     }
                 }
+                // KPIs (Financeiro/Estoque/Safra/RH) -- pedido do usuário
+                // ("teria uma alternativa mais eficiente a esses kpis"):
+                // em vez de uma seção própria só pra 4 números, entram aqui
+                // dentro, junto do resto da atividade em tempo real da
+                // conta.
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                Text("Indicadores", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                KpiGrid(data)
             }
         }
     }
@@ -934,6 +967,10 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>) {
 // coloque os valores a direita, as quantidades no meio e os textos nomes a
 // esquerda"), mesmo padrão de alinhamento adotado em todo o app (ver
 // DomainListScreen.kt).
+// Usado só pra somar no título "Monitor em tempo real (N)" -- ver
+// ActivityMonitorCard, que agora também mostra estes 4 KPIs por dentro.
+private const val KPI_COUNT = 4
+
 private enum class KpiKind { QUANTIDADE, VALOR }
 private data class Kpi(
     val label: String,
@@ -1081,12 +1118,14 @@ private fun MiniCardHeader(title: String, icon: androidx.compose.ui.graphics.vec
     }
 }
 
-// Voltou pro layout original (ícone da categoria à esquerda, junto do
-// título, igual MiniCardHeader) -- pedido do usuário ("volte a posição
-// anterior do kpi"). Sem data/hora por extenso -- pedido do usuário ("tire
-// data e hora"); só um ícone pequeno de atualizar no canto superior
-// direito, clicável, dispara viewModel.refresh() (só esses 3 cards --
-// Destaques mantém seu próprio layout/atualização embaixo).
+// Ícone de atualizar removido -- pedido do usuário ("não vejo ele girar
+// quando aperto, se não girar, pode retirar o ícone e a palavra agora dos
+// kpis"): o ícone nunca teve nenhuma animação de rotação (só disparava
+// viewModel.refresh() em silêncio, sem feedback visual nenhum), então some
+// daqui (e "(agora)"/"(ago...)" sai do título de Clima/Câmbio abaixo).
+// `onRefresh` fica sem uso aqui de propósito -- as 3 chamadas (ClimaCard/
+// CambioCard/CotacoesCard) continuam recebendo o parâmetro sem precisar
+// mudar a assinatura delas nem os pontos onde são chamadas.
 @Composable
 private fun MiniCardHeaderWithRefresh(
     title: String,
@@ -1099,9 +1138,6 @@ private fun MiniCardHeaderWithRefresh(
         SectionBadgeIcon(icon, color, size = 22.dp)
         Spacer(Modifier.width(6.dp))
         Text(title, style = titleStyle, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-        IconButton(onClick = onRefresh, modifier = Modifier.size(24.dp)) {
-            Icon(Icons.Filled.Refresh, contentDescription = "Atualizar", modifier = Modifier.size(16.dp))
-        }
     }
 }
 
@@ -1109,7 +1145,7 @@ private fun MiniCardHeaderWithRefresh(
 private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            MiniCardHeaderWithRefresh("Clima (agora)", Icons.Filled.WbSunny, BrYellow, MaterialTheme.typography.titleMedium, onRefresh)
+            MiniCardHeaderWithRefresh("Clima", Icons.Filled.WbSunny, BrYellow, MaterialTheme.typography.titleMedium, onRefresh)
             // Temperatura atual centralizada, máx/mín centralizado na linha
             // debaixo -- pedido do usuário ("kpi clima colocar °C
             // centralizado e max °C/ min ºC na linha debaixo centralizado").
@@ -1133,7 +1169,7 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh
 private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            MiniCardHeaderWithRefresh("Câmbio (agora)", Icons.Filled.CurrencyExchange, BrGreen, MaterialTheme.typography.titleMedium, onRefresh)
+            MiniCardHeaderWithRefresh("Câmbio", Icons.Filled.CurrencyExchange, BrGreen, MaterialTheme.typography.titleMedium, onRefresh)
             Row { Text("Dólar: "); Text(fx.usdBrl?.let { formatMoneyBrl(it) } ?: "—", fontWeight = FontWeight.Bold) }
             Row { Text("Euro: "); Text(fx.eurBrl?.let { formatMoneyBrl(it) } ?: "—", fontWeight = FontWeight.Bold) }
         }
