@@ -4,9 +4,13 @@ import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,9 +22,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.TableChart
 import com.bragro.mobile.ui.theme.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -30,6 +42,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -40,17 +53,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bragro.mobile.data.model.ColumnConfig
+import com.bragro.mobile.data.model.DomainConfig
 import com.bragro.mobile.data.model.DreCategoriaData
 import com.bragro.mobile.data.model.DreData
 import com.bragro.mobile.data.model.DreFazendaData
 import com.bragro.mobile.data.model.DreRamoItemData
 import com.bragro.mobile.data.repo.DreRepository
+import com.bragro.mobile.ui.domain.exportCsv
+import com.bragro.mobile.ui.print.HtmlPrinter
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -87,6 +106,17 @@ class DreViewModel(app: Application) : AndroidViewModel(app) {
         expandedFarmIds.value = if (farmId in expandedFarmIds.value) expandedFarmIds.value - farmId else expandedFarmIds.value + farmId
     }
 
+    // Ícone "recolher/expandir todos" no bloco Dados (mesmo padrão dos
+    // outros módulos) -- atua em todos os cards de fazenda de uma vez, em
+    // vez de precisar abrir um por um.
+    fun expandAllFarms(farmIds: Set<String>) {
+        expandedFarmIds.value = farmIds
+    }
+
+    fun collapseAllFarms() {
+        expandedFarmIds.value = emptySet()
+    }
+
     init {
         viewModelScope.launch {
             repository.observeCached().collectLatest { entity ->
@@ -119,6 +149,54 @@ class DreViewModel(app: Application) : AndroidViewModel(app) {
 
 private fun formatMoneyBrl(value: Double): String =
     NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(value)
+
+// Exportação CSV/PDF/Imprimir do DRE -- pedido do usuário ("construir
+// CSV/PDF/Imprimir também" pra DRE/Análises). DRE já tem uma lista plana
+// por fazenda (porFazenda), então em vez de escrever exportação nova do
+// zero, montamos um DomainConfig/ColumnConfig sintético (não vem de
+// nenhum registro/backend, só serve pra reaproveitar exportCsv/
+// HtmlPrinter -- mesma infra usada nos 16 módulos genéricos).
+private val DRE_EXPORT_COLUMNS = listOf(
+    ColumnConfig(key = "farmName", label = "Fazenda", type = "text"),
+    ColumnConfig(key = "areaHa", label = "Área (ha)", type = "number"),
+    ColumnConfig(key = "custoTotal", label = "Custo Total", type = "number", money = true),
+    ColumnConfig(key = "custoPorHa", label = "Custo/ha", type = "number", money = true),
+    ColumnConfig(key = "custoPorSc", label = "Custo/sc", type = "number", money = true),
+    ColumnConfig(key = "receitaTotal", label = "Receita Total", type = "number", money = true),
+    ColumnConfig(key = "margem", label = "Margem", type = "number", money = true),
+    ColumnConfig(key = "margemPorHa", label = "Margem/ha", type = "number", money = true),
+    ColumnConfig(key = "totalSacas", label = "Sacas", type = "number"),
+)
+
+private fun dreExportConfig(): DomainConfig = DomainConfig(id = "dre", label = "DRE", columns = DRE_EXPORT_COLUMNS)
+
+private fun dreExportRecords(dre: DreData): List<Map<String, String?>> {
+    val linhas = dre.porFazenda.map { f ->
+        mapOf(
+            "farmName" to f.farmName,
+            "areaHa" to f.areaHa.toString(),
+            "custoTotal" to f.custoTotal.toString(),
+            "custoPorHa" to f.custoPorHa.toString(),
+            "custoPorSc" to f.custoPorSc?.toString(),
+            "receitaTotal" to f.receitaTotal.toString(),
+            "margem" to f.margem.toString(),
+            "margemPorHa" to f.margemPorHa.toString(),
+            "totalSacas" to f.totalSacas?.toString(),
+        )
+    }
+    val totalizacao = mapOf(
+        "farmName" to "Total",
+        "areaHa" to dre.totais.areaHa.toString(),
+        "custoTotal" to dre.totais.custoTotal.toString(),
+        "custoPorHa" to dre.totais.custoPorHa.toString(),
+        "custoPorSc" to dre.totais.custoPorSc?.toString(),
+        "receitaTotal" to dre.totais.receitaTotal.toString(),
+        "margem" to dre.totais.margem.toString(),
+        "margemPorHa" to null,
+        "totalSacas" to dre.totais.totalSacas.toString(),
+    )
+    return linhas + totalizacao
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -191,6 +269,44 @@ private fun CategoriaBarRow(item: DreCategoriaData, maxValor: Double) {
     }
 }
 
+// Espelho de ModuleBlockSpec/ModuleCategoryBlock (DomainListScreen.kt) --
+// mesmo padrão de bloco com título + Card, duplicado aqui em vez de
+// compartilhado pra não arriscar mexer nos módulos que já estão
+// funcionando (mesma decisão já tomada nos outros arquivos).
+private data class DreBlockSpec(
+    val title: String,
+    val vertical: Boolean,
+    val content: @Composable () -> Unit,
+)
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun DreCategoryBlock(spec: DreBlockSpec, modifier: Modifier = Modifier, fillHeight: Boolean = false) {
+    Column(modifier = modifier) {
+        Text(
+            spec.title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+        )
+        Card(modifier = Modifier.fillMaxWidth().let { if (fillHeight) it.weight(1f) else it }) {
+            if (spec.vertical) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(8.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) { spec.content() }
+            } else {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) { spec.content() }
+            }
+        }
+    }
+}
+
 @Composable
 private fun FarmCard(f: DreFazendaData, arvore: List<DreRamoItemData>, expanded: Boolean, onToggle: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -237,6 +353,11 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
     val safra by viewModel.safra
     val cultura by viewModel.cultura
     val expandedFarmIds by viewModel.expandedFarmIds
+    val context = LocalContext.current
+    // Filtros Safra/Cultura viram ícone (Filtro), mesmo padrão dos outros
+    // módulos -- pedido do usuário ("dre, análises... transforme os
+    // filtros em ícone").
+    var filtrosOpen by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -255,28 +376,90 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                         }
                     }
                 },
-                actions = {
-                    IconButton(onClick = { viewModel.refresh() }) {
-                        if (loading) CircularProgressIndicator(modifier = Modifier.padding(4.dp))
-                        else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
-                    }
-                },
             )
         },
     ) { padding ->
         val data = dre
+        val allFarmIds = data?.porFazenda?.map { it.farmId }?.toSet().orEmpty()
+        val allFarmsExpanded = allFarmIds.isNotEmpty() && expandedFarmIds.containsAll(allFarmIds)
+        val temRegistros = data != null && data.porFazenda.isNotEmpty()
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        FilterDropdown("Safra", safra, data?.safrasDisponiveis.orEmpty()) { viewModel.setSafra(it) }
+            item(key = "dre-icon-row") {
+                val dadosBlock = DreBlockSpec("Dados", vertical = false) {
+                    IconButton(onClick = { filtrosOpen = !filtrosOpen }) {
+                        Icon(
+                            Icons.Filled.FilterAlt,
+                            contentDescription = "Filtros",
+                            tint = if (filtrosOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                        )
                     }
-                    Column(modifier = Modifier.weight(1f)) {
-                        FilterDropdown("Cultura", cultura, data?.culturasDisponiveis.orEmpty()) { viewModel.setCultura(it) }
+                    if (allFarmIds.isNotEmpty()) {
+                        IconButton(onClick = {
+                            if (allFarmsExpanded) viewModel.collapseAllFarms() else viewModel.expandAllFarms(allFarmIds)
+                        }) {
+                            Icon(
+                                if (allFarmsExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                                contentDescription = if (allFarmsExpanded) "Recolher todas as fazendas" else "Expandir todas as fazendas",
+                            )
+                        }
+                    }
+                }
+                val registrosBlock = DreBlockSpec("", vertical = false) {
+                    IconButton(onClick = {
+                        val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                        android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                    }) {
+                        Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Armazenamento")
+                    }
+                }
+                val operacoesBlock = DreBlockSpec("Operações", vertical = false) {
+                    IconButton(onClick = { viewModel.refresh() }) {
+                        if (loading) CircularProgressIndicator(modifier = Modifier.padding(4.dp).size(20.dp))
+                        else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
+                    }
+                }
+                val arquivosBlock = DreBlockSpec("Arquivos", vertical = false) {
+                    if (temRegistros) {
+                        IconButton(onClick = { exportCsv(context, "DRE", DRE_EXPORT_COLUMNS, dreExportRecords(data!!)) }) {
+                            Icon(Icons.Filled.TableChart, contentDescription = "Exportar CSV")
+                        }
+                        IconButton(onClick = { HtmlPrinter.exportPdfDirect(context, dreExportConfig(), dreExportRecords(data!!)) }) {
+                            Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar PDF")
+                        }
+                    }
+                }
+                val distribuicaoBlock = DreBlockSpec("", vertical = true) {
+                    if (temRegistros) {
+                        IconButton(onClick = { HtmlPrinter.printList(context, dreExportConfig(), dreExportRecords(data!!)) }) {
+                            Icon(Icons.Filled.Print, contentDescription = "Imprimir")
+                        }
+                    }
+                }
+                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DreCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
+                        DreCategoryBlock(registrosBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DreCategoryBlock(operacoesBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
+                        DreCategoryBlock(arquivosBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
+                        DreCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                    }
+                }
+            }
+            if (filtrosOpen) {
+                item {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            FilterDropdown("Safra", safra, data?.safrasDisponiveis.orEmpty()) { viewModel.setSafra(it) }
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            FilterDropdown("Cultura", cultura, data?.culturasDisponiveis.orEmpty()) { viewModel.setCultura(it) }
+                        }
                     }
                 }
             }

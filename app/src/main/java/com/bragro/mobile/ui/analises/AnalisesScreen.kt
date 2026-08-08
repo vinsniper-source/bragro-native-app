@@ -3,9 +3,13 @@ package com.bragro.mobile.ui.analises
 import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,7 +17,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.TableChart
 import com.bragro.mobile.ui.theme.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -23,6 +33,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -33,13 +44,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bragro.mobile.data.model.ColumnConfig
+import com.bragro.mobile.data.model.DomainConfig
 import com.bragro.mobile.data.repo.AnalisesRepository
+import com.bragro.mobile.ui.domain.exportCsv
+import com.bragro.mobile.ui.print.HtmlPrinter
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonArray
@@ -131,6 +148,82 @@ private fun valorParaTexto(el: JsonElement): String = when (el) {
     else -> "—"
 }
 
+// Exportação CSV/PDF/Imprimir -- pedido do usuário ("construir CSV/PDF/
+// Imprimir também" pra DRE/Análises). Análises não tem uma tabela única
+// (é um JSON genérico com 15 cruzamentos diferentes, cada um com campos
+// próprios -- ver comentário da AnalisesViewModel), então em vez de
+// modelar 15 formatos de exportação diferentes, a exportação também é
+// GENÉRICA: uma tabela "longa" (Seção / Item / Campo / Valor), uma linha
+// por campo de cada card já mostrado na tela (mesmo texto de
+// valorParaTexto usado no ObjetoCard) -- mesmo princípio da renderização.
+private val ANALISES_EXPORT_COLUMNS = listOf(
+    ColumnConfig(key = "secao", label = "Seção", type = "text"),
+    ColumnConfig(key = "item", label = "Item", type = "text"),
+    ColumnConfig(key = "campo", label = "Campo", type = "text"),
+    ColumnConfig(key = "valor", label = "Valor", type = "text"),
+)
+
+private fun analisesExportConfig(): DomainConfig = DomainConfig(id = "analises", label = "Análises", columns = ANALISES_EXPORT_COLUMNS)
+
+private fun analisesExportRecords(data: JsonObject): List<Map<String, String?>> {
+    val linhas = mutableListOf<Map<String, String?>>()
+    data.entries.forEach { (chave, valor) ->
+        val secao = tituloSecao(chave)
+        when (valor) {
+            is JsonArray -> valor.forEachIndexed { indice, item ->
+                if (item is JsonObject) {
+                    item.entries.forEach { (campo, v) ->
+                        linhas.add(mapOf("secao" to secao, "item" to (indice + 1).toString(), "campo" to campo, "valor" to valorParaTexto(v)))
+                    }
+                }
+            }
+            is JsonObject -> valor.entries.forEach { (campo, v) ->
+                linhas.add(mapOf("secao" to secao, "item" to "", "campo" to campo, "valor" to valorParaTexto(v)))
+            }
+            else -> linhas.add(mapOf("secao" to secao, "item" to "", "campo" to "", "valor" to valorParaTexto(valor)))
+        }
+    }
+    return linhas
+}
+
+// Espelho de ModuleBlockSpec/ModuleCategoryBlock (DomainListScreen.kt) --
+// mesmo padrão de bloco com título + Card, duplicado aqui em vez de
+// compartilhado pra não arriscar mexer nos módulos que já estão
+// funcionando (mesma decisão já tomada nos outros arquivos).
+private data class AnalisesBlockSpec(
+    val title: String,
+    val vertical: Boolean,
+    val content: @Composable () -> Unit,
+)
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AnalisesCategoryBlock(spec: AnalisesBlockSpec, modifier: Modifier = Modifier, fillHeight: Boolean = false) {
+    Column(modifier = modifier) {
+        Text(
+            spec.title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+        )
+        Card(modifier = Modifier.fillMaxWidth().let { if (fillHeight) it.weight(1f) else it }) {
+            if (spec.vertical) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(8.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) { spec.content() }
+            } else {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) { spec.content() }
+            }
+        }
+    }
+}
+
 @Composable
 private fun ObjetoCard(obj: JsonObject) {
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -197,6 +290,11 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
     val offline by viewModel.offline
     val safra by viewModel.safra
     val cultura by viewModel.cultura
+    val context = LocalContext.current
+    // Filtros Safra/Cultura viram ícone (Filtro), mesmo padrão dos outros
+    // módulos -- pedido do usuário ("dre, análises... transforme os
+    // filtros em ícone").
+    var filtrosOpen by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -215,32 +313,82 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                         }
                     }
                 },
-                actions = {
-                    IconButton(onClick = { viewModel.refresh() }) {
-                        if (loading) CircularProgressIndicator(modifier = Modifier.padding(4.dp))
-                        else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
-                    }
-                },
             )
         },
     ) { padding ->
         val data = analises
+        val temRegistros = data != null && data.entries.isNotEmpty()
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            item {
-                // Cultura ao lado de Safra, mesma linha, blocos separados --
-                // pedido do usuário ("análises coloque filtro cultura,
-                // dividindo a mesma linha com o filtro safra, blocos
-                // separados"), mesmo padrão do DRE (DreScreen.kt).
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        FilterDropdown("Safra", safra, safrasDisponiveis) { viewModel.setSafra(it) }
+            item(key = "analises-icon-row") {
+                val dadosBlock = AnalisesBlockSpec("Dados", vertical = false) {
+                    IconButton(onClick = { filtrosOpen = !filtrosOpen }) {
+                        Icon(
+                            Icons.Filled.FilterAlt,
+                            contentDescription = "Filtros",
+                            tint = if (filtrosOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                        )
                     }
-                    Column(modifier = Modifier.weight(1f)) {
-                        FilterDropdown("Cultura", cultura, culturasDisponiveis) { viewModel.setCultura(it) }
+                }
+                val registrosBlock = AnalisesBlockSpec("", vertical = false) {
+                    IconButton(onClick = {
+                        val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                        android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                    }) {
+                        Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Armazenamento")
+                    }
+                }
+                val operacoesBlock = AnalisesBlockSpec("Operações", vertical = false) {
+                    IconButton(onClick = { viewModel.refresh() }) {
+                        if (loading) CircularProgressIndicator(modifier = Modifier.padding(4.dp).size(20.dp))
+                        else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
+                    }
+                }
+                val arquivosBlock = AnalisesBlockSpec("Arquivos", vertical = false) {
+                    if (temRegistros) {
+                        IconButton(onClick = { exportCsv(context, "Análises", ANALISES_EXPORT_COLUMNS, analisesExportRecords(data!!)) }) {
+                            Icon(Icons.Filled.TableChart, contentDescription = "Exportar CSV")
+                        }
+                        IconButton(onClick = { HtmlPrinter.exportPdfDirect(context, analisesExportConfig(), analisesExportRecords(data!!)) }) {
+                            Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar PDF")
+                        }
+                    }
+                }
+                val distribuicaoBlock = AnalisesBlockSpec("", vertical = true) {
+                    if (temRegistros) {
+                        IconButton(onClick = { HtmlPrinter.printList(context, analisesExportConfig(), analisesExportRecords(data!!)) }) {
+                            Icon(Icons.Filled.Print, contentDescription = "Imprimir")
+                        }
+                    }
+                }
+                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AnalisesCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
+                        AnalisesCategoryBlock(registrosBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AnalisesCategoryBlock(operacoesBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
+                        AnalisesCategoryBlock(arquivosBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
+                        AnalisesCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                    }
+                }
+            }
+            if (filtrosOpen) {
+                item {
+                    // Cultura ao lado de Safra, mesma linha, blocos separados --
+                    // pedido do usuário ("análises coloque filtro cultura,
+                    // dividindo a mesma linha com o filtro safra, blocos
+                    // separados"), mesmo padrão do DRE (DreScreen.kt).
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            FilterDropdown("Safra", safra, safrasDisponiveis) { viewModel.setSafra(it) }
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            FilterDropdown("Cultura", cultura, culturasDisponiveis) { viewModel.setCultura(it) }
+                        }
                     }
                 }
             }

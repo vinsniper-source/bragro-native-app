@@ -388,6 +388,12 @@ fun DomainListScreen(
             // rh, controle interno"). Os outros módulos continuam com a
             // fileira única de ícones (sem blocos), inalterada.
             val useCategorizedBlocks = domainId in CATEGORIZED_BLOCK_DOMAINS
+            // Safra/Clima/Planejamento Safra/Colheita/Frota: mesmo esqueleto
+            // de blocos do padrão genérico acima, mas cada um com seu
+            // próprio conjunto de ícones por bloco -- personalização
+            // confirmada por imagem pra cada módulo (ver PER_MODULE_BLOCK_DOMAINS
+            // abaixo).
+            val useCustomBlocks = domainId in PER_MODULE_BLOCK_DOMAINS
             item(key = "module-icon-row") {
                 if (useCategorizedBlocks) {
                     val dadosBlock = ModuleBlockSpec("Dados", vertical = false) {
@@ -469,6 +475,138 @@ fun DomainListScreen(
                             ModuleCategoryBlock(operacoesBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
                             ModuleCategoryBlock(arquivosBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
                             ModuleCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                        }
+                    }
+                } else if (useCustomBlocks) {
+                    // Dados: igual pros 5 módulos -- gráfico, filtro, coluna,
+                    // expandir/recolher (mesmo bloco Dados do padrão genérico).
+                    val dadosBlock = ModuleBlockSpec("Dados", vertical = false) {
+                        ModuleIconButton(
+                            ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
+                        ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
+                        if (showFiltros) {
+                            ModuleIconButton(
+                                ModuleIconItem("filtros", Icons.Filled.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
+                            ) { filtrosOverride = !filtrosExpanded }
+                        }
+                        ColumnsPickerButton(
+                            allColumns = cfg.columns.filter { !it.hideInTable },
+                            visibleKeys = visibleKeys,
+                            onChange = { customVisibleKeys = it },
+                        )
+                        if (filteredRecords.isNotEmpty()) {
+                            IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear() }) {
+                                Icon(
+                                    if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                                    contentDescription = if (allExpanded) "Recolher todos os lançamentos" else "Expandir todos os lançamentos",
+                                )
+                            }
+                        }
+                    }
+                    // Operações: varia por módulo -- Safra (recalcular área +
+                    // atualizar + período + calculadora), Clima/Planejamento
+                    // Safra (só atualizar + período), Colheita (atualizar +
+                    // período + calculadora), Frota (atualizar + período +
+                    // recalcular área) -- personalização confirmada por
+                    // imagem, módulo por módulo.
+                    val operacoesBlock = ModuleBlockSpec("Operações", vertical = false) {
+                        if (domainId == "safra") {
+                            ModuleIconButton(
+                                ModuleIconItem("recalcular-area", Icons.Filled.Autorenew, "Recalcular Área"),
+                            ) { expandedBlocks["recalcular-area"] = expandedBlocks["recalcular-area"] != true }
+                        }
+                        IconButton(onClick = { viewModel.refresh(domainId) }) {
+                            if (refreshing) CircularProgressIndicator(modifier = Modifier.padding(4.dp).size(20.dp))
+                            else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
+                        }
+                        if (dateCol != null) {
+                            GenericPeriodoDropdown(
+                                periodo = periodo,
+                                intervalFrom = intervalFrom,
+                                intervalTo = intervalTo,
+                                dateLabel = dateCol.label,
+                                onPeriodo = { periodo = it; if (it != null) { intervalFrom = ""; intervalTo = "" } },
+                                onInterval = { from, to -> intervalFrom = from; intervalTo = to; if (from.isNotBlank() || to.isNotBlank()) periodo = null },
+                            )
+                        }
+                        if (domainId == "safra" || domainId == "colheita") {
+                            ModuleIconButton(
+                                ModuleIconItem("calculators", Icons.Filled.Calculate, "Calculadoras", active = expandedBlocks["calculators"] == true),
+                            ) { expandedBlocks["calculators"] = expandedBlocks["calculators"] != true }
+                        }
+                        if (domainId == "frota") {
+                            ModuleIconButton(
+                                ModuleIconItem("recalcular-area", Icons.Filled.Autorenew, "Recalcular Área"),
+                            ) { expandedBlocks["recalcular-area"] = expandedBlocks["recalcular-area"] != true }
+                        }
+                    }
+                    val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
+                        if (filteredRecords.isNotEmpty()) {
+                            IconButton(onClick = {
+                                exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
+                            }) {
+                                Icon(Icons.Filled.TableChart, contentDescription = "Exportar CSV")
+                            }
+                            IconButton(onClick = {
+                                HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys)
+                            }) {
+                                Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar PDF")
+                            }
+                        }
+                    }
+                    val nuvemBlock = ModuleBlockSpec("", vertical = false) {
+                        IconButton(onClick = {
+                            val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                        }) {
+                            Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Armazenamento")
+                        }
+                    }
+                    val imprimirBlock = ModuleBlockSpec("", vertical = true) {
+                        if (filteredRecords.isNotEmpty()) {
+                            IconButton(onClick = {
+                                HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys)
+                            }) {
+                                Icon(Icons.Filled.Print, contentDescription = "Imprimir")
+                            }
+                        }
+                    }
+                    if (domainId == "clima") {
+                        // Clima ganha um 3º ícone individual (Previsão do
+                        // tempo), além de Nuvem e Imprimir -- pedido do
+                        // usuário ("blocos individuais para ícone clima,
+                        // ícone imprimir e ícone nuvem").
+                        val climaBlock = ModuleBlockSpec("", vertical = true) {
+                            ModuleIconButton(
+                                ModuleIconItem("clima-weather", Icons.Filled.WbSunny, "Previsão do tempo", active = expandedBlocks["clima-weather"] == true),
+                            ) { expandedBlocks["clima-weather"] = expandedBlocks["clima-weather"] != true }
+                        }
+                        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ModuleCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
+                                ModuleCategoryBlock(climaBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                                ModuleCategoryBlock(nuvemBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                            }
+                            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ModuleCategoryBlock(operacoesBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
+                                ModuleCategoryBlock(arquivosBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
+                                ModuleCategoryBlock(imprimirBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                            }
+                        }
+                    } else {
+                        // Safra, Planejamento Safra, Colheita, Frota: mesmo
+                        // esqueleto do padrão genérico (Dados+Nuvem em cima,
+                        // Operações+Arquivos+Imprimir embaixo).
+                        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ModuleCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
+                                ModuleCategoryBlock(nuvemBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                            }
+                            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ModuleCategoryBlock(operacoesBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
+                                ModuleCategoryBlock(arquivosBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
+                                ModuleCategoryBlock(imprimirBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                            }
                         }
                     }
                 } else {
@@ -732,6 +870,14 @@ fun DomainListScreen(
 private val CATEGORIZED_BLOCK_DOMAINS = setOf(
     "romaneios", "pragas", "receituarios", "pedidos", "contratos",
     "caixainterno", "inventario", "rh", "controleinterno",
+)
+
+// Safra/Clima/Planejamento Safra/Colheita/Frota: mesmo layout em blocos
+// acima, mas com conjunto de ícones próprio por módulo (personalização
+// confirmada por imagem, módulo por módulo -- ver ramo useCustomBlocks em
+// "module-icon-row").
+private val PER_MODULE_BLOCK_DOMAINS = setOf(
+    "safra", "clima", "planejamentosafra", "colheita", "frota",
 )
 
 // Espelho de FinBlockSpec/FinanceiroCategoryBlock (FinanceiroScreen.kt) --
