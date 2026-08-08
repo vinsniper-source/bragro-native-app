@@ -3,12 +3,9 @@ package com.bragro.mobile.ui.print
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.os.CancellationSignal
-import android.os.ParcelFileDescriptor
-import android.print.PageRange
+import android.graphics.Paint
+import android.graphics.pdf.PdfDocument
 import android.print.PrintAttributes
-import android.print.PrintDocumentAdapter
-import android.print.PrintDocumentInfo
 import android.print.PrintManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -18,6 +15,7 @@ import com.bragro.mobile.data.model.DomainConfig
 import com.bragro.mobile.ui.domain.displayValueFor
 import com.bragro.mobile.ui.domain.formatMoneyValue
 import java.io.File
+import java.io.FileOutputStream
 
 // Fase 2 do app nativo (Task #41): "Impressao" -- no site, o unico mecanismo
 // de impressao que existe hoje (ver components/domain/data-table.tsx,
@@ -65,46 +63,94 @@ object HtmlPrinter {
     }
 
     // Ícone "PDF" -- pedido do usuário ("faça que no ícone pdf já seja
-    // direcionado pro Adobe ou similares"): em vez de abrir o diálogo de
-    // impressão do sistema (como o ícone "Imprimir" continua fazendo), gera
-    // o PDF de verdade num arquivo (mesmo PrintDocumentAdapter do WebView,
-    // só que escrito direto num arquivo em vez de mandado pro PrintManager)
-    // e abre com o app de PDF instalado (Adobe Acrobat, Google PDF etc.) via
-    // ACTION_VIEW -- sem diálogo nenhum no meio.
+    // direcionado pro Adobe ou similares"): abre direto no leitor instalado,
+    // sem passar pelo diálogo de impressão do sistema (que o ícone
+    // "Imprimir" continua usando, ver printList acima).
+    //
+    // TENTATIVA ANTERIOR (revertida): dirigir manualmente o
+    // PrintDocumentAdapter do próprio WebView (mesmo usado no printList) pra
+    // escrever direto num arquivo em vez de mandar pro PrintManager. NÃO
+    // COMPILA -- LayoutResultCallback/WriteResultCallback têm construtor
+    // package-private no SDK do Android (só o sistema pode instanciá-los,
+    // confirmado pelo erro "Cannot access '<init>': it is package-private").
+    // Ou seja: não existe API pública pra "roubar" a renderização de HTML do
+    // WebView sem passar pelo diálogo de verdade.
+    //
+    // Por isso aqui é um gerador de PDF PRÓPRIO (android.graphics.pdf.PdfDocument
+    // + Canvas), bem mais simples que o HTML/CSS da impressão -- só texto em
+    // colunas, sem as bordas/zebra da versão impressa -- mas cobre o mesmo
+    // conteúdo e evita o diálogo por completo.
     fun exportPdfDirect(context: Context, domain: DomainConfig, records: List<Map<String, String?>>, visibleKeys: Set<String>? = null) {
         val cols = domain.columns.filter { !it.hideInTable && (visibleKeys == null || visibleKeys.contains(it.key)) }
-        val html = buildListHtml(domain.label, cols, records)
-        val webView = WebView(context)
-        activeWebView = webView
-        webView.webViewClient = object : WebViewClient() {
-            override fun onPageFinished(view: WebView, url: String?) {
-                val adapter = view.createPrintDocumentAdapter(domain.label)
-                val attrs = PrintAttributes.Builder()
-                    .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
-                    .setResolution(PrintAttributes.Resolution("pdf", "pdf", 300, 300))
-                    .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
-                    .build()
-                adapter.onLayout(null, attrs, null, object : PrintDocumentAdapter.LayoutResultCallback() {
-                    override fun onLayoutFinished(info: PrintDocumentInfo?, changed: Boolean) {
-                        val dir = File(context.cacheDir, "exports").apply { mkdirs() }
-                        val safeTitle = domain.label.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
-                        val file = File(dir, "$safeTitle.pdf")
-                        val pfd = ParcelFileDescriptor.open(
-                            file,
-                            ParcelFileDescriptor.MODE_CREATE or ParcelFileDescriptor.MODE_TRUNCATE or ParcelFileDescriptor.MODE_READ_WRITE,
-                        )
-                        adapter.onWrite(arrayOf(PageRange.ALL_PAGES), pfd, CancellationSignal(), object : PrintDocumentAdapter.WriteResultCallback() {
-                            override fun onWriteFinished(pages: Array<PageRange>?) {
-                                pfd.close()
-                                openPdf(context, file)
-                                activeWebView = null
-                            }
-                        })
-                    }
-                }, null)
-            }
+        val file = buildPdfFile(context, domain.label, cols, records)
+        openPdf(context, file)
+    }
+
+    private fun buildPdfFile(context: Context, title: String, cols: List<ColumnConfig>, records: List<Map<String, String?>>): File {
+        // A4 paisagem em pontos (1/72"), mais colunas cabem numa linha.
+        val pageWidth = 842
+        val pageHeight = 595
+        val margin = 24f
+        val colCount = cols.size.coerceAtLeast(1)
+        val fontSize = when {
+            colCount <= 4 -> 12f
+            colCount <= 6 -> 10f
+            colCount <= 9 -> 9f
+            else -> 8f
         }
-        webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
+        val colWidth = (pageWidth - margin * 2) / colCount
+        val rowHeight = fontSize + 12f
+        val headerPaint = Paint().apply { textSize = fontSize; isFakeBoldText = true; color = android.graphics.Color.BLACK }
+        val cellPaint = Paint().apply { textSize = fontSize; color = android.graphics.Color.BLACK }
+        val titlePaint = Paint().apply { textSize = 16f; isFakeBoldText = true; color = android.graphics.Color.BLACK }
+        val linePaint = Paint().apply { color = android.graphics.Color.LTGRAY; strokeWidth = 0.5f }
+
+        fun maxChars(): Int = (colWidth / (fontSize * 0.55f)).toInt().coerceAtLeast(3)
+        fun clip(text: String): String {
+            val max = maxChars()
+            return if (text.length > max) text.take(max - 1) + "…" else text
+        }
+
+        val pdf = PdfDocument()
+        var pageNum = 1
+        var page = pdf.startPage(PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNum).create())
+        var canvas = page.canvas
+        var y = margin + 16f
+        canvas.drawText(title, margin, y, titlePaint)
+        y += rowHeight
+
+        fun drawHeaderRow() {
+            cols.forEachIndexed { i, col -> canvas.drawText(clip(col.label), margin + i * colWidth, y, headerPaint) }
+            y += 4f
+            canvas.drawLine(margin, y, pageWidth - margin, y, linePaint)
+            y += rowHeight
+        }
+        drawHeaderRow()
+
+        records.forEach { record ->
+            if (y > pageHeight - margin) {
+                pdf.finishPage(page)
+                pageNum++
+                page = pdf.startPage(PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNum).create())
+                canvas = page.canvas
+                y = margin + 16f
+                drawHeaderRow()
+            }
+            cols.forEachIndexed { i, col ->
+                val raw = record[col.key].orEmpty()
+                val text = if (col.money && raw.isNotBlank()) formatMoneyValue(raw) else displayValueFor(col.key, raw, col.type)
+                canvas.drawText(clip(text), margin + i * colWidth, y, cellPaint)
+            }
+            y += rowHeight
+        }
+        pdf.finishPage(page)
+
+        val dir = File(context.cacheDir, "exports").apply { mkdirs() }
+        val safeTitle = title.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
+        val file = File(dir, "$safeTitle.pdf")
+        FileOutputStream(file).use { pdf.writeTo(it) }
+        pdf.close()
+        return file
     }
 
     private fun openPdf(context: Context, file: File) {
