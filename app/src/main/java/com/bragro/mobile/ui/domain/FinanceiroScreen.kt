@@ -620,16 +620,20 @@ private data class FinBlockSpec(
 @Composable
 private fun FinanceiroCategoryBlock(spec: FinBlockSpec, modifier: Modifier = Modifier, fillHeight: Boolean = false) {
     Column(modifier = modifier) {
-        // Título só aparece se não for vazio -- pedido do usuário ("retire
-        // os títulos Registros e Distribuição").
-        if (spec.title.isNotEmpty()) {
-            Text(
-                spec.title,
-                style = spec.titleStyle,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
-            )
-        }
+        // BUG corrigido: quando o título ficava vazio, eu escondia o Text
+        // por completo (if isNotEmpty) -- só que isso também removia o
+        // ESPAÇO que o título ocupava, fazendo os blocos de 1 ícone
+        // (Registros/Distribuição, sem título) ficarem mais altos que os
+        // vizinhos com título (Dados/Operações), já que sobrava toda a
+        // altura da linha pro Card sem nada "comendo" espaço em cima. Agora
+        // o Text sempre existe (reserva a mesma altura em todo bloco da
+        // linha) -- só o CONTEÚDO fica vazio quando spec.title é "".
+        Text(
+            spec.title,
+            style = spec.titleStyle,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+        )
         // BUG corrigido: antes o Card sempre forçava fillMaxHeight(), o que
         // quebra a medição quando dois blocos ficam EMPILHADOS dentro de uma
         // Column sem altura própria (caso de Operações+Arquivos), dentro de

@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -379,7 +381,97 @@ fun DomainListScreen(
             val showRecalcularArea = domainId == "safra" || domainId == "frota"
             val showFiltros = filterableSelectCols.isNotEmpty()
             val activeFilterCountGeneric = columnFilters.values.count { it.isNotBlank() }
+            // Layout em blocos (Dados/Registros/Operações/Arquivos/
+            // Distribuição), igual ao Financeiro -- pedido do usuário
+            // ("aplique esse padrão nos módulos: romaneios, pragas,
+            // receituarios, pedidos, contratos, caixa interno, inventário,
+            // rh, controle interno"). Os outros módulos continuam com a
+            // fileira única de ícones (sem blocos), inalterada.
+            val useCategorizedBlocks = domainId in CATEGORIZED_BLOCK_DOMAINS
             item(key = "module-icon-row") {
+                if (useCategorizedBlocks) {
+                    val dadosBlock = ModuleBlockSpec("Dados", vertical = false) {
+                        ModuleIconButton(
+                            ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
+                        ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
+                        if (showFiltros) {
+                            ModuleIconButton(
+                                ModuleIconItem("filtros", Icons.Filled.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
+                            ) { filtrosOverride = !filtrosExpanded }
+                        }
+                        ColumnsPickerButton(
+                            allColumns = cfg.columns.filter { !it.hideInTable },
+                            visibleKeys = visibleKeys,
+                            onChange = { customVisibleKeys = it },
+                        )
+                        if (filteredRecords.isNotEmpty()) {
+                            IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear() }) {
+                                Icon(
+                                    if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                                    contentDescription = if (allExpanded) "Recolher todos os lançamentos" else "Expandir todos os lançamentos",
+                                )
+                            }
+                        }
+                    }
+                    val registrosBlock = ModuleBlockSpec("", vertical = false) {
+                        IconButton(onClick = {
+                            val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                        }) {
+                            Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Armazenamento")
+                        }
+                    }
+                    val operacoesBlock = ModuleBlockSpec("Operações", vertical = false) {
+                        IconButton(onClick = { viewModel.refresh(domainId) }) {
+                            if (refreshing) CircularProgressIndicator(modifier = Modifier.padding(4.dp).size(20.dp))
+                            else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
+                        }
+                        if (dateCol != null) {
+                            GenericPeriodoDropdown(
+                                periodo = periodo,
+                                intervalFrom = intervalFrom,
+                                intervalTo = intervalTo,
+                                dateLabel = dateCol.label,
+                                onPeriodo = { periodo = it; if (it != null) { intervalFrom = ""; intervalTo = "" } },
+                                onInterval = { from, to -> intervalFrom = from; intervalTo = to; if (from.isNotBlank() || to.isNotBlank()) periodo = null },
+                            )
+                        }
+                    }
+                    val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
+                        if (filteredRecords.isNotEmpty()) {
+                            IconButton(onClick = {
+                                exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
+                            }) {
+                                Icon(Icons.Filled.TableChart, contentDescription = "Exportar CSV")
+                            }
+                            IconButton(onClick = {
+                                HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys)
+                            }) {
+                                Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar PDF")
+                            }
+                        }
+                    }
+                    val distribuicaoBlock = ModuleBlockSpec("", vertical = true) {
+                        if (filteredRecords.isNotEmpty()) {
+                            IconButton(onClick = {
+                                HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys)
+                            }) {
+                                Icon(Icons.Filled.Print, contentDescription = "Imprimir")
+                            }
+                        }
+                    }
+                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ModuleCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
+                            ModuleCategoryBlock(registrosBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                        }
+                        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ModuleCategoryBlock(operacoesBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
+                            ModuleCategoryBlock(arquivosBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
+                            ModuleCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                        }
+                    }
+                } else {
                 // Borda fina em volta do bloco -- mesmo padrão de todos os
                 // outros Cards do app (Task #147) -- pedido do usuário
                 // ("coloque uma borda fina em volta do bloco").
@@ -490,6 +582,7 @@ fun DomainListScreen(
                     }) {
                         Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Armazenamento")
                     }
+                }
                 }
                 }
             }
@@ -629,6 +722,58 @@ fun DomainListScreen(
                 viewModel.refresh(domainId)
             },
         )
+    }
+}
+
+// Módulos que usam o layout em blocos (Dados/Registros/Operações/Arquivos/
+// Distribuição), igual ao Financeiro -- pedido do usuário. Os demais
+// módulos continuam com a fileira única de ícones (ver useCategorizedBlocks
+// acima).
+private val CATEGORIZED_BLOCK_DOMAINS = setOf(
+    "romaneios", "pragas", "receituarios", "pedidos", "contratos",
+    "caixainterno", "inventario", "rh", "controleinterno",
+)
+
+// Espelho de FinBlockSpec/FinanceiroCategoryBlock (FinanceiroScreen.kt) --
+// mesmo padrão de bloco com título + Card (fileira horizontal ou coluna
+// vertical de ícones), reaproveitado aqui pros módulos genéricos listados
+// acima. Duplicado (em vez de compartilhado) pra não arriscar mexer no
+// Financeiro, que já está funcionando, só pra extrair código comum.
+private data class ModuleBlockSpec(
+    val title: String,
+    val vertical: Boolean,
+    val content: @Composable () -> Unit,
+)
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun ModuleCategoryBlock(spec: ModuleBlockSpec, modifier: Modifier = Modifier, fillHeight: Boolean = false) {
+    Column(modifier = modifier) {
+        // Título sempre existe (mesmo vazio) pra reservar a mesma altura em
+        // todo bloco da linha -- ver comentário equivalente em
+        // FinanceiroCategoryBlock (bug corrigido: esconder o Text por
+        // completo quando vazio desalinhava os blocos de 1 ícone).
+        Text(
+            spec.title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+        )
+        Card(modifier = Modifier.fillMaxWidth().let { if (fillHeight) it.weight(1f) else it }) {
+            if (spec.vertical) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(8.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+                ) { spec.content() }
+            } else {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) { spec.content() }
+            }
+        }
     }
 }
 
