@@ -260,28 +260,24 @@ fun DomainListScreen(
                 // alterna: sem nenhum ícone/bloco aberto mostra o nome do
                 // módulo; com um bloco aberto mostra SÓ o nome dele, sem
                 // repetir o nome do módulo junto -- pedido do usuário.
+                // Setinha de recolher/expandir removida do título -- pedido
+                // do usuário ("retire essa seta de recolher ao lado do
+                // título"); ela mora só na fileira de ícones abaixo agora.
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        // Setinha de recolher/expandir ao lado do título --
-                        // pedido do usuário -- além da cópia que já existe na
-                        // fileira de ícones (mesma ação nos dois lugares).
-                        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                            Text(activeBlockLabel ?: (config?.label ?: domainId))
-                            if (filteredRecords.isNotEmpty()) {
-                                IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear() }, modifier = Modifier.size(28.dp)) {
-                                    Icon(
-                                        if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
-                                        contentDescription = if (allExpanded) "Recolher todos os lançamentos" else "Expandir todos os lançamentos",
-                                        modifier = Modifier.size(20.dp),
-                                    )
-                                }
-                            }
-                        }
+                        Text(activeBlockLabel ?: (config?.label ?: domainId))
                     }
                 },
+                // A seta de voltar ganha o mesmo espaçador do título -- pedido
+                // do usuário ("a seta [voltar] tinha que ficar na mesma altura
+                // do título"): sem isso ela fica mais alta, na altura ORIGINAL
+                // da AppBar, enquanto o título desceu uma linha.
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar") }
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar") }
+                    }
                 },
                 // Sem "actions" aqui -- Atualizar/Recolher-Expandir/Colunas/
                 // Exportar mudaram pra fileira de ícones abaixo do título

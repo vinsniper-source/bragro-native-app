@@ -217,29 +217,28 @@ fun FinanceiroScreen(
                     // (não mais "Financeiro — X") -- pedido do usuário.
                     // Título desce uma linha de fato -- mesmo padrão do
                     // Início: 1ª linha em branco, texto na linha de baixo.
+                    // Setinha de recolher/expandir removida daqui -- pedido do
+                    // usuário ("retire essa seta de recolher ao lado do
+                    // título"); ela mora só dentro do bloco Dados agora.
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        // Setinha de recolher/expandir alinhada ao lado do
-                        // título -- pedido do usuário -- além da cópia dentro
-                        // do bloco Dados (mesma ação nos dois lugares).
-                        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                            Text(if (isQuickView) view.label else "Financeiro")
-                            if (filtered.isNotEmpty()) {
-                                IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear() }, modifier = Modifier.size(28.dp)) {
-                                    Icon(
-                                        if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
-                                        contentDescription = if (allExpanded) "Recolher todos os lançamentos" else "Expandir todos os lançamentos",
-                                        modifier = Modifier.size(20.dp),
-                                    )
-                                }
-                            }
-                        }
+                        Text(if (isQuickView) view.label else "Financeiro")
                         if (activeBlockLabel != null) {
                             Text(activeBlockLabel, style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar") } },
+                // A seta de voltar ganha o mesmo espaçador de cima do título
+                // -- pedido do usuário ("a seta [voltar] tinha que ficar na
+                // mesma altura do título"): sem isso ela fica centralizada
+                // na altura ORIGINAL da AppBar, mais alta que o título, que
+                // desceu uma linha.
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar") }
+                    }
+                },
                 // Sem "actions" aqui -- Atualizar/Recolher-Expandir/Extrato/
                 // Importar XML/Colunas/Exportar mudaram pra fileira de ícones
                 // abaixo do título, pedido do usuário ("os ícones que
@@ -430,15 +429,20 @@ fun FinanceiroScreen(
             // desproporcional a altura e a largura").
             Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FinanceiroCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight())
-                    FinanceiroCategoryBlock(armazenamentoBlock, modifier = Modifier.weight(1f).fillMaxHeight())
+                    FinanceiroCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
+                    FinanceiroCategoryBlock(armazenamentoBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
                 }
                 Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Sem fillHeight aqui -- Operações e Arquivos ficam
+                    // empilhados nesta Column (sem altura própria) e cada um
+                    // deve ocupar só a altura do seu próprio conteúdo; é a
+                    // Column como um todo que casa com a altura da
+                    // Distribuição ao lado, não cada bloco individualmente.
                     Column(modifier = Modifier.weight(3f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         FinanceiroCategoryBlock(operacoesBlock, modifier = Modifier.fillMaxWidth())
                         FinanceiroCategoryBlock(arquivosBlock, modifier = Modifier.fillMaxWidth())
                     }
-                    FinanceiroCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(1f).fillMaxHeight())
+                    FinanceiroCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
                 }
             }
 
@@ -628,7 +632,7 @@ private data class FinBlockSpec(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun FinanceiroCategoryBlock(spec: FinBlockSpec, modifier: Modifier = Modifier) {
+private fun FinanceiroCategoryBlock(spec: FinBlockSpec, modifier: Modifier = Modifier, fillHeight: Boolean = false) {
     Column(modifier = modifier) {
         Text(
             spec.title,
@@ -636,20 +640,30 @@ private fun FinanceiroCategoryBlock(spec: FinBlockSpec, modifier: Modifier = Mod
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
         )
-        // fillMaxHeight -- não só fillMaxWidth -- pra o card esticar e
-        // ocupar o resto da altura do bloco, alinhando a base com o vizinho
-        // da mesma linha (ver height(IntrinsicSize.Min) no chamador); sem
-        // efeito quando o bloco é isolado (altura não forçada por fora).
-        Card(modifier = Modifier.fillMaxWidth().fillMaxHeight()) {
+        // BUG corrigido: antes o Card sempre forçava fillMaxHeight(), o que
+        // quebra a medição quando dois blocos ficam EMPILHADOS dentro de uma
+        // Column sem altura própria (caso de Operações+Arquivos), dentro de
+        // uma Row medida por IntrinsicSize.Min -- um bloco "roubava" a
+        // altura do outro (Arquivos sumia, Operações esticava). Agora só usa
+        // `weight(1f)` (que estica de verdade, sem quebrar a medição) quando
+        // o chamador pede explicitamente via `fillHeight` -- só faz sentido
+        // pra blocos que são vizinhos diretos numa Row (Dados/Registros,
+        // Distribuição), não pra blocos empilhados numa Column.
+        Card(modifier = Modifier.fillMaxWidth().let { if (fillHeight) it.weight(1f) else it }) {
             if (spec.vertical) {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) { spec.content() }
             } else {
+                // SpaceEvenly em vez de spacedBy -- pedido do usuário
+                // ("distribua melhor os ícones dentro do bloco pra não
+                // ficar espaço até o final"): antes os ícones ficavam
+                // agrupados à esquerda, sobrando um vão vazio à direita em
+                // blocos largos (Dados/Operações/Arquivos).
                 FlowRow(
                     modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) { spec.content() }
             }
