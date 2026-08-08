@@ -42,7 +42,6 @@ import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.FilterAlt
-import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
@@ -306,9 +305,11 @@ fun FinanceiroScreen(
                             ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
                         ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
                     }
-                    if (view == FinanceiroView.CONCILIADO) {
-                        BancoDropdown(banco = banco, options = bancoOptions, onSelect = { banco = it })
-                    }
+                    // Sem guard de view -- pedido do usuário ("quando o
+                    // ícone todos tiver selecionado, tem que aparecer todos
+                    // os ícones do bloco"): o Filtro (Banco) agora sempre
+                    // aparece em Dados, não só na visão Conciliado.
+                    BancoDropdown(banco = banco, options = bancoOptions, onSelect = { banco = it })
                     if (cfg != null) {
                         ColumnsPickerButton(
                             allColumns = viewColumns,
@@ -388,9 +389,9 @@ fun FinanceiroScreen(
                     }
                 }
             val armazenamentoBlock =
-                // Renomeado de "Armazenamento" pra "Registros" -- pedido do
-                // usuário no esboço mais recente.
-                FinBlockSpec("Registros", MaterialTheme.typography.bodySmall, vertical = false) {
+                // Sem título (string vazia) -- pedido do usuário ("retire os
+                // títulos Registros e Distribuição").
+                FinBlockSpec("", MaterialTheme.typography.bodySmall, vertical = false) {
                     // Só esse ícone no bloco -- pedido do usuário ("será
                     // apenas um ícone offline, troque o ícone por uma
                     // nuvem"). Reflete o estado de conexão (offline usa os
@@ -403,47 +404,32 @@ fun FinanceiroScreen(
                     }
                 }
             val distribuicaoBlock =
-                // Vertical agora -- pedido do usuário no desenho mais
-                // recente: cobre a altura combinada de Operações+Arquivos,
-                // à direita deles.
-                FinBlockSpec("Distribuição", MaterialTheme.typography.bodyMedium, vertical = true) {
+                // Sem título (string vazia) e sem o ícone Compartilhar --
+                // pedido do usuário ("exclua o ícone de compartilhar em txt";
+                // "retire os títulos Registros e Distribuição"). Agora só
+                // Imprimir, centralizado (ver FinanceiroCategoryBlock).
+                FinBlockSpec("", MaterialTheme.typography.bodyMedium, vertical = true) {
                     if (cfg != null && filtered.isNotEmpty()) {
                         IconButton(onClick = { HtmlPrinter.printList(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) }) {
                             Icon(Icons.Filled.Print, contentDescription = "Imprimir")
                         }
-                        // Ícone trocado (não é mais o "Share" padrão) --
-                        // pedido do usuário ("troque o ícone de
-                        // compartilhar").
-                        IconButton(onClick = { shareFinanceiroResumo(context, view, effectiveColumns, filtered) }) {
-                            Icon(Icons.Filled.IosShare, contentDescription = "Compartilhar")
-                        }
                     }
                 }
-            // Layout final acertado com o usuário via prévia (mockup v2):
-            // linha 1 -- Dados (largo) + Registros (estreito); linha 2 --
-            // Operações e Arquivos empilhados à esquerda (mesma largura de
-            // Dados) e Distribuição à direita (mesma largura de Registros)
-            // cobrindo a altura combinada dos dois. Todas as 3 "linhas"
-            // (Dados, Operações, Arquivos) com a mesma altura -- pedido do
-            // usuário ("as linhas tem que ser delimitadas, não podem ficar
-            // desproporcional a altura e a largura").
+            // Layout: linha 1 -- Dados (largo) + Registros (estreito); linha
+            // 2 -- Operações + Distribuição (mesma altura dos dois, pedido do
+            // usuário: "reduza o tamanho do bloco vertical, fique alinhado
+            // ao bloco da linha 2"); linha 3 -- Arquivos sozinho, largura
+            // total (Distribuição não cobre mais essa linha).
             Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FinanceiroCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
                     FinanceiroCategoryBlock(armazenamentoBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
                 }
                 Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // Sem fillHeight aqui -- Operações e Arquivos ficam
-                    // empilhados nesta Column (sem altura própria) e cada um
-                    // deve ocupar só a altura do seu próprio conteúdo; é a
-                    // Column como um todo que casa com a altura da
-                    // Distribuição ao lado, não cada bloco individualmente.
-                    Column(modifier = Modifier.weight(3f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        FinanceiroCategoryBlock(operacoesBlock, modifier = Modifier.fillMaxWidth())
-                        FinanceiroCategoryBlock(arquivosBlock, modifier = Modifier.fillMaxWidth())
-                    }
+                    FinanceiroCategoryBlock(operacoesBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
                     FinanceiroCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
                 }
+                FinanceiroCategoryBlock(arquivosBlock, modifier = Modifier.fillMaxWidth())
             }
 
             when {
@@ -634,12 +620,16 @@ private data class FinBlockSpec(
 @Composable
 private fun FinanceiroCategoryBlock(spec: FinBlockSpec, modifier: Modifier = Modifier, fillHeight: Boolean = false) {
     Column(modifier = modifier) {
-        Text(
-            spec.title,
-            style = spec.titleStyle,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
-        )
+        // Título só aparece se não for vazio -- pedido do usuário ("retire
+        // os títulos Registros e Distribuição").
+        if (spec.title.isNotEmpty()) {
+            Text(
+                spec.title,
+                style = spec.titleStyle,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+            )
+        }
         // BUG corrigido: antes o Card sempre forçava fillMaxHeight(), o que
         // quebra a medição quando dois blocos ficam EMPILHADOS dentro de uma
         // Column sem altura própria (caso de Operações+Arquivos), dentro de
@@ -651,9 +641,13 @@ private fun FinanceiroCategoryBlock(spec: FinBlockSpec, modifier: Modifier = Mod
         // Distribuição), não pra blocos empilhados numa Column.
         Card(modifier = Modifier.fillMaxWidth().let { if (fillHeight) it.weight(1f) else it }) {
             if (spec.vertical) {
+                // Centralizado (horizontal e vertical) -- pedido do usuário
+                // ("centralize o ícone da impressora"); fillMaxHeight aqui
+                // pra sobrar espaço de verdade pro Arrangement.Center atuar.
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(8.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
                 ) { spec.content() }
             } else {
                 // SpaceEvenly em vez de spacedBy -- pedido do usuário
@@ -671,32 +665,9 @@ private fun FinanceiroCategoryBlock(spec: FinBlockSpec, modifier: Modifier = Mod
     }
 }
 
-/** "Compartilhar" (bloco Distribuição) -- pedido do usuário ("no bloco
- * Distribuição... imprimir e compartilhar"): monta um resumo em texto puro
- * (rótulo: valor por lançamento) e abre o menu de compartilhar do Android --
- * mesma infraestrutura já usada por exportCsv (ver shareTextFile). */
-private fun shareFinanceiroResumo(
-    context: android.content.Context,
-    view: FinanceiroView,
-    columns: List<com.bragro.mobile.data.model.ColumnConfig>,
-    records: List<Map<String, String?>>,
-) {
-    val texto = buildString {
-        appendLine("Financeiro — ${view.label}")
-        appendLine()
-        records.forEach { record ->
-            columns.forEach { col ->
-                val v = record[col.key]
-                if (!v.isNullOrBlank()) {
-                    appendLine("${col.label}: ${if (col.money) formatMoneyValue(v) else displayValueFor(col.key, v, col.type)}")
-                }
-            }
-            appendLine("—")
-        }
-    }
-    val fileName = "financeiro-${view.name.lowercase()}-resumo.txt"
-    com.bragro.mobile.ui.util.shareTextFile(context, fileName, "text/plain", texto)
-}
+// shareFinanceiroResumo (ícone Compartilhar em txt) removido -- pedido do
+// usuário ("exclua o ícone de compartilhar em txt, não só nesse módulo mas
+// como em todos os outros").
 
 /** Botão-dropdown "Período" -- 8 categorias de recorrência/vencimento + um
  * intervalo de datas manual (De/Até), espelho do dropdown Período do site

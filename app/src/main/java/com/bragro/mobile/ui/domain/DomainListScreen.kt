@@ -32,7 +32,6 @@ import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.FilterAlt
-import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.MonitorWeight
 import androidx.compose.material.icons.filled.PictureAsPdf
@@ -479,11 +478,9 @@ fun DomainListScreen(
                         }) {
                             Icon(Icons.Filled.Print, contentDescription = "Imprimir")
                         }
-                        IconButton(onClick = {
-                            shareRecordsResumo(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
-                        }) {
-                            Icon(Icons.Filled.IosShare, contentDescription = "Compartilhar")
-                        }
+                        // Ícone Compartilhar (txt) removido -- pedido do
+                        // usuário ("exclua o ícone de compartilhar em txt...
+                        // em todos os outros [módulos]").
                     }
                     // Ícone nuvem (armazenamento/offline) -- reflete o estado
                     // de conexão, mesmo padrão do Financeiro ("Registros").
