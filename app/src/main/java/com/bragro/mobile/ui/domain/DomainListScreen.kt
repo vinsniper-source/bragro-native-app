@@ -230,25 +230,13 @@ fun DomainListScreen(
     // ícones"). Tudo começa fechado; tocar o ícone na fileira revela o
     // bloco correspondente.
     val expandedBlocks = remember(domainId) { mutableStateMapOf<String, Boolean>() }
-    // Nome de cada bloco, na mesma ordem em que aparecem na fileira de
-    // ícones -- usado só pra saber qual nome mostrar no título quando um
-    // bloco está aberto (ver título abaixo).
-    val iconRowLabels = remember(domainId) {
-        linkedMapOf(
-            "charts" to "Gráficos",
-            "calculators" to "Calculadoras",
-            "clima-weather" to "Previsão do tempo",
-            "estoque-fazenda" to "Transferências entre Fazendas",
-            "recalcular-area" to "Recalcular Área",
-            "filtros" to "Filtros",
-        )
-    }
-    // Título alterna pro nome do bloco aberto -- pedido do usuário ("quando
-    // clicar vai alternar o nome, por exemplo onde está a palavra
-    // financeiro"); sem nenhum bloco aberto, volta pro nome do módulo.
-    val activeBlockLabel = iconRowLabels.entries.firstOrNull { (key, _) ->
-        if (key == "filtros") filtrosExpanded else expandedBlocks[key] == true
-    }?.value
+    // Título FIXO com o nome do setor/módulo -- pedido do usuário ("agora
+    // que os ícones estão tendo rótulos, pode deixar fixo o nome do setor
+    // ao invés de alterar para parecer o nome do ícone no título"): antes
+    // o título trocava pro nome do bloco aberto (ex.: "Gráficos"), mas
+    // agora que cada ícone já mostra seu próprio rótulo embaixo, não
+    // precisa mais repetir esse nome no título -- reverte pro nome do
+    // módulo sempre.
 
     // Botão "Colunas" (espelho do site) -- null = ainda não customizado pelo
     // usuário, mostra todas as colunas não ocultas (comportamento de sempre).
@@ -291,7 +279,7 @@ fun DomainListScreen(
                         // longos (ex.: "Transferências entre Fazendas") sem
                         // isso podiam quebrar linha e cortar embaixo, já
                         // que a AppBar tem altura fixa.
-                        Text(activeBlockLabel ?: (config?.label ?: domainId), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(config?.label ?: domainId, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 },
                 // A seta de voltar ganha o mesmo espaçador do título -- pedido
@@ -445,7 +433,7 @@ fun DomainListScreen(
                     val registrosBlock = ModuleBlockSpec("", vertical = false) {
                         LabeledIconButton(
                             icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
-                            label = "Armazenamento",
+                            label = "Nuvem",
                             onClick = {
                                 val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
@@ -548,7 +536,7 @@ fun DomainListScreen(
                     val operacoesBlock = ModuleBlockSpec("Operações", vertical = false) {
                         if (domainId == "safra") {
                             ModuleIconButton(
-                                ModuleIconItem("recalcular-area", Icons.Filled.Autorenew, "Recalcular Área"),
+                                ModuleIconItem("recalcular-area", Icons.Filled.Autorenew, "Recalcular"),
                             ) { expandedBlocks["recalcular-area"] = expandedBlocks["recalcular-area"] != true }
                         }
                         LabeledIconButton(
@@ -574,7 +562,7 @@ fun DomainListScreen(
                         }
                         if (domainId == "frota") {
                             ModuleIconButton(
-                                ModuleIconItem("recalcular-area", Icons.Filled.Autorenew, "Recalcular Área"),
+                                ModuleIconItem("recalcular-area", Icons.Filled.Autorenew, "Recalcular"),
                             ) { expandedBlocks["recalcular-area"] = expandedBlocks["recalcular-area"] != true }
                         }
                     }
@@ -602,7 +590,7 @@ fun DomainListScreen(
                     val nuvemBlock = ModuleBlockSpec("", vertical = false) {
                         LabeledIconButton(
                             icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
-                            label = "Armazenamento",
+                            label = "Nuvem",
                             onClick = {
                                 val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
@@ -625,7 +613,7 @@ fun DomainListScreen(
                         // ícone imprimir e ícone nuvem").
                         val climaBlock = ModuleBlockSpec("", vertical = true) {
                             ModuleIconButton(
-                                ModuleIconItem("clima-weather", Icons.Filled.WbSunny, "Previsão do tempo", active = expandedBlocks["clima-weather"] == true),
+                                ModuleIconItem("clima-weather", Icons.Filled.WbSunny, "Previsão", active = expandedBlocks["clima-weather"] == true),
                             ) { expandedBlocks["clima-weather"] = expandedBlocks["clima-weather"] != true }
                         }
                         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -653,7 +641,7 @@ fun DomainListScreen(
                         // padrão da imagem 3 e 4" em Estoque).
                         val transferenciasBlock = ModuleBlockSpec("", vertical = true) {
                             ModuleIconButton(
-                                ModuleIconItem("estoque-fazenda", Icons.Filled.CompareArrows, "Transferências entre Fazendas", active = expandedBlocks["estoque-fazenda"] == true),
+                                ModuleIconItem("estoque-fazenda", Icons.Filled.CompareArrows, "Transferências", active = expandedBlocks["estoque-fazenda"] == true),
                             ) { expandedBlocks["estoque-fazenda"] = expandedBlocks["estoque-fazenda"] != true }
                         }
                         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -707,12 +695,12 @@ fun DomainListScreen(
                     }
                     if (showClima) {
                         ModuleIconButton(
-                            ModuleIconItem("clima-weather", Icons.Filled.WbSunny, "Previsão do tempo", active = expandedBlocks["clima-weather"] == true),
+                            ModuleIconItem("clima-weather", Icons.Filled.WbSunny, "Previsão", active = expandedBlocks["clima-weather"] == true),
                         ) { expandedBlocks["clima-weather"] = expandedBlocks["clima-weather"] != true }
                     }
                     if (showEstoqueFazenda) {
                         ModuleIconButton(
-                            ModuleIconItem("estoque-fazenda", Icons.Filled.CompareArrows, "Transferências entre Fazendas", active = expandedBlocks["estoque-fazenda"] == true),
+                            ModuleIconItem("estoque-fazenda", Icons.Filled.CompareArrows, "Transferências", active = expandedBlocks["estoque-fazenda"] == true),
                         ) { expandedBlocks["estoque-fazenda"] = expandedBlocks["estoque-fazenda"] != true }
                     }
                     if (showRecalcularArea) {
@@ -721,7 +709,7 @@ fun DomainListScreen(
                         // confundia, pedido do usuario ("substitua icones
                         // que estejam iguais mas com funcoes diferentes").
                         ModuleIconButton(
-                            ModuleIconItem("recalcular-area", Icons.Filled.Autorenew, "Recalcular Área"),
+                            ModuleIconItem("recalcular-area", Icons.Filled.Autorenew, "Recalcular"),
                         ) { expandedBlocks["recalcular-area"] = expandedBlocks["recalcular-area"] != true }
                     }
                     if (showFiltros) {
@@ -795,7 +783,7 @@ fun DomainListScreen(
                     // de conexão, mesmo padrão do Financeiro ("Registros").
                     LabeledIconButton(
                         icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
-                        label = "Armazenamento",
+                        label = "Nuvem",
                         onClick = {
                             val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
                             android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
@@ -1174,18 +1162,16 @@ private fun GenericPeriodoDropdown(
     var toText by remember(intervalTo) { mutableStateOf(intervalTo) }
     val hasFilter = periodo != null || intervalFrom.isNotBlank() || intervalTo.isNotBlank()
 
-    // Só ícone (sem texto "Período"/categoria selecionada) -- pedido do
-    // usuário ("período isolado, só o ícone"), mesmo critério aplicado no
-    // site (data-table.tsx). O estado ativo continua visível pela cor
-    // preenchida do botão (igual a antes), só não escreve mais o rótulo.
+    // Ganhou rótulo "Período" -- varredura geral pedida pelo usuário
+    // ("alguns ícones não receberam rótulos como colunas e períodos,
+    // filtros"). Estado ativo continua visível pela cor preenchida.
     Box {
-        IconButton(onClick = { expanded = true }) {
-            Icon(
-                Icons.Filled.CalendarMonth,
-                contentDescription = "Período",
-                tint = if (hasFilter) MaterialTheme.colorScheme.primary else LocalContentColor.current,
-            )
-        }
+        LabeledIconButton(
+            icon = Icons.Filled.CalendarMonth,
+            label = "Período",
+            tint = if (hasFilter) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+            onClick = { expanded = true },
+        )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(text = { Text("Todos os períodos") }, onClick = { onPeriodo(null); expanded = false })
             HorizontalDivider()

@@ -337,7 +337,7 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                 val registrosBlock = AnalisesBlockSpec("", vertical = false) {
                     LabeledIconButton(
                         icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
-                        label = "Armazenamento",
+                        label = "Nuvem",
                         onClick = {
                             val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
                             android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()

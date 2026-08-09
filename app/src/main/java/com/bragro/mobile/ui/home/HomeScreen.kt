@@ -1055,77 +1055,73 @@ private fun KpiGrid(data: HomeData) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 row.forEach { kpi ->
+                    // Reestruturado -- pedido do usuário ("resolva de uma
+                    // vez por todas o porque o kpi financeiro não consegue
+                    // puxar as ,00"): a caixa do valor (`widthIn(min=4dp)`,
+                    // sem largura máxima) ficava competindo por espaço com a
+                    // Column(weight(1f)) do rótulo NA MESMA Row -- quando o
+                    // valor era longo (ex.: "R$ 1.164.566,00"), ele "roubava"
+                    // toda a largura solta, sobrando quase nada pro rótulo,
+                    // que então quebrava em muitas linhas (sem maxLines) e
+                    // explodia a altura mínima da Row inteira (height =
+                    // IntrinsicSize.Min), estufando o card vazio -- exatamente
+                    // o bug visto no card do Financeiro. Agora o valor/
+                    // quantidade fica numa linha PRÓPRIA, com a largura TOTAL
+                    // do card, sem nenhum vizinho disputando espaço -- nunca
+                    // mais é cortado nem força a altura de ninguém.
                     Card(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                        // Alignment.Top (não CenterVertically) -- pedido do
-                        // usuário ("no kpi financeiro coloque a descrição e
-                        // na mesma linha acrescente as duas casas depois da
-                        // vírgula"): com o rótulo forçado em 2 linhas
-                        // (minLines abaixo, pra manter os cards com a mesma
-                        // altura), centralizar verticalmente jogava o valor
-                        // pra entre as 2 linhas do rótulo -- alinhado no topo,
-                        // o valor sempre fica ao lado da 1ª linha do rótulo.
-                        Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                            // Só contorno, sem preenchimento -- pedido do
-                            // usuário ("retire o preenchimento verde e deixe
-                            // apenas a borda em verde, em todo app").
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .border(1.dp, kpi.color, CircleShape),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(kpi.icon, contentDescription = null, tint = kpi.color, modifier = Modifier.size(20.dp))
-                            }
-                            Spacer(Modifier.width(10.dp))
-                            // Esquerda: nome do KPI (linha 1) + descrição
-                            // (linha 2, sempre presente -- mesmo espaço
-                            // reservado em todo card, com ou sem descrição,
-                            // pra manter a altura homogênea entre eles).
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    kpi.label,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                                // Sem maxLines/ellipsis -- pedido do usuário
-                                // ("aumente a altura pra caber todas as
-                                // informações sem cortar"): a descrição
-                                // quebra em quantas linhas precisar, e o
-                                // Card cresce junto (altura não é mais fixa
-                                // em 1 linha por card).
-                                Text(
-                                    kpi.description ?: " ",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            Spacer(Modifier.width(6.dp))
-                            // Centro: quantidade (contagem simples).
-                            Box(modifier = Modifier.width(36.dp), contentAlignment = Alignment.Center) {
-                                if (kpi.kind == KpiKind.QUANTIDADE) {
-                                    Text(kpi.value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Column(modifier = Modifier.padding(12.dp).fillMaxWidth()) {
+                            Row(verticalAlignment = Alignment.Top) {
+                                // Só contorno, sem preenchimento -- pedido do
+                                // usuário ("retire o preenchimento verde e
+                                // deixe apenas a borda em verde, em todo
+                                // app").
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .border(1.dp, kpi.color, CircleShape),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(kpi.icon, contentDescription = null, tint = kpi.color, modifier = Modifier.size(20.dp))
                                 }
-                            }
-                            // Direita: valor em R$ -- sempre em UMA linha só,
-                            // não importa o número de caracteres (pedido do
-                            // usuário: "coloque o valor total em uma linha só
-                            // independente do número de caracteres").
-                            Box(modifier = Modifier.widthIn(min = 4.dp), contentAlignment = Alignment.CenterEnd) {
-                                if (kpi.kind == KpiKind.VALOR) {
+                                Spacer(Modifier.width(10.dp))
+                                Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        kpi.value,
-                                        style = MaterialTheme.typography.titleMedium,
+                                        kpi.label,
+                                        style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.Bold,
-                                        textAlign = TextAlign.End,
                                         maxLines = 1,
-                                        softWrap = false,
-                                        overflow = TextOverflow.Visible,
+                                        overflow = TextOverflow.Ellipsis,
                                     )
+                                    // Sem maxLines/ellipsis -- pedido do
+                                    // usuário ("aumente a altura pra caber
+                                    // todas as informações sem cortar"): a
+                                    // descrição quebra em quantas linhas
+                                    // precisar, e o Card cresce junto.
+                                    if (kpi.description != null) {
+                                        Text(
+                                            kpi.description,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
                                 }
                             }
+                            Spacer(Modifier.height(6.dp))
+                            // Valor/quantidade em linha própria, largura
+                            // cheia do card -- nunca mais compete por espaço
+                            // com o rótulo, então nunca mais corta o "R$" nem
+                            // as casas decimais.
+                            Text(
+                                kpi.value,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.End,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
                         }
                     }
                 }

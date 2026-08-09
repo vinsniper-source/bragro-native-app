@@ -179,14 +179,11 @@ fun FinanceiroScreen(
     // módulo genérico (DomainListScreen.kt) -- pedido do usuário ("reduza os
     // blocos que são compatíveis a ícones, distribua numa linha só").
     val expandedBlocks = remember { mutableStateMapOf<String, Boolean>() }
-    val iconRowLabels = remember {
-        linkedMapOf(
-            "charts" to "Gráficos",
-            "calculators" to "Calculadoras",
-            "recalcular-vencimentos" to "Recalcular Vencimentos",
-        )
-    }
-    val activeBlockLabel = iconRowLabels.entries.firstOrNull { (key, _) -> expandedBlocks[key] == true }?.value
+    // Título FIXO (nome do setor) -- pedido do usuário ("agora que os
+    // ícones estão tendo rótulos, pode deixar fixo o nome do setor ao
+    // invés de alterar para parecer o nome do ícone no título"): removido
+    // o subtítulo que ecoava o nome do bloco aberto (ex.: "Gráficos"),
+    // já que cada ícone agora mostra seu próprio rótulo embaixo.
 
     val filtered = remember(allRecords, view, periodo, intervalFrom, intervalTo, banco) {
         var result = filterByFinanceiroView(allRecords, view)
@@ -237,9 +234,6 @@ fun FinanceiroScreen(
                         // ("adapte ao tamanho da fonte sem cortes e dentro
                         // do limite da tela").
                         Text(if (isQuickView) view.label else "Financeiro", maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        if (activeBlockLabel != null) {
-                            Text(activeBlockLabel, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
                     }
                 },
                 // A seta de voltar ganha o mesmo espaçador de cima do título
@@ -357,7 +351,7 @@ fun FinanceiroScreen(
                         // do usuario ("substitua icones que estejam iguais
                         // mas com funcoes diferentes").
                         ModuleIconButton(
-                            ModuleIconItem("recalcular-vencimentos", Icons.Filled.Autorenew, "Recalcular Vencimentos", active = expandedBlocks["recalcular-vencimentos"] == true),
+                            ModuleIconItem("recalcular-vencimentos", Icons.Filled.Autorenew, "Recalcular", active = expandedBlocks["recalcular-vencimentos"] == true),
                         ) { expandedBlocks["recalcular-vencimentos"] = expandedBlocks["recalcular-vencimentos"] != true }
                     }
                     PeriodoDropdown(
@@ -414,7 +408,7 @@ fun FinanceiroScreen(
                     // dados salvos no aparelho).
                     LabeledIconButton(
                         icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
-                        label = "Armazenamento",
+                        label = "Nuvem",
                         onClick = {
                             val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
                             android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
@@ -737,17 +731,16 @@ private fun PeriodoDropdown(
     var toText by remember(intervalTo) { mutableStateOf(intervalTo) }
     val hasFilter = periodo != null || intervalFrom.isNotBlank() || intervalTo.isNotBlank()
 
-    // Só ícone (sem texto) -- pedido do usuário ("período isolado, só o
-    // ícone"), mesmo critério do site (data-table.tsx) e do Período
-    // genérico dos demais módulos (DomainListScreen.kt).
+    // Ganhou rótulo "Período" -- varredura geral pedida pelo usuário
+    // ("alguns ícones não receberam rótulos como colunas e períodos,
+    // filtros").
     Box {
-        IconButton(onClick = { expanded = true }) {
-            Icon(
-                Icons.Filled.CalendarMonth,
-                contentDescription = "Período",
-                tint = if (hasFilter) MaterialTheme.colorScheme.primary else LocalContentColor.current,
-            )
-        }
+        LabeledIconButton(
+            icon = Icons.Filled.CalendarMonth,
+            label = "Período",
+            tint = if (hasFilter) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+            onClick = { expanded = true },
+        )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(text = { Text("Todos os períodos") }, onClick = { onPeriodo(null); expanded = false })
             HorizontalDivider()
@@ -803,13 +796,12 @@ private fun BancoDropdown(banco: String?, options: List<LookupEntity>, onSelect:
     val hasFilter = !banco.isNullOrBlank()
 
     Box {
-        IconButton(onClick = { expanded = true }) {
-            Icon(
-                Icons.Filled.FilterAlt,
-                contentDescription = "Filtros",
-                tint = if (hasFilter) MaterialTheme.colorScheme.primary else LocalContentColor.current,
-            )
-        }
+        LabeledIconButton(
+            icon = Icons.Filled.FilterAlt,
+            label = "Filtros",
+            tint = if (hasFilter) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+            onClick = { expanded = true },
+        )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(text = { Text("Todos os bancos") }, onClick = { onSelect(null); expanded = false })
             HorizontalDivider()

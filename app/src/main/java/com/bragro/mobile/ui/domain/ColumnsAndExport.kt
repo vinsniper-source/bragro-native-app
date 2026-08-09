@@ -36,9 +36,10 @@ import java.util.Locale
 fun ColumnsPickerButton(allColumns: List<ColumnConfig>, visibleKeys: Set<String>, onChange: (Set<String>) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     Box {
-        IconButton(onClick = { expanded = true }) {
-            Icon(Icons.Filled.ViewColumn, contentDescription = "Colunas")
-        }
+        // Rótulo abaixo do ícone -- varredura geral pedida pelo usuário
+        // ("alguns ícones não receberam rótulos como colunas e períodos,
+        // filtros"), mesmo padrão visual do LabeledIconButton.
+        LabeledIconButton(icon = Icons.Filled.ViewColumn, label = "Colunas", onClick = { expanded = true })
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             Box(modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
                 Column {
