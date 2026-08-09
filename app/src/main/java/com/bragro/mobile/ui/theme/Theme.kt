@@ -74,6 +74,11 @@ private val LightColors = lightColorScheme(
     outlineVariant = Color(0xFFC3D0CB),
 )
 
+// Fundo do modo escuro agora é o tom mais escuro de verde que existe no
+// tema (BrGreenDark) -- pedido do usuário ("coloque a textura de fundo o
+// tom mais escuro de verde que tiver no modo escuro"). `surface` (blocos/
+// Card) continua mais claro que o fundo, mesma relação de contraste já
+// confirmada por imagem antes.
 private val DarkColors = darkColorScheme(
     primary = BrGreen,
     primaryContainer = Color(0xFF243A2F),
@@ -82,7 +87,7 @@ private val DarkColors = darkColorScheme(
     secondaryContainer = Color(0xFF5E4F26),
     onSecondaryContainer = Color(0xFFF4DFA5),
     tertiary = BrBlue,
-    background = Color(0xFF1E2B23),
+    background = Color(0xFF0C2317),
     surface = Color(0xFF151B18),
     surfaceVariant = Color(0xFF151B18),
     outline = Color(0xFF70847F),

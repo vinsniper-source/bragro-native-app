@@ -443,11 +443,16 @@ fun HomeScreen(
                 ) {
                     // Logo nova, ainda maior que antes -- pedido do usuário
                     // repetiu ("aumente mais o tamanho da logo, login e
-                    // início"). 96dp -> 120dp.
+                    // início"). 96dp -> 120dp -> 100dp: 120dp deixava a logo
+                    // larga demais (sem largura fixa, escala pela proporção
+                    // da imagem) e empurrava o ícone da logo do cliente pra
+                    // fora da tela, à direita -- pedido do usuário
+                    // ("desloque a logo mais pra esquerda pro ícone da logo
+                    // do cliente voltar a aparecer").
                     Image(
                         painter = painterResource(R.drawable.logo_bragro),
                         contentDescription = "BRAgro",
-                        modifier = Modifier.height(120.dp),
+                        modifier = Modifier.height(100.dp),
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     // Ícone "Início" removido -- pedido do usuário ("retire a
@@ -639,13 +644,14 @@ fun HomeScreen(
 
             item(key = "mural") { BulletinBoardCard(data.notices, canManage, viewModel) }
             item(key = "alertas") { AlertsCard(data.alerts, onOpenDomain) }
-            // KPIs (Financeiro/Estoque/Safra/RH) entraram dentro do Monitor
-            // em tempo real, em vez de uma seção própria -- pedido do
-            // usuário ("teria uma alternativa mais eficiente a esses kpis
-            // lembrando que já tenho avisos, alertas, monitor, clima,
-            // câmbio, cotações, destaques"), recomendação escolhida em vez
-            // de manter mais uma seção separada na tela.
-            item(key = "monitor") { ActivityMonitorCard(data) }
+            // Revertido -- pedido do usuário ("os kpis estão dentro do
+            // monitor em tempo real, volte eles para a posição original"):
+            // dentro do Monitor os cards ficavam espremidos (Card dentro de
+            // Card, menos largura disponível) e os rótulos cortavam
+            // ("Itens no e...", "Operaç...", "Colabor..."). Volta a ser
+            // seção própria, largura cheia.
+            item(key = "monitor") { ActivityMonitorCard(data.recentActivity) }
+            item(key = "kpis") { KpiGrid(data) }
             // Clima ao lado de Câmbio, Cotações ao lado de Destaques -- cada
             // par em blocos separados (Card) lado a lado, pedido do usuário
             // ("coloque câmbio ao lado de clima separados por blocos").
@@ -895,8 +901,7 @@ private fun AlertsCard(alerts: List<AlertData>, onOpenDomain: (String) -> Unit) 
 // mesma lógica no monitor do app mobile e coloque toda descrição de um item
 // em uma linha só").
 @Composable
-private fun ActivityMonitorCard(data: HomeData) {
-    val events = data.recentActivity
+private fun ActivityMonitorCard(events: List<ActivityEventData>) {
     // Fechado por padrão -- pedido do usuário ("os blocos mural, alertas e
     // monitor tem que aparecer fechados").
     var expanded by remember { mutableStateOf(false) }
@@ -908,9 +913,8 @@ private fun ActivityMonitorCard(data: HomeData) {
                 Box(modifier = Modifier.weight(1f)) {
                     // Contagem no título -- mesmo padrão da Central de
                     // Alertas ("(N)"), pedido do usuário ("coloque a
-                    // quantidade do item"); soma os KPIs também agora que
-                    // eles moram aqui dentro (ver KpiGrid abaixo).
-                    CollapsibleHeader("Monitor em tempo real (${events.size + KPI_COUNT})", expanded) { expanded = !expanded }
+                    // quantidade do item").
+                    CollapsibleHeader("Monitor em tempo real (${events.size})", expanded) { expanded = !expanded }
                 }
             }
             if (expanded) {
@@ -949,14 +953,6 @@ private fun ActivityMonitorCard(data: HomeData) {
                         }
                     }
                 }
-                // KPIs (Financeiro/Estoque/Safra/RH) -- pedido do usuário
-                // ("teria uma alternativa mais eficiente a esses kpis"):
-                // em vez de uma seção própria só pra 4 números, entram aqui
-                // dentro, junto do resto da atividade em tempo real da
-                // conta.
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                Text("Indicadores", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                KpiGrid(data)
             }
         }
     }
@@ -967,10 +963,6 @@ private fun ActivityMonitorCard(data: HomeData) {
 // coloque os valores a direita, as quantidades no meio e os textos nomes a
 // esquerda"), mesmo padrão de alinhamento adotado em todo o app (ver
 // DomainListScreen.kt).
-// Usado só pra somar no título "Monitor em tempo real (N)" -- ver
-// ActivityMonitorCard, que agora também mostra estes 4 KPIs por dentro.
-private const val KPI_COUNT = 4
-
 private enum class KpiKind { QUANTIDADE, VALOR }
 private data class Kpi(
     val label: String,
@@ -1010,9 +1002,33 @@ private fun KpiGrid(data: HomeData) {
             KpiKind.VALOR,
             description = "Saldo em aberto (a receber − a pagar)",
         ),
-        Kpi("Itens no estoque", data.itensEstoque.toString(), Icons.Filled.Inventory2, BrYellow, KpiKind.QUANTIDADE),
-        Kpi("Operações de safra em andamento", data.safrasAtivas.toString(), Icons.Filled.Eco, BrGreen, KpiKind.QUANTIDADE),
-        Kpi("Colaboradores ativos", data.colaboradoresAtivos.toString(), Icons.Filled.Groups, BrGreen, KpiKind.QUANTIDADE),
+        // Descrições adicionadas -- pedido do usuário ("melhore as
+        // informações dentro do kpi"), mesmo padrão que o Financeiro já
+        // tinha (nome + legenda curta explicando o número).
+        Kpi(
+            "Itens no estoque",
+            data.itensEstoque.toString(),
+            Icons.Filled.Inventory2,
+            BrYellow,
+            KpiKind.QUANTIDADE,
+            description = "Total de itens cadastrados no estoque",
+        ),
+        Kpi(
+            "Operações de safra",
+            data.safrasAtivas.toString(),
+            Icons.Filled.Eco,
+            BrGreen,
+            KpiKind.QUANTIDADE,
+            description = "Lançamentos de safra em andamento",
+        ),
+        Kpi(
+            "Colaboradores ativos",
+            data.colaboradoresAtivos.toString(),
+            Icons.Filled.Groups,
+            BrGreen,
+            KpiKind.QUANTIDADE,
+            description = "Total cadastrado no módulo RH",
+        ),
     )
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         kpis.chunked(2).forEach { row ->

@@ -285,7 +285,13 @@ fun DomainListScreen(
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text(activeBlockLabel ?: (config?.label ?: domainId))
+                        // maxLines/ellipsis defensivo -- pedido do usuário
+                        // ("adapte ao tamanho da fonte sem cortes e dentro
+                        // do limite da tela"): nomes de bloco dinâmicos
+                        // longos (ex.: "Transferências entre Fazendas") sem
+                        // isso podiam quebrar linha e cortar embaixo, já
+                        // que a AppBar tem altura fixa.
+                        Text(activeBlockLabel ?: (config?.label ?: domainId), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 },
                 // A seta de voltar ganha o mesmo espaçador do título -- pedido
@@ -461,17 +467,29 @@ fun DomainListScreen(
                             )
                         }
                     }
+                    // Ícones compactos (36dp, mesma referência do
+                    // ModuleIconButton) -- pedido do usuário ("coloque os
+                    // blocos da linha 2 todos na horizontal e com limite de
+                    // altura"): 2 IconButton no tamanho padrão (48dp) não
+                    // cabiam lado a lado na largura do bloco Arquivos e
+                    // quebravam pra 2 linhas, esticando a fileira inteira.
                     val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
                         if (filteredRecords.isNotEmpty()) {
-                            IconButton(onClick = {
-                                exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
-                            }) {
-                                Icon(Icons.Filled.TableChart, contentDescription = "Exportar CSV")
+                            IconButton(
+                                onClick = {
+                                    exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
+                                },
+                                modifier = Modifier.size(36.dp),
+                            ) {
+                                Icon(Icons.Filled.TableChart, contentDescription = "Exportar CSV", modifier = Modifier.size(20.dp))
                             }
-                            IconButton(onClick = {
-                                HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys)
-                            }) {
-                                Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar PDF")
+                            IconButton(
+                                onClick = {
+                                    HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys)
+                                },
+                                modifier = Modifier.size(36.dp),
+                            ) {
+                                Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar PDF", modifier = Modifier.size(20.dp))
                             }
                         }
                     }
@@ -558,17 +576,26 @@ fun DomainListScreen(
                             ) { expandedBlocks["recalcular-area"] = expandedBlocks["recalcular-area"] != true }
                         }
                     }
+                    // Mesmo ajuste de tamanho do bloco genérico acima --
+                    // pedido do usuário ("coloque os blocos da linha 2
+                    // todos na horizontal e com limite de altura").
                     val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
                         if (filteredRecords.isNotEmpty()) {
-                            IconButton(onClick = {
-                                exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
-                            }) {
-                                Icon(Icons.Filled.TableChart, contentDescription = "Exportar CSV")
+                            IconButton(
+                                onClick = {
+                                    exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
+                                },
+                                modifier = Modifier.size(36.dp),
+                            ) {
+                                Icon(Icons.Filled.TableChart, contentDescription = "Exportar CSV", modifier = Modifier.size(20.dp))
                             }
-                            IconButton(onClick = {
-                                HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys)
-                            }) {
-                                Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar PDF")
+                            IconButton(
+                                onClick = {
+                                    HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys)
+                                },
+                                modifier = Modifier.size(36.dp),
+                            ) {
+                                Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar PDF", modifier = Modifier.size(20.dp))
                             }
                         }
                     }
@@ -610,6 +637,29 @@ fun DomainListScreen(
                             // (Arquivos só tem 2), o peso igual de antes
                             // (2f/2f) quebrava linha -- corrigido comparando
                             // com o mockup aprovado.
+                            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ModuleCategoryBlock(operacoesBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
+                                ModuleCategoryBlock(arquivosBlock, modifier = Modifier.weight(1.5f).fillMaxHeight(), fillHeight = true)
+                                ModuleCategoryBlock(imprimirBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                            }
+                        }
+                    } else if (domainId == "estoque") {
+                        // Estoque também ganha um 3º ícone individual
+                        // (Transferências entre Fazendas, que já existia na
+                        // fileira única antiga) -- mesmo padrão do Clima
+                        // acima -- pedido do usuário ("aplique o mesmo
+                        // padrão da imagem 3 e 4" em Estoque).
+                        val transferenciasBlock = ModuleBlockSpec("", vertical = true) {
+                            ModuleIconButton(
+                                ModuleIconItem("estoque-fazenda", Icons.Filled.CompareArrows, "Transferências entre Fazendas", active = expandedBlocks["estoque-fazenda"] == true),
+                            ) { expandedBlocks["estoque-fazenda"] = expandedBlocks["estoque-fazenda"] != true }
+                        }
+                        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ModuleCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
+                                ModuleCategoryBlock(transferenciasBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                                ModuleCategoryBlock(nuvemBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                            }
                             Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 ModuleCategoryBlock(operacoesBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
                                 ModuleCategoryBlock(arquivosBlock, modifier = Modifier.weight(1.5f).fillMaxHeight(), fillHeight = true)
@@ -939,7 +989,7 @@ private val CATEGORIZED_BLOCK_DOMAINS = setOf(
 // confirmada por imagem, módulo por módulo -- ver ramo useCustomBlocks em
 // "module-icon-row").
 private val PER_MODULE_BLOCK_DOMAINS = setOf(
-    "safra", "clima", "planejamentosafra", "colheita", "frota",
+    "safra", "clima", "planejamentosafra", "colheita", "frota", "estoque",
 )
 
 // Espelho de FinBlockSpec/FinanceiroCategoryBlock (FinanceiroScreen.kt) --

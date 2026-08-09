@@ -35,10 +35,14 @@ import androidx.compose.material.icons.filled.CallSplit
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.FilterAlt
@@ -48,6 +52,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.ViewList
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -63,6 +68,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -78,6 +84,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
@@ -161,6 +168,11 @@ fun FinanceiroScreen(
     // tela deverá estar vazia").
     var allExpanded by remember { mutableStateOf(false) }
     val cardOverrides = remember { mutableStateMapOf<String, Boolean>() }
+    // Confirmação antes de excluir -- mesmo padrão do módulo genérico
+    // (DomainListScreen.kt), pedido do usuário ("implemente em todos os
+    // blocos de lançamentos os ícones ver, editar e excluir... como foi
+    // aplicado em safra").
+    var recordPendingDelete by remember { mutableStateOf<String?>(null) }
 
     // Blocos "compatíveis com ícone" (Gráficos, Calculadoras, Recalcular
     // Vencimentos, Filtros) consolidados numa fileira só, mesmo padrão do
@@ -221,9 +233,12 @@ fun FinanceiroScreen(
                     // título"); ela mora só dentro do bloco Dados agora.
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text(if (isQuickView) view.label else "Financeiro")
+                        // maxLines/ellipsis defensivo -- pedido do usuário
+                        // ("adapte ao tamanho da fonte sem cortes e dentro
+                        // do limite da tela").
+                        Text(if (isQuickView) view.label else "Financeiro", maxLines = 1, overflow = TextOverflow.Ellipsis)
                         if (activeBlockLabel != null) {
-                            Text(activeBlockLabel, style = MaterialTheme.typography.labelSmall)
+                            Text(activeBlockLabel, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 },
@@ -508,34 +523,42 @@ fun FinanceiroScreen(
                                 // a lista inteira, ver comentário acima).
                                 val expanded = cardOverrides[recordId ?: ""] ?: false
                                 val colsToShow = if (expanded) allCols else summaryCols
-                                Card(
-                                    onClick = { if (recordId != null) onEditRecord(recordId) },
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                ) {
-                                    Column(modifier = Modifier.padding(12.dp)) {
-                                        if (hasMore) {
-                                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                                                IconButton(
-                                                    onClick = { cardOverrides[recordId ?: ""] = !expanded },
-                                                    modifier = Modifier.size(28.dp),
-                                                ) {
+                                // Sem onClick no Card -- Ver/Editar/Excluir
+                                // substituem o toque no bloco inteiro, mesmo
+                                // padrão aplicado no módulo genérico.
+                                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                                    Row(modifier = Modifier.fillMaxWidth()) {
+                                        Column(modifier = Modifier.weight(1f).padding(12.dp)) {
+                                            if (expanded) {
+                                                colsToShow.chunked(2).forEach { pair ->
+                                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                                        pair.forEach { col -> Column(modifier = Modifier.weight(1f)) { FinanceiroFieldLine(col, record[col.key]) } }
+                                                        if (pair.size == 1) Spacer(modifier = Modifier.weight(1f))
+                                                    }
+                                                }
+                                            } else {
+                                                colsToShow.forEach { col -> FinanceiroFieldLine(col, record[col.key]) }
+                                            }
+                                        }
+                                        Column(
+                                            modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp),
+                                            verticalArrangement = Arrangement.spacedBy(0.dp),
+                                        ) {
+                                            if (hasMore) {
+                                                IconButton(onClick = { cardOverrides[recordId ?: ""] = !expanded }, modifier = Modifier.size(28.dp)) {
                                                     Icon(
-                                                        if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                                        contentDescription = if (expanded) "Recolher lançamento" else "Expandir lançamento",
-                                                        modifier = Modifier.size(20.dp),
+                                                        if (expanded) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                                        contentDescription = if (expanded) "Recolher lançamento" else "Ver lançamento completo",
+                                                        modifier = Modifier.size(18.dp),
                                                     )
                                                 }
                                             }
-                                        }
-                                        if (expanded) {
-                                            colsToShow.chunked(2).forEach { pair ->
-                                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                                    pair.forEach { col -> Column(modifier = Modifier.weight(1f)) { FinanceiroFieldLine(col, record[col.key]) } }
-                                                    if (pair.size == 1) Spacer(modifier = Modifier.weight(1f))
-                                                }
+                                            IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
+                                                Icon(Icons.Filled.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp))
                                             }
-                                        } else {
-                                            colsToShow.forEach { col -> FinanceiroFieldLine(col, record[col.key]) }
+                                            IconButton(onClick = { recordPendingDelete = recordId }, modifier = Modifier.size(28.dp)) {
+                                                Icon(Icons.Filled.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                                            }
                                         }
                                     }
                                 }
@@ -546,6 +569,23 @@ fun FinanceiroScreen(
                 }
             }
         }
+    }
+
+    if (recordPendingDelete != null) {
+        AlertDialog(
+            onDismissRequest = { recordPendingDelete = null },
+            title = { Text("Excluir lançamento?") },
+            text = { Text("Essa ação não pode ser desfeita.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteRecord("financeiro", recordPendingDelete!!)
+                    recordPendingDelete = null
+                }) { Text("Excluir") }
+            },
+            dismissButton = {
+                TextButton(onClick = { recordPendingDelete = null }) { Text("Cancelar") }
+            },
+        )
     }
 }
 

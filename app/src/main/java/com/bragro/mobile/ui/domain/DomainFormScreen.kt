@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,11 +19,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -33,7 +38,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -190,8 +197,26 @@ fun DomainFormScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (recordId == null) "Novo lançamento" else "Editar lançamento") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar") } },
+                // Título desce uma linha, mesmo padrão já usado em
+                // DomainListScreen/Financeiro/DRE/Análises -- pedido do
+                // usuário ("em novo lançamento em todos os módulos... rebaixe
+                // a seta a esquerda e o título uma linha abaixo").
+                title = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            if (recordId == null) "Novo lançamento" else "Editar lançamento",
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        )
+                    }
+                },
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar") }
+                    }
+                },
                 actions = {
                     // "Copiar último lançamento" (Task #51/#77) virou ícone
                     // no topo à direita -- pedido do usuário ("transforme a
@@ -410,6 +435,11 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
             )
         }
         "date" -> {
+            // Ícone de calendário dentro do campo -- pedido do usuário ("o
+            // ícone copiar em campos de data... coloque ao lado dentro do
+            // campo um calendário para aplicar a data"): antes só dava pra
+            // digitar a data na mão (DD/MM/AAAA), sem nenhum seletor.
+            var showPicker by remember { mutableStateOf(false) }
             OutlinedTextField(
                 value = value,
                 onValueChange = { viewModel.setField(col.key, it) },
@@ -419,7 +449,27 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = fieldColors,
+                trailingIcon = {
+                    IconButton(onClick = { showPicker = true }) {
+                        Icon(Icons.Filled.CalendarMonth, contentDescription = "Escolher data")
+                    }
+                },
             )
+            if (showPicker) {
+                val pickerState = rememberDatePickerState(initialSelectedDateMillis = brDateToMillisOrNull(value) ?: System.currentTimeMillis())
+                DatePickerDialog(
+                    onDismissRequest = { showPicker = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            pickerState.selectedDateMillis?.let { viewModel.setField(col.key, millisToBrDate(it)) }
+                            showPicker = false
+                        }) { Text("OK") }
+                    },
+                    dismissButton = { TextButton(onClick = { showPicker = false }) { Text("Cancelar") } },
+                ) {
+                    DatePicker(state = pickerState)
+                }
+            }
         }
         "textarea" -> {
             OutlinedTextField(
@@ -445,4 +495,26 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
     if (col.hint != null) {
         Text(col.hint, style = MaterialTheme.typography.bodySmall)
     }
+}
+
+// Conversão pro DatePicker (Material3) -- ele trabalha em epoch millis UTC,
+// o campo trabalha em texto "DD/MM/AAAA". Calendar com fuso UTC explícito
+// (nunca o fuso do aparelho) pra não "voltar um dia" -- mesmo cuidado já
+// documentado em isoDateToBr/brDateToIso (StatusStyle.kt).
+private fun millisToBrDate(millis: Long): String {
+    val cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
+    cal.timeInMillis = millis
+    val d = cal.get(java.util.Calendar.DAY_OF_MONTH)
+    val mo = cal.get(java.util.Calendar.MONTH) + 1
+    val y = cal.get(java.util.Calendar.YEAR)
+    return "%02d/%02d/%04d".format(d, mo, y)
+}
+
+private fun brDateToMillisOrNull(br: String): Long? {
+    val m = Regex("^(\\d{2})/(\\d{2})/(\\d{4})$").find(br.trim()) ?: return null
+    val (d, mo, y) = m.destructured
+    val cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
+    cal.clear()
+    cal.set(y.toInt(), mo.toInt() - 1, d.toInt())
+    return cal.timeInMillis
 }
