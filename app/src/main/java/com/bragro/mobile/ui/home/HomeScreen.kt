@@ -438,7 +438,13 @@ fun HomeScreen(
             Column(modifier = Modifier.statusBarsPadding()) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    // Padding assimétrico -- pedido do usuário ("chegue mais
+                    // a logo em início para a esquerda pra igualar a altura
+                    // dos ícones com a logo do cliente"): start reduzido de
+                    // 16dp pra 4dp empurra a logo BRAgro mais pra esquerda,
+                    // sobrando mais espaço à direita pros ícones + logo do
+                    // cliente não ficarem espremidos/cortados.
+                    modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     // Logo nova, ainda maior que antes -- pedido do usuário

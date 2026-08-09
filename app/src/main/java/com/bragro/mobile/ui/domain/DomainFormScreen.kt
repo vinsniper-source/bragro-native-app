@@ -222,10 +222,16 @@ fun DomainFormScreen(
                     // no topo à direita -- pedido do usuário ("transforme a
                     // palavra copiar último lançamento em ícone, posicione-o
                     // à direita"), em vez do botão largo que ocupava uma
-                    // linha inteira do formulário.
+                    // linha inteira do formulário. Mesmo Spacer do
+                    // título/seta (16.dp) pra ficar na mesma altura -- pedido
+                    // do usuário ("insira... o ícone copiar na mesma altura
+                    // do título no canto superior direito").
                     if (recordId == null && lastRecord != null) {
-                        IconButton(onClick = { viewModel.copyFromLastRecord() }) {
-                            Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último lançamento")
+                        Column {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            IconButton(onClick = { viewModel.copyFromLastRecord() }) {
+                                Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último lançamento")
+                            }
                         }
                     }
                 },

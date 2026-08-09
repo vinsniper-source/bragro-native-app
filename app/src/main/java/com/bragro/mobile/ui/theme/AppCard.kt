@@ -20,13 +20,13 @@ import androidx.compose.ui.unit.dp
  * ganha a borda de uma vez, sem duplicar o Card do Material3 (ele só
  * delega, acrescentando o `border` como default).
  *
- * Cor neutra (outlineVariant do tema ativo) -- pedido do usuário ("retire a
- * cor das bordas"), que removeu o verde que essa borda usava antes. Como
- * `outlineVariant` já muda sozinho por tema (ver Theme.kt), não precisa de
- * lógica extra de claro/escuro aqui.
+ * Voltou a ser verde (BrGreen) -- pedido do usuário ("todas as bordas
+ * finas contornadas com verde"), depois que a textura de fundo/bloco
+ * passou a ser uma cor plana só (branco/quase-preto, ver Theme.kt) e a
+ * borda ficou responsável por demarcar cada bloco.
  */
 @Composable
-private fun cardBorderColor(): androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.outlineVariant
+private fun cardBorderColor(): androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary
 
 @Composable
 fun Card(
