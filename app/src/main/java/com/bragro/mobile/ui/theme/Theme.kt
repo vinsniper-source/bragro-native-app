@@ -54,11 +54,11 @@ val BrOrange = Color(0xFFD9822B)
 // Textura única por tema -- pedido do usuário ("a textura do app será
 // apenas uma em cada módulo, uma textura branca / parecida com preta e
 // todas as bordas finas contornadas com verde", depois refinado pra "use
-// as cores off white e cinza chumbo"). `background` e `surface`/
-// `surfaceVariant` usam A MESMA cor plana -- off-white no claro, cinza
-// chumbo (gunmetal) no escuro, nada de branco/preto puro. Os blocos
-// deixam de ter um tom de verde próprio; quem separa um bloco do fundo é
-// só a borda fina verde (ver AppCard.kt/cardBorderColor, que usa
+// as cores off white e cinza chumbo", depois "coloque a textura do modo
+// escuro quase preto"). `background` e `surface`/`surfaceVariant` usam A
+// MESMA cor plana -- off-white no claro, quase preto no escuro. Os
+// blocos deixam de ter um tom de verde próprio; quem separa um bloco do
+// fundo é só a borda fina verde (ver AppCard.kt/cardBorderColor, que usa
 // MaterialTheme.colorScheme.primary = BrGreen).
 private val LightColors = lightColorScheme(
     primary = BrGreen,
@@ -84,9 +84,9 @@ private val DarkColors = darkColorScheme(
     secondaryContainer = Color(0xFF5E4F26),
     onSecondaryContainer = Color(0xFFF4DFA5),
     tertiary = BrBlue,
-    background = Color(0xFF2C3539),
-    surface = Color(0xFF2C3539),
-    surfaceVariant = Color(0xFF2C3539),
+    background = Color(0xFF121212),
+    surface = Color(0xFF121212),
+    surfaceVariant = Color(0xFF121212),
     outline = Color(0xFF70847F),
     outlineVariant = Color(0xFF3F4A46),
 )
