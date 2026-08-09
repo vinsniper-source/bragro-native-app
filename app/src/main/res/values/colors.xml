@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Icone do app trocado pela nova logo (diamante dourado com globo)
-         enviada pelo usuário -- o fundo do PNG já vem preto, então o fundo
+         enviada pelo usuário: o fundo do PNG já vem preto, então o fundo
          do ícone adaptativo (mipmap-anydpi-v26/ic_launcher.xml) virou preto
          pra combinar sem borda visível. Splash continua verde (BrGreen),
          não fazia parte do pedido. -->
