@@ -444,7 +444,11 @@ fun HomeScreen(
                     // 16dp pra 4dp empurra a logo BRAgro mais pra esquerda,
                     // sobrando mais espaço à direita pros ícones + logo do
                     // cliente não ficarem espremidos/cortados.
-                    modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+                    // bottom reduzido de 8dp pra 4dp -- pedido do usuário
+                    // ("na linha que separa a logo da frase Olá, bem-
+                    // vindo, erga mais a linha"): a linha (HorizontalDivider
+                    // logo abaixo deste Row) sobe mais perto da logo/ícones.
+                    modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 16.dp, top = 8.dp, bottom = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     // Logo nova, ainda maior que antes -- pedido do usuário
@@ -592,7 +596,10 @@ fun HomeScreen(
 
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(12.dp),
+            // Topo reduzido de 12dp pra 6dp -- pedido do usuário ("erga...
+            // o resto da página inicial"): "Olá, bem-vindo" e o restante do
+            // conteúdo sobem, ficando mais perto da linha divisória acima.
+            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item(key = "greeting") {
@@ -1038,12 +1045,17 @@ private fun KpiGrid(data: HomeData) {
     )
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         kpis.chunked(2).forEach { row ->
+            // IntrinsicSize.Min + fillMaxHeight -- pedido do usuário
+            // ("alinhe qualquer bloco... que não tiver a mesma altura ao
+            // bloco do lado"): sem isso, se um KPI tivesse descrição maior
+            // que o vizinho na mesma fileira, os 2 cards ficavam com
+            // alturas diferentes.
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 row.forEach { kpi ->
-                    Card(modifier = Modifier.weight(1f)) {
+                    Card(modifier = Modifier.weight(1f).fillMaxHeight()) {
                         // Alignment.Top (não CenterVertically) -- pedido do
                         // usuário ("no kpi financeiro coloque a descrição e
                         // na mesma linha acrescente as duas casas depois da
@@ -1078,12 +1090,16 @@ private fun KpiGrid(data: HomeData) {
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
+                                // Sem maxLines/ellipsis -- pedido do usuário
+                                // ("aumente a altura pra caber todas as
+                                // informações sem cortar"): a descrição
+                                // quebra em quantas linhas precisar, e o
+                                // Card cresce junto (altura não é mais fixa
+                                // em 1 linha por card).
                                 Text(
                                     kpi.description ?: " ",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
                                 )
                             }
                             Spacer(Modifier.width(6.dp))
@@ -1183,6 +1199,15 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            // Periodicidade + fonte -- pedido do usuário ("coloque a
+            // periodicidade que é atualizado e a fonte"). Valor real do
+            // backend (getWeather em weather.ts): revalidate 1800s = 30
+            // min, Open-Meteo.
+            Text(
+                "Atualizado a cada 30 min · Fonte: Open-Meteo",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -1194,6 +1219,15 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: 
             MiniCardHeaderWithRefresh("Câmbio", Icons.Filled.CurrencyExchange, BrGreen, MaterialTheme.typography.titleMedium, onRefresh)
             Row { Text("Dólar: "); Text(fx.usdBrl?.let { formatMoneyBrl(it) } ?: "—", fontWeight = FontWeight.Bold) }
             Row { Text("Euro: "); Text(fx.eurBrl?.let { formatMoneyBrl(it) } ?: "—", fontWeight = FontWeight.Bold) }
+            // Periodicidade + fonte -- pedido do usuário. Valor real do
+            // backend (getFxRates em quotes.ts): revalidate 900s = 15 min,
+            // AwesomeAPI (com fallback pra exchangerate-api.com só se a
+            // AwesomeAPI falhar).
+            Text(
+                "Atualizado a cada 15 min · Fonte: AwesomeAPI",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -1210,7 +1244,8 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
             // Renomeado -- pedido do usuário ("altere o kpi cotações
             // agrícolas para cotações grãos").
             MiniCardHeaderWithRefresh("Cotações Grãos", Icons.Filled.Agriculture, BrGreen, MaterialTheme.typography.titleMedium, onRefresh)
-            listOfNotNull(com.soja, com.milho, com.sorgo).forEach { q ->
+            val itens = listOfNotNull(com.soja, com.milho, com.sorgo)
+            itens.forEach { q ->
                 Row {
                     Text("${q.nome}: ")
                     Text(
@@ -1221,6 +1256,18 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
                     )
                 }
             }
+            // Periodicidade + fonte -- pedido do usuário ("a fonte por
+            // exemplo cotações é o Grão Direto"). Valor real do backend
+            // (getCommodityQuotes em quotes.ts): só Grão Direto, lido 1x
+            // por semana (GRAO_DIRETO_REVALIDATE); usa a data que a
+            // própria fonte informou quando disponível, em vez de "agora".
+            val dataFonte = itens.firstNotNullOfOrNull { it.atualizadoEm }
+            Text(
+                if (dataFonte != null) "Atualizado semanalmente ($dataFonte) · Fonte: Grão Direto"
+                else "Atualizado semanalmente · Fonte: Grão Direto",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

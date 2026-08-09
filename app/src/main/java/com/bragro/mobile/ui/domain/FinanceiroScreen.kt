@@ -339,12 +339,11 @@ fun FinanceiroScreen(
                     // (ver TopAppBar acima) -- pedido do usuário, os dois
                     // controlam o mesmo estado.
                     if (filtered.isNotEmpty()) {
-                        IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear() }) {
-                            Icon(
-                                if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
-                                contentDescription = if (allExpanded) "Recolher todos os lançamentos" else "Expandir todos os lançamentos",
-                            )
-                        }
+                        LabeledIconButton(
+                            icon = if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                            label = if (allExpanded) "Recolher" else "Expandir",
+                            onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
+                        )
                     }
                 }
             val operacoesBlock =
@@ -369,38 +368,40 @@ fun FinanceiroScreen(
                         onPeriodo = { periodo = it; if (it != null) { intervalFrom = ""; intervalTo = "" } },
                         onInterval = { from, to -> intervalFrom = from; intervalTo = to; if (from.isNotBlank() || to.isNotBlank()) periodo = null },
                     )
-                    IconButton(onClick = { viewModel.refresh("financeiro") }) {
-                        if (refreshing) CircularProgressIndicator(modifier = Modifier.padding(4.dp).size(20.dp))
-                        else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
-                    }
+                    LabeledIconButton(
+                        icon = Icons.Filled.Refresh,
+                        label = "Atualizar",
+                        loading = refreshing,
+                        onClick = { viewModel.refresh("financeiro") },
+                    )
                 }
             val arquivosBlock =
                 FinBlockSpec("Arquivos", MaterialTheme.typography.titleSmall, vertical = false) {
                     if (!isQuickView) {
-                        IconButton(onClick = onOpenBankImport) {
-                            Icon(Icons.Filled.Upload, contentDescription = "Extrato bancário")
-                        }
-                        IconButton(onClick = onOpenNfeImport) {
-                            Icon(Icons.Filled.Description, contentDescription = "Importar XML (NF-e)")
-                        }
+                        LabeledIconButton(icon = Icons.Filled.Upload, label = "Extrato", onClick = onOpenBankImport)
+                        LabeledIconButton(icon = Icons.Filled.Description, label = "XML", onClick = onOpenNfeImport)
                     }
                     if (cfg != null && filtered.isNotEmpty()) {
-                        IconButton(onClick = { exportCsv(context, "financeiro-${view.name.lowercase()}", effectiveColumns, filtered) }) {
-                            // Ícone trocado pra planilha/tabela -- pedido do
-                            // usuário ("use os ícones da demonstração...
-                            // ficaram mais intuitivos"), em vez de um
-                            // download genérico.
-                            Icon(Icons.Filled.TableChart, contentDescription = "Exportar CSV")
-                        }
+                        // Ícone trocado pra planilha/tabela -- pedido do
+                        // usuário ("use os ícones da demonstração...
+                        // ficaram mais intuitivos"), em vez de um download
+                        // genérico.
+                        LabeledIconButton(
+                            icon = Icons.Filled.TableChart,
+                            label = "CSV",
+                            onClick = { exportCsv(context, "financeiro-${view.name.lowercase()}", effectiveColumns, filtered) },
+                        )
                         // Ícone próprio pra PDF -- antes chamava a mesma
                         // função do "Imprimir" (HtmlPrinter.printList, abre o
                         // diálogo de impressão do sistema), então os dois
                         // ícones faziam exatamente a mesma coisa. Agora gera
                         // o PDF direto e abre no leitor instalado (Adobe ou
                         // similar) -- pedido do usuário.
-                        IconButton(onClick = { HtmlPrinter.exportPdfDirect(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) }) {
-                            Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar PDF")
-                        }
+                        LabeledIconButton(
+                            icon = Icons.Filled.PictureAsPdf,
+                            label = "PDF",
+                            onClick = { HtmlPrinter.exportPdfDirect(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) },
+                        )
                     }
                 }
             val armazenamentoBlock =
@@ -411,12 +412,14 @@ fun FinanceiroScreen(
                     // apenas um ícone offline, troque o ícone por uma
                     // nuvem"). Reflete o estado de conexão (offline usa os
                     // dados salvos no aparelho).
-                    IconButton(onClick = {
-                        val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
-                        android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                    }) {
-                        Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Armazenamento")
-                    }
+                    LabeledIconButton(
+                        icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
+                        label = "Armazenamento",
+                        onClick = {
+                            val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                        },
+                    )
                 }
             val distribuicaoBlock =
                 // Sem título (string vazia) e sem o ícone Compartilhar --
@@ -425,9 +428,11 @@ fun FinanceiroScreen(
                 // Imprimir, centralizado (ver FinanceiroCategoryBlock).
                 FinBlockSpec("", MaterialTheme.typography.bodyMedium, vertical = true) {
                     if (cfg != null && filtered.isNotEmpty()) {
-                        IconButton(onClick = { HtmlPrinter.printList(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) }) {
-                            Icon(Icons.Filled.Print, contentDescription = "Imprimir")
-                        }
+                        LabeledIconButton(
+                            icon = Icons.Filled.Print,
+                            label = "Imprimir",
+                            onClick = { HtmlPrinter.printList(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) },
+                        )
                     }
                 }
             // Layout: linha 1 -- Dados (largo) + Registros (estreito); linha

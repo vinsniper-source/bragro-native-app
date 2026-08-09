@@ -56,6 +56,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bragro.mobile.data.model.ColumnConfig
 import com.bragro.mobile.data.model.DomainConfig
 import com.bragro.mobile.data.repo.AnalisesRepository
+import com.bragro.mobile.ui.domain.LabeledIconButton
 import com.bragro.mobile.ui.domain.exportCsv
 import com.bragro.mobile.ui.print.HtmlPrinter
 import kotlinx.coroutines.flow.collectLatest
@@ -326,43 +327,52 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
         ) {
             item(key = "analises-icon-row") {
                 val dadosBlock = AnalisesBlockSpec("Dados", vertical = false) {
-                    IconButton(onClick = { filtrosOpen = !filtrosOpen }) {
-                        Icon(
-                            Icons.Filled.FilterAlt,
-                            contentDescription = "Filtros",
-                            tint = if (filtrosOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current,
-                        )
-                    }
+                    LabeledIconButton(
+                        icon = Icons.Filled.FilterAlt,
+                        label = "Filtros",
+                        tint = if (filtrosOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                        onClick = { filtrosOpen = !filtrosOpen },
+                    )
                 }
                 val registrosBlock = AnalisesBlockSpec("", vertical = false) {
-                    IconButton(onClick = {
-                        val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
-                        android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                    }) {
-                        Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Armazenamento")
-                    }
+                    LabeledIconButton(
+                        icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
+                        label = "Armazenamento",
+                        onClick = {
+                            val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                        },
+                    )
                 }
                 val operacoesBlock = AnalisesBlockSpec("Operações", vertical = false) {
-                    IconButton(onClick = { viewModel.refresh() }) {
-                        if (loading) CircularProgressIndicator(modifier = Modifier.padding(4.dp).size(20.dp))
-                        else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
-                    }
+                    LabeledIconButton(
+                        icon = Icons.Filled.Refresh,
+                        label = "Atualizar",
+                        loading = loading,
+                        onClick = { viewModel.refresh() },
+                    )
                 }
                 val arquivosBlock = AnalisesBlockSpec("Arquivos", vertical = false) {
                     if (temRegistros) {
-                        IconButton(onClick = { exportCsv(context, "Análises", ANALISES_EXPORT_COLUMNS, analisesExportRecords(data!!)) }) {
-                            Icon(Icons.Filled.TableChart, contentDescription = "Exportar CSV")
-                        }
-                        IconButton(onClick = { HtmlPrinter.exportPdfDirect(context, analisesExportConfig(), analisesExportRecords(data!!)) }) {
-                            Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar PDF")
-                        }
+                        LabeledIconButton(
+                            icon = Icons.Filled.TableChart,
+                            label = "CSV",
+                            onClick = { exportCsv(context, "Análises", ANALISES_EXPORT_COLUMNS, analisesExportRecords(data!!)) },
+                        )
+                        LabeledIconButton(
+                            icon = Icons.Filled.PictureAsPdf,
+                            label = "PDF",
+                            onClick = { HtmlPrinter.exportPdfDirect(context, analisesExportConfig(), analisesExportRecords(data!!)) },
+                        )
                     }
                 }
                 val distribuicaoBlock = AnalisesBlockSpec("", vertical = true) {
                     if (temRegistros) {
-                        IconButton(onClick = { HtmlPrinter.printList(context, analisesExportConfig(), analisesExportRecords(data!!)) }) {
-                            Icon(Icons.Filled.Print, contentDescription = "Imprimir")
-                        }
+                        LabeledIconButton(
+                            icon = Icons.Filled.Print,
+                            label = "Imprimir",
+                            onClick = { HtmlPrinter.printList(context, analisesExportConfig(), analisesExportRecords(data!!)) },
+                        )
                     }
                 }
                 Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {

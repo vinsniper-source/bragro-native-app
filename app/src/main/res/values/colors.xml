@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Mesma paleta de ui/theme/Theme.kt (BrGreen/BrYellow): fundo do
-         icone adaptativo (mipmap-anydpi-v26/ic_launcher.xml) e da tela de
-         splash (themes.xml), Task #38. -->
-    <color name="ic_launcher_background">#2F6F4F</color>
+    <!-- Icone do app trocado pela nova logo (diamante dourado com globo)
+         enviada pelo usuário -- o fundo do PNG já vem preto, então o fundo
+         do ícone adaptativo (mipmap-anydpi-v26/ic_launcher.xml) virou preto
+         pra combinar sem borda visível. Splash continua verde (BrGreen),
+         não fazia parte do pedido. -->
+    <color name="ic_launcher_background">#000000</color>
     <color name="splash_background">#2F6F4F</color>
 </resources>

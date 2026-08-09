@@ -68,6 +68,7 @@ import com.bragro.mobile.data.model.DreData
 import com.bragro.mobile.data.model.DreFazendaData
 import com.bragro.mobile.data.model.DreRamoItemData
 import com.bragro.mobile.data.repo.DreRepository
+import com.bragro.mobile.ui.domain.LabeledIconButton
 import com.bragro.mobile.ui.domain.exportCsv
 import com.bragro.mobile.ui.print.HtmlPrinter
 import kotlinx.coroutines.flow.collectLatest
@@ -390,53 +391,59 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
         ) {
             item(key = "dre-icon-row") {
                 val dadosBlock = DreBlockSpec("Dados", vertical = false) {
-                    IconButton(onClick = { filtrosOpen = !filtrosOpen }) {
-                        Icon(
-                            Icons.Filled.FilterAlt,
-                            contentDescription = "Filtros",
-                            tint = if (filtrosOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current,
-                        )
-                    }
+                    LabeledIconButton(
+                        icon = Icons.Filled.FilterAlt,
+                        label = "Filtros",
+                        tint = if (filtrosOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                        onClick = { filtrosOpen = !filtrosOpen },
+                    )
                     if (allFarmIds.isNotEmpty()) {
-                        IconButton(onClick = {
-                            if (allFarmsExpanded) viewModel.collapseAllFarms() else viewModel.expandAllFarms(allFarmIds)
-                        }) {
-                            Icon(
-                                if (allFarmsExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
-                                contentDescription = if (allFarmsExpanded) "Recolher todas as fazendas" else "Expandir todas as fazendas",
-                            )
-                        }
+                        LabeledIconButton(
+                            icon = if (allFarmsExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                            label = if (allFarmsExpanded) "Recolher" else "Expandir",
+                            onClick = { if (allFarmsExpanded) viewModel.collapseAllFarms() else viewModel.expandAllFarms(allFarmIds) },
+                        )
                     }
                 }
                 val registrosBlock = DreBlockSpec("", vertical = false) {
-                    IconButton(onClick = {
-                        val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
-                        android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                    }) {
-                        Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Armazenamento")
-                    }
+                    LabeledIconButton(
+                        icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
+                        label = "Armazenamento",
+                        onClick = {
+                            val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                        },
+                    )
                 }
                 val operacoesBlock = DreBlockSpec("Operações", vertical = false) {
-                    IconButton(onClick = { viewModel.refresh() }) {
-                        if (loading) CircularProgressIndicator(modifier = Modifier.padding(4.dp).size(20.dp))
-                        else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
-                    }
+                    LabeledIconButton(
+                        icon = Icons.Filled.Refresh,
+                        label = "Atualizar",
+                        loading = loading,
+                        onClick = { viewModel.refresh() },
+                    )
                 }
                 val arquivosBlock = DreBlockSpec("Arquivos", vertical = false) {
                     if (temRegistros) {
-                        IconButton(onClick = { exportCsv(context, "DRE", DRE_EXPORT_COLUMNS, dreExportRecords(data!!)) }) {
-                            Icon(Icons.Filled.TableChart, contentDescription = "Exportar CSV")
-                        }
-                        IconButton(onClick = { HtmlPrinter.exportPdfDirect(context, dreExportConfig(), dreExportRecords(data!!)) }) {
-                            Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar PDF")
-                        }
+                        LabeledIconButton(
+                            icon = Icons.Filled.TableChart,
+                            label = "CSV",
+                            onClick = { exportCsv(context, "DRE", DRE_EXPORT_COLUMNS, dreExportRecords(data!!)) },
+                        )
+                        LabeledIconButton(
+                            icon = Icons.Filled.PictureAsPdf,
+                            label = "PDF",
+                            onClick = { HtmlPrinter.exportPdfDirect(context, dreExportConfig(), dreExportRecords(data!!)) },
+                        )
                     }
                 }
                 val distribuicaoBlock = DreBlockSpec("", vertical = true) {
                     if (temRegistros) {
-                        IconButton(onClick = { HtmlPrinter.printList(context, dreExportConfig(), dreExportRecords(data!!)) }) {
-                            Icon(Icons.Filled.Print, contentDescription = "Imprimir")
-                        }
+                        LabeledIconButton(
+                            icon = Icons.Filled.Print,
+                            label = "Imprimir",
+                            onClick = { HtmlPrinter.printList(context, dreExportConfig(), dreExportRecords(data!!)) },
+                        )
                     }
                 }
                 Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {

@@ -435,27 +435,30 @@ fun DomainListScreen(
                             onChange = { customVisibleKeys = it },
                         )
                         if (filteredRecords.isNotEmpty()) {
-                            IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear() }) {
-                                Icon(
-                                    if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
-                                    contentDescription = if (allExpanded) "Recolher todos os lançamentos" else "Expandir todos os lançamentos",
-                                )
-                            }
+                            LabeledIconButton(
+                                icon = if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                                label = if (allExpanded) "Recolher" else "Expandir",
+                                onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
+                            )
                         }
                     }
                     val registrosBlock = ModuleBlockSpec("", vertical = false) {
-                        IconButton(onClick = {
-                            val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
-                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                        }) {
-                            Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Armazenamento")
-                        }
+                        LabeledIconButton(
+                            icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
+                            label = "Armazenamento",
+                            onClick = {
+                                val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                            },
+                        )
                     }
                     val operacoesBlock = ModuleBlockSpec("Operações", vertical = false) {
-                        IconButton(onClick = { viewModel.refresh(domainId) }) {
-                            if (refreshing) CircularProgressIndicator(modifier = Modifier.padding(4.dp).size(20.dp))
-                            else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
-                        }
+                        LabeledIconButton(
+                            icon = Icons.Filled.Refresh,
+                            label = "Atualizar",
+                            loading = refreshing,
+                            onClick = { viewModel.refresh(domainId) },
+                        )
                         if (dateCol != null) {
                             GenericPeriodoDropdown(
                                 periodo = periodo,
@@ -475,31 +478,29 @@ fun DomainListScreen(
                     // quebravam pra 2 linhas, esticando a fileira inteira.
                     val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
                         if (filteredRecords.isNotEmpty()) {
-                            IconButton(
+                            LabeledIconButton(
+                                icon = Icons.Filled.TableChart,
+                                label = "CSV",
                                 onClick = {
                                     exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
                                 },
-                                modifier = Modifier.size(36.dp),
-                            ) {
-                                Icon(Icons.Filled.TableChart, contentDescription = "Exportar CSV", modifier = Modifier.size(20.dp))
-                            }
-                            IconButton(
+                            )
+                            LabeledIconButton(
+                                icon = Icons.Filled.PictureAsPdf,
+                                label = "PDF",
                                 onClick = {
                                     HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys)
                                 },
-                                modifier = Modifier.size(36.dp),
-                            ) {
-                                Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar PDF", modifier = Modifier.size(20.dp))
-                            }
+                            )
                         }
                     }
                     val distribuicaoBlock = ModuleBlockSpec("", vertical = true) {
                         if (filteredRecords.isNotEmpty()) {
-                            IconButton(onClick = {
-                                HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys)
-                            }) {
-                                Icon(Icons.Filled.Print, contentDescription = "Imprimir")
-                            }
+                            LabeledIconButton(
+                                icon = Icons.Filled.Print,
+                                label = "Imprimir",
+                                onClick = { HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys) },
+                            )
                         }
                     }
                     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -531,12 +532,11 @@ fun DomainListScreen(
                             onChange = { customVisibleKeys = it },
                         )
                         if (filteredRecords.isNotEmpty()) {
-                            IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear() }) {
-                                Icon(
-                                    if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
-                                    contentDescription = if (allExpanded) "Recolher todos os lançamentos" else "Expandir todos os lançamentos",
-                                )
-                            }
+                            LabeledIconButton(
+                                icon = if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                                label = if (allExpanded) "Recolher" else "Expandir",
+                                onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
+                            )
                         }
                     }
                     // Operações: varia por módulo -- Safra (recalcular área +
@@ -551,10 +551,12 @@ fun DomainListScreen(
                                 ModuleIconItem("recalcular-area", Icons.Filled.Autorenew, "Recalcular Área"),
                             ) { expandedBlocks["recalcular-area"] = expandedBlocks["recalcular-area"] != true }
                         }
-                        IconButton(onClick = { viewModel.refresh(domainId) }) {
-                            if (refreshing) CircularProgressIndicator(modifier = Modifier.padding(4.dp).size(20.dp))
-                            else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
-                        }
+                        LabeledIconButton(
+                            icon = Icons.Filled.Refresh,
+                            label = "Atualizar",
+                            loading = refreshing,
+                            onClick = { viewModel.refresh(domainId) },
+                        )
                         if (dateCol != null) {
                             GenericPeriodoDropdown(
                                 periodo = periodo,
@@ -581,39 +583,39 @@ fun DomainListScreen(
                     // todos na horizontal e com limite de altura").
                     val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
                         if (filteredRecords.isNotEmpty()) {
-                            IconButton(
+                            LabeledIconButton(
+                                icon = Icons.Filled.TableChart,
+                                label = "CSV",
                                 onClick = {
                                     exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
                                 },
-                                modifier = Modifier.size(36.dp),
-                            ) {
-                                Icon(Icons.Filled.TableChart, contentDescription = "Exportar CSV", modifier = Modifier.size(20.dp))
-                            }
-                            IconButton(
+                            )
+                            LabeledIconButton(
+                                icon = Icons.Filled.PictureAsPdf,
+                                label = "PDF",
                                 onClick = {
                                     HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys)
                                 },
-                                modifier = Modifier.size(36.dp),
-                            ) {
-                                Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar PDF", modifier = Modifier.size(20.dp))
-                            }
+                            )
                         }
                     }
                     val nuvemBlock = ModuleBlockSpec("", vertical = false) {
-                        IconButton(onClick = {
-                            val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
-                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                        }) {
-                            Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Armazenamento")
-                        }
+                        LabeledIconButton(
+                            icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
+                            label = "Armazenamento",
+                            onClick = {
+                                val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                            },
+                        )
                     }
                     val imprimirBlock = ModuleBlockSpec("", vertical = true) {
                         if (filteredRecords.isNotEmpty()) {
-                            IconButton(onClick = {
-                                HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys)
-                            }) {
-                                Icon(Icons.Filled.Print, contentDescription = "Imprimir")
-                            }
+                            LabeledIconButton(
+                                icon = Icons.Filled.Print,
+                                label = "Imprimir",
+                                onClick = { HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys) },
+                            )
                         }
                     }
                     if (domainId == "clima") {
@@ -744,20 +746,21 @@ fun DomainListScreen(
                     // ícones que couberem no mesmo bloco unifique os
                     // blocos"). Mesmo comportamento de antes, só mudou de
                     // lugar.
-                    IconButton(onClick = { viewModel.refresh(domainId) }) {
-                        if (refreshing) CircularProgressIndicator(modifier = Modifier.padding(4.dp).size(20.dp))
-                        else Icon(Icons.Filled.Refresh, contentDescription = "Atualizar")
-                    }
+                    LabeledIconButton(
+                        icon = Icons.Filled.Refresh,
+                        label = "Atualizar",
+                        loading = refreshing,
+                        onClick = { viewModel.refresh(domainId) },
+                    )
                     if (filteredRecords.isNotEmpty()) {
                         // Só mexe nos cards de lançamento -- não fecha Filtros
                         // nem os outros blocos (Gráficos/Calculadoras/etc.),
                         // pedido do usuário.
-                        IconButton(onClick = { allExpanded = !allExpanded; cardOverrides.clear() }) {
-                            Icon(
-                                if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
-                                contentDescription = if (allExpanded) "Recolher todos os lançamentos" else "Expandir todos os lançamentos",
-                            )
-                        }
+                        LabeledIconButton(
+                            icon = if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                            label = if (allExpanded) "Recolher" else "Expandir",
+                            onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
+                        )
                     }
                     ColumnsPickerButton(
                         allColumns = cfg.columns.filter { !it.hideInTable },
@@ -769,33 +772,35 @@ fun DomainListScreen(
                         // de um menu único -- pedido do usuário ("implemente
                         // nos módulos que não tiverem... csv, pdf, imprimir,
                         // compartilhar, nuvem").
-                        IconButton(onClick = {
-                            exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
-                        }) {
-                            Icon(Icons.Filled.TableChart, contentDescription = "Exportar CSV")
-                        }
-                        IconButton(onClick = {
-                            HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys)
-                        }) {
-                            Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar PDF")
-                        }
-                        IconButton(onClick = {
-                            HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys)
-                        }) {
-                            Icon(Icons.Filled.Print, contentDescription = "Imprimir")
-                        }
+                        LabeledIconButton(
+                            icon = Icons.Filled.TableChart,
+                            label = "CSV",
+                            onClick = { exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords) },
+                        )
+                        LabeledIconButton(
+                            icon = Icons.Filled.PictureAsPdf,
+                            label = "PDF",
+                            onClick = { HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys) },
+                        )
+                        LabeledIconButton(
+                            icon = Icons.Filled.Print,
+                            label = "Imprimir",
+                            onClick = { HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys) },
+                        )
                         // Ícone Compartilhar (txt) removido -- pedido do
                         // usuário ("exclua o ícone de compartilhar em txt...
                         // em todos os outros [módulos]").
                     }
                     // Ícone nuvem (armazenamento/offline) -- reflete o estado
                     // de conexão, mesmo padrão do Financeiro ("Registros").
-                    IconButton(onClick = {
-                        val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
-                        android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                    }) {
-                        Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Armazenamento")
-                    }
+                    LabeledIconButton(
+                        icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
+                        label = "Armazenamento",
+                        onClick = {
+                            val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                        },
+                    )
                 }
                 }
                 }
