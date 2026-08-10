@@ -94,6 +94,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bragro.mobile.data.NetworkStatus
 import com.bragro.mobile.data.local.LookupEntity
 import com.bragro.mobile.data.repo.ConfigRepository
 import com.bragro.mobile.ui.print.HtmlPrinter
@@ -248,7 +249,7 @@ fun FinanceiroScreen(
                         // maxLines/ellipsis defensivo -- pedido do usuário
                         // ("adapte ao tamanho da fonte sem cortes e dentro
                         // do limite da tela").
-                        Text(if (isQuickView) view.label else "Financeiro", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(if (isQuickView) view.label else "Financeiro", maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.primary)
                     }
                 },
                 // A seta de voltar ganha o mesmo espaçador de cima do título
@@ -259,7 +260,7 @@ fun FinanceiroScreen(
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar") }
+                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary) }
                     }
                 },
                 // Sem "actions" aqui -- Atualizar/Recolher-Expandir/Extrato/
@@ -437,7 +438,7 @@ fun FinanceiroScreen(
                         icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
                         label = "Nuvem",
                         onClick = {
-                            val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                            val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
                             android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                         },
                     )
@@ -494,7 +495,7 @@ fun FinanceiroScreen(
                 else -> {
                     if (offline) {
                         Text(
-                            "Sem conexão -- mostrando o último resultado salvo neste aparelho.",
+                            NetworkStatus.failureMessage(context),
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                         )

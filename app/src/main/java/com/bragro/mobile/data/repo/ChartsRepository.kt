@@ -44,8 +44,9 @@ class ModuleActionsRepository(context: Context) {
     private val tokenStore = TokenStore(context)
 
     // Campos extras opcionais -- só usados pelo Controle de Estoque por
-    // Fazenda ("estoque-transferir"/"estoque-devolver"); as demais actions
-    // (recalcular-*, fleet-efficiency) chamam run(action) sem eles.
+    // Fazenda ("estoque-transferir"/"estoque-devolver"/"estoque-saida"/
+    // "estoque-ajuste"); as demais actions (recalcular-*, fleet-efficiency)
+    // chamam run(action) sem eles.
     suspend fun run(
         action: String,
         item: String? = null,
@@ -54,6 +55,8 @@ class ModuleActionsRepository(context: Context) {
         fazendaOrigemId: String? = null,
         fazendaDestinoId: String? = null,
         transferenciaEntradaId: String? = null,
+        motivo: String? = null,
+        tipo: String? = null,
     ): JsonObject? {
         val tokens = tokenStore.current() ?: return null
         var (accessToken, refreshToken) = tokens
@@ -62,6 +65,7 @@ class ModuleActionsRepository(context: Context) {
             item = item, unidade = unidade, quantidade = quantidade,
             fazendaOrigemId = fazendaOrigemId, fazendaDestinoId = fazendaDestinoId,
             transferenciaEntradaId = transferenciaEntradaId,
+            motivo = motivo, tipo = tipo,
         )
         return try {
             var response = NetworkModule.mobileApi.moduleActions(buildRequest(accessToken))

@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bragro.mobile.data.NetworkStatus
 import com.bragro.mobile.data.model.ColumnConfig
 import com.bragro.mobile.data.model.DomainConfig
 import com.bragro.mobile.data.model.DreCategoriaData
@@ -157,9 +158,14 @@ private fun formatMoneyBrl(value: Double): String =
 // zero, montamos um DomainConfig/ColumnConfig sintético (não vem de
 // nenhum registro/backend, só serve pra reaproveitar exportCsv/
 // HtmlPrinter -- mesma infra usada nos 16 módulos genéricos).
+// "Área (ha)"/"Área total" removidos do DRE (KPI, coluna e export) -- pedido
+// do usuário ("não incluir total fazenda/área em dre e análises, total
+// fazendas/área é usada apenas em financeiro para rateio indireto"). O
+// campo `areaHa` continua vindo do backend (DreData) porque ainda é usado
+// internamente pra redistribuir o custo indireto por fazenda -- só a
+// EXIBIÇÃO pro usuário foi retirada daqui.
 private val DRE_EXPORT_COLUMNS = listOf(
     ColumnConfig(key = "farmName", label = "Fazenda", type = "text"),
-    ColumnConfig(key = "areaHa", label = "Área (ha)", type = "number"),
     ColumnConfig(key = "custoTotal", label = "Custo Total", type = "number", money = true),
     ColumnConfig(key = "custoPorHa", label = "Custo/ha", type = "number", money = true),
     ColumnConfig(key = "custoPorSc", label = "Custo/sc", type = "number", money = true),
@@ -175,7 +181,6 @@ private fun dreExportRecords(dre: DreData): List<Map<String, String?>> {
     val linhas = dre.porFazenda.map { f ->
         mapOf(
             "farmName" to f.farmName,
-            "areaHa" to f.areaHa.toString(),
             "custoTotal" to f.custoTotal.toString(),
             "custoPorHa" to f.custoPorHa.toString(),
             "custoPorSc" to f.custoPorSc?.toString(),
@@ -187,7 +192,6 @@ private fun dreExportRecords(dre: DreData): List<Map<String, String?>> {
     }
     val totalizacao = mapOf(
         "farmName" to "Total",
-        "areaHa" to dre.totais.areaHa.toString(),
         "custoTotal" to dre.totais.custoTotal.toString(),
         "custoPorHa" to dre.totais.custoPorHa.toString(),
         "custoPorSc" to dre.totais.custoPorSc?.toString(),
@@ -315,7 +319,6 @@ private fun FarmCard(f: DreFazendaData, arvore: List<DreRamoItemData>, expanded:
             Row(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(f.farmName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text("${f.areaHa} ha", style = MaterialTheme.typography.bodySmall)
                 }
                 if (arvore.isNotEmpty()) {
                     IconButton(onClick = onToggle, modifier = Modifier.size(24.dp)) {
@@ -374,14 +377,14 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("DRE")
+                        Text("DRE", color = MaterialTheme.colorScheme.primary)
                     }
                 },
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 },
@@ -429,7 +432,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                         icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
                         label = "Nuvem",
                         onClick = {
-                            val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                            val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
                             android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                         },
                     )
@@ -492,7 +495,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
             if (offline) {
                 item {
                     Text(
-                        "Sem conexão -- mostrando o último resultado salvo neste aparelho.",
+                        NetworkStatus.failureMessage(context),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
@@ -506,7 +509,6 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text("Totais", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Row { Text("Área total: "); Text("${data.totais.areaHa} ha", fontWeight = FontWeight.Bold) }
                             Row { Text("Custo total: "); Text(formatMoneyBrl(data.totais.custoTotal), fontWeight = FontWeight.Bold) }
                             Row { Text("Custo/ha: "); Text(formatMoneyBrl(data.totais.custoPorHa), fontWeight = FontWeight.Bold) }
                             if (data.totais.custoPorSc != null) {

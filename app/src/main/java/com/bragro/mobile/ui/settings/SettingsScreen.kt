@@ -155,8 +155,23 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = viewModel(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Configurações") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar") } },
+                // Seta+título uma linha abaixo + fonte verde -- mesmo padrão
+                // já usado nos módulos (DomainListScreen/DomainFormScreen),
+                // agora replicado aqui e em todos os títulos do app (pedido
+                // do usuário: "rebaixe a seta e o título... troque a cor por
+                // verde... em todos os títulos do mobile").
+                title = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Configurações", color = MaterialTheme.colorScheme.primary)
+                    }
+                },
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary) }
+                    }
+                },
             )
         },
     ) { padding ->

@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bragro.mobile.data.NetworkStatus
 import com.bragro.mobile.data.model.ColumnConfig
 import com.bragro.mobile.data.model.DomainConfig
 import com.bragro.mobile.data.repo.AnalisesRepository
@@ -313,14 +314,14 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Análises")
+                        Text("Análises", color = MaterialTheme.colorScheme.primary)
                     }
                 },
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 },
@@ -359,7 +360,7 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                         icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
                         label = "Nuvem",
                         onClick = {
-                            val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                            val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
                             android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                         },
                     )
@@ -426,7 +427,7 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
             if (offline) {
                 item {
                     Text(
-                        "Sem conexão -- mostrando o último resultado salvo neste aparelho.",
+                        NetworkStatus.failureMessage(context),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }

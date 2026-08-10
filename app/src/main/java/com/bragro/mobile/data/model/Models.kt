@@ -20,6 +20,14 @@ data class ColumnConfig(
     val computed: Boolean = false,
     val money: Boolean = false,
     val lookupCategory: String? = null,
+    // Torna a lista de opcoes deste campo dependente do valor atual de outro
+    // campo (irmao, mesmo dominio) -- ver comentario equivalente em
+    // types.ts (ColumnConfig). `dependsOn` e a `key` do campo irmao;
+    // `lookupCategoryByValue` mapeia o valor bruto desse campo irmao pra
+    // qual lookupCategory usar neste campo (cai em `lookupCategory` normal
+    // se o irmao nao tem valor ainda ou o valor nao esta no mapa).
+    val dependsOn: String? = null,
+    val lookupCategoryByValue: Map<String, String>? = null,
     val staticOptions: List<String>? = null,
     val hideInTable: Boolean = false,
     val hint: String? = null,
@@ -213,15 +221,25 @@ data class ModuleActionRequest(
     val refreshToken: String,
     val action: String,
     // Campos extras só usados pelas actions "estoque-transferir"/
-    // "estoque-devolver" (Controle de Estoque por Fazenda) -- pedido do
-    // usuário ("como faço pra fazer esse controle interligando com a
-    // tabela estoque"). Ficam null/omitidos nas demais actions.
+    // "estoque-devolver"/"estoque-saida"/"estoque-ajuste" (Controle de
+    // Estoque por Fazenda) -- pedido do usuário ("como faço pra fazer esse
+    // controle interligando com a tabela estoque"... "precisamos tambem
+    // colocar saída/devolução e... ajuste manual"). Ficam null/omitidos nas
+    // demais actions.
     val item: String? = null,
     val unidade: String? = null,
     val quantidade: Double? = null,
     val fazendaOrigemId: String? = null,
     val fazendaDestinoId: String? = null,
     val transferenciaEntradaId: String? = null,
+    // "estoque-saida"/"estoque-ajuste" reaproveitam fazendaOrigemId como a
+    // fazenda única desses dois (rótulo "Origem" no app). "tipo" só existe
+    // no ajuste ("ENTRADA" | "SAIDA"); "motivo" é obrigatório no ajuste e
+    // opcional na saída. Nulos por padrão -- não quebram nenhuma action
+    // antiga que não os envia (compatibilidade com o backend já em
+    // produção, que ignora campos extras que não usa).
+    val motivo: String? = null,
+    val tipo: String? = null,
 )
 
 @Serializable
@@ -641,14 +659,25 @@ data class DroneCreateRequest(
 @Serializable
 data class DroneCreateResponse(val ok: Boolean, val record: DroneRecordDto? = null, val error: String? = null)
 
-// Réplica mobile PARCIAL do módulo FieldView -- só os dados (talhões,
-// status de safra/frota por talhão/máquina), sem o mapa interativo nem
-// importação de KML/KMZ (ver comentário completo em
-// /api/mobile/fieldview/route.ts sobre esse recorte). JsonObject porque o
-// "status" reaproveita os registros crus de Safra/Frota (mesmo formato
-// heterogêneo de RecordsResponse acima), não um schema fixo próprio.
+// Réplica mobile do módulo FieldView -- talhões (com boundary/área
+// calculada), status de safra/frota por talhão/máquina, e agora (Task
+// #110) o mapa nativo (osmdroid) + importação nativa de KML/KMZ, sem
+// depender mais do site pra nenhuma das duas coisas. "geojson" chega cru
+// (JsonElement, mesmo critério de outros campos heterogêneos deste
+// arquivo) porque é sempre um objeto GeoJSON Polygon padrão
+// ({"type":"Polygon","coordinates":[[[lon,lat],...]]}) e a tela só precisa
+// reconverter pra GeoPoint pro overlay do mapa, não faz sentido modelar
+// uma data class Polygon/MultiPolygon aqui. Nullable com default null pra
+// não quebrar a deserialização de respostas antigas (versão anterior do
+// backend não mandava esse campo).
 @Serializable
-data class FieldBoundaryDto(val id: String, val talhao: String, val nome: String? = null, val areaHaCalc: Double? = null)
+data class FieldBoundaryDto(
+    val id: String,
+    val talhao: String,
+    val nome: String? = null,
+    val areaHaCalc: Double? = null,
+    val geojson: JsonElement? = null,
+)
 
 @Serializable
 data class FieldviewRequest(val accessToken: String, val refreshToken: String)
@@ -659,6 +688,31 @@ data class FieldviewResponse(
     val boundaries: List<FieldBoundaryDto> = emptyList(),
     val talhaoStatus: List<JsonObject> = emptyList(),
     val maquinaStatus: List<JsonObject> = emptyList(),
+    val error: String? = null,
+)
+
+// Importação nativa de KML/KMZ (Task #110) -- mesma rota
+// /api/mobile/fieldview, só que com "action" = "import_boundary" (o campo
+// "action" é omitido/ausente nas chamadas antigas de FieldviewRequest
+// acima, que o backend continua tratando como o fluxo só-leitura de
+// sempre). "talhao" é a chave única de negócio (mesma convenção
+// talhao-por-nome usada em SafraRegistro/FrotaRegistro, ver FieldBoundary
+// no schema.prisma -- upsert por [orgId, talhao]).
+@Serializable
+data class FieldviewImportRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String = "import_boundary",
+    val talhao: String,
+    val nome: String? = null,
+    val geojson: JsonElement,
+    val areaHaCalc: Double? = null,
+)
+
+@Serializable
+data class FieldviewImportResponse(
+    val ok: Boolean,
+    val boundary: FieldBoundaryDto? = null,
     val error: String? = null,
 )
 

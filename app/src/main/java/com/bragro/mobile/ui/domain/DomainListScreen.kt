@@ -87,6 +87,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bragro.mobile.data.NetworkStatus
 import com.bragro.mobile.data.model.AuditEntry
 import com.bragro.mobile.data.model.DomainConfig
 import com.bragro.mobile.data.model.WeatherResponse
@@ -313,7 +314,7 @@ fun DomainListScreen(
                         // longos (ex.: "Transferências entre Fazendas") sem
                         // isso podiam quebrar linha e cortar embaixo, já
                         // que a AppBar tem altura fixa.
-                        Text(config?.label ?: domainId, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(config?.label ?: domainId, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.primary)
                     }
                 },
                 // A seta de voltar ganha o mesmo espaçador do título -- pedido
@@ -323,7 +324,7 @@ fun DomainListScreen(
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar") }
+                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary) }
                     }
                 },
                 // Sem "actions" aqui -- Atualizar/Recolher-Expandir/Colunas/
@@ -415,7 +416,7 @@ fun DomainListScreen(
                             icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
                             label = "Nuvem",
                             onClick = {
-                                val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                                val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                             },
                         )
@@ -496,7 +497,7 @@ fun DomainListScreen(
                             icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
                             label = "Nuvem",
                             onClick = {
-                                val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                                val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                             },
                         )
@@ -663,7 +664,7 @@ fun DomainListScreen(
                             icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
                             label = "Nuvem",
                             onClick = {
-                                val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                                val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                             },
                         )
@@ -946,7 +947,7 @@ fun DomainListScreen(
                         icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
                         label = "Nuvem",
                         onClick = {
-                            val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                            val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
                             android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                         },
                     )
@@ -1004,7 +1005,7 @@ fun DomainListScreen(
             if (offline) {
                 item(key = "offline-banner") {
                     Text(
-                        "Sem conexão -- mostrando o último resultado salvo neste aparelho.",
+                        NetworkStatus.failureMessage(context),
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(bottom = 8.dp),
                     )

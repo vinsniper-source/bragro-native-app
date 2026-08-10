@@ -41,7 +41,18 @@ class AuthRepository(private val context: Context) {
             }
             LoginResult.Success
         } catch (e: Exception) {
-            LoginResult.Failure("Sem conexao com o servidor. Verifique sua internet e tente novamente.")
+            // Antes reportava "sem conexão" pra QUALQUER excecao (senha
+            // errada tratada em outro lugar, mas timeout/erro de servidor/
+            // sessao cairiam aqui) -- agora confere a conectividade real do
+            // aparelho (com.bragro.mobile.data.NetworkStatus) antes de
+            // afirmar isso, pedido do usuario ("o app esta acusando sem
+            // conexao mesmo com wifi e dados ligados").
+            val msg = if (com.bragro.mobile.data.NetworkStatus.isOnline(context)) {
+                "Não foi possível conectar ao servidor. Tente novamente em alguns instantes."
+            } else {
+                "Sem conexão com o servidor. Verifique sua internet e tente novamente."
+            }
+            LoginResult.Failure(msg)
         }
     }
 

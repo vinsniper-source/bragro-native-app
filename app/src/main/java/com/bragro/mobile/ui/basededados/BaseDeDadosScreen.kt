@@ -113,8 +113,20 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Base de Dados") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar") } },
+                // Seta+título uma linha abaixo + fonte verde -- padrão global
+                // (pedido do usuário, ver comentário em SettingsScreen.kt).
+                title = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Base de Dados", color = MaterialTheme.colorScheme.primary)
+                    }
+                },
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary) }
+                    }
+                },
             )
         },
     ) { padding ->

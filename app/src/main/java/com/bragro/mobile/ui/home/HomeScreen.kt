@@ -864,8 +864,15 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, vie
                 // Botão de adicionar aviso -- o app antes não tinha NENHUM
                 // jeito de publicar um aviso (só o site tinha), pedido
                 // explícito do usuário. Só OWNER/ADMIN vê, mesma regra do site.
+                // Tamanho fixo em 28.dp (mesmo do botão excluir aviso, linha
+                // ~890) -- pedido do usuário ("altura do bloco mural igual ao
+                // bloco central de alertas"): sem isso, o IconButton padrão
+                // (48.dp de área de toque) deixava o cabeçalho do Mural mais
+                // alto que o de Alertas (que não tem esse botão extra),
+                // fazendo os dois cards ficarem com altura diferente quando
+                // recolhidos.
                 if (canManage) {
-                    IconButton(onClick = { showAddDialog = true }) {
+                    IconButton(onClick = { showAddDialog = true }, modifier = Modifier.size(28.dp)) {
                         Icon(Icons.Filled.Add, contentDescription = "Adicionar aviso", tint = BrGreen)
                     }
                 }

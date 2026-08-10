@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CompareArrows
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material3.Button
 import androidx.compose.material3.AlertDialog
@@ -39,6 +41,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bragro.mobile.data.local.LookupEntity
+import com.bragro.mobile.data.repo.ConfigRepository
 import com.bragro.mobile.data.repo.ModuleActionsRepository
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
@@ -56,6 +60,17 @@ import kotlinx.serialization.json.jsonPrimitive
 // devolver o que sobrou de uma entrega anterior. Tudo via
 // /api/mobile/module-actions (mesmas Server-side functions do site, ver
 // lib/services/estoque-fazenda.ts) -- sem tabela nova nenhuma.
+//
+// Pedido do usuário ("precisamos tambem colocar saída/devolução e mudarmos o
+// nome dos campos... ajuste manual (com registro data hora e usuário, fique
+// permanente esse aviso) listas ssuspensas em item, origem, destino"): além
+// de Transferir/Devolver, mais dois botões/diálogos -- "Saída" (baixa manual,
+// uma linha só) e "Ajuste manual" (correção de saldo com motivo
+// OBRIGATÓRIO). Os rótulos de fazenda em TODOS os diálogos agora são
+// "Origem"/"Destino" (antes "De onde sai"/"Fazenda de destino"), e o campo
+// Item deixou de ser texto livre -- agora é uma lista suspensa vinda da
+// categoria "itens_estoque" (mesma lookup do formulário genérico de
+// Estoque), igual ao site.
 
 data class FazendaOpt(val id: String, val name: String)
 data class SaldoLinha(val fazendaNome: String, val item: String, val unidade: String?, val saldo: Double)
@@ -66,9 +81,12 @@ data class TransferenciaRecebida(
 
 class EstoqueFazendaViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = ModuleActionsRepository(app)
+    private val configRepo = ConfigRepository(app)
     var loading = mutableStateOf(false)
         private set
     var farms = mutableStateOf<List<FazendaOpt>>(emptyList())
+        private set
+    var itens = mutableStateOf<List<LookupEntity>>(emptyList())
         private set
     var saldos = mutableStateOf<List<SaldoLinha>>(emptyList())
         private set
@@ -80,6 +98,10 @@ class EstoqueFazendaViewModel(app: Application) : AndroidViewModel(app) {
     fun load() {
         loading.value = true
         viewModelScope.launch {
+            // Item agora é lista suspensa (pedido do usuário) -- mesma
+            // categoria "itens_estoque" que o formulário genérico de Estoque
+            // usa (ver DomainFormViewModel.load em DomainFormScreen.kt).
+            itens.value = configRepo.lookupsByCategory("itens_estoque")
             val result = repo.run("estoque-saldo-fazenda")
             if (result != null) {
                 farms.value = result["farms"]?.jsonArray.orEmpty().mapNotNull { it as? JsonObject }.map {
@@ -128,6 +150,37 @@ class EstoqueFazendaViewModel(app: Application) : AndroidViewModel(app) {
             onDone(result != null)
         }
     }
+
+    /** Saída manual (consumo/perda/baixa) -- uma linha só, sem "outro lado"
+     * recebendo. "fazendaOrigemId" aqui é a fazenda ÚNICA da saída (rótulo
+     * "Origem" no diálogo). */
+    fun saida(item: String, unidade: String, quantidade: Double, fazendaOrigemId: String?, motivo: String, onDone: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val result = repo.run(
+                "estoque-saida", item = item, unidade = unidade.ifBlank { null },
+                quantidade = quantidade, fazendaOrigemId = fazendaOrigemId, motivo = motivo.ifBlank { null },
+            )
+            message.value = if (result != null) "Saída registrada." else "Não foi possível registrar a saída -- confira os dados e a conexão."
+            if (result != null) load()
+            onDone(result != null)
+        }
+    }
+
+    /** Ajuste manual de saldo -- motivo OBRIGATÓRIO (pedido do usuário: "com
+     * registro data hora e usuário, fique permanente esse aviso"). O
+     * backend grava responsavel + criadoEm (permanentes, nunca expurgados)
+     * junto com o motivo. */
+    fun ajusteManual(item: String, unidade: String, quantidade: Double, fazendaOrigemId: String?, tipo: String, motivo: String, onDone: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val result = repo.run(
+                "estoque-ajuste", item = item, unidade = unidade.ifBlank { null },
+                quantidade = quantidade, fazendaOrigemId = fazendaOrigemId, tipo = tipo, motivo = motivo,
+            )
+            message.value = if (result != null) "Ajuste manual registrado." else "Não foi possível registrar o ajuste -- confira os dados e a conexão."
+            if (result != null) load()
+            onDone(result != null)
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -149,6 +202,29 @@ private fun FazendaDropdown(label: String, options: List<FazendaOpt>, placeholde
     }
 }
 
+/** Item agora é lista suspensa (pedido do usuário) -- mesmo mecanismo de
+ * FazendaDropdown acima, só que sobre a lookup "itens_estoque" (mesma
+ * categoria do formulário genérico de Estoque, ver FormField em
+ * DomainFormScreen.kt). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ItemDropdown(label: String, options: List<LookupEntity>, placeholder: String, selectedValue: String, onSelect: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val selectedLabel = options.firstOrNull { it.value == selectedValue }?.label ?: selectedValue.ifBlank { placeholder }
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+        OutlinedTextField(
+            value = selectedLabel, onValueChange = {}, readOnly = true, label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.menuAnchor().fillMaxWidth(),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { i ->
+                DropdownMenuItem(text = { Text(i.label) }, onClick = { onSelect(i.value); expanded = false })
+            }
+        }
+    }
+}
+
 /** Bloco colapsável "Transferências entre Fazendas" -- só aparece no módulo
  * Estoque (ver DomainListScreen.kt). Fechado por padrão, mesmo critério do
  * bloco Filtros. */
@@ -159,9 +235,12 @@ fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel(), 
     // módulo (ModuleIconRow) -- já nasce aberto.
     var open by remember { mutableStateOf(!showHeader) }
     var transferOpen by remember { mutableStateOf(false) }
+    var saidaOpen by remember { mutableStateOf(false) }
+    var ajusteOpen by remember { mutableStateOf(false) }
     var devolverAlvo by remember { mutableStateOf<String?>(null) }
     val loading by viewModel.loading
     val farms by viewModel.farms
+    val itens by viewModel.itens
     val saldos by viewModel.saldos
     val transferencias by viewModel.transferencias
     val message by viewModel.message
@@ -181,10 +260,18 @@ fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel(), 
                 if (loading && farms.isEmpty()) {
                     Text("Carregando...", style = MaterialTheme.typography.bodySmall)
                 } else {
-                    Row(modifier = Modifier.fillMaxWidth()) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(onClick = { transferOpen = true }) {
                             Icon(Icons.Filled.CompareArrows, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Text(" Transferir pra fazenda")
+                            Text(" Transferir")
+                        }
+                        OutlinedButton(onClick = { saidaOpen = true }) {
+                            Icon(Icons.Filled.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Text(" Saída")
+                        }
+                        OutlinedButton(onClick = { ajusteOpen = true }) {
+                            Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Text(" Ajuste")
                         }
                     }
                     Text("Saldo por fazenda", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
@@ -223,7 +310,13 @@ fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel(), 
     }
 
     if (transferOpen) {
-        TransferirFazendaDialog(farms = farms, onDismiss = { transferOpen = false }, viewModel = viewModel)
+        TransferirFazendaDialog(farms = farms, itens = itens, onDismiss = { transferOpen = false }, viewModel = viewModel)
+    }
+    if (saidaOpen) {
+        SaidaFazendaDialog(farms = farms, itens = itens, onDismiss = { saidaOpen = false }, viewModel = viewModel)
+    }
+    if (ajusteOpen) {
+        AjusteManualFazendaDialog(farms = farms, itens = itens, onDismiss = { ajusteOpen = false }, viewModel = viewModel)
     }
     if (devolverAlvo != null) {
         DevolverFazendaDialog(transferenciaEntradaId = devolverAlvo!!, onDismiss = { devolverAlvo = null }, viewModel = viewModel)
@@ -231,7 +324,7 @@ fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel(), 
 }
 
 @Composable
-private fun TransferirFazendaDialog(farms: List<FazendaOpt>, onDismiss: () -> Unit, viewModel: EstoqueFazendaViewModel) {
+private fun TransferirFazendaDialog(farms: List<FazendaOpt>, itens: List<LookupEntity>, onDismiss: () -> Unit, viewModel: EstoqueFazendaViewModel) {
     var item by remember { mutableStateOf("") }
     var unidade by remember { mutableStateOf("") }
     var quantidade by remember { mutableStateOf("") }
@@ -245,13 +338,13 @@ private fun TransferirFazendaDialog(farms: List<FazendaOpt>, onDismiss: () -> Un
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Sai do depósito de origem e entra na fazenda de destino.", style = MaterialTheme.typography.bodySmall)
-                OutlinedTextField(value = item, onValueChange = { item = it }, label = { Text("Item *") }, modifier = Modifier.fillMaxWidth())
+                ItemDropdown("Item *", itens, "Selecione", item) { item = it }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(value = quantidade, onValueChange = { quantidade = it }, label = { Text("Quantidade *") }, modifier = Modifier.weight(1f))
                     OutlinedTextField(value = unidade, onValueChange = { unidade = it }, label = { Text("Unidade") }, modifier = Modifier.weight(1f))
                 }
-                FazendaDropdown("De onde sai", farms, "Depósito Central", fazendaOrigemId) { fazendaOrigemId = it }
-                FazendaDropdown("Fazenda de destino *", farms, "Selecione", fazendaDestinoId) { fazendaDestinoId = it }
+                FazendaDropdown("Origem", farms, "Depósito Central", fazendaOrigemId) { fazendaOrigemId = it }
+                FazendaDropdown("Destino *", farms, "Selecione", fazendaDestinoId) { fazendaDestinoId = it }
             }
         },
         confirmButton = {
@@ -266,6 +359,119 @@ private fun TransferirFazendaDialog(farms: List<FazendaOpt>, onDismiss: () -> Un
                 },
             ) {
                 if (saving) CircularProgressIndicator(modifier = Modifier.size(18.dp)) else Text("Transferir")
+            }
+        },
+        dismissButton = { Button(onClick = onDismiss) { Text("Cancelar") } },
+    )
+}
+
+/** Saída manual (consumo/perda/baixa) -- uma fazenda só (rótulo "Origem",
+ * já que o item está saindo do estoque dela), sem par de destino. */
+@Composable
+private fun SaidaFazendaDialog(farms: List<FazendaOpt>, itens: List<LookupEntity>, onDismiss: () -> Unit, viewModel: EstoqueFazendaViewModel) {
+    var item by remember { mutableStateOf("") }
+    var unidade by remember { mutableStateOf("") }
+    var quantidade by remember { mutableStateOf("") }
+    var fazendaId by remember { mutableStateOf("") }
+    var motivo by remember { mutableStateOf("") }
+    var saving by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Saída de estoque") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Baixa manual do item (consumo, perda, quebra etc.) -- não é transferência pra outra fazenda.", style = MaterialTheme.typography.bodySmall)
+                ItemDropdown("Item *", itens, "Selecione", item) { item = it }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = quantidade, onValueChange = { quantidade = it }, label = { Text("Quantidade *") }, modifier = Modifier.weight(1f))
+                    OutlinedTextField(value = unidade, onValueChange = { unidade = it }, label = { Text("Unidade") }, modifier = Modifier.weight(1f))
+                }
+                FazendaDropdown("Origem", farms, "Depósito Central", fazendaId) { fazendaId = it }
+                OutlinedTextField(
+                    value = motivo, onValueChange = { motivo = it }, label = { Text("Motivo") },
+                    placeholder = { Text("Opcional -- ex.: consumo, perda, quebra") }, modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = !saving && item.isNotBlank() && quantidade.toDoubleOrNull() != null,
+                onClick = {
+                    saving = true
+                    viewModel.saida(item, unidade, quantidade.toDoubleOrNull() ?: 0.0, fazendaId.ifBlank { null }, motivo) {
+                        saving = false
+                        onDismiss()
+                    }
+                },
+            ) {
+                if (saving) CircularProgressIndicator(modifier = Modifier.size(18.dp)) else Text("Registrar saída")
+            }
+        },
+        dismissButton = { Button(onClick = onDismiss) { Text("Cancelar") } },
+    )
+}
+
+/** Ajuste manual de saldo -- motivo OBRIGATÓRIO (pedido do usuário: "com
+ * registro data hora e usuário, fique permanente esse aviso"). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AjusteManualFazendaDialog(farms: List<FazendaOpt>, itens: List<LookupEntity>, onDismiss: () -> Unit, viewModel: EstoqueFazendaViewModel) {
+    var item by remember { mutableStateOf("") }
+    var unidade by remember { mutableStateOf("") }
+    var quantidade by remember { mutableStateOf("") }
+    var fazendaId by remember { mutableStateOf("") }
+    var tipo by remember { mutableStateOf("ENTRADA") }
+    var motivo by remember { mutableStateOf("") }
+    var saving by remember { mutableStateOf(false) }
+    var tipoExpanded by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Ajuste manual de estoque") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    "Corrige o saldo de um item (contagem de inventário, sobra ou quebra na conferência etc.). O motivo é " +
+                        "obrigatório e fica registrado permanentemente junto com o usuário e a data/hora do ajuste.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                ItemDropdown("Item *", itens, "Selecione", item) { item = it }
+                ExposedDropdownMenuBox(expanded = tipoExpanded, onExpandedChange = { tipoExpanded = it }) {
+                    OutlinedTextField(
+                        value = if (tipo == "ENTRADA") "Entrada (aumenta o saldo)" else "Saída (reduz o saldo)",
+                        onValueChange = {}, readOnly = true, label = { Text("Tipo *") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = tipoExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    )
+                    ExposedDropdownMenu(expanded = tipoExpanded, onDismissRequest = { tipoExpanded = false }) {
+                        DropdownMenuItem(text = { Text("Entrada (aumenta o saldo)") }, onClick = { tipo = "ENTRADA"; tipoExpanded = false })
+                        DropdownMenuItem(text = { Text("Saída (reduz o saldo)") }, onClick = { tipo = "SAIDA"; tipoExpanded = false })
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = quantidade, onValueChange = { quantidade = it }, label = { Text("Quantidade *") }, modifier = Modifier.weight(1f))
+                    OutlinedTextField(value = unidade, onValueChange = { unidade = it }, label = { Text("Unidade") }, modifier = Modifier.weight(1f))
+                }
+                FazendaDropdown("Origem", farms, "Depósito Central", fazendaId) { fazendaId = it }
+                OutlinedTextField(
+                    value = motivo, onValueChange = { motivo = it }, label = { Text("Motivo *") },
+                    placeholder = { Text("Obrigatório -- justifique o ajuste") }, modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = !saving && item.isNotBlank() && quantidade.toDoubleOrNull() != null && motivo.isNotBlank(),
+                onClick = {
+                    saving = true
+                    viewModel.ajusteManual(item, unidade, quantidade.toDoubleOrNull() ?: 0.0, fazendaId.ifBlank { null }, tipo, motivo) {
+                        saving = false
+                        onDismiss()
+                    }
+                },
+            ) {
+                if (saving) CircularProgressIndicator(modifier = Modifier.size(18.dp)) else Text("Registrar ajuste")
             }
         },
         dismissButton = { Button(onClick = onDismiss) { Text("Cancelar") } },

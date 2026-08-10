@@ -25,6 +25,8 @@ import com.bragro.mobile.data.model.DroneCreateRequest
 import com.bragro.mobile.data.model.DroneCreateResponse
 import com.bragro.mobile.data.model.DroneListRequest
 import com.bragro.mobile.data.model.DroneListResponse
+import com.bragro.mobile.data.model.FieldviewImportRequest
+import com.bragro.mobile.data.model.FieldviewImportResponse
 import com.bragro.mobile.data.model.FieldviewRequest
 import com.bragro.mobile.data.model.FieldviewResponse
 import com.bragro.mobile.data.model.HomeRequest
@@ -134,6 +136,13 @@ interface MobileApi {
 
     @POST("api/mobile/fieldview")
     suspend fun fieldview(@Body body: FieldviewRequest): Response<FieldviewResponse>
+
+    // Mesma URL de fieldview() acima, corpo/resposta diferentes (o
+    // Retrofit resolve pelo tipo do parametro no ponto de chamada, nao pela
+    // URL -- o backend distingue os dois fluxos pelo campo "action" dentro
+    // do JSON, ver comentario em FieldviewImportRequest/Models.kt).
+    @POST("api/mobile/fieldview")
+    suspend fun importFieldBoundary(@Body body: FieldviewImportRequest): Response<FieldviewImportResponse>
 
     @POST("api/mobile/nfe-preview")
     suspend fun nfePreview(@Body body: NfePreviewRequest): Response<NfePreviewResponse>

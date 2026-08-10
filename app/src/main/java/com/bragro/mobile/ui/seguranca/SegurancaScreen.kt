@@ -135,8 +135,20 @@ fun SegurancaScreen(onBack: () -> Unit, viewModel: SegurancaViewModel = viewMode
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Acessos e Segurança") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar") } },
+                // Seta+título uma linha abaixo + fonte verde -- padrão global
+                // (pedido do usuário, ver comentário em SettingsScreen.kt).
+                title = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Acessos e Segurança", color = MaterialTheme.colorScheme.primary)
+                    }
+                },
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary) }
+                    }
+                },
             )
         },
     ) { padding ->

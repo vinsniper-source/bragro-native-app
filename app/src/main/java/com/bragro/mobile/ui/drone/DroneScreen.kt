@@ -168,14 +168,14 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Drone")
+                        Text("Drone", color = MaterialTheme.colorScheme.primary)
                     }
                 },
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         androidx.compose.material3.IconButton(onClick = onBack) {
-                            Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar")
+                            Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 },
@@ -341,7 +341,7 @@ private fun DroneLookupDropdown(label: String, options: List<LookupEntity>, valu
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.fillMaxWidth().menuAnchor(),
         )
-        androidx.compose.material3.ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(text = { Text("(nenhum)") }, onClick = { onChange(""); expanded = false })
             options.forEach { opt -> DropdownMenuItem(text = { Text(opt.label) }, onClick = { onChange(opt.value); expanded = false }) }
         }
@@ -360,7 +360,7 @@ private fun DroneStaticDropdown(label: String, options: List<Pair<String, String
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.fillMaxWidth().menuAnchor(),
         )
-        androidx.compose.material3.ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { (key, lbl) -> DropdownMenuItem(text = { Text(lbl) }, onClick = { onChange(key); expanded = false }) }
         }
     }

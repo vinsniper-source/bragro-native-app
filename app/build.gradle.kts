@@ -189,6 +189,14 @@ dependencies {
     // Sincronizacao em segundo plano quando a conexao voltar.
     implementation("androidx.work:work-runtime-ktx:2.9.1")
 
+    // Mapa nativo do FieldView (Task #110) -- osmdroid renderiza tiles do
+    // OpenStreetMap (MAPNIK, via HTTPS, compativel com usesCleartextTraffic
+    // "false" acima) e poligonos de contorno de talhao, SEM chave de API
+    // nenhuma (ao contrario de Google Maps/Mapbox, descartados de proposito
+    // porque exigiriam cadastro/cobranca). Puramente Java/Kotlin, sem
+    // dependencia nativa (.so) alem do proprio Android SDK.
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
     // OCR embarcado no aparelho (Fase 2, Task #42: Romaneio rapido) --

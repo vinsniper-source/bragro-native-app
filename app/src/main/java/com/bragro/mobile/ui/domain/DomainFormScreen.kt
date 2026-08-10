@@ -100,7 +100,15 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             val cfg = configRepository.domainConfig(domainId) ?: return@launch
             config.value = cfg
 
-            val categories = cfg.columns.mapNotNull { it.lookupCategory }.distinct()
+            // Categorias de TODO campo: as diretas (lookupCategory) e, pra
+            // campos dependentes (dependsOn + lookupCategoryByValue, ver
+            // ColumnConfig em Models.kt), todas as categorias que o mapa
+            // pode escolher -- pré-carrega tudo de uma vez (mesmo se o
+            // usuário ainda não escolheu o campo do qual depende).
+            val categories = (
+                cfg.columns.mapNotNull { it.lookupCategory } +
+                    cfg.columns.flatMap { it.lookupCategoryByValue?.values.orEmpty() }
+                ).distinct()
             val loaded = mutableMapOf<String, List<LookupEntity>>()
             for (cat in categories) loaded[cat] = configRepository.lookupsByCategory(cat)
             lookupsByCategory.value = loaded
@@ -132,11 +140,39 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setField(key: String, value: String) {
         fields[key] = value
+        // Campos que dependem deste (dependsOn, ver ColumnConfig em
+        // Models.kt) têm a seleção atual limpa -- ela pode não existir mais
+        // na lista filtrada pra o novo valor (mesmo comportamento do site,
+        // ver handleSelectChange em record-form.tsx). Ex.: trocar a
+        // Categoria do Controle Interno (EPI/MATERIAL DE LIMPEZA/MATERIAL
+        // DE ESCRITÓRIO) esvazia o Item já escolhido.
+        val dependents = config.value?.columns?.filter { it.dependsOn == key }.orEmpty()
+        for (dep in dependents) {
+            if (fields[dep.key]?.isNotEmpty() == true) fields[dep.key] = ""
+        }
         // Some o aviso vermelho desse campo específico assim que o usuário
         // começa a corrigir -- sem isso ficava marcado até o próximo Salvar.
         if (value.isNotBlank() && key in missingFields.value) {
             missingFields.value = missingFields.value - key
         }
+    }
+
+    /** Categoria de lookup efetiva pra um campo -- se o campo tem dependsOn
+     * + lookupCategoryByValue (ver ColumnConfig em Models.kt), usa o valor
+     * atual do campo do qual ele depende pra escolher qual lista mostrar
+     * (cai em lookupCategory normal se esse campo ainda não tem valor, ou o
+     * valor não está no mapa). Mesma lógica de effectiveLookupCategory em
+     * record-form.tsx (site). */
+    fun effectiveLookupCategory(col: ColumnConfig): String? {
+        val dependsOn = col.dependsOn
+        val byValue = col.lookupCategoryByValue
+        if (dependsOn != null && byValue != null) {
+            val depVal = fields[dependsOn]
+            if (!depVal.isNullOrBlank()) {
+                byValue[depVal]?.let { return it }
+            }
+        }
+        return col.lookupCategory
     }
 
     /** Preenche todos os campos (exceto computados) com os valores do
@@ -240,13 +276,14 @@ fun DomainFormScreen(
                             if (recordId == null) "Novo lançamento" else "Editar lançamento",
                             maxLines = 1,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                 },
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar") }
+                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary) }
                     }
                 },
                 actions = {
@@ -335,7 +372,14 @@ fun DomainFormScreen(
                     val optionLabels = col.lookupCategory?.let { cat -> lookups[cat]?.associate { it.value to it.label } } ?: emptyMap()
                     ComputedFieldDisplay(col = col, raw = computedValues[col.key] ?: "", optionLabels = optionLabels)
                 } else {
-                    FormField(col = col, options = col.lookupCategory?.let { lookups[it] }, viewModel = viewModel, isMissing = col.key in missingFields)
+                    // Campos com dependsOn (ver ColumnConfig em Models.kt)
+                    // usam effectiveLookupCategory pra escolher a lista
+                    // certa conforme o valor atual do campo do qual
+                    // dependem (ex.: Item do Controle Interno conforme a
+                    // Categoria) -- campos sem dependsOn continuam usando
+                    // lookupCategory direto (effectiveLookupCategory cai
+                    // nele automaticamente).
+                    FormField(col = col, options = viewModel.effectiveLookupCategory(col)?.let { lookups[it] }, viewModel = viewModel, isMissing = col.key in missingFields)
                 }
                 androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
             }
