@@ -595,6 +595,95 @@ data class RecordsResponse(
     val error: String? = null,
 )
 
+// Réplica mobile do módulo Drone (ver /api/mobile/drone/route.ts e
+// src/app/(app)/drone/actions.ts no site) -- schema fixo (não passa pelo
+// DomainConfig genérico porque Drone não é um domínio do registry.ts, é
+// uma tabela própria com upload de arquivo).
+@Serializable
+data class DroneRecordDto(
+    val id: String,
+    val data: String,
+    val talhao: String? = null,
+    val tipoCaptura: String,
+    val piloto: String? = null,
+    val altitude: Double? = null,
+    val areaCoberta: Double? = null,
+    val observacoes: String? = null,
+    val storagePath: String,
+    val publicUrl: String? = null,
+    val fileSizeBytes: Long? = null,
+    val criadoEm: String,
+)
+
+@Serializable
+data class DroneListRequest(val accessToken: String, val refreshToken: String, val action: String = "list")
+
+@Serializable
+data class DroneListResponse(val ok: Boolean, val records: List<DroneRecordDto> = emptyList(), val error: String? = null)
+
+@Serializable
+data class DroneCreateRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String = "create",
+    val data: String,
+    val talhao: String? = null,
+    val tipoCaptura: String,
+    val piloto: String? = null,
+    val altitude: Double? = null,
+    val areaCoberta: Double? = null,
+    val observacoes: String? = null,
+    val storagePath: String,
+    val publicUrl: String,
+    val fileSizeBytes: Long,
+)
+
+@Serializable
+data class DroneCreateResponse(val ok: Boolean, val record: DroneRecordDto? = null, val error: String? = null)
+
+// Réplica mobile PARCIAL do módulo FieldView -- só os dados (talhões,
+// status de safra/frota por talhão/máquina), sem o mapa interativo nem
+// importação de KML/KMZ (ver comentário completo em
+// /api/mobile/fieldview/route.ts sobre esse recorte). JsonObject porque o
+// "status" reaproveita os registros crus de Safra/Frota (mesmo formato
+// heterogêneo de RecordsResponse acima), não um schema fixo próprio.
+@Serializable
+data class FieldBoundaryDto(val id: String, val talhao: String, val nome: String? = null, val areaHaCalc: Double? = null)
+
+@Serializable
+data class FieldviewRequest(val accessToken: String, val refreshToken: String)
+
+@Serializable
+data class FieldviewResponse(
+    val ok: Boolean,
+    val boundaries: List<FieldBoundaryDto> = emptyList(),
+    val talhaoStatus: List<JsonObject> = emptyList(),
+    val maquinaStatus: List<JsonObject> = emptyList(),
+    val error: String? = null,
+)
+
+// "Editado por" no card de cada lançamento (pedido do usuário: "editado
+// por + data/hora dentro do card, via histórico de alterações") -- devolve
+// só a última edição de cada recordId pedido, num único lote por tela de
+// lista (ver /api/mobile/audit-info/route.ts).
+@Serializable
+data class AuditInfoRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val domainId: String,
+    val recordIds: List<String>,
+)
+
+@Serializable
+data class AuditEntry(val userEmail: String, val createdAt: String, val action: String)
+
+@Serializable
+data class AuditInfoResponse(
+    val ok: Boolean,
+    val info: Map<String, AuditEntry> = emptyMap(),
+    val error: String? = null,
+)
+
 @Serializable
 data class SyncRequest(
     val accessToken: String,

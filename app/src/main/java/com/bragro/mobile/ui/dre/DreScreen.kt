@@ -359,6 +359,14 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
     // módulos -- pedido do usuário ("dre, análises... transforme os
     // filtros em ícone").
     var filtrosOpen by remember { mutableStateOf(false) }
+    // Recolher/expandir os blocos do relatório (Totais, Composição, Fazendas)
+    // de uma vez -- pedido do usuário ("insira o ícone recolher/expandir os
+    // blocos em dre e análises"), mesmo padrão do allExpanded já usado nas
+    // listas de lançamentos (DomainListScreen/FinanceiroScreen). Começa
+    // FECHADO -- pedido do usuário ("sempre aparecer a tela vazia, só
+    // expandir quando clicar no ícone"), mesmo critério já usado em
+    // allExpanded nos módulos genéricos.
+    var contentExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -397,11 +405,22 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                         tint = if (filtrosOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current,
                         onClick = { filtrosOpen = !filtrosOpen },
                     )
-                    if (allFarmIds.isNotEmpty()) {
+                    // Ícone único de recolher/expandir -- pedido do usuário
+                    // ("retire o ícone expandir e troque pelo ícone de
+                    // expandir dos dados, pois o que está dentro do botão
+                    // dados não está habilitado"): antes existiam 2 ícones
+                    // de recolher/expandir (este, só pro detalhamento de
+                    // custo por fazenda -- só habilitado quando há fazendas
+                    // com árvore de custo -- e outro, mais recente, no
+                    // bloco Nuvem, pro relatório inteiro). Ficou só este,
+                    // agora controlando o relatório inteiro (Totais,
+                    // Composição, cards de fazenda), sempre habilitado
+                    // quando há dados.
+                    if (temRegistros) {
                         LabeledIconButton(
-                            icon = if (allFarmsExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
-                            label = if (allFarmsExpanded) "Recolher" else "Expandir",
-                            onClick = { if (allFarmsExpanded) viewModel.collapseAllFarms() else viewModel.expandAllFarms(allFarmIds) },
+                            icon = if (contentExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                            label = if (contentExpanded) "Recolher" else "Expandir",
+                            onClick = { contentExpanded = !contentExpanded },
                         )
                     }
                 }
@@ -482,7 +501,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                 item {
                     Text(if (loading) "Carregando..." else "Sem dados ainda. Conecte-se à internet e atualize.")
                 }
-            } else {
+            } else if (contentExpanded) {
                 item {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {

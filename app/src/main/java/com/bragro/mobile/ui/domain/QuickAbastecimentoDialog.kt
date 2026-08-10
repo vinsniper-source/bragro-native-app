@@ -146,7 +146,11 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
                             copyMessage = if (found) "Campos preenchidos com o último abastecimento -- confira antes de lançar." else "Nenhum abastecimento lançado ainda para copiar."
                         }
                     }) {
-                        androidx.compose.material3.Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último abastecimento")
+                        androidx.compose.material3.Icon(
+                            Icons.Filled.ContentCopy,
+                            contentDescription = "Copiar último abastecimento",
+                            tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                        )
                     }
                 }
                 if (copyMessage != null) Text(copyMessage!!, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)

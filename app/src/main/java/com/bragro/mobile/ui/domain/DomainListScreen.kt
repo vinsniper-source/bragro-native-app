@@ -4,6 +4,9 @@ import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -84,8 +87,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bragro.mobile.data.model.AuditEntry
 import com.bragro.mobile.data.model.DomainConfig
 import com.bragro.mobile.data.model.WeatherResponse
+import com.bragro.mobile.data.repo.AuditInfoRepository
 import com.bragro.mobile.data.repo.ConfigRepository
 import com.bragro.mobile.data.repo.RecordRepository
 import com.bragro.mobile.data.repo.WeatherRepository
@@ -98,6 +103,7 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
     private val configRepository = ConfigRepository(app)
     private val recordRepository = RecordRepository(app)
     private val weatherRepository = WeatherRepository()
+    private val auditInfoRepository = AuditInfoRepository(app)
 
     var config = mutableStateOf<DomainConfig?>(null)
         private set
@@ -119,6 +125,20 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
     // /api/mobile/weather do WeatherRepository do Início.
     var weather = mutableStateOf<WeatherResponse?>(null)
         private set
+
+    // "Editado por" + data/hora dentro do card (pedido do usuário, ver
+    // AuditInfoRepository.kt) -- mapa recordId -> última edição, buscado
+    // em UM lote sempre que a lista de registros muda (não um request por
+    // card). Sem cache no Room de propósito, mesmo critério do bloco
+    // Gráficos: só importa com a tela aberta e online.
+    var auditInfo = mutableStateOf<Map<String, AuditEntry>>(emptyMap())
+        private set
+
+    fun loadAuditInfo(domainId: String, recordIds: List<String>) {
+        viewModelScope.launch {
+            auditInfo.value = auditInfoRepository.fetch(domainId, recordIds)
+        }
+    }
 
     fun load(domainId: String) {
         viewModelScope.launch {
@@ -180,7 +200,16 @@ fun DomainListScreen(
     val refreshing by viewModel.refreshing
     val offline by viewModel.offline
     val weather by viewModel.weather
+    val auditInfo by viewModel.auditInfo
     val context = LocalContext.current
+
+    // "Editado por" (ver comentário no ViewModel) -- busca em lote sempre
+    // que a lista de ids muda (nova sincronização, filtro não afeta pois
+    // usa "records" cru, não "filteredRecords"). LaunchedEffect só refaz a
+    // chamada quando a lista de ids muda de verdade (List tem equals
+    // estrutural), então não fica martelando a rede a cada recomposição.
+    val recordIds = remember(records) { records.mapNotNull { it["id"] } }
+    LaunchedEffect(domainId, recordIds) { viewModel.loadAuditInfo(domainId, recordIds) }
     // Abastecimento rápido (Frota): FAB extra que abre um Dialog com só o
     // essencial preenchido -- espelho de quick-abastecimento-button.tsx.
     var showQuickAbastecimento by remember { mutableStateOf(false) }
@@ -218,6 +247,11 @@ fun DomainListScreen(
     // usuário) -- guarda o id do lançamento aguardando confirmação; null =
     // nenhum diálogo aberto.
     var recordPendingDelete by remember(domainId) { mutableStateOf<String?>(null) }
+    // "Ver" ganhou ação própria, separada da setinha de expandir -- pedido
+    // do usuário ("a setinha será individual pra cada bloco... setinha
+    // acima do ícone ver, depois editar e por último excluir"): guarda o id
+    // do lançamento aberto no diálogo de leitura; null = nenhum diálogo.
+    var recordBeingViewed by remember(domainId) { mutableStateOf<String?>(null) }
     // Bloco "Filtros" -- colapsável só pela própria setinha (ModuleIconButton
     // "filtros"), independente da seta de recolher/expandir lançamentos
     // acima (que não deve abrir/fechar Filtros, Gráficos ou Calculadoras).
@@ -362,18 +396,45 @@ fun DomainListScreen(
             // pro nome do outro módulo, então dispensa o rótulo escrito.
             if (linkedDomains != null && onSwitchDomain != null) {
                 item(key = "linked-domain-switch") {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier.padding(8.dp),
-                        ) {
-                            linkedDomains.forEach { (id, label) ->
-                                val active = id == domainId
-                                ModuleIconButton(
-                                    ModuleIconItem(id, linkedDomainIcon(id), label, active = active),
-                                ) { if (!active) onSwitchDomain(id) }
-                            }
+                    // Ganhou o título "Faturamento" acima do alternador
+                    // NFSe/Cobranças (mesmo padrão de bloco com título dos
+                    // outros módulos) e um bloco individual de Nuvem do lado,
+                    // na mesma linha -- pedido do usuário ("coloque o nome da
+                    // categoria de faturamento... e na mesma linha coloque o
+                    // ícone nuvem em um bloco individual").
+                    val faturamentoBlock = ModuleBlockSpec("Faturamento", vertical = false) {
+                        linkedDomains.forEach { (id, label) ->
+                            val active = id == domainId
+                            ModuleIconButton(
+                                ModuleIconItem(id, linkedDomainIcon(id), label, active = active),
+                            ) { if (!active) onSwitchDomain(id) }
                         }
+                    }
+                    val nuvemBlock = ModuleBlockSpec("", vertical = true) {
+                        LabeledIconButton(
+                            icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
+                            label = "Nuvem",
+                            onClick = {
+                                val msg = if (offline) "Sem conexão -- mostrando o último resultado salvo neste aparelho." else "Conectado -- dados sincronizados com o servidor."
+                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                            },
+                        )
+                    }
+                    // Imprimir ganhou bloco individual próprio nesta linha --
+                    // pedido do usuário ("o primeiro bloco faturamento recue
+                    // um pouco para encaixar o bloco individual imprimir").
+                    // Faturamento perde peso (3f -> 2f) pra abrir espaço.
+                    val imprimirBlockCobrancas = ModuleBlockSpec("", vertical = true) {
+                        LabeledIconButton(
+                            icon = Icons.Filled.Print,
+                            label = "Imprimir",
+                            onClick = { HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys) },
+                        )
+                    }
+                    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ModuleCategoryBlock(faturamentoBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
+                        ModuleCategoryBlock(nuvemBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                        ModuleCategoryBlock(imprimirBlockCobrancas, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
                     }
                 }
             }
@@ -526,6 +587,16 @@ fun DomainListScreen(
                                 onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
                             )
                         }
+                        // Transferências entra dentro de Dados (5º ícone) em
+                        // vez de bloco individual -- pedido do usuário ("no
+                        // módulo estoque em dados transfira o ícone
+                        // transferência e expanda o bloco de 4 para 5
+                        // ícones, e deixe nuvem na mesma linha").
+                        if (domainId == "estoque") {
+                            ModuleIconButton(
+                                ModuleIconItem("estoque-fazenda", Icons.Filled.CompareArrows, "Transferências", active = expandedBlocks["estoque-fazenda"] == true),
+                            ) { expandedBlocks["estoque-fazenda"] = expandedBlocks["estoque-fazenda"] != true }
+                        }
                     }
                     // Operações: varia por módulo -- Safra (recalcular área +
                     // atualizar + período + calculadora), Clima/Planejamento
@@ -634,20 +705,12 @@ fun DomainListScreen(
                             }
                         }
                     } else if (domainId == "estoque") {
-                        // Estoque também ganha um 3º ícone individual
-                        // (Transferências entre Fazendas, que já existia na
-                        // fileira única antiga) -- mesmo padrão do Clima
-                        // acima -- pedido do usuário ("aplique o mesmo
-                        // padrão da imagem 3 e 4" em Estoque).
-                        val transferenciasBlock = ModuleBlockSpec("", vertical = true) {
-                            ModuleIconButton(
-                                ModuleIconItem("estoque-fazenda", Icons.Filled.CompareArrows, "Transferências", active = expandedBlocks["estoque-fazenda"] == true),
-                            ) { expandedBlocks["estoque-fazenda"] = expandedBlocks["estoque-fazenda"] != true }
-                        }
+                        // Transferências já está dentro de Dados agora (ver
+                        // acima) -- linha 1 fica só Dados (5 ícones) + Nuvem,
+                        // mesma linha.
                         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 ModuleCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
-                                ModuleCategoryBlock(transferenciasBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
                                 ModuleCategoryBlock(nuvemBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
                             }
                             Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -657,23 +720,117 @@ fun DomainListScreen(
                             }
                         }
                     } else {
-                        // Safra, Planejamento Safra, Colheita, Frota: mesmo
-                        // esqueleto do padrão genérico (Dados+Nuvem em cima,
-                        // Operações+Arquivos+Imprimir embaixo).
-                        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                ModuleCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
-                                ModuleCategoryBlock(nuvemBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                        // Safra ganhou layout próprio -- pedido do usuário
+                        // ("depois do bloco dados crie dois blocos
+                        // individuais para colocar nuvem e imprimir nesta
+                        // mesma linha, na linha de baixo em operações
+                        // coloque na horizontal em uma linha só os 4
+                        // ícones e logo à frente os ícones em arquivos"):
+                        // Nuvem e Imprimir sobem pra linha do Dados, cada um
+                        // em bloco próprio; linha de baixo fica só com
+                        // Operações (mais largo, cabem os 4 ícones numa
+                        // linha) + Arquivos ao lado.
+                        // Planejamento Safra/Colheita/Frota continuam com o
+                        // esqueleto antigo (Dados+Nuvem em cima, Operações+
+                        // Arquivos+Imprimir embaixo) -- mudança não pedida
+                        // pro usuário pra esses 3 módulos.
+                        if (domainId == "safra") {
+                            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    ModuleCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
+                                    ModuleCategoryBlock(nuvemBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                                    ModuleCategoryBlock(imprimirBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                                }
+                                Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    ModuleCategoryBlock(operacoesBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
+                                    ModuleCategoryBlock(arquivosBlock, modifier = Modifier.weight(1.5f).fillMaxHeight(), fillHeight = true)
+                                }
                             }
-                            // Operações mais largo que Arquivos -- mesmo
-                            // ajuste do Clima acima (3 a 4 ícones em
-                            // Operações contra só 2 em Arquivos).
-                            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                ModuleCategoryBlock(operacoesBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
-                                ModuleCategoryBlock(arquivosBlock, modifier = Modifier.weight(1.5f).fillMaxHeight(), fillHeight = true)
-                                ModuleCategoryBlock(imprimirBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                        } else {
+                            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    ModuleCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
+                                    ModuleCategoryBlock(nuvemBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                                }
+                                // Operações mais largo que Arquivos -- mesmo
+                                // ajuste do Clima acima (3 a 4 ícones em
+                                // Operações contra só 2 em Arquivos).
+                                Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    ModuleCategoryBlock(operacoesBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
+                                    ModuleCategoryBlock(arquivosBlock, modifier = Modifier.weight(1.5f).fillMaxHeight(), fillHeight = true)
+                                    ModuleCategoryBlock(imprimirBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                                }
                             }
                         }
+                    }
+                } else if (linkedDomains != null) {
+                    // Cobranças/NFS-e: linha 2 do módulo em blocos Dados/
+                    // Operações/Arquivos (Faturamento+Nuvem+Imprimir já
+                    // ficam na linha 1, ver item "linked-domain-switch"
+                    // acima) -- pedido do usuário ("crie a categoria dados
+                    // e coloque... gráfico, filtros, expandir e colunas...
+                    // bloco operações... atualizar e período... bloco
+                    // arquivos... csv e pdf").
+                    val dadosBlockCobrancas = ModuleBlockSpec("Dados", vertical = false) {
+                        ModuleIconButton(
+                            ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
+                        ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
+                        if (showFiltros) {
+                            ModuleIconButton(
+                                ModuleIconItem("filtros", Icons.Filled.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
+                            ) { filtrosOverride = !filtrosExpanded }
+                        }
+                        if (filteredRecords.isNotEmpty()) {
+                            LabeledIconButton(
+                                icon = if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                                label = if (allExpanded) "Recolher" else "Expandir",
+                                onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
+                            )
+                        }
+                        ColumnsPickerButton(
+                            allColumns = cfg.columns.filter { !it.hideInTable },
+                            visibleKeys = visibleKeys,
+                            onChange = { customVisibleKeys = it },
+                        )
+                    }
+                    // vertical = true -- pedido do usuário ("cobranças
+                    // coloque o bloco operações com 2 ícones na vertical").
+                    val operacoesBlockCobrancas = ModuleBlockSpec("Operações", vertical = true) {
+                        LabeledIconButton(
+                            icon = Icons.Filled.Refresh,
+                            label = "Atualizar",
+                            loading = refreshing,
+                            onClick = { viewModel.refresh(domainId) },
+                        )
+                        if (dateCol != null) {
+                            GenericPeriodoDropdown(
+                                periodo = periodo,
+                                intervalFrom = intervalFrom,
+                                intervalTo = intervalTo,
+                                dateLabel = dateCol.label,
+                                onPeriodo = { periodo = it; if (it != null) { intervalFrom = ""; intervalTo = "" } },
+                                onInterval = { from, to -> intervalFrom = from; intervalTo = to; if (from.isNotBlank() || to.isNotBlank()) periodo = null },
+                            )
+                        }
+                    }
+                    val arquivosBlockCobrancas = ModuleBlockSpec("Arquivos", vertical = false) {
+                        if (filteredRecords.isNotEmpty()) {
+                            LabeledIconButton(
+                                icon = Icons.Filled.TableChart,
+                                label = "CSV",
+                                onClick = { exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords) },
+                            )
+                            LabeledIconButton(
+                                icon = Icons.Filled.PictureAsPdf,
+                                label = "PDF",
+                                onClick = { HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys) },
+                            )
+                        }
+                    }
+                    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ModuleCategoryBlock(dadosBlockCobrancas, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
+                        ModuleCategoryBlock(operacoesBlockCobrancas, modifier = Modifier.weight(1.3f).fillMaxHeight(), fillHeight = true)
+                        ModuleCategoryBlock(arquivosBlockCobrancas, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
                     }
                 } else {
                 // Borda fina em volta do bloco -- mesmo padrão de todos os
@@ -781,6 +938,10 @@ fun DomainListScreen(
                     }
                     // Ícone nuvem (armazenamento/offline) -- reflete o estado
                     // de conexão, mesmo padrão do Financeiro ("Registros").
+                    // Cobranças/NFS-e não passam mais por este branch (ver
+                    // "else if (linkedDomains != null)" acima) -- já ganhou
+                    // um bloco individual próprio ao lado do alternador
+                    // Faturamento (ver item "linked-domain-switch").
                     LabeledIconButton(
                         icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
                         label = "Nuvem",
@@ -878,16 +1039,20 @@ fun DomainListScreen(
                     // inteira (ver `if (allExpanded)` que envolve este `items`).
                     val expanded = cardOverrides[recordId ?: ""] ?: false
                     val colsToShow = if (expanded) allVisibleCols else summaryCols
-                    // Card não tem mais onClick pra editar -- pedido do
-                    // usuário ("crie individualmente em cada bloco ícone
-                    // ver, editar e excluir no lado direito, na vertical").
-                    // Ver/Editar/Excluir substituem o toque no bloco
-                    // inteiro; a setinha de expandir/recolher (que só
-                    // existia quando `hasMore`) foi incorporada ao ícone
-                    // Ver, agora sempre visível. Esses 3 ícones só existem
-                    // aqui (Composable da tela) -- HtmlPrinter/exportCsv
-                    // leem os registros direto do banco/lista, nunca essa
-                    // árvore de UI, então nunca aparecem no CSV/PDF/impressão.
+                    // Card não tem onClick pra editar -- pedido do usuário
+                    // ("crie individualmente em cada bloco ícone ver, editar
+                    // e excluir no lado direito, na vertical"). 4 ícones
+                    // agora, cada um com sua própria ação -- pedido do
+                    // usuário ("a setinha será individual pra cada bloco...
+                    // setinha acima do ícone ver, depois editar e por último
+                    // excluir"): setinha só expande/recolhe os campos AQUI
+                    // dentro do card (resumo x completo); Ver abre um
+                    // diálogo de leitura com TODOS os campos preenchidos,
+                    // sem precisar expandir o card pra ver tudo. Esses 4
+                    // ícones só existem aqui (Composable da tela) --
+                    // HtmlPrinter/exportCsv leem os registros direto do
+                    // banco/lista, nunca essa árvore de UI, então nunca
+                    // aparecem no CSV/PDF/impressão.
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -910,6 +1075,20 @@ fun DomainListScreen(
                                 } else {
                                     colsToShow.forEach { col -> RecordFieldLine(col, record[col.key]!!) }
                                 }
+                                // "Editado por" + data/hora (pedido do
+                                // usuário) -- só aparece quando já existe
+                                // ALGUMA edição registrada (histórico de
+                                // alterações); some sozinho depois de 7
+                                // dias junto com o resto do audit_logs
+                                // (purge-audit-logs, ver vercel.json).
+                                auditInfo[recordId]?.let { entry ->
+                                    Text(
+                                        formatAuditEntry(entry),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(top = 6.dp),
+                                    )
+                                }
                             }
                             Column(
                                 modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp),
@@ -918,11 +1097,14 @@ fun DomainListScreen(
                                 if (hasMore) {
                                     IconButton(onClick = { cardOverrides[recordId ?: ""] = !expanded }, modifier = Modifier.size(28.dp)) {
                                         Icon(
-                                            if (expanded) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                            contentDescription = if (expanded) "Recolher lançamento" else "Ver lançamento completo",
+                                            if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                            contentDescription = if (expanded) "Recolher lançamento" else "Expandir lançamento",
                                             modifier = Modifier.size(18.dp),
                                         )
                                     }
+                                }
+                                IconButton(onClick = { recordBeingViewed = recordId }, modifier = Modifier.size(28.dp)) {
+                                    Icon(Icons.Filled.Visibility, contentDescription = "Ver lançamento completo", modifier = Modifier.size(18.dp))
                                 }
                                 IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
                                     Icon(Icons.Filled.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp))
@@ -953,6 +1135,45 @@ fun DomainListScreen(
             },
             dismissButton = {
                 TextButton(onClick = { recordPendingDelete = null }) { Text("Cancelar") }
+            },
+        )
+    }
+    // Diálogo de leitura do ícone "Ver" -- pedido do usuário (ver ação
+    // 22.: 4 ícones separados no card). Mostra TODOS os campos preenchidos
+    // do lançamento, só leitura, sem precisar expandir o card na lista.
+    if (recordBeingViewed != null) {
+        // `cfg` (a val local não-nula) só existe dentro do lambda do
+        // Scaffold, e este diálogo fica fora dele -- usa `config` (o State
+        // nullable, visível na função inteira) direto, com fallback.
+        val viewedConfig = config
+        val viewedRecord = records.firstOrNull { it["id"] == recordBeingViewed }
+        AlertDialog(
+            onDismissRequest = { recordBeingViewed = null },
+            title = { Text(viewedConfig?.label ?: domainId) },
+            text = {
+                if (viewedRecord == null || viewedConfig == null) {
+                    Text("Lançamento não encontrado.")
+                } else {
+                    Column(
+                        modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        viewedConfig.columns.filter { !it.hideInTable && !viewedRecord[it.key].isNullOrBlank() }.forEach { col ->
+                            RecordFieldLine(col, viewedRecord[col.key]!!)
+                        }
+                        auditInfo[recordBeingViewed]?.let { entry ->
+                            Text(
+                                formatAuditEntry(entry),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 6.dp),
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { recordBeingViewed = null }) { Text("Fechar") }
             },
         )
     }
@@ -1026,6 +1247,20 @@ private fun ModuleCategoryBlock(spec: ModuleBlockSpec, modifier: Modifier = Modi
             }
         }
     }
+}
+
+// "Editado por" + data/hora (pedido do usuário) -- sem `private` porque
+// FinanceiroScreen.kt (mesmo pacote) tem seu próprio card de lançamento e
+// reaproveita esta função em vez de duplicá-la. `createdAt` chega em ISO
+// 8601 UTC (Prisma DateTime.toISOString()); exibido convertido pro fuso do
+// aparelho, formato dd/MM HH:mm (mesmo padrão de formatUpdatedAt no Início).
+fun formatAuditEntry(entry: com.bragro.mobile.data.model.AuditEntry): String {
+    val parser = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
+        timeZone = java.util.TimeZone.getTimeZone("UTC")
+    }
+    val display = java.text.SimpleDateFormat("dd/MM HH:mm", java.util.Locale("pt", "BR"))
+    val whenText = try { display.format(parser.parse(entry.createdAt)!!) } catch (e: Exception) { entry.createdAt }
+    return "Editado por ${entry.userEmail} em $whenText"
 }
 
 // Uma linha de campo dentro do card de lançamento -- mesmo critério

@@ -30,12 +30,23 @@ import java.util.Calendar
 // (ver Task #62/#70 no historico do projeto) -- verde como cor principal.
 // Nao-privadas (usadas tambem em ui/home/DomainVisuals.kt pra colorir cada
 // secao de modulos igual ao agrupamento do site -- ver sidebar-nav.tsx).
+// BrGreen (cor de categoria, sem relação com claro/escuro) continua igual.
 val BrGreen = Color(0xFF2F6F4F)
 val BrYellow = Color(0xFFF2C037)
 val BrBlue = Color(0xFF1E4B8A)
 // Quarta cor de apoio (fora da bandeira) so pra diferenciar a 4a secao
 // ("Pessoas") das outras 3, que ja usam verde/amarelo/azul.
 val BrOrange = Color(0xFFD9822B)
+
+// Duas paletas de verde -- uma por tema -- pedido do usuário ("o ideal é
+// trabalhar com duas variáveis de verde diferentes... uma paleta mais
+// suave e luminosa para o Dark Mode e uma mais densa e contrastante para
+// o Light Mode"). No claro, verde mais escuro/saturado (tom esmeralda
+// fechado) pra não perder contraste sob luz ambiente forte; no escuro,
+// verde mais suave/acinzentado (evita o efeito de "vibração" que um verde
+// muito saturado causa em cima de fundo quase-preto).
+val BrGreenPrimaryLight = Color(0xFF1B4D33)
+val BrGreenPrimaryDark = Color(0xFF6FA98C)
 
 // Antes só `primary/secondary/tertiary` eram definidos -- lightColorScheme()/
 // darkColorScheme() NÃO derivam os outros ~20 tokens (surface, surfaceVariant,
@@ -61,10 +72,14 @@ val BrOrange = Color(0xFFD9822B)
 // fundo é só a borda fina verde (ver AppCard.kt/cardBorderColor, que usa
 // MaterialTheme.colorScheme.primary = BrGreen).
 private val LightColors = lightColorScheme(
-    primary = BrGreen,
+    // Verde mais escuro/saturado no claro -- pedido do usuário ("aumente o
+    // contraste... use um verde mais profundo, tom folha/esmeralda
+    // fechado"), em vez do BrGreen puro (mais claro, perdia contraste no
+    // fundo off-white sob luz forte).
+    primary = BrGreenPrimaryLight,
     onPrimary = Color(0xFFFFFFFF),
     primaryContainer = Color(0xFFD1DFD8),
-    onPrimaryContainer = Color(0xFF12291F),
+    onPrimaryContainer = Color(0xFF0E2B1C),
     secondary = BrYellow,
     secondaryContainer = Color(0xFFFCEFCD),
     onSecondaryContainer = Color(0xFF4D3C00),
@@ -72,12 +87,17 @@ private val LightColors = lightColorScheme(
     background = Color(0xFFF7F5F0),
     surface = Color(0xFFF7F5F0),
     surfaceVariant = Color(0xFFF7F5F0),
-    outline = Color(0xFF5F726E),
+    outline = Color(0xFF4A5C57),
     outlineVariant = Color(0xFFC3D0CB),
 )
 
 private val DarkColors = darkColorScheme(
-    primary = BrGreen,
+    // Verde mais suave/acinzentado no escuro -- pedido do usuário
+    // ("reduza a saturação... prefira tons de verde mais pastel,
+    // acinzentados... sem poluir a tela"), em vez do BrGreen puro (mais
+    // saturado, "vibrava" em cima do fundo quase-preto).
+    primary = BrGreenPrimaryDark,
+    onPrimary = Color(0xFF0C2317),
     primaryContainer = Color(0xFF243A2F),
     onPrimaryContainer = Color(0xFFB7D9C7),
     secondary = BrYellow,
@@ -87,7 +107,7 @@ private val DarkColors = darkColorScheme(
     background = Color(0xFF121212),
     surface = Color(0xFF121212),
     surfaceVariant = Color(0xFF121212),
-    outline = Color(0xFF70847F),
+    outline = Color(0xFF7A9186),
     outlineVariant = Color(0xFF3F4A46),
 )
 

@@ -132,6 +132,11 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setField(key: String, value: String) {
         fields[key] = value
+        // Some o aviso vermelho desse campo específico assim que o usuário
+        // começa a corrigir -- sem isso ficava marcado até o próximo Salvar.
+        if (value.isNotBlank() && key in missingFields.value) {
+            missingFields.value = missingFields.value - key
+        }
     }
 
     /** Preenche todos os campos (exceto computados) com os valores do
@@ -147,7 +152,33 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // Campos com o rótulo faltando -- exibido junto do campo em vermelho
+    // depois de uma tentativa de salvar sem preenchê-lo (pedido do usuário:
+    // "coloque uma condição para salvar o lançamento, todos os campos
+    // [obrigatórios] terão que ser preenchidos", confirmado como válido em
+    // TODOS os módulos, não só Receituários/Cobranças). Servidor já rejeita
+    // isso via Zod (registry.ts `required: true`), mas sem aviso nenhum na
+    // tela -- o usuário só via um erro genérico depois de tentar salvar.
+    var missingFields = mutableStateOf<Set<String>>(emptySet())
+        private set
+
+    /** Valida os campos `required: true` (não computados) antes de tentar
+     * salvar -- mesma regra já usada pelo servidor (registry.ts), só que
+     * aqui bloqueia ANTES de gastar uma chamada de rede/gravação offline.
+     * Retorna a lista de rótulos faltando (vazia = pode salvar). */
+    private fun validateRequired(): List<String> {
+        val cfg = config.value ?: return emptyList()
+        val missing = cfg.columns.filter { !it.computed && it.required && fields[it.key].isNullOrBlank() }
+        missingFields.value = missing.map { it.key }.toSet()
+        return missing.map { it.label }
+    }
+
     fun save(domainId: String, recordId: String?, onDone: () -> Unit) {
+        val missingLabels = validateRequired()
+        if (missingLabels.isNotEmpty()) {
+            errorMessage.value = "Preencha os campos obrigatórios: ${missingLabels.joinToString(", ")}."
+            return
+        }
         saving.value = true
         errorMessage.value = null
         offlineNotice.value = null
@@ -193,6 +224,7 @@ fun DomainFormScreen(
     val offlineNotice by viewModel.offlineNotice
     val lastRecord by viewModel.lastRecord
     val computedValues by viewModel.computedValues
+    val missingFields by viewModel.missingFields
 
     Scaffold(
         topBar = {
@@ -229,8 +261,11 @@ fun DomainFormScreen(
                     if (recordId == null && lastRecord != null) {
                         Column {
                             Spacer(modifier = Modifier.height(16.dp))
+                            // Cor verde -- pedido do usuário ("em novo
+                            // lançamento altere a cor do ícone copiar para
+                            // verde").
                             IconButton(onClick = { viewModel.copyFromLastRecord() }) {
-                                Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último lançamento")
+                                Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último lançamento", tint = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }
@@ -300,7 +335,7 @@ fun DomainFormScreen(
                     val optionLabels = col.lookupCategory?.let { cat -> lookups[cat]?.associate { it.value to it.label } } ?: emptyMap()
                     ComputedFieldDisplay(col = col, raw = computedValues[col.key] ?: "", optionLabels = optionLabels)
                 } else {
-                    FormField(col = col, options = col.lookupCategory?.let { lookups[it] }, viewModel = viewModel)
+                    FormField(col = col, options = col.lookupCategory?.let { lookups[it] }, viewModel = viewModel, isMissing = col.key in missingFields)
                 }
                 androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
             }
@@ -378,11 +413,27 @@ private fun greenFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedTrailingIconColor = BrGreen,
 )
 
+// Mesmas cores de sempre, só com a borda/rótulo em vermelho quando o campo
+// está na lista de "faltando" depois de uma tentativa de Salvar (pedido do
+// usuário: validação de obrigatório em todos os módulos) -- também some o
+// cursor e ícones da cor de erro, senão fica um vermelho só na borda e o
+// resto verde, inconsistente.
+@Composable
+private fun errorFieldColors() = OutlinedTextFieldDefaults.colors(
+    unfocusedBorderColor = MaterialTheme.colorScheme.error,
+    focusedBorderColor = MaterialTheme.colorScheme.error,
+    unfocusedLabelColor = MaterialTheme.colorScheme.error,
+    focusedLabelColor = MaterialTheme.colorScheme.error,
+    cursorColor = MaterialTheme.colorScheme.error,
+    focusedTrailingIconColor = MaterialTheme.colorScheme.error,
+    unfocusedTrailingIconColor = MaterialTheme.colorScheme.error,
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel: DomainFormViewModel) {
+private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel: DomainFormViewModel, isMissing: Boolean = false) {
     val value = viewModel.fields[col.key] ?: ""
-    val fieldColors = greenFieldColors()
+    val fieldColors = if (isMissing) errorFieldColors() else greenFieldColors()
 
     when (col.type) {
         "checkbox" -> {
@@ -456,8 +507,10 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                 singleLine = true,
                 colors = fieldColors,
                 trailingIcon = {
+                    // Cor verde -- pedido do usuário ("nos campos que houver
+                    // calendário altere o ícone para cor verde").
                     IconButton(onClick = { showPicker = true }) {
-                        Icon(Icons.Filled.CalendarMonth, contentDescription = "Escolher data")
+                        Icon(Icons.Filled.CalendarMonth, contentDescription = "Escolher data", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
             )
@@ -497,6 +550,9 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                 colors = fieldColors,
             )
         }
+    }
+    if (isMissing) {
+        Text("Campo obrigatório", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
     }
     if (col.hint != null) {
         Text(col.hint, style = MaterialTheme.typography.bodySmall)

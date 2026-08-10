@@ -2,6 +2,8 @@ package com.bragro.mobile.data.remote
 
 import com.bragro.mobile.data.model.AnalisesRequest
 import com.bragro.mobile.data.model.AnalisesResponse
+import com.bragro.mobile.data.model.AuditInfoRequest
+import com.bragro.mobile.data.model.AuditInfoResponse
 import com.bragro.mobile.data.model.BackupRequest
 import com.bragro.mobile.data.model.BackupResponse
 import com.bragro.mobile.data.model.BankImportConfirmRequest
@@ -19,6 +21,12 @@ import com.bragro.mobile.data.model.DashboardRequest
 import com.bragro.mobile.data.model.DashboardResponse
 import com.bragro.mobile.data.model.DreRequest
 import com.bragro.mobile.data.model.DreResponse
+import com.bragro.mobile.data.model.DroneCreateRequest
+import com.bragro.mobile.data.model.DroneCreateResponse
+import com.bragro.mobile.data.model.DroneListRequest
+import com.bragro.mobile.data.model.DroneListResponse
+import com.bragro.mobile.data.model.FieldviewRequest
+import com.bragro.mobile.data.model.FieldviewResponse
 import com.bragro.mobile.data.model.HomeRequest
 import com.bragro.mobile.data.model.HomeResponse
 import com.bragro.mobile.data.model.ModuleActionRequest
@@ -114,6 +122,18 @@ interface MobileApi {
 
     @POST("api/mobile/records")
     suspend fun records(@Body body: RecordsRequest): Response<RecordsResponse>
+
+    @POST("api/mobile/audit-info")
+    suspend fun auditInfo(@Body body: AuditInfoRequest): Response<AuditInfoResponse>
+
+    @POST("api/mobile/drone")
+    suspend fun droneList(@Body body: DroneListRequest): Response<DroneListResponse>
+
+    @POST("api/mobile/drone")
+    suspend fun droneCreate(@Body body: DroneCreateRequest): Response<DroneCreateResponse>
+
+    @POST("api/mobile/fieldview")
+    suspend fun fieldview(@Body body: FieldviewRequest): Response<FieldviewResponse>
 
     @POST("api/mobile/nfe-preview")
     suspend fun nfePreview(@Body body: NfePreviewRequest): Response<NfePreviewResponse>

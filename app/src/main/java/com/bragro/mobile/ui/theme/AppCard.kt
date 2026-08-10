@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 
 /** Borda fina em TODO Card do app -- pedido do usuário ("borda verde bem
@@ -20,13 +21,23 @@ import androidx.compose.ui.unit.dp
  * ganha a borda de uma vez, sem duplicar o Card do Material3 (ele só
  * delega, acrescentando o `border` como default).
  *
- * Voltou a ser verde (BrGreen) -- pedido do usuário ("todas as bordas
- * finas contornadas com verde"), depois que a textura de fundo/bloco
- * passou a ser uma cor plana só (branco/quase-preto, ver Theme.kt) e a
- * borda ficou responsável por demarcar cada bloco.
+ * Verde (MaterialTheme.colorScheme.primary, já ajustado por tema em
+ * Theme.kt: mais escuro/saturado no claro, mais suave no escuro) -- pedido
+ * do usuário ("todas as bordas finas contornadas com verde"), depois que a
+ * textura de fundo/bloco passou a ser uma cor plana só (branco/quase-preto,
+ * ver Theme.kt) e a borda ficou responsável por demarcar cada bloco.
+ *
+ * No modo escuro a borda ganha transparência (35%) além do verde já mais
+ * suave -- pedido do usuário ("aumente a transparência, ex: 20% a 40% de
+ * opacidade na borda... evita o efeito de vibração visual"). No claro
+ * fica opaca, pra manter o contraste alto pedido também.
  */
 @Composable
-private fun cardBorderColor(): androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary
+private fun cardBorderColor(): androidx.compose.ui.graphics.Color {
+    val primary = MaterialTheme.colorScheme.primary
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    return if (isDark) primary.copy(alpha = 0.35f) else primary
+}
 
 @Composable
 fun Card(

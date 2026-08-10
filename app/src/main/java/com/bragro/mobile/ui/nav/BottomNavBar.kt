@@ -11,8 +11,10 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -99,6 +101,12 @@ private val BOTTOM_TABS = listOf(
             SectorTarget.Domain("pragas", "Pragas"),
             SectorTarget.Domain("receituarios", "Receituários"),
             SectorTarget.Domain("clima", "Clima"),
+            // Réplica completa do site (Task #106/#107) -- ficam aqui no
+            // setor Safra por serem dados de campo/talhão, mesmo critério
+            // de agrupamento de Pragas/Clima acima. Igual DRE/Análises,
+            // não são um domínio genérico (DomainConfig) -- rotas próprias.
+            SectorTarget.Special("drone", "Drone"),
+            SectorTarget.Special("fieldview", "FieldView"),
         ),
     ),
     // Acesso direto -- pedido do usuário ("botão frota acesso direto, retire
@@ -167,6 +175,8 @@ fun BRAgroBottomBar(
     onNavigateDomain: (String) -> Unit,
     onOpenDre: () -> Unit,
     onOpenAnalises: () -> Unit,
+    onOpenDrone: () -> Unit,
+    onOpenFieldview: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenBaseDeDados: () -> Unit,
     onOpenSeguranca: () -> Unit,
@@ -180,6 +190,8 @@ fun BRAgroBottomBar(
             is SectorTarget.Special -> when (target.routeKey) {
                 "dre" -> onOpenDre()
                 "analises" -> onOpenAnalises()
+                "drone" -> onOpenDrone()
+                "fieldview" -> onOpenFieldview()
             }
         }
     }
@@ -233,6 +245,8 @@ fun BRAgroBottomBar(
                                 is SectorTarget.Special -> when (item.routeKey) {
                                     "dre" -> Icons.Filled.Assessment
                                     "analises" -> Icons.Filled.Analytics
+                                    "drone" -> Icons.Filled.FlightTakeoff
+                                    "fieldview" -> Icons.Filled.Map
                                     else -> tab.icon
                                 }
                             }

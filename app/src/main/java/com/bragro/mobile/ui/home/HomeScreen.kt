@@ -97,6 +97,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.bragro.mobile.R
 import com.bragro.mobile.data.local.AppDatabase
+import com.bragro.mobile.data.local.PendingSyncEntity
 import com.bragro.mobile.data.local.SessionEntity
 import com.bragro.mobile.data.model.AlertData
 import com.bragro.mobile.data.model.ActivityEventData
@@ -162,6 +163,11 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var pendingCount = mutableStateOf(0)
         private set
+    // Lista completa (não só a contagem) -- pedido do usuário ("poderia
+    // saber ao clicar na frase quais são os lançamentos"), pro banner do
+    // Início abrir um diálogo com o detalhe de cada pendência.
+    var pendingItems = mutableStateOf<List<PendingSyncEntity>>(emptyList())
+        private set
     var loading = mutableStateOf(false)
         private set
     var syncing = mutableStateOf(false)
@@ -183,6 +189,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         viewModelScope.launch { recordRepository.observePendingCount().collectLatest { pendingCount.value = it } }
+        viewModelScope.launch { recordRepository.observePending().collectLatest { pendingItems.value = it } }
         viewModelScope.launch { db.sessionDao().observe().collectLatest { session.value = it } }
         // Mostra o último retrato salvo assim que a tela abre (mesmo antes
         // da 1ª resposta de rede) -- é o que faz o Início aparecer offline
@@ -397,6 +404,8 @@ fun HomeScreen(
     val home by viewModel.home
     val weather by viewModel.weather
     val pending by viewModel.pendingCount
+    val pendingItems by viewModel.pendingItems
+    var pendingDialogOpen by remember { mutableStateOf(false) }
     val loading by viewModel.loading
     val session by viewModel.session
     val notifications by viewModel.notifications
@@ -594,6 +603,10 @@ fun HomeScreen(
             )
         }
 
+        if (pendingDialogOpen) {
+            PendingSyncDialog(items = pendingItems, onDismiss = { pendingDialogOpen = false })
+        }
+
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             // Topo reduzido de 12dp pra 6dp -- pedido do usuário ("erga...
@@ -622,18 +635,23 @@ fun HomeScreen(
                         // âmbar) em vez de texto simples -- pedido do
                         // usuário (apontou esse aviso numa captura de tela
                         // como algo que precisa chamar mais atenção).
+                        // Clicável agora -- pedido do usuário ("poderia
+                        // saber ao clicar na frase quais são os
+                        // lançamentos"): abre um diálogo com o módulo, tipo
+                        // de operação e horário de cada pendência na fila.
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 8.dp)
                                 .background(BrOrange.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                                .clickable { pendingDialogOpen = true }
                                 .padding(horizontal = 10.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Icon(Icons.Filled.CloudSync, contentDescription = null, tint = BrOrange, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                "$pending lançamento(s) aguardando conexão para sincronizar.",
+                                "$pending lançamento(s) aguardando conexão para sincronizar. Toque para ver quais.",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Bold,
                                 color = BrOrange,
@@ -728,6 +746,91 @@ private fun NotificationsDialog(items: List<NotificationItemData>, onMarkAllRead
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Fechar") } },
+    )
+}
+
+// Nome amigável de cada módulo pro diálogo de pendências -- mesma lista de
+// domainId usada em toda a base (ver DomainVisuals.kt), só que aqui como
+// rótulo pra exibição, não pra ícone/agrupamento.
+private val PENDING_SYNC_DOMAIN_LABELS: Map<String, String> = mapOf(
+    "financeiro" to "Financeiro",
+    "safra" to "Safra",
+    "planejamentosafra" to "Planejamento de Safra",
+    "colheita" to "Colheita",
+    "romaneios" to "Romaneios",
+    "receituarios" to "Receituários",
+    "pragas" to "Pragas",
+    "clima" to "Clima",
+    "estoque" to "Estoque",
+    "inventario" to "Inventário",
+    "frota" to "Frota",
+    "controleinterno" to "Controle Interno",
+    "rh" to "RH",
+    "pedidos" to "Pedidos",
+    "contratos" to "Contratos",
+    "caixainterno" to "Caixa Interno",
+    "cobrancas" to "Cobranças",
+    "nfse" to "NFS-e",
+)
+
+/** "kind" salvo em PendingSyncEntity ("create"/"update"/"delete") -> texto
+ * legível na lista de pendências. */
+private fun pendingSyncKindLabel(kind: String): String = when (kind) {
+    "create" -> "Novo lançamento"
+    "update" -> "Edição"
+    "delete" -> "Exclusão"
+    else -> kind
+}
+
+/** Diálogo do banner "N lançamento(s) aguardando conexão" -- pedido do
+ * usuário ("poderia saber ao clicar na frase quais são os lançamentos"):
+ * lista cada item da fila local (PendingSyncEntity) com módulo, tipo de
+ * operação, horário em que foi salvo offline e o motivo do último erro de
+ * sincronização, se já tentou e falhou (ultimoErro, preenchido pelo
+ * RecordRepository.trySyncOne). Sem isso, o usuário só via um número sem
+ * explicação de por quê ainda está pendente. */
+@Composable
+private fun PendingSyncDialog(items: List<PendingSyncEntity>, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Lançamentos aguardando sincronizar") },
+        text = {
+            if (items.isEmpty()) {
+                Text("Nenhum lançamento pendente.", style = MaterialTheme.typography.bodySmall)
+            } else {
+                Column(
+                    modifier = Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(
+                        "Esses lançamentos foram salvos neste aparelho, mas ainda não foram confirmados pelo servidor -- geralmente por falta de conexão, mas também pode ser sessão expirada ou algum erro no envio (ver abaixo).",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    items.forEach { item ->
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    PENDING_SYNC_DOMAIN_LABELS[item.domainId] ?: item.domainId,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text("· ${pendingSyncKindLabel(item.kind)}", style = MaterialTheme.typography.labelSmall)
+                            }
+                            Text(formatUpdatedAt(item.criadoEmMillis), style = MaterialTheme.typography.labelSmall)
+                            if (item.ultimoErro != null) {
+                                Text(
+                                    "Erro: ${item.ultimoErro}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar") } },
     )
 }
 
@@ -1281,6 +1384,15 @@ private fun DestaquesCard(data: HomeData, updatedAtMillis: Long?, modifier: Modi
                 Text("Pedidos em atraso: ")
                 Text(data.pedidosAtrasados.toString(), fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+            // Sem info extra aqui -- pedido do usuário ("retire no kpi os
+            // destaques que você colocou, não faz sentido, são informações
+            // dos kpis que já tem na página inicial"): tanto o resumo de
+            // módulos quanto Alertas/Avisos duplicavam cards que já existem
+            // na tela (KPIs Financeiro/Estoque/Safra/RH e Central de
+            // Alertas/Mural de Avisos) -- Destaques volta a mostrar só o
+            // que é exclusivo dele. A altura já casa com o bloco ao lado
+            // (Cotações) via IntrinsicSize.Min + fillMaxHeight no Row que
+            // envolve os dois (ver item "cotacoes-destaques").
             // Data/hora da última busca ao vivo -- pedido do usuário
             // ("implemente também em destaques atualização: data e hora").
             if (updatedAtMillis != null) {

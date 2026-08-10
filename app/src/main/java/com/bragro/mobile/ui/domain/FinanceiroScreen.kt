@@ -5,6 +5,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -77,6 +80,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -141,8 +145,16 @@ fun FinanceiroScreen(
     val allRecords by viewModel.records
     val refreshing by viewModel.refreshing
     val offline by viewModel.offline
+    val auditInfo by viewModel.auditInfo
     val context = LocalContext.current
     val bancoOptions by filtersViewModel.bancos
+
+    // "Editado por" (ver DomainListScreen.kt) -- mesmo critério de lote por
+    // lista de ids, reaproveitando o mesmo ViewModel/endpoint do módulo
+    // genérico (Financeiro usa "domainId" = "financeiro" em audit_logs
+    // também, já que passa pelo MESMO motor de CRUD em actions.ts).
+    val recordIdsForAudit = remember(allRecords) { allRecords.mapNotNull { it["id"] } }
+    LaunchedEffect(recordIdsForAudit) { viewModel.loadAuditInfo("financeiro", recordIdsForAudit) }
 
     var view by remember { mutableStateOf(FinanceiroView.TODOS) }
     val isQuickView = view != FinanceiroView.TODOS
@@ -173,6 +185,9 @@ fun FinanceiroScreen(
     // blocos de lançamentos os ícones ver, editar e excluir... como foi
     // aplicado em safra").
     var recordPendingDelete by remember { mutableStateOf<String?>(null) }
+    // "Ver" com diálogo de leitura próprio, separado da setinha de
+    // expandir -- mesmo ajuste do módulo genérico (DomainListScreen.kt).
+    var recordBeingViewed by remember { mutableStateOf<String?>(null) }
 
     // Blocos "compatíveis com ícone" (Gráficos, Calculadoras, Recalcular
     // Vencimentos, Filtros) consolidados numa fileira só, mesmo padrão do
@@ -283,14 +298,26 @@ fun FinanceiroScreen(
                 modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 2.dp),
             )
             Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
-                Row(
+                // Split fixo 4+3 -- pedido do usuário ("4 ícones em cima e
+                // 3 embaixo"). Cada linha distribui só os ícones que tem
+                // (weight(1f) por ícone, sem espaço vazio sobrando) pra
+                // preencher a largura toda do bloco -- pedido do usuário
+                // ("na linha 2 distribua os 3 ícones para eles preencherem
+                // o bloco"), em vez de alinhar em colunas fixas de 4.
+                Column(
                     modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    FinanceiroView.values().forEach { v ->
-                        ModuleIconButton(
-                            ModuleIconItem(v.name, financeiroViewIcon(v), v.label, active = v == view),
-                        ) { view = v }
+                    FinanceiroView.values().toList().chunked(4).forEach { linha ->
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            linha.forEach { v ->
+                                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                    ModuleIconButton(
+                                        ModuleIconItem(v.name, financeiroViewIcon(v), v.label, active = v == view),
+                                    ) { view = v }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -538,19 +565,33 @@ fun FinanceiroScreen(
                                             } else {
                                                 colsToShow.forEach { col -> FinanceiroFieldLine(col, record[col.key]) }
                                             }
+                                            auditInfo[recordId]?.let { entry ->
+                                                Text(
+                                                    formatAuditEntry(entry),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.padding(top = 6.dp),
+                                                )
+                                            }
                                         }
                                         Column(
                                             modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp),
                                             verticalArrangement = Arrangement.spacedBy(0.dp),
                                         ) {
+                                            // Setinha (expandir/recolher aqui no card) separada de Ver
+                                            // (diálogo de leitura completo) -- pedido do usuário, mesmo
+                                            // ajuste do módulo genérico (DomainListScreen.kt).
                                             if (hasMore) {
                                                 IconButton(onClick = { cardOverrides[recordId ?: ""] = !expanded }, modifier = Modifier.size(28.dp)) {
                                                     Icon(
-                                                        if (expanded) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                                        contentDescription = if (expanded) "Recolher lançamento" else "Ver lançamento completo",
+                                                        if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                                        contentDescription = if (expanded) "Recolher lançamento" else "Expandir lançamento",
                                                         modifier = Modifier.size(18.dp),
                                                     )
                                                 }
+                                            }
+                                            IconButton(onClick = { recordBeingViewed = recordId }, modifier = Modifier.size(28.dp)) {
+                                                Icon(Icons.Filled.Visibility, contentDescription = "Ver lançamento completo", modifier = Modifier.size(18.dp))
                                             }
                                             IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
                                                 Icon(Icons.Filled.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp))
@@ -583,6 +624,41 @@ fun FinanceiroScreen(
             },
             dismissButton = {
                 TextButton(onClick = { recordPendingDelete = null }) { Text("Cancelar") }
+            },
+        )
+    }
+    // Diálogo de leitura do ícone "Ver" -- mesmo padrão do módulo genérico
+    // (DomainListScreen.kt): mostra TODOS os campos preenchidos do
+    // lançamento, só leitura.
+    if (recordBeingViewed != null) {
+        val viewedRecord = filtered.firstOrNull { it["id"] == recordBeingViewed }
+        AlertDialog(
+            onDismissRequest = { recordBeingViewed = null },
+            title = { Text(if (isQuickView) view.label else "Financeiro") },
+            text = {
+                if (viewedRecord == null) {
+                    Text("Lançamento não encontrado.")
+                } else {
+                    Column(
+                        modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        effectiveColumns.filter { it.key != "conciliar" && !viewedRecord[it.key].isNullOrBlank() }.forEach { col ->
+                            FinanceiroFieldLine(col, viewedRecord[col.key])
+                        }
+                        auditInfo[recordBeingViewed]?.let { entry ->
+                            Text(
+                                formatAuditEntry(entry),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 6.dp),
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { recordBeingViewed = null }) { Text("Fechar") }
             },
         )
     }

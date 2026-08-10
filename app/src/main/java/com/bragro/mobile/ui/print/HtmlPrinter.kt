@@ -153,6 +153,107 @@ object HtmlPrinter {
         return file
     }
 
+    // "Imprimir"/"PDF" dentro do bloco Gráficos (pedido do usuário: "dentro
+    // do ícone gráficos... coloque do lado direito na vertical os seguintes
+    // ícones imprimir e pdf") -- os gráficos não são uma lista de registros
+    // (não passam por DomainConfig/ColumnConfig), então usam sua própria
+    // representação simples de título + tabela de linhas, uma por gráfico
+    // já separado em bloco (ModuleChartsCard.kt monta essa lista a partir
+    // dos mesmos dados exibidos na tela, um item por bloco de gráfico).
+    data class ChartPrintData(val title: String, val headers: List<String>, val rows: List<List<String>>)
+
+    fun printCharts(context: Context, title: String, charts: List<ChartPrintData>) {
+        val html = buildChartsHtml(title, charts)
+        print(context, jobName = title, html = html)
+    }
+
+    fun exportChartsPdfDirect(context: Context, title: String, charts: List<ChartPrintData>) {
+        val file = buildChartsPdfFile(context, title, charts)
+        openPdf(context, file)
+    }
+
+    private fun buildChartsHtml(title: String, charts: List<ChartPrintData>): String {
+        val geradoEm = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale("pt", "BR")).format(java.util.Date())
+        val blocks = charts.joinToString("") { chart ->
+            val header = chart.headers.joinToString("") { "<th>${escapeHtml(it)}</th>" }
+            val rows = chart.rows.joinToString("") { row -> "<tr>${row.joinToString("") { "<td>${escapeHtml(it)}</td>" }}</tr>" }
+            """
+              <h2>${escapeHtml(chart.title)}</h2>
+              <table><thead><tr>$header</tr></thead><tbody>$rows</tbody></table>
+            """.trimIndent()
+        }
+        return """
+            <!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
+            <style>
+              body { font-family: Arial, Helvetica, sans-serif; padding: 24px; color: #111; }
+              h1 { font-size: 18px; margin-bottom: 2px; }
+              h2 { font-size: 14px; margin-top: 20px; margin-bottom: 6px; }
+              p { font-size: 11px; color: #666; margin-top: 0; margin-bottom: 16px; }
+              table { border-collapse: collapse; width: 100%; font-size: 11px; margin-bottom: 12px; }
+              th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+            </style></head>
+            <body>
+              <h1>${escapeHtml(title)} -- Gráficos</h1>
+              <p>Gerado em $geradoEm</p>
+              $blocks
+            </body></html>
+        """.trimIndent()
+    }
+
+    private fun buildChartsPdfFile(context: Context, title: String, charts: List<ChartPrintData>): File {
+        val pageWidth = 595
+        val pageHeight = 842
+        val margin = 24f
+        val fontSize = 10f
+        val headerPaint = Paint().apply { textSize = fontSize; isFakeBoldText = true; color = android.graphics.Color.BLACK }
+        val cellPaint = Paint().apply { textSize = fontSize; color = android.graphics.Color.BLACK }
+        val titlePaint = Paint().apply { textSize = 16f; isFakeBoldText = true; color = android.graphics.Color.BLACK }
+        val chartTitlePaint = Paint().apply { textSize = 12f; isFakeBoldText = true; color = android.graphics.Color.BLACK }
+        val rowHeight = fontSize + 10f
+
+        val pdf = PdfDocument()
+        var pageNum = 1
+        var page = pdf.startPage(PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNum).create())
+        var canvas = page.canvas
+        var y = margin + 16f
+        canvas.drawText(title, margin, y, titlePaint)
+        y += rowHeight * 1.5f
+
+        fun newPageIfNeeded(extra: Float = rowHeight) {
+            if (y + extra > pageHeight - margin) {
+                pdf.finishPage(page)
+                pageNum++
+                page = pdf.startPage(PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNum).create())
+                canvas = page.canvas
+                y = margin + 16f
+            }
+        }
+
+        charts.forEach { chart ->
+            newPageIfNeeded(rowHeight * 2)
+            canvas.drawText(chart.title, margin, y, chartTitlePaint)
+            y += rowHeight
+            val colCount = chart.headers.size.coerceAtLeast(1)
+            val colWidth = (pageWidth - margin * 2) / colCount
+            chart.headers.forEachIndexed { i, h -> canvas.drawText(h, margin + i * colWidth, y, headerPaint) }
+            y += rowHeight
+            chart.rows.forEach { row ->
+                newPageIfNeeded()
+                row.forEachIndexed { i, cell -> canvas.drawText(cell, margin + i * colWidth, y, cellPaint) }
+                y += rowHeight
+            }
+            y += rowHeight * 0.5f
+        }
+        pdf.finishPage(page)
+
+        val dir = File(context.cacheDir, "exports").apply { mkdirs() }
+        val safeTitle = "$title-graficos".lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
+        val file = File(dir, "$safeTitle.pdf")
+        FileOutputStream(file).use { pdf.writeTo(it) }
+        pdf.close()
+        return file
+    }
+
     private fun openPdf(context: Context, file: File) {
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
         val intent = Intent(Intent.ACTION_VIEW).apply {

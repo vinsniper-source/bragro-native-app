@@ -36,6 +36,12 @@ class RecordRepository(private val context: Context) {
 
     fun observePendingCount(): Flow<Int> = db.pendingSyncDao().observeCount()
 
+    // Lista completa da fila (não só a contagem) -- pedido do usuário
+    // ("poderia saber ao clicar na frase quais são os lançamentos"), pro
+    // banner "N lançamentos aguardando conexão" do Início abrir um diálogo
+    // com o detalhe de cada pendência.
+    fun observePending(): Flow<List<PendingSyncEntity>> = db.pendingSyncDao().observeAll()
+
     suspend fun getRecord(domainId: String, id: String): Map<String, String?>? =
         db.recordDao().byId(domainId, id)?.let { jsonStringToMap(it.fieldsJson) }
 
@@ -132,6 +138,12 @@ class RecordRepository(private val context: Context) {
         }
         return sincronizados
     }
+
+    /** true se ainda sobrou algo na fila depois de um syncAll() -- usado
+     * pelo SyncWorker pra saber se deve pedir retry ao WorkManager (antes
+     * ele sempre retornava sucesso, mesmo com pendencia sobrando, entao
+     * nunca reagendava uma nova tentativa por conta propria). */
+    suspend fun hasPending(): Boolean = db.pendingSyncDao().allOnce().isNotEmpty()
 
     /** Tenta sincronizar UM item da fila. Retorna null se nao ha conexao/
      * token (quem chamou entao assume que ficou pendente mesmo, sem erro). */

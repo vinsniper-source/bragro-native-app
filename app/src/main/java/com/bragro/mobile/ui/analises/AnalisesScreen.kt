@@ -21,6 +21,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
@@ -297,6 +299,13 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
     // módulos -- pedido do usuário ("dre, análises... transforme os
     // filtros em ícone").
     var filtrosOpen by remember { mutableStateOf(false) }
+    // Recolher/expandir as seções de análise de uma vez -- pedido do usuário
+    // ("insira o ícone recolher/expandir os blocos em dre e análises"),
+    // mesmo padrão do allExpanded já usado nas listas de lançamentos
+    // (DomainListScreen/FinanceiroScreen) e agora também no DRE. Começa
+    // FECHADO -- pedido do usuário ("sempre aparecer a tela vazia, só
+    // expandir quando clicar no ícone").
+    var contentExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -333,6 +342,17 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                         tint = if (filtrosOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current,
                         onClick = { filtrosOpen = !filtrosOpen },
                     )
+                    // Ícone de recolher/expandir movido pra dentro de Dados,
+                    // junto do Filtro -- mesmo ajuste do DRE (DreScreen.kt),
+                    // pedido do usuário ("no módulo análises aplique
+                    // exatamente o que aplicou em dre").
+                    if (temRegistros) {
+                        LabeledIconButton(
+                            icon = if (contentExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                            label = if (contentExpanded) "Recolher" else "Expandir",
+                            onClick = { contentExpanded = !contentExpanded },
+                        )
+                    }
                 }
                 val registrosBlock = AnalisesBlockSpec("", vertical = false) {
                     LabeledIconButton(
@@ -415,7 +435,7 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                 item {
                     Text(if (loading) "Carregando..." else "Sem dados ainda. Conecte-se à internet e atualize.")
                 }
-            } else {
+            } else if (contentExpanded) {
                 data.entries.forEachIndexed { index, (chave, valor) ->
                     item(key = chave) { SecaoAnalise(chave, valor) }
                     if (index < data.entries.size - 1) {
