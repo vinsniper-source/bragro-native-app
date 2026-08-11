@@ -18,7 +18,7 @@ import androidx.room.RoomDatabase
         AnalisesEntity::class,
         HomeEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -50,7 +50,7 @@ abstract class AppDatabase : RoomDatabase() {
                     // adicionada em addMigrations(...) abaixo -- sem isso o
                     // Room falha explicitamente no open do banco (em vez de
                     // destruir dado do usuario silenciosamente).
-                    .addMigrations(MIGRATION_5_6)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7)
                     .build()
                     .also { instance = it }
             }

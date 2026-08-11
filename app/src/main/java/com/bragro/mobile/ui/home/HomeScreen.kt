@@ -49,6 +49,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.PushPin
@@ -368,6 +369,16 @@ private fun formatMoneyBrl(value: Double): String =
         minimumFractionDigits = 2
         maximumFractionDigits = 2
     }.format(value)
+
+// Subtítulo do KPI "Fazendas cadastradas" -- soma da área (ha) de todas as
+// fazendas do cadastro (mesmo campo areaTotalHa retornado por
+// /api/mobile/home e /api/mobile/dashboard). Sem casas decimais forçadas
+// (diferente de formatMoneyBrl) porque hectare não é moeda -- "1.234,5 ha"
+// e "1.234 ha" são igualmente válidos, então usa no máximo 1 casa decimal.
+private fun formatAreaHa(value: Double): String =
+    NumberFormat.getNumberInstance(Locale("pt", "BR")).apply {
+        maximumFractionDigits = 1
+    }.format(value) + " ha"
 
 private fun todayLongBrazil(): String {
     val fmt = SimpleDateFormat("EEEE, dd 'de' MMMM 'de' yyyy", Locale("pt", "BR"))
@@ -1201,6 +1212,21 @@ private fun KpiGrid(data: HomeData) {
             BrGreen,
             KpiKind.QUANTIDADE,
             description = "Total cadastrado no módulo RH",
+        ),
+        // 5º KPI -- espelha numeroFazendas/areaTotalHa, novos campos de
+        // /api/mobile/home e /api/mobile/dashboard (contagem de fazendas do
+        // cadastro + soma da área em hectares). Mesmo padrão visual dos
+        // outros 4 (ícone com borda colorida, quantidade em destaque,
+        // legenda menor abaixo do nome) -- aqui a legenda mostra a área
+        // total em vez de um texto fixo, já que é a métrica-irmã da
+        // contagem de fazendas.
+        Kpi(
+            "Fazendas cadastradas",
+            data.numeroFazendas.toString(),
+            Icons.Filled.Map,
+            BrOrange,
+            KpiKind.QUANTIDADE,
+            description = "Área total: ${formatAreaHa(data.areaTotalHa)}",
         ),
     )
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

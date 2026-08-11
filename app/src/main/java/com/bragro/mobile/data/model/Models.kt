@@ -65,7 +65,11 @@ data class SessionInfo(
 data class LookupItem(val category: String, val value: String, val label: String, val order: Int = 0)
 
 @Serializable
-data class FarmItem(val name: String, val areaHa: Double)
+// "id" default "" -- hoje /api/mobile/bootstrap ainda NÃO devolve o id real
+// da Farm (só name/areaHa, ver bootstrap/route.ts), então esse campo chega
+// vazio na prática; deixado aqui pronto pra quando o backend passar a
+// mandar (ignoreUnknownKeys já cobre o caso de o campo não vir na resposta).
+data class FarmItem(val name: String, val areaHa: Double, val id: String = "")
 
 @Serializable
 data class BootstrapResponse(
@@ -169,6 +173,13 @@ data class HomeData(
     val colaboradoresAtivos: Int,
     val culturaLider: String? = null,
     val pedidosAtrasados: Int,
+    // Novos contadores do Início (KPI "Fazendas cadastradas") -- espelham
+    // numeroFazendas/areaTotalHa retornados por /api/mobile/home e
+    // /api/mobile/dashboard (ver getDashboardStats no backend). Default 0
+    // evita quebrar a leitura do cache offline salvo antes desses campos
+    // existirem.
+    val numeroFazendas: Int = 0,
+    val areaTotalHa: Double = 0.0,
     val alerts: List<AlertData> = emptyList(),
     val notices: List<NoticeData> = emptyList(),
     val recentActivity: List<ActivityEventData> = emptyList(),
@@ -707,6 +718,11 @@ data class FieldviewImportRequest(
     val nome: String? = null,
     val geojson: JsonElement,
     val areaHaCalc: Double? = null,
+    // Vínculo opcional com o cadastro de Fazendas (Farm) -- mesmo campo novo
+    // aceito pelo backend em /api/mobile/fieldview (action=import_boundary),
+    // que reaproveita o fluxo web equivalente (fieldview/actions.ts). Null/
+    // ausente = não vincula a nenhuma fazenda (comportamento de sempre).
+    val farmId: String? = null,
 )
 
 @Serializable

@@ -43,7 +43,7 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material.icons.filled.GridOn
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
@@ -409,9 +409,9 @@ fun FinanceiroScreen(
                         // ficaram mais intuitivos"), em vez de um download
                         // genérico.
                         LabeledIconButton(
-                            icon = Icons.Filled.TableChart,
-                            label = "CSV",
-                            onClick = { exportCsv(context, "financeiro-${view.name.lowercase()}", effectiveColumns, filtered) },
+                            icon = Icons.Filled.GridOn,
+                            label = "Excel",
+                            onClick = { exportXlsx(context, "financeiro-${view.name.lowercase()}", effectiveColumns, filtered) },
                         )
                         // Ícone próprio pra PDF -- antes chamava a mesma
                         // função do "Imprimir" (HtmlPrinter.printList, abre o

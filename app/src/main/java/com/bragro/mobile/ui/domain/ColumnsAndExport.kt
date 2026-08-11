@@ -21,8 +21,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.bragro.mobile.data.export.XlsxWriter
 import com.bragro.mobile.data.model.ColumnConfig
-import com.bragro.mobile.ui.util.shareTextFile
+import com.bragro.mobile.ui.util.shareBinaryFile
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -74,28 +75,26 @@ private fun cellText(col: ColumnConfig, raw: String?): String {
     return if (col.money && value.isNotBlank()) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)
 }
 
-private fun csvEscape(value: String): String {
-    val needsQuotes = value.contains(",") || value.contains("\"") || value.contains("\n")
-    val escaped = value.replace("\"", "\"\"")
-    return if (needsQuotes) "\"$escaped\"" else escaped
-}
+/** Monta a matriz (cabeçalho + linhas, tudo já formatado como texto de
+ * exibição via [cellText]) que alimenta tanto o .xlsx (XlsxWriter.buildXlsx)
+ * quanto qualquer outro consumidor futuro que precise da tabela crua --
+ * separado de [exportXlsx] pra poder ser testado/reaproveitado sem precisar
+ * de Context/Android. */
+private fun buildExportRows(columns: List<ColumnConfig>, records: List<Map<String, String?>>): List<List<String>> =
+    records.map { record -> columns.map { col -> cellText(col, record[col.key]) } }
 
-fun buildCsv(columns: List<ColumnConfig>, records: List<Map<String, String?>>): String {
-    val header = columns.joinToString(",") { csvEscape(it.label) }
-    val rows = records.joinToString("\n") { record ->
-        columns.joinToString(",") { col -> csvEscape(cellText(col, record[col.key])) }
-    }
-    return "$header\n$rows"
-}
-
-/** Botão CSV -- espelho do botão CSV/PDF do site (data-table.tsx), grava um
+/** Botão "Excel" (antes "CSV") -- espelho do botão CSV/PDF do site
+ * (data-table.tsx), só que agora gera um .xlsx real (XlsxWriter.buildXlsx,
+ * zip+XML feito à mão, sem lib pesada) em vez de texto CSV. Grava um
  * arquivo temporário e abre o menu "Compartilhar" do Android (mesmo
  * mecanismo do botão "Backup" do Início, ver ui/util/FileShare.kt). */
-fun exportCsv(context: Context, title: String, columns: List<ColumnConfig>, records: List<Map<String, String?>>) {
-    val csv = buildCsv(columns, records)
+fun exportXlsx(context: Context, title: String, columns: List<ColumnConfig>, records: List<Map<String, String?>>) {
+    val headers = columns.map { it.label }
+    val rows = buildExportRows(columns, records)
+    val bytes = XlsxWriter.buildXlsx(headers, rows)
     val safeTitle = title.lowercase(Locale.US).replace(Regex("[^a-z0-9]+"), "-").trim('-')
-    val fileName = "$safeTitle-${SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())}.csv"
-    shareTextFile(context, fileName, "text/csv", csv)
+    val fileName = "$safeTitle-${SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())}.xlsx"
+    shareBinaryFile(context, bytes, fileName)
 }
 
 // shareRecordsResumo (ícone Compartilhar em txt) removido -- pedido do

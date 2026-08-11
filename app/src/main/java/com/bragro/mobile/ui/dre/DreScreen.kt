@@ -32,7 +32,7 @@ import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material.icons.filled.GridOn
 import com.bragro.mobile.ui.theme.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -70,7 +70,7 @@ import com.bragro.mobile.data.model.DreFazendaData
 import com.bragro.mobile.data.model.DreRamoItemData
 import com.bragro.mobile.data.repo.DreRepository
 import com.bragro.mobile.ui.domain.LabeledIconButton
-import com.bragro.mobile.ui.domain.exportCsv
+import com.bragro.mobile.ui.domain.exportXlsx
 import com.bragro.mobile.ui.print.HtmlPrinter
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -448,9 +448,9 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                 val arquivosBlock = DreBlockSpec("Arquivos", vertical = false) {
                     if (temRegistros) {
                         LabeledIconButton(
-                            icon = Icons.Filled.TableChart,
-                            label = "CSV",
-                            onClick = { exportCsv(context, "DRE", DRE_EXPORT_COLUMNS, dreExportRecords(data!!)) },
+                            icon = Icons.Filled.GridOn,
+                            label = "Excel",
+                            onClick = { exportXlsx(context, "DRE", DRE_EXPORT_COLUMNS, dreExportRecords(data!!)) },
                         )
                         LabeledIconButton(
                             icon = Icons.Filled.PictureAsPdf,

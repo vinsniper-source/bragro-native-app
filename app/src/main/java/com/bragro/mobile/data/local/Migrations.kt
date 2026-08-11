@@ -47,3 +47,17 @@ val MIGRATION_5_6: Migration = object : Migration(5, 6) {
         db.execSQL("ALTER TABLE pending_sync ADD COLUMN conflictMessage TEXT")
     }
 }
+
+/** version 6 -> 7: seletor de fazenda no import de KML/KMZ (FieldviewScreen)
+ * -- farms.id, o id real da Farm no backend, pra poder mandar farmId em
+ * FieldviewImportRequest. Coluna aditiva com DEFAULT '' (nao null, mesmo
+ * criterio de "primitivo com default" do comentario acima) -- farms e uma
+ * tabela 100% "espelho" (clearAll + insertAll a cada bootstrap, ver
+ * ConfigRepository.bootstrapAndCacheConfig), entao nenhuma linha existente
+ * fica com dado incompleto por muito tempo: a proxima sincronizacao ja
+ * substitui tudo. */
+val MIGRATION_6_7: Migration = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE farms ADD COLUMN id TEXT NOT NULL DEFAULT ''")
+    }
+}

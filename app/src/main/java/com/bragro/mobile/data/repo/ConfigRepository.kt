@@ -93,7 +93,7 @@ class ConfigRepository(context: Context) {
             db.lookupDao().insertAll(bootstrapBody.lookups.map { LookupEntity(it.category, it.value, it.label, it.order) })
 
             db.farmDao().clearAll()
-            db.farmDao().insertAll(bootstrapBody.farms.map { FarmEntity(it.name, it.areaHa) })
+            db.farmDao().insertAll(bootstrapBody.farms.map { FarmEntity(name = it.name, areaHa = it.areaHa, id = it.id) })
 
             true
         } catch (e: Exception) {

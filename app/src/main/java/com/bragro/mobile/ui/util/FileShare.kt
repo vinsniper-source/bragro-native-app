@@ -44,6 +44,32 @@ fun shareTextFile(context: Context, fileName: String, mimeType: String, content:
     context.startActivity(chooser)
 }
 
+/** Igual a [shareTextFile], só que pra conteúdo binário (bytes) em vez de
+ * texto -- usado pelo .xlsx real gerado por XlsxWriter.buildXlsx (ver
+ * ui/domain/ColumnsAndExport.kt), que antes era um .csv de texto puro
+ * escrito por shareTextFile. Mesmo mecanismo (grava em cacheDir/exports/,
+ * FileProvider, chooser do Android) -- só troca writeText por
+ * writeBytes. */
+fun shareBinaryFile(
+    context: Context,
+    bytes: ByteArray,
+    fileName: String,
+    mimeType: String = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+) {
+    val dir = File(context.cacheDir, "exports").apply { mkdirs() }
+    val file = File(dir, fileName)
+    file.writeBytes(bytes)
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = mimeType
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    val chooser = Intent.createChooser(intent, "Compartilhar $fileName")
+    chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    context.startActivity(chooser)
+}
+
 /** Grava de fato o arquivo na pasta Downloads pública do aparelho (visível
  * no app Arquivos/Files, sobrevive mesmo que o usuário feche o menu de
  * compartilhar sem escolher nada) -- Android 10+ usa MediaStore (não

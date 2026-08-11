@@ -45,7 +45,7 @@ import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material.icons.filled.GridOn
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.WbSunny
@@ -541,10 +541,10 @@ fun DomainListScreen(
                     val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
                         if (filteredRecords.isNotEmpty()) {
                             LabeledIconButton(
-                                icon = Icons.Filled.TableChart,
-                                label = "CSV",
+                                icon = Icons.Filled.GridOn,
+                                label = "Excel",
                                 onClick = {
-                                    exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
+                                    exportXlsx(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
                                 },
                             )
                             LabeledIconButton(
@@ -656,10 +656,10 @@ fun DomainListScreen(
                     val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
                         if (filteredRecords.isNotEmpty()) {
                             LabeledIconButton(
-                                icon = Icons.Filled.TableChart,
-                                label = "CSV",
+                                icon = Icons.Filled.GridOn,
+                                label = "Excel",
                                 onClick = {
-                                    exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
+                                    exportXlsx(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
                                 },
                             )
                             LabeledIconButton(
@@ -829,9 +829,9 @@ fun DomainListScreen(
                     val arquivosBlockCobrancas = ModuleBlockSpec("Arquivos", vertical = false) {
                         if (filteredRecords.isNotEmpty()) {
                             LabeledIconButton(
-                                icon = Icons.Filled.TableChart,
-                                label = "CSV",
-                                onClick = { exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords) },
+                                icon = Icons.Filled.GridOn,
+                                label = "Excel",
+                                onClick = { exportXlsx(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords) },
                             )
                             LabeledIconButton(
                                 icon = Icons.Filled.PictureAsPdf,
@@ -931,9 +931,9 @@ fun DomainListScreen(
                         // nos módulos que não tiverem... csv, pdf, imprimir,
                         // compartilhar, nuvem").
                         LabeledIconButton(
-                            icon = Icons.Filled.TableChart,
-                            label = "CSV",
-                            onClick = { exportCsv(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords) },
+                            icon = Icons.Filled.GridOn,
+                            label = "Excel",
+                            onClick = { exportXlsx(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords) },
                         )
                         LabeledIconButton(
                             icon = Icons.Filled.PictureAsPdf,
@@ -1063,9 +1063,9 @@ fun DomainListScreen(
                     // diálogo de leitura com TODOS os campos preenchidos,
                     // sem precisar expandir o card pra ver tudo. Esses 4
                     // ícones só existem aqui (Composable da tela) --
-                    // HtmlPrinter/exportCsv leem os registros direto do
+                    // HtmlPrinter/exportXlsx leem os registros direto do
                     // banco/lista, nunca essa árvore de UI, então nunca
-                    // aparecem no CSV/PDF/impressão.
+                    // aparecem no Excel/PDF/impressão.
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()

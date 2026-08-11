@@ -26,7 +26,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import com.bragro.mobile.ui.theme.Card
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -59,8 +62,10 @@ import com.bragro.mobile.data.kml.ParsedPolygon
 import com.bragro.mobile.data.kml.parseKmlOrKmz
 import com.bragro.mobile.data.kml.polygonAreaHectares
 import com.bragro.mobile.data.kml.polygonToGeoJson
+import com.bragro.mobile.data.local.FarmEntity
 import com.bragro.mobile.data.model.FieldBoundaryDto
 import com.bragro.mobile.data.model.FieldviewResponse
+import com.bragro.mobile.data.repo.ConfigRepository
 import com.bragro.mobile.data.repo.FieldviewRepository
 import com.bragro.mobile.ui.domain.displayValueFor
 import kotlinx.coroutines.launch
@@ -83,6 +88,7 @@ import org.osmdroid.views.overlay.Polygon as OsmPolygon
 // no aparelho (ver data/kml/KmlParser.kt), sem depender mais do site.
 class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
     private val repository = FieldviewRepository(app)
+    private val configRepository = ConfigRepository(app)
 
     var data = mutableStateOf<FieldviewResponse?>(null)
         private set
@@ -92,6 +98,11 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var importError = mutableStateOf<String?>(null)
         private set
+    // Lista de fazendas do cadastro (mesma fonte já usada em NfeImportScreen,
+    // ver ConfigRepository.farms()/bootstrap) -- alimenta o dropdown opcional
+    // "Fazenda (opcional)" do diálogo de import de KML/KMZ.
+    var farms = mutableStateOf<List<FarmEntity>>(emptyList())
+        private set
 
     fun load() {
         loading.value = true
@@ -99,19 +110,23 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
             data.value = repository.fetch()
             loading.value = false
         }
+        viewModelScope.launch { farms.value = configRepository.farms() }
     }
 
     /** Importa um talhão parseado de um KML/KMZ -- converte pra GeoJSON e
      * calcula a área aproximada localmente (KmlParser.kt), manda pro
      * servidor (upsert por [orgId, talhao]) e recarrega a lista em caso
-     * de sucesso. */
-    fun importBoundary(talhao: String, polygon: ParsedPolygon, onDone: (Boolean) -> Unit) {
+     * de sucesso. [farmId] (opcional) vincula o talhão importado a uma
+     * fazenda do cadastro (ver dropdown em ImportBoundaryDialog) -- null/
+     * vazio quando o usuário não escolhe nenhuma, mesmo comportamento
+     * opcional do backend. */
+    fun importBoundary(talhao: String, polygon: ParsedPolygon, farmId: String?, onDone: (Boolean) -> Unit) {
         importing.value = true
         importError.value = null
         viewModelScope.launch {
             val geojson = polygonToGeoJson(polygon)
             val areaHa = polygonAreaHectares(polygon.points)
-            val ok = repository.importBoundary(talhao, polygon.name, geojson, areaHa)
+            val ok = repository.importBoundary(talhao, polygon.name, geojson, areaHa, farmId?.takeIf { it.isNotBlank() })
             if (ok) {
                 data.value = repository.fetch()
             } else {
@@ -162,6 +177,7 @@ fun FieldviewScreen(onBack: () -> Unit, viewModel: FieldviewViewModel = viewMode
     val loading by viewModel.loading
     val importing by viewModel.importing
     val importError by viewModel.importError
+    val farms by viewModel.farms
     var tab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Talhões", "Máquinas", "Fazendas/KML")
     var pendingPolygons by remember { mutableStateOf<List<ParsedPolygon>>(emptyList()) }
@@ -233,9 +249,10 @@ fun FieldviewScreen(onBack: () -> Unit, viewModel: FieldviewViewModel = viewMode
             total = pendingPolygons.size,
             saving = importing,
             error = importError,
+            farms = farms,
             onDismiss = { pendingPolygons = emptyList(); pendingIndex = 0 },
-            onConfirm = { talhao ->
-                viewModel.importBoundary(talhao, currentPolygon) { ok ->
+            onConfirm = { talhao, farmId ->
+                viewModel.importBoundary(talhao, currentPolygon, farmId) { ok ->
                     if (ok) {
                         if (pendingIndex + 1 < pendingPolygons.size) {
                             pendingIndex += 1
@@ -420,10 +437,15 @@ private fun ImportBoundaryDialog(
     total: Int,
     saving: Boolean,
     error: String?,
+    farms: List<FarmEntity>,
     onDismiss: () -> Unit,
-    onConfirm: (talhao: String) -> Unit,
+    onConfirm: (talhao: String, farmId: String?) -> Unit,
 ) {
     var talhao by remember(polygon) { mutableStateOf(polygon.name ?: "") }
+    // Vínculo opcional com o cadastro de Fazendas (Task farmId em
+    // /api/mobile/fieldview, action=import_boundary) -- null enquanto
+    // nenhuma fazenda é escolhida, mesmo comportamento opcional do backend.
+    var selectedFarm by remember(polygon) { mutableStateOf<FarmEntity?>(null) }
 
     AlertDialog(
         onDismissRequest = { if (!saving) onDismiss() },
@@ -442,17 +464,53 @@ private fun ImportBoundaryDialog(
                     label = { Text("Talhão *") }, singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                // Dropdown opcional -- mesma lista de fazendas já cacheada
+                // pelo bootstrap (ConfigRepository.farms(), reaproveitada de
+                // NfeImportScreen). Vazio (null) é uma opção explícita
+                // ("Nenhuma"), já que o vínculo é opcional no backend.
+                OptionalFarmDropdown(
+                    farms = farms,
+                    selected = selectedFarm,
+                    onSelect = { selectedFarm = it },
+                )
                 if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
         },
         confirmButton = {
             Button(
                 enabled = !saving && talhao.isNotBlank(),
-                onClick = { onConfirm(talhao.trim()) },
+                onClick = { onConfirm(talhao.trim(), selectedFarm?.id) },
             ) {
                 if (saving) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Salvar")
             }
         },
         dismissButton = { TextButton(onClick = onDismiss, enabled = !saving) { Text("Cancelar") } },
     )
+}
+
+/** Dropdown "Fazenda (opcional)" do diálogo de import de KML/KMZ -- mesmo
+ * padrão visual do FarmDropdown de NfeImportScreen.kt (ExposedDropdownMenuBox
+ * com OutlinedTextField somente-leitura), só que com uma opção extra
+ * "Nenhuma" pra limpar a seleção (o vínculo com fazenda é opcional aqui,
+ * diferente do NF-e, onde a fazenda de destino é obrigatória). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun OptionalFarmDropdown(farms: List<FarmEntity>, selected: FarmEntity?, onSelect: (FarmEntity?) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+        OutlinedTextField(
+            value = selected?.name ?: "Nenhuma",
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Fazenda (opcional)") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.fillMaxWidth().menuAnchor(),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(text = { Text("Nenhuma") }, onClick = { onSelect(null); expanded = false })
+            for (farm in farms) {
+                DropdownMenuItem(text = { Text(farm.name) }, onClick = { onSelect(farm); expanded = false })
+            }
+        }
+    }
 }

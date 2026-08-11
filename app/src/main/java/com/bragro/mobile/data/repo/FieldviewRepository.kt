@@ -39,12 +39,13 @@ class FieldviewRepository(context: Context) {
     /** Importa um talhão (contorno + área) parseado de um KML/KMZ no
      * aparelho -- upsert por [orgId, talhao] no servidor (mesma convenção
      * talhao-por-nome de Safra/Frota). Retorna true em caso de sucesso. */
-    suspend fun importBoundary(talhao: String, nome: String?, geojson: JsonElement, areaHaCalc: Double?): Boolean {
+    suspend fun importBoundary(talhao: String, nome: String?, geojson: JsonElement, areaHaCalc: Double?, farmId: String? = null): Boolean {
         val tokens = tokenStore.current() ?: return false
         var (accessToken, refreshToken) = tokens
         fun buildRequest(token: String) = FieldviewImportRequest(
             accessToken = token, refreshToken = refreshToken,
             talhao = talhao, nome = nome, geojson = geojson, areaHaCalc = areaHaCalc,
+            farmId = farmId,
         )
         return try {
             var response = NetworkModule.mobileApi.importFieldBoundary(buildRequest(accessToken))

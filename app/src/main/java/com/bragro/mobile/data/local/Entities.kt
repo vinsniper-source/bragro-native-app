@@ -35,11 +35,19 @@ data class LookupEntity(
     val order: Int,
 )
 
-/** Fazenda cadastrada na organizacao. */
+/** Fazenda cadastrada na organizacao.
+ * "id" (Task de seletor de fazenda no import KML/KMZ) -- id real da Farm no
+ * backend, usado pra vincular um talhao importado a uma fazenda do
+ * cadastro (farmId em FieldviewImportRequest). Default "" (nao null, pra
+ * ALTER TABLE ADD COLUMN nao exigir coluna nullable) porque
+ * /api/mobile/bootstrap ainda nao devolve esse id (so name/areaHa) --
+ * enquanto isso nao mudar no backend, esse campo fica sempre vazio aqui e
+ * o dropdown de fazenda no import nao envia farmId (ver FieldviewScreen). */
 @Entity(tableName = "farms", primaryKeys = ["name"])
 data class FarmEntity(
     val name: String,
     val areaHa: Double,
+    val id: String = "",
 )
 
 /** Configuracao (campos/tipos) de UM dos 16 modulos -- cache local do que
