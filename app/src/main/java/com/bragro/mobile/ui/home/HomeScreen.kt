@@ -1111,21 +1111,31 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>) {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            // Sequência pedida pelo usuário: setor, operação,
-                            // tipo, item, quantidade, status, horas (horas
-                            // fica na coluna da direita, ver Text abaixo).
-                            // "setor" é o próprio nome do módulo (tableLabel)
-                            // -- não há uma coluna "setor" comum às 6
-                            // tabelas. Cada pedaço só entra se a tabela
+                            // Reordenado -- pedido do usuário: "tipo, item e
+                            // quantidade, status". "Tipo" aqui é o campo
+                            // `operacao` (tipo de lançamento/operação, ex.:
+                            // "VENDA"/"COMPRA") -- é o que faz sentido
+                            // semântico de "tipo" no contexto do monitor, e
+                            // não o `type` (criado/atualizado), que é uma
+                            // flag interna de origem do evento (INSERT/
+                            // UPDATE). `tableLabel` (setor) continua como
+                            // prefixo, dando o contexto de qual módulo é.
+                            // `type` foi empurrado pra depois do status em
+                            // vez de removido, pra não perder a informação
+                            // de criado/atualizado (fica com menos destaque,
+                            // no fim da linha) -- MESMO critério aplicado em
+                            // paralelo no site (ver realtime-monitor.tsx),
+                            // pra manter a ordem consistente nas duas
+                            // plataformas. Cada pedaço só entra se a tabela
                             // daquele evento realmente tiver o campo.
                             Text(
                                 buildString {
                                     append(e.tableLabel)
                                     if (!e.operacao.isNullOrBlank()) append(" · ${e.operacao}")
-                                    append(" · ${e.type}")
                                     if (!e.item.isNullOrBlank()) append(" · ${e.item}")
                                     if (!e.qtde.isNullOrBlank()) append(" · ${e.qtde}")
                                     if (!e.status.isNullOrBlank()) append(" · ${e.status}")
+                                    append(" · ${e.type}")
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Medium,
@@ -1174,6 +1184,13 @@ private data class Kpi(
 @Composable
 private fun KpiGrid(data: HomeData) {
     val kpis = listOf(
+        // Estes 4 (Financeiro/Estoque/Safra/RH) formam o grid 2x2 abaixo --
+        // o 5º KPI ("Fazendas cadastradas") foi separado da lista (ver
+        // `kpiFazendas` mais abaixo) e passou a ocupar a linha cheia, fora
+        // deste grid -- pedido do usuário ("expandir o card fazendas
+        // cadastradas pra ocupar a linha toda"): antes ele entrava junto
+        // nesta mesma lista de 5 e o `chunked(2)` deixava ele sozinho numa
+        // 3ª fileira de 2 colunas, com a metade da linha vazia (Spacer).
         // Cores dos ícones Safra/Financeiro invertidas -- pedido do usuário
         // ("inverta as cores dos ícones dos kpis safra e financeiro").
         // Descrição mais explícita -- pedido do usuário ("no bloco kpi
@@ -1213,21 +1230,21 @@ private fun KpiGrid(data: HomeData) {
             KpiKind.QUANTIDADE,
             description = "Total cadastrado no módulo RH",
         ),
-        // 5º KPI -- espelha numeroFazendas/areaTotalHa, novos campos de
-        // /api/mobile/home e /api/mobile/dashboard (contagem de fazendas do
-        // cadastro + soma da área em hectares). Mesmo padrão visual dos
-        // outros 4 (ícone com borda colorida, quantidade em destaque,
-        // legenda menor abaixo do nome) -- aqui a legenda mostra a área
-        // total em vez de um texto fixo, já que é a métrica-irmã da
-        // contagem de fazendas.
-        Kpi(
-            "Fazendas cadastradas",
-            data.numeroFazendas.toString(),
-            Icons.Filled.Map,
-            BrOrange,
-            KpiKind.QUANTIDADE,
-            description = "Área total: ${formatAreaHa(data.areaTotalHa)}",
-        ),
+    )
+    // 5º KPI -- espelha numeroFazendas/areaTotalHa, novos campos de
+    // /api/mobile/home e /api/mobile/dashboard (contagem de fazendas do
+    // cadastro + soma da área em hectares). Mesmo padrão visual dos outros 4
+    // (ícone com borda colorida, quantidade em destaque, legenda menor
+    // abaixo do nome) -- aqui a legenda mostra a área total em vez de um
+    // texto fixo, já que é a métrica-irmã da contagem de fazendas. Fica FORA
+    // da lista `kpis` de propósito (ver comentário abaixo, em `KpiCard`).
+    val kpiFazendas = Kpi(
+        "Fazendas cadastradas",
+        data.numeroFazendas.toString(),
+        Icons.Filled.Map,
+        BrOrange,
+        KpiKind.QUANTIDADE,
+        description = "Área total: ${formatAreaHa(data.areaTotalHa)}",
     )
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         kpis.chunked(2).forEach { row ->
@@ -1240,83 +1257,93 @@ private fun KpiGrid(data: HomeData) {
                 modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                row.forEach { kpi ->
-                    // Reestruturado -- pedido do usuário ("resolva de uma
-                    // vez por todas o porque o kpi financeiro não consegue
-                    // puxar as ,00"): a caixa do valor (`widthIn(min=4dp)`,
-                    // sem largura máxima) ficava competindo por espaço com a
-                    // Column(weight(1f)) do rótulo NA MESMA Row -- quando o
-                    // valor era longo (ex.: "R$ 1.164.566,00"), ele "roubava"
-                    // toda a largura solta, sobrando quase nada pro rótulo,
-                    // que então quebrava em muitas linhas (sem maxLines) e
-                    // explodia a altura mínima da Row inteira (height =
-                    // IntrinsicSize.Min), estufando o card vazio -- exatamente
-                    // o bug visto no card do Financeiro. Agora o valor/
-                    // quantidade fica numa linha PRÓPRIA, com a largura TOTAL
-                    // do card, sem nenhum vizinho disputando espaço -- nunca
-                    // mais é cortado nem força a altura de ninguém.
-                    Card(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                        Column(modifier = Modifier.padding(12.dp).fillMaxWidth()) {
-                            Row(verticalAlignment = Alignment.Top) {
-                                // Só contorno, sem preenchimento -- pedido do
-                                // usuário ("retire o preenchimento verde e
-                                // deixe apenas a borda em verde, em todo
-                                // app").
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(CircleShape)
-                                        .border(1.dp, kpi.color, CircleShape),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(kpi.icon, contentDescription = null, tint = kpi.color, modifier = Modifier.size(20.dp))
-                                }
-                                Spacer(Modifier.width(10.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        kpi.label,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                    // Sem maxLines/ellipsis -- pedido do
-                                    // usuário ("aumente a altura pra caber
-                                    // todas as informações sem cortar"): a
-                                    // descrição quebra em quantas linhas
-                                    // precisar, e o Card cresce junto.
-                                    if (kpi.description != null) {
-                                        Text(
-                                            kpi.description,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                    }
-                                }
-                            }
-                            Spacer(Modifier.height(6.dp))
-                            // Valor/quantidade em linha própria, largura
-                            // cheia do card -- nunca mais compete por espaço
-                            // com o rótulo, então nunca mais corta o "R$" nem
-                            // as casas decimais.
-                            Text(
-                                kpi.value,
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.End,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        }
-                    }
-                }
+                row.forEach { kpi -> KpiCard(kpi, modifier = Modifier.weight(1f).fillMaxHeight()) }
                 // Fileira ímpar (última sobra 1 KPI): Spacer no lugar do 2º
                 // card mantém a largura igual à fileira de cima, sem
                 // "padronizar" a largura de propósito -- só evita o card
                 // sozinho esticar até o fim.
                 if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
             }
+        }
+        // "Fazendas cadastradas" ocupando a linha TODA, separado do grid de
+        // 2 colunas acima -- pedido do usuário ("o card fazendas cadastradas
+        // quero que ele ocupe a linha toda, separe ele dos outros 4 kpis que
+        // tão no grid de 2 colunas"): antes ele entrava na mesma lista dos
+        // outros 4 e o `chunked(2)` sobrava ele sozinho numa fileira com a
+        // outra metade vazia (Spacer). Reaproveita o mesmo `KpiCard` (mesmo
+        // visual dos outros), só que com `fillMaxWidth()` em vez de
+        // `weight(1f)` dentro de uma Row de 2.
+        KpiCard(kpiFazendas, modifier = Modifier.fillMaxWidth())
+    }
+}
+
+// Corpo visual de um card de KPI -- extraído de dentro do loop de KpiGrid
+// pra poder ser reaproveitado tanto nas 2 colunas do grid (Financeiro/
+// Estoque/Safra/RH) quanto no card "Fazendas cadastradas" em largura cheia,
+// fora do grid (ver comentário em KpiGrid).
+@Composable
+private fun KpiCard(kpi: Kpi, modifier: Modifier = Modifier) {
+    // Reestruturado -- pedido do usuário ("resolva de uma vez por todas o
+    // porque o kpi financeiro não consegue puxar as ,00"): a caixa do valor
+    // (`widthIn(min=4dp)`, sem largura máxima) ficava competindo por espaço
+    // com a Column(weight(1f)) do rótulo NA MESMA Row -- quando o valor era
+    // longo (ex.: "R$ 1.164.566,00"), ele "roubava" toda a largura solta,
+    // sobrando quase nada pro rótulo, que então quebrava em muitas linhas
+    // (sem maxLines) e explodia a altura mínima da Row inteira (height =
+    // IntrinsicSize.Min), estufando o card vazio -- exatamente o bug visto
+    // no card do Financeiro. Agora o valor/quantidade fica numa linha
+    // PRÓPRIA, com a largura TOTAL do card, sem nenhum vizinho disputando
+    // espaço -- nunca mais é cortado nem força a altura de ninguém.
+    Card(modifier = modifier) {
+        Column(modifier = Modifier.padding(12.dp).fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.Top) {
+                // Só contorno, sem preenchimento -- pedido do usuário
+                // ("retire o preenchimento verde e deixe apenas a borda em
+                // verde, em todo app").
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .border(1.dp, kpi.color, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(kpi.icon, contentDescription = null, tint = kpi.color, modifier = Modifier.size(20.dp))
+                }
+                Spacer(Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        kpi.label,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    // Sem maxLines/ellipsis -- pedido do usuário ("aumente a
+                    // altura pra caber todas as informações sem cortar"): a
+                    // descrição quebra em quantas linhas precisar, e o Card
+                    // cresce junto.
+                    if (kpi.description != null) {
+                        Text(
+                            kpi.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(6.dp))
+            // Valor/quantidade em linha própria, largura cheia do card --
+            // nunca mais compete por espaço com o rótulo, então nunca mais
+            // corta o "R$" nem as casas decimais.
+            Text(
+                kpi.value,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.End,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

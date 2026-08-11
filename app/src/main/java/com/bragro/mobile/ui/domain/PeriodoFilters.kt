@@ -7,10 +7,13 @@ import java.util.Locale
 // Espelho de FINANCEIRO_PERIODOS + genericPeriodoRange + buildFinanceiroPeriodoWhere
 // + financeiroPeriodoVctoWindow (data-table.tsx / actions.ts) -- só que calculado
 // em memória sobre os registros já sincronizados (Room), sem endpoint novo. As
-// mesmas 8 categorias servem tanto pro Financeiro (recorrência ou vencimento,
+// mesmas 9 categorias servem tanto pro Financeiro (recorrência ou vencimento,
 // conforme a visão) quanto pros demais domínios (janela de data pra trás sobre
 // a 1ª coluna de data), exatamente como no site.
+// "Diário" adicionado (rodada em paralelo no site, mesma posição -- 1º item do
+// dropdown, ver FINANCEIRO_PERIODOS em data-table.tsx) -- pedido do usuário.
 enum class PeriodoCategoria(val label: String) {
+    DIARIO("Diário"),
     SEMANAL("Semanal"),
     QUINZENAL("Quinzenal"),
     MENSAL("Mensal"),
@@ -31,6 +34,9 @@ fun genericPeriodoRange(categoria: PeriodoCategoria): Pair<String, String> {
     val to = Calendar.getInstance()
     val from = Calendar.getInstance()
     when (categoria) {
+        // Mesmo dia, sem janela pra trás -- espelho do case "DIARIO" em
+        // genericPeriodoRange (data-table.tsx).
+        PeriodoCategoria.DIARIO -> {}
         PeriodoCategoria.SEMANAL -> from.add(Calendar.DAY_OF_MONTH, -7)
         PeriodoCategoria.QUINZENAL -> from.add(Calendar.DAY_OF_MONTH, -15)
         PeriodoCategoria.MENSAL -> from.set(Calendar.DAY_OF_MONTH, 1)
@@ -49,6 +55,12 @@ fun financeiroPeriodoVctoWindow(categoria: PeriodoCategoria): Pair<String, Strin
     val from = Calendar.getInstance()
     val to = Calendar.getInstance()
     when (categoria) {
+        // Só o dia de hoje -- espelho do case "DIARIO" em
+        // financeiroPeriodoVctoWindow (actions.ts): sem este case a janela
+        // ficaria igual à de hoje mesmo (from == to, ambos já inicializados
+        // com a data atual), mas explícito aqui pra documentar a mesma
+        // intenção do site (evitar cair num "default" que não filtra nada).
+        PeriodoCategoria.DIARIO -> {}
         PeriodoCategoria.SEMANAL -> to.add(Calendar.DAY_OF_MONTH, 7)
         PeriodoCategoria.QUINZENAL -> to.add(Calendar.DAY_OF_MONTH, 15)
         PeriodoCategoria.MENSAL -> {

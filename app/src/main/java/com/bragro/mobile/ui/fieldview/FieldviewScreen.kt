@@ -19,9 +19,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -276,7 +277,20 @@ private fun TalhaoStatusList(rows: List<JsonObject>) {
     LazyColumn(contentPadding = PaddingValues(16.dp)) {
         items(rows.size) { i ->
             Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                Column(modifier = Modifier.padding(12.dp)) { RawRecordFields(rows[i]) }
+                Column(modifier = Modifier.padding(12.dp)) {
+                    // Ícone + rótulo -- pedido do usuário ("acho que todo o
+                    // fieldview... não tem sequer ícones... e outros tantos
+                    // ícones"): esta aba era a única das 3 (Talhões/
+                    // Máquinas/Fazendas-KML) sem NENHUM ícone no card, só
+                    // texto solto (RawRecordFields), diferente do padrão
+                    // ícone+label já usado nas outras 2 abas e no resto do
+                    // app.
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Eco, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
+                        Text("Talhão", style = MaterialTheme.typography.titleSmall)
+                    }
+                    RawRecordFields(rows[i])
+                }
             }
         }
     }
@@ -292,8 +306,14 @@ private fun MaquinaStatusList(rows: List<JsonObject>) {
         items(rows.size) { i ->
             Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Row(Modifier.fillMaxWidth()) {
-                        Icon(Icons.Filled.DirectionsCar, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                    // Ícone SEM rótulo -- achado da auditoria (usuário:
+                    // "outros tantos ícones"): o ícone do carro ficava
+                    // sozinho, sem nenhum texto ao lado explicando o que
+                    // representa (diferente do padrão ícone+label do resto
+                    // do app, ex.: BoundariesList abaixo já tem Map + nome).
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.DirectionsCar, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
+                        Text("Máquina", style = MaterialTheme.typography.titleSmall)
                     }
                     RawRecordFields(rows[i])
                 }
@@ -339,7 +359,16 @@ private fun FazendasKmlTab(
             enabled = !importing,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
-            Icon(Icons.Filled.AttachFile, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+            // Trocado de Icons.Filled.AttachFile (clipe de papel genérico,
+            // associado a "anexar" e não a "importar contorno de mapa")
+            // pra Icons.Filled.UploadFile -- achado da auditoria (usuário:
+            // "não tem sequer ícones de arquivos kml/kmz"): o botão em si
+            // já existia (ActivityResultContracts.OpenDocument, ver
+            // kmlPicker acima) e já tinha o texto "Importar KML/KMZ" ao
+            // lado, mas o ícone de clipe não comunicava "importação de
+            // arquivo" -- só "anexo", o mesmo ícone usado em Drone pra
+            // anexar foto/vídeo a um registro (contexto bem diferente).
+            Icon(Icons.Filled.UploadFile, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
             Text(if (importing) "Importando..." else "Importar KML/KMZ")
         }
         BoundariesMap(boundaries)

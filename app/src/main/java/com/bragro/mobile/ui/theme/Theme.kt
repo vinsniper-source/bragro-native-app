@@ -1,7 +1,6 @@
 package com.bragro.mobile.ui.theme
 
 import android.content.Context
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -164,7 +163,6 @@ fun BRAgroTheme(content: @Composable () -> Unit) {
     val context = LocalContext.current
     LaunchedEffect(Unit) { ThemeController.ensureLoaded(context) }
     val mode by ThemeController.mode.collectAsState()
-    val systemDark = isSystemInDarkTheme()
 
     // No modo Automático, o site reavalia "é noite?" a cada 15 minutos
     // (setInterval) pra trocar de claro pra escuro sozinho ao anoitecer, sem
@@ -179,12 +177,31 @@ fun BRAgroTheme(content: @Composable () -> Unit) {
         }
     }
 
+    // BUG investigado (usuário: "modo automático não está identificando se é
+    // dia ou noite no mobile"): o `|| systemDark` abaixo replicava
+    // computeAutoDark() do site (isNightTime() || prefersDarkDevice()) ao pé
+    // da letra, mas no navegador `prefers-color-scheme` é um sinal de
+    // ambiente (o SO raramente fica travado num dos dois valores pra
+    // sempre). No Android é o oposto: a enorme maioria dos usuários deixa o
+    // tema do sistema fixo em Claro OU Escuro nas Configurações (sem
+    // "agendar por horário do dia") -- ou seja, `isSystemInDarkTheme()`
+    // normalmente devolve SEMPRE o mesmo valor, dia e noite. Como o OR faz
+    // `dark` virar `true` sempre que QUALQUER lado for `true`, num aparelho
+    // com tema do sistema fixado em Escuro o app nunca saía do escuro (nem
+    // às 10h da manhã), e num aparelho fixado em Claro o horário noturno só
+    // vencia depois das 18h -- em ambos os casos dava a impressão de que o
+    // "Automático" simplesmente não olhava pro relógio. Fix: no modo
+    // Automático o critério de dia/noite passa a ser SÓ o horário do
+    // aparelho (isNightTimeNow(), faixa 6h-18h = dia), sem depender do
+    // toggle de tema do sistema -- quem quiser o tema sempre-escuro
+    // independente da hora já tem a opção manual "Escuro" no próprio ciclo
+    // do botão (Automático -> Claro -> Escuro).
     val dark = when (mode) {
         ThemeMode.DARK -> true
         ThemeMode.LIGHT -> false
         ThemeMode.AUTO -> {
             @Suppress("UNUSED_EXPRESSION") tick
-            isNightTimeNow() || systemDark
+            isNightTimeNow()
         }
     }
     val colors = if (dark) DarkColors else LightColors

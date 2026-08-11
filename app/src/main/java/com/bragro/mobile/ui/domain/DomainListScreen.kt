@@ -1391,10 +1391,10 @@ private fun weekdayShortBr(isoDate: String): String {
 }
 
 /** Espelho genérico do dropdown Período do Financeiro (ver PeriodoDropdown em
- * FinanceiroScreen.kt), aplicado aos demais ~17 módulos: 8 categorias como
- * janela de data PARA TRÁS a partir de hoje + intervalo manual, sobre a 1ª
- * coluna de data do domínio -- mesmo critério de genericPeriodoRange
- * (data-table.tsx). */
+ * FinanceiroScreen.kt), aplicado aos demais ~17 módulos: 9 categorias (inclui
+ * "Diário") como janela de data PARA TRÁS a partir de hoje + intervalo
+ * manual, sobre a 1ª coluna de data do domínio -- mesmo critério de
+ * genericPeriodoRange (data-table.tsx). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun GenericPeriodoDropdown(

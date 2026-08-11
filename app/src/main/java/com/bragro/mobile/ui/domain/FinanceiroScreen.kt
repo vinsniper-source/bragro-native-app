@@ -429,7 +429,22 @@ fun FinanceiroScreen(
             val armazenamentoBlock =
                 // Sem título (string vazia) -- pedido do usuário ("retire os
                 // títulos Registros e Distribuição").
-                FinBlockSpec("", MaterialTheme.typography.bodySmall, vertical = false) {
+                // BUG corrigido: altura do bloco (a caixa com borda, não a
+                // Column inteira) ficava diferente da de Dados, ao lado na
+                // mesma linha -- pedido do usuário ("o bloco/ícone de nuvem
+                // não está com a mesma altura do bloco Dados"). Estava
+                // usando bodySmall (lineHeight 16sp) enquanto Dados usa
+                // titleSmall (lineHeight 20sp); como o Text do título (linha
+                // sempre presente, ver FinanceiroCategoryBlock) e o Card
+                // (weight(1f)) dividem a MESMA altura total forçada pelo Row
+                // (IntrinsicSize.Min), um título mais baixo deixava mais
+                // espaço de sobra pro Card, esticando-o além do vizinho.
+                // bodyMedium tem o mesmo lineHeight de titleSmall (20sp) --
+                // mesmo estilo já usado em Distribuição/Operações (par que já
+                // ficava correto, ver comentário "mesma altura dos dois"
+                // acima) -- resolve sem alterar o Row/fillMaxHeight, que já
+                // seguia a convenção certa.
+                FinBlockSpec("", MaterialTheme.typography.bodyMedium, vertical = false) {
                     // Só esse ícone no bloco -- pedido do usuário ("será
                     // apenas um ícone offline, troque o ícone por uma
                     // nuvem"). Reflete o estado de conexão (offline usa os
@@ -789,10 +804,11 @@ private fun FinanceiroCategoryBlock(spec: FinBlockSpec, modifier: Modifier = Mod
 // usuário ("exclua o ícone de compartilhar em txt, não só nesse módulo mas
 // como em todos os outros").
 
-/** Botão-dropdown "Período" -- 8 categorias de recorrência/vencimento + um
- * intervalo de datas manual (De/Até), espelho do dropdown Período do site
- * (data-table.tsx). Em Contas a Pagar/Receber as categorias viram janela de
- * Vencimento; nas demais visões casam pelo campo "Periodo" do lançamento. */
+/** Botão-dropdown "Período" -- 9 categorias de recorrência/vencimento
+ * (inclui "Diário", adicionado em paralelo no site) + um intervalo de datas
+ * manual (De/Até), espelho do dropdown Período do site (data-table.tsx). Em
+ * Contas a Pagar/Receber as categorias viram janela de Vencimento; nas
+ * demais visões casam pelo campo "Periodo" do lançamento. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PeriodoDropdown(
