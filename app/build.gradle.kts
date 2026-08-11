@@ -67,15 +67,35 @@ android {
 
     buildTypes {
         release {
-            // isMinifyEnabled continua false de proposito por enquanto:
-            // ativar R8/ProGuard exigiria testar manualmente num aparelho
-            // real (Room/kotlinx.serialization/Retrofit usam reflexao/
-            // proxies que costumam precisar de regras de "keep" especificas,
-            // e nao ha como validar isso sem rodar o app de verdade -- risco
-            // que nao vale a pena correr as cegas). Ativar isso e um bom
-            // proximo passo, mas so com um aparelho/emulador em maos pra
-            // testar o instalado antes de publicar.
-            isMinifyEnabled = false
+            // R8/ProGuard ligado (Fase 3) -- proguard-rules.pro agora tem
+            // regras de "keep" explicitas pra kotlinx.serialization (data/
+            // model/**), Retrofit (regras oficiais do projeto) e WorkManager
+            // (SyncWorker/TokenRefreshWorker, instanciados por reflexao) --
+            // Room/OkHttp/Coil/ML Kit/coroutines-android/Crashlytics/AndroidX
+            // em geral ja embutem seu proprio consumer-rules.pro (nao
+            // precisam de regra manual, ver comentarios em proguard-
+            // rules.pro pra detalhe de cada dependencia).
+            //
+            // ATENCAO -- MAIOR RISCO desta mudanca: erro de regra de keep NAO
+            // aparece como erro de compilacao, aparece como CRASH ou
+            // comportamento silenciosamente errado em runtime, e SO num
+            // aparelho real. A primeira build de release com minify ligado
+            // PRECISA ser testada manualmente cobrindo pelo menos: login,
+            // listar/criar/editar um lancamento em pelo menos 2 modulos
+            // diferentes, upload de foto/arquivo (Coil/OCR) e a tela do mapa
+            // (osmdroid, aba Fazendas/KML do FieldView). Se algo quebrar SO
+            // no release (nao no debug), a causa quase sempre e uma regra de
+            // keep faltando -- a solucao mais rapida enquanto investiga e
+            // voltar isMinifyEnabled pra false.
+            isMinifyEnabled = true
+            // shrinkResources fica de fora por enquanto: nao foi possivel
+            // confirmar, so por leitura de codigo (sem compilador/build real
+            // disponivel neste ambiente), que nenhum recurso e referenciado
+            // dinamicamente por nome/string em runtime (ex.: Resources.
+            // getIdentifier, comum em apps com icone dinamico por
+            // categoria/status) -- risco desnecessario de ligar as cegas
+            // junto com o minify. Ativar isso pode ser um proximo passo,
+            // depois que a build com minify sozinho for validada no aparelho.
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             if (hasKeystoreConfig) {
                 signingConfig = signingConfigs.getByName("release")

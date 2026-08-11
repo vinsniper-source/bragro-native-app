@@ -1,6 +1,7 @@
 package com.bragro.mobile.data.repo
 
 import android.content.Context
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.local.AnalisesEntity
 import com.bragro.mobile.data.local.AppDatabase
@@ -57,6 +58,7 @@ class AnalisesRepository(context: Context) {
             )
             true
         } catch (e: Exception) {
+            AppLog.e("AnalisesRepository", "Falha ao atualizar análises cruzadas (safra=$safra, cultura=$cultura)", e)
             false
         }
     }

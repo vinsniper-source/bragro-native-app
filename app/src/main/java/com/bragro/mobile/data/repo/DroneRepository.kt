@@ -1,6 +1,7 @@
 package com.bragro.mobile.data.repo
 
 import android.content.Context
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.model.DroneCreateRequest
 import com.bragro.mobile.data.model.DroneListRequest
@@ -31,6 +32,7 @@ class DroneRepository(context: Context) {
             val body = response.body()
             if (!response.isSuccessful || body?.ok != true) emptyList() else body.records
         } catch (e: Exception) {
+            AppLog.e("DroneRepository", "Falha ao listar voos de drone", e)
             emptyList()
         }
     }
@@ -68,6 +70,7 @@ class DroneRepository(context: Context) {
                 Result.failure(Exception(body?.error ?: "Falha ao salvar registro de drone."))
             }
         } catch (e: Exception) {
+            AppLog.e("DroneRepository", "Falha ao criar registro de captura de drone (talhao=$talhao)", e)
             Result.failure(e)
         }
     }

@@ -1,6 +1,7 @@
 package com.bragro.mobile.data.repo
 
 import com.bragro.mobile.BuildConfig
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.remote.NetworkModule
 
@@ -29,6 +30,7 @@ object TokenRefresher {
                 null
             }
         } catch (e: Exception) {
+            AppLog.e("TokenRefresher", "Falha ao renovar access token via refresh_token (Supabase Auth)", e)
             null
         }
     }

@@ -1,6 +1,7 @@
 package com.bragro.mobile.data.repo
 
 import android.content.Context
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.model.BankImportConfirmRequest
 import com.bragro.mobile.data.model.BankImportRowDto
@@ -30,6 +31,7 @@ class BankImportRepository(context: Context) {
             val body = response.body()
             if (!response.isSuccessful || body?.ok != true) null else body.signatures
         } catch (e: Exception) {
+            AppLog.e("BankImportRepository", "Falha ao buscar assinaturas de dedup do extrato bancário (banco=$banco)", e)
             null
         }
     }
@@ -51,6 +53,7 @@ class BankImportRepository(context: Context) {
             val body = response.body()
             if (!response.isSuccessful || body?.ok != true) null else body.imported
         } catch (e: Exception) {
+            AppLog.e("BankImportRepository", "Falha ao confirmar importação do extrato bancário (banco=$banco, ${rows.size} linhas)", e)
             null
         }
     }

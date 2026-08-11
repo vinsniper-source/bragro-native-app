@@ -1,6 +1,7 @@
 package com.bragro.mobile.data.repo
 
 import android.content.Context
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.local.AppDatabase
 import com.bragro.mobile.data.local.HomeEntity
@@ -53,6 +54,7 @@ class HomeRepository(context: Context) {
             }
             home
         } catch (e: Exception) {
+            AppLog.e("HomeRepository", "Falha ao atualizar dados do Início (Mural/Alertas/Monitor/KPIs)", e)
             null
         }
     }

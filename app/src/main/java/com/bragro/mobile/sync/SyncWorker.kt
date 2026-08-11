@@ -9,6 +9,7 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.repo.RecordRepository
 import java.util.concurrent.TimeUnit
 
@@ -32,6 +33,7 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
             // deixar o item parado ate o proximo abrir do app.
             if (repo.hasPending()) Result.retry() else Result.success()
         } catch (e: Exception) {
+            AppLog.e("SyncWorker", "Falha inesperada ao processar a fila de sincronização offline (doWork)", e)
             Result.retry()
         }
     }

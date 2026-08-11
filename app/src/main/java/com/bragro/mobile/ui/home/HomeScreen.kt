@@ -657,6 +657,43 @@ fun HomeScreen(
                                 color = BrOrange,
                             )
                         }
+                        // Task #124 (conflito de sync) -- item(ns) da fila
+                        // que o backend recusou com 409 CONFLICT (outro
+                        // aparelho editou o MESMO lançamento antes deste
+                        // sincronizar) NÃO entram mais no retry automático
+                        // (ver RecordRepository.syncAll/hasPending) -- sem
+                        // este segundo aviso, o problema ficaria invisível
+                        // pro usuário (o lançamento simplesmente nunca
+                        // sincronizaria, sem explicação nenhuma na tela).
+                        // Cor de erro (mais forte que o âmbar de "pendente
+                        // normal" acima) porque isso não se resolve só
+                        // esperando conexão -- precisa de uma ação do
+                        // usuário.
+                        if (pendingItems.any { it.conflictMessage != null }) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 6.dp)
+                                    .background(MaterialTheme.colorScheme.errorContainer, RoundedCornerShape(8.dp))
+                                    .clickable { pendingDialogOpen = true }
+                                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    Icons.Filled.WarningAmber,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "Um lançamento foi alterado em outro dispositivo — abra e confira antes de tentar salvar de novo.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -821,6 +858,19 @@ private fun PendingSyncDialog(items: List<PendingSyncEntity>, onDismiss: () -> U
                             if (item.ultimoErro != null) {
                                 Text(
                                     "Erro: ${item.ultimoErro}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                            // Task #124 (conflito de sync) -- distinto de
+                            // ultimoErro acima: este item PAROU de ser
+                            // tentado automaticamente (ver
+                            // RecordRepository.syncAll/hasPending), só
+                            // resolve com o usuário abrindo o lançamento no
+                            // módulo e decidindo o que fazer.
+                            if (item.conflictMessage != null) {
+                                Text(
+                                    "Conflito: ${item.conflictMessage}",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.error,
                                 )

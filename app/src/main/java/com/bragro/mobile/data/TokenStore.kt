@@ -19,6 +19,13 @@ class TokenStore(private val context: Context) {
     private val keyAccess = stringPreferencesKey("access_token")
     private val keyRefresh = stringPreferencesKey("refresh_token")
     private val keyEmail = stringPreferencesKey("email")
+    // Task #124 (isolamento de cache por organizacao) -- guarda o orgId da
+    // ULTIMA organizacao autenticada com sucesso neste aparelho, sobrevive a
+    // logout() de proposito (logout() NAO chama clear() em nenhuma dessas
+    // duas chaves -- ver AuthRepository.logout()): e o que permite
+    // AuthRepository.login() comparar "org nova == org anterior" mesmo
+    // depois de um logout/login normal na MESMA conta.
+    private val keyLastOrgId = stringPreferencesKey("last_org_id")
 
     val accessTokenFlow: Flow<String?> = context.dataStore.data.map { it[keyAccess] }
     val emailFlow: Flow<String?> = context.dataStore.data.map { it[keyEmail] }
@@ -42,7 +49,29 @@ class TokenStore(private val context: Context) {
         return access to refresh
     }
 
+    /** Ultima organizacao autenticada com sucesso neste aparelho -- null no
+     * primeiríssimo login (nunca logou antes neste aparelho), caso em que
+     * AuthRepository.login() NAO deve tratar como "troca de organizacao"
+     * (nao ha fila pendente de organizacao nenhuma pra limpar ainda). */
+    suspend fun getLastOrgId(): String? = context.dataStore.data.first()[keyLastOrgId]
+
+    suspend fun setLastOrgId(orgId: String) {
+        context.dataStore.edit { it[keyLastOrgId] = orgId }
+    }
+
+    /** Chamado no logout -- apaga access/refresh/email (a sessao em si),
+     * mas PROPOSITALMENTE preserva "last_org_id" (Task #124): esse valor so
+     * faz sentido sobrevivendo ao logout, senao AuthRepository.login()
+     * nunca conseguiria distinguir "relogando na mesma organizacao depois
+     * de um logout normal" (deve preservar a fila pendente) de "outra
+     * organizacao logando por cima" (deve limpar) -- ver comentario em
+     * getLastOrgId() acima. Antes usava it.clear() (limpeza total do
+     * DataStore), o que apagava esse rastro junto. */
     suspend fun clear() {
-        context.dataStore.edit { it.clear() }
+        context.dataStore.edit {
+            it.remove(keyAccess)
+            it.remove(keyRefresh)
+            it.remove(keyEmail)
+        }
     }
 }

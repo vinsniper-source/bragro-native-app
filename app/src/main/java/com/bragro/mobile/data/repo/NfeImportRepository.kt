@@ -1,6 +1,7 @@
 package com.bragro.mobile.data.repo
 
 import android.content.Context
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.model.NfeImportRequest
 import com.bragro.mobile.data.model.NfeImportedInvoiceData
@@ -41,6 +42,7 @@ class NfeImportRepository(context: Context) {
                 Result.Error(body?.error ?: "Não foi possível ler o XML.")
             }
         } catch (e: Exception) {
+            AppLog.e("NfeImportRepository", "Falha ao gerar preview de importação de XML de NF-e", e)
             Result.Error("Sem conexão com o servidor.")
         }
     }
@@ -64,6 +66,7 @@ class NfeImportRepository(context: Context) {
                 Result.Error(body?.error ?: "Não foi possível importar a nota.")
             }
         } catch (e: Exception) {
+            AppLog.e("NfeImportRepository", "Falha ao confirmar importação de XML de NF-e (fazendaDestino=$fazendaDestino)", e)
             Result.Error("Sem conexão com o servidor.")
         }
     }

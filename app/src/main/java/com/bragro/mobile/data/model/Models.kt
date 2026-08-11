@@ -746,10 +746,35 @@ data class SyncRequest(
     val kind: String, // "create" | "update"
     val recordId: String? = null,
     val fields: Map<String, String>,
+    // Task #124 (deteccao de conflito de sync) -- timestamp ISO da ULTIMA
+    // edicao conhecida deste registro (RecordEntity.expectedVersion, que
+    // por sua vez vem de RecordLastEdit.updatedAt via /api/mobile/audit-info,
+    // ver AuditInfoRepository). O backend (/api/offline-sync, ja ajustado)
+    // compara com o updatedAt ATUAL de RecordLastEdit: se bater, aplica o
+    // update normalmente; se NAO bater (outro aparelho editou o mesmo
+    // registro nesse meio tempo), responde 409 com code="CONFLICT" em vez
+    // de sobrescrever. Nullable/default null e de proposito fail-open --
+    // um "update" sem esse campo (kind="create"/"delete", ou um registro
+    // que nunca teve "editado por" carregado na tela) e aplicado sem
+    // nenhuma verificacao extra, exatamente como antes desta task.
+    val expectedVersion: String? = null,
 )
 
 @Serializable
-data class SyncResponse(val ok: Boolean, val error: String? = null)
+data class SyncResponse(
+    val ok: Boolean,
+    val error: String? = null,
+    // Preenchidos pelo backend SO na resposta 409 (ver comentario em
+    // expectedVersion acima) -- na pratica, como o HTTP status nao e 2xx
+    // nesse caso, o Retrofit entrega esse corpo em Response.errorBody(),
+    // nao em Response.body() (ver RecordRepository.trySyncOne/
+    // parseSyncErrorBody); esses 2 campos ficam aqui tambem so por
+    // completude/documentacao do contrato, e como rede de seguranca caso
+    // o backend um dia responda 200 com ok=false+code (fail-open, nao
+    // quebra nada se isso nunca acontecer).
+    val code: String? = null,
+    val message: String? = null,
+)
 
 // -- Supabase Auth REST (login direto, sem passar pelo site) --
 

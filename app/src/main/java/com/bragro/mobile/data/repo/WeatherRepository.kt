@@ -1,5 +1,6 @@
 package com.bragro.mobile.data.repo
 
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.model.WeatherResponse
 import com.bragro.mobile.data.remote.NetworkModule
 
@@ -16,6 +17,7 @@ class WeatherRepository {
             val body = response.body()
             if (!response.isSuccessful || body?.ok != true) null else body
         } catch (e: Exception) {
+            AppLog.e("WeatherRepository", "Falha ao buscar clima/câmbio/cotações ao vivo", e)
             null
         }
     }

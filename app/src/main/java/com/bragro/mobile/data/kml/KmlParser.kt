@@ -3,6 +3,7 @@ package com.bragro.mobile.data.kml
 import android.content.Context
 import android.net.Uri
 import android.util.Xml
+import com.bragro.mobile.data.AppLog
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -41,6 +42,7 @@ fun parseKmlOrKmz(context: Context, uri: Uri): List<ParsedPolygon> {
     return try {
         parseKmlBytes(kmlBytes)
     } catch (e: Exception) {
+        AppLog.e("KmlParser", "Falha ao parsear conteúdo KML do arquivo importado pelo usuário", e)
         emptyList()
     }
 }
@@ -60,6 +62,11 @@ private fun extractKmlEntryFromZip(zipBytes: ByteArray): ByteArray? {
         }
         found
     } catch (e: Exception) {
+        // Fallback deliberado: nem toda entrada aqui é KMZ de verdade (pode
+        // ser um .kml puro sem extensão de zip válida) -- log em nível mais
+        // baixo (warning) porque cair neste catch faz parte do fluxo normal
+        // de detecção KML-vs-KMZ, não é necessariamente um erro real.
+        AppLog.w("KmlParser", "Arquivo importado não é um .zip/KMZ válido -- assumindo KML puro", e)
         null
     }
 }

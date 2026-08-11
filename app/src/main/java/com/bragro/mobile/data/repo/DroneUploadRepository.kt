@@ -2,6 +2,7 @@ package com.bragro.mobile.data.repo
 
 import android.content.Context
 import com.bragro.mobile.BuildConfig
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.local.AppDatabase
 import com.bragro.mobile.data.remote.NetworkModule
@@ -42,6 +43,7 @@ class DroneUploadRepository(private val context: Context) {
             val publicUrl = "${BuildConfig.SUPABASE_URL}/storage/v1/object/public/$DRONE_BUCKET/$path"
             UploadResult(path, publicUrl, bytes.size.toLong())
         } catch (e: Exception) {
+            AppLog.e("DroneUploadRepository", "Falha ao enviar arquivo de captura de drone (fileName=$fileName, talhao=$talhao) pro Storage", e)
             null
         }
     }

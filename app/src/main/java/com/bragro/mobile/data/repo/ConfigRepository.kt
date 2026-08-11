@@ -1,6 +1,7 @@
 package com.bragro.mobile.data.repo
 
 import android.content.Context
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.local.AppDatabase
 import com.bragro.mobile.data.local.DomainConfigEntity
 import com.bragro.mobile.data.local.FarmEntity
@@ -36,8 +37,23 @@ class ConfigRepository(context: Context) {
      * configuracao dos modulos + dados da organizacao e grava tudo no Room.
      * Retorna false se alguma das duas chamadas falhar (sem internet, token
      * expirado etc.) -- quem chamou decide o que fazer (ex.: no login,
-     * bloquear; numa atualizacao manual, so avisar e manter o cache antigo). */
-    suspend fun bootstrapAndCacheConfig(accessToken: String, refreshToken: String): Boolean {
+     * bloquear; numa atualizacao manual, so avisar e manter o cache antigo).
+     *
+     * [onOrgResolved] (Task #124, isolamento de cache por organizacao) --
+     * chamado logo que o orgId da organizacao recem-autenticada e conhecido,
+     * ANTES de continuar o resto do bootstrap (session/lookups/farms). E o
+     * unico ponto do fluxo em que quem chamou (AuthRepository.login()) fica
+     * sabendo o orgId a tempo de decidir se limpa a fila de sincronizacao
+     * pendente (organizacao diferente da ultima logada neste aparelho) antes
+     * dela ser potencialmente usada. No-op por padrao pra nao quebrar
+     * nenhuma outra chamada existente (ex.: "Sincronizar agora" manual, que
+     * nunca precisou dessa decisao por so rodar com o usuario ja logado na
+     * MESMA organizacao). */
+    suspend fun bootstrapAndCacheConfig(
+        accessToken: String,
+        refreshToken: String,
+        onOrgResolved: suspend (orgId: String) -> Unit = {},
+    ): Boolean {
         return try {
             val configResponse = NetworkModule.mobileApi.config()
             val configBody = configResponse.body()
@@ -48,6 +64,7 @@ class ConfigRepository(context: Context) {
             if (!bootstrapResponse.isSuccessful || bootstrapBody?.ok != true || bootstrapBody.session == null) return false
 
             val session = bootstrapBody.session
+            onOrgResolved(session.orgId)
             db.domainConfigDao().clearAll()
             db.domainConfigDao().insertAll(
                 configBody.domains.map { d ->
@@ -80,6 +97,7 @@ class ConfigRepository(context: Context) {
 
             true
         } catch (e: Exception) {
+            AppLog.e("ConfigRepository", "Falha ao executar bootstrap/config (login ou sincronizar agora)", e)
             false
         }
     }

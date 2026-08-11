@@ -1,6 +1,7 @@
 package com.bragro.mobile.data.repo
 
 import android.content.Context
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.model.ModuleActionRequest
 import com.bragro.mobile.data.model.ModuleChartsRequest
@@ -33,6 +34,7 @@ class ChartsRepository(context: Context) {
             val body = response.body()
             if (!response.isSuccessful || body?.ok != true) null else body
         } catch (e: Exception) {
+            AppLog.e("ChartsRepository", "Falha ao buscar gráficos do módulo domainId=$domainId (safra=$safra)", e)
             null
         }
     }
@@ -79,6 +81,7 @@ class ModuleActionsRepository(context: Context) {
             val body = response.body()
             if (!response.isSuccessful || body?.ok != true) null else body.result
         } catch (e: Exception) {
+            AppLog.e("ModuleActionsRepository", "Falha ao executar ação de módulo '$action'", e)
             null
         }
     }

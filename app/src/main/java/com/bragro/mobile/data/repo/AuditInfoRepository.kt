@@ -1,6 +1,7 @@
 package com.bragro.mobile.data.repo
 
 import android.content.Context
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.model.AuditEntry
 import com.bragro.mobile.data.model.AuditInfoRequest
@@ -34,6 +35,7 @@ class AuditInfoRepository(context: Context) {
             val body = response.body()
             if (!response.isSuccessful || body?.ok != true) emptyMap() else body.info
         } catch (e: Exception) {
+            AppLog.e("AuditInfoRepository", "Falha ao buscar 'editado por' para domainId=$domainId (${recordIds.size} registros)", e)
             emptyMap()
         }
     }

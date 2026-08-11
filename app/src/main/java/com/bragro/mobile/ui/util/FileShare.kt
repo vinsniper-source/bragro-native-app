@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import androidx.core.content.FileProvider
+import com.bragro.mobile.data.AppLog
 import java.io.File
 
 /** Grava um texto (JSON do backup, CSV de exportação) num arquivo temporário
@@ -68,6 +69,7 @@ fun saveToDownloads(context: Context, fileName: String, mimeType: String, conten
         }
         true
     } catch (e: Exception) {
+        AppLog.e("FileShare", "Falha ao gravar arquivo '$fileName' na pasta Downloads pública", e)
         false
     }
 }

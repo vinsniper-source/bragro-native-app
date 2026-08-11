@@ -2,6 +2,7 @@ package com.bragro.mobile.data.repo
 
 import android.content.Context
 import com.bragro.mobile.BuildConfig
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.local.AppDatabase
 import com.bragro.mobile.data.remote.NetworkModule
@@ -41,6 +42,7 @@ class RomaneioUploadRepository(private val context: Context) {
             if (!response.isSuccessful) return null
             "${BuildConfig.SUPABASE_URL}/storage/v1/object/public/$FOTO_BUCKET/$path"
         } catch (e: Exception) {
+            AppLog.e("RomaneioUploadRepository", "Falha ao enviar foto do ticket da balança pro Storage", e)
             null
         }
     }

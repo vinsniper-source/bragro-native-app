@@ -137,6 +137,27 @@ data class RecordEntity(
     /** true = ainda nao existe no servidor (criado offline, aguardando sync);
      * o id local, nesse caso, e um UUID temporario gerado no aparelho. */
     val pendingCreate: Boolean = false,
+    /** Organizacao a que este registro pertence (sessao ativa no momento em
+     * que foi gravado/atualizado localmente) -- Task #124: antes o cache
+     * local nao era isolado por organizacao, entao um segundo usuario de
+     * outra org logando no MESMO aparelho podia herdar a fila pendente do
+     * primeiro. Nullable/default null so pra permitir ALTER TABLE ADD COLUMN
+     * (Migrations.kt) sem perder as linhas ja existentes; registros antigos
+     * (orgId = null) sao tratados como "sem organizacao conhecida" e nunca
+     * disparam a limpeza em AuthRepository.login(). */
+    val orgId: String? = null,
+    /** "Ultima edicao conhecida" deste registro (timestamp ISO de
+     * RecordLastEdit.updatedAt no servidor, ver AuditInfoRepository/
+     * DomainListScreen.loadAuditInfo) -- Task #124 (deteccao de conflito de
+     * sync). E enviado de volta como SyncRequest.expectedVersion num
+     * update; se o servidor ja tiver uma edicao mais recente que essa
+     * (feita por outro aparelho), o backend responde 409 CONFLICT em vez de
+     * sobrescrever silenciosamente. Nullable/default null -- registros
+     * nunca abertos numa tela com "editado por" carregado (ou criados
+     * offline, ainda sem nenhuma edicao no servidor) simplesmente nao
+     * mandam esse campo, e o backend aplica o update normalmente
+     * (fail-open, ver comentario no backend). */
+    val expectedVersion: String? = null,
 )
 
 /** Fila de escrita offline (outbox) -- toda vez que o usuario salva um
@@ -154,4 +175,25 @@ data class PendingSyncEntity(
     val fieldsJson: String,
     val criadoEmMillis: Long,
     val ultimoErro: String? = null,
+    /** Mesma organizacao gravada em RecordEntity.orgId no momento em que
+     * este item entrou na fila (Task #124) -- usado por
+     * AuthRepository.login() pra decidir se a fila pendente deve ser
+     * limpa (organizacao diferente da ultima logada neste aparelho) ou
+     * preservada (mesma organizacao, so relogando). */
+    val orgId: String? = null,
+    /** Copia de RecordEntity.expectedVersion no momento em que este item
+     * entrou na fila (Task #124) -- mandado de volta pro backend em
+     * SyncRequest.expectedVersion; guardado aqui (e nao relido de
+     * RecordEntity na hora do sync) pra nao mudar se o usuario editar o
+     * mesmo registro de novo antes deste item terminar de sincronizar. */
+    val expectedVersion: String? = null,
+    /** Preenchido SO quando o backend responde 409 CONFLICT (outro
+     * aparelho editou este registro entre a leitura do "editado por" e
+     * esta tentativa de sync) -- Task #124. Diferente de `ultimoErro`
+     * (erro generico, elegivel a novo retry automatico): um item com
+     * `conflictMessage` preenchido PARA de ser tentado automaticamente
+     * (ver RecordRepository.syncAll/hasPending) ate o usuario abrir o
+     * lancamento e decidir o que fazer -- retry automatico infinito só
+     * bateria conflito de novo pra sempre. */
+    val conflictMessage: String? = null,
 )

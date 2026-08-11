@@ -54,6 +54,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.kml.ParsedPolygon
 import com.bragro.mobile.data.kml.parseKmlOrKmz
 import com.bragro.mobile.data.kml.polygonAreaHectares
@@ -369,6 +370,15 @@ private fun BoundariesMap(boundaries: List<FieldBoundaryDto>) {
             }
             mv.invalidate()
         },
+        // Sem isso, o MapView do osmdroid (cache de tiles em memoria/disco +
+        // threads de download) continua vivo mesmo depois que esta tela sai
+        // de composicao (ex.: usuario aperta Voltar) -- vazamento de memoria
+        // classico de osmdroid em Compose. onRelease (disponivel desde
+        // Compose UI 1.4, presente na 1.6.8 usada neste projeto -- ver
+        // app/build.gradle.kts) e chamado exatamente uma vez, quando a View
+        // sai de composicao pra nao ser reaproveitada -- ponto certo pra
+        // liberar o MapView, igual a documentacao do osmdroid recomenda.
+        onRelease = { mapView -> mapView.onDetach() },
     )
 }
 
@@ -391,6 +401,7 @@ private fun geoJsonPolygonToGeoPoints(geojson: JsonElement?): List<GeoPoint> {
             GeoPoint(lat, lon)
         }
     } catch (e: Exception) {
+        AppLog.e("FieldviewScreen", "Falha ao converter GeoJSON de contorno de talhão pra pontos do mapa", e)
         emptyList()
     }
 }

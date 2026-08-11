@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.local.FarmEntity
 import com.bragro.mobile.data.model.NfeImportedInvoiceData
 import com.bragro.mobile.data.model.NfeItemData
@@ -114,6 +115,7 @@ class NfeImportViewModel(app: Application) : AndroidViewModel(app) {
                     }
                 }
             } catch (e: Exception) {
+                AppLog.e("NfeImportScreen", "Falha ao ler arquivo XML de NF-e selecionado", e)
                 null
             }
             if (text.isNullOrBlank()) {
@@ -184,6 +186,7 @@ class NfeImportViewModel(app: Application) : AndroidViewModel(app) {
                 if (idx >= 0 && cursor.moveToFirst()) cursor.getString(idx) else null
             }
         } catch (e: Exception) {
+            AppLog.e("NfeImportScreen", "Falha ao consultar nome de exibição do arquivo XML de NF-e selecionado", e)
             null
         }
     }

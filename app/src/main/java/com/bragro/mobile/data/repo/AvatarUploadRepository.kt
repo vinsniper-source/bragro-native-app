@@ -2,6 +2,7 @@ package com.bragro.mobile.data.repo
 
 import android.content.Context
 import com.bragro.mobile.BuildConfig
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.local.AppDatabase
 import com.bragro.mobile.data.model.UpdateAvatarRequest
@@ -77,6 +78,7 @@ class AvatarUploadRepository(context: Context) {
             db.sessionDao().upsert(session.copy(avatarUrl = publicUrl))
             Result.success(publicUrl)
         } catch (e: Exception) {
+            AppLog.e("AvatarUploadRepository", "Falha ao enviar/atualizar foto de perfil (avatar)", e)
             Result.failure(e)
         }
     }

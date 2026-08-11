@@ -2,6 +2,7 @@ package com.bragro.mobile.data.repo
 
 import android.content.Context
 import com.bragro.mobile.BuildConfig
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.model.BackupRequest
 import com.bragro.mobile.data.model.BridgeCodeRequest
@@ -32,6 +33,7 @@ class NotificationsRepository(context: Context) {
             val body = response.body()
             if (!response.isSuccessful || body?.ok != true) null else body.result
         } catch (e: Exception) {
+            AppLog.e("NotificationsRepository", "Falha ao executar ação '$action' em Notificações", e)
             null
         }
     }
@@ -58,6 +60,7 @@ class BackupRepository(context: Context) {
             val body = response.body()
             if (!response.isSuccessful || body?.ok != true) null else body.backup
         } catch (e: Exception) {
+            AppLog.e("BackupRepository", "Falha ao buscar JSON de backup completo", e)
             null
         }
     }
@@ -86,6 +89,7 @@ class NoticesRepository(context: Context) {
             val resp = response.body()
             if (!response.isSuccessful || resp?.ok != true) null else resp.result
         } catch (e: Exception) {
+            AppLog.e("NoticesRepository", "Falha ao executar ação '${req.action}' no Mural de Avisos", e)
             null
         }
     }
@@ -134,6 +138,7 @@ class BridgeRepository(context: Context) {
             if (code.isNullOrBlank()) fallback
             else "${BuildConfig.API_BASE_URL}/api/mobile/bridge?code=$code&next=/$path"
         } catch (e: Exception) {
+            AppLog.e("BridgeRepository", "Falha ao gerar código de ponte pro navegador (path=$path) -- usando link simples de fallback", e)
             fallback
         }
     }

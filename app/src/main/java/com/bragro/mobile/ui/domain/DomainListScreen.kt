@@ -137,7 +137,19 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
 
     fun loadAuditInfo(domainId: String, recordIds: List<String>) {
         viewModelScope.launch {
-            auditInfo.value = auditInfoRepository.fetch(domainId, recordIds)
+            val info = auditInfoRepository.fetch(domainId, recordIds)
+            auditInfo.value = info
+            // Task #124 (deteccao de conflito de sync) -- alem de exibir
+            // "Editado por" (ja fazia isso), agora tambem grava esse mesmo
+            // "createdAt" (timestamp ISO de RecordLastEdit.updatedAt no
+            // servidor) como RecordEntity.expectedVersion de cada
+            // lancamento -- e o que RecordRepository.updateRecord() manda
+            // de volta em SyncRequest.expectedVersion quando o usuario
+            // editar esse registro, pro backend detectar se outro
+            // aparelho editou antes dele (409 CONFLICT).
+            info.forEach { (recordId, entry) ->
+                recordRepository.updateExpectedVersion(domainId, recordId, entry.createdAt)
+            }
         }
     }
 

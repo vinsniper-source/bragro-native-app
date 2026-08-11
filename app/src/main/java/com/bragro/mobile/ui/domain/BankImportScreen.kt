@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.model.BankImportRowDto
 import com.bragro.mobile.data.repo.BankImportRepository
 import kotlinx.coroutines.launch
@@ -160,9 +161,15 @@ class BankImportViewModel(app: Application) : AndroidViewModel(app) {
         else try {
             String(bytes, Charsets.UTF_8)
         } catch (e: Exception) {
+            // Fallback deliberado/rotineiro: nem todo CSV exportado de banco
+            // é UTF-8 (windows-1252/Latin1 é comum em exports antigos) --
+            // cair aqui faz parte do fluxo normal de detecção de charset,
+            // não é um erro de verdade (log em nível baixo só por precaução).
+            AppLog.w("BankImportScreen", "CSV do extrato bancário não é UTF-8 -- tentando windows-1252", e)
             String(bytes, charset("windows-1252"))
         }
     } catch (e: Exception) {
+        AppLog.e("BankImportScreen", "Falha ao ler arquivo de extrato bancário selecionado (nenhum charset funcionou)", e)
         null
     }
 
@@ -172,6 +179,7 @@ class BankImportViewModel(app: Application) : AndroidViewModel(app) {
             if (idx >= 0 && cursor.moveToFirst()) cursor.getString(idx) else null
         }
     } catch (e: Exception) {
+        AppLog.e("BankImportScreen", "Falha ao consultar nome de exibição do arquivo de extrato selecionado", e)
         null
     }
 }

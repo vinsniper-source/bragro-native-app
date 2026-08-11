@@ -49,6 +49,7 @@ import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.local.LookupEntity
 import com.bragro.mobile.data.repo.ConfigRepository
 import com.bragro.mobile.data.repo.RecordRepository
@@ -176,6 +177,7 @@ class RomaneioQuickViewModel(app: Application) : AndroidViewModel(app) {
             val result = recognizer.process(image).await()
             RomaneioOcrParser.parse(result.text)
         } catch (e: Exception) {
+            AppLog.e("RomaneioQuickScreen", "Falha ao rodar OCR (ML Kit) na foto do ticket do Romaneio Rápido", e)
             emptyMap()
         }
     }
@@ -198,6 +200,7 @@ class RomaneioQuickViewModel(app: Application) : AndroidViewModel(app) {
             redimensionada.compress(Bitmap.CompressFormat.JPEG, 75, out)
             out.toByteArray()
         } catch (e: Exception) {
+            AppLog.e("RomaneioQuickScreen", "Falha ao comprimir/redimensionar foto do ticket antes do upload", e)
             null
         }
     }
@@ -216,6 +219,7 @@ class RomaneioQuickViewModel(app: Application) : AndroidViewModel(app) {
             val matrix = Matrix().apply { postRotate(degrees) }
             Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
         } catch (e: Exception) {
+            AppLog.e("RomaneioQuickScreen", "Falha ao ler EXIF/rotacionar foto do ticket -- mantendo bitmap original", e)
             bitmap
         }
     }

@@ -28,6 +28,7 @@ object NetworkStatus {
             caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
                 caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
         } catch (e: Exception) {
+            AppLog.e("NetworkStatus", "Falha ao consultar ConnectivityManager para checar status de rede", e)
             // Se a própria checagem falhar por algum motivo, não afirma nada
             // que possa estar errado -- assume "online" (deixa a chamada de
             // rede real decidir, em vez de bloquear a UI com um falso "sem

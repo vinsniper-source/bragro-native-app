@@ -1,6 +1,7 @@
 package com.bragro.mobile.data.repo
 
 import android.content.Context
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.model.BaseDeDadosRequest
 import com.bragro.mobile.data.model.SecurityRequest
@@ -61,6 +62,7 @@ class SettingsRepository(context: Context) {
             if (!response.isSuccessful || resp?.ok != true) Result.failure(IllegalStateException(resp?.error ?: "Falha na operação."))
             else Result.success(resp.result)
         } catch (e: Exception) {
+            AppLog.e("SettingsRepository", "Falha ao executar ação '$action' em Configurações", e)
             Result.failure(e)
         }
     }
@@ -94,6 +96,7 @@ class BaseDeDadosRepository(context: Context) {
             if (!response.isSuccessful || resp?.ok != true) Result.failure(IllegalStateException(resp?.error ?: "Falha na operação."))
             else Result.success(resp.result)
         } catch (e: Exception) {
+            AppLog.e("BaseDeDadosRepository", "Falha ao executar ação '$action' em Base de Dados", e)
             Result.failure(e)
         }
     }
@@ -126,6 +129,7 @@ class SecurityRepository(context: Context) {
             if (!response.isSuccessful || resp?.ok != true) Result.failure(IllegalStateException(resp?.error ?: "Falha na operação."))
             else Result.success(resp.result)
         } catch (e: Exception) {
+            AppLog.e("SecurityRepository", "Falha ao executar ação '$action' em Acessos/Segurança", e)
             Result.failure(e)
         }
     }

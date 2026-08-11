@@ -2,6 +2,7 @@ package com.bragro.mobile.data.repo
 
 import android.content.Context
 import com.bragro.mobile.BuildConfig
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.local.AppDatabase
 import com.bragro.mobile.data.model.UpdateLogoRequest
@@ -84,6 +85,7 @@ class LogoUploadRepository(context: Context) {
             db.sessionDao().upsert(session.copy(orgLogoUrl = publicUrl))
             Result.success(publicUrl)
         } catch (e: Exception) {
+            AppLog.e("LogoUploadRepository", "Falha ao enviar/atualizar logo da organização", e)
             Result.failure(e)
         }
     }

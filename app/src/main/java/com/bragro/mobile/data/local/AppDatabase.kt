@@ -18,7 +18,7 @@ import androidx.room.RoomDatabase
         AnalisesEntity::class,
         HomeEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -39,11 +39,18 @@ abstract class AppDatabase : RoomDatabase() {
         fun get(context: Context): AppDatabase =
             instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "bragro.db")
-                    // Fase 1 ainda nao foi lancada (nenhum apk publicado com o
-                    // schema antigo) -- destrutiva e segura aqui e evita ter
-                    // que escrever uma Migration manual so pra uma tabela nova
-                    // (dashboard, Task #31) num app que ainda ninguem instalou.
-                    .fallbackToDestructiveMigration()
+                    // fallbackToDestructiveMigration() foi REMOVIDO de proposito
+                    // (Task #123 -- auditoria identificou que a proxima mudanca
+                    // de schema apagaria, sem aviso, todo o cache local e a fila
+                    // de sincronizacao pendente do usuario). Era seguro so
+                    // enquanto nenhum apk publicado dependia do schema antigo;
+                    // isso deixou de ser verdade. Ver Migrations.kt pro
+                    // historico completo e as regras pra quem for tocar aqui:
+                    // TODA mudanca de schema agora EXIGE uma Migration real
+                    // adicionada em addMigrations(...) abaixo -- sem isso o
+                    // Room falha explicitamente no open do banco (em vez de
+                    // destruir dado do usuario silenciosamente).
+                    .addMigrations(MIGRATION_5_6)
                     .build()
                     .also { instance = it }
             }

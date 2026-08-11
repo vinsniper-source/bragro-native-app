@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
+import com.bragro.mobile.data.AppLog
 
 /** Abre uma URL numa Custom Tab (Chrome) em vez de um Intent.ACTION_VIEW
  * genérico -- usado tanto pelo botão Módulos (BottomNavBar.kt) quanto pelo
@@ -19,6 +20,7 @@ fun openInCustomTab(context: Context, url: String) {
     try {
         CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(url))
     } catch (e: Exception) {
+        AppLog.e("CustomTabs", "Falha ao abrir Custom Tab pra url=$url -- usando Intent.ACTION_VIEW de fallback", e)
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 }

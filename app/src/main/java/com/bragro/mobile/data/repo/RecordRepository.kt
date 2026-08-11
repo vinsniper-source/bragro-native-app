@@ -1,18 +1,21 @@
 package com.bragro.mobile.data.repo
 
 import android.content.Context
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.local.AppDatabase
 import com.bragro.mobile.data.local.PendingSyncEntity
 import com.bragro.mobile.data.local.RecordEntity
 import com.bragro.mobile.data.model.RecordsRequest
 import com.bragro.mobile.data.model.SyncRequest
+import com.bragro.mobile.data.model.SyncResponse
 import com.bragro.mobile.data.remote.NetworkModule
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import retrofit2.Response
 import java.util.UUID
 
 sealed class SaveResult {
@@ -45,6 +48,27 @@ class RecordRepository(private val context: Context) {
     suspend fun getRecord(domainId: String, id: String): Map<String, String?>? =
         db.recordDao().byId(domainId, id)?.let { jsonStringToMap(it.fieldsJson) }
 
+    /** orgId da sessao ATUALMENTE logada (Task #124, isolamento de cache
+     * por organizacao) -- gravado em todo RecordEntity/PendingSyncEntity
+     * criado a partir de agora, pra AuthRepository.login() conseguir
+     * decidir depois se a fila pendente pertence a mesma organizacao que
+     * esta logando ou a uma anterior (e deve ser limpa). Null se, por
+     * algum motivo, nao houver sessao cacheada ainda (nao deveria
+     * acontecer em uso normal -- login() sempre grava a SessionEntity
+     * antes de qualquer tela que chame create/update/deleteRecord). */
+    private suspend fun currentOrgId(): String? = db.sessionDao().get()?.orgId
+
+    /** Grava o "expectedVersion" (ultima edicao conhecida, ver
+     * AuditInfoRepository/DomainListScreen.loadAuditInfo) de um registro
+     * especifico -- Task #124 (deteccao de conflito de sync). Chamado
+     * sempre que a tela de lista busca o rotulo "Editado por" de cada
+     * card, pra manter esse valor atualizado localmente ANTES do usuario
+     * eventualmente editar o registro (updateRecord le esse campo pra
+     * mandar de volta ao backend em SyncRequest.expectedVersion). */
+    suspend fun updateExpectedVersion(domainId: String, id: String, version: String) {
+        db.recordDao().updateExpectedVersion(domainId, id, version)
+    }
+
     /** "Copiar último lançamento" (Task #51/#77) -- mesmo mecanismo generico
      * do site (data-table.tsx: abre o formulario de criacao pre-preenchido
      * com os campos do registro mais recente do modulo). Funciona igual pra
@@ -71,6 +95,7 @@ class RecordRepository(private val context: Context) {
             val body = response.body()
             if (!response.isSuccessful || body?.ok != true) return false
 
+            val orgId = currentOrgId()
             db.recordDao().clearSyncedForDomain(domainId)
             db.recordDao().upsertAll(
                 body.records.map { obj ->
@@ -79,11 +104,13 @@ class RecordRepository(private val context: Context) {
                         id = (obj["id"] as? JsonPrimitive)?.content ?: UUID.randomUUID().toString(),
                         fieldsJson = obj.toString(),
                         criadoEmMillis = System.currentTimeMillis(),
+                        orgId = orgId,
                     )
                 }
             )
             true
         } catch (e: Exception) {
+            AppLog.e("RecordRepository", "Falha ao atualizar cache local de registros do módulo domainId=$domainId a partir do servidor", e)
             false
         }
     }
@@ -94,19 +121,31 @@ class RecordRepository(private val context: Context) {
      * fila); se nao, fica pendente ate o SyncWorker conseguir. */
     suspend fun createRecord(domainId: String, fields: Map<String, String>): SaveResult {
         val localId = "local-${UUID.randomUUID()}"
+        val orgId = currentOrgId()
         db.recordDao().upsert(
-            RecordEntity(domainId = domainId, id = localId, fieldsJson = mapToJson(fields), criadoEmMillis = System.currentTimeMillis(), pendingCreate = true)
+            RecordEntity(domainId = domainId, id = localId, fieldsJson = mapToJson(fields), criadoEmMillis = System.currentTimeMillis(), pendingCreate = true, orgId = orgId)
         )
         val pendingId = db.pendingSyncDao().insert(
-            PendingSyncEntity(domainId = domainId, kind = "create", localRecordId = localId, serverRecordId = null, fieldsJson = mapToJson(fields), criadoEmMillis = System.currentTimeMillis())
+            PendingSyncEntity(domainId = domainId, kind = "create", localRecordId = localId, serverRecordId = null, fieldsJson = mapToJson(fields), criadoEmMillis = System.currentTimeMillis(), orgId = orgId)
         )
         return trySyncOne(pendingId) ?: SaveResult.SavedOffline
     }
 
     suspend fun updateRecord(domainId: String, recordId: String, fields: Map<String, String>): SaveResult {
-        db.recordDao().upsert(RecordEntity(domainId = domainId, id = recordId, fieldsJson = mapToJson(fields), criadoEmMillis = System.currentTimeMillis()))
+        val orgId = currentOrgId()
+        // Task #124 (deteccao de conflito) -- preserva o "expectedVersion" ja
+        // conhecido deste registro (gravado por updateExpectedVersion() na
+        // ultima vez que a tela buscou "Editado por") ANTES de sobrescrever a
+        // linha com os campos novos; e esse valor que vai no
+        // SyncRequest.expectedVersion mais abaixo (via PendingSyncEntity),
+        // pro backend saber se algum outro aparelho editou o registro
+        // depois da ultima vez que este aparelho conferiu.
+        val expectedVersion = db.recordDao().byId(domainId, recordId)?.expectedVersion
+        db.recordDao().upsert(
+            RecordEntity(domainId = domainId, id = recordId, fieldsJson = mapToJson(fields), criadoEmMillis = System.currentTimeMillis(), orgId = orgId, expectedVersion = expectedVersion)
+        )
         val pendingId = db.pendingSyncDao().insert(
-            PendingSyncEntity(domainId = domainId, kind = "update", localRecordId = recordId, serverRecordId = recordId, fieldsJson = mapToJson(fields), criadoEmMillis = System.currentTimeMillis())
+            PendingSyncEntity(domainId = domainId, kind = "update", localRecordId = recordId, serverRecordId = recordId, fieldsJson = mapToJson(fields), criadoEmMillis = System.currentTimeMillis(), orgId = orgId, expectedVersion = expectedVersion)
         )
         return trySyncOne(pendingId) ?: SaveResult.SavedOffline
     }
@@ -121,7 +160,7 @@ class RecordRepository(private val context: Context) {
     suspend fun deleteRecord(domainId: String, recordId: String): SaveResult {
         db.recordDao().deleteById(domainId, recordId)
         val pendingId = db.pendingSyncDao().insert(
-            PendingSyncEntity(domainId = domainId, kind = "delete", localRecordId = recordId, serverRecordId = recordId, fieldsJson = mapToJson(emptyMap()), criadoEmMillis = System.currentTimeMillis())
+            PendingSyncEntity(domainId = domainId, kind = "delete", localRecordId = recordId, serverRecordId = recordId, fieldsJson = mapToJson(emptyMap()), criadoEmMillis = System.currentTimeMillis(), orgId = currentOrgId())
         )
         return trySyncOne(pendingId) ?: SaveResult.SavedOffline
     }
@@ -131,7 +170,14 @@ class RecordRepository(private val context: Context) {
      * "Sincronizar agora"). */
     suspend fun syncAll(): Int {
         var sincronizados = 0
-        val pendentes = db.pendingSyncDao().allOnce()
+        // Task #124 (conflito de sync) -- itens ja marcados com
+        // conflictMessage NAO entram aqui: ja sabemos que vao bater 409 de
+        // novo (nada mudou do lado do servidor so porque o tempo passou),
+        // entao tentar de novo automaticamente so bateria rede sem motivo
+        // ate o usuario abrir o lancamento e decidir o que fazer. Continuam
+        // visiveis na fila (observeAll/observePending) pro banner do
+        // Início avisar sobre eles.
+        val pendentes = db.pendingSyncDao().allOnce().filter { it.conflictMessage == null }
         for (item in pendentes) {
             val result = trySyncOne(item.id)
             if (result is SaveResult.SavedOnline) sincronizados++
@@ -142,8 +188,15 @@ class RecordRepository(private val context: Context) {
     /** true se ainda sobrou algo na fila depois de um syncAll() -- usado
      * pelo SyncWorker pra saber se deve pedir retry ao WorkManager (antes
      * ele sempre retornava sucesso, mesmo com pendencia sobrando, entao
-     * nunca reagendava uma nova tentativa por conta propria). */
-    suspend fun hasPending(): Boolean = db.pendingSyncDao().allOnce().isNotEmpty()
+     * nunca reagendava uma nova tentativa por conta propria).
+     *
+     * Task #124 -- itens em conflito (conflictMessage != null) NAO contam
+     * aqui de proposito: eles so se resolvem com uma acao do usuario (abrir
+     * o lancamento, editar de novo ou descartar), nunca so tentando de novo
+     * -- se contassem, o WorkManager ficaria reagendando retry pra sempre
+     * (com backoff crescente) por causa de um item que nenhum retry
+     * automatico resolve. */
+    suspend fun hasPending(): Boolean = db.pendingSyncDao().allOnce().any { it.conflictMessage == null }
 
     /** Tenta sincronizar UM item da fila. Retorna null se nao ha conexao/
      * token (quem chamou entao assume que ficou pendente mesmo, sem erro). */
@@ -155,7 +208,7 @@ class RecordRepository(private val context: Context) {
             val fieldsMap = jsonStringToMap(pending.fieldsJson).mapValues { it.value ?: "" }
             var accessToken = tokens.first
             var response = NetworkModule.mobileApi.sync(
-                SyncRequest(accessToken, tokens.second, pending.domainId, pending.kind, pending.serverRecordId, fieldsMap)
+                SyncRequest(accessToken, tokens.second, pending.domainId, pending.kind, pending.serverRecordId, fieldsMap, pending.expectedVersion)
             )
 
             // Access token de vida curta (~1h) pode ja ter expirado se o
@@ -171,15 +224,35 @@ class RecordRepository(private val context: Context) {
                 if (newAccess != null) {
                     accessToken = newAccess
                     response = NetworkModule.mobileApi.sync(
-                        SyncRequest(accessToken, tokens.second, pending.domainId, pending.kind, pending.serverRecordId, fieldsMap)
+                        SyncRequest(accessToken, tokens.second, pending.domainId, pending.kind, pending.serverRecordId, fieldsMap, pending.expectedVersion)
                     )
                 }
             }
 
             val body = response.body()
             if (!response.isSuccessful || body?.ok != true) {
-                db.pendingSyncDao().marcarErro(pending.id, body?.error ?: "Erro ao sincronizar (codigo ${response.code()}).")
-                return SaveResult.Failure(body?.error ?: "Erro ao sincronizar.")
+                // Task #124 (deteccao de conflito) -- 409 com code="CONFLICT"
+                // e um caso ESPECIAL: nao e um erro generico (rede/validacao)
+                // que vale a pena tentar de novo sozinho, e um aviso de que
+                // outro aparelho editou o MESMO registro depois da ultima
+                // vez que este aparelho conferiu (ver expectedVersion acima).
+                // Como o corpo da resposta so chega em response.body() quando
+                // o HTTP e 2xx, aqui (response nao-2xx) o corpo real esta em
+                // errorBody() -- parseSyncErrorBody() le e interpreta isso.
+                val (code, message) = if (!response.isSuccessful) {
+                    parseSyncErrorBody(response)
+                } else {
+                    body?.code to body?.error
+                }
+                if (code == "CONFLICT") {
+                    val conflictMsg = message
+                        ?: "Este lançamento foi alterado por outro dispositivo desde a última sincronização."
+                    db.pendingSyncDao().marcarConflito(pending.id, conflictMsg)
+                    return SaveResult.Failure(conflictMsg)
+                }
+                val erro = message ?: body?.error ?: "Erro ao sincronizar (codigo ${response.code()})."
+                db.pendingSyncDao().marcarErro(pending.id, erro)
+                return SaveResult.Failure(erro)
             }
 
             db.pendingSyncDao().delete(pending.id)
@@ -190,13 +263,41 @@ class RecordRepository(private val context: Context) {
             // (chamado logo em seguida pela tela) busca a versao definitiva.
             if (pending.kind == "create") {
                 db.recordDao().upsert(
-                    RecordEntity(domainId = pending.domainId, id = pending.localRecordId, fieldsJson = pending.fieldsJson, criadoEmMillis = System.currentTimeMillis(), pendingCreate = false)
+                    RecordEntity(domainId = pending.domainId, id = pending.localRecordId, fieldsJson = pending.fieldsJson, criadoEmMillis = System.currentTimeMillis(), pendingCreate = false, orgId = pending.orgId)
                 )
             }
             refreshFromServer(pending.domainId)
             SaveResult.SavedOnline
         } catch (e: Exception) {
+            // Loga sempre (mesmo sendo o caso normal de "sem conexão") --
+            // sem isso, e impossivel distinguir depois um timeout/sem-rede
+            // real de um erro de verdade (ex.: parsing, bug) que
+            // silenciosamente deixa um item pendente pra sempre na fila.
+            AppLog.e("RecordRepository", "Falha ao sincronizar item pendente da fila (pendingId=$pendingId, kind=${pending.kind}, domainId=${pending.domainId})", e)
             null // sem conexao -- fica pendente, sem marcar como erro real
+        }
+    }
+
+    /** Le e interpreta o corpo de erro de uma resposta HTTP nao-2xx do
+     * /api/offline-sync (Task #124, deteccao de conflito) -- Retrofit so
+     * converte `response.body()` pro tipo esperado (SyncResponse) quando o
+     * HTTP e 2xx; quando nao e (ex.: 409 CONFLICT), o corpo bruto fica em
+     * `response.errorBody()`, sem conversao automatica. Le uma unica vez
+     * (errorBody() so pode ser consumido uma vez) e tenta extrair "code"/
+     * "message" do JSON -- devolve (null, null) se o corpo estiver vazio,
+     * nao for JSON valido, ou nao tiver esses campos (fail-open: quem
+     * chamou trata como erro generico nesse caso, igual a antes desta
+     * task). */
+    private fun parseSyncErrorBody(response: Response<SyncResponse>): Pair<String?, String?> {
+        return try {
+            val raw = response.errorBody()?.string() ?: return null to null
+            val obj = kotlinx.serialization.json.Json.parseToJsonElement(raw) as? JsonObject ?: return null to null
+            val code = (obj["code"] as? JsonPrimitive)?.content
+            val message = (obj["message"] as? JsonPrimitive)?.content
+            code to message
+        } catch (e: Exception) {
+            AppLog.e("RecordRepository", "Falha ao interpretar corpo de erro da resposta de /api/offline-sync", e)
+            null to null
         }
     }
 
@@ -214,6 +315,7 @@ class RecordRepository(private val context: Context) {
                 }
             }
         } catch (e: Exception) {
+            AppLog.e("RecordRepository", "Falha ao decodificar JSON de campos de um registro (fieldsJson corrompido?)", e)
             emptyMap()
         }
     }

@@ -1,6 +1,7 @@
 package com.bragro.mobile.data.repo
 
 import android.content.Context
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.model.FieldviewImportRequest
 import com.bragro.mobile.data.model.FieldviewRequest
@@ -30,6 +31,7 @@ class FieldviewRepository(context: Context) {
             val body = response.body()
             if (!response.isSuccessful || body?.ok != true) null else body
         } catch (e: Exception) {
+            AppLog.e("FieldviewRepository", "Falha ao buscar dados do FieldView (talhões/status)", e)
             null
         }
     }
@@ -56,6 +58,7 @@ class FieldviewRepository(context: Context) {
             val body = response.body()
             response.isSuccessful && body?.ok == true
         } catch (e: Exception) {
+            AppLog.e("FieldviewRepository", "Falha ao importar contorno de talhão (talhao=$talhao) via KML/KMZ", e)
             false
         }
     }

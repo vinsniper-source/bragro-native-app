@@ -1,6 +1,7 @@
 package com.bragro.mobile.data.repo
 
 import android.content.Context
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.local.AppDatabase
 import com.bragro.mobile.data.local.DashboardEntity
@@ -57,6 +58,7 @@ class DashboardRepository(context: Context) {
             )
             true
         } catch (e: Exception) {
+            AppLog.e("DashboardRepository", "Falha ao atualizar KPIs do Início (dashboard)", e)
             false
         }
     }

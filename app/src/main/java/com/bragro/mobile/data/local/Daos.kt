@@ -135,6 +135,22 @@ interface RecordDao {
     // espera rede pra refletir a ação do usuário na tela).
     @Query("DELETE FROM records WHERE domainId = :domainId AND id = :id")
     suspend fun deleteById(domainId: String, id: String)
+
+    // Task #124 -- grava o "expectedVersion" (última edição conhecida,
+    // vinda de /api/mobile/audit-info) sem reescrever o registro inteiro
+    // (evitaria sobrescrever fieldsJson/pendingCreate por engano). Usado
+    // por DomainListViewModel.loadAuditInfo() sempre que a tela busca o
+    // rótulo "Editado por" de cada card.
+    @Query("UPDATE records SET expectedVersion = :version WHERE domainId = :domainId AND id = :id")
+    suspend fun updateExpectedVersion(domainId: String, id: String, version: String)
+
+    // Task #124 (isolamento de cache por organização) -- limpa TODO o
+    // cache de registros de TODOS os módulos, não só um domainId (ver
+    // clearSyncedForDomain acima). Chamado só por AuthRepository.login()
+    // quando detecta que a organização recém-autenticada é diferente da
+    // última conhecida neste aparelho.
+    @Query("DELETE FROM records")
+    suspend fun clearAll()
 }
 
 @Dao
@@ -156,4 +172,20 @@ interface PendingSyncDao {
 
     @Query("UPDATE pending_sync SET ultimoErro = :erro WHERE id = :id")
     suspend fun marcarErro(id: Long, erro: String)
+
+    // Task #124 (conflito de sync) -- diferente de marcarErro: um item
+    // marcado aqui não entra mais no retry automático (ver
+    // RecordRepository.syncAll/hasPending), só volta a ser tentado se o
+    // usuário editar o lançamento de novo (o que cria um NOVO item na
+    // fila) ou se este for removido manualmente.
+    @Query("UPDATE pending_sync SET conflictMessage = :mensagem WHERE id = :id")
+    suspend fun marcarConflito(id: Long, mensagem: String)
+
+    // Task #124 (isolamento de cache por organização) -- ver
+    // RecordDao.clearAll(). Some com a fila pendente inteira quando a
+    // organização recém-autenticada é diferente da última conhecida neste
+    // aparelho (evita sincronizar um lançamento contra a organização
+    // errada).
+    @Query("DELETE FROM pending_sync")
+    suspend fun clearAll()
 }
