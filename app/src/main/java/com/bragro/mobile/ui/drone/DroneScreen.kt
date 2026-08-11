@@ -226,7 +226,16 @@ private fun DroneRecordCard(record: DroneRecordDto) {
     Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Column(modifier = Modifier.padding(12.dp)) {
             val tipoLabel = TIPOS_CAPTURA.firstOrNull { it.first == record.tipoCaptura }?.second ?: record.tipoCaptura
-            Text(tipoLabel, style = MaterialTheme.typography.titleSmall)
+            // Ícone + título -- achado real da re-auditoria (usuário: "faltam
+            // os ícones nos dois módulos"): diferente de FieldView (que já
+            // tinha ícone+label em TalhaoStatusList/MaquinaStatusList/
+            // BoundariesList), este card do Drone era só texto solto, sem
+            // NENHUM ícone -- a auditoria anterior tinha checado só o FAB/
+            // botão de anexo e concluído (errado) que o módulo já estava OK.
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.FlightTakeoff, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
+                Text(tipoLabel, style = MaterialTheme.typography.titleSmall)
+            }
             Text(isoDateOnlyDrone(record.data), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             record.talhao?.let { Text("Talhão: $it", style = MaterialTheme.typography.bodySmall) }
             record.piloto?.let { Text("Piloto: $it", style = MaterialTheme.typography.bodySmall) }

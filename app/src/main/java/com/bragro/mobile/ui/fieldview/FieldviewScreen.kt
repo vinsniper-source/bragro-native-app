@@ -219,9 +219,18 @@ fun FieldviewScreen(onBack: () -> Unit, viewModel: FieldviewViewModel = viewMode
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
+            // Ícone em cada aba (Eco/DirectionsCar/Map, mesmos já usados no
+            // conteudo de cada uma abaixo) -- pedido do usuário ("outros
+            // tantos ícones"), TabRow antes só tinha texto.
+            val tabIcons = listOf(Icons.Filled.Eco, Icons.Filled.DirectionsCar, Icons.Filled.Map)
             TabRow(selectedTabIndex = tab) {
                 tabs.forEachIndexed { i, label ->
-                    Tab(selected = tab == i, onClick = { tab = i }, text = { Text(label) })
+                    Tab(
+                        selected = tab == i,
+                        onClick = { tab = i },
+                        text = { Text(label) },
+                        icon = { Icon(tabIcons[i], contentDescription = null) },
+                    )
                 }
             }
             when {
