@@ -144,7 +144,14 @@ fun BRAgroNavHost() {
             DroneScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.FIELDVIEW) {
-            FieldviewScreen(onBack = { navController.popBackStack() })
+            FieldviewScreen(
+                onBack = { navController.popBackStack() },
+                // Atalho manual (botão + na aba Máquinas) -- pedido do
+                // usuário: em vez de duplicar o formulário completo de Frota
+                // dentro do FieldView (que só mostra um RESUMO automático
+                // dela), leva direto pro lançamento novo de Frota.
+                onNavigateToFrota = { navController.navigate(Routes.domainFormNew("frota")) },
+            )
         }
         composable(Routes.NFE_IMPORT) {
             NfeImportScreen(onBack = { navController.popBackStack() })

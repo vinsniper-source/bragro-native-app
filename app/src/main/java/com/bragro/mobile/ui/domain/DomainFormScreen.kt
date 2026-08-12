@@ -541,29 +541,61 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
             }
         }
         "select" -> {
+            // Combobox pesquisavel -- pedido do usuario ("quando clicar no
+            // campo apareça o teclado para facilitar a busca... são todos os
+            // campos que possuem lista suspensa de todos os módulos"). Antes
+            // o campo era "readOnly = true" (só abria a lista pra rolar e
+            // tocar, sem teclado nenhum) -- inútil pra listas longas como
+            // Local/Entidade/Categoria com dezenas de itens. Agora o campo é
+            // editável de verdade: digitar abre o teclado E filtra a lista
+            // (igual ao SearchableSelect novo em record-form.tsx no site).
             var expanded by remember { mutableStateOf(false) }
             val optionLabels = options?.associate { it.value to it.label } ?: emptyMap()
             val staticOpts = col.staticOptions
+            // (valor, rotulo) na mesma ordem que já vinha (staticOpts
+            // preserva ordem própria do domínio; options já chega ordenado
+            // alfabeticamente do Room -- ver LookupDao.byCategory).
+            val allOptions: List<Pair<String, String>> = staticOpts?.map { it to it }
+                ?: options?.map { it.value to it.label }
+                ?: emptyList()
+            var query by remember(value) { mutableStateOf(optionLabels[value] ?: value) }
+            val filtered = remember(query, allOptions) {
+                val q = query.trim()
+                if (q.isEmpty()) allOptions else allOptions.filter { it.second.contains(q, ignoreCase = true) }
+            }
             ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
                 OutlinedTextField(
-                    value = optionLabels[value] ?: value,
-                    onValueChange = {},
-                    readOnly = true,
+                    value = query,
+                    onValueChange = { typed -> query = typed; expanded = true },
                     label = { Text(fieldLabel(col)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     modifier = Modifier.fillMaxWidth().menuAnchor(),
                     colors = fieldColors,
                 )
-                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    DropdownMenuItem(text = { Text("(vazio)") }, onClick = { viewModel.setField(col.key, ""); expanded = false })
-                    if (staticOpts != null) {
-                        for (opt in staticOpts) {
-                            DropdownMenuItem(text = { Text(opt) }, onClick = { viewModel.setField(col.key, opt); expanded = false })
-                        }
-                    } else {
-                        for (opt in options.orEmpty()) {
-                            DropdownMenuItem(text = { Text(opt.label) }, onClick = { viewModel.setField(col.key, opt.value); expanded = false })
-                        }
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = {
+                        expanded = false
+                        // Fechou sem escolher nada novo -- volta o texto pro
+                        // que realmente está selecionado (senão um texto
+                        // digitado e não confirmado ficaria "preso" no campo).
+                        query = optionLabels[value] ?: value
+                    },
+                ) {
+                    DropdownMenuItem(text = { Text("(vazio)") }, onClick = {
+                        viewModel.setField(col.key, "")
+                        query = ""
+                        expanded = false
+                    })
+                    if (filtered.isEmpty()) {
+                        DropdownMenuItem(text = { Text("Nenhum resultado", color = MaterialTheme.colorScheme.onSurfaceVariant) }, onClick = {}, enabled = false)
+                    }
+                    for ((optValue, optLabel) in filtered) {
+                        DropdownMenuItem(text = { Text(optLabel) }, onClick = {
+                            viewModel.setField(col.key, optValue)
+                            query = optLabel
+                            expanded = false
+                        })
                     }
                 }
             }

@@ -189,6 +189,33 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
             onDone(ok)
         }
     }
+
+    /** Lançamento MANUAL de talhão, sem KML/KMZ nenhum -- pedido do usuário
+     * ("fieldview não tem a opção de lançar manualmente só automaticamente...
+     * insira o botão + em talhões, máquinas e fazendas/kml"). Reaproveita o
+     * MESMO endpoint/upsert de importBoundary acima, só que com um GeoJSON
+     * vazio (GeometryCollection sem geometrias) em vez do polígono parseado
+     * do arquivo -- o mapa (osmdroid) simplesmente não desenha contorno
+     * nenhum pra esse talhão, sem quebrar nada (ver MapPolygonsView abaixo,
+     * que já ignora silenciosamente uma geometria sem coordenadas). */
+    fun manualBoundary(talhao: String, nome: String?, farmId: String?, onDone: (Boolean) -> Unit) {
+        importing.value = true
+        importError.value = null
+        viewModelScope.launch {
+            val emptyGeoJson = kotlinx.serialization.json.buildJsonObject {
+                put("type", kotlinx.serialization.json.JsonPrimitive("GeometryCollection"))
+                put("geometries", kotlinx.serialization.json.buildJsonArray {})
+            }
+            val ok = repository.importBoundary(talhao, nome, emptyGeoJson, null, farmId?.takeIf { it.isNotBlank() })
+            if (ok) {
+                data.value = repository.fetch()
+            } else {
+                importError.value = "Falha ao lançar o talhão -- confira a conexão e tente de novo."
+            }
+            importing.value = false
+            onDone(ok)
+        }
+    }
 }
 
 private val IGNORED_KEYS = setOf("id", "orgId", "criadoEm", "editadoEm", "updatedAt")
@@ -213,7 +240,7 @@ private fun RawRecordFields(obj: JsonObject) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FieldviewScreen(onBack: () -> Unit, viewModel: FieldviewViewModel = viewModel()) {
+fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, viewModel: FieldviewViewModel = viewModel()) {
     val context = LocalContext.current
     LaunchedEffect(Unit) { viewModel.load() }
     // osmdroid exige um user agent nao-vazio (senao os servidores de tile
@@ -238,6 +265,9 @@ fun FieldviewScreen(onBack: () -> Unit, viewModel: FieldviewViewModel = viewMode
     val tabs = listOf("Talhões", "Máquinas", "Fazendas/KML")
     var pendingPolygons by remember { mutableStateOf<List<ParsedPolygon>>(emptyList()) }
     var pendingIndex by remember { mutableStateOf(0) }
+    // Diálogo de lançamento MANUAL de talhão (sem KML/KMZ) -- pedido do
+    // usuário. Aberto pelo botão "+" nas abas Talhões e Fazendas/KML.
+    var manualDialogOpen by remember { mutableStateOf(false) }
 
     val kmlPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         if (uri != null) {
@@ -303,6 +333,23 @@ fun FieldviewScreen(onBack: () -> Unit, viewModel: FieldviewViewModel = viewMode
                     )
                 }
             }
+            // Botão "+" de lançamento MANUAL -- pedido do usuário ("insira o
+            // botão + em talhões, máquinas e fazendas/kml"), pra deixar as
+            // duas opções (automático E manual) em cada aba. Talhões/
+            // Fazendas-KML abrem o mesmo diálogo (criar talhão sem arquivo);
+            // Máquinas leva pro lançamento novo de Frota (essa aba é só um
+            // RESUMO automático do que já existe em Frota, não faz sentido
+            // duplicar o formulário inteiro aqui dentro).
+            Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                when (tab) {
+                    0, 2 -> OutlinedButton(onClick = { manualDialogOpen = true }) {
+                        Text("+ Lançar talhão manualmente")
+                    }
+                    1 -> OutlinedButton(onClick = onNavigateToFrota) {
+                        Text("+ Lançar máquina manualmente (Frota)")
+                    }
+                }
+            }
             when {
                 loading -> Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator(modifier = Modifier.padding(top = 24.dp))
@@ -319,6 +366,20 @@ fun FieldviewScreen(onBack: () -> Unit, viewModel: FieldviewViewModel = viewMode
                 }
             }
         }
+    }
+
+    if (manualDialogOpen) {
+        ManualBoundaryDialog(
+            saving = importing,
+            error = importError,
+            farms = farms,
+            onDismiss = { manualDialogOpen = false },
+            onConfirm = { talhao, nome, farmId ->
+                viewModel.manualBoundary(talhao, nome, farmId) { ok ->
+                    if (ok) manualDialogOpen = false
+                }
+            },
+        )
     }
 
     val currentPolygon = pendingPolygons.getOrNull(pendingIndex)
@@ -588,6 +649,66 @@ private fun ImportBoundaryDialog(
             Button(
                 enabled = !saving && talhao.isNotBlank(),
                 onClick = { onConfirm(talhao.trim(), selectedFarm?.id) },
+            ) {
+                if (saving) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Salvar")
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !saving) { Text("Cancelar") } },
+    )
+}
+
+/** Diálogo de lançamento MANUAL de talhão (sem KML/KMZ) -- pedido do
+ * usuário. Mesmo layout do ImportBoundaryDialog acima, só que sem o passo
+ * de escolher um arquivo/polígono: o usuário digita o número/nome do talhão
+ * direto, e o servidor cria o registro com um GeoJSON vazio (ver
+ * FieldviewViewModel.manualBoundary). O contorno pode ser importado depois,
+ * a qualquer momento, sem perder o vínculo (upsert por [orgId, talhao]). */
+@Composable
+private fun ManualBoundaryDialog(
+    saving: Boolean,
+    error: String?,
+    farms: List<FarmEntity>,
+    onDismiss: () -> Unit,
+    onConfirm: (talhao: String, nome: String?, farmId: String?) -> Unit,
+) {
+    var talhao by remember { mutableStateOf("") }
+    var nome by remember { mutableStateOf("") }
+    var selectedFarm by remember { mutableStateOf<FarmEntity?>(null) }
+
+    AlertDialog(
+        onDismissRequest = { if (!saving) onDismiss() },
+        title = { Text("Lançar talhão manualmente") },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    "Cria o talhão na hora, sem precisar de um arquivo KML/KMZ. Você pode importar o contorno depois, se quiser.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                OutlinedTextField(
+                    value = talhao, onValueChange = { talhao = it },
+                    label = { Text("Talhão (número/nome) *") }, singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = nome, onValueChange = { nome = it },
+                    label = { Text("Nome (opcional)") }, singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OptionalFarmDropdown(
+                    farms = farms,
+                    selected = selectedFarm,
+                    onSelect = { selectedFarm = it },
+                )
+                if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = !saving && talhao.isNotBlank(),
+                onClick = { onConfirm(talhao.trim(), nome.trim().ifBlank { null }, selectedFarm?.id) },
             ) {
                 if (saving) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Salvar")
             }

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Sync
 import com.bragro.mobile.ui.theme.Card
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,6 +35,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -140,6 +142,13 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
         val missingCount = data?.get("missingCount")?.jsonPrimitive?.contentOrNull?.toIntOrNull() ?: 0
         val bySector = data?.get("bySector")?.jsonArray
         val farms = data?.get("farms")?.jsonArray
+        // Confirmacao (Sim/Nao) antes de importar -- pedido do usuario
+        // ("coloque a opcao nao tambem"), o botao antes disparava a
+        // importacao direto no toque, sem chance de desistir. So traz
+        // itens padrao que ainda NAO existem nesta organizacao e que o
+        // usuario nunca excluiu de proposito (ver import_defaults/
+        // LookupOptionExclusion em api/mobile/base-de-dados/route.ts).
+        var showImportConfirm by remember { mutableStateOf(false) }
 
         LazyColumn(
             contentPadding = PaddingValues(12.dp, padding.calculateTopPadding() + 4.dp, 12.dp, 24.dp),
@@ -153,7 +162,7 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text("Há $missingCount item(ns) padrão ainda não importados (categorias e/ou fazendas).", style = MaterialTheme.typography.bodyMedium)
-                            Button(onClick = { viewModel.importDefaults() }, enabled = !busy, modifier = Modifier.padding(top = 8.dp)) {
+                            Button(onClick = { showImportConfirm = true }, enabled = !busy, modifier = Modifier.padding(top = 8.dp)) {
                                 Text("Importar padrões")
                             }
                         }
@@ -186,6 +195,23 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
                     )
                 }
             }
+        }
+
+        if (showImportConfirm) {
+            AlertDialog(
+                onDismissRequest = { showImportConfirm = false },
+                title = { Text("Importar dados padrão?") },
+                text = { Text("Isso vai trazer $missingCount item(ns) padrão (categorias/valores de listas suspensas e/ou fazendas) que ainda não existem nesta organização. Valores que você já excluiu de propósito não são repostos.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showImportConfirm = false
+                        viewModel.importDefaults()
+                    }) { Text("Sim, importar") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showImportConfirm = false }) { Text("Não") }
+                },
+            )
         }
     }
 }

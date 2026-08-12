@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -393,9 +392,6 @@ fun DomainListScreen(
         // critério do site: noPedido/item/criadoEm), então checar o
         // (noPedido,item) do próximo registro na lista já visível basta.
         val isPedidos = domainId == "pedidos"
-        // Agrupamento visual de Safra por Safra+Cultura+Local+Operação (ver
-        // groupSafraRecords/SAFRA_GROUP_KEYS) -- pedido do usuário.
-        val isSafra = domainId == "safra"
         LazyColumn(
             contentPadding = PaddingValues(12.dp, padding.calculateTopPadding() + 4.dp, 12.dp, 80.dp),
             // Sem isso os blocos (Gráficos, Calculadoras, Recalcular Área,
@@ -1049,41 +1045,16 @@ fun DomainListScreen(
                     Text(msg, modifier = Modifier.padding(vertical = 24.dp))
                 }
             } else if (allExpanded) {
-                // Safra: registros do MESMO grupo (Safra+Cultura+Local+
-                // Operação) ficam adjacentes (ver groupSafraRecords) --
-                // nos demais módulos, displayRecords é idêntico a
-                // filteredRecords (isEmpty/sem custo extra).
-                val displayRecords = if (isSafra) groupSafraRecords(filteredRecords) else filteredRecords
-                itemsIndexed(displayRecords, key = { _, it -> it["id"] ?: it.hashCode().toString() }) { index, record ->
+                // Agrupamento visual de Safra (Safra+Cultura+Local+Operação
+                // no mesmo bloco) foi implementado e DESFEITO a pedido do
+                // usuário na mesma sessão -- volta a ser uma lista plana,
+                // cada lançamento seu próprio card, igual aos demais módulos.
+                items(filteredRecords, key = { it["id"] ?: it.hashCode().toString() }) { record ->
                     val recordId = record["id"]
                     val isLastOfGroup = isPedidos && run {
                         val idx = filteredRecords.indexOf(record)
                         val next = filteredRecords.getOrNull(idx + 1)
                         next == null || next["noPedido"] != record["noPedido"] || next["item"] != record["item"]
-                    }
-                    // Cabeçalho do grupo -- mostra Safra/Cultura/Local/
-                    // Operação UMA vez só para todo o bloco de lançamentos
-                    // com esses 4 campos iguais (pedido do usuário: "coloque
-                    // as informações no mesmo bloco... independente da
-                    // data"), em vez de repetir os mesmos 4 valores em cada
-                    // card de cada data.
-                    val isFirstOfSafraGroup = isSafra && (index == 0 || safraGroupKey(displayRecords[index - 1]) != safraGroupKey(record))
-                    if (isFirstOfSafraGroup) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(top = if (index == 0) 0.dp else 10.dp, bottom = 2.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            listOf("safra" to record["safra"], "cultura" to record["cultura"], "local" to record["local"], "operacao" to record["operacao"])
-                                .filter { !it.second.isNullOrBlank() }
-                                .forEach { (key, value) ->
-                                    Text(
-                                        "${cfg.columns.firstOrNull { c -> c.key == key }?.label ?: key}: $value",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                        }
                     }
                     // Mostra TODAS as colunas visíveis (não só as 4
                     // primeiras) -- pedido do usuário ("mostre o bloco
@@ -1091,12 +1062,9 @@ fun DomainListScreen(
                     // lançamentos"), em 2 colunas quando o card está
                     // expandido. Recolhido, continua com um resumo curto (as
                     // mesmas 4 primeiras de antes) pra lista não ficar
-                    // gigante por padrão. Em Safra, Safra/Cultura/Local/
-                    // Operação já foram pro cabeçalho do grupo acima -- não
-                    // repete aqui dentro do card individual.
+                    // gigante por padrão.
                     val allVisibleCols = cfg.columns.filter {
-                        !it.hideInTable && visibleKeys.contains(it.key) && !record[it.key].isNullOrBlank() &&
-                            !(isSafra && it.key in SAFRA_GROUP_KEYS)
+                        !it.hideInTable && visibleKeys.contains(it.key) && !record[it.key].isNullOrBlank()
                     }
                     val summaryCols = allVisibleCols.take(4)
                     val hasMore = allVisibleCols.size > summaryCols.size
@@ -1328,32 +1296,6 @@ fun formatAuditEntry(entry: com.bragro.mobile.data.model.AuditEntry): String {
     val display = java.text.SimpleDateFormat("dd/MM HH:mm", java.util.Locale("pt", "BR"))
     val whenText = try { display.format(parser.parse(entry.createdAt)!!) } catch (e: Exception) { entry.createdAt }
     return "Editado por ${entry.userEmail} em $whenText"
-}
-
-// Agrupamento de lançamentos de Safra por Safra+Cultura+Local+Operação,
-// independente da Data (pedido do usuário: "coloque as informações no
-// mesmo bloco safra, independente da data se a safra, cultura, local e
-// operação forem iguais, insira no mesmo bloco no mobile nativo"). Só o
-// app nativo tem essa agrupação visual (a tabela do site já mostra tudo
-// em linhas, sem esse problema de repetir Safra/Cultura/Local/Operação em
-// cada card, que é uma limitação só do layout em cards do app).
-private val SAFRA_GROUP_KEYS = setOf("safra", "cultura", "local", "operacao")
-
-private fun safraGroupKey(record: Map<String, String>): String =
-    SAFRA_GROUP_KEYS.joinToString("|") { record[it] ?: "" }
-
-/** Reordena os lançamentos de Safra pra que os do MESMO grupo (Safra+
- * Cultura+Local+Operação) fiquem adjacentes -- sem isso, dois lançamentos
- * do mesmo grupo em datas bem diferentes ficariam espalhados pela lista
- * (ordenada por data) e nunca apareceriam "no mesmo bloco" visualmente,
- * por mais que a chave de agrupamento fosse igual. Mantém a ordem relativa
- * de cada grupo (e a ordem dos grupos entre si) igual à primeira aparição
- * na lista já filtrada/ordenada por data -- só agrupa, não muda o critério
- * de ordenação por data escolhido pelo usuário nos filtros. */
-private fun groupSafraRecords(records: List<Map<String, String>>): List<Map<String, String>> {
-    val grouped = LinkedHashMap<String, MutableList<Map<String, String>>>()
-    for (r in records) grouped.getOrPut(safraGroupKey(r)) { mutableListOf() }.add(r)
-    return grouped.values.flatten()
 }
 
 // Uma linha de campo dentro do card de lançamento -- mesmo critério
