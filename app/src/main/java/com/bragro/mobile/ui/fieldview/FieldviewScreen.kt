@@ -66,8 +66,13 @@ import com.bragro.mobile.data.kml.polygonToGeoJson
 import com.bragro.mobile.data.local.FarmEntity
 import com.bragro.mobile.data.model.FieldBoundaryDto
 import com.bragro.mobile.data.model.FieldviewResponse
+import com.bragro.mobile.data.model.ProviderIntegrationDto
 import com.bragro.mobile.data.repo.ConfigRepository
 import com.bragro.mobile.data.repo.FieldviewRepository
+import com.bragro.mobile.data.repo.IntegrationModule
+import com.bragro.mobile.data.repo.ProviderIntegrationRepository
+import com.bragro.mobile.ui.domain.IntegrationBusy
+import com.bragro.mobile.ui.domain.ProviderIntegrationCard
 import com.bragro.mobile.ui.domain.displayValueFor
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonElement
@@ -90,6 +95,9 @@ import org.osmdroid.views.overlay.Polygon as OsmPolygon
 class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
     private val repository = FieldviewRepository(app)
     private val configRepository = ConfigRepository(app)
+    // Card "Acesso automático via prestadora de serviço" (Task #341/#54) --
+    // ver ProviderIntegrationRepository.kt/ProviderIntegrationCard.kt.
+    private val integrationRepository = ProviderIntegrationRepository(app, IntegrationModule.FIELDVIEW)
 
     var data = mutableStateOf<FieldviewResponse?>(null)
         private set
@@ -104,6 +112,12 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
     // "Fazenda (opcional)" do diálogo de import de KML/KMZ.
     var farms = mutableStateOf<List<FarmEntity>>(emptyList())
         private set
+    var integration = mutableStateOf<ProviderIntegrationDto?>(null)
+        private set
+    var integrationBusy = mutableStateOf<IntegrationBusy?>(null)
+        private set
+    var integrationMessage = mutableStateOf<String?>(null)
+        private set
 
     fun load() {
         loading.value = true
@@ -112,6 +126,44 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
             loading.value = false
         }
         viewModelScope.launch { farms.value = configRepository.farms() }
+        viewModelScope.launch { integration.value = integrationRepository.get() }
+    }
+
+    fun saveIntegration(provedor: String, apiKey: String) {
+        integrationBusy.value = IntegrationBusy.SALVANDO
+        integrationMessage.value = null
+        viewModelScope.launch {
+            val ok = integrationRepository.save(provedor, apiKey)
+            integrationMessage.value = if (ok) "Credencial salva." else "Falha ao salvar credencial -- confira a conexão e tente de novo."
+            if (ok) integration.value = integrationRepository.get()
+            integrationBusy.value = null
+        }
+    }
+
+    fun disconnectIntegration() {
+        integrationBusy.value = IntegrationBusy.DESCONECTANDO
+        integrationMessage.value = null
+        viewModelScope.launch {
+            val ok = integrationRepository.disconnect()
+            if (ok) {
+                integration.value = integrationRepository.get()
+                integrationMessage.value = "Integração desconectada."
+            } else {
+                integrationMessage.value = "Falha ao desconectar -- confira a conexão e tente de novo."
+            }
+            integrationBusy.value = null
+        }
+    }
+
+    fun syncIntegration() {
+        integrationBusy.value = IntegrationBusy.SINCRONIZANDO
+        integrationMessage.value = null
+        viewModelScope.launch {
+            val result = integrationRepository.sync()
+            integrationMessage.value = result.mensagem
+            integration.value = integrationRepository.get()
+            integrationBusy.value = null
+        }
     }
 
     /** Importa um talhão parseado de um KML/KMZ -- converte pra GeoJSON e
@@ -179,6 +231,9 @@ fun FieldviewScreen(onBack: () -> Unit, viewModel: FieldviewViewModel = viewMode
     val importing by viewModel.importing
     val importError by viewModel.importError
     val farms by viewModel.farms
+    val integration by viewModel.integration
+    val integrationBusy by viewModel.integrationBusy
+    val integrationMessage by viewModel.integrationMessage
     var tab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Talhões", "Máquinas", "Fazendas/KML")
     var pendingPolygons by remember { mutableStateOf<List<ParsedPolygon>>(emptyList()) }
@@ -218,6 +273,21 @@ fun FieldviewScreen(onBack: () -> Unit, viewModel: FieldviewViewModel = viewMode
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+            // Card "Acesso automático via prestadora de serviço" (Task
+            // #341/#54) -- mesma posição/UX do site (topo da tela, acima das
+            // abas, ver fieldview-client.tsx), única peça que ainda faltava
+            // no mobile (a credencial já era 100% funcional no site).
+            ProviderIntegrationCard(
+                providers = listOf("John Deere Operations Center", "Climate FieldView", "Trimble Ag Software", "Outro"),
+                descricao = "Hoje os limites de talhão são importados manualmente por KML/KMZ. A credencial abaixo já fica salva com segurança; a sincronização automática ainda depende de aprovação de parceiro junto ao fabricante.",
+                integration = integration,
+                busy = integrationBusy,
+                syncMessage = integrationMessage,
+                onSave = { provedor, apiKey -> viewModel.saveIntegration(provedor, apiKey) },
+                onDisconnect = { viewModel.disconnectIntegration() },
+                onSync = { viewModel.syncIntegration() },
+                modifier = Modifier.padding(horizontal = 16.dp),
             )
             // Ícone em cada aba (Eco/DirectionsCar/Map, mesmos já usados no
             // conteudo de cada uma abaixo) -- pedido do usuário ("outros

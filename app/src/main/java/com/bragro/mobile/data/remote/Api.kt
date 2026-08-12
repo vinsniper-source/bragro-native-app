@@ -43,6 +43,14 @@ import com.bragro.mobile.data.model.NoticesRequest
 import com.bragro.mobile.data.model.NoticesResponse
 import com.bragro.mobile.data.model.NotificationsRequest
 import com.bragro.mobile.data.model.NotificationsResponse
+import com.bragro.mobile.data.model.GetProviderIntegrationRequest
+import com.bragro.mobile.data.model.GetProviderIntegrationResponse
+import com.bragro.mobile.data.model.SaveProviderIntegrationRequest
+import com.bragro.mobile.data.model.SaveProviderIntegrationResponse
+import com.bragro.mobile.data.model.DisconnectProviderIntegrationRequest
+import com.bragro.mobile.data.model.DisconnectProviderIntegrationResponse
+import com.bragro.mobile.data.model.SyncProviderIntegrationRequest
+import com.bragro.mobile.data.model.SyncProviderIntegrationResponse
 import com.bragro.mobile.data.model.RecordsRequest
 import com.bragro.mobile.data.model.RecordsResponse
 import com.bragro.mobile.data.model.SecurityRequest
@@ -143,6 +151,36 @@ interface MobileApi {
     // do JSON, ver comentario em FieldviewImportRequest/Models.kt).
     @POST("api/mobile/fieldview")
     suspend fun importFieldBoundary(@Body body: FieldviewImportRequest): Response<FieldviewImportResponse>
+
+    // Card "Acesso automático via prestadora de serviço" (Task #341/#54) --
+    // 4 ações novas na mesma rota /api/mobile/fieldview, distinguidas pelo
+    // "action" dentro do corpo (mesma convenção de importFieldBoundary()
+    // acima). Ver ProviderIntegrationRepository.kt.
+    @POST("api/mobile/fieldview")
+    suspend fun fieldviewGetIntegration(@Body body: GetProviderIntegrationRequest): Response<GetProviderIntegrationResponse>
+
+    @POST("api/mobile/fieldview")
+    suspend fun fieldviewSaveIntegration(@Body body: SaveProviderIntegrationRequest): Response<SaveProviderIntegrationResponse>
+
+    @POST("api/mobile/fieldview")
+    suspend fun fieldviewDisconnectIntegration(@Body body: DisconnectProviderIntegrationRequest): Response<DisconnectProviderIntegrationResponse>
+
+    @POST("api/mobile/fieldview")
+    suspend fun fieldviewSyncIntegration(@Body body: SyncProviderIntegrationRequest): Response<SyncProviderIntegrationResponse>
+
+    // Mesmas 4 ações, agora na rota /api/mobile/drone -- mesmo corpo/
+    // resposta (o módulo é implícito na URL, ver comentário em Models.kt).
+    @POST("api/mobile/drone")
+    suspend fun droneGetIntegration(@Body body: GetProviderIntegrationRequest): Response<GetProviderIntegrationResponse>
+
+    @POST("api/mobile/drone")
+    suspend fun droneSaveIntegration(@Body body: SaveProviderIntegrationRequest): Response<SaveProviderIntegrationResponse>
+
+    @POST("api/mobile/drone")
+    suspend fun droneDisconnectIntegration(@Body body: DisconnectProviderIntegrationRequest): Response<DisconnectProviderIntegrationResponse>
+
+    @POST("api/mobile/drone")
+    suspend fun droneSyncIntegration(@Body body: SyncProviderIntegrationRequest): Response<SyncProviderIntegrationResponse>
 
     @POST("api/mobile/nfe-preview")
     suspend fun nfePreview(@Body body: NfePreviewRequest): Response<NfePreviewResponse>

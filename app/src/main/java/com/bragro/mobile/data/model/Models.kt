@@ -732,6 +732,65 @@ data class FieldviewImportResponse(
     val error: String? = null,
 )
 
+// Card "Acesso automático via prestadora de serviço" (Task #341/#54) --
+// réplica mobile do ProviderIntegrationCard do site (ver
+// components/domain/provider-integration-card.tsx e
+// lib/services/provider-integration.ts). Mesmas 4 ações novas em
+// /api/mobile/fieldview E /api/mobile/drone (o módulo é implícito na URL,
+// não vai no corpo) -- por isso um único conjunto de request/response serve
+// os dois, ver métodos *GetIntegration/*SaveIntegration/etc. em Api.kt e
+// ProviderIntegrationRepository.kt.
+@Serializable
+data class ProviderIntegrationDto(
+    val provedor: String? = null,
+    val apiKeyConfigurado: Boolean = false,
+    // "DESCONECTADO" | "CONECTADO" | "ERRO" -- mesmo enum de status do site.
+    val status: String = "DESCONECTADO",
+    val ultimaSincronizacaoEm: String? = null,
+)
+
+@Serializable
+data class GetProviderIntegrationRequest(
+    val accessToken: String, val refreshToken: String, val action: String = "get_integration",
+)
+
+@Serializable
+data class GetProviderIntegrationResponse(
+    val ok: Boolean, val integration: ProviderIntegrationDto? = null, val error: String? = null,
+)
+
+@Serializable
+data class SaveProviderIntegrationRequest(
+    val accessToken: String, val refreshToken: String, val action: String = "save_integration",
+    val provedor: String, val apiKey: String,
+)
+
+@Serializable
+data class SaveProviderIntegrationResponse(val ok: Boolean, val error: String? = null)
+
+@Serializable
+data class DisconnectProviderIntegrationRequest(
+    val accessToken: String, val refreshToken: String, val action: String = "disconnect_integration",
+)
+
+@Serializable
+data class DisconnectProviderIntegrationResponse(val ok: Boolean, val error: String? = null)
+
+@Serializable
+data class SyncProviderIntegrationRequest(
+    val accessToken: String, val refreshToken: String, val action: String = "sync_integration",
+)
+
+// "ok" aqui reflete o resultado da sincronização em si (hoje sempre false --
+// ver comentário de topo em provider-integration.ts: depende de aprovação
+// de parceiro do fabricante), não sucesso HTTP -- diferente das outras
+// respostas acima. "mensagem" é sempre preenchida pelo backend para exibir
+// ao usuário (sucesso ou stub explicando o motivo).
+@Serializable
+data class SyncProviderIntegrationResponse(
+    val ok: Boolean, val mensagem: String? = null, val error: String? = null,
+)
+
 // "Editado por" no card de cada lançamento (pedido do usuário: "editado
 // por + data/hora dentro do card, via histórico de alterações") -- devolve
 // só a última edição de cada recordId pedido, num único lote por tela de

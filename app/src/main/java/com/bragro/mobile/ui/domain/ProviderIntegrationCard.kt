@@ -1,0 +1,189 @@
+package com.bragro.mobile.ui.domain
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
+import com.bragro.mobile.data.model.ProviderIntegrationDto
+import com.bragro.mobile.ui.theme.Card
+
+/** "Ocupado com" -- espelha o `busy` (union "salvar"|"sync"|"desconectar"|
+ * null) do ProviderIntegrationCard do site, só que tipado em vez de String
+ * solta (evita erro de digitação, já que este enum só circula dentro do
+ * Compose, nunca vai pra rede -- diferente do "action" do corpo HTTP). */
+enum class IntegrationBusy { SALVANDO, SINCRONIZANDO, DESCONECTANDO }
+
+/** Card "Acesso automático via prestadora de serviço" (Task #341/#54) --
+ * réplica mobile do ProviderIntegrationCard do site (ver
+ * components/domain/provider-integration-card.tsx), reaproveitando a mesma
+ * UX: colapsável e fechado por padrão, dropdown de provedor + campo de
+ * senha/token, botões Salvar/Desconectar, e "Testar sincronização" quando
+ * já conectado (mesmo aviso de que a sincronização automática em si ainda
+ * depende de aprovação de parceiro do fabricante -- ver mensagem que volta
+ * em [onSync]). Compartilhado entre FieldviewScreen e DroneScreen: só muda
+ * a lista de provedores e a descrição por módulo (ver chamadas em cada
+ * tela). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProviderIntegrationCard(
+    providers: List<String>,
+    descricao: String,
+    integration: ProviderIntegrationDto?,
+    busy: IntegrationBusy?,
+    syncMessage: String?,
+    onSave: (provedor: String, apiKey: String) -> Unit,
+    onDisconnect: () -> Unit,
+    onSync: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var open by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
+    var provedor by remember(integration?.provedor) { mutableStateOf(integration?.provedor ?: "") }
+    var apiKey by remember { mutableStateOf("") }
+    val conectado = integration?.status == "CONECTADO"
+
+    Card(modifier = modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.Bolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
+            Text(
+                "Acesso automático via prestadora de serviço",
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.weight(1f),
+            )
+            if (conectado) {
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = MaterialTheme.shapes.small,
+                ) {
+                    Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.height(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(integration?.provedor ?: "", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            } else {
+                Text("Não conectado", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            IconButtonToggle(open) { open = !open }
+        }
+        if (open) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).padding(bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(descricao, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+                    OutlinedTextField(
+                        value = provedor, onValueChange = {}, readOnly = true,
+                        label = { Text("Provedor") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    )
+                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        providers.forEach { p -> DropdownMenuItem(text = { Text(p) }, onClick = { provedor = p; expanded = false }) }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = apiKey, onValueChange = { apiKey = it },
+                    label = { Text("API Key / Token") },
+                    placeholder = { Text(if (integration?.apiKeyConfigurado == true) "•••••••• (salvo)" else "Cole aqui a credencial do provedor") },
+                    leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        enabled = busy == null && provedor.isNotBlank() && apiKey.isNotBlank(),
+                        onClick = { onSave(provedor, apiKey.trim()); apiKey = "" },
+                    ) {
+                        if (busy == IntegrationBusy.SALVANDO) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Salvar")
+                    }
+                    if (conectado) {
+                        OutlinedButton(enabled = busy == null, onClick = onDisconnect) {
+                            if (busy == IntegrationBusy.DESCONECTANDO) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Desconectar")
+                        }
+                    }
+                }
+
+                if (conectado) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(enabled = busy == null, onClick = onSync) {
+                            if (busy == IntegrationBusy.SINCRONIZANDO) {
+                                CircularProgressIndicator(modifier = Modifier.height(18.dp))
+                            } else {
+                                Icon(Icons.Filled.Sync, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                            }
+                            Text("Testar sincronização")
+                        }
+                    }
+                    integration?.ultimaSincronizacaoEm?.let {
+                        Text("Última sincronização: ${formatIsoDateTime(it)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+
+                syncMessage?.let {
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun IconButtonToggle(open: Boolean, onClick: () -> Unit) {
+    androidx.compose.material3.IconButton(onClick = onClick) {
+        Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
+    }
+}
+
+/** "AAAA-MM-DDTHH:mm:ss..." (ISO, mesmo formato que Prisma/Next.js mandam)
+ * -> "DD/MM/AAAA HH:mm", mesmo padrão pt-BR do resto do app (ver
+ * isoDateOnlyDrone em DroneScreen.kt). String crua se o formato vier
+ * inesperado, em vez de derrubar a tela. */
+private fun formatIsoDateTime(iso: String): String {
+    val m = Regex("^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2})").find(iso) ?: return iso
+    val (y, mo, d, h, min) = m.destructured
+    return "$d/$mo/$y $h:$min"
+}

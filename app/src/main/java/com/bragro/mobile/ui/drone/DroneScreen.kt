@@ -54,9 +54,14 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bragro.mobile.data.local.LookupEntity
 import com.bragro.mobile.data.model.DroneRecordDto
+import com.bragro.mobile.data.model.ProviderIntegrationDto
 import com.bragro.mobile.data.repo.ConfigRepository
 import com.bragro.mobile.data.repo.DroneRepository
 import com.bragro.mobile.data.repo.DroneUploadRepository
+import com.bragro.mobile.data.repo.IntegrationModule
+import com.bragro.mobile.data.repo.ProviderIntegrationRepository
+import com.bragro.mobile.ui.domain.IntegrationBusy
+import com.bragro.mobile.ui.domain.ProviderIntegrationCard
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -84,6 +89,9 @@ class DroneViewModel(app: Application) : AndroidViewModel(app) {
     private val configRepository = ConfigRepository(app)
     private val droneRepository = DroneRepository(app)
     private val uploadRepository = DroneUploadRepository(app)
+    // Card "Acesso automático via prestadora de serviço" (Task #341/#54) --
+    // ver ProviderIntegrationRepository.kt/ProviderIntegrationCard.kt.
+    private val integrationRepository = ProviderIntegrationRepository(app, IntegrationModule.DRONE)
 
     var records = mutableStateOf<List<DroneRecordDto>>(emptyList())
         private set
@@ -95,6 +103,12 @@ class DroneViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var errorMessage = mutableStateOf<String?>(null)
         private set
+    var integration = mutableStateOf<ProviderIntegrationDto?>(null)
+        private set
+    var integrationBusy = mutableStateOf<IntegrationBusy?>(null)
+        private set
+    var integrationMessage = mutableStateOf<String?>(null)
+        private set
 
     fun load() {
         loading.value = true
@@ -102,6 +116,44 @@ class DroneViewModel(app: Application) : AndroidViewModel(app) {
             talhoes.value = configRepository.lookupsByCategory("talhoes")
             records.value = droneRepository.list()
             loading.value = false
+        }
+        viewModelScope.launch { integration.value = integrationRepository.get() }
+    }
+
+    fun saveIntegration(provedor: String, apiKey: String) {
+        integrationBusy.value = IntegrationBusy.SALVANDO
+        integrationMessage.value = null
+        viewModelScope.launch {
+            val ok = integrationRepository.save(provedor, apiKey)
+            integrationMessage.value = if (ok) "Credencial salva." else "Falha ao salvar credencial -- confira a conexão e tente de novo."
+            if (ok) integration.value = integrationRepository.get()
+            integrationBusy.value = null
+        }
+    }
+
+    fun disconnectIntegration() {
+        integrationBusy.value = IntegrationBusy.DESCONECTANDO
+        integrationMessage.value = null
+        viewModelScope.launch {
+            val ok = integrationRepository.disconnect()
+            if (ok) {
+                integration.value = integrationRepository.get()
+                integrationMessage.value = "Integração desconectada."
+            } else {
+                integrationMessage.value = "Falha ao desconectar -- confira a conexão e tente de novo."
+            }
+            integrationBusy.value = null
+        }
+    }
+
+    fun syncIntegration() {
+        integrationBusy.value = IntegrationBusy.SINCRONIZANDO
+        integrationMessage.value = null
+        viewModelScope.launch {
+            val result = integrationRepository.sync()
+            integrationMessage.value = result.mensagem
+            integration.value = integrationRepository.get()
+            integrationBusy.value = null
         }
     }
 
@@ -160,6 +212,9 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
     val talhoes by viewModel.talhoes
     val saving by viewModel.saving
     val error by viewModel.errorMessage
+    val integration by viewModel.integration
+    val integrationBusy by viewModel.integrationBusy
+    val integrationMessage by viewModel.integrationMessage
     var showNovo by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -193,6 +248,20 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 12.dp),
+            )
+            // Card "Acesso automático via prestadora de serviço" (Task
+            // #341/#54) -- mesma posição/UX do site (topo da tela, ver
+            // drone-client.tsx), única peça que ainda faltava no mobile.
+            ProviderIntegrationCard(
+                providers = listOf("DJI Terra", "DJI Cloud", "XAG One", "Pix4Dfields", "Outro"),
+                descricao = "Hoje os voos são registrados manualmente com upload de arquivo. A credencial abaixo já fica salva com segurança; a sincronização automática ainda depende de aprovação de parceiro junto ao fabricante.",
+                integration = integration,
+                busy = integrationBusy,
+                syncMessage = integrationMessage,
+                onSave = { provedor, apiKey -> viewModel.saveIntegration(provedor, apiKey) },
+                onDisconnect = { viewModel.disconnectIntegration() },
+                onSync = { viewModel.syncIntegration() },
+                modifier = Modifier.padding(bottom = 4.dp),
             )
             when {
                 loading -> Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
