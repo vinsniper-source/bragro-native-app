@@ -115,6 +115,7 @@ import com.bragro.mobile.data.repo.NoticesRepository
 import com.bragro.mobile.data.repo.NotificationsRepository
 import com.bragro.mobile.data.repo.RecordRepository
 import com.bragro.mobile.data.repo.WeatherRepository
+import com.bragro.mobile.ui.domain.FarmSelectorButton
 import com.bragro.mobile.ui.theme.BrBlue
 import com.bragro.mobile.ui.theme.BrGreen
 import com.bragro.mobile.ui.theme.BrOrange
@@ -498,6 +499,11 @@ fun HomeScreen(
                             Icon(Icons.Filled.Backup, contentDescription = "Backup completo")
                         }
                     }
+                    // Filtro global de fazenda (ver FarmSelection.kt) --
+                    // mesmo lugar do cabeçalho do site (FarmSelector),
+                    // primeiro item do cluster de ícones. Só aparece com
+                    // fazendas cadastradas (checagem interna do componente).
+                    FarmSelectorButton()
                     IconButton(onClick = { notificationsOpen = true; viewModel.loadNotifications() }) {
                         BadgedBox(badge = { if (unreadCount > 0) Badge { Text(unreadCount.toString()) } }) {
                             Icon(

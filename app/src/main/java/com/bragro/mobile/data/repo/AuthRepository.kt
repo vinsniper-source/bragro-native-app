@@ -53,6 +53,11 @@ class AuthRepository(private val context: Context) {
                 if (lastOrgId != null && lastOrgId != newOrgId) {
                     db.recordDao().clearAll()
                     db.pendingSyncDao().clearAll()
+                    // Filtro global de fazenda (ver FarmSelection.kt) tambem
+                    // e por organizacao -- uma fazenda escolhida na org
+                    // anterior nao deve continuar filtrando os modulos da
+                    // org nova que acabou de logar neste mesmo aparelho.
+                    com.bragro.mobile.ui.domain.FarmSelection.clear(context)
                 }
                 tokenStore.setLastOrgId(newOrgId)
             }

@@ -246,6 +246,23 @@ fun DomainListScreen(
     } ?: emptyList()
     val columnFilters = remember(domainId) { mutableStateMapOf<String, String>() }
 
+    // Filtro global de fazenda (ver FarmSelection.kt, equivalente ao
+    // FarmSelector do cabecalho do site) -- quando ha uma fazenda escolhida
+    // e este dominio e "farm-linked", pre-preenche o filtro de
+    // Local/Fazenda deste modulo com ela, reaproveitando o MESMO
+    // columnFilters usado pelos filtros manuais logo acima. O usuario ainda
+    // pode trocar o filtro so nesta tela pelo dropdown de Filtros normal;
+    // ao voltar e reabrir o modulo (ou trocar a selecao global), volta a
+    // refletir a fazenda escolhida no cabecalho.
+    LaunchedEffect(Unit) { FarmSelection.load(context) }
+    val globalFarmField = remember(domainId) { FarmSelection.farmFieldFor(domainId) }
+    val globalFarmSelected = FarmSelection.selected.value
+    LaunchedEffect(domainId, globalFarmField, globalFarmSelected) {
+        if (globalFarmField != null) {
+            if (globalFarmSelected != null) columnFilters[globalFarmField] = globalFarmSelected else columnFilters.remove(globalFarmField)
+        }
+    }
+
     // Recolher/expandir todos os LANÇAMENTOS de uma vez -- pedido do usuário
     // ("a setinha só mexe nos cards de registro, sem abrir/fechar Filtros,
     // Gráficos, Calculadoras"; "os cards não ocultam" -- antes esse estado só
@@ -339,11 +356,21 @@ fun DomainListScreen(
                         IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary) }
                     }
                 },
-                // Sem "actions" aqui -- Atualizar/Recolher-Expandir/Colunas/
-                // Exportar mudaram pra fileira de ícones abaixo do título
-                // (item "module-icon-row"), pedido do usuário ("os ícones
-                // que estavam do lado do título, coloque-os saltando uma
-                // linha abaixo do título, e os insira no bloco").
+                // Sem "actions" aqui (Atualizar/Recolher-Expandir/Colunas/
+                // Exportar ficam na fileira de ícones abaixo do título, ver
+                // "module-icon-row") EXCETO o filtro global de fazenda: como
+                // ele afeta o app inteiro (nao so este módulo), fica no
+                // mesmo lugar do site (cabeçalho), não misturado com os
+                // ícones específicos deste módulo. Só aparece em módulos
+                // "farm-linked" (ver FarmSelection.farmFieldFor).
+                actions = {
+                    if (globalFarmField != null) {
+                        Column {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            FarmSelectorButton()
+                        }
+                    }
+                },
             )
         },
         floatingActionButton = {

@@ -18,6 +18,26 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.1.0] -- 2026-08-12
+
+- Preenchimento automático de despesas fixas mensais (Financeiro).
+- Base de Dados: importar padrões respeita valores excluídos manualmente
+  (não repõe mais o que o usuário apagou de propósito).
+- Correção do erro 400 ao sincronizar lançamentos offline (mensagem de
+  erro real chegava vazia pro app) + registro no Sentry.
+- Selects com busca (digitar filtra as opções) em Novo Lançamento, em
+  todos os módulos.
+- Lançamento manual (sem KML/KMZ) em FieldView -- Talhões, Máquinas e
+  Fazendas.
+- Confirmação (Sim/Não) antes de importar os valores padrão em Base de
+  Dados.
+- Reversão do agrupamento visual de lançamentos de Safra por bloco --
+  volta à listagem simples de sempre.
+- Seletor global de fazenda no cabeçalho (Início e cada módulo
+  farm-linked): ao escolher uma fazenda, os módulos Safra, Frota,
+  Financeiro, Colheita, Planejamento de Safra, Pragas e Clima já abrem
+  filtrados só pelas operações dela.
+
 ## [1.0.0] -- Fases 1, 2 e 3 (ainda não publicado na Play Store)
 
 Primeira versão completa do app nativo -- ainda não publicada, esta é a
