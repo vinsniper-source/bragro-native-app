@@ -61,7 +61,7 @@ import kotlinx.serialization.json.jsonPrimitive
 
 private val ROLES = listOf("ADMIN", "AGRONOMO", "FINANCEIRO", "RH", "OPERADOR", "CUSTOM")
 private val MODULES = listOf(
-    "financeiro" to "Financeiro", "pedidos" to "Pedidos", "estoque" to "Estoque",
+    "financeiro" to "Financeiro", "pedidos" to "Pedidos", "cotacoesfornecedores" to "Cotações de Fornecedores", "estoque" to "Estoque",
     "safra" to "Safra", "planejamentosafra" to "Planejamento de Safra", "colheita" to "Colheita",
     "romaneios" to "Romaneios", "contratos" to "Contratos", "inventario" to "Inventário (Ativos)",
     // Labels encurtados -- pedido do usuário (retirar "Recursos Humanos",

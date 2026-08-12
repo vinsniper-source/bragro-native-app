@@ -5,6 +5,7 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Agriculture
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.Balance
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Description
@@ -54,6 +55,7 @@ private val FALLBACK_SECTION = DomainSectionMeta("outros", "Outros", Color(0xFF6
 private val DOMAIN_SECTION_ID: Map<String, String> = mapOf(
     "financeiro" to "financeiro",
     "pedidos" to "financeiro",
+    "cotacoesfornecedores" to "financeiro",
     "contratos" to "financeiro",
     "caixainterno" to "financeiro",
     "cobrancas" to "financeiro",
@@ -81,6 +83,9 @@ private val DOMAIN_ICON: Map<String, ImageVector> = mapOf(
     // "Financeiro" e ao de DRE/Análises no dropdown, confundia.
     "financeiro" to Icons.Filled.Receipt,
     "pedidos" to Icons.Filled.ShoppingCart,
+    // Balanca (comparacao de propostas) -- mesmo espirito do icone "Scale"
+    // do site (lucide-react) pro modulo novo de Cotacoes de Fornecedores.
+    "cotacoesfornecedores" to Icons.Filled.Balance,
     "contratos" to Icons.Filled.Description,
     "caixainterno" to Icons.Filled.Payments,
     "cobrancas" to Icons.Filled.CreditCard,

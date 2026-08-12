@@ -24,7 +24,13 @@ interface SessionDao {
 
 @Dao
 interface LookupDao {
-    @Query("SELECT * FROM lookup_options WHERE category = :category ORDER BY `order` ASC")
+    // Ordem alfabetica (pedido do usuario: "coloque todas as listas
+    // suspensas em ordem alfabetica na plataforma e mobile") -- antes era
+    // por "order" (ordem de insercao no servidor). Mesmo criterio do
+    // bootstrap/route.ts no site (orderBy label asc), so que aqui e o DAO
+    // local (Room) que realmente decide a ordem exibida no app, ja que os
+    // dados sao cacheados localmente e relidos por categoria.
+    @Query("SELECT * FROM lookup_options WHERE category = :category ORDER BY label ASC")
     suspend fun byCategory(category: String): List<LookupEntity>
 
     @Query("DELETE FROM lookup_options")

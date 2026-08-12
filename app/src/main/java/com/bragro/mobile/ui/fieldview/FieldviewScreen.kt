@@ -279,7 +279,7 @@ fun FieldviewScreen(onBack: () -> Unit, viewModel: FieldviewViewModel = viewMode
             // abas, ver fieldview-client.tsx), única peça que ainda faltava
             // no mobile (a credencial já era 100% funcional no site).
             ProviderIntegrationCard(
-                providers = listOf("John Deere Operations Center", "Climate FieldView", "Trimble Ag Software", "Outro"),
+                providers = listOf("Climate FieldView", "John Deere Operations Center", "Outro", "Trimble Ag Software"),
                 descricao = "Hoje os limites de talhão são importados manualmente por KML/KMZ. A credencial abaixo já fica salva com segurança; a sincronização automática ainda depende de aprovação de parceiro junto ao fabricante.",
                 integration = integration,
                 busy = integrationBusy,

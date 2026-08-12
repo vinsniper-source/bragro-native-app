@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -95,7 +97,11 @@ fun CalcResultField(label: String, unit: String? = null, value: String) {
  * site) no topo e os campos empilhados embaixo. */
 @Composable
 fun CalcCard(icon: String, title: String, content: @Composable () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    // Sem borda externa (pedido do usuário, mesmo ajuste do CalcCard em
+    // agronomic-calculators.tsx no site) -- o Card padrão do tema
+    // (ui/theme/AppCard.kt) sempre desenha uma borda verde fina, sobrescrita
+    // aqui só nesta calculadora.
+    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("$icon $title", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
             content()

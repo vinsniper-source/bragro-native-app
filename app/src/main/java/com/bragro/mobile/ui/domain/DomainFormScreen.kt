@@ -403,6 +403,56 @@ fun DomainFormScreen(
     }
 }
 
+// Mascara de moeda ao digitar (pedido do usuario: "coloque auto
+// preenchimento nos valores moeda... ponto na milhar e as ,00
+// automaticamente") -- réplica exata da mesma lógica em money-input.tsx no
+// site (formatBrMoneyInput/moneyRawToDisplay/toRawNumberString), pra
+// digitar "970000" no app dar "970.000,00" igual no site.
+
+/** So digitos (+ 1 "-" opcional na frente e 1 "," opcional) -- ponto de
+ * milhar automatico, ",00" completado quando o usuario nao digitou
+ * centavos. Ex.: "970000" -> "970.000,00", "1234,5" -> "1.234,50". */
+private fun formatMoneyMask(raw: String): String {
+    val negative = raw.trim().startsWith("-")
+    val cleaned = raw.filter { it.isDigit() || it == ',' }
+    val firstComma = cleaned.indexOf(',')
+    val intPartRaw = if (firstComma == -1) cleaned else cleaned.substring(0, firstComma)
+    val decPartRaw = if (firstComma == -1) "" else cleaned.substring(firstComma + 1).replace(",", "")
+    val intDigits = intPartRaw.replaceFirst(Regex("^0+(?=\\d)"), "")
+    if (intDigits.isEmpty() && decPartRaw.isEmpty() && firstComma == -1) return ""
+    val intFormatted = groupThousands(intDigits.ifEmpty { "0" })
+    val decFormatted = (decPartRaw + "00").take(2)
+    return "${if (negative) "-" else ""}$intFormatted,$decFormatted"
+}
+
+/** "-970.000,00" -> "-970000.00" -- mesmo formato numerico cru que o campo
+ * sempre guardou em viewModel.fields (o servidor faz Number(raw)/
+ * toDoubleOrNull nisso, sem mudanca nenhuma). */
+private fun moneyDisplayToRaw(display: String): String {
+    if (display.isEmpty()) return ""
+    val negative = display.startsWith("-")
+    val unsigned = if (negative) display.substring(1) else display
+    val parts = unsigned.split(",")
+    val intDigits = parts[0].replace(".", "").ifEmpty { "0" }
+    val decPart = parts.getOrElse(1) { "00" }
+    return "${if (negative) "-" else ""}$intDigits.$decPart"
+}
+
+/** "970000.00" (valor cru guardado no campo) -> "970.000,00" (exibicao) --
+ * usado tanto pro valor inicial ao editar quanto a cada keystroke (o campo
+ * e 100% controlado pelo valor cru, nunca guarda o texto formatado). */
+private fun moneyRawToDisplay(raw: String): String {
+    val n = raw.toDoubleOrNull() ?: return ""
+    val negative = n < 0
+    val cents = Math.round(kotlin.math.abs(n) * 100)
+    val intPart = (cents / 100).toString()
+    val decPart = (cents % 100).toString().padStart(2, '0')
+    return "${if (negative) "-" else ""}${groupThousands(intPart)},$decPart"
+}
+
+private fun groupThousands(digits: String): String =
+    digits.reversed().chunked(3).joinToString(".").reversed()
+
 // col.label de toda coluna "money" JÁ vem com "(R$)" embutido (ver
 // lib/domains/registry.ts no site, ex.: "Valor (R$)", "Bruto (R$)") --
 // completar de novo aqui era a causa do "há 2 (R$) (R$)" relatado pelo
@@ -519,21 +569,34 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
             }
         }
         "number" -> {
-            OutlinedTextField(
-                value = value,
-                onValueChange = { viewModel.setField(col.key, it) },
-                label = { Text(fieldLabel(col)) },
-                // Prefixo "R$" dentro do próprio campo pros monetários --
-                // mesmo padrão do site (record-form.tsx), pedido do usuário
-                // ("não tem valores convertidos em moedas"): antes só virava
-                // R$ formatado DEPOIS de salvo, sem nenhuma pista enquanto
-                // se digitava.
-                prefix = if (col.money) ({ Text("R$ ") }) else null,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                colors = fieldColors,
-            )
+            if (col.money) {
+                // Mascara de milhar/centavos automatica (pedido do usuario:
+                // "970000" -> "970.000,00" enquanto digita, mesma mascara
+                // do site -- ver money-input.tsx). "value" (viewModel.fields)
+                // continua guardando o numero cru ("970000.00", igual antes),
+                // so a EXIBICAO e formatada -- o parser do servidor no
+                // Number(raw)/toDoubleOrNull nao precisou mudar.
+                OutlinedTextField(
+                    value = moneyRawToDisplay(value),
+                    onValueChange = { typed -> viewModel.setField(col.key, moneyDisplayToRaw(formatMoneyMask(typed))) },
+                    label = { Text(fieldLabel(col)) },
+                    prefix = { Text("R$ ") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = fieldColors,
+                )
+            } else {
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = { viewModel.setField(col.key, it) },
+                    label = { Text(fieldLabel(col)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = fieldColors,
+                )
+            }
         }
         "date" -> {
             // Ícone de calendário dentro do campo -- pedido do usuário ("o

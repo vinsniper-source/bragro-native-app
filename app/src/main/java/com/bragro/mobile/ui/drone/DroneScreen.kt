@@ -67,14 +67,17 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 // Tipos de captura (mesmo enum DroneCaptureType do Prisma) com rótulo
-// amigável em pt-BR -- o servidor só aceita as chaves em MAIÚSCULO.
+// amigável em pt-BR -- o servidor só aceita as chaves em MAIÚSCULO. Ordem
+// alfabética pelo rótulo (pedido do usuário: "coloque todas as listas
+// suspensas em ordem alfabética") -- mesma ordem de chaves usada no site
+// (ver TIPOS_CAPTURA em drone/page.tsx).
 private val TIPOS_CAPTURA = listOf(
-    "FOTO_AEREA" to "Foto aérea",
-    "NDVI_MULTIESPECTRAL" to "NDVI multiespectral",
-    "MAPEAMENTO_ORTOMOSAICO" to "Mapeamento ortomosaico",
-    "VIDEO" to "Vídeo",
     "APLICACAO_PULVERIZACAO" to "Aplicação/pulverização",
+    "FOTO_AEREA" to "Foto aérea",
+    "MAPEAMENTO_ORTOMOSAICO" to "Mapeamento ortomosaico",
+    "NDVI_MULTIESPECTRAL" to "NDVI multiespectral",
     "OUTRO" to "Outro",
+    "VIDEO" to "Vídeo",
 )
 
 private fun todayBr(): String = SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR")).format(java.util.Date())
@@ -237,7 +240,9 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showNovo = true }) {
+            // Um pouco mais acima da posição padrão do Scaffold (pedido do
+            // usuário: "em drone suba um pouco o botão do ícone drone").
+            FloatingActionButton(onClick = { showNovo = true }, modifier = Modifier.padding(bottom = 16.dp)) {
                 Icon(Icons.Filled.FlightTakeoff, contentDescription = "Novo registro de drone")
             }
         },
@@ -253,7 +258,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
             // #341/#54) -- mesma posição/UX do site (topo da tela, ver
             // drone-client.tsx), única peça que ainda faltava no mobile.
             ProviderIntegrationCard(
-                providers = listOf("DJI Terra", "DJI Cloud", "XAG One", "Pix4Dfields", "Outro"),
+                providers = listOf("DJI Cloud", "DJI Terra", "Outro", "Pix4Dfields", "XAG One"),
                 descricao = "Hoje os voos são registrados manualmente com upload de arquivo. A credencial abaixo já fica salva com segurança; a sincronização automática ainda depende de aprovação de parceiro junto ao fabricante.",
                 integration = integration,
                 busy = integrationBusy,
