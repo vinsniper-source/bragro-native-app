@@ -1483,15 +1483,23 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
                     )
                 }
             }
-            // Periodicidade + fonte -- pedido do usuário ("a fonte por
-            // exemplo cotações é o Grão Direto"). Valor real do backend
-            // (getCommodityQuotes em quotes.ts): só Grão Direto, lido 1x
-            // por semana (GRAO_DIRETO_REVALIDATE); usa a data que a
-            // própria fonte informou quando disponível, em vez de "agora".
+            // Fonte -- pedido do usuário ("a fonte por exemplo cotações é o
+            // Grão Direto"). Valor real do backend (getCommodityQuotes em
+            // quotes.ts): só Grão Direto, lido 1x por semana
+            // (GRAO_DIRETO_REVALIDATE); usa a data que a própria fonte
+            // informou quando disponível, em vez de "agora". "Atualizado
+            // semanalmente" removido -- pedido do usuário ("retire a
+            // palavra atualizado semanalmente, suba uma linha do bloco"):
+            // a frase toda nao cabia numa linha so e empurrava o card pra
+            // 2 linhas de legenda, deixando Cotações mais alto que
+            // Destaques (mesmo com o fillMaxHeight/IntrinsicSize.Min do Row
+            // que envolve os dois, ver item "cotacoes-destaques" -- o
+            // conteudo interno que sobrava). Com a legenda cabendo numa
+            // linha so, os dois cards voltam a ficar com a mesma altura de
+            // conteudo.
             val dataFonte = itens.firstNotNullOfOrNull { it.atualizadoEm }
             Text(
-                if (dataFonte != null) "Atualizado semanalmente ($dataFonte) · Fonte: Grão Direto"
-                else "Atualizado semanalmente · Fonte: Grão Direto",
+                if (dataFonte != null) "Fonte: Grão Direto ($dataFonte)" else "Fonte: Grão Direto",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

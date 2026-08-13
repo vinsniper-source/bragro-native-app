@@ -298,26 +298,24 @@ fun FinanceiroScreen(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 2.dp),
             )
-            Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
-                // Split fixo 4+3 -- pedido do usuário ("4 ícones em cima e
-                // 3 embaixo"). Cada linha distribui só os ícones que tem
-                // (weight(1f) por ícone, sem espaço vazio sobrando) pra
-                // preencher a largura toda do bloco -- pedido do usuário
-                // ("na linha 2 distribua os 3 ícones para eles preencherem
-                // o bloco"), em vez de alinhar em colunas fixas de 4.
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    FinanceiroView.values().toList().chunked(4).forEach { linha ->
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            linha.forEach { v ->
-                                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                                    ModuleIconButton(
-                                        ModuleIconItem(v.name, financeiroViewIcon(v), v.label, active = v == view),
-                                    ) { view = v }
-                                }
-                            }
+            // Cada visão (Todos/Contas a Pagar/.../Rateio Indireto) agora é
+            // seu PRÓPRIO bloco (Card individual), em vez de todos os 7
+            // ícones dividindo um único Card por baixo do título "Gestão
+            // Financeira" -- pedido do usuário ("coloque cada ícone em um
+            // bloco individual, retire o bloco único"). FlowRow (não Row
+            // fixo) deixa cada bloco quebrar pra próxima linha sozinho
+            // conforme a largura da tela, sem espremer.
+            FlowRow(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                FinanceiroView.values().forEach { v ->
+                    Card {
+                        Box(modifier = Modifier.padding(6.dp)) {
+                            ModuleIconButton(
+                                ModuleIconItem(v.name, financeiroViewIcon(v), v.label, active = v == view),
+                            ) { view = v }
                         }
                     }
                 }
@@ -477,14 +475,21 @@ fun FinanceiroScreen(
             // usuário: "reduza o tamanho do bloco vertical, fique alinhado
             // ao bloco da linha 2"); linha 3 -- Arquivos sozinho, largura
             // total (Distribuição não cobre mais essa linha).
+            // Dados/Operações ganharam mais peso (3f -> 4.2f) às custas de
+            // Nuvem/Imprimir (1f -> 0.8f) -- pedido do usuário ("em dados e
+            // operações expanda os blocos e diminua o recuo dos blocos
+            // individuais ao lado"): os blocos principais (com vários
+            // ícones/filtros) ocupam mais da largura da linha, e os blocos
+            // de 1 ícone só ao lado (Nuvem, Imprimir) recuam pra uma faixa
+            // mais estreita, já que não precisam de mais espaço que isso.
             Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FinanceiroCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
-                    FinanceiroCategoryBlock(armazenamentoBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                    FinanceiroCategoryBlock(dadosBlock, modifier = Modifier.weight(4.2f).fillMaxHeight(), fillHeight = true)
+                    FinanceiroCategoryBlock(armazenamentoBlock, modifier = Modifier.weight(0.8f).fillMaxHeight(), fillHeight = true)
                 }
                 Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FinanceiroCategoryBlock(operacoesBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
-                    FinanceiroCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                    FinanceiroCategoryBlock(operacoesBlock, modifier = Modifier.weight(4.2f).fillMaxHeight(), fillHeight = true)
+                    FinanceiroCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(0.8f).fillMaxHeight(), fillHeight = true)
                 }
                 FinanceiroCategoryBlock(arquivosBlock, modifier = Modifier.fillMaxWidth())
             }
