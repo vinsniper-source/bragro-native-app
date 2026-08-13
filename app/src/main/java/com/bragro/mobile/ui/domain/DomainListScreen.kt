@@ -65,6 +65,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -577,13 +580,13 @@ fun DomainListScreen(
                     }
                     // Nuvem/Imprimir e os blocos únicos que só existiam pra
                     // eles (Registros/Distribuição) saíram daqui -- pedido do
-                    // usuário. Cada categoria agora ocupa a linha inteira,
-                    // sozinha ("coloque cada categoria em uma linha").
-                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        ModuleCategoryBlock(dadosBlock, modifier = Modifier.fillMaxWidth())
-                        ModuleCategoryBlock(operacoesBlock, modifier = Modifier.fillMaxWidth())
-                        ModuleCategoryBlock(arquivosBlock, modifier = Modifier.fillMaxWidth())
-                    }
+                    // usuário. Dados/Operações/Arquivos viraram uma barra
+                    // oval (pill) que alterna entre categorias, mostrando só
+                    // os ícones da categoria selecionada -- pedido do
+                    // usuário ("use esse padrão com essa barra oval
+                    // alternando entre as categorias, mostre apenas os
+                    // ícones de cada categoria").
+                    ModuleCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth())
                 } else if (useCustomBlocks) {
                     // Dados: igual pros 5 módulos -- gráfico, filtro, coluna,
                     // expandir/recolher (mesmo bloco Dados do padrão genérico).
@@ -691,16 +694,10 @@ fun DomainListScreen(
                     }
                     // Nuvem/Imprimir e todo o esqueleto de Row/weight
                     // específico por módulo (clima/estoque/safra/demais)
-                    // saíram daqui -- pedido do usuário ("padronize o
-                    // tamanho dos blocos... coloque cada categoria em uma
-                    // linha... retire os blocos únicos"). Dados/Operações/
-                    // Arquivos ocupam a linha inteira, cada um sozinho,
-                    // igual em todos os módulos deste grupo.
-                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        ModuleCategoryBlock(dadosBlock, modifier = Modifier.fillMaxWidth())
-                        ModuleCategoryBlock(operacoesBlock, modifier = Modifier.fillMaxWidth())
-                        ModuleCategoryBlock(arquivosBlock, modifier = Modifier.fillMaxWidth())
-                    }
+                    // saíram daqui -- pedido do usuário. Dados/Operações/
+                    // Arquivos viraram a mesma barra oval alternando
+                    // categorias usada no grupo de blocos genérico acima.
+                    ModuleCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth())
                 } else if (linkedDomains != null) {
                     // Cobranças/NFS-e: linha 2 do módulo em blocos Dados/
                     // Operações/Arquivos (Faturamento+Nuvem+Imprimir já
@@ -765,13 +762,9 @@ fun DomainListScreen(
                             )
                         }
                     }
-                    // Cada categoria em uma linha, mesmo padrão do resto do
-                    // app agora -- pedido do usuário.
-                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        ModuleCategoryBlock(dadosBlockCobrancas, modifier = Modifier.fillMaxWidth())
-                        ModuleCategoryBlock(operacoesBlockCobrancas, modifier = Modifier.fillMaxWidth())
-                        ModuleCategoryBlock(arquivosBlockCobrancas, modifier = Modifier.fillMaxWidth())
-                    }
+                    // Mesma barra oval alternando categorias -- pedido do
+                    // usuário.
+                    ModuleCategoryTabs(listOf(dadosBlockCobrancas, operacoesBlockCobrancas, arquivosBlockCobrancas), modifier = Modifier.fillMaxWidth())
                 } else {
                 // Sem Card "por fora" -- cada ícone já é seu próprio Card
                 // (ModuleIconButton/LabeledIconButton), e SpaceEvenly
@@ -1183,6 +1176,53 @@ private fun ModuleCategoryBlock(spec: ModuleBlockSpec, modifier: Modifier = Modi
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) { spec.content() }
+        }
+    }
+}
+
+// Alternador de categorias em barra oval (pill), mostrando só os ícones da
+// categoria selecionada -- pedido do usuário ("use esse padrão com essa
+// barra oval alternando entre as categorias, mostre apenas os ícones de
+// cada categoria"), a partir do print do módulo Safra onde as 3 categorias
+// (Dados/Operações/Arquivos) apareciam empilhadas com todos os ícones
+// juntos de uma vez. Substitui o Column de N ModuleCategoryBlock nos 3
+// pontos que usam esse padrão (blocos genéricos, blocos por módulo em
+// PER_MODULE_BLOCK_DOMAINS, e Cobranças/NFS-e).
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun ModuleCategoryTabs(blocks: List<ModuleBlockSpec>, modifier: Modifier = Modifier) {
+    var selected by remember { mutableStateOf(0) }
+    // Trava o índice dentro dos limites -- essa mesma instância do
+    // Composable é reaproveitada ao trocar de módulo (ex.: Cobranças <->
+    // NFS-e), então o número de blocos pode variar entre recomposições.
+    val safeSelected = selected.coerceIn(0, blocks.size - 1)
+    Column(modifier = modifier) {
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            blocks.forEachIndexed { index, block ->
+                SegmentedButton(
+                    selected = safeSelected == index,
+                    onClick = { selected = index },
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = blocks.size),
+                    label = { Text(block.title) },
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        val active = blocks[safeSelected]
+        if (active.vertical) {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) { active.content() }
+            }
+        } else {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) { active.content() }
         }
     }
 }

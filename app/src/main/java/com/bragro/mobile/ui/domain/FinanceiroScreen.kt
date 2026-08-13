@@ -38,7 +38,6 @@ import androidx.compose.material.icons.filled.CallSplit
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
@@ -71,6 +70,9 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -136,13 +138,6 @@ fun FinanceiroScreen(
     // unifique esses dois módulos"): agora vive DENTRO do Financeiro, ao
     // lado do Extrato bancário.
     onOpenNfeImport: () -> Unit,
-    // Atalho pro módulo irmão "Cotações de Fornecedores" -- pedido do usuário
-    // ("o modulo cotações não apareceu no botão financeiro"): o módulo já
-    // existia (é um domínio próprio, agrupado na mesma seção "Financeiro" da
-    // tela Módulos, ver DomainVisuals.kt/ModulosScreen.kt), só não tinha
-    // nenhum atalho a partir de DENTRO do Financeiro, que era onde o usuário
-    // esperava encontrá-lo.
-    onOpenCotacoes: () -> Unit,
     viewModel: DomainListViewModel = viewModel(),
     filtersViewModel: FinanceiroFiltersViewModel = viewModel(),
 ) {
@@ -434,7 +429,6 @@ fun FinanceiroScreen(
                     if (!isQuickView) {
                         LabeledIconButton(icon = Icons.Filled.Upload, label = "Extrato", onClick = onOpenBankImport)
                         LabeledIconButton(icon = Icons.Filled.Description, label = "XML", onClick = onOpenNfeImport)
-                        LabeledIconButton(icon = Icons.Filled.CurrencyExchange, label = "Cotações", onClick = onOpenCotacoes)
                     }
                     if (cfg != null && filtered.isNotEmpty()) {
                         // Ícone trocado pra planilha/tabela -- pedido do
@@ -461,14 +455,17 @@ fun FinanceiroScreen(
                 }
             // Nuvem e Imprimir saíram daqui -- foram promovidos pro canto
             // superior direito da TopAppBar, ao lado do título (ver Scaffold
-            // acima) -- pedido do usuário. Sem mais nenhum bloco estreito ao
-            // lado, Dados e Operações passam a ocupar a linha inteira
-            // sozinhos.
-            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                FinanceiroCategoryBlock(dadosBlock, modifier = Modifier.fillMaxWidth())
-                FinanceiroCategoryBlock(operacoesBlock, modifier = Modifier.fillMaxWidth())
-                FinanceiroCategoryBlock(arquivosBlock, modifier = Modifier.fillMaxWidth())
-            }
+            // acima) -- pedido do usuário. Dados/Operações/Arquivos viraram
+            // uma barra oval (pill) que alterna entre categorias, mostrando
+            // só os ícones da categoria selecionada -- pedido do usuário
+            // ("use esse padrão com essa barra oval alternando entre as
+            // categorias, mostre apenas os ícones de cada categoria"), mesmo
+            // padrão aplicado nos demais módulos (DomainListScreen.kt/
+            // ModuleCategoryTabs).
+            FinanceiroCategoryTabs(
+                listOf(dadosBlock, operacoesBlock, arquivosBlock),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+            )
 
             when {
                 cfg == null -> {
@@ -781,6 +778,48 @@ private fun FinanceiroCategoryBlock(spec: FinBlockSpec, modifier: Modifier = Mod
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) { spec.content() }
+        }
+    }
+}
+
+// Barra oval (pill) alternando entre categorias (Dados/Operações/Arquivos),
+// mostrando só os ícones da categoria selecionada -- pedido do usuário. Ver
+// ModuleCategoryTabs (DomainListScreen.kt) pro mesmo padrão nos demais
+// módulos; duplicado aqui (em vez de compartilhado) pelo mesmo motivo de
+// FinanceiroCategoryBlock/ModuleCategoryBlock -- evitar mexer em código
+// compartilhado entre os dois arquivos.
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun FinanceiroCategoryTabs(blocks: List<FinBlockSpec>, modifier: Modifier = Modifier) {
+    var selected by remember { mutableStateOf(0) }
+    val safeSelected = selected.coerceIn(0, blocks.size - 1)
+    Column(modifier = modifier) {
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            blocks.forEachIndexed { index, block ->
+                SegmentedButton(
+                    selected = safeSelected == index,
+                    onClick = { selected = index },
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = blocks.size),
+                    label = { Text(block.title) },
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        val active = blocks[safeSelected]
+        if (active.vertical) {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+                ) { active.content() }
+            }
+        } else {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) { active.content() }
         }
     }
 }

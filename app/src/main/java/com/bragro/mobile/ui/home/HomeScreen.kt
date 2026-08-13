@@ -110,6 +110,7 @@ import com.bragro.mobile.data.model.WeatherResponse
 import com.bragro.mobile.data.repo.AuthRepository
 import com.bragro.mobile.data.repo.AvatarUploadRepository
 import com.bragro.mobile.data.repo.BackupRepository
+import com.bragro.mobile.data.repo.ConfigRepository
 import com.bragro.mobile.data.repo.LogoUploadRepository
 import com.bragro.mobile.data.repo.HomeRepository
 import com.bragro.mobile.data.repo.NoticesRepository
@@ -158,6 +159,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     private val noticesRepository = NoticesRepository(app)
     private val logoUploadRepository = LogoUploadRepository(app)
     private val avatarUploadRepository = AvatarUploadRepository(app)
+    private val configRepository = ConfigRepository(app)
     private val db = AppDatabase.get(app)
 
     var home = mutableStateOf<HomeData?>(null)
@@ -217,11 +219,26 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { weather.value = weatherRepository.fetch() }
     }
 
+    // BUG real corrigido -- pedido do usuário ("listas suspensas
+    // desatualizadas... tem valores que apaguei na base de dados mas
+    // continua aparecendo"; "o modulo cotações não apareceu"; "a logo do
+    // cliente não aparece"): "Sincronizar agora" só chamava
+    // recordRepository.syncAll() (fila de LANÇAMENTOS offline pendentes) --
+    // NUNCA reexecutava o bootstrap (configRepository.bootstrapAndCacheConfig),
+    // que é quem baixa e recacheia no Room a lista de módulos, as listas
+    // suspensas e as fazendas. bootstrapAndCacheConfig só rodava mesmo no
+    // LOGIN (ver AuthRepository.login) -- ou seja, não existia NENHUM jeito
+    // de atualizar esse cache sem sair e entrar de novo na conta. Agora
+    // "Sincronizar agora" recarrega os dois: os lançamentos pendentes E a
+    // configuração/listas suspensas/fazendas, usando o token já salvo na
+    // sessão (sem pedir senha de novo).
     fun syncNow() {
         if (syncing.value) return
         syncing.value = true
         viewModelScope.launch {
             recordRepository.syncAll()
+            val s = db.sessionDao().get()
+            if (s != null) configRepository.bootstrapAndCacheConfig(s.accessToken, s.refreshToken)
             syncing.value = false
         }
     }
@@ -495,8 +512,14 @@ fun HomeScreen(
                         // notificações, tema, conta, logo cliente), a soma das
                         // larguras passava da tela e o ÚLTIMO item (logo do
                         // cliente / botão "+") ficava cortado fora da área
-                        // visível, sem nenhum aviso.
-                        modifier = Modifier.height(100.dp).widthIn(max = 130.dp),
+                        // visível, sem nenhum aviso. Agora que o cluster de
+                        // ícones rola horizontalmente (Row.horizontalScroll
+                        // abaixo), dá pra aumentar um pouquinho a logo (100dp
+                        // -> 112dp) sem nenhum ícone ficar escondido -- pedido
+                        // do usuário ("aumente logo de início uma pouquinho
+                        // sem estourar o limite, sem esconder nenhum ícone do
+                        // cabeçalho").
+                        modifier = Modifier.height(112.dp).widthIn(max = 142.dp),
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     // Cluster de ícones do cabeçalho com rolagem horizontal --
