@@ -496,8 +496,6 @@ private fun BoundariesList(boundaries: List<FieldBoundaryDto>, modifier: Modifie
 @Composable
 private fun FazendasKmlTab(
     boundaries: List<FieldBoundaryDto>,
-    importing: Boolean,
-    onImportClick: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         // Botão "Importar KML/KMZ" que existia aqui foi promovido pra cima
