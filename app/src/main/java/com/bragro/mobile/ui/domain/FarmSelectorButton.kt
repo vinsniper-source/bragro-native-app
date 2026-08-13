@@ -9,7 +9,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,8 +49,13 @@ fun FarmSelectorButton() {
     // trator no menu/bottom nav (pedido do usuario: "troque o icone fazenda
     // por um mais relevante"); pino de local combina melhor com "escolher
     // uma fazenda", sem confundir com o modulo de frota.
+    // Verde sempre -- pedido do usuario ("nos modulos coloque a cor verde no
+    // icone fazenda"): antes so ficava verde (primary) com uma fazenda
+    // filtrada selecionada; em "Todas as fazendas" (selected == null) caia
+    // pra LocalContentColor (neutro), o que deixava o icone sem cor de
+    // destaque na maior parte do tempo (estado padrao, sem filtro).
     IconButton(onClick = { menuOpen = true }) {
-        Icon(Icons.Filled.LocationOn, contentDescription = "Filtrar por fazenda: ${selected ?: "todas"}", tint = if (selected != null) MaterialTheme.colorScheme.primary else LocalContentColor.current)
+        Icon(Icons.Filled.LocationOn, contentDescription = "Filtrar por fazenda: ${selected ?: "todas"}", tint = MaterialTheme.colorScheme.primary)
     }
     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
         BasicText(

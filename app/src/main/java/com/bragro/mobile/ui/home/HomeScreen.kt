@@ -56,6 +56,8 @@ import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.AlertDialog
@@ -84,6 +86,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -398,6 +401,15 @@ private fun formatAreaHa(value: Double): String =
     NumberFormat.getNumberInstance(Locale("pt", "BR")).apply {
         maximumFractionDigits = 1
     }.format(value) + " ha"
+
+// Variação percentual do câmbio (Dólar/Euro) -- pedido do usuário ("kpi
+// câmbio, na linha dólar e na linha euro adicione ícone de variação e
+// porcentagem"), mesmo formato usado no card de Cotações Grãos do site
+// (TrendingUp/TrendingDown + "x,xx%").
+private fun formatVariacaoPct(value: Double): String {
+    val sign = if (value >= 0) "+" else ""
+    return "$sign${String.format(Locale("pt", "BR"), "%.2f", value)}%"
+}
 
 private fun todayLongBrazil(): String {
     val fmt = SimpleDateFormat("EEEE, dd 'de' MMMM 'de' yyyy", Locale("pt", "BR"))
@@ -783,6 +795,12 @@ fun HomeScreen(
             // ("Itens no e...", "Operaç...", "Colabor..."). Volta a ser
             // seção própria, largura cheia.
             item(key = "monitor") { ActivityMonitorCard(data.recentActivity, onOpenDomain) }
+            // Faixa ilustrativa decorativa acima dos KPIs -- pedido do
+            // usuário ("gere uma imagem junto com os kpis"), só enfeite
+            // visual, sem nenhum dado. Desenhada em Compose (gradiente +
+            // ícone translúcido) em vez de um arquivo de imagem novo -- não
+            // depende de nenhum asset binário extra no app.
+            item(key = "kpis-banner") { KpiDecorativeBanner() }
             item(key = "kpis") { KpiGrid(data) }
             // Clima ao lado de Câmbio, Cotações ao lado de Destaques -- cada
             // par em blocos separados (Card) lado a lado, pedido do usuário
@@ -1242,6 +1260,31 @@ private data class Kpi(
 // aplicável) e a da direita mostra o valor em R$ (se aplicável) -- cada KPI
 // só preenche a coluna que faz sentido pra ele, mas as 3 zonas ficam sempre
 // na mesma posição em todo card.
+// Faixa decorativa acima dos KPIs -- pedido do usuário ("na imagem acima
+// gere uma imagem junto com os kpis"), confirmado como ilustração puramente
+// visual (sem dado nenhum). Gradiente verde suave + ícone grande e
+// translúcido (Agriculture, mesmo ícone já usado no KPI "Operações de
+// safra"/Cotações Grãos) -- desenhado 100% em Compose, sem precisar
+// adicionar nenhum arquivo de imagem novo em res/drawable.
+@Composable
+private fun KpiDecorativeBanner() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Brush.horizontalGradient(listOf(BrGreen.copy(alpha = 0.20f), BrGreen.copy(alpha = 0.04f)))),
+        contentAlignment = Alignment.CenterEnd,
+    ) {
+        Icon(
+            Icons.Filled.Agriculture,
+            contentDescription = null,
+            tint = BrGreen.copy(alpha = 0.30f),
+            modifier = Modifier.size(48.dp).padding(end = 16.dp),
+        )
+    }
+}
+
 @Composable
 private fun KpiGrid(data: HomeData) {
     val kpis = listOf(
@@ -1318,7 +1361,7 @@ private fun KpiGrid(data: HomeData) {
                 modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                row.forEach { kpi -> KpiCard(kpi, modifier = Modifier.weight(1f).fillMaxHeight()) }
+                row.forEach { kpi -> KpiCard(kpi, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true) }
                 // Fileira ímpar (última sobra 1 KPI): Spacer no lugar do 2º
                 // card mantém a largura igual à fileira de cima, sem
                 // "padronizar" a largura de propósito -- só evita o card
@@ -1343,7 +1386,26 @@ private fun KpiGrid(data: HomeData) {
 // Estoque/Safra/RH) quanto no card "Fazendas cadastradas" em largura cheia,
 // fora do grid (ver comentário em KpiGrid).
 @Composable
-private fun KpiCard(kpi: Kpi, modifier: Modifier = Modifier) {
+// `fillHeight` -- pedido do usuário ("kpi financeiro alinhar o valor à linha
+// do kpi estoque"): dentro da fileira de 2 colunas (KpiGrid, Row com
+// IntrinsicSize.Min), os 2 cards já tinham a MESMA altura total -- mas
+// quando a descrição de um KPI quebrava em mais linhas que a do vizinho
+// (ex.: "Saldo em aberto (a receber − a pagar)" de Financeiro vs. "Total de
+// itens cadastrados no estoque" de Estoque), o valor ficava mais embaixo num
+// card que no outro, já que ele vinha logo depois da descrição no fluxo
+// normal -- a altura "sobrando" da equalização ficava invisível no final do
+// card mais curto, em vez de empurrar o valor pra baixo igual. Com
+// `fillHeight = true` (só usado pelos 4 KPIs da fileira 2x2, que têm altura
+// garantida pelo IntrinsicSize.Min do Row pai), o cabeçalho (ícone+
+// label+descrição) vira `weight(1f)` dentro de uma Column com
+// `fillMaxHeight()`, empurrando o valor pro rodapé do card -- agora sempre
+// na MESMA linha em todo card da fileira, não importa quantas linhas a
+// descrição ocupou. `kpiFazendas` (linha cheia, fora do grid, sem altura
+// garantida por nenhum vizinho) continua com `fillHeight = false` (padrão) --
+// aplicar `fillMaxHeight()` ali, sem um Row pai com IntrinsicSize.Min pra
+// dar uma altura de verdade, quebraria o layout (altura infinita).
+@Composable
+private fun KpiCard(kpi: Kpi, modifier: Modifier = Modifier, fillHeight: Boolean = false) {
     // Reestruturado -- pedido do usuário ("resolva de uma vez por todas o
     // porque o kpi financeiro não consegue puxar as ,00"): a caixa do valor
     // (`widthIn(min=4dp)`, sem largura máxima) ficava competindo por espaço
@@ -1356,8 +1418,8 @@ private fun KpiCard(kpi: Kpi, modifier: Modifier = Modifier) {
     // PRÓPRIA, com a largura TOTAL do card, sem nenhum vizinho disputando
     // espaço -- nunca mais é cortado nem força a altura de ninguém.
     Card(modifier = modifier) {
-        Column(modifier = Modifier.padding(12.dp).fillMaxWidth()) {
-            Row(verticalAlignment = Alignment.Top) {
+        Column(modifier = Modifier.padding(12.dp).fillMaxWidth().let { if (fillHeight) it.fillMaxHeight() else it }) {
+            Row(verticalAlignment = Alignment.Top, modifier = Modifier.let { if (fillHeight) it.weight(1f) else it }) {
                 // Só contorno, sem preenchimento -- pedido do usuário
                 // ("retire o preenchimento verde e deixe apenas a borda em
                 // verde, em todo app").
@@ -1487,8 +1549,20 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: 
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MiniCardHeaderWithRefresh("Câmbio", Icons.Filled.CurrencyExchange, BrGreen, MaterialTheme.typography.titleMedium, onRefresh)
-            Row { Text("Dólar: "); Text(fx.usdBrl?.let { formatMoneyBrl(it) } ?: "—", fontWeight = FontWeight.Bold) }
-            Row { Text("Euro: "); Text(fx.eurBrl?.let { formatMoneyBrl(it) } ?: "—", fontWeight = FontWeight.Bold) }
+            // Ícone de variação (alta/baixa) + porcentagem do dia ao lado do
+            // valor -- pedido do usuário ("na linha dólar e na linha euro
+            // adicione ícone de variação e porcentagem"), mesmo padrão já
+            // usado nas cotações agrícolas do site (TrendingUp/TrendingDown
+            // + "x,xx%"). Some sozinho quando a fonte não informa variação
+            // (fallback exchangerate-api.com).
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Dólar: "); Text(fx.usdBrl?.let { formatMoneyBrl(it) } ?: "—", fontWeight = FontWeight.Bold)
+                FxVariacaoTag(fx.usdVariacaoPct)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Euro: "); Text(fx.eurBrl?.let { formatMoneyBrl(it) } ?: "—", fontWeight = FontWeight.Bold)
+                FxVariacaoTag(fx.eurVariacaoPct)
+            }
             // Periodicidade + fonte -- pedido do usuário. Valor real do
             // backend (getFxRates em quotes.ts): revalidate 900s = 15 min,
             // AwesomeAPI (com fallback pra exchangerate-api.com só se a
@@ -1499,6 +1573,22 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: 
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+@Composable
+private fun FxVariacaoTag(pct: Double?) {
+    if (pct == null) return
+    val positive = pct >= 0
+    val color = if (positive) BrGreen else MaterialTheme.colorScheme.error
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 6.dp)) {
+        Icon(
+            if (positive) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(14.dp),
+        )
+        Text(formatVariacaoPct(pct), style = MaterialTheme.typography.labelSmall, color = color)
     }
 }
 

@@ -753,13 +753,16 @@ private fun FinanceiroCategoryBlock(spec: FinBlockSpec, modifier: Modifier = Mod
             // dentro de uma Row medida por IntrinsicSize.Min -- um bloco
             // "roubava" a altura do outro. Agora só usa `weight(1f)` quando o
             // chamador pede explicitamente via `fillHeight`.
-            Card(modifier = Modifier.fillMaxWidth().let { if (fillHeight) it.weight(1f) else it }) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(8.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-                ) { spec.content() }
-            }
+            // Sem Card "por fora" -- pedido do usuário ("retire as bordas
+            // das categorias que tiverem um bloco dentro do outro, retire a
+            // borda externa"): cada ícone dentro já é seu próprio Card com
+            // borda (ModuleIconButton/LabeledIconButton), então o Card
+            // externo só duplicava a borda.
+            Column(
+                modifier = Modifier.fillMaxWidth().let { if (fillHeight) it.weight(1f) else it }.padding(8.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+            ) { spec.content() }
         } else {
             // Sem Card "por fora" envolvendo tudo -- pedido do usuário ("em
             // todos os módulos, por categorias: dados, operações, arquivos
@@ -807,13 +810,13 @@ private fun FinanceiroCategoryTabs(blocks: List<FinBlockSpec>, modifier: Modifie
         Spacer(modifier = Modifier.height(8.dp))
         val active = blocks[safeSelected]
         if (active.vertical) {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-                ) { active.content() }
-            }
+            // Sem Card "por fora" -- pedido do usuário ("retire as bordas
+            // das categorias que tiverem um bloco dentro do outro").
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+            ) { active.content() }
         } else {
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),

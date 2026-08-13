@@ -494,8 +494,19 @@ data class WeatherData(
     val forecast: List<WeatherForecastDay> = emptyList(),
 )
 
+// usdVariacaoPct/eurVariacaoPct -- pedido do usuário ("kpi câmbio, na linha
+// dólar e na linha euro adicione ícone de variação e porcentagem"), mesmo
+// campo que já existia só pras cotações agrícolas (variacaoPct em
+// CommodityQuoteData abaixo). null quando a fonte não informa variação (ex.:
+// fallback exchangerate-api.com, usado só se a AwesomeAPI cair de vez).
 @Serializable
-data class FxRatesData(val usdBrl: Double? = null, val eurBrl: Double? = null, val arsBrl: Double? = null)
+data class FxRatesData(
+    val usdBrl: Double? = null,
+    val eurBrl: Double? = null,
+    val arsBrl: Double? = null,
+    val usdVariacaoPct: Double? = null,
+    val eurVariacaoPct: Double? = null,
+)
 
 @Serializable
 data class CommodityQuoteData(

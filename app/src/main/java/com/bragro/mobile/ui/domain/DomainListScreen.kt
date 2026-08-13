@@ -1155,13 +1155,17 @@ private fun ModuleCategoryBlock(spec: ModuleBlockSpec, modifier: Modifier = Modi
             modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
         )
         if (spec.vertical) {
-            Card(modifier = Modifier.fillMaxWidth().let { if (fillHeight) it.weight(1f) else it }) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(8.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-                ) { spec.content() }
-            }
+            // Sem Card "por fora" -- pedido do usuário ("retire as bordas
+            // das categorias que tiverem um bloco dentro do outro, retire a
+            // borda externa"): cada ícone dentro (ModuleIconButton/
+            // LabeledIconButton) já é seu próprio Card com borda, então o
+            // Card externo só duplicava a borda (bloco dentro de bloco).
+            // Mesmo ajuste já feito no ramo `else` abaixo (não-vertical).
+            Column(
+                modifier = Modifier.fillMaxWidth().let { if (fillHeight) it.weight(1f) else it }.padding(8.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+            ) { spec.content() }
         } else {
             // Sem Card "por fora" -- mesmo ajuste de FinanceiroCategoryBlock
             // (FinanceiroScreen.kt): pedido do usuário ("em todos os
@@ -1210,13 +1214,12 @@ private fun ModuleCategoryTabs(blocks: List<ModuleBlockSpec>, modifier: Modifier
         Spacer(modifier = Modifier.height(8.dp))
         val active = blocks[safeSelected]
         if (active.vertical) {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) { active.content() }
-            }
+            // Mesmo ajuste do ModuleCategoryBlock acima -- sem Card externo.
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) { active.content() }
         } else {
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),

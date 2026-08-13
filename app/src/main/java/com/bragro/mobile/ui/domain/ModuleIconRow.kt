@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -59,6 +60,16 @@ data class ModuleIconItem(
 // FinanceiroScreen.kt), não o ícone que encolhe.
 private val MODULE_ICON_SIZE = 22.dp
 
+// Fundo verde translúcido nos blocos de ícone -- pedido do usuário ("nos
+// blocos de ícones preencha o fundo de verde"). Só aqui (ModuleIconButton/
+// LabeledIconButton), não no Card padrão do app inteiro (com.bragro.mobile.
+// ui.theme.Card, AppCard.kt) -- lá o usuário já tinha pedido o oposto antes
+// ("retire o preenchimento verde e deixe apenas a borda em verde, em todo
+// app"). alpha baixo (12%) mantém o ícone/texto legíveis por cima (alguns
+// ícones já usam tint=primary/verde no estado ativo) e não briga com o verde
+// mais forte da borda (cardBorderColor, em AppCard.kt).
+private val MODULE_ICON_BG_ALPHA = 0.12f
+
 // Cada ícone virou seu próprio bloco (Card individual) -- pedido do usuário
 // ("em todos os módulos, por categorias: dados, operações, arquivos torne-os
 // blocos com ícones individuais"), mesmo tratamento já aplicado à seleção de
@@ -69,7 +80,11 @@ private val MODULE_ICON_SIZE = 22.dp
 // precisar editar bloco por bloco.
 @Composable
 fun ModuleIconButton(item: ModuleIconItem, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.widthIn(min = 44.dp)) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.widthIn(min = 44.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = MODULE_ICON_BG_ALPHA)),
+    ) {
         Column(
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -114,7 +129,12 @@ fun LabeledIconButton(
     tint: androidx.compose.ui.graphics.Color = LocalContentColor.current,
     loading: Boolean = false,
 ) {
-    Card(onClick = onClick, enabled = !loading, modifier = modifier.widthIn(min = 44.dp)) {
+    Card(
+        onClick = onClick,
+        enabled = !loading,
+        modifier = modifier.widthIn(min = 44.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = MODULE_ICON_BG_ALPHA)),
+    ) {
         Column(
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
