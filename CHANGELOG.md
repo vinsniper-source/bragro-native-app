@@ -37,6 +37,16 @@ o que mudou (o CI não faz isso sozinho).
   farm-linked): ao escolher uma fazenda, os módulos Safra, Frota,
   Financeiro, Colheita, Planejamento de Safra, Pragas e Clima já abrem
   filtrados só pelas operações dela.
+- Ícone do filtro de fazenda trocado de trator para pino de local (não
+  conflita mais visualmente com o ícone de Frota).
+- Logo BRAgro colada na borda esquerda de Início, abrindo espaço pra
+  logo do cliente no lado direito do cabeçalho.
+- Monitor em tempo real: cada evento agora é clicável e leva direto pro
+  módulo correspondente (mesmo comportamento que Central de Alertas já
+  tinha).
+- Base de Dados: botão "Recusar" ao lado de "Importar padrões" -- marca
+  os itens que faltam como decisão definitiva de não importar, sem
+  precisar ver o aviso de novo (reversível cadastrando na mão depois).
 
 ## [1.0.0] -- Fases 1, 2 e 3 (ainda não publicado na Play Store)
 

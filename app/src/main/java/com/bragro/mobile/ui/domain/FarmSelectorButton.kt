@@ -3,7 +3,7 @@ package com.bragro.mobile.ui.domain
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Agriculture
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -46,8 +46,12 @@ fun FarmSelectorButton() {
 
     val selected = FarmSelection.selected.value
 
+    // LocationOn (pino de mapa), nao um icone de trator -- "Frota" ja usa
+    // trator no menu/bottom nav (pedido do usuario: "troque o icone fazenda
+    // por um mais relevante"); pino de local combina melhor com "escolher
+    // uma fazenda", sem confundir com o modulo de frota.
     IconButton(onClick = { menuOpen = true }) {
-        Icon(Icons.Filled.Agriculture, contentDescription = "Filtrar por fazenda: ${selected ?: "todas"}", tint = if (selected != null) MaterialTheme.colorScheme.primary else LocalContentColor.current)
+        Icon(Icons.Filled.LocationOn, contentDescription = "Filtrar por fazenda: ${selected ?: "todas"}", tint = if (selected != null) MaterialTheme.colorScheme.primary else LocalContentColor.current)
     }
     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
         BasicText(

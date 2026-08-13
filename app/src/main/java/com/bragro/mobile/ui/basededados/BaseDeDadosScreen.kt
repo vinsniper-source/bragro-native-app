@@ -96,6 +96,10 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
     fun deleteLookup(id: String) = act("delete_lookup", id = id)
     fun toggleLookup(id: String, ativo: Boolean) = act("toggle_lookup", id = id, ativo = ativo)
     fun importDefaults() = act("import_defaults")
+    // "Recusar" -- pedido do usuário ("coloque o botão com a opção
+    // recusar"), espelho de declineDefaultsAction no site: lapideia os
+    // itens faltando agora, o aviso some sem importar nada.
+    fun declineDefaults() = act("decline_defaults")
     fun addFarm(name: String, areaHa: Double) = act("add_farm", name = name, areaHa = areaHa)
     fun updateFarm(id: String, areaHa: Double) = act("update_farm", id = id, areaHa = areaHa)
     fun deleteFarm(id: String) = act("delete_farm", id = id)
@@ -149,6 +153,12 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
         // usuario nunca excluiu de proposito (ver import_defaults/
         // LookupOptionExclusion em api/mobile/base-de-dados/route.ts).
         var showImportConfirm by remember { mutableStateOf(false) }
+        // "Recusar" -- pedido do usuário ("coloque o botão com a opção
+        // recusar"): diferente do "Não" do diálogo de Importar (que só
+        // fecha o diálogo, o aviso continua aparecendo depois), este marca
+        // os itens faltando como decisão definitiva de não importar -- o
+        // aviso some de vez, reversível cadastrando na mão depois.
+        var showDeclineConfirm by remember { mutableStateOf(false) }
 
         LazyColumn(
             contentPadding = PaddingValues(12.dp, padding.calculateTopPadding() + 4.dp, 12.dp, 24.dp),
@@ -162,8 +172,13 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text("Há $missingCount item(ns) padrão ainda não importados (categorias e/ou fazendas).", style = MaterialTheme.typography.bodyMedium)
-                            Button(onClick = { showImportConfirm = true }, enabled = !busy, modifier = Modifier.padding(top = 8.dp)) {
-                                Text("Importar padrões")
+                            Row(modifier = Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(onClick = { showImportConfirm = true }, enabled = !busy) {
+                                    Text("Importar padrões")
+                                }
+                                TextButton(onClick = { showDeclineConfirm = true }, enabled = !busy) {
+                                    Text("Recusar")
+                                }
                             }
                         }
                     }
@@ -210,6 +225,22 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
                 },
                 dismissButton = {
                     TextButton(onClick = { showImportConfirm = false }) { Text("Não") }
+                },
+            )
+        }
+        if (showDeclineConfirm) {
+            AlertDialog(
+                onDismissRequest = { showDeclineConfirm = false },
+                title = { Text("Recusar estes $missingCount item(ns) padrão?") },
+                text = { Text("O aviso de importação para de aparecer para estes itens específicos (categorias/valores e/ou fazendas). Nada é apagado do que já existe — e você pode trazer qualquer um deles de volta depois, cadastrando manualmente.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showDeclineConfirm = false
+                        viewModel.declineDefaults()
+                    }) { Text("Sim, recusar") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeclineConfirm = false }) { Text("Cancelar") }
                 },
             )
         }

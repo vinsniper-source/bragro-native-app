@@ -459,17 +459,21 @@ fun HomeScreen(
             Column(modifier = Modifier.statusBarsPadding()) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Row(
-                    // Padding assimétrico -- pedido do usuário ("chegue mais
-                    // a logo em início para a esquerda pra igualar a altura
-                    // dos ícones com a logo do cliente"): start reduzido de
-                    // 16dp pra 4dp empurra a logo BRAgro mais pra esquerda,
-                    // sobrando mais espaço à direita pros ícones + logo do
-                    // cliente não ficarem espremidos/cortados.
+                    // Padding assimétrico -- pedido do usuário ("mova a logo
+                    // bem no limite para o lado esquerdo para abrir espaço
+                    // para a logo do cliente aparecer no lado direito"):
+                    // start zerado (era 4dp, antes disso 16dp) deixa a logo
+                    // BRAgro colada na borda esquerda de vez -- com mais um
+                    // ícone no cabeçalho agora (filtro de fazenda), o espaço
+                    // à direita ficou mais disputado, então cada dp que sai
+                    // daqui ajuda o cluster de ícones + logo do cliente a
+                    // não cortar. end tambem reduzido (16dp -> 8dp) pelo
+                    // mesmo motivo, do outro lado.
                     // bottom reduzido de 8dp pra 4dp -- pedido do usuário
                     // ("na linha que separa a logo da frase Olá, bem-
                     // vindo, erga mais a linha"): a linha (HorizontalDivider
                     // logo abaixo deste Row) sobe mais perto da logo/ícones.
-                    modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 16.dp, top = 8.dp, bottom = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(start = 0.dp, end = 8.dp, top = 8.dp, bottom = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     // Logo nova, ainda maior que antes -- pedido do usuário
@@ -735,7 +739,7 @@ fun HomeScreen(
             // Card, menos largura disponível) e os rótulos cortavam
             // ("Itens no e...", "Operaç...", "Colabor..."). Volta a ser
             // seção própria, largura cheia.
-            item(key = "monitor") { ActivityMonitorCard(data.recentActivity) }
+            item(key = "monitor") { ActivityMonitorCard(data.recentActivity, onOpenDomain) }
             item(key = "kpis") { KpiGrid(data) }
             // Clima ao lado de Câmbio, Cotações ao lado de Destaques -- cada
             // par em blocos separados (Card) lado a lado, pedido do usuário
@@ -1091,7 +1095,7 @@ private fun AlertsCard(alerts: List<AlertData>, onOpenDomain: (String) -> Unit) 
 // mesma lógica no monitor do app mobile e coloque toda descrição de um item
 // em uma linha só").
 @Composable
-private fun ActivityMonitorCard(events: List<ActivityEventData>) {
+private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (String) -> Unit) {
     // Fechado por padrão -- pedido do usuário ("os blocos mural, alertas e
     // monitor tem que aparecer fechados").
     var expanded by remember { mutableStateOf(false) }
@@ -1113,7 +1117,15 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>) {
                 } else {
                     events.forEach { e ->
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                            // Clicavel -- leva pro modulo de origem do
+                            // evento (e.table ja e o mesmo id de rota
+                            // usado em onOpenDomain, ver ACTIVITY_TABLE_
+                            // LABEL/home/route.ts no backend), mesmo
+                            // padrao ja usado na Central de Alertas
+                            // (AlertsCard acima) -- pedido do usuario
+                            // ("quando trocar em alguma movimentação ser
+                            // direcionado para a tela correspondente").
+                            modifier = Modifier.fillMaxWidth().clickable { onOpenDomain(e.table) }.padding(vertical = 3.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
