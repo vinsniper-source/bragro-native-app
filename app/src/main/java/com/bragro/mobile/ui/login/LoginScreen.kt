@@ -167,5 +167,19 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
         )
+
+        // Versão instalada (nome + código) -- pedido nasceu de um problema
+        // real: depois de instalar um .apk novo, não tinha nenhum jeito de
+        // confirmar dentro do proprio app se aquela build realmente é a mais
+        // recente ou se ficou uma versão antiga instalada por engano. Visível
+        // já na tela de login (não precisa nem logar pra checar).
+        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 12.dp))
+        Text(
+            "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+            style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
