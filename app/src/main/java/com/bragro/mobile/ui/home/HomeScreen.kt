@@ -1385,7 +1385,6 @@ private fun KpiGrid(data: HomeData) {
 // pra poder ser reaproveitado tanto nas 2 colunas do grid (Financeiro/
 // Estoque/Safra/RH) quanto no card "Fazendas cadastradas" em largura cheia,
 // fora do grid (ver comentário em KpiGrid).
-@Composable
 // `fillHeight` -- pedido do usuário ("kpi financeiro alinhar o valor à linha
 // do kpi estoque"): dentro da fileira de 2 colunas (KpiGrid, Row com
 // IntrinsicSize.Min), os 2 cards já tinham a MESMA altura total -- mas
