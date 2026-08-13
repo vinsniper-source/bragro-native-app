@@ -333,31 +333,23 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, view
                     )
                 }
             }
-            // Botão "+ Lançar talhão manualmente" REMOVIDO -- pedido do
-            // usuário ("retire o botão lançar manualmente do fieldview e
-            // mobile coloque Importar KML/KMZ com ícone"): reversão de um
-            // pedido anterior da mesma sessão. A partir de agora, o único
-            // jeito de adicionar talhão pelo app é importando o contorno via
-            // KML/KMZ (mesmo botão que já existia só dentro da aba Fazendas/
-            // KML, ver FazendasKmlTab abaixo) -- promovido pra cá, visível
-            // também na aba Talhões, já que é a aba onde faz mais sentido
-            // adicionar um novo. O diálogo/estado de lançamento manual
+            // Botão único "Importar KML/KMZ" nas 3 abas -- pedido do usuário
+            // ("o botão importar kml tem que servir também para máquinas e
+            // mapas, retire o botão importar máquinas"): antes só Talhões/
+            // Fazendas-KML tinham este botão e Máquinas tinha um botão
+            // separado ("+ Lançar máquina manualmente (Frota)"), removido
+            // agora. O diálogo/estado de lançamento manual de talhão
             // (ManualBoundaryDialog, manualDialogOpen) fica no código, sem
             // nenhum botão que o abra -- mais simples que desmontar
             // form/validação/chamada de API que continuam corretos, só sem
             // gatilho na UI.
             Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                when (tab) {
-                    0, 2 -> OutlinedButton(
-                        onClick = { kmlPicker.launch(arrayOf("application/vnd.google-earth.kml+xml", "application/vnd.google-earth.kmz", "application/octet-stream", "*/*")) },
-                        enabled = !importing,
-                    ) {
-                        Icon(Icons.Filled.UploadFile, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                        Text(if (importing) "Importando..." else "Importar KML/KMZ")
-                    }
-                    1 -> OutlinedButton(onClick = onNavigateToFrota) {
-                        Text("+ Lançar máquina manualmente (Frota)")
-                    }
+                OutlinedButton(
+                    onClick = { kmlPicker.launch(arrayOf("application/vnd.google-earth.kml+xml", "application/vnd.google-earth.kmz", "application/octet-stream", "*/*")) },
+                    enabled = !importing,
+                ) {
+                    Icon(Icons.Filled.UploadFile, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                    Text(if (importing) "Importando..." else "Importar KML/KMZ")
                 }
             }
             when {

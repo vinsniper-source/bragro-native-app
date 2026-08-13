@@ -356,18 +356,38 @@ fun DomainListScreen(
                         IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary) }
                     }
                 },
-                // Sem "actions" aqui (Atualizar/Recolher-Expandir/Colunas/
-                // Exportar ficam na fileira de ícones abaixo do título, ver
-                // "module-icon-row") EXCETO o filtro global de fazenda: como
-                // ele afeta o app inteiro (nao so este módulo), fica no
-                // mesmo lugar do site (cabeçalho), não misturado com os
-                // ícones específicos deste módulo. Só aparece em módulos
-                // "farm-linked" (ver FarmSelection.farmFieldFor).
+                // Nuvem/Imprimir promovidos pro canto superior direito, sem
+                // rótulo, na mesma linha do título -- pedido do usuário
+                // ("coloque em todos os módulos os ícones imprimir e nuvem
+                // do lado direito canto superior na mesma linha do título do
+                // topo... retire o bloco e os rótulos dos dois"). Saem de
+                // TODOS os blocos/fileiras abaixo (Registros/Distribuição/
+                // Nuvem-Imprimir-Cobranças e a fileira única dos demais
+                // módulos) -- essa é agora a ÚNICA cópia dos dois em todo o
+                // módulo genérico. Além do filtro global de fazenda, que já
+                // morava aqui.
                 actions = {
-                    if (globalFarmField != null) {
-                        Column {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            FarmSelectorButton()
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row {
+                            if (globalFarmField != null) {
+                                FarmSelectorButton()
+                            }
+                            IconButton(onClick = {
+                                val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
+                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                            }) {
+                                Icon(
+                                    if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
+                                    contentDescription = "Nuvem",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                            if (config != null && filteredRecords.isNotEmpty()) {
+                                IconButton(onClick = { HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) }) {
+                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
+                                }
+                            }
                         }
                     }
                 },
@@ -442,6 +462,13 @@ fun DomainListScreen(
                     // na mesma linha -- pedido do usuário ("coloque o nome da
                     // categoria de faturamento... e na mesma linha coloque o
                     // ícone nuvem em um bloco individual").
+                    // Nuvem/Imprimir saíram daqui -- promovidos pro canto
+                    // superior direito da TopAppBar (ver actions do Scaffold
+                    // acima), sem rótulo, junto com os demais módulos --
+                    // pedido do usuário ("coloque os ícones nuvem e imprimir
+                    // no canto superior direito... retire o bloco e os
+                    // rótulos dos dois"). Faturamento volta a ocupar a linha
+                    // inteira sozinho.
                     val faturamentoBlock = ModuleBlockSpec("Faturamento", vertical = false) {
                         linkedDomains.forEach { (id, label) ->
                             val active = id == domainId
@@ -450,32 +477,7 @@ fun DomainListScreen(
                             ) { if (!active) onSwitchDomain(id) }
                         }
                     }
-                    val nuvemBlock = ModuleBlockSpec("", vertical = true) {
-                        LabeledIconButton(
-                            icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
-                            label = "Nuvem",
-                            onClick = {
-                                val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
-                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                            },
-                        )
-                    }
-                    // Imprimir ganhou bloco individual próprio nesta linha --
-                    // pedido do usuário ("o primeiro bloco faturamento recue
-                    // um pouco para encaixar o bloco individual imprimir").
-                    // Faturamento perde peso (3f -> 2f) pra abrir espaço.
-                    val imprimirBlockCobrancas = ModuleBlockSpec("", vertical = true) {
-                        LabeledIconButton(
-                            icon = Icons.Filled.Print,
-                            label = "Imprimir",
-                            onClick = { HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys) },
-                        )
-                    }
-                    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ModuleCategoryBlock(faturamentoBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
-                        ModuleCategoryBlock(nuvemBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
-                        ModuleCategoryBlock(imprimirBlockCobrancas, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
-                    }
+                    ModuleCategoryBlock(faturamentoBlock, modifier = Modifier.fillMaxWidth())
                 }
             }
             // Blocos "compatíveis com ícone" (Gráficos, Calculadoras, Clima,
@@ -531,16 +533,6 @@ fun DomainListScreen(
                             )
                         }
                     }
-                    val registrosBlock = ModuleBlockSpec("", vertical = false) {
-                        LabeledIconButton(
-                            icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
-                            label = "Nuvem",
-                            onClick = {
-                                val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
-                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                            },
-                        )
-                    }
                     val operacoesBlock = ModuleBlockSpec("Operações", vertical = false) {
                         LabeledIconButton(
                             icon = Icons.Filled.Refresh,
@@ -583,25 +575,14 @@ fun DomainListScreen(
                             )
                         }
                     }
-                    val distribuicaoBlock = ModuleBlockSpec("", vertical = true) {
-                        if (filteredRecords.isNotEmpty()) {
-                            LabeledIconButton(
-                                icon = Icons.Filled.Print,
-                                label = "Imprimir",
-                                onClick = { HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys) },
-                            )
-                        }
-                    }
+                    // Nuvem/Imprimir e os blocos únicos que só existiam pra
+                    // eles (Registros/Distribuição) saíram daqui -- pedido do
+                    // usuário. Cada categoria agora ocupa a linha inteira,
+                    // sozinha ("coloque cada categoria em uma linha").
                     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            ModuleCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
-                            ModuleCategoryBlock(registrosBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
-                        }
-                        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            ModuleCategoryBlock(operacoesBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
-                            ModuleCategoryBlock(arquivosBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
-                            ModuleCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
-                        }
+                        ModuleCategoryBlock(dadosBlock, modifier = Modifier.fillMaxWidth())
+                        ModuleCategoryBlock(operacoesBlock, modifier = Modifier.fillMaxWidth())
+                        ModuleCategoryBlock(arquivosBlock, modifier = Modifier.fillMaxWidth())
                     }
                 } else if (useCustomBlocks) {
                     // Dados: igual pros 5 módulos -- gráfico, filtro, coluna,
@@ -636,6 +617,16 @@ fun DomainListScreen(
                             ModuleIconButton(
                                 ModuleIconItem("estoque-fazenda", Icons.Filled.CompareArrows, "Transferências", active = expandedBlocks["estoque-fazenda"] == true),
                             ) { expandedBlocks["estoque-fazenda"] = expandedBlocks["estoque-fazenda"] != true }
+                        }
+                        // Previsão do tempo entra dentro de Dados também --
+                        // era um bloco individual próprio (climaBlock),
+                        // removido junto com os demais blocos de ícone único
+                        // (pedido do usuário: "retire os blocos únicos dos
+                        // blocos individuais").
+                        if (domainId == "clima") {
+                            ModuleIconButton(
+                                ModuleIconItem("clima-weather", Icons.Filled.WbSunny, "Previsão", active = expandedBlocks["clima-weather"] == true),
+                            ) { expandedBlocks["clima-weather"] = expandedBlocks["clima-weather"] != true }
                         }
                     }
                     // Operações: varia por módulo -- Safra (recalcular área +
@@ -698,126 +689,17 @@ fun DomainListScreen(
                             )
                         }
                     }
-                    val nuvemBlock = ModuleBlockSpec("", vertical = false) {
-                        LabeledIconButton(
-                            icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
-                            label = "Nuvem",
-                            onClick = {
-                                val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
-                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                            },
-                        )
-                    }
-                    val imprimirBlock = ModuleBlockSpec("", vertical = true) {
-                        if (filteredRecords.isNotEmpty()) {
-                            LabeledIconButton(
-                                icon = Icons.Filled.Print,
-                                label = "Imprimir",
-                                onClick = { HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys) },
-                            )
-                        }
-                    }
-                    if (domainId == "clima") {
-                        // Clima ganha um 3º ícone individual (Previsão do
-                        // tempo), além de Nuvem e Imprimir -- pedido do
-                        // usuário ("blocos individuais para ícone clima,
-                        // ícone imprimir e ícone nuvem").
-                        val climaBlock = ModuleBlockSpec("", vertical = true) {
-                            ModuleIconButton(
-                                ModuleIconItem("clima-weather", Icons.Filled.WbSunny, "Previsão", active = expandedBlocks["clima-weather"] == true),
-                            ) { expandedBlocks["clima-weather"] = expandedBlocks["clima-weather"] != true }
-                        }
-                        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                ModuleCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
-                                ModuleCategoryBlock(climaBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
-                                ModuleCategoryBlock(nuvemBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
-                            }
-                            // Operações ganha mais largura que Arquivos --
-                            // Safra/Colheita/Frota têm 3-4 ícones nesse bloco
-                            // (Arquivos só tem 2), o peso igual de antes
-                            // (2f/2f) quebrava linha -- corrigido comparando
-                            // com o mockup aprovado.
-                            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                ModuleCategoryBlock(operacoesBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
-                                ModuleCategoryBlock(arquivosBlock, modifier = Modifier.weight(1.5f).fillMaxHeight(), fillHeight = true)
-                                ModuleCategoryBlock(imprimirBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
-                            }
-                        }
-                    } else if (domainId == "estoque") {
-                        // Transferências já está dentro de Dados agora (ver
-                        // acima) -- linha 1 fica só Dados (5 ícones) + Nuvem,
-                        // mesma linha.
-                        //
-                        // Nuvem no MESMO tamanho de Imprimir (pedido do
-                        // usuário: "deixe o bloco nuvem nas dimensões do
-                        // bloco imprimir, consequentemente o bloco dados irá
-                        // expandir um pouco") -- Nuvem e Imprimir ficam em
-                        // linhas diferentes (peso é relativo aos irmãos NA
-                        // MESMA linha, não à tela toda), então "peso 1f" nas
-                        // duas linhas não dava a mesma largura: a linha de
-                        // baixo (Operações 3f + Arquivos 1.5f + Imprimir 1f)
-                        // soma 5.5f, então Imprimir ocupa 1/5.5 (~18%) da
-                        // largura. Pra Nuvem (peso 1f) ocupar essa MESMA
-                        // fração na linha de cima, Dados precisa somar 4.5f
-                        // (1/(4.5+1) = 1/5.5) -- daí Dados cresce de 3f pra
-                        // 4.5f (75% -> ~82% da linha), exatamente o "expandir
-                        // um pouco" pedido, e o resultado é independente do
-                        // tamanho da tela (é proporção, não dp fixo).
-                        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                ModuleCategoryBlock(dadosBlock, modifier = Modifier.weight(4.5f).fillMaxHeight(), fillHeight = true)
-                                ModuleCategoryBlock(nuvemBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
-                            }
-                            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                ModuleCategoryBlock(operacoesBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
-                                ModuleCategoryBlock(arquivosBlock, modifier = Modifier.weight(1.5f).fillMaxHeight(), fillHeight = true)
-                                ModuleCategoryBlock(imprimirBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
-                            }
-                        }
-                    } else {
-                        // Safra ganhou layout próprio -- pedido do usuário
-                        // ("depois do bloco dados crie dois blocos
-                        // individuais para colocar nuvem e imprimir nesta
-                        // mesma linha, na linha de baixo em operações
-                        // coloque na horizontal em uma linha só os 4
-                        // ícones e logo à frente os ícones em arquivos"):
-                        // Nuvem e Imprimir sobem pra linha do Dados, cada um
-                        // em bloco próprio; linha de baixo fica só com
-                        // Operações (mais largo, cabem os 4 ícones numa
-                        // linha) + Arquivos ao lado.
-                        // Planejamento Safra/Colheita/Frota continuam com o
-                        // esqueleto antigo (Dados+Nuvem em cima, Operações+
-                        // Arquivos+Imprimir embaixo) -- mudança não pedida
-                        // pro usuário pra esses 3 módulos.
-                        if (domainId == "safra") {
-                            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    ModuleCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
-                                    ModuleCategoryBlock(nuvemBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
-                                    ModuleCategoryBlock(imprimirBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
-                                }
-                                Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    ModuleCategoryBlock(operacoesBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
-                                    ModuleCategoryBlock(arquivosBlock, modifier = Modifier.weight(1.5f).fillMaxHeight(), fillHeight = true)
-                                }
-                            }
-                        } else {
-                            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    ModuleCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
-                                    ModuleCategoryBlock(nuvemBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
-                                }
-                                // Operações mais largo que Arquivos -- mesmo
-                                // ajuste do Clima acima (3 a 4 ícones em
-                                // Operações contra só 2 em Arquivos).
-                                Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    ModuleCategoryBlock(operacoesBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
-                                    ModuleCategoryBlock(arquivosBlock, modifier = Modifier.weight(1.5f).fillMaxHeight(), fillHeight = true)
-                                    ModuleCategoryBlock(imprimirBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
-                                }
-                            }
-                        }
+                    // Nuvem/Imprimir e todo o esqueleto de Row/weight
+                    // específico por módulo (clima/estoque/safra/demais)
+                    // saíram daqui -- pedido do usuário ("padronize o
+                    // tamanho dos blocos... coloque cada categoria em uma
+                    // linha... retire os blocos únicos"). Dados/Operações/
+                    // Arquivos ocupam a linha inteira, cada um sozinho,
+                    // igual em todos os módulos deste grupo.
+                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        ModuleCategoryBlock(dadosBlock, modifier = Modifier.fillMaxWidth())
+                        ModuleCategoryBlock(operacoesBlock, modifier = Modifier.fillMaxWidth())
+                        ModuleCategoryBlock(arquivosBlock, modifier = Modifier.fillMaxWidth())
                     }
                 } else if (linkedDomains != null) {
                     // Cobranças/NFS-e: linha 2 do módulo em blocos Dados/
@@ -883,20 +765,24 @@ fun DomainListScreen(
                             )
                         }
                     }
-                    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ModuleCategoryBlock(dadosBlockCobrancas, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
-                        ModuleCategoryBlock(operacoesBlockCobrancas, modifier = Modifier.weight(1.3f).fillMaxHeight(), fillHeight = true)
-                        ModuleCategoryBlock(arquivosBlockCobrancas, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
+                    // Cada categoria em uma linha, mesmo padrão do resto do
+                    // app agora -- pedido do usuário.
+                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        ModuleCategoryBlock(dadosBlockCobrancas, modifier = Modifier.fillMaxWidth())
+                        ModuleCategoryBlock(operacoesBlockCobrancas, modifier = Modifier.fillMaxWidth())
+                        ModuleCategoryBlock(arquivosBlockCobrancas, modifier = Modifier.fillMaxWidth())
                     }
                 } else {
-                // Borda fina em volta do bloco -- mesmo padrão de todos os
-                // outros Cards do app (Task #147) -- pedido do usuário
-                // ("coloque uma borda fina em volta do bloco").
-                Card(modifier = Modifier.fillMaxWidth()) {
+                // Sem Card "por fora" -- cada ícone já é seu próprio Card
+                // (ModuleIconButton/LabeledIconButton), e SpaceEvenly
+                // distribui pra preencher a linha inteira -- pedido do
+                // usuário ("padronize o tamanho dos blocos dos ícones e que
+                // preencha toda a linha"), mesmo padrão já usado nos blocos
+                // Dados/Operações/Arquivos dos outros módulos.
                 FlowRow(
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     ModuleIconButton(
                         ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
@@ -983,30 +869,12 @@ fun DomainListScreen(
                             label = "PDF",
                             onClick = { HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys) },
                         )
-                        LabeledIconButton(
-                            icon = Icons.Filled.Print,
-                            label = "Imprimir",
-                            onClick = { HtmlPrinter.printList(context, cfg, filteredRecords, visibleKeys) },
-                        )
                         // Ícone Compartilhar (txt) removido -- pedido do
                         // usuário ("exclua o ícone de compartilhar em txt...
                         // em todos os outros [módulos]").
                     }
-                    // Ícone nuvem (armazenamento/offline) -- reflete o estado
-                    // de conexão, mesmo padrão do Financeiro ("Registros").
-                    // Cobranças/NFS-e não passam mais por este branch (ver
-                    // "else if (linkedDomains != null)" acima) -- já ganhou
-                    // um bloco individual próprio ao lado do alternador
-                    // Faturamento (ver item "linked-domain-switch").
-                    LabeledIconButton(
-                        icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
-                        label = "Nuvem",
-                        onClick = {
-                            val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
-                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                        },
-                    )
-                }
+                    // Nuvem e Imprimir saíram daqui -- agora só na TopAppBar
+                    // (ver actions do Scaffold acima), pedido do usuário.
                 }
                 }
             }
