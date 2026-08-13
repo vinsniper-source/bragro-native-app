@@ -188,6 +188,7 @@ fun BRAgroNavHost() {
                     onEditRecord = { recordId -> navController.navigate(Routes.domainFormEdit(domainId, recordId)) },
                     onOpenBankImport = { navController.navigate(Routes.BANK_IMPORT) },
                     onOpenNfeImport = { navController.navigate(Routes.NFE_IMPORT) },
+                    onOpenCotacoes = { navController.navigate(Routes.domainList("cotacoesfornecedores")) },
                 )
             } else {
                 DomainListScreen(

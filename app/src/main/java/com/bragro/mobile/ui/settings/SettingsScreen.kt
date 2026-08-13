@@ -15,9 +15,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Smartphone
 import com.bragro.mobile.ui.theme.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -189,6 +191,14 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = viewModel(
             if (error != null) {
                 item(key = "error") { Text(error!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = 4.dp)) }
             }
+            // "Aplicativo mobile" (Android + iOS) -- pedido do usuário
+            // ("configurações: coloque os blocos android e ios como está na
+            // plataforma"): mesmos 2 blocos que já existiam no site
+            // (src/app/(app)/configuracoes/configuracoes-client.tsx),
+            // replicados aqui de verdade (não é redirecionamento), mesmo
+            // padrão das outras seções desta tela.
+            item(key = "app-android") { AppMobileAndroidCard(data?.get("appRelease")?.jsonObject) }
+            item(key = "app-ios") { AppMobileIosCard() }
             item(key = "org") { OrgCard(org, saving) { name, tolerancia, onDone -> viewModel.saveOrg(name, tolerancia, onDone) } }
             item(key = "assinatura") {
                 AssinaturaCard(
@@ -227,6 +237,75 @@ private fun CollapsibleCard(title: String, icon: (@Composable () -> Unit)? = nul
             }
             if (open) {
                 Column(modifier = Modifier.padding(top = 12.dp)) { content() }
+            }
+        }
+    }
+}
+
+// Réplica do card "Aplicativo mobile (Android)" do site -- mesma fonte de
+// dados (prisma.appRelease, ver /api/mobile/settings -> getConfigDataFor),
+// já incluída na resposta de "get" que este ViewModel já carrega. Fechado
+// por padrão (initiallyOpen = false), mesmo padrão das demais seções.
+@Composable
+private fun AppMobileAndroidCard(appRelease: JsonObject?) {
+    val context = LocalContext.current
+    CollapsibleCard("Aplicativo mobile (Android)", icon = { Icon(Icons.Filled.Smartphone, contentDescription = null) }) {
+        if (appRelease == null) {
+            Text("Nenhuma versão publicada ainda.", style = MaterialTheme.typography.bodySmall)
+        } else {
+            val versao = appRelease["versao"]?.jsonPrimitive?.contentOrNull ?: "?"
+            val publicadoEm = appRelease["publicadoEm"]?.jsonPrimitive?.contentOrNull
+            val notas = appRelease["notas"]?.jsonPrimitive?.contentOrNull
+            val apkUrl = appRelease["apkUrl"]?.jsonPrimitive?.contentOrNull
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Versão $versao" + (publicadoEm?.let { " — publicada em ${it.take(10).split("-").reversed().joinToString("/")}" } ?: ""),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    if (!notas.isNullOrBlank()) {
+                        Text(notas, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 2.dp))
+                    }
+                    Text(
+                        "Toque em Baixar pra abrir o instalador no navegador (fora da Play Store, pode pedir pra permitir \"fontes desconhecidas\").",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+                if (!apkUrl.isNullOrBlank()) {
+                    androidx.compose.material3.Button(onClick = { openInCustomTab(context, apkUrl) }, modifier = Modifier.padding(start = 8.dp)) {
+                        Icon(Icons.Filled.Download, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                        Text("Baixar")
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Réplica do card "Aplicativo mobile (iPhone/iPad)" do site -- iOS não
+// permite instalar um .apk (isso é coisa de Android); a única forma sem
+// custo e sem Mac/conta de desenvolvedor Apple é o PWA via Safari
+// ("Adicionar à Tela de Início"). Mesmo texto/passo a passo do site.
+@Composable
+private fun AppMobileIosCard() {
+    CollapsibleCard("Aplicativo mobile (iPhone/iPad)", icon = { Icon(Icons.Filled.Smartphone, contentDescription = null) }) {
+        Text(
+            "O iOS não permite instalar um arquivo baixado como app — a Apple só libera isso pela App Store. O caminho que funciona sem custo, direto pelo Safari:",
+            style = MaterialTheme.typography.bodySmall,
+        )
+        Column(modifier = Modifier.padding(top = 8.dp)) {
+            listOf(
+                "Abra o sistema no Safari (precisa ser o Safari -- outros navegadores no iPhone não mostram essa opção).",
+                "Toque no ícone de Compartilhar, na barra inferior.",
+                "Role a lista e toque em \"Adicionar à Tela de Início\".",
+                "Toque em Adicionar -- o ícone aparece na tela como um app, com uso offline.",
+            ).forEachIndexed { i, step ->
+                Row(modifier = Modifier.padding(top = if (i == 0) 0.dp else 6.dp)) {
+                    Text("${i + 1}.", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.padding(end = 6.dp))
+                    Text(step, style = MaterialTheme.typography.bodySmall)
+                }
             }
         }
     }

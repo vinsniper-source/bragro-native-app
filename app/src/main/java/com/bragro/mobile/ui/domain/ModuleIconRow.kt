@@ -1,6 +1,5 @@
 package com.bragro.mobile.ui.domain
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -22,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.bragro.mobile.ui.theme.Card
 
 /**
  * Um item da fileira de ícones do módulo -- pedido do usuário ("reduza os
@@ -59,31 +59,38 @@ data class ModuleIconItem(
 // FinanceiroScreen.kt), não o ícone que encolhe.
 private val MODULE_ICON_SIZE = 22.dp
 
+// Cada ícone virou seu próprio bloco (Card individual) -- pedido do usuário
+// ("em todos os módulos, por categorias: dados, operações, arquivos torne-os
+// blocos com ícones individuais"), mesmo tratamento já aplicado à seleção de
+// visão do Financeiro (Todos/Pagar/Receber/...). Como TODOS os blocos
+// Dados/Operações/Arquivos (genéricos em DomainListScreen.kt e os próprios do
+// Financeiro em FinanceiroScreen.kt) montam seu conteúdo chamando este
+// composable, a mudança aqui já vale pra "todos os módulos" de uma vez, sem
+// precisar editar bloco por bloco.
 @Composable
 fun ModuleIconButton(item: ModuleIconItem, onClick: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .widthIn(min = 40.dp)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 2.dp, vertical = 2.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        BadgedBox(badge = { if (item.badgeCount > 0) Badge { Text("${item.badgeCount}") } }) {
-            Icon(
-                item.icon,
-                contentDescription = null,
-                tint = if (item.active) MaterialTheme.colorScheme.primary else LocalContentColor.current,
-                modifier = Modifier.size(MODULE_ICON_SIZE),
+    Card(onClick = onClick, modifier = Modifier.widthIn(min = 44.dp)) {
+        Column(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            BadgedBox(badge = { if (item.badgeCount > 0) Badge { Text("${item.badgeCount}") } }) {
+                Icon(
+                    item.icon,
+                    contentDescription = null,
+                    tint = if (item.active) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                    modifier = Modifier.size(MODULE_ICON_SIZE),
+                )
+            }
+            Text(
+                item.label,
+                style = MaterialTheme.typography.labelSmall,
+                color = if (item.active) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
             )
         }
-        Text(
-            item.label,
-            style = MaterialTheme.typography.labelSmall,
-            color = if (item.active) MaterialTheme.colorScheme.primary else LocalContentColor.current,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Ellipsis,
-        )
     }
 }
 
@@ -107,26 +114,25 @@ fun LabeledIconButton(
     tint: androidx.compose.ui.graphics.Color = LocalContentColor.current,
     loading: Boolean = false,
 ) {
-    Column(
-        modifier = modifier
-            .widthIn(min = 40.dp)
-            .clickable(onClick = onClick, enabled = !loading)
-            .padding(horizontal = 2.dp, vertical = 2.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        if (loading) {
-            CircularProgressIndicator(modifier = Modifier.size(MODULE_ICON_SIZE), strokeWidth = 2.dp)
-        } else {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(MODULE_ICON_SIZE))
+    Card(onClick = onClick, enabled = !loading, modifier = modifier.widthIn(min = 44.dp)) {
+        Column(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            if (loading) {
+                CircularProgressIndicator(modifier = Modifier.size(MODULE_ICON_SIZE), strokeWidth = 2.dp)
+            } else {
+                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(MODULE_ICON_SIZE))
+            }
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                color = tint,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            color = tint,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Ellipsis,
-        )
     }
 }
 

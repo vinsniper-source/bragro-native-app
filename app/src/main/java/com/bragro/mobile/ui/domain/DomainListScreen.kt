@@ -1293,20 +1293,28 @@ private fun ModuleCategoryBlock(spec: ModuleBlockSpec, modifier: Modifier = Modi
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
         )
-        Card(modifier = Modifier.fillMaxWidth().let { if (fillHeight) it.weight(1f) else it }) {
-            if (spec.vertical) {
+        if (spec.vertical) {
+            Card(modifier = Modifier.fillMaxWidth().let { if (fillHeight) it.weight(1f) else it }) {
                 Column(
                     modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(8.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
                 ) { spec.content() }
-            } else {
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                ) { spec.content() }
             }
+        } else {
+            // Sem Card "por fora" -- mesmo ajuste de FinanceiroCategoryBlock
+            // (FinanceiroScreen.kt): pedido do usuário ("em todos os
+            // módulos, por categorias: dados, operações, arquivos torne-os
+            // blocos com ícones individuais e redistribua de forma que
+            // preencha toda a linha"). Cada ícone já é seu próprio Card
+            // (ModuleIconButton/LabeledIconButton, ModuleIconRow.kt) -- essa
+            // troca vale pros 14 módulos que usam CATEGORIZED_BLOCK_DOMAINS/
+            // PER_MODULE_BLOCK_DOMAINS de uma vez só.
+            FlowRow(
+                modifier = Modifier.fillMaxWidth().let { if (fillHeight) it.weight(1f) else it },
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) { spec.content() }
         }
     }
 }

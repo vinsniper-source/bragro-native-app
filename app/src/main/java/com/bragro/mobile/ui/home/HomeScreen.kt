@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -487,9 +488,27 @@ fun HomeScreen(
                     Image(
                         painter = painterResource(R.drawable.logo_bragro),
                         contentDescription = "BRAgro",
-                        modifier = Modifier.height(100.dp),
+                        // widthIn(max) evita que a logo, sozinha, já tome
+                        // metade da tela em telas estreitas -- bug real
+                        // encontrado ("logo do cliente não aparece"): com
+                        // muitos ícones no cabeçalho (backup, fazenda,
+                        // notificações, tema, conta, logo cliente), a soma das
+                        // larguras passava da tela e o ÚLTIMO item (logo do
+                        // cliente / botão "+") ficava cortado fora da área
+                        // visível, sem nenhum aviso.
+                        modifier = Modifier.height(100.dp).widthIn(max = 130.dp),
                     )
                     Spacer(modifier = Modifier.weight(1f))
+                    // Cluster de ícones do cabeçalho com rolagem horizontal --
+                    // mesma correção do bug acima: mesmo que a soma das
+                    // larguras dos ícones não caiba na tela (aparelhos mais
+                    // estreitos, ou fontes/densidade maiores), nada fica
+                    // permanentemente inacessível -- o usuário arrasta pra ver
+                    // o restante, mas o botão de logo do cliente nunca some.
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                     // Ícone "Início" removido -- pedido do usuário ("retire a
                     // casinha"), era decorativo (onClick vazio, já estamos
                     // nesta tela).
@@ -610,6 +629,7 @@ fun HomeScreen(
                             Box(modifier = Modifier.padding(end = 8.dp).size(32.dp))
                         }
                     }
+                    } // fecha Row de rolagem horizontal do cluster de ícones
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         },

@@ -333,17 +333,27 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, view
                     )
                 }
             }
-            // Botão "+" de lançamento MANUAL -- pedido do usuário ("insira o
-            // botão + em talhões, máquinas e fazendas/kml"), pra deixar as
-            // duas opções (automático E manual) em cada aba. Talhões/
-            // Fazendas-KML abrem o mesmo diálogo (criar talhão sem arquivo);
-            // Máquinas leva pro lançamento novo de Frota (essa aba é só um
-            // RESUMO automático do que já existe em Frota, não faz sentido
-            // duplicar o formulário inteiro aqui dentro).
+            // Botão "+ Lançar talhão manualmente" REMOVIDO -- pedido do
+            // usuário ("retire o botão lançar manualmente do fieldview e
+            // mobile coloque Importar KML/KMZ com ícone"): reversão de um
+            // pedido anterior da mesma sessão. A partir de agora, o único
+            // jeito de adicionar talhão pelo app é importando o contorno via
+            // KML/KMZ (mesmo botão que já existia só dentro da aba Fazendas/
+            // KML, ver FazendasKmlTab abaixo) -- promovido pra cá, visível
+            // também na aba Talhões, já que é a aba onde faz mais sentido
+            // adicionar um novo. O diálogo/estado de lançamento manual
+            // (ManualBoundaryDialog, manualDialogOpen) fica no código, sem
+            // nenhum botão que o abra -- mais simples que desmontar
+            // form/validação/chamada de API que continuam corretos, só sem
+            // gatilho na UI.
             Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 when (tab) {
-                    0, 2 -> OutlinedButton(onClick = { manualDialogOpen = true }) {
-                        Text("+ Lançar talhão manualmente")
+                    0, 2 -> OutlinedButton(
+                        onClick = { kmlPicker.launch(arrayOf("application/vnd.google-earth.kml+xml", "application/vnd.google-earth.kmz", "application/octet-stream", "*/*")) },
+                        enabled = !importing,
+                    ) {
+                        Icon(Icons.Filled.UploadFile, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                        Text(if (importing) "Importando..." else "Importar KML/KMZ")
                     }
                     1 -> OutlinedButton(onClick = onNavigateToFrota) {
                         Text("+ Lançar máquina manualmente (Frota)")
@@ -358,11 +368,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, view
                 else -> when (tab) {
                     0 -> TalhaoStatusList(data!!.talhaoStatus)
                     1 -> MaquinaStatusList(data!!.maquinaStatus)
-                    else -> FazendasKmlTab(
-                        boundaries = data!!.boundaries,
-                        importing = importing,
-                        onImportClick = { kmlPicker.launch(arrayOf("application/vnd.google-earth.kml+xml", "application/vnd.google-earth.kmz", "application/octet-stream", "*/*")) },
-                    )
+                    else -> FazendasKmlTab(boundaries = data!!.boundaries)
                 }
             }
         }
@@ -494,23 +500,10 @@ private fun FazendasKmlTab(
     onImportClick: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        OutlinedButton(
-            onClick = onImportClick,
-            enabled = !importing,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        ) {
-            // Trocado de Icons.Filled.AttachFile (clipe de papel genérico,
-            // associado a "anexar" e não a "importar contorno de mapa")
-            // pra Icons.Filled.UploadFile -- achado da auditoria (usuário:
-            // "não tem sequer ícones de arquivos kml/kmz"): o botão em si
-            // já existia (ActivityResultContracts.OpenDocument, ver
-            // kmlPicker acima) e já tinha o texto "Importar KML/KMZ" ao
-            // lado, mas o ícone de clipe não comunicava "importação de
-            // arquivo" -- só "anexo", o mesmo ícone usado em Drone pra
-            // anexar foto/vídeo a um registro (contexto bem diferente).
-            Icon(Icons.Filled.UploadFile, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-            Text(if (importing) "Importando..." else "Importar KML/KMZ")
-        }
+        // Botão "Importar KML/KMZ" que existia aqui foi promovido pra cima
+        // (fileira comum acima das abas, ver FieldviewScreen) -- fica
+        // visível tanto em Talhões quanto em Fazendas/KML agora, sem
+        // duplicar nesta aba.
         BoundariesMap(boundaries)
         BoundariesList(boundaries, modifier = Modifier.weight(1f))
     }

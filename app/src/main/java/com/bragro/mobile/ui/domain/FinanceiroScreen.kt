@@ -135,6 +135,13 @@ fun FinanceiroScreen(
     // unifique esses dois módulos"): agora vive DENTRO do Financeiro, ao
     // lado do Extrato bancário.
     onOpenNfeImport: () -> Unit,
+    // Atalho pro módulo irmão "Cotações de Fornecedores" -- pedido do usuário
+    // ("o modulo cotações não apareceu no botão financeiro"): o módulo já
+    // existia (é um domínio próprio, agrupado na mesma seção "Financeiro" da
+    // tela Módulos, ver DomainVisuals.kt/ModulosScreen.kt), só não tinha
+    // nenhum atalho a partir de DENTRO do Financeiro, que era onde o usuário
+    // esperava encontrá-lo.
+    onOpenCotacoes: () -> Unit,
     viewModel: DomainListViewModel = viewModel(),
     filtersViewModel: FinanceiroFiltersViewModel = viewModel(),
 ) {
@@ -263,11 +270,37 @@ fun FinanceiroScreen(
                         IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary) }
                     }
                 },
-                // Sem "actions" aqui -- Atualizar/Recolher-Expandir/Extrato/
-                // Importar XML/Colunas/Exportar mudaram pra fileira de ícones
-                // abaixo do título, pedido do usuário ("os ícones que
-                // estavam do lado do título, saltando uma linha, insira-os
-                // no bloco").
+                // Nuvem/Imprimir promovidos pro canto superior direito, na
+                // mesma linha do título -- pedido do usuário ("coloque em
+                // todos os módulos os ícones imprimir e nuvem do lado
+                // direito canto superior na mesma linha do título do
+                // topo"). Saem dos blocos Registros/Distribuição (que agora
+                // desaparecem -- ver Dados/Operações abaixo, que passam a
+                // ocupar a linha inteira sozinhos). Mesmo Spacer de 16dp do
+                // título/seta de voltar, pra ficarem alinhados na mesma
+                // altura.
+                actions = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row {
+                            IconButton(onClick = {
+                                val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
+                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                            }) {
+                                Icon(
+                                    if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
+                                    contentDescription = "Nuvem",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                            if (cfg != null && filtered.isNotEmpty()) {
+                                IconButton(onClick = { HtmlPrinter.printList(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) }) {
+                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+                        }
+                    }
+                },
             )
         },
         floatingActionButton = {
@@ -400,6 +433,7 @@ fun FinanceiroScreen(
                     if (!isQuickView) {
                         LabeledIconButton(icon = Icons.Filled.Upload, label = "Extrato", onClick = onOpenBankImport)
                         LabeledIconButton(icon = Icons.Filled.Description, label = "XML", onClick = onOpenNfeImport)
+                        LabeledIconButton(icon = Icons.Filled.CurrencyExchange, label = "Cotações", onClick = onOpenCotacoes)
                     }
                     if (cfg != null && filtered.isNotEmpty()) {
                         // Ícone trocado pra planilha/tabela -- pedido do
@@ -424,73 +458,14 @@ fun FinanceiroScreen(
                         )
                     }
                 }
-            val armazenamentoBlock =
-                // Sem título (string vazia) -- pedido do usuário ("retire os
-                // títulos Registros e Distribuição").
-                // BUG corrigido: altura do bloco (a caixa com borda, não a
-                // Column inteira) ficava diferente da de Dados, ao lado na
-                // mesma linha -- pedido do usuário ("o bloco/ícone de nuvem
-                // não está com a mesma altura do bloco Dados"). Estava
-                // usando bodySmall (lineHeight 16sp) enquanto Dados usa
-                // titleSmall (lineHeight 20sp); como o Text do título (linha
-                // sempre presente, ver FinanceiroCategoryBlock) e o Card
-                // (weight(1f)) dividem a MESMA altura total forçada pelo Row
-                // (IntrinsicSize.Min), um título mais baixo deixava mais
-                // espaço de sobra pro Card, esticando-o além do vizinho.
-                // bodyMedium tem o mesmo lineHeight de titleSmall (20sp) --
-                // mesmo estilo já usado em Distribuição/Operações (par que já
-                // ficava correto, ver comentário "mesma altura dos dois"
-                // acima) -- resolve sem alterar o Row/fillMaxHeight, que já
-                // seguia a convenção certa.
-                FinBlockSpec("", MaterialTheme.typography.bodyMedium, vertical = false) {
-                    // Só esse ícone no bloco -- pedido do usuário ("será
-                    // apenas um ícone offline, troque o ícone por uma
-                    // nuvem"). Reflete o estado de conexão (offline usa os
-                    // dados salvos no aparelho).
-                    LabeledIconButton(
-                        icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
-                        label = "Nuvem",
-                        onClick = {
-                            val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
-                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                        },
-                    )
-                }
-            val distribuicaoBlock =
-                // Sem título (string vazia) e sem o ícone Compartilhar --
-                // pedido do usuário ("exclua o ícone de compartilhar em txt";
-                // "retire os títulos Registros e Distribuição"). Agora só
-                // Imprimir, centralizado (ver FinanceiroCategoryBlock).
-                FinBlockSpec("", MaterialTheme.typography.bodyMedium, vertical = true) {
-                    if (cfg != null && filtered.isNotEmpty()) {
-                        LabeledIconButton(
-                            icon = Icons.Filled.Print,
-                            label = "Imprimir",
-                            onClick = { HtmlPrinter.printList(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) },
-                        )
-                    }
-                }
-            // Layout: linha 1 -- Dados (largo) + Registros (estreito); linha
-            // 2 -- Operações + Distribuição (mesma altura dos dois, pedido do
-            // usuário: "reduza o tamanho do bloco vertical, fique alinhado
-            // ao bloco da linha 2"); linha 3 -- Arquivos sozinho, largura
-            // total (Distribuição não cobre mais essa linha).
-            // Dados/Operações ganharam mais peso (3f -> 4.2f) às custas de
-            // Nuvem/Imprimir (1f -> 0.8f) -- pedido do usuário ("em dados e
-            // operações expanda os blocos e diminua o recuo dos blocos
-            // individuais ao lado"): os blocos principais (com vários
-            // ícones/filtros) ocupam mais da largura da linha, e os blocos
-            // de 1 ícone só ao lado (Nuvem, Imprimir) recuam pra uma faixa
-            // mais estreita, já que não precisam de mais espaço que isso.
+            // Nuvem e Imprimir saíram daqui -- foram promovidos pro canto
+            // superior direito da TopAppBar, ao lado do título (ver Scaffold
+            // acima) -- pedido do usuário. Sem mais nenhum bloco estreito ao
+            // lado, Dados e Operações passam a ocupar a linha inteira
+            // sozinhos.
             Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FinanceiroCategoryBlock(dadosBlock, modifier = Modifier.weight(4.2f).fillMaxHeight(), fillHeight = true)
-                    FinanceiroCategoryBlock(armazenamentoBlock, modifier = Modifier.weight(0.8f).fillMaxHeight(), fillHeight = true)
-                }
-                Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FinanceiroCategoryBlock(operacoesBlock, modifier = Modifier.weight(4.2f).fillMaxHeight(), fillHeight = true)
-                    FinanceiroCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(0.8f).fillMaxHeight(), fillHeight = true)
-                }
+                FinanceiroCategoryBlock(dadosBlock, modifier = Modifier.fillMaxWidth())
+                FinanceiroCategoryBlock(operacoesBlock, modifier = Modifier.fillMaxWidth())
                 FinanceiroCategoryBlock(arquivosBlock, modifier = Modifier.fillMaxWidth())
             }
 
@@ -770,37 +745,41 @@ private fun FinanceiroCategoryBlock(spec: FinBlockSpec, modifier: Modifier = Mod
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
         )
-        // BUG corrigido: antes o Card sempre forçava fillMaxHeight(), o que
-        // quebra a medição quando dois blocos ficam EMPILHADOS dentro de uma
-        // Column sem altura própria (caso de Operações+Arquivos), dentro de
-        // uma Row medida por IntrinsicSize.Min -- um bloco "roubava" a
-        // altura do outro (Arquivos sumia, Operações esticava). Agora só usa
-        // `weight(1f)` (que estica de verdade, sem quebrar a medição) quando
-        // o chamador pede explicitamente via `fillHeight` -- só faz sentido
-        // pra blocos que são vizinhos diretos numa Row (Dados/Registros,
-        // Distribuição), não pra blocos empilhados numa Column.
-        Card(modifier = Modifier.fillMaxWidth().let { if (fillHeight) it.weight(1f) else it }) {
-            if (spec.vertical) {
-                // Centralizado (horizontal e vertical) -- pedido do usuário
-                // ("centralize o ícone da impressora"); fillMaxHeight aqui
-                // pra sobrar espaço de verdade pro Arrangement.Center atuar.
+        if (spec.vertical) {
+            // Centralizado (horizontal e vertical) -- pedido do usuário
+            // ("centralize o ícone da impressora"); fillMaxHeight aqui
+            // pra sobrar espaço de verdade pro Arrangement.Center atuar.
+            // BUG corrigido: antes o Card sempre forçava fillMaxHeight(), o
+            // que quebra a medição quando dois blocos ficam EMPILHADOS dentro
+            // de uma Column sem altura própria (caso de Operações+Arquivos),
+            // dentro de uma Row medida por IntrinsicSize.Min -- um bloco
+            // "roubava" a altura do outro. Agora só usa `weight(1f)` quando o
+            // chamador pede explicitamente via `fillHeight`.
+            Card(modifier = Modifier.fillMaxWidth().let { if (fillHeight) it.weight(1f) else it }) {
                 Column(
                     modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(8.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
                 ) { spec.content() }
-            } else {
-                // SpaceEvenly em vez de spacedBy -- pedido do usuário
-                // ("distribua melhor os ícones dentro do bloco pra não
-                // ficar espaço até o final"): antes os ícones ficavam
-                // agrupados à esquerda, sobrando um vão vazio à direita em
-                // blocos largos (Dados/Operações/Arquivos).
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                ) { spec.content() }
             }
+        } else {
+            // Sem Card "por fora" envolvendo tudo -- pedido do usuário ("em
+            // todos os módulos, por categorias: dados, operações, arquivos
+            // torne-os blocos com ícones individuais e redistribua de forma
+            // que preencha toda a linha"): cada ícone já é seu próprio Card
+            // (ver ModuleIconButton/LabeledIconButton em ModuleIconRow.kt),
+            // então envolver tudo de novo aqui só duplicava a borda (card
+            // dentro de card). SpaceEvenly distribui os cards individuais
+            // pra ocupar a largura inteira da linha, mesmo padrão já usado
+            // no seletor de visão "Gestão Financeira".
+            // weight(1f) condicional preservado aqui (migrado do Card antigo)
+            // -- é o que faz Dados/Operações combinarem em altura com
+            // Nuvem/Imprimir ao lado, dentro da Row com IntrinsicSize.Min.
+            FlowRow(
+                modifier = Modifier.fillMaxWidth().let { if (fillHeight) it.weight(1f) else it },
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) { spec.content() }
         }
     }
 }
