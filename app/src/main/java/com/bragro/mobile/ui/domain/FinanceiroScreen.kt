@@ -279,6 +279,13 @@ fun FinanceiroScreen(
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Row {
+                            // Fazendas/Nuvem/Imprimir, nessa ordem -- pedido
+                            // do usuário ("em todos os módulos coloque os
+                            // ícones no topo do lado superior direito... na
+                            // ordem fazendas, nuvem e imprimir"), mesma
+                            // ordem já usada no módulo genérico
+                            // (DomainListScreen.kt).
+                            FarmSelectorButton()
                             IconButton(onClick = {
                                 val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
@@ -309,7 +316,7 @@ fun FinanceiroScreen(
                     // as cores dos botões +, tendo como exemplo a cor do
                     // ícone fazenda").
                     containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = androidx.compose.ui.graphics.Color.White,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) {
                     Icon(Icons.Filled.Add, contentDescription = "Novo lançamento")
                 }
@@ -821,7 +828,7 @@ private fun FinanceiroCategoryTabs(blocks: List<FinBlockSpec>, modifier: Modifie
                     // blocos das categorias a mesma cor do ícone fazenda").
                     colors = SegmentedButtonDefaults.colors(
                         activeContainerColor = MaterialTheme.colorScheme.primary,
-                        activeContentColor = androidx.compose.ui.graphics.Color.White,
+                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
                         inactiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                     ),
                     label = { Text(block.title) },

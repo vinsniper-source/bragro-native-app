@@ -496,15 +496,21 @@ private fun ComputedFieldDisplay(col: ColumnConfig, raw: String, optionLabels: M
 // Tonalidade de verde da marca (mesma da barra inferior de navegação)
 // explícita em TODOS os campos de lançamento -- pedido do usuário ("aplique
 // a tonalidade de verde da barra inferior de botões em todos os campos de
-// lançamentos"). Sem isso, o campo focado usa `colorScheme.primary` por
-// padrão (que já é BrGreen desde o ajuste do Theme.kt), mas fixar aqui
-// garante o tom mesmo que o tema mude no futuro.
+// lançamentos"). Usa `colorScheme.primary` (não mais o BrGreen fixo) --
+// pedido do usuário ("no modo claro e escuro siga a cor da barra inferior
+// para as listas suspensas dos módulos e dos campos"): BrGreen é uma
+// constante única (0xFF2F6F4F) que não muda com o tema, enquanto a barra
+// inferior (NavigationBar, ver BottomNavBar.kt) usa colorScheme.primary, que
+// É diferente por tema (BrGreenPrimaryLight/BrGreenPrimaryDark, ver
+// Theme.kt) -- com BrGreen fixo, o campo ficava com um verde ligeiramente
+// diferente do da barra inferior no modo escuro. colorScheme.primary garante
+// que os dois sempre batem, em qualquer tema.
 @Composable
 private fun greenFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = BrGreen,
-    focusedLabelColor = BrGreen,
-    cursorColor = BrGreen,
-    focusedTrailingIconColor = BrGreen,
+    focusedBorderColor = MaterialTheme.colorScheme.primary,
+    focusedLabelColor = MaterialTheme.colorScheme.primary,
+    cursorColor = MaterialTheme.colorScheme.primary,
+    focusedTrailingIconColor = MaterialTheme.colorScheme.primary,
 )
 
 // Mesmas cores de sempre, só com a borda/rótulo em vermelho quando o campo
@@ -535,7 +541,7 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                 Checkbox(
                     checked = value == "true",
                     onCheckedChange = { viewModel.setField(col.key, it.toString()) },
-                    colors = androidx.compose.material3.CheckboxDefaults.colors(checkedColor = BrGreen),
+                    colors = androidx.compose.material3.CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary),
                 )
                 Text(col.label + if (col.required) " *" else "")
             }

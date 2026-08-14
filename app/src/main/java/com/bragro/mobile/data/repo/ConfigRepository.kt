@@ -31,6 +31,14 @@ class ConfigRepository(context: Context) {
 
     suspend fun lookupsByCategory(category: String) = db.lookupDao().byCategory(category)
 
+    // Reativos -- ver comentario em Daos.kt (LookupDao.observeByCategory/
+    // FarmDao.observeAll): quem observa via collectAsState() se atualiza
+    // sozinho quando o bootstrap em segundo plano reescreve essas tabelas,
+    // sem precisar reabrir a tela pra refletir uma exclusao feita no site.
+    fun observeLookupsByCategory(category: String): Flow<List<LookupEntity>> = db.lookupDao().observeByCategory(category)
+
+    fun observeFarms(): Flow<List<FarmEntity>> = db.farmDao().observeAll()
+
     suspend fun farms() = db.farmDao().all()
 
     /** Chamada apos login (ou manualmente em "Sincronizar agora") -- busca a

@@ -46,11 +46,11 @@ import com.bragro.mobile.ui.home.domainIcon
 private val BottomNavColors: androidx.compose.material3.NavigationBarItemColors
     @Composable
     get() = NavigationBarItemDefaults.colors(
-        selectedIconColor = androidx.compose.ui.graphics.Color.White,
-        selectedTextColor = androidx.compose.ui.graphics.Color.White,
-        indicatorColor = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.18f),
-        unselectedIconColor = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.70f),
-        unselectedTextColor = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.70f),
+        selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+        selectedTextColor = MaterialTheme.colorScheme.onPrimary,
+        indicatorColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f),
+        unselectedIconColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.70f),
+        unselectedTextColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.70f),
     )
 
 // Pedido do usuário: "os botões inferiores devem aparecer uma lista

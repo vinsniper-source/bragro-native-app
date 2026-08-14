@@ -119,7 +119,9 @@ import com.bragro.mobile.data.repo.NoticesRepository
 import com.bragro.mobile.data.repo.NotificationsRepository
 import com.bragro.mobile.data.repo.RecordRepository
 import com.bragro.mobile.data.repo.WeatherRepository
+import com.bragro.mobile.ui.domain.CulturaSelectorButton
 import com.bragro.mobile.ui.domain.FarmSelectorButton
+import com.bragro.mobile.ui.domain.SafraSelectorButton
 import com.bragro.mobile.ui.theme.BrBlue
 import com.bragro.mobile.ui.theme.BrGreen
 import com.bragro.mobile.ui.theme.BrOrange
@@ -521,30 +523,26 @@ fun HomeScreen(
                 ) {
                     // Logo nova, ainda maior que antes -- pedido do usuário
                     // repetiu ("aumente mais o tamanho da logo, login e
-                    // início"). 96dp -> 120dp -> 100dp: 120dp deixava a logo
-                    // larga demais (sem largura fixa, escala pela proporção
-                    // da imagem) e empurrava o ícone da logo do cliente pra
-                    // fora da tela, à direita -- pedido do usuário
-                    // ("desloque a logo mais pra esquerda pro ícone da logo
-                    // do cliente voltar a aparecer").
+                    // início"). 96dp -> 120dp -> 100dp -> 112dp -> 128dp: o
+                    // ícone fazenda saiu deste cluster e foi para a linha
+                    // nova abaixo da logo (junto de safra/cultura, ver Row
+                    // logo após este bloco) -- pedido do usuário ("aumente a
+                    // logo pois terá mais espaço"), já que agora só restam
+                    // Backup/Notificações/Tema/Conta/Logo-cliente disputando
+                    // espaço com ela nesta linha, em vez de seis ícones.
                     Image(
                         painter = painterResource(R.drawable.logo_bragro),
                         contentDescription = "BRAgro",
                         // widthIn(max) evita que a logo, sozinha, já tome
                         // metade da tela em telas estreitas -- bug real
                         // encontrado ("logo do cliente não aparece"): com
-                        // muitos ícones no cabeçalho (backup, fazenda,
-                        // notificações, tema, conta, logo cliente), a soma das
-                        // larguras passava da tela e o ÚLTIMO item (logo do
-                        // cliente / botão "+") ficava cortado fora da área
-                        // visível, sem nenhum aviso. Agora que o cluster de
-                        // ícones rola horizontalmente (Row.horizontalScroll
-                        // abaixo), dá pra aumentar um pouquinho a logo (100dp
-                        // -> 112dp) sem nenhum ícone ficar escondido -- pedido
-                        // do usuário ("aumente logo de início uma pouquinho
-                        // sem estourar o limite, sem esconder nenhum ícone do
-                        // cabeçalho").
-                        modifier = Modifier.height(112.dp).widthIn(max = 142.dp),
+                        // muitos ícones no cabeçalho, a soma das larguras
+                        // passava da tela e o ÚLTIMO item (logo do cliente /
+                        // botão "+") ficava cortado fora da área visível,
+                        // sem nenhum aviso. O cluster de ícones ainda rola
+                        // horizontalmente (Row.horizontalScroll abaixo) como
+                        // rede de segurança, mesmo com mais espaço agora.
+                        modifier = Modifier.height(128.dp).widthIn(max = 162.dp),
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     // Cluster de ícones do cabeçalho com rolagem horizontal --
@@ -570,11 +568,6 @@ fun HomeScreen(
                             Icon(Icons.Filled.Backup, contentDescription = "Backup completo")
                         }
                     }
-                    // Filtro global de fazenda (ver FarmSelection.kt) --
-                    // mesmo lugar do cabeçalho do site (FarmSelector),
-                    // primeiro item do cluster de ícones. Só aparece com
-                    // fazendas cadastradas (checagem interna do componente).
-                    FarmSelectorButton()
                     IconButton(onClick = { notificationsOpen = true; viewModel.loadNotifications() }) {
                         BadgedBox(badge = { if (unreadCount > 0) Badge { Text(unreadCount.toString()) } }) {
                             Icon(
@@ -678,6 +671,21 @@ fun HomeScreen(
                         }
                     }
                     } // fecha Row de rolagem horizontal do cluster de ícones
+                // Filtros globais (Fazenda/Safra/Cultura), numa linha própria
+                // abaixo da logo -- pedido do usuário ("remaneje o ícone
+                // fazenda para baixo da logo e crie mais dois ícones globais
+                // safra e cultura, nesta ordem: fazenda, safra e cultura").
+                // Cada botão some sozinho se não houver opções cadastradas
+                // (checagem interna de cada Selector), então a linha pode
+                // aparecer com só 1 ou 2 ícones dependendo do cadastro.
+                Row(
+                    modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    FarmSelectorButton()
+                    SafraSelectorButton()
+                    CulturaSelectorButton()
+                }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         },
@@ -1602,16 +1610,29 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
             // padrão já usado no Câmbio (FxVariacaoTag). Cabe numa linha só
             // agora que o card ocupa a largura inteira da tela (deixou de
             // dividir a linha com Destaques -- ver item "cotacoes" acima).
+            // Distribuição melhor aproveitando a largura cheia do card --
+            // pedido do usuário ("distribuir melhor as informações dentro
+            // do bloco"): antes tudo ficava espremido à esquerda (nome +
+            // preço + variação em sequência); agora o nome fica fixo à
+            // esquerda e preço/variação vão para a ponta direita da linha,
+            // usando o espaço extra que sobrou desde que o card passou a
+            // ocupar a tela inteira (Task #68).
             itens.forEach { q ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("${q.nome}: ")
-                    Text(
-                        "${formatMoneyBrl(q.valor)} / ${q.unidade}",
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    FxVariacaoTag(q.variacaoPct)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(q.nome, fontWeight = FontWeight.Medium)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "${formatMoneyBrl(q.valor)} / ${q.unidade}",
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        FxVariacaoTag(q.variacaoPct)
+                    }
                 }
             }
             // Fonte -- pedido do usuário ("a fonte por exemplo cotações é o

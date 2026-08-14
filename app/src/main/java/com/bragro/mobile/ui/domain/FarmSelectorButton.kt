@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,13 +34,17 @@ import com.bragro.mobile.data.repo.ConfigRepository
 @Composable
 fun FarmSelectorButton() {
     val context = LocalContext.current
-    var farms by remember { mutableStateOf<List<FarmEntity>>(emptyList()) }
+    // Reativo (Flow/collectAsState), nao mais LaunchedEffect(Unit) + fetch
+    // unico -- BUG real corrigido (pedido do usuario: "as listas suspensas
+    // de todo app continuam desatualizadas, ainda ha fazendas que ja
+    // exclui"): a leitura unica so pegava o que o Room tinha NAQUELE
+    // instante e nunca mais recarregava sozinha, mesmo com o bootstrap em
+    // segundo plano atualizando a tabela pouco depois. Ver comentario
+    // completo em Daos.kt (FarmDao.observeAll).
+    val farms by remember { ConfigRepository(context).observeFarms() }.collectAsState(initial = emptyList())
     var menuOpen by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        FarmSelection.load(context)
-        farms = ConfigRepository(context).farms()
-    }
+    LaunchedEffect(Unit) { FarmSelection.load(context) }
 
     if (farms.isEmpty()) return
 

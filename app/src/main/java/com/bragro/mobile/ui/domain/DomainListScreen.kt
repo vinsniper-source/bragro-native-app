@@ -266,6 +266,28 @@ fun DomainListScreen(
         }
     }
 
+    // Filtros globais de Safra/Cultura (ver GlobalFieldSelection.kt) --
+    // mesmo mecanismo do filtro global de fazenda acima, só que aqui a
+    // coluna filtrada tem sempre a mesma key ("safra"/"cultura"), então em
+    // vez de outra lista de domínios hardcoded, só verifica se o próprio
+    // módulo tem essa coluna -- pedido do usuário ("crie mais dois ícones
+    // globais safra e cultura").
+    LaunchedEffect(Unit) { SafraSelection.load(context); CulturaSelection.load(context) }
+    val hasSafraField = remember(domainId, config) { config?.columns?.any { it.key == "safra" && !it.computed } == true }
+    val hasCulturaField = remember(domainId, config) { config?.columns?.any { it.key == "cultura" && !it.computed } == true }
+    val globalSafraSelected = SafraSelection.selected.value
+    val globalCulturaSelected = CulturaSelection.selected.value
+    LaunchedEffect(domainId, hasSafraField, globalSafraSelected) {
+        if (hasSafraField) {
+            if (globalSafraSelected != null) columnFilters["safra"] = globalSafraSelected else columnFilters.remove("safra")
+        }
+    }
+    LaunchedEffect(domainId, hasCulturaField, globalCulturaSelected) {
+        if (hasCulturaField) {
+            if (globalCulturaSelected != null) columnFilters["cultura"] = globalCulturaSelected else columnFilters.remove("cultura")
+        }
+    }
+
     // Recolher/expandir todos os LANÇAMENTOS de uma vez -- pedido do usuário
     // ("a setinha só mexe nos cards de registro, sem abrir/fechar Filtros,
     // Gráficos, Calculadoras"; "os cards não ocultam" -- antes esse estado só
@@ -418,7 +440,7 @@ fun DomainListScreen(
                     // ícone branco -- mesmo tratamento já aplicado na barra
                     // inferior e nas abas ovais de categoria.
                     containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = androidx.compose.ui.graphics.Color.White,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
                 }
             } else if (domainId == "romaneios" && onOpenRomaneioQuick != null) {
@@ -443,7 +465,7 @@ fun DomainListScreen(
                     // ícone branco -- mesmo tratamento já aplicado na barra
                     // inferior e nas abas ovais de categoria.
                     containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = androidx.compose.ui.graphics.Color.White,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
                 }
             } else {
@@ -457,7 +479,7 @@ fun DomainListScreen(
                     // ícone branco -- mesmo tratamento já aplicado na barra
                     // inferior e nas abas ovais de categoria.
                     containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = androidx.compose.ui.graphics.Color.White,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
             }
         },
@@ -1152,6 +1174,11 @@ fun DomainListScreen(
 private val CATEGORIZED_BLOCK_DOMAINS = setOf(
     "romaneios", "pragas", "receituarios", "pedidos", "contratos",
     "caixainterno", "inventario", "rh", "controleinterno",
+    // Pedido do usuário ("cotações fornecedores deixar o layout do módulo
+    // igual por exemplo o de pedidos") -- antes caía no layout padrão (fora
+    // de CATEGORIZED_BLOCK_DOMAINS/PER_MODULE_BLOCK_DOMAINS), agora usa o
+    // mesmo bloco Dados/Operações/Arquivos de Pedidos.
+    "cotacoesfornecedores",
 )
 
 // Safra/Clima/Planejamento Safra/Colheita/Frota: mesmo layout em blocos
@@ -1247,7 +1274,7 @@ private fun ModuleCategoryTabs(blocks: List<ModuleBlockSpec>, modifier: Modifier
                     // módulos que usam esse padrão (não só Financeiro).
                     colors = SegmentedButtonDefaults.colors(
                         activeContainerColor = MaterialTheme.colorScheme.primary,
-                        activeContentColor = androidx.compose.ui.graphics.Color.White,
+                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
                         inactiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                     ),
                     label = { Text(block.title) },

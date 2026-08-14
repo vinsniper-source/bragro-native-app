@@ -33,6 +33,23 @@ interface LookupDao {
     @Query("SELECT * FROM lookup_options WHERE category = :category ORDER BY label ASC")
     suspend fun byCategory(category: String): List<LookupEntity>
 
+    // Versao reativa de byCategory -- BUG real corrigido (pedido do usuario:
+    // "as listas suspensas de todo app continuam desatualizadas, ainda ha
+    // fazendas que ja exclui"): telas que buscavam a lista com
+    // LaunchedEffect(Unit) + byCategory() (suspend, uma unica vez) SO liam
+    // o valor que o Room tinha NAQUELE INSTANTE -- se o bootstrap em segundo
+    // plano (ver ConfigRepository.bootstrapAndCacheConfig, chamado sozinho a
+    // cada abertura do Inicio) atualizasse a tabela um pouco DEPOIS dessa
+    // leitura (ou a tela ja estivesse aberta havia um tempo), a lista
+    // continuava mostrando o valor antigo pelo resto da sessao, sem nenhum
+    // jeito de se auto-corrigir a nao ser fechar e reabrir o app inteiro.
+    // Flow (Room gera a query reativa sozinho) resolve isso na raiz: quem
+    // observa via collectAsState() recompoe automaticamente assim que
+    // clearAll()+insertAll() do bootstrap terminar, sem precisar de nenhuma
+    // logica extra de "recarregar".
+    @Query("SELECT * FROM lookup_options WHERE category = :category ORDER BY label ASC")
+    fun observeByCategory(category: String): Flow<List<LookupEntity>>
+
     @Query("DELETE FROM lookup_options")
     suspend fun clearAll()
 
@@ -44,6 +61,11 @@ interface LookupDao {
 interface FarmDao {
     @Query("SELECT * FROM farms ORDER BY name ASC")
     suspend fun all(): List<FarmEntity>
+
+    // Versao reativa de all() -- mesmo motivo de LookupDao.observeByCategory
+    // acima (bug de fazenda excluida continuando na lista suspensa/filtro).
+    @Query("SELECT * FROM farms ORDER BY name ASC")
+    fun observeAll(): Flow<List<FarmEntity>>
 
     @Query("DELETE FROM farms")
     suspend fun clearAll()

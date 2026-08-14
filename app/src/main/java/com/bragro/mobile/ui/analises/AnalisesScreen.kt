@@ -61,6 +61,7 @@ import com.bragro.mobile.data.NetworkStatus
 import com.bragro.mobile.data.model.ColumnConfig
 import com.bragro.mobile.data.model.DomainConfig
 import com.bragro.mobile.data.repo.AnalisesRepository
+import com.bragro.mobile.ui.domain.FarmSelectorButton
 import com.bragro.mobile.ui.domain.LabeledIconButton
 import com.bragro.mobile.ui.domain.exportXlsx
 import com.bragro.mobile.ui.print.HtmlPrinter
@@ -250,7 +251,7 @@ private fun AnalisesCategoryTabs(blocks: List<AnalisesBlockSpec>, modifier: Modi
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = blocks.size),
                     colors = SegmentedButtonDefaults.colors(
                         activeContainerColor = MaterialTheme.colorScheme.primary,
-                        activeContentColor = androidx.compose.ui.graphics.Color.White,
+                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
                         inactiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                     ),
                     label = { Text(block.title) },
@@ -379,6 +380,10 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Row {
+                            // Fazendas/Nuvem/Imprimir, nessa ordem -- pedido
+                            // do usuário ("em todos os módulos... na ordem
+                            // fazendas, nuvem e imprimir").
+                            FarmSelectorButton()
                             IconButton(onClick = {
                                 val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
