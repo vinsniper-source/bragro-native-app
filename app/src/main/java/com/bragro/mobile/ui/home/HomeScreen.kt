@@ -86,7 +86,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -220,6 +219,20 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             loading.value = false
         }
         viewModelScope.launch { weather.value = weatherRepository.fetch() }
+        // Listas suspensas/módulos/fazendas -- pedido do usuário ("atualiza
+        // todas as listas suspensas de todos os módulos... faça para que
+        // quando apagar desapareça também das listas suspensas
+        // automaticamente"): antes só recarregava esse cache no login ou
+        // tocando manualmente em "Sincronizar agora" (ver syncNow acima).
+        // Agora acontece sozinho toda vez que o Início carrega (silencioso,
+        // em paralelo, sem travar a tela -- os dados em cache continuam
+        // aparecendo na hora, offline-first) -- assim uma exclusão feita em
+        // Base de Dados (site ou app) some dos dropdowns na próxima vez que
+        // o usuário abrir o app, sem precisar de nenhum passo manual.
+        viewModelScope.launch {
+            val s = db.sessionDao().get()
+            if (s != null) configRepository.bootstrapAndCacheConfig(s.accessToken, s.refreshToken)
+        }
     }
 
     // BUG real corrigido -- pedido do usuário ("listas suspensas
@@ -795,12 +808,6 @@ fun HomeScreen(
             // ("Itens no e...", "Operaç...", "Colabor..."). Volta a ser
             // seção própria, largura cheia.
             item(key = "monitor") { ActivityMonitorCard(data.recentActivity, onOpenDomain) }
-            // Faixa ilustrativa decorativa acima dos KPIs -- pedido do
-            // usuário ("gere uma imagem junto com os kpis"), só enfeite
-            // visual, sem nenhum dado. Desenhada em Compose (gradiente +
-            // ícone translúcido) em vez de um arquivo de imagem novo -- não
-            // depende de nenhum asset binário extra no app.
-            item(key = "kpis-banner") { KpiDecorativeBanner() }
             item(key = "kpis") { KpiGrid(data) }
             // Clima ao lado de Câmbio, Cotações ao lado de Destaques -- cada
             // par em blocos separados (Card) lado a lado, pedido do usuário
@@ -818,14 +825,26 @@ fun HomeScreen(
                     }
                 }
             }
-            item(key = "cotacoes-destaques") {
+            // Fazendas cadastradas ao lado de Destaques, dividindo o bloco --
+            // pedido do usuário ("realoque o kpi destaques, para o lado de
+            // fazendas cadastradas, dividindo os blocos"). Fazendas
+            // cadastradas saiu do grid 2x2 de KpiGrid (ver `fazendasKpi`
+            // acima) pra poder formar essa dupla aqui.
+            item(key = "fazendas-destaques") {
                 Row(
                     modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    weather?.commodities?.let { CotacoesCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.weight(1f).fillMaxHeight()) }
+                    KpiCard(fazendasKpi(data), modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
                     DestaquesCard(data, viewModel.lastUpdatedAt.value, modifier = Modifier.weight(1f).fillMaxHeight())
                 }
+            }
+            // Cotações Grãos agora ocupa a linha inteira, até o limite da
+            // tela -- pedido do usuário ("expanda kpi cotações grãos até o
+            // limite da tela"), separado de Destaques (que foi pro lado de
+            // Fazendas cadastradas acima).
+            item(key = "cotacoes") {
+                weather?.commodities?.let { CotacoesCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth()) }
             }
         }
     }
@@ -1260,31 +1279,6 @@ private data class Kpi(
 // aplicável) e a da direita mostra o valor em R$ (se aplicável) -- cada KPI
 // só preenche a coluna que faz sentido pra ele, mas as 3 zonas ficam sempre
 // na mesma posição em todo card.
-// Faixa decorativa acima dos KPIs -- pedido do usuário ("na imagem acima
-// gere uma imagem junto com os kpis"), confirmado como ilustração puramente
-// visual (sem dado nenhum). Gradiente verde suave + ícone grande e
-// translúcido (Agriculture, mesmo ícone já usado no KPI "Operações de
-// safra"/Cotações Grãos) -- desenhado 100% em Compose, sem precisar
-// adicionar nenhum arquivo de imagem novo em res/drawable.
-@Composable
-private fun KpiDecorativeBanner() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(Brush.horizontalGradient(listOf(BrGreen.copy(alpha = 0.20f), BrGreen.copy(alpha = 0.04f)))),
-        contentAlignment = Alignment.CenterEnd,
-    ) {
-        Icon(
-            Icons.Filled.Agriculture,
-            contentDescription = null,
-            tint = BrGreen.copy(alpha = 0.30f),
-            modifier = Modifier.size(48.dp).padding(end = 16.dp),
-        )
-    }
-}
-
 @Composable
 private fun KpiGrid(data: HomeData) {
     val kpis = listOf(
@@ -1335,21 +1329,6 @@ private fun KpiGrid(data: HomeData) {
             description = "Total cadastrado no módulo RH",
         ),
     )
-    // 5º KPI -- espelha numeroFazendas/areaTotalHa, novos campos de
-    // /api/mobile/home e /api/mobile/dashboard (contagem de fazendas do
-    // cadastro + soma da área em hectares). Mesmo padrão visual dos outros 4
-    // (ícone com borda colorida, quantidade em destaque, legenda menor
-    // abaixo do nome) -- aqui a legenda mostra a área total em vez de um
-    // texto fixo, já que é a métrica-irmã da contagem de fazendas. Fica FORA
-    // da lista `kpis` de propósito (ver comentário abaixo, em `KpiCard`).
-    val kpiFazendas = Kpi(
-        "Fazendas cadastradas",
-        data.numeroFazendas.toString(),
-        Icons.Filled.Map,
-        BrOrange,
-        KpiKind.QUANTIDADE,
-        description = "Área total: ${formatAreaHa(data.areaTotalHa)}",
-    )
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         kpis.chunked(2).forEach { row ->
             // IntrinsicSize.Min + fillMaxHeight -- pedido do usuário
@@ -1369,17 +1348,30 @@ private fun KpiGrid(data: HomeData) {
                 if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
             }
         }
-        // "Fazendas cadastradas" ocupando a linha TODA, separado do grid de
-        // 2 colunas acima -- pedido do usuário ("o card fazendas cadastradas
-        // quero que ele ocupe a linha toda, separe ele dos outros 4 kpis que
-        // tão no grid de 2 colunas"): antes ele entrava na mesma lista dos
-        // outros 4 e o `chunked(2)` sobrava ele sozinho numa fileira com a
-        // outra metade vazia (Spacer). Reaproveita o mesmo `KpiCard` (mesmo
-        // visual dos outros), só que com `fillMaxWidth()` em vez de
-        // `weight(1f)` dentro de uma Row de 2.
-        KpiCard(kpiFazendas, modifier = Modifier.fillMaxWidth())
+        // "Fazendas cadastradas" saiu daqui -- pedido do usuário ("realoque
+        // o kpi destaques para o lado de fazendas cadastradas, dividindo os
+        // blocos"): agora mora no item "fazendas-destaques" (ver HomeScreen
+        // abaixo), lado a lado com Destaques, em vez de sozinho numa linha
+        // cheia aqui dentro do grid.
     }
 }
+
+// 5º KPI -- espelha numeroFazendas/areaTotalHa, novos campos de
+// /api/mobile/home e /api/mobile/dashboard (contagem de fazendas do
+// cadastro + soma da área em hectares). Mesmo padrão visual dos outros 4
+// (ícone com borda colorida, quantidade em destaque, legenda menor abaixo do
+// nome) -- aqui a legenda mostra a área total em vez de um texto fixo, já
+// que é a métrica-irmã da contagem de fazendas. Extraído de dentro de
+// KpiGrid pra poder ser renderizado ao lado de Destaques (ver comentário no
+// item "fazendas-destaques" em HomeScreen), em vez de dentro do grid.
+private fun fazendasKpi(data: HomeData): Kpi = Kpi(
+    "Fazendas cadastradas",
+    data.numeroFazendas.toString(),
+    Icons.Filled.Map,
+    BrOrange,
+    KpiKind.QUANTIDADE,
+    description = "Área total: ${formatAreaHa(data.areaTotalHa)}",
+)
 
 // Corpo visual de um card de KPI -- extraído de dentro do loop de KpiGrid
 // pra poder ser reaproveitado tanto nas 2 colunas do grid (Financeiro/
@@ -1604,15 +1596,22 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
             // agrícolas para cotações grãos").
             MiniCardHeaderWithRefresh("Cotações Grãos", Icons.Filled.Agriculture, BrGreen, MaterialTheme.typography.titleMedium, onRefresh)
             val itens = listOfNotNull(com.soja, com.milho, com.sorgo)
+            // Quantidade (unidade "sc" = saca) + variação/porcentagem do dia
+            // ao lado do preço -- pedido do usuário ("insira a quantidade de
+            // cada sc, os ícones de variações e a porcentagem"), mesmo
+            // padrão já usado no Câmbio (FxVariacaoTag). Cabe numa linha só
+            // agora que o card ocupa a largura inteira da tela (deixou de
+            // dividir a linha com Destaques -- ver item "cotacoes" acima).
             itens.forEach { q ->
-                Row {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("${q.nome}: ")
                     Text(
-                        "${formatMoneyBrl(q.valor)}/${q.unidade}",
+                        "${formatMoneyBrl(q.valor)} / ${q.unidade}",
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    FxVariacaoTag(q.variacaoPct)
                 }
             }
             // Fonte -- pedido do usuário ("a fonte por exemplo cotações é o

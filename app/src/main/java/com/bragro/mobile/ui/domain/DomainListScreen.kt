@@ -408,7 +408,18 @@ fun DomainListScreen(
                     ) {
                         Icon(Icons.Filled.LocalGasStation, contentDescription = "Abastecimento rápido")
                     }
-                    FloatingActionButton(onClick = onNewRecord) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
+                    FloatingActionButton(
+                    onClick = onNewRecord,
+                    // Cores invertidas -- pedido do usuário ("inverta também
+                    // as cores dos botões +, tendo como exemplo a cor do
+                    // ícone fazenda"): antes usava as cores padrão do FAB
+                    // (primaryContainer claro + ícone escuro); agora fundo
+                    // verde cheio (primary, mesma cor do ícone fazenda) com
+                    // ícone branco -- mesmo tratamento já aplicado na barra
+                    // inferior e nas abas ovais de categoria.
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = androidx.compose.ui.graphics.Color.White,
+                ) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
                 }
             } else if (domainId == "romaneios" && onOpenRomaneioQuick != null) {
                 // Romaneio Rápido (leitura da balança) unificado aqui como
@@ -422,10 +433,32 @@ fun DomainListScreen(
                     ) {
                         Icon(Icons.Filled.MonitorWeight, contentDescription = "Romaneio rápido (balança)")
                     }
-                    FloatingActionButton(onClick = onNewRecord) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
+                    FloatingActionButton(
+                    onClick = onNewRecord,
+                    // Cores invertidas -- pedido do usuário ("inverta também
+                    // as cores dos botões +, tendo como exemplo a cor do
+                    // ícone fazenda"): antes usava as cores padrão do FAB
+                    // (primaryContainer claro + ícone escuro); agora fundo
+                    // verde cheio (primary, mesma cor do ícone fazenda) com
+                    // ícone branco -- mesmo tratamento já aplicado na barra
+                    // inferior e nas abas ovais de categoria.
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = androidx.compose.ui.graphics.Color.White,
+                ) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
                 }
             } else {
-                FloatingActionButton(onClick = onNewRecord) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
+                FloatingActionButton(
+                    onClick = onNewRecord,
+                    // Cores invertidas -- pedido do usuário ("inverta também
+                    // as cores dos botões +, tendo como exemplo a cor do
+                    // ícone fazenda"): antes usava as cores padrão do FAB
+                    // (primaryContainer claro + ícone escuro); agora fundo
+                    // verde cheio (primary, mesma cor do ícone fazenda) com
+                    // ícone branco -- mesmo tratamento já aplicado na barra
+                    // inferior e nas abas ovais de categoria.
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = androidx.compose.ui.graphics.Color.White,
+                ) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
             }
         },
     ) { padding ->
@@ -1207,6 +1240,16 @@ private fun ModuleCategoryTabs(blocks: List<ModuleBlockSpec>, modifier: Modifier
                     selected = safeSelected == index,
                     onClick = { selected = index },
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = blocks.size),
+                    // Fundo verde (mesma cor do ícone fazenda/primary) --
+                    // pedido do usuário ("nos módulos lançamentos coloque
+                    // também a cor de fundo dos blocos das categorias a
+                    // mesma cor do ícone fazenda"), aplicado a todos os
+                    // módulos que usam esse padrão (não só Financeiro).
+                    colors = SegmentedButtonDefaults.colors(
+                        activeContainerColor = MaterialTheme.colorScheme.primary,
+                        activeContentColor = androidx.compose.ui.graphics.Color.White,
+                        inactiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    ),
                     label = { Text(block.title) },
                 )
             }

@@ -33,27 +33,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.bragro.mobile.ui.home.domainIcon
-import com.bragro.mobile.ui.theme.BrGreen
 
-// Pedido do usuário: "coloque o tom de verde da barra inferior dos botões em
-// todo app conforme o modo claro e escuro" -- o Material3 antes derivava a
-// cor do item selecionado automaticamente da paleta tonal (`primary` fica
-// bem esmaecido dentro do NavigationBarItem padrão), o que resultava numa
-// aba selecionada quase sem verde visível. Fixamos a cor explícita do
-// BrGreen (mesma em claro/escuro) pro ícone/rótulo/indicador da aba ativa.
+// Fundo da barra inferior inteira agora é verde (mesma cor do ícone
+// fazenda/primary) -- pedido do usuário ("na barra inferior dos botões
+// coloque o fundo a mesma cor por exemplo do ícone fazenda início"). Como o
+// fundo virou sólido/verde, os ícones/rótulos precisaram trocar pra branco
+// (em vez do próprio verde, que ficaria invisível em cima de verde) --
+// opacidade menor pro item não-selecionado distingue do selecionado (branco
+// cheio + pílula translúcida atrás), mesmo conceito de antes (aba ativa em
+// destaque), só que invertido de "verde sobre fundo neutro" pra "branco
+// sobre fundo verde".
 private val BottomNavColors: androidx.compose.material3.NavigationBarItemColors
     @Composable
     get() = NavigationBarItemDefaults.colors(
-        selectedIconColor = BrGreen,
-        selectedTextColor = BrGreen,
-        // Sem preenchimento verde atrás do ícone selecionado -- pedido do
-        // usuário ("retire o preenchimento verde e deixe apenas a borda em
-        // verde, em todo app"); o Material3 não tem um "indicador com só
-        // borda" pronto, então a seleção fica só pela cor do ícone/rótulo
-        // (já em BrGreen acima), sem a pílula de fundo.
-        indicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        selectedIconColor = androidx.compose.ui.graphics.Color.White,
+        selectedTextColor = androidx.compose.ui.graphics.Color.White,
+        indicatorColor = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.18f),
+        unselectedIconColor = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.70f),
+        unselectedTextColor = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.70f),
     )
 
 // Pedido do usuário: "os botões inferiores devem aparecer uma lista
@@ -125,6 +122,16 @@ private val BOTTOM_TABS = listOf(
             // do usuário ("crie um botão importar xml e unifique esses dois
             // módulos").
             SectorTarget.Domain("pedidos", "Pedidos"),
+            // Existia como domínio (colunas, cálculo automático de Índice de
+            // Vantagem, listas suspensas próprias já cadastradas no banco --
+            // categorias_cotacao/itens_estoque/entidades_financeiro/
+            // unidades/formas_pgto, todas conferidas), mas nunca tinha
+            // entrado nessa lista suspensa -- só aparecia na tela "Módulos"
+            // (grade completa, ModulosScreen.kt), não no atalho principal do
+            // dia a dia. Pra quem só usa a aba Financeiro, o módulo parecia
+            // não existir -- pedido do usuário ("ainda não foi implementado
+            // o módulo cotações fornecedores"). Corrigido aqui.
+            SectorTarget.Domain("cotacoesfornecedores", "Cotações de Fornecedores"),
             SectorTarget.Domain("contratos", "Contratos"),
             SectorTarget.Domain("caixainterno", "Caixa Interno"),
             // Cobranças e NFS-e unificados numa única entrada -- pedido do
@@ -196,7 +203,7 @@ fun BRAgroBottomBar(
         }
     }
 
-    NavigationBar {
+    NavigationBar(containerColor = MaterialTheme.colorScheme.primary) {
         BOTTOM_TABS.forEach { tab ->
             val selected = tab.directDomainId == currentDomainId ||
                 tab.items.any { it is SectorTarget.Domain && it.domainId == currentDomainId }

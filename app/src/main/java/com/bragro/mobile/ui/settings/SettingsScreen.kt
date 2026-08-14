@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -249,6 +250,34 @@ private fun CollapsibleCard(title: String, icon: (@Composable () -> Unit)? = nul
 @Composable
 private fun AppMobileAndroidCard(appRelease: JsonObject?) {
     val context = LocalContext.current
+    // Download nativo (DownloadManager) em vez de abrir o link num Custom
+    // Tab -- corrige bug real ("o download vai até o final mas não aparece
+    // a mensagem concluído, fica em looping infinito, às vezes dá certo na
+    // segunda vez às vezes não"): dentro de um Custom Tab o download roda
+    // inteiro no processo do navegador e o app nunca fica sabendo quando
+    // termina. Ver ApkInstaller.kt pro porquê completo.
+    var downloading by remember { mutableStateOf(false) }
+    var downloadId by remember { mutableStateOf<Long?>(null) }
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        val downloadManager = context.getSystemService(android.content.Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
+        val receiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(ctx: android.content.Context, intent: android.content.Intent) {
+                val finishedId = intent.getLongExtra(android.app.DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
+                if (finishedId == -1L || finishedId != downloadId) return
+                downloading = false
+                downloadId = null
+                android.widget.Toast.makeText(context, "Download concluído -- abrindo instalador...", android.widget.Toast.LENGTH_SHORT).show()
+                com.bragro.mobile.ui.util.openApkInstaller(context, downloadManager, finishedId)
+            }
+        }
+        androidx.core.content.ContextCompat.registerReceiver(
+            context,
+            receiver,
+            android.content.IntentFilter(android.app.DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+            androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
+        onDispose { context.unregisterReceiver(receiver) }
+    }
     CollapsibleCard("Aplicativo mobile (Android)", icon = { Icon(Icons.Filled.Smartphone, contentDescription = null) }) {
         if (appRelease == null) {
             Text("Nenhuma versão publicada ainda.", style = MaterialTheme.typography.bodySmall)
@@ -267,16 +296,30 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
                         Text(notas, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 2.dp))
                     }
                     Text(
-                        "Toque em Baixar pra abrir o instalador no navegador (fora da Play Store, pode pedir pra permitir \"fontes desconhecidas\").",
+                        if (downloading) "Baixando... você recebe uma notificação quando terminar." else "Toque em Baixar (fora da Play Store, pode pedir pra permitir \"fontes desconhecidas\").",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }
                 if (!apkUrl.isNullOrBlank()) {
-                    androidx.compose.material3.Button(onClick = { openInCustomTab(context, apkUrl) }, modifier = Modifier.padding(start = 8.dp)) {
-                        Icon(Icons.Filled.Download, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                        Text("Baixar")
+                    androidx.compose.material3.Button(
+                        onClick = {
+                            if (!downloading) {
+                                downloading = true
+                                downloadId = com.bragro.mobile.ui.util.enqueueApkDownload(context, apkUrl, versao)
+                            }
+                        },
+                        enabled = !downloading,
+                        modifier = Modifier.padding(start = 8.dp),
+                    ) {
+                        if (downloading) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp).padding(end = 4.dp), strokeWidth = 2.dp)
+                            Text("Baixando...")
+                        } else {
+                            Icon(Icons.Filled.Download, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                            Text("Baixar")
+                        }
                     }
                 }
             }

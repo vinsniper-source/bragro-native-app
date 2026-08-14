@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -46,6 +45,9 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -312,6 +314,50 @@ private fun DreCategoryBlock(spec: DreBlockSpec, modifier: Modifier = Modifier, 
     }
 }
 
+// Barra oval (pill) alternando entre categorias (Dados/Operações/Arquivos),
+// mostrando só os ícones da categoria selecionada -- mesmo padrão de
+// ModuleCategoryTabs (DomainListScreen.kt)/FinanceiroCategoryTabs
+// (FinanceiroScreen.kt), duplicado aqui pelo mesmo motivo de DreCategoryBlock
+// (evitar mexer em código compartilhado entre os módulos).
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun DreCategoryTabs(blocks: List<DreBlockSpec>, modifier: Modifier = Modifier) {
+    var selected by remember { mutableStateOf(0) }
+    val safeSelected = selected.coerceIn(0, blocks.size - 1)
+    Column(modifier = modifier) {
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            blocks.forEachIndexed { index, block ->
+                SegmentedButton(
+                    selected = safeSelected == index,
+                    onClick = { selected = index },
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = blocks.size),
+                    colors = SegmentedButtonDefaults.colors(
+                        activeContainerColor = MaterialTheme.colorScheme.primary,
+                        activeContentColor = androidx.compose.ui.graphics.Color.White,
+                        inactiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    ),
+                    label = { Text(block.title) },
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        val active = blocks[safeSelected]
+        if (active.vertical) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) { active.content() }
+        } else {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) { active.content() }
+        }
+    }
+}
+
 @Composable
 private fun FarmCard(f: DreFazendaData, arvore: List<DreRamoItemData>, expanded: Boolean, onToggle: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -388,6 +434,28 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                         }
                     }
                 },
+                // Nuvem/Imprimir no canto superior direito -- mesmo padrão
+                // já aplicado em todos os outros módulos (ver
+                // DomainListScreen.kt/FinanceiroScreen.kt), pedido do
+                // usuário ("aplique o mesmo padrão... da aba lançamentos").
+                actions = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row {
+                            IconButton(onClick = {
+                                val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
+                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                            }) {
+                                Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.primary)
+                            }
+                            if (dre != null && dre!!.porFazenda.isNotEmpty()) {
+                                IconButton(onClick = { HtmlPrinter.printList(context, dreExportConfig(), dreExportRecords(dre!!)) }) {
+                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+                        }
+                    }
+                },
             )
         },
     ) { padding ->
@@ -427,16 +495,6 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                         )
                     }
                 }
-                val registrosBlock = DreBlockSpec("", vertical = false) {
-                    LabeledIconButton(
-                        icon = if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
-                        label = "Nuvem",
-                        onClick = {
-                            val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
-                            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                        },
-                    )
-                }
                 val operacoesBlock = DreBlockSpec("Operações", vertical = false) {
                     LabeledIconButton(
                         icon = Icons.Filled.Refresh,
@@ -459,26 +517,14 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                         )
                     }
                 }
-                val distribuicaoBlock = DreBlockSpec("", vertical = true) {
-                    if (temRegistros) {
-                        LabeledIconButton(
-                            icon = Icons.Filled.Print,
-                            label = "Imprimir",
-                            onClick = { HtmlPrinter.printList(context, dreExportConfig(), dreExportRecords(data!!)) },
-                        )
-                    }
-                }
-                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        DreCategoryBlock(dadosBlock, modifier = Modifier.weight(3f).fillMaxHeight(), fillHeight = true)
-                        DreCategoryBlock(registrosBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
-                    }
-                    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        DreCategoryBlock(operacoesBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
-                        DreCategoryBlock(arquivosBlock, modifier = Modifier.weight(2f).fillMaxHeight(), fillHeight = true)
-                        DreCategoryBlock(distribuicaoBlock, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
-                    }
-                }
+                // Nuvem/Imprimir saíram daqui -- foram promovidos pro canto
+                // superior direito da TopAppBar (ver Scaffold acima), mesmo
+                // padrão já usado em todos os outros módulos. Dados/
+                // Operações/Arquivos viraram uma barra oval (pill) que
+                // alterna entre categorias -- pedido do usuário ("aplique o
+                // mesmo padrão... da aba lançamentos com a barra oval e as
+                // categorias os ícones no topo").
+                DreCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth())
             }
             if (filtrosOpen) {
                 item {

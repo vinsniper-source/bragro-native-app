@@ -146,6 +146,24 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
         val missingCount = data?.get("missingCount")?.jsonPrimitive?.contentOrNull?.toIntOrNull() ?: 0
         val bySector = data?.get("bySector")?.jsonArray
         val farms = data?.get("farms")?.jsonArray
+        // Descrição item a item do que vai ser importado/recusado -- pedido
+        // do usuário ("quando subir descreva quais são arquivos que serão
+        // enviados"): antes os diálogos só mostravam a CONTAGEM
+        // ($missingCount item(ns) padrão), sem dizer quais categorias/
+        // fazendas de fato entram na leva -- ver missingLookupItems/
+        // missingFarmNames em api/mobile/base-de-dados/route.ts.
+        val missingSummary = remember(data) {
+            val parts = mutableListOf<String>()
+            data?.get("missingLookupItems")?.jsonArray?.forEach { el ->
+                val obj = el.jsonObject
+                val label = obj["label"]?.jsonPrimitive?.contentOrNull ?: return@forEach
+                val values = obj["values"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
+                if (values.isNotEmpty()) parts += "• $label: ${values.joinToString(", ")}"
+            }
+            val farmNames = data?.get("missingFarmNames")?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
+            if (farmNames.isNotEmpty()) parts += "• Fazendas: ${farmNames.joinToString(", ")}"
+            parts.joinToString("\n")
+        }
         // Confirmacao (Sim/Nao) antes de importar -- pedido do usuario
         // ("coloque a opcao nao tambem"), o botao antes disparava a
         // importacao direto no toque, sem chance de desistir. So traz
@@ -216,7 +234,14 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
             AlertDialog(
                 onDismissRequest = { showImportConfirm = false },
                 title = { Text("Importar dados padrão?") },
-                text = { Text("Isso vai trazer $missingCount item(ns) padrão (categorias/valores de listas suspensas e/ou fazendas) que ainda não existem nesta organização. Valores que você já excluiu de propósito não são repostos.") },
+                text = {
+                    Column {
+                        Text("Isso vai trazer $missingCount item(ns) padrão que ainda não existem nesta organização. Valores que você já excluiu de propósito não são repostos.")
+                        if (missingSummary.isNotBlank()) {
+                            Text(missingSummary, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
+                        }
+                    }
+                },
                 confirmButton = {
                     TextButton(onClick = {
                         showImportConfirm = false
@@ -232,7 +257,14 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
             AlertDialog(
                 onDismissRequest = { showDeclineConfirm = false },
                 title = { Text("Recusar estes $missingCount item(ns) padrão?") },
-                text = { Text("O aviso de importação para de aparecer para estes itens específicos (categorias/valores e/ou fazendas). Nada é apagado do que já existe — e você pode trazer qualquer um deles de volta depois, cadastrando manualmente.") },
+                text = {
+                    Column {
+                        Text("O aviso de importação para de aparecer para estes itens específicos. Nada é apagado do que já existe — e você pode trazer qualquer um deles de volta depois, cadastrando manualmente.")
+                        if (missingSummary.isNotBlank()) {
+                            Text(missingSummary, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
+                        }
+                    }
+                },
                 confirmButton = {
                     TextButton(onClick = {
                         showDeclineConfirm = false

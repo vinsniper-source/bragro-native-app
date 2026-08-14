@@ -303,7 +303,14 @@ fun FinanceiroScreen(
             // Mesmo critério do site (isQuickView): visões rápidas são só
             // leitura, sem "Novo Lançamento".
             if (!isQuickView) {
-                FloatingActionButton(onClick = onNewRecord) {
+                FloatingActionButton(
+                    onClick = onNewRecord,
+                    // Cores invertidas -- pedido do usuário ("inverta também
+                    // as cores dos botões +, tendo como exemplo a cor do
+                    // ícone fazenda").
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = androidx.compose.ui.graphics.Color.White,
+                ) {
                     Icon(Icons.Filled.Add, contentDescription = "Novo lançamento")
                 }
             }
@@ -334,19 +341,25 @@ fun FinanceiroScreen(
             // bloco individual, retire o bloco único"). FlowRow (não Row
             // fixo) deixa cada bloco quebrar pra próxima linha sozinho
             // conforme a largura da tela, sem espremer.
+            // SpaceEvenly (era spacedBy) -- pedido do usuário ("reposicione
+            // os blocos individuais de forma que preencha toda a linha"),
+            // mesmo padrão já usado nos blocos Dados/Operações/Arquivos
+            // (ModuleCategoryBlock/FinanceiroCategoryBlock).
+            // Card externo removido -- pedido do usuário ("se houver blocos
+            // individuais com duas camadas retire a camada exterior"):
+            // ModuleIconButton já É seu próprio Card com borda, então esse
+            // Card+Box em volta só duplicava a borda (bloco dentro de
+            // bloco), igual o ajuste já feito em ModuleCategoryBlock/
+            // FinanceiroCategoryBlock.
             FlowRow(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 FinanceiroView.values().forEach { v ->
-                    Card {
-                        Box(modifier = Modifier.padding(6.dp)) {
-                            ModuleIconButton(
-                                ModuleIconItem(v.name, financeiroViewIcon(v), v.label, active = v == view),
-                            ) { view = v }
-                        }
-                    }
+                    ModuleIconButton(
+                        ModuleIconItem(v.name, financeiroViewIcon(v), v.label, active = v == view),
+                    ) { view = v }
                 }
             }
 
@@ -803,6 +816,14 @@ private fun FinanceiroCategoryTabs(blocks: List<FinBlockSpec>, modifier: Modifie
                     selected = safeSelected == index,
                     onClick = { selected = index },
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = blocks.size),
+                    // Fundo verde (mesma cor do ícone fazenda/primary) --
+                    // pedido do usuário ("coloque também a cor de fundo dos
+                    // blocos das categorias a mesma cor do ícone fazenda").
+                    colors = SegmentedButtonDefaults.colors(
+                        activeContainerColor = MaterialTheme.colorScheme.primary,
+                        activeContentColor = androidx.compose.ui.graphics.Color.White,
+                        inactiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    ),
                     label = { Text(block.title) },
                 )
             }

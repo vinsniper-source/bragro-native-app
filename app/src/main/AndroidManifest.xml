@@ -3,6 +3,14 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Baixar/instalar o APK de atualização direto pelo DownloadManager
+         nativo, em vez de abrir o link num Custom Tab do navegador:
+         corrige bug real ("o download vai até o final mas não aparece a
+         mensagem concluído, fica em looping infinito"), causado pelo
+         navegador dentro do Custom Tab não reportar de volta pro app
+         quando o download termina, deixando a UI "pendurada".
+         Ver ApkInstaller.kt. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application
         android:name=".BRAgroApplication"
