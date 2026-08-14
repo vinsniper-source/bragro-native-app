@@ -13,7 +13,6 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -61,21 +60,17 @@ data class ModuleIconItem(
 // FinanceiroScreen.kt), não o ícone que encolhe.
 private val MODULE_ICON_SIZE = 22.dp
 
-// Fundo verde translúcido -- continua assim SÓ em [LabeledIconButton]
-// (ações genéricas: Filtros, Atualizar, Exportar etc., que têm sua própria
-// lógica de cor ativo/inativo por call site). [ModuleIconButton] (os
-// "blocos individuais" de Dados/Operações/Arquivos) usa fundo sólido +
-// preto fixo agora, ver MODULE_ICON_FG abaixo -- pedido do usuário ("troque
-// a cor dos ícones com blocos individuais, altere o fundo para o verde da
-// cor do ícone fazenda e a fonte para do ícone e rótulo para cor preta").
-private val MODULE_ICON_BG_ALPHA = 0.12f
-
-// Cor do ícone e do rótulo dentro do [ModuleIconButton] -- pedido do
-// usuário ("a fonte para do ícone e rótulo para cor preta"). Preta sempre
-// (ativo ou não), já que o fundo desse bloco específico agora é verde
-// sólido -- um ícone/texto verde (como no esquema anterior, tint=primary
-// no estado ativo) ficaria invisível em cima do próprio verde.
-private val MODULE_ICON_FG = Color.Black
+// Fundo dos blocos de ícone = MESMA cor da barra inferior (surface -- ver
+// BottomNavBar.kt) -- pedido do usuário ("nos módulos coloque o fundo dos
+// blocos dos ícones na mesma cor da barra inferior e corrija os que
+// tiverem sem padrão"). Passou por duas cores diferentes antes (translúcido
+// verde, depois verde sólido) e os dois componentes (ModuleIconButton/
+// LabeledIconButton) tinham ficado com fundos DIFERENTES entre si -- exatamente
+// o "sem padrão" que o usuário apontou. Agora os dois usam o mesmo par
+// fundo/conteúdo: fundo = surface, ícone/rótulo = primary (verde), idêntico
+// ao esquema já usado na barra inferior (mesmo "padrão" pedido).
+private val MODULE_ICON_FG: Color
+    @Composable get() = MaterialTheme.colorScheme.primary
 
 // Cada ícone virou seu próprio bloco (Card individual) -- pedido do usuário
 // ("em todos os módulos, por categorias: dados, operações, arquivos torne-os
@@ -90,7 +85,7 @@ fun ModuleIconButton(item: ModuleIconItem, onClick: () -> Unit) {
     Card(
         onClick = onClick,
         modifier = Modifier.widthIn(min = 44.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
@@ -133,14 +128,19 @@ fun LabeledIconButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    tint: Color = LocalContentColor.current,
+    // Verde (primary) por padrão agora, mesmo padrão do ModuleIconButton --
+    // call sites que já passam um `tint` próprio (ex.: alternar cor quando
+    // "ativo") continuam funcionando normalmente, já que o fundo deixou de
+    // ser verde (virou surface) e não corre mais risco de "sumir" nenhuma
+    // combinação de cor de conteúdo.
+    tint: Color = MaterialTheme.colorScheme.primary,
     loading: Boolean = false,
 ) {
     Card(
         onClick = onClick,
         enabled = !loading,
         modifier = modifier.widthIn(min = 44.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = MODULE_ICON_BG_ALPHA)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),

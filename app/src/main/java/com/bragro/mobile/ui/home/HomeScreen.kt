@@ -672,29 +672,12 @@ fun HomeScreen(
                         }
                     }
                     } // fecha Row de rolagem horizontal do cluster de ícones
-                // Filtros globais (Fazenda/Safra/Cultura), numa linha própria
-                // abaixo da logo -- pedido do usuário ("remaneje o ícone
-                // fazenda para baixo da logo e crie mais dois ícones globais
-                // safra e cultura, nesta ordem: fazenda, safra e cultura").
-                // Cada botão some sozinho se não houver opções cadastradas
-                // (checagem interna de cada Selector), então a linha pode
-                // aparecer com só 1 ou 2 ícones dependendo do cadastro.
-                // Rótulo de texto em cada botão + alinhado no canto direito
-                // -- pedido do usuário ("coloque rótulos e desloque para o
-                // canto direito"): fillMaxWidth + Arrangement.End (com
-                // espaçamento entre os 3) empurra o cluster inteiro pra
-                // ponta direita, mesmo lado onde já ficam os demais ícones
-                // do cabeçalho (Backup/Notificações/Tema/Conta/logo
-                // cliente), em vez de embaixo da logo à esquerda.
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 8.dp, top = 0.dp, bottom = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    FarmSelectorButton(showLabel = true)
-                    SafraSelectorButton(showLabel = true)
-                    CulturaSelectorButton(showLabel = true)
-                }
+                // Fazenda/Safra/Cultura saíram daqui -- pedido do usuário
+                // ("transfira para baixo do slogan os ícones fazenda, safra
+                // cultura"): agora ficam dentro do item "greeting" da
+                // LazyColumn, logo abaixo do slogan ("Conectando a força da
+                // nossa terra..."), ver mais abaixo neste arquivo. Sem essa
+                // linha aqui, o divisor volta a ficar colado na logo.
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         },
@@ -715,10 +698,14 @@ fun HomeScreen(
 
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            // Topo reduzido de 12dp pra 6dp -- pedido do usuário ("erga...
-            // o resto da página inicial"): "Olá, bem-vindo" e o restante do
-            // conteúdo sobem, ficando mais perto da linha divisória acima.
-            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 12.dp),
+            // Topo reduzido de 6dp pra 2dp -- pedido do usuário ("diminua a
+            // distância consideravelmente de 'olá bom dia' para a logo"):
+            // "Olá, bem-vindo" sobe bem mais perto da linha divisória/logo
+            // acima. Ajudou também remover a linha de fazenda/safra/cultura
+            // que antes ficava entre a logo e essa linha (ver comentário no
+            // Row do TopAppBar acima) -- já reduziu boa parte da distância
+            // sozinho, essa mudança aqui é o resto.
+            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 2.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item(key = "greeting") {
@@ -736,6 +723,21 @@ fun HomeScreen(
                         color = BrGreen,
                         modifier = Modifier.padding(top = 2.dp),
                     )
+                    // Fazenda/Safra/Cultura -- pedido do usuário ("transfira
+                    // para baixo do slogan os ícones fazenda, safra
+                    // cultura"): saiu de dentro do TopAppBar (ver comentário
+                    // lá em cima) e entra aqui, logo abaixo do slogan
+                    // ("Conectando a força..."). Mesmo visual de antes
+                    // (rótulo + alinhado à direita).
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        FarmSelectorButton(showLabel = true)
+                        SafraSelectorButton(showLabel = true)
+                        CulturaSelectorButton(showLabel = true)
+                    }
                     if (pending > 0) {
                         // Virou um banner destacado (ícone + fundo tonal em
                         // âmbar) em vez de texto simples -- pedido do
