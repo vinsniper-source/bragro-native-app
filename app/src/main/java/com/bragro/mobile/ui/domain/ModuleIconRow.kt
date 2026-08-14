@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -60,15 +61,21 @@ data class ModuleIconItem(
 // FinanceiroScreen.kt), não o ícone que encolhe.
 private val MODULE_ICON_SIZE = 22.dp
 
-// Fundo verde translúcido nos blocos de ícone -- pedido do usuário ("nos
-// blocos de ícones preencha o fundo de verde"). Só aqui (ModuleIconButton/
-// LabeledIconButton), não no Card padrão do app inteiro (com.bragro.mobile.
-// ui.theme.Card, AppCard.kt) -- lá o usuário já tinha pedido o oposto antes
-// ("retire o preenchimento verde e deixe apenas a borda em verde, em todo
-// app"). alpha baixo (12%) mantém o ícone/texto legíveis por cima (alguns
-// ícones já usam tint=primary/verde no estado ativo) e não briga com o verde
-// mais forte da borda (cardBorderColor, em AppCard.kt).
+// Fundo verde translúcido -- continua assim SÓ em [LabeledIconButton]
+// (ações genéricas: Filtros, Atualizar, Exportar etc., que têm sua própria
+// lógica de cor ativo/inativo por call site). [ModuleIconButton] (os
+// "blocos individuais" de Dados/Operações/Arquivos) usa fundo sólido +
+// preto fixo agora, ver MODULE_ICON_FG abaixo -- pedido do usuário ("troque
+// a cor dos ícones com blocos individuais, altere o fundo para o verde da
+// cor do ícone fazenda e a fonte para do ícone e rótulo para cor preta").
 private val MODULE_ICON_BG_ALPHA = 0.12f
+
+// Cor do ícone e do rótulo dentro do [ModuleIconButton] -- pedido do
+// usuário ("a fonte para do ícone e rótulo para cor preta"). Preta sempre
+// (ativo ou não), já que o fundo desse bloco específico agora é verde
+// sólido -- um ícone/texto verde (como no esquema anterior, tint=primary
+// no estado ativo) ficaria invisível em cima do próprio verde.
+private val MODULE_ICON_FG = Color.Black
 
 // Cada ícone virou seu próprio bloco (Card individual) -- pedido do usuário
 // ("em todos os módulos, por categorias: dados, operações, arquivos torne-os
@@ -83,7 +90,7 @@ fun ModuleIconButton(item: ModuleIconItem, onClick: () -> Unit) {
     Card(
         onClick = onClick,
         modifier = Modifier.widthIn(min = 44.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = MODULE_ICON_BG_ALPHA)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
@@ -93,14 +100,14 @@ fun ModuleIconButton(item: ModuleIconItem, onClick: () -> Unit) {
                 Icon(
                     item.icon,
                     contentDescription = null,
-                    tint = if (item.active) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                    tint = MODULE_ICON_FG,
                     modifier = Modifier.size(MODULE_ICON_SIZE),
                 )
             }
             Text(
                 item.label,
                 style = MaterialTheme.typography.labelSmall,
-                color = if (item.active) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                color = MODULE_ICON_FG,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
@@ -126,7 +133,7 @@ fun LabeledIconButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    tint: androidx.compose.ui.graphics.Color = LocalContentColor.current,
+    tint: Color = LocalContentColor.current,
     loading: Boolean = false,
 ) {
     Card(

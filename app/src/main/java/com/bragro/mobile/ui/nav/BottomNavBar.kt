@@ -34,23 +34,23 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.bragro.mobile.ui.home.domainIcon
 
-// Fundo da barra inferior inteira agora é verde (mesma cor do ícone
-// fazenda/primary) -- pedido do usuário ("na barra inferior dos botões
-// coloque o fundo a mesma cor por exemplo do ícone fazenda início"). Como o
-// fundo virou sólido/verde, os ícones/rótulos precisaram trocar pra branco
-// (em vez do próprio verde, que ficaria invisível em cima de verde) --
-// opacidade menor pro item não-selecionado distingue do selecionado (branco
-// cheio + pílula translúcida atrás), mesmo conceito de antes (aba ativa em
-// destaque), só que invertido de "verde sobre fundo neutro" pra "branco
-// sobre fundo verde".
+// Revertido -- pedido do usuário ("volte a colocar a cor da barra inferior
+// da cor da lista suspensa dos módulos, claro/escuro, fonte verde"): o fundo
+// verde sólido de uma rodada anterior volta a ser a MESMA cor de fundo das
+// listas suspensas (surface -- off-white no claro, quase preto no escuro,
+// ver Theme.kt), e ícone/rótulo passam a usar verde (primary) em vez de
+// branco -- inverso do esquema anterior ("branco sobre fundo verde" virou
+// "verde sobre fundo neutro", que é como o app funcionava antes daquela
+// rodada). Opacidade menor no item não-selecionado continua distinguindo do
+// selecionado (verde cheio + pílula translúcida atrás).
 private val BottomNavColors: androidx.compose.material3.NavigationBarItemColors
     @Composable
     get() = NavigationBarItemDefaults.colors(
-        selectedIconColor = MaterialTheme.colorScheme.onPrimary,
-        selectedTextColor = MaterialTheme.colorScheme.onPrimary,
-        indicatorColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f),
-        unselectedIconColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.70f),
-        unselectedTextColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.70f),
+        selectedIconColor = MaterialTheme.colorScheme.primary,
+        selectedTextColor = MaterialTheme.colorScheme.primary,
+        indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+        unselectedIconColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.70f),
+        unselectedTextColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.70f),
     )
 
 // Pedido do usuário: "os botões inferiores devem aparecer uma lista
@@ -203,7 +203,7 @@ fun BRAgroBottomBar(
         }
     }
 
-    NavigationBar(containerColor = MaterialTheme.colorScheme.primary) {
+    NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
         BOTTOM_TABS.forEach { tab ->
             val selected = tab.directDomainId == currentDomainId ||
                 tab.items.any { it is SectorTarget.Domain && it.domainId == currentDomainId }

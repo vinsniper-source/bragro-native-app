@@ -514,22 +514,23 @@ fun HomeScreen(
                     // daqui ajuda o cluster de ícones + logo do cliente a
                     // não cortar. end tambem reduzido (16dp -> 8dp) pelo
                     // mesmo motivo, do outro lado.
-                    // bottom reduzido de 8dp pra 4dp -- pedido do usuário
-                    // ("na linha que separa a logo da frase Olá, bem-
-                    // vindo, erga mais a linha"): a linha (HorizontalDivider
-                    // logo abaixo deste Row) sobe mais perto da logo/ícones.
-                    modifier = Modifier.fillMaxWidth().padding(start = 0.dp, end = 8.dp, top = 8.dp, bottom = 4.dp),
+                    // bottom reduzido de 4dp pra 2dp -- pedido do usuário
+                    // ("diminua distância da logo para os ícones fazendas,
+                    // safra e cultura"): a linha nova abaixo (Farm/Safra/
+                    // Cultura) sobe mais perto da logo.
+                    modifier = Modifier.fillMaxWidth().padding(start = 0.dp, end = 8.dp, top = 8.dp, bottom = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     // Logo nova, ainda maior que antes -- pedido do usuário
                     // repetiu ("aumente mais o tamanho da logo, login e
-                    // início"). 96dp -> 120dp -> 100dp -> 112dp -> 128dp: o
-                    // ícone fazenda saiu deste cluster e foi para a linha
-                    // nova abaixo da logo (junto de safra/cultura, ver Row
-                    // logo após este bloco) -- pedido do usuário ("aumente a
-                    // logo pois terá mais espaço"), já que agora só restam
-                    // Backup/Notificações/Tema/Conta/Logo-cliente disputando
-                    // espaço com ela nesta linha, em vez de seis ícones.
+                    // início"). 96dp -> 120dp -> 100dp -> 112dp -> 128dp ->
+                    // 150dp (pedido mais recente: "aumente a logo do
+                    // início"): o ícone fazenda saiu deste cluster e foi
+                    // para a linha nova abaixo da logo (junto de safra/
+                    // cultura, ver Row logo após este bloco), já que agora
+                    // só restam Backup/Notificações/Tema/Conta/Logo-cliente
+                    // disputando espaço com ela nesta linha, em vez de seis
+                    // ícones.
                     Image(
                         painter = painterResource(R.drawable.logo_bragro),
                         contentDescription = "BRAgro",
@@ -542,7 +543,7 @@ fun HomeScreen(
                         // sem nenhum aviso. O cluster de ícones ainda rola
                         // horizontalmente (Row.horizontalScroll abaixo) como
                         // rede de segurança, mesmo com mais espaço agora.
-                        modifier = Modifier.height(128.dp).widthIn(max = 162.dp),
+                        modifier = Modifier.height(150.dp).widthIn(max = 190.dp),
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     // Cluster de ícones do cabeçalho com rolagem horizontal --
@@ -678,13 +679,21 @@ fun HomeScreen(
                 // Cada botão some sozinho se não houver opções cadastradas
                 // (checagem interna de cada Selector), então a linha pode
                 // aparecer com só 1 ou 2 ícones dependendo do cadastro.
+                // Rótulo de texto em cada botão + alinhado no canto direito
+                // -- pedido do usuário ("coloque rótulos e desloque para o
+                // canto direito"): fillMaxWidth + Arrangement.End (com
+                // espaçamento entre os 3) empurra o cluster inteiro pra
+                // ponta direita, mesmo lado onde já ficam os demais ícones
+                // do cabeçalho (Backup/Notificações/Tema/Conta/logo
+                // cliente), em vez de embaixo da logo à esquerda.
                 Row(
-                    modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 8.dp, top = 0.dp, bottom = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    FarmSelectorButton()
-                    SafraSelectorButton()
-                    CulturaSelectorButton()
+                    FarmSelectorButton(showLabel = true)
+                    SafraSelectorButton(showLabel = true)
+                    CulturaSelectorButton(showLabel = true)
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }

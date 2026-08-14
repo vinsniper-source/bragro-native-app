@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
@@ -19,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -36,7 +39,17 @@ import com.bragro.mobile.data.repo.ConfigRepository
  * usuário ("fazenda, safra e cultura, cor verde de fazenda").
  */
 @Composable
-fun GlobalFieldSelectorButton(selection: GlobalFieldSelection, icon: ImageVector, label: String, lookupCategory: String) {
+fun GlobalFieldSelectorButton(
+    selection: GlobalFieldSelection,
+    icon: ImageVector,
+    label: String,
+    lookupCategory: String,
+    // Rótulo de texto abaixo do ícone -- pedido do usuário ("coloque
+    // rótulos" nos ícones globais fazenda/safra/cultura do Início). Só o
+    // Início usa showLabel=true; os demais módulos (TopAppBar) continuam só
+    // com o ícone (sem espaço sobrando pra texto ali).
+    showLabel: Boolean = false,
+) {
     val context = LocalContext.current
     // Reativo -- mesmo motivo/comentario completo de FarmSelectorButton.kt
     // (bug de valor excluído continuando na lista suspensa/filtro).
@@ -49,8 +62,23 @@ fun GlobalFieldSelectorButton(selection: GlobalFieldSelection, icon: ImageVector
 
     val selected = selection.selected.value
 
-    IconButton(onClick = { menuOpen = true }) {
-        Icon(icon, contentDescription = "Filtrar por $label: ${selected ?: "todas"}", tint = MaterialTheme.colorScheme.primary)
+    if (showLabel) {
+        Column(
+            modifier = Modifier.clickable { menuOpen = true }.padding(horizontal = 6.dp, vertical = 2.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Icon(icon, contentDescription = "Filtrar por $label: ${selected ?: "todas"}", tint = MaterialTheme.colorScheme.primary)
+            Text(
+                label.replaceFirstChar { it.uppercase() },
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+            )
+        }
+    } else {
+        IconButton(onClick = { menuOpen = true }) {
+            Icon(icon, contentDescription = "Filtrar por $label: ${selected ?: "todas"}", tint = MaterialTheme.colorScheme.primary)
+        }
     }
     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
         BasicText(
@@ -74,7 +102,9 @@ fun GlobalFieldSelectorButton(selection: GlobalFieldSelection, icon: ImageVector
 }
 
 @Composable
-fun SafraSelectorButton() = GlobalFieldSelectorButton(SafraSelection, Icons.Filled.Eco, "safra", "safras")
+fun SafraSelectorButton(showLabel: Boolean = false) =
+    GlobalFieldSelectorButton(SafraSelection, Icons.Filled.Eco, "safra", "safras", showLabel)
 
 @Composable
-fun CulturaSelectorButton() = GlobalFieldSelectorButton(CulturaSelection, Icons.Filled.Grass, "cultura", "culturas")
+fun CulturaSelectorButton(showLabel: Boolean = false) =
+    GlobalFieldSelectorButton(CulturaSelection, Icons.Filled.Grass, "cultura", "culturas", showLabel)

@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
@@ -18,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -32,7 +35,7 @@ import com.bragro.mobile.data.repo.ConfigRepository
  * uma fazenda cadastrada (senao nao ha o que filtrar).
  */
 @Composable
-fun FarmSelectorButton() {
+fun FarmSelectorButton(showLabel: Boolean = false) {
     val context = LocalContext.current
     // Reativo (Flow/collectAsState), nao mais LaunchedEffect(Unit) + fetch
     // unico -- BUG real corrigido (pedido do usuario: "as listas suspensas
@@ -59,8 +62,18 @@ fun FarmSelectorButton() {
     // filtrada selecionada; em "Todas as fazendas" (selected == null) caia
     // pra LocalContentColor (neutro), o que deixava o icone sem cor de
     // destaque na maior parte do tempo (estado padrao, sem filtro).
-    IconButton(onClick = { menuOpen = true }) {
-        Icon(Icons.Filled.LocationOn, contentDescription = "Filtrar por fazenda: ${selected ?: "todas"}", tint = MaterialTheme.colorScheme.primary)
+    if (showLabel) {
+        Column(
+            modifier = Modifier.clickable { menuOpen = true }.padding(horizontal = 6.dp, vertical = 2.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Icon(Icons.Filled.LocationOn, contentDescription = "Filtrar por fazenda: ${selected ?: "todas"}", tint = MaterialTheme.colorScheme.primary)
+            Text("Fazenda", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, maxLines = 1)
+        }
+    } else {
+        IconButton(onClick = { menuOpen = true }) {
+            Icon(Icons.Filled.LocationOn, contentDescription = "Filtrar por fazenda: ${selected ?: "todas"}", tint = MaterialTheme.colorScheme.primary)
+        }
     }
     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
         BasicText(
