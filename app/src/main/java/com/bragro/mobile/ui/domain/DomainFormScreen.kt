@@ -625,9 +625,23 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                     colors = fieldColors,
                 )
             } else {
+                // BUG real encontrado (Sentry SISTEMA-AGRO-BRA-3, "Hectare
+                // (ha): valor numérico inválido", POST /api/offline-sync,
+                // domainId "safra"): KeyboardType.Decimal mostra a tecla ","
+                // em teclado numérico de aparelho com locale pt-BR (não "."),
+                // e este campo (diferente do "money" acima, que já passa por
+                // moneyDisplayToRaw) guardava o texto digitado cru -- "45,5"
+                // virava Number("45,5") = NaN no servidor, rejeitado pelo
+                // Zod. Afeta qualquer campo number não-money com casas
+                // decimais (Hectare, Qtd, Produtividade, Vazão/Dose): o
+                // usuário só via "erro 400" genérico ao sincronizar depois
+                // de digitar um valor quebrado. Troca "," por "." a cada
+                // tecla -- campo continua 100% controlado por um único valor
+                // (sem exibição/valor cru separados como no money), então o
+                // que aparece na tela já é o que vai pro servidor.
                 OutlinedTextField(
                     value = value,
-                    onValueChange = { viewModel.setField(col.key, it) },
+                    onValueChange = { viewModel.setField(col.key, it.replace(",", ".")) },
                     label = { Text(fieldLabel(col)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
