@@ -31,8 +31,10 @@ android {
         applicationId = "com.bragro.mobile"
         minSdk = 24
         targetSdk = 34
-        versionCode = 7
-        versionName = "1.1.5"
+        // Bump p/ o release com a correcao do bug #21 (sync offline: campo
+        // numerico com virgula decimal, ver DomainFormScreen.kt).
+        versionCode = 8
+        versionName = "1.1.6"
 
         // URLs do backend (o MESMO backend do site publicado -- ver
         // native-app/README.md). Trocaveis por variante/ambiente sem

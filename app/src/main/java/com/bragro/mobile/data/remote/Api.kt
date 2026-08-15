@@ -31,6 +31,8 @@ import com.bragro.mobile.data.model.FieldviewRequest
 import com.bragro.mobile.data.model.FieldviewResponse
 import com.bragro.mobile.data.model.HomeRequest
 import com.bragro.mobile.data.model.HomeResponse
+import com.bragro.mobile.data.model.LivroCaixaRequest
+import com.bragro.mobile.data.model.LivroCaixaResponse
 import com.bragro.mobile.data.model.ModuleActionRequest
 import com.bragro.mobile.data.model.ModuleActionResponse
 import com.bragro.mobile.data.model.ModuleChartsRequest
@@ -126,6 +128,9 @@ interface MobileApi {
 
     @POST("api/mobile/dre")
     suspend fun dre(@Body body: DreRequest): Response<DreResponse>
+
+    @POST("api/mobile/livro-caixa")
+    suspend fun livroCaixa(@Body body: LivroCaixaRequest): Response<LivroCaixaResponse>
 
     @POST("api/mobile/analises")
     suspend fun analises(@Body body: AnalisesRequest): Response<AnalisesResponse>

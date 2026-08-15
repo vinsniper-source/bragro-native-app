@@ -110,6 +110,20 @@ data class DreEntity(
     val atualizadoEmMillis: Long,
 )
 
+/** Livro Caixa do Produtor Rural (Task #58) -- mesmo padrao de blob JSON do
+ * DreEntity: so existe UMA linha aqui (id fixo "current"), sobrescrita a
+ * cada consulta bem-sucedida de /api/mobile/livro-caixa. "ano"/"banco"
+ * guardam o filtro usado na ultima consulta, so pra mostrar na tela quando
+ * estiver exibindo um resultado cacheado offline. */
+@Entity(tableName = "livro_caixa")
+data class LivroCaixaEntity(
+    @PrimaryKey val id: String = "current",
+    val ano: Int,
+    val banco: String?,
+    val dataJson: String,
+    val atualizadoEmMillis: Long,
+)
+
 /** Analises cruzadas entre modulos (Fase 2, Task #36) -- so existe UMA
  * linha aqui (id fixo "current"), sobrescrita a cada consulta bem-sucedida
  * de /api/mobile/analises. "analisesJson" guarda o objeto inteiro (15

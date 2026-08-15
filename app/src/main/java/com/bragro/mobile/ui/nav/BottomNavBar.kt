@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
@@ -117,6 +118,10 @@ private val BOTTOM_TABS = listOf(
             SectorTarget.Domain("financeiro", "Lançamentos"),
             SectorTarget.Special("dre", "DRE"),
             SectorTarget.Special("analises", "Análises cruzadas"),
+            // Livro Caixa do Produtor Rural (Task #58) -- ja existia no site
+            // (Task #49), faltava no app. Mesmo criterio de agrupamento
+            // (relatorio financeiro, mesmo setor de DRE/Analises).
+            SectorTarget.Special("livrocaixa", "Livro Caixa"),
             // "Importar NF-e" saiu daqui -- virou o botão "Importar XML"
             // dentro do próprio Financeiro (ver FinanceiroScreen.kt), pedido
             // do usuário ("crie um botão importar xml e unifique esses dois
@@ -182,6 +187,7 @@ fun BRAgroBottomBar(
     onNavigateDomain: (String) -> Unit,
     onOpenDre: () -> Unit,
     onOpenAnalises: () -> Unit,
+    onOpenLivroCaixa: () -> Unit,
     onOpenDrone: () -> Unit,
     onOpenFieldview: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -197,6 +203,7 @@ fun BRAgroBottomBar(
             is SectorTarget.Special -> when (target.routeKey) {
                 "dre" -> onOpenDre()
                 "analises" -> onOpenAnalises()
+                "livrocaixa" -> onOpenLivroCaixa()
                 "drone" -> onOpenDrone()
                 "fieldview" -> onOpenFieldview()
             }
@@ -252,6 +259,7 @@ fun BRAgroBottomBar(
                                 is SectorTarget.Special -> when (item.routeKey) {
                                     "dre" -> Icons.Filled.Assessment
                                     "analises" -> Icons.Filled.Analytics
+                                    "livrocaixa" -> Icons.AutoMirrored.Filled.MenuBook
                                     "drone" -> Icons.Filled.FlightTakeoff
                                     "fieldview" -> Icons.Filled.Map
                                     else -> tab.icon

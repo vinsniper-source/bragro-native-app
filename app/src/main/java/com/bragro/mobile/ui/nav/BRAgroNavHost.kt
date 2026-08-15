@@ -22,6 +22,7 @@ import com.bragro.mobile.data.repo.AuthRepository
 import com.bragro.mobile.ui.analises.AnalisesScreen
 import com.bragro.mobile.ui.basededados.BaseDeDadosScreen
 import com.bragro.mobile.ui.dre.DreScreen
+import com.bragro.mobile.ui.livrocaixa.LivroCaixaScreen
 import com.bragro.mobile.ui.drone.DroneScreen
 import com.bragro.mobile.ui.fieldview.FieldviewScreen
 import com.bragro.mobile.ui.domain.BankImportScreen
@@ -40,6 +41,7 @@ private object Routes {
     const val HOME = "home"
     const val DRE = "dre"
     const val ANALISES = "analises"
+    const val LIVRO_CAIXA = "livro_caixa"
     const val DRONE = "drone"
     const val FIELDVIEW = "fieldview"
     const val NFE_IMPORT = "nfe_import"
@@ -109,6 +111,7 @@ fun BRAgroNavHost() {
                     },
                     onOpenDre = { navController.navigate(Routes.DRE) },
                     onOpenAnalises = { navController.navigate(Routes.ANALISES) },
+                    onOpenLivroCaixa = { navController.navigate(Routes.LIVRO_CAIXA) },
                     onOpenDrone = { navController.navigate(Routes.DRONE) },
                     onOpenFieldview = { navController.navigate(Routes.FIELDVIEW) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) },
@@ -139,6 +142,9 @@ fun BRAgroNavHost() {
         }
         composable(Routes.ANALISES) {
             AnalisesScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.LIVRO_CAIXA) {
+            LivroCaixaScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.DRONE) {
             DroneScreen(onBack = { navController.popBackStack() })

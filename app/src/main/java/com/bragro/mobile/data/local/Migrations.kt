@@ -61,3 +61,28 @@ val MIGRATION_6_7: Migration = object : Migration(6, 7) {
         db.execSQL("ALTER TABLE farms ADD COLUMN id TEXT NOT NULL DEFAULT ''")
     }
 }
+
+/** version 7 -> 8: tabela nova "livro_caixa" (Task #58, cache offline do
+ * Livro Caixa do Produtor Rural) -- mesmo formato de blob JSON com id fixo
+ * "current" que "dre"/"analises"/"home" ja usam (LivroCaixaEntity,
+ * Entities.kt); tabela nova = CREATE TABLE em vez de ALTER TABLE. Colunas e
+ * tipos espelham exatamente a entidade Kotlin (id/dataJson TEXT NOT NULL,
+ * ano INTEGER NOT NULL, banco TEXT nullable, atualizadoEmMillis INTEGER NOT
+ * NULL) -- Room valida essa correspondencia byte a byte na abertura do
+ * banco depois da migracao. */
+val MIGRATION_7_8: Migration = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `livro_caixa` (
+              `id` TEXT NOT NULL,
+              `ano` INTEGER NOT NULL,
+              `banco` TEXT,
+              `dataJson` TEXT NOT NULL,
+              `atualizadoEmMillis` INTEGER NOT NULL,
+              PRIMARY KEY(`id`)
+            )
+            """.trimIndent()
+        )
+    }
+}

@@ -475,6 +475,71 @@ data class DreResponse(
     val error: String? = null,
 )
 
+// Livro Caixa do Produtor Rural (Task #58) -- ver POST /api/mobile/livro-caixa
+// no site (src/app/api/mobile/livro-caixa/route.ts), que so serializa o
+// retorno de getLivroCaixaData() (lib/services/livro-caixa.ts) -- MESMO
+// motor de classificacao (regime de caixa, entrada/saida, resumo por conta
+// e por mes) que a pagina /livro-caixa do site usa, nada refeito em Kotlin.
+@Serializable
+data class LivroCaixaRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val ano: Int? = null,
+    val saldoInicial: Double? = null,
+    val banco: String? = null,
+)
+
+@Serializable
+data class LivroCaixaLancamentoData(
+    val id: String,
+    val data: String,
+    val historico: String,
+    val operacao: String,
+    val tipoDocumento: String? = null,
+    val banco: String? = null,
+    val entrada: Double,
+    val saida: Double,
+    val saldo: Double,
+)
+
+@Serializable
+data class LivroCaixaMesData(
+    val mes: String,
+    val label: String,
+    val entradas: Double,
+    val saidas: Double,
+    val saldoFinal: Double,
+)
+
+@Serializable
+data class LivroCaixaContaResumoData(
+    val banco: String,
+    val quantidade: Int,
+    val entradas: Double,
+    val saidas: Double,
+    val saldo: Double,
+)
+
+@Serializable
+data class LivroCaixaData(
+    val ano: Int,
+    val saldoInicial: Double,
+    val bancoFiltro: String? = null,
+    val lancamentos: List<LivroCaixaLancamentoData> = emptyList(),
+    val porMes: List<LivroCaixaMesData> = emptyList(),
+    val contas: List<LivroCaixaContaResumoData> = emptyList(),
+    val totalEntradas: Double,
+    val totalSaidas: Double,
+    val saldoFinal: Double,
+)
+
+@Serializable
+data class LivroCaixaResponse(
+    val ok: Boolean,
+    val resultado: LivroCaixaData? = null,
+    val error: String? = null,
+)
+
 // Fase 2 (Task #35): Clima/Cambio/Cotacoes ao vivo -- ver GET
 // /api/mobile/weather no site (src/app/api/mobile/weather/route.ts), que
 // so serializa getWeather()/getFxRates()/getCommodityQuotes()

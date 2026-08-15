@@ -117,6 +117,15 @@ interface DreDao {
 }
 
 @Dao
+interface LivroCaixaDao {
+    @Query("SELECT * FROM livro_caixa WHERE id = 'current' LIMIT 1")
+    fun observe(): Flow<LivroCaixaEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(livroCaixa: LivroCaixaEntity)
+}
+
+@Dao
 interface AnalisesDao {
     @Query("SELECT * FROM analises WHERE id = 'current' LIMIT 1")
     fun observe(): Flow<AnalisesEntity?>
