@@ -17,6 +17,8 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.AccountTree
+import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -105,6 +107,20 @@ private val BOTTOM_TABS = listOf(
             // não são um domínio genérico (DomainConfig) -- rotas próprias.
             SectorTarget.Special("drone", "Drone"),
             SectorTarget.Special("fieldview", "FieldView"),
+            // Painel "Controle de Insumos" (gap encontrado na auditoria
+            // módulo-a-módulo contra o site, pedido do usuário "implemente
+            // tudo que falta ainda para o app native da plataforma") -- no
+            // site fica na seção "estoque" (lib/modules.ts), mas o app não
+            // tem dropdown na aba Estoque (é acesso direto, pedido explícito
+            // do usuário: "botão estoque retire a lista suspensa"). Entra
+            // aqui em Safra por ser um painel cruzando consumo de
+            // Safra/Frota/ADM, ao lado de outros painéis "especiais"
+            // (Drone/FieldView).
+            SectorTarget.Special("controleinsumos", "Controle de Insumos"),
+            // Visão "Operação" agrupada (mesmo gap/critério de agrupamento
+            // do item acima) -- no site é "campo"/permissão "safra"
+            // (lib/modules.ts), então entra aqui também.
+            SectorTarget.Special("operacoes", "Operações"),
         ),
     ),
     // Acesso direto -- pedido do usuário ("botão frota acesso direto, retire
@@ -190,6 +206,8 @@ fun BRAgroBottomBar(
     onOpenLivroCaixa: () -> Unit,
     onOpenDrone: () -> Unit,
     onOpenFieldview: () -> Unit,
+    onOpenControleInsumos: () -> Unit,
+    onOpenOperacoes: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenBaseDeDados: () -> Unit,
     onOpenSeguranca: () -> Unit,
@@ -206,6 +224,8 @@ fun BRAgroBottomBar(
                 "livrocaixa" -> onOpenLivroCaixa()
                 "drone" -> onOpenDrone()
                 "fieldview" -> onOpenFieldview()
+                "controleinsumos" -> onOpenControleInsumos()
+                "operacoes" -> onOpenOperacoes()
             }
         }
     }
@@ -262,6 +282,8 @@ fun BRAgroBottomBar(
                                     "livrocaixa" -> Icons.AutoMirrored.Filled.MenuBook
                                     "drone" -> Icons.Filled.FlightTakeoff
                                     "fieldview" -> Icons.Filled.Map
+                                    "controleinsumos" -> Icons.Filled.AccountTree
+                                    "operacoes" -> Icons.Filled.Timeline
                                     else -> tab.icon
                                 }
                             }

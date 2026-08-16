@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import java.text.NumberFormat
 import java.util.Locale
@@ -159,12 +160,20 @@ fun StatusBadge(rawValue: String) {
     val displayValue = displayValueFor("status", rawValue)
     val tone = statusTone(displayValue)
     if (tone == null) {
-        Text(displayValue, style = MaterialTheme.typography.bodyMedium)
+        Text(displayValue, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
         return
     }
     val (bg, fg) = when (tone) {
         Tone.GOOD -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) to MaterialTheme.colorScheme.primary
-        Tone.WARN -> Color(0xFFF2C037).copy(alpha = 0.20f) to Color(0xFF8A6D00)
+        // Antes fixo (Color(0xFFF2C037) alpha 0.20 / Color(0xFF8A6D00)) --
+        // pedido do usuário ("coloque as cores das fontes preto/branco modo
+        // claro/escuro"): esse par não mudava entre temas, e no Escuro o
+        // amarelo em 20% de alpha sobre o fundo quase-preto produzia um tom
+        // amarronzado onde o texto marrom-escuro ficava com contraste
+        // baixo. secondaryContainer/onSecondaryContainer já são o par
+        // "amarelo suave" do Material3 CORRETO por tema (claro: bg claro/fg
+        // escuro; escuro: bg oliva/fg amarelo claro, ver Theme.kt).
+        Tone.WARN -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
         Tone.BAD -> MaterialTheme.colorScheme.error.copy(alpha = 0.15f) to MaterialTheme.colorScheme.error
     }
     Text(

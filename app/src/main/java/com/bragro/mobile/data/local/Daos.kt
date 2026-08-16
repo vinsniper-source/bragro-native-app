@@ -126,6 +126,24 @@ interface LivroCaixaDao {
 }
 
 @Dao
+interface ControleInsumosDao {
+    @Query("SELECT * FROM controle_insumos WHERE id = 'current' LIMIT 1")
+    fun observe(): Flow<ControleInsumosEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(controleInsumos: ControleInsumosEntity)
+}
+
+@Dao
+interface OperacoesDao {
+    @Query("SELECT * FROM operacoes WHERE id = 'current' LIMIT 1")
+    fun observe(): Flow<OperacoesEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(operacoes: OperacoesEntity)
+}
+
+@Dao
 interface AnalisesDao {
     @Query("SELECT * FROM analises WHERE id = 'current' LIMIT 1")
     fun observe(): Flow<AnalisesEntity?>

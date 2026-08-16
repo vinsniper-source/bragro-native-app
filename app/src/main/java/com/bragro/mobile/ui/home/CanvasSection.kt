@@ -52,8 +52,15 @@ import java.util.Locale
 // realizado); tocar numa mostra o "fluxo" de custo por categoria como barra
 // empilhada, igual ao site.
 
+// Virou @Composable (não mais função pura) -- pedido do usuário ("coloque
+// as cores das fontes preto/branco modo claro/escuro"): "ok" usava BrGreen
+// cru como cor de TEXTO (nome da fazenda dentro do círculo), que fica com
+// contraste muito baixo no modo Escuro (verde escuro sobre fundo quase-
+// preto). MaterialTheme.colorScheme.primary já resolve certo pros dois
+// temas (ver Theme.kt).
+@Composable
 private fun statusColor(status: String): Color = when (status) {
-    "ok" -> BrGreen
+    "ok" -> MaterialTheme.colorScheme.primary
     "alerta" -> BrYellow
     "risco" -> Color(0xFFD32F2F)
     else -> Color(0xFF9E9E9E) // "semdado"
@@ -202,7 +209,7 @@ fun CanvasCirclesRow(fazendas: List<CanvasFazendaCardData>, selectedId: String?,
                                 seta,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = if (f.tendencia == "melhorando") BrGreen else Color(0xFFD32F2F),
+                                color = if (f.tendencia == "melhorando") MaterialTheme.colorScheme.primary else Color(0xFFD32F2F),
                             )
                         }
                     }
@@ -239,7 +246,7 @@ fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Medium,
                             color = when (fazenda.tendencia) {
-                                "melhorando" -> BrGreen
+                                "melhorando" -> MaterialTheme.colorScheme.primary
                                 "piorando" -> Color(0xFFD32F2F)
                                 else -> MaterialTheme.colorScheme.onSurfaceVariant
                             },
@@ -335,15 +342,15 @@ fun AdaptiveSuggestionCard(estagio: String, onOpenDomain: (String) -> Unit) {
                 modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(sugestao.icon, contentDescription = null, tint = BrGreen, modifier = Modifier.size(18.dp))
+                Icon(sugestao.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
             }
             Spacer(modifier = Modifier.width(10.dp))
             Text(sugestao.texto, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
             if (sugestao.domainId != null) {
                 Spacer(modifier = Modifier.width(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(sugestao.label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium, color = BrGreen)
-                    Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = BrGreen, modifier = Modifier.size(16.dp))
+                    Text(sugestao.label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                 }
             }
         }

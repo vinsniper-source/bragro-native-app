@@ -117,7 +117,17 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             val existing = recordId?.let { recordRepository.getRecord(domainId, it) }
             val computed = mutableMapOf<String, String>()
             for (col in cfg.columns) {
-                val raw = existing?.get(col.key) ?: ""
+                // Checkbox num registro NOVO (existing == null) nasce com
+                // col.defaultChecked, não "" -- pedido do usuário ("erro 400
+                // no offline-sync mobile"): "" era serializado e mandado pro
+                // servidor como valor real do campo (em vez de a chave ficar
+                // ausente, como um <input type=checkbox> desmarcado faria no
+                // HTML), o que virava `null` num Boolean NOT NULL do Prisma
+                // e derrubava a sincronização com 400 (ver parseFormData em
+                // actions.ts, fix irmão deste). Mesma lógica do
+                // defaultChecked:true do site (record-form.tsx).
+                val raw = existing?.get(col.key)
+                    ?: if (col.type == "checkbox") col.defaultChecked.toString() else ""
                 if (col.computed) {
                     computed[col.key] = raw
                     continue

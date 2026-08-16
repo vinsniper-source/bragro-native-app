@@ -489,7 +489,15 @@ private fun isAdminRole(role: String?): Boolean = role == "OWNER" || role == "AD
 
 // Mesmas cores suaves da bandeira do Brasil usadas no Mural de Avisos do
 // site (NOTICE_TONE em bulletin-board-client.tsx), ciclando por aviso.
-private val NOTICE_TONES = listOf(BrGreen, BrYellow, BrBlue)
+// Antes uma lista fixa (BrGreen, BrYellow, BrBlue) calculada fora de
+// contexto @Composable -- pedido do usuário ("coloque as cores das fontes
+// preto/branco modo claro/escuro"): BrGreen e BrBlue crus não mudavam entre
+// temas e ficavam com contraste baixo no Escuro (ver Theme.kt). Virou
+// função @Composable pra poder usar MaterialTheme.colorScheme.primary/
+// tertiary (que JÁ resolvem certo pros dois temas), mantendo só o amarelo
+// (BrYellow) fixo -- ele tem contraste bom nos dois casos.
+@Composable
+private fun noticeTones() = listOf(MaterialTheme.colorScheme.primary, BrYellow, MaterialTheme.colorScheme.tertiary)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -645,7 +653,7 @@ fun HomeScreen(
                         IconButton(onClick = { userMenuOpen = true }, enabled = !uploadingAvatar) {
                             val avatarUrl = session?.avatarUrl
                             if (uploadingAvatar) {
-                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = BrGreen)
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.primary)
                             } else if (!avatarUrl.isNullOrBlank()) {
                                 AsyncImage(
                                     model = avatarUrl,
@@ -697,7 +705,7 @@ fun HomeScreen(
                             contentAlignment = Alignment.Center,
                         ) {
                             if (uploadingLogo) {
-                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = BrGreen)
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.primary)
                             } else {
                                 AsyncImage(
                                     model = orgLogoUrl,
@@ -783,7 +791,12 @@ fun HomeScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         fontStyle = FontStyle.Italic,
                         fontWeight = FontWeight.Medium,
-                        color = BrGreen,
+                        // BrGreen (fixo) -> colorScheme.primary (adapta por
+                        // tema) -- pedido do usuário ("coloque as cores das
+                        // fontes preto/branco modo claro/escuro"): BrGreen
+                        // cru ficava quase ilegível no fundo quase-preto do
+                        // modo Escuro (ver Theme.kt).
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(top = 2.dp),
                     )
                     if (pending > 0) {
@@ -987,9 +1000,16 @@ private fun NotificationsDialog(items: List<NotificationItemData>, onMarkAllRead
                     items.forEach { n ->
                         Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(n.titulo, style = MaterialTheme.typography.bodyMedium, fontWeight = if (!n.lida) FontWeight.Bold else FontWeight.Normal)
+                                Text(
+                                    n.titulo,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = if (!n.lida) FontWeight.Bold else FontWeight.Normal,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false),
+                                )
                                 Spacer(Modifier.width(4.dp))
-                                Text("· ${n.tipo}", style = MaterialTheme.typography.labelSmall)
+                                Text("· ${n.tipo}", style = MaterialTheme.typography.labelSmall, maxLines = 1)
                             }
                             Text(n.mensagem, style = MaterialTheme.typography.bodySmall)
                             Text(formatEventTime(n.criadaEm), style = MaterialTheme.typography.labelSmall)
@@ -1128,7 +1148,7 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, vie
                 // Ícone estilo KPI (badge circular colorido) no cabeçalho --
                 // pedido do usuário ("coloque um ícone como nos kpis abaixo
                 // nos blocos mural de avisos central de alertas").
-                SectionBadgeIcon(Icons.Filled.Campaign, BrBlue)
+                SectionBadgeIcon(Icons.Filled.Campaign, MaterialTheme.colorScheme.tertiary)
                 Spacer(Modifier.width(8.dp))
                 Box(modifier = Modifier.weight(1f)) {
                     CollapsibleHeader("Mural de Avisos (${notices.size})", expanded) { expanded = !expanded }
@@ -1145,7 +1165,7 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, vie
                 // recolhidos.
                 if (canManage) {
                     IconButton(onClick = { showAddDialog = true }, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.Add, contentDescription = "Adicionar aviso", tint = BrGreen)
+                        Icon(Icons.Filled.Add, contentDescription = "Adicionar aviso", tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -1153,8 +1173,9 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, vie
                 if (notices.isEmpty()) {
                     Text("Nenhum aviso publicado.", style = MaterialTheme.typography.bodySmall)
                 } else {
+                    val tones = noticeTones()
                     notices.forEachIndexed { i, n ->
-                        val tone = NOTICE_TONES[i % NOTICE_TONES.size]
+                        val tone = tones[i % tones.size]
                         Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.Top) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1277,9 +1298,29 @@ private fun AlertsCard(alerts: List<AlertData>, onOpenDomain: (String) -> Unit) 
                                 tint = if (a.severidade == "alta") MaterialTheme.colorScheme.error else BrYellow,
                                 modifier = Modifier.padding(top = 2.dp, end = 8.dp),
                             )
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                Text(a.titulo, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                                Text(a.descricao, style = MaterialTheme.typography.bodySmall)
+                            // fillMaxWidth() -> weight(1f) -- pedido do usuário
+                            // ("limite a tela, não deixe nenhum caractere
+                            // passar do limite da tela"): fillMaxWidth() aqui
+                            // (2º filho do Row, depois do Icon de largura
+                            // fixa) tentava ocupar a largura TOTAL do Row
+                            // além do espaço já usado pelo ícone, estourando
+                            // a borda direita da tela quando título/descrição
+                            // era longo. weight(1f) faz a Column dividir só o
+                            // espaço que sobra depois do ícone.
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    a.titulo,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Text(
+                                    a.descricao,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    maxLines = 3,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
                             }
                         }
                     }
@@ -1303,7 +1344,7 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Bolt, contentDescription = null, tint = BrGreen, modifier = Modifier.size(18.dp))
+                Icon(Icons.Filled.Bolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
                 Box(modifier = Modifier.weight(1f)) {
                     // Contagem no título -- mesmo padrão da Central de
@@ -1418,7 +1459,11 @@ private fun KpiGrid(data: HomeData) {
             "Financeiro",
             formatMoneyBrl(data.saldoFinanceiroAberto),
             Icons.Filled.AccountBalanceWallet,
-            BrBlue,
+            // BrBlue (fixo) -> colorScheme.tertiary (adapta por tema) --
+            // pedido do usuário ("coloque as cores das fontes preto/branco
+            // modo claro/escuro"): BrBlue cru tinha baixo contraste no modo
+            // Escuro (ver Theme.kt/BrBlueTertiaryDark).
+            MaterialTheme.colorScheme.tertiary,
             KpiKind.VALOR,
             description = "Saldo em aberto (a receber − a pagar)",
         ),
@@ -1437,7 +1482,7 @@ private fun KpiGrid(data: HomeData) {
             "Operações de safra",
             data.safrasAtivas.toString(),
             Icons.Filled.Eco,
-            BrGreen,
+            MaterialTheme.colorScheme.primary,
             KpiKind.QUANTIDADE,
             description = "Lançamentos de safra em andamento",
         ),
@@ -1445,7 +1490,7 @@ private fun KpiGrid(data: HomeData) {
             "Colaboradores ativos",
             data.colaboradoresAtivos.toString(),
             Icons.Filled.Groups,
-            BrGreen,
+            MaterialTheme.colorScheme.primary,
             KpiKind.QUANTIDADE,
             description = "Total cadastrado no módulo RH",
         ),
@@ -1660,7 +1705,7 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh
 private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            MiniCardHeaderWithRefresh("Câmbio", Icons.Filled.CurrencyExchange, BrGreen, MaterialTheme.typography.titleMedium, onRefresh)
+            MiniCardHeaderWithRefresh("Câmbio", Icons.Filled.CurrencyExchange, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
             // Ícone de variação (alta/baixa) + porcentagem do dia ao lado do
             // valor -- pedido do usuário ("na linha dólar e na linha euro
             // adicione ícone de variação e porcentagem"), mesmo padrão já
@@ -1692,7 +1737,7 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: 
 private fun FxVariacaoTag(pct: Double?) {
     if (pct == null) return
     val positive = pct >= 0
-    val color = if (positive) BrGreen else MaterialTheme.colorScheme.error
+    val color = if (positive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 6.dp)) {
         Icon(
             if (positive) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
@@ -1715,7 +1760,7 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             // Renomeado -- pedido do usuário ("altere o kpi cotações
             // agrícolas para cotações grãos").
-            MiniCardHeaderWithRefresh("Cotações Grãos", Icons.Filled.Agriculture, BrGreen, MaterialTheme.typography.titleMedium, onRefresh)
+            MiniCardHeaderWithRefresh("Cotações Grãos", Icons.Filled.Agriculture, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
             val itens = listOfNotNull(com.soja, com.milho, com.sorgo)
             // Quantidade (unidade "sc" = saca) + variação/porcentagem do dia
             // ao lado do preço -- pedido do usuário ("insira a quantidade de

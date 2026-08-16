@@ -86,3 +86,45 @@ val MIGRATION_7_8: Migration = object : Migration(7, 8) {
         )
     }
 }
+
+/** version 8 -> 9: tabela nova "controle_insumos" (gap encontrado na
+ * auditoria módulo-a-módulo contra o site, pedido do usuário "implemente
+ * tudo que falta ainda para o app native da plataforma") -- mesmo formato de
+ * blob JSON com id fixo "current" que "dre"/"livro_caixa" já usam
+ * (ControleInsumosEntity, Entities.kt). */
+val MIGRATION_8_9: Migration = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `controle_insumos` (
+              `id` TEXT NOT NULL,
+              `safra` TEXT,
+              `dataJson` TEXT NOT NULL,
+              `atualizadoEmMillis` INTEGER NOT NULL,
+              PRIMARY KEY(`id`)
+            )
+            """.trimIndent()
+        )
+    }
+}
+
+/** version 9 -> 10: tabela nova "operacoes" (gap encontrado na auditoria
+ * módulo-a-módulo contra o site, pedido do usuário "implemente tudo que
+ * falta ainda para o app native da plataforma") -- mesmo formato de blob
+ * JSON com id fixo "current" que "dre"/"controle_insumos" já usam
+ * (OperacoesEntity, Entities.kt). */
+val MIGRATION_9_10: Migration = object : Migration(9, 10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `operacoes` (
+              `id` TEXT NOT NULL,
+              `janela` INTEGER NOT NULL,
+              `dataJson` TEXT NOT NULL,
+              `atualizadoEmMillis` INTEGER NOT NULL,
+              PRIMARY KEY(`id`)
+            )
+            """.trimIndent()
+        )
+    }
+}

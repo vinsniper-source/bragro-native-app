@@ -51,6 +51,7 @@ import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Upload
@@ -138,6 +139,11 @@ fun FinanceiroScreen(
     // unifique esses dois módulos"): agora vive DENTRO do Financeiro, ao
     // lado do Extrato bancário.
     onOpenNfeImport: () -> Unit,
+    // Gap encontrado na auditoria módulo-a-módulo contra o site (pedido do
+    // usuário "implemente tudo que falta ainda para o app native da
+    // plataforma"): réplica do diálogo web "Lançar nota com itens"
+    // (nota-multi-item-button.tsx), como tela própria (NotaMultiItemScreen.kt).
+    onOpenNotaMultiItem: () -> Unit,
     viewModel: DomainListViewModel = viewModel(),
     filtersViewModel: FinanceiroFiltersViewModel = viewModel(),
 ) {
@@ -449,6 +455,7 @@ fun FinanceiroScreen(
                     if (!isQuickView) {
                         LabeledIconButton(icon = Icons.Filled.Upload, label = "Extrato", onClick = onOpenBankImport)
                         LabeledIconButton(icon = Icons.Filled.Description, label = "XML", onClick = onOpenNfeImport)
+                        LabeledIconButton(icon = Icons.Filled.Receipt, label = "Nota c/ itens", onClick = onOpenNotaMultiItem)
                     }
                     if (cfg != null && filtered.isNotEmpty()) {
                         // Ícone trocado pra planilha/tabela -- pedido do
@@ -985,10 +992,20 @@ private fun financeiroViewIcon(v: FinanceiroView) = when (v) {
 private fun FluxoCard(row: FluxoRow, onClick: () -> Unit) {
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text("${row.original["entidade"] ?: "—"} — ${row.original["categoria"] ?: "—"}", fontWeight = FontWeight.Medium)
+            Text(
+                "${row.original["entidade"] ?: "—"} — ${row.original["categoria"] ?: "—"}",
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             Text("Data movimento: ${row.dataMovimento?.let { displayValueFor("data", it, "date") } ?: "—"}", style = MaterialTheme.typography.bodySmall)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (row.entrada > 0) Text("Entrada: ${formatMoneyValue(row.entrada.toString())}", color = Color(0xFF2F6F4F))
+                // Color(0xFF2F6F4F) (fixo) -> colorScheme.primary (adapta por
+                // tema) -- pedido do usuário ("coloque as cores das fontes
+                // preto/branco modo claro/escuro"): "Saída" já usava
+                // colorScheme.error corretamente, "Entrada" era o único fora
+                // do padrão.
+                if (row.entrada > 0) Text("Entrada: ${formatMoneyValue(row.entrada.toString())}", color = MaterialTheme.colorScheme.primary)
                 if (row.saida > 0) Text("Saída: ${formatMoneyValue(row.saida.toString())}", color = MaterialTheme.colorScheme.error)
             }
             Text("Saldo acumulado: ${formatMoneyValue(row.saldoAcumulado.toString())}", fontWeight = FontWeight.Bold)

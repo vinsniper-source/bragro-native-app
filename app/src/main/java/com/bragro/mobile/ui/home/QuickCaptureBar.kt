@@ -30,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.bragro.mobile.ui.theme.BrGreen
 import com.bragro.mobile.ui.theme.Card
 import java.util.Locale
 
@@ -93,7 +92,7 @@ fun QuickCaptureBar(onOpenFinanceiro: () -> Unit) {
                     singleLine = true,
                 )
                 IconButton(onClick = { startListening() }) {
-                    Icon(Icons.Filled.Mic, contentDescription = "Falar", tint = BrGreen)
+                    Icon(Icons.Filled.Mic, contentDescription = "Falar", tint = MaterialTheme.colorScheme.primary)
                 }
                 if (texto.isNotBlank()) {
                     IconButton(onClick = { texto = "" }) {

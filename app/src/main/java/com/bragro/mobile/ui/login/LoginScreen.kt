@@ -31,7 +31,6 @@ import com.bragro.mobile.BuildConfig
 import com.bragro.mobile.R
 import com.bragro.mobile.data.repo.AuthRepository
 import com.bragro.mobile.data.repo.LoginResult
-import com.bragro.mobile.ui.theme.BrGreen
 import com.bragro.mobile.ui.util.openInCustomTab
 import kotlinx.coroutines.launch
 import androidx.lifecycle.viewModelScope
@@ -98,7 +97,11 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
             style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
             fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-            color = BrGreen,
+            // BrGreen (fixo) -> colorScheme.primary (adapta por tema) --
+            // pedido do usuário ("coloque as cores das fontes preto/branco
+            // modo claro/escuro"): BrGreen cru era escuro demais e ficava
+            // quase ilegível sobre o fundo quase-preto do modo Escuro.
+            color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             modifier = Modifier.padding(top = 6.dp),
         )

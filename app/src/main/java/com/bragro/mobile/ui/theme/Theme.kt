@@ -47,6 +47,16 @@ val BrOrange = Color(0xFFD9822B)
 val BrGreenPrimaryLight = Color(0xFF1B4D33)
 val BrGreenPrimaryDark = Color(0xFF6FA98C)
 
+// Mesmo problema do verde (ver acima), agora pro azul (BrBlue) -- pedido do
+// usuário ("coloque as cores das fontes preto/branco modo claro/escuro"):
+// `tertiary` usava BrBlue cru (#1E4B8A) nos DOIS temas, e esse azul escuro
+// praticamente some em cima do fundo quase-preto do Escuro (baixíssimo
+// contraste). Igual ao par Light/Dark do verde, uma versão mais clara só
+// pro tema escuro -- qualquer `Text`/`Icon` que usava BrBlue direto (não
+// MaterialTheme.colorScheme.tertiary) foi trocado pra usar o token do tema,
+// que agora resolve certo nos dois casos.
+val BrBlueTertiaryDark = Color(0xFF7FAEEA)
+
 // Antes só `primary/secondary/tertiary` eram definidos -- lightColorScheme()/
 // darkColorScheme() NÃO derivam os outros ~20 tokens (surface, surfaceVariant,
 // primaryContainer, outline etc.) a partir deles; o resto ficava no roxo
@@ -102,7 +112,7 @@ private val DarkColors = darkColorScheme(
     secondary = BrYellow,
     secondaryContainer = Color(0xFF5E4F26),
     onSecondaryContainer = Color(0xFFF4DFA5),
-    tertiary = BrBlue,
+    tertiary = BrBlueTertiaryDark,
     background = Color(0xFF121212),
     surface = Color(0xFF121212),
     surfaceVariant = Color(0xFF121212),

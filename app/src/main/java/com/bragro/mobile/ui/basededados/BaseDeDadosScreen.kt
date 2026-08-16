@@ -52,7 +52,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bragro.mobile.data.repo.BaseDeDadosRepository
-import com.bragro.mobile.ui.theme.BrGreen
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
@@ -379,7 +378,7 @@ private fun SectorCard(
                 val ativo = v["ativo"]?.jsonPrimitive?.booleanOrNull ?: true
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
                     Text(vLabel, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                    Switch(checked = ativo, onCheckedChange = { onToggle(id, it) }, enabled = !busy, colors = SwitchDefaults.colors(checkedThumbColor = BrGreen, checkedTrackColor = BrGreen.copy(alpha = 0.5f)))
+                    Switch(checked = ativo, onCheckedChange = { onToggle(id, it) }, enabled = !busy, colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)))
                     IconButton(onClick = { onDelete(id) }, enabled = !busy) { Icon(Icons.Filled.Delete, contentDescription = "Excluir") }
                 }
             }

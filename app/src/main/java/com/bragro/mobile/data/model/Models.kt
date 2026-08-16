@@ -31,6 +31,13 @@ data class ColumnConfig(
     val staticOptions: List<String>? = null,
     val hideInTable: Boolean = false,
     val hint: String? = null,
+    // Espelha defaultChecked de types.ts -- pedido do usuário ("erro 400 no
+    // offline-sync mobile"): campos checkbox com defaultChecked=true (ex.:
+    // "incluirDeclaracao" do Financeiro/Livro Caixa) devem nascer marcados
+    // num registro NOVO, igual ao formulário web (record-form.tsx). Sem
+    // isso o app não tinha como saber e sempre nascia desmarcado (ver
+    // DomainFormScreen.kt).
+    val defaultChecked: Boolean = false,
 )
 
 @Serializable
@@ -531,6 +538,11 @@ data class LivroCaixaRequest(
     val ano: Int? = null,
     val saldoInicial: Double? = null,
     val banco: String? = null,
+    // imovel -- pedido do usuario ("implemente tudo que falta ainda para o
+    // app native da plataforma"): filtro por imovel rural (COD_IMOVEL do
+    // LCDPR), ja existia no site (livro-caixa-client.tsx) e no motor
+    // (getLivroCaixaData) mas faltava na rota/modelo mobile.
+    val imovel: String? = null,
 )
 
 @Serializable
@@ -541,6 +553,10 @@ data class LivroCaixaLancamentoData(
     val operacao: String,
     val tipoDocumento: String? = null,
     val banco: String? = null,
+    // imovel -- COD_IMOVEL do LCDPR (nome da fazenda vinculada, com
+    // fallback pro campo texto "local"). Faltava no modelo mobile (gap
+    // real, ver relatorio de auditoria).
+    val imovel: String = "",
     val entrada: Double,
     val saida: Double,
     val saldo: Double,
@@ -564,14 +580,27 @@ data class LivroCaixaContaResumoData(
     val saldo: Double,
 )
 
+// Resumo por imovel -- mesmo criterio do resumo por conta, agrupado pelo
+// imovel rural. Espelha LivroCaixaImovelResumo em livro-caixa.ts (site).
+@Serializable
+data class LivroCaixaImovelResumoData(
+    val imovel: String,
+    val quantidade: Int,
+    val entradas: Double,
+    val saidas: Double,
+    val saldo: Double,
+)
+
 @Serializable
 data class LivroCaixaData(
     val ano: Int,
     val saldoInicial: Double,
     val bancoFiltro: String? = null,
+    val imovelFiltro: String? = null,
     val lancamentos: List<LivroCaixaLancamentoData> = emptyList(),
     val porMes: List<LivroCaixaMesData> = emptyList(),
     val contas: List<LivroCaixaContaResumoData> = emptyList(),
+    val imoveis: List<LivroCaixaImovelResumoData> = emptyList(),
     val totalEntradas: Double,
     val totalSaidas: Double,
     val saldoFinal: Double,
@@ -581,6 +610,209 @@ data class LivroCaixaData(
 data class LivroCaixaResponse(
     val ok: Boolean,
     val resultado: LivroCaixaData? = null,
+    val error: String? = null,
+)
+
+// Config Produtor Rural / IRPF (Organization.cnpj/cpfProdutorRural/
+// inscricaoEstadualProdutor/certificadoDigitalRef/contaIrpfPadrao) -- pedido
+// do usuario ("implemente tudo que falta ainda para o app native da
+// plataforma"): esse card ja existia no site (produtor-rural-card.tsx) e no
+// schema (excecao ja autorizada, ver memoria "Livro Caixa schema
+// exception"), mas nao tinha rota nem modelo mobile ainda -- gap real.
+@Serializable
+data class ProdutorRuralConfigData(
+    val cnpj: String = "",
+    val cpfProdutorRural: String = "",
+    val inscricaoEstadualProdutor: String = "",
+    val certificadoDigitalRef: String = "",
+    val contaIrpfPadrao: String = "",
+)
+
+@Serializable
+data class ProdutorRuralRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val save: ProdutorRuralConfigData? = null,
+)
+
+@Serializable
+data class ProdutorRuralResponse(
+    val ok: Boolean,
+    val config: ProdutorRuralConfigData? = null,
+    val error: String? = null,
+)
+
+// Nota digitada manualmente com mais de um item no mesmo lançamento -- gap
+// encontrado na auditoria módulo-a-módulo (Financeiro, botão "Lançar nota
+// com itens", ver nota-multi-item-button.tsx no site). Chama DIRETO
+// criarNotaComItensAction() via /api/mobile/nota-multi-item (mesmo motor de
+// baixa em Estoque + geração de Financeiro que o XML já usa).
+@Serializable
+data class NotaMultiItemItemData(
+    val descricao: String = "",
+    val quantidade: Double = 0.0,
+    val unidade: String? = null,
+    val valorUnitario: Double = 0.0,
+)
+
+@Serializable
+data class NotaMultiItemRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val numero: String,
+    val serie: String? = null,
+    val emitenteNome: String,
+    val dataEmissao: String? = null,
+    val fazendaDestino: String,
+    val itens: List<NotaMultiItemItemData>,
+)
+
+@Serializable
+data class NotaMultiItemResponse(
+    val ok: Boolean,
+    val invoiceId: String? = null,
+    val itensCount: Int? = null,
+    val valorTotal: Double? = null,
+    val error: String? = null,
+)
+
+// Painel "Controle de Insumos" (gap encontrado na auditoria módulo-a-módulo
+// contra o site, pedido do usuário "implemente tudo que falta ainda para o
+// app native da plataforma") -- painel SOMENTE-LEITURA, ver
+// /api/mobile/controle-insumos (route.ts), que so serializa o retorno das
+// MESMAS funções que src/app/(app)/controle-de-insumos/page.tsx usa
+// (lib/services/insumos-arvore.ts). Espelha InsumoSaldo/InsumoItemSituacao/
+// InsumosSituacaoConsolidada/InsumosRamoItem.
+@Serializable
+data class InsumoSaldoData(
+    val item: String,
+    val saldo: Double,
+    val minimo: Double,
+    val status: String, // "OK" | "ATENCAO" | "CRITICO"
+    val consumoMedioDiario: Double,
+    val diasRestantes: Int? = null,
+)
+
+@Serializable
+data class InsumoItemSituacaoData(
+    val item: String,
+    val categoria: String, // "SAFRA" | "FROTA" | "ADM"
+    val unidade: String? = null,
+    val qtdPedida: Double,
+    val entregue: Double,
+    val aReceber: Double,
+    val emEstoque: Double,
+    val aplicadoSafra: Double,
+    val aplicadoFrota: Double,
+    val aplicadoAdm: Double,
+    val totalAplicado: Double,
+    val percentualAplicado: Double? = null,
+    val status: String, // "FALTA" | "EM_USO" | "EM_TRANSITO" | "OK"
+)
+
+@Serializable
+data class InsumosSituacaoConsolidadaData(
+    val itensUnicos: Int,
+    val totalPedido: Double,
+    val totalEmEstoque: Double,
+    val totalAplicado: Double,
+    val itensAtencao: Int,
+    val porCategoria: Map<String, List<InsumoItemSituacaoData>> = emptyMap(),
+)
+
+// Recursivo (cada nó pode ter "filhos", ex.: Categoria -> item), mesmo
+// padrão de DreRamoItemData.
+@Serializable
+data class InsumosRamoItemData(
+    val label: String,
+    val qtd: Double,
+    val unidade: String? = null,
+    val filhos: List<InsumosRamoItemData>? = null,
+    val status: String? = null,
+)
+
+@Serializable
+data class InsumoSaldoTopData(val item: String, val saldo: Double)
+
+@Serializable
+data class ControleInsumosRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val safra: String? = null,
+)
+
+@Serializable
+data class ControleInsumosResponse(
+    val ok: Boolean,
+    val situacaoConsolidada: InsumosSituacaoConsolidadaData? = null,
+    val itensCriticos: List<InsumoSaldoData> = emptyList(),
+    val arvoreControleInterno: List<InsumosRamoItemData> = emptyList(),
+    val saldoTop10: List<InsumoSaldoTopData> = emptyList(),
+    val error: String? = null,
+)
+
+// Visão "Operação" agrupada (gap encontrado na auditoria módulo-a-módulo
+// contra o site, pedido do usuário "implemente tudo que falta ainda para o
+// app native da plataforma") -- ver /api/mobile/operacoes (route.ts), que só
+// serializa o retorno de getOperacoes() (lib/services/operacoes.ts). Espelha
+// OperacaoTimelineItem/OperacaoEstoqueItem/OperacaoFinanceiroItem/
+// OperacaoAgrupada.
+@Serializable
+data class OperacaoTimelineItemData(
+    val id: String,
+    val data: String,
+    val operacao: String,
+    val responsavel: String? = null,
+    val os: String? = null,
+)
+
+@Serializable
+data class OperacaoEstoqueItemData(
+    val item: String,
+    val qtd: Double,
+    val unidade: String? = null,
+)
+
+@Serializable
+data class OperacaoFinanceiroItemData(
+    val id: String,
+    val data: String,
+    val categoria: String,
+    val subcategoria: String? = null,
+    val entidade: String? = null,
+    val valor: Double,
+)
+
+@Serializable
+data class OperacaoAgrupadaData(
+    val chave: String,
+    val safra: String,
+    val cultura: String,
+    val local: String,
+    val hectare: Double? = null,
+    val estagio: String, // "plantio" | "vegetativo" | "colheita" | "indefinido"
+    val dataInicio: String,
+    val dataFim: String? = null,
+    val realizadoTotal: Double,
+    val planejadoTotal: Double,
+    val variacaoMedia: Double? = null,
+    val timeline: List<OperacaoTimelineItemData> = emptyList(),
+    val financeiroTotal: Double,
+    val financeiroDetalhe: List<OperacaoFinanceiroItemData> = emptyList(),
+    val estoqueConsumido: List<OperacaoEstoqueItemData> = emptyList(),
+)
+
+@Serializable
+data class OperacoesRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val janela: Int? = null,
+)
+
+@Serializable
+data class OperacoesResponse(
+    val ok: Boolean,
+    val operacoes: List<OperacaoAgrupadaData> = emptyList(),
     val error: String? = null,
 )
 

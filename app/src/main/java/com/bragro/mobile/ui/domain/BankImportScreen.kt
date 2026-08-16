@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -308,7 +309,7 @@ fun BankImportScreen(onBack: () -> Unit, viewModel: BankImportViewModel = viewMo
                         Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(checked = r.include, onCheckedChange = { viewModel.toggleInclude(i, it) })
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(r.row.descricao, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+                                Text(r.row.descricao, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 Text(formatDateBr(r.row.dataIso), style = MaterialTheme.typography.labelSmall)
                                 if (r.duplicate) {
                                     Text("Possível duplicado", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)

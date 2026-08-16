@@ -50,7 +50,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bragro.mobile.data.repo.SecurityRepository
-import com.bragro.mobile.ui.theme.BrGreen
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
@@ -231,7 +230,7 @@ private fun ModulesChecklist(selected: List<String>, onChange: (List<String>) ->
                 Switch(
                     checked = checked,
                     onCheckedChange = { on -> onChange(if (on) selected + id else selected - id) },
-                    colors = SwitchDefaults.colors(checkedThumbColor = BrGreen, checkedTrackColor = BrGreen.copy(alpha = 0.5f)),
+                    colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(label, style = MaterialTheme.typography.bodySmall)
@@ -274,7 +273,7 @@ private fun EquipeCard(
                         Text(fullName ?: email, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                         Text("$email · $role", style = MaterialTheme.typography.labelSmall)
                     }
-                    Switch(checked = ativo, onCheckedChange = { onToggle(id, it) }, enabled = !busy, colors = SwitchDefaults.colors(checkedThumbColor = BrGreen, checkedTrackColor = BrGreen.copy(alpha = 0.5f)))
+                    Switch(checked = ativo, onCheckedChange = { onToggle(id, it) }, enabled = !busy, colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)))
                     Icon(if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null)
                 }
                 if (expanded) {
@@ -331,7 +330,7 @@ private fun AccessLogsCard(logs: kotlinx.serialization.json.JsonArray?) {
                 Icon(
                     if (success) Icons.Filled.CheckCircle else Icons.Filled.Cancel,
                     contentDescription = null,
-                    tint = if (success) BrGreen else MaterialTheme.colorScheme.error,
+                    tint = if (success) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(end = 8.dp),
                 )
                 Column(modifier = Modifier.weight(1f)) {

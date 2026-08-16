@@ -124,6 +124,34 @@ data class LivroCaixaEntity(
     val atualizadoEmMillis: Long,
 )
 
+/** Painel "Controle de Insumos" (gap encontrado na auditoria módulo-a-módulo
+ * contra o site, pedido do usuário "implemente tudo que falta ainda para o
+ * app native da plataforma") -- mesmo padrao de blob JSON do DreEntity: so
+ * existe UMA linha aqui (id fixo "current"), sobrescrita a cada consulta
+ * bem-sucedida de /api/mobile/controle-insumos. "safra" guarda o filtro
+ * usado na ultima consulta. */
+@Entity(tableName = "controle_insumos")
+data class ControleInsumosEntity(
+    @PrimaryKey val id: String = "current",
+    val safra: String?,
+    val dataJson: String,
+    val atualizadoEmMillis: Long,
+)
+
+/** Visão "Operação" agrupada (gap encontrado na auditoria módulo-a-módulo
+ * contra o site, pedido do usuário "implemente tudo que falta ainda para o
+ * app native da plataforma") -- mesmo padrao de blob JSON do DreEntity: so
+ * existe UMA linha aqui (id fixo "current"), sobrescrita a cada consulta
+ * bem-sucedida de /api/mobile/operacoes. "janela" guarda o filtro (30/60/90/
+ * 180 dias) usado na ultima consulta. */
+@Entity(tableName = "operacoes")
+data class OperacoesEntity(
+    @PrimaryKey val id: String = "current",
+    val janela: Int,
+    val dataJson: String,
+    val atualizadoEmMillis: Long,
+)
+
 /** Analises cruzadas entre modulos (Fase 2, Task #36) -- so existe UMA
  * linha aqui (id fixo "current"), sobrescrita a cada consulta bem-sucedida
  * de /api/mobile/analises. "analisesJson" guarda o objeto inteiro (15

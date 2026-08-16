@@ -31,7 +31,10 @@ import com.bragro.mobile.ui.domain.DomainListScreen
 import com.bragro.mobile.ui.domain.FinanceiroScreen
 import com.bragro.mobile.ui.home.HomeScreen
 import com.bragro.mobile.ui.login.LoginScreen
+import com.bragro.mobile.ui.insumos.ControleInsumosScreen
 import com.bragro.mobile.ui.nfe.NfeImportScreen
+import com.bragro.mobile.ui.nfe.NotaMultiItemScreen
+import com.bragro.mobile.ui.operacoes.OperacoesScreen
 import com.bragro.mobile.ui.romaneio.RomaneioQuickScreen
 import com.bragro.mobile.ui.seguranca.SegurancaScreen
 import com.bragro.mobile.ui.settings.SettingsScreen
@@ -45,6 +48,9 @@ private object Routes {
     const val DRONE = "drone"
     const val FIELDVIEW = "fieldview"
     const val NFE_IMPORT = "nfe_import"
+    const val NOTA_MULTI_ITEM = "nota_multi_item"
+    const val CONTROLE_INSUMOS = "controle_insumos"
+    const val OPERACOES = "operacoes"
     const val ROMANEIO_QUICK = "romaneio_quick"
     const val BANK_IMPORT = "bank_import"
     const val SETTINGS = "settings"
@@ -114,6 +120,8 @@ fun BRAgroNavHost() {
                     onOpenLivroCaixa = { navController.navigate(Routes.LIVRO_CAIXA) },
                     onOpenDrone = { navController.navigate(Routes.DRONE) },
                     onOpenFieldview = { navController.navigate(Routes.FIELDVIEW) },
+                    onOpenControleInsumos = { navController.navigate(Routes.CONTROLE_INSUMOS) },
+                    onOpenOperacoes = { navController.navigate(Routes.OPERACOES) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                     onOpenBaseDeDados = { navController.navigate(Routes.BASE_DE_DADOS) },
                     onOpenSeguranca = { navController.navigate(Routes.SEGURANCA) },
@@ -168,6 +176,32 @@ fun BRAgroNavHost() {
         composable(Routes.NFE_IMPORT) {
             NfeImportScreen(onBack = { navController.popBackStack() })
         }
+        composable(Routes.NOTA_MULTI_ITEM) {
+            NotaMultiItemScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.CONTROLE_INSUMOS) {
+            ControleInsumosScreen(
+                onBack = { navController.popBackStack() },
+                // "Pedido rápido" (item já filtrado) -- o formulário genérico
+                // (DomainFormScreen.kt) ainda não aceita valor inicial vindo
+                // por navegação, então o atalho leva pro Novo Lançamento de
+                // Pedidos (o usuário escolhe o item lá) em vez de pré-
+                // preencher, diferente do site (/m/pedidos?item=X). Gap
+                // conhecido, documentado aqui.
+                onPedidoRapido = { navController.navigate(Routes.domainFormNew("pedidos")) },
+            )
+        }
+        composable(Routes.OPERACOES) {
+            OperacoesScreen(
+                onBack = { navController.popBackStack() },
+                onVerEmSafra = {
+                    navController.navigate(Routes.domainList("safra")) {
+                        popUpTo(Routes.HOME)
+                        launchSingleTop = true
+                    }
+                },
+            )
+        }
         composable(Routes.ROMANEIO_QUICK) {
             RomaneioQuickScreen(onBack = { navController.popBackStack() })
         }
@@ -200,6 +234,7 @@ fun BRAgroNavHost() {
                     onEditRecord = { recordId -> navController.navigate(Routes.domainFormEdit(domainId, recordId)) },
                     onOpenBankImport = { navController.navigate(Routes.BANK_IMPORT) },
                     onOpenNfeImport = { navController.navigate(Routes.NFE_IMPORT) },
+                    onOpenNotaMultiItem = { navController.navigate(Routes.NOTA_MULTI_ITEM) },
                 )
             } else {
                 DomainListScreen(

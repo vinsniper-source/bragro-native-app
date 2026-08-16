@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
@@ -33,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.bragro.mobile.data.local.LookupEntity
 import com.bragro.mobile.data.repo.ConfigRepository
@@ -83,13 +85,24 @@ fun GlobalFieldSelectorButton(
     if (asPill) {
         Row(
             modifier = Modifier
+                // widthIn(max=...) + Ellipsis -- mesmo fix de
+                // FarmSelectorButton.kt (ver comentário completo lá): pedido
+                // do usuário ("limite a tela, não deixe nenhum caractere
+                // passar do limite da tela").
+                .widthIn(max = 160.dp)
                 .clip(RoundedCornerShape(999.dp))
                 .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), RoundedCornerShape(999.dp))
                 .clickable { menuOpen = true }
                 .padding(horizontal = 10.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(selected ?: "Todas as $labelPlural", style = MaterialTheme.typography.labelSmall, maxLines = 1)
+            Text(
+                selected ?: "Todas as $labelPlural",
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
+            )
             Icon(Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.size(14.dp).padding(start = 2.dp))
         }
     } else if (showLabel) {

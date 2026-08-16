@@ -18,8 +18,10 @@ import androidx.room.RoomDatabase
         AnalisesEntity::class,
         HomeEntity::class,
         LivroCaixaEntity::class,
+        ControleInsumosEntity::class,
+        OperacoesEntity::class,
     ],
-    version = 8,
+    version = 10,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -34,6 +36,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun analisesDao(): AnalisesDao
     abstract fun homeDao(): HomeDao
     abstract fun livroCaixaDao(): LivroCaixaDao
+    abstract fun controleInsumosDao(): ControleInsumosDao
+    abstract fun operacoesDao(): OperacoesDao
 
     companion object {
         @Volatile private var instance: AppDatabase? = null
@@ -52,7 +56,7 @@ abstract class AppDatabase : RoomDatabase() {
                     // adicionada em addMigrations(...) abaixo -- sem isso o
                     // Room falha explicitamente no open do banco (em vez de
                     // destruir dado do usuario silenciosamente).
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
                     .build()
                     .also { instance = it }
             }

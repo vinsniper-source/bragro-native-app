@@ -29,17 +29,17 @@ class LivroCaixaRepository(context: Context) {
     /** Retorna true se conseguiu atualizar do servidor; false se
      * offline/sem sessao (quem chamou continua podendo mostrar o cache
      * antigo via observeCached()). */
-    suspend fun refresh(ano: Int, saldoInicial: Double, banco: String?): Boolean {
+    suspend fun refresh(ano: Int, saldoInicial: Double, banco: String?, imovel: String? = null): Boolean {
         val tokens = tokenStore.current() ?: return false
         var (accessToken, refreshToken) = tokens
         return try {
-            var response = NetworkModule.mobileApi.livroCaixa(LivroCaixaRequest(accessToken, refreshToken, ano, saldoInicial, banco))
+            var response = NetworkModule.mobileApi.livroCaixa(LivroCaixaRequest(accessToken, refreshToken, ano, saldoInicial, banco, imovel))
             // Ver comentario equivalente em DashboardRepository (Task #37).
             if (response.code() == 401) {
                 val newAccess = TokenRefresher.refreshAccessToken(tokenStore, refreshToken)
                 if (newAccess != null) {
                     accessToken = newAccess
-                    response = NetworkModule.mobileApi.livroCaixa(LivroCaixaRequest(accessToken, refreshToken, ano, saldoInicial, banco))
+                    response = NetworkModule.mobileApi.livroCaixa(LivroCaixaRequest(accessToken, refreshToken, ano, saldoInicial, banco, imovel))
                 }
             }
             val body = response.body()

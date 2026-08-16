@@ -17,6 +17,8 @@ import com.bragro.mobile.data.model.BridgeCodeRequest
 import com.bragro.mobile.data.model.BridgeCodeResponse
 import com.bragro.mobile.data.model.BootstrapResponse
 import com.bragro.mobile.data.model.ConfigResponse
+import com.bragro.mobile.data.model.ControleInsumosRequest
+import com.bragro.mobile.data.model.ControleInsumosResponse
 import com.bragro.mobile.data.model.DashboardRequest
 import com.bragro.mobile.data.model.DashboardResponse
 import com.bragro.mobile.data.model.DreRequest
@@ -33,6 +35,8 @@ import com.bragro.mobile.data.model.HomeRequest
 import com.bragro.mobile.data.model.HomeResponse
 import com.bragro.mobile.data.model.LivroCaixaRequest
 import com.bragro.mobile.data.model.LivroCaixaResponse
+import com.bragro.mobile.data.model.ProdutorRuralRequest
+import com.bragro.mobile.data.model.ProdutorRuralResponse
 import com.bragro.mobile.data.model.ModuleActionRequest
 import com.bragro.mobile.data.model.ModuleActionResponse
 import com.bragro.mobile.data.model.ModuleChartsRequest
@@ -43,6 +47,10 @@ import com.bragro.mobile.data.model.NfePreviewRequest
 import com.bragro.mobile.data.model.NfePreviewResponse
 import com.bragro.mobile.data.model.NoticesRequest
 import com.bragro.mobile.data.model.NoticesResponse
+import com.bragro.mobile.data.model.NotaMultiItemRequest
+import com.bragro.mobile.data.model.NotaMultiItemResponse
+import com.bragro.mobile.data.model.OperacoesRequest
+import com.bragro.mobile.data.model.OperacoesResponse
 import com.bragro.mobile.data.model.NotificationsRequest
 import com.bragro.mobile.data.model.NotificationsResponse
 import com.bragro.mobile.data.model.GetProviderIntegrationRequest
@@ -129,8 +137,30 @@ interface MobileApi {
     @POST("api/mobile/dre")
     suspend fun dre(@Body body: DreRequest): Response<DreResponse>
 
+    // Painel "Controle de Insumos" (gap encontrado na auditoria módulo-a-
+    // módulo, pedido do usuario "implemente tudo que falta ainda para o app
+    // native da plataforma").
+    @POST("api/mobile/controle-insumos")
+    suspend fun controleInsumos(@Body body: ControleInsumosRequest): Response<ControleInsumosResponse>
+
     @POST("api/mobile/livro-caixa")
     suspend fun livroCaixa(@Body body: LivroCaixaRequest): Response<LivroCaixaResponse>
+
+    // Produtor Rural / IRPF (config da Organization) -- pedido do usuario
+    // ("implemente tudo que falta ainda para o app native da plataforma").
+    @POST("api/mobile/produtor-rural")
+    suspend fun produtorRural(@Body body: ProdutorRuralRequest): Response<ProdutorRuralResponse>
+
+    // Financeiro: "Lançar nota com itens" (multi-item) -- pedido do usuario
+    // ("implemente tudo que falta ainda para o app native da plataforma").
+    @POST("api/mobile/nota-multi-item")
+    suspend fun notaMultiItem(@Body body: NotaMultiItemRequest): Response<NotaMultiItemResponse>
+
+    // Visão "Operação" agrupada (gap encontrado na auditoria módulo-a-módulo,
+    // pedido do usuario "implemente tudo que falta ainda para o app native
+    // da plataforma").
+    @POST("api/mobile/operacoes")
+    suspend fun operacoes(@Body body: OperacoesRequest): Response<OperacoesResponse>
 
     @POST("api/mobile/analises")
     suspend fun analises(@Body body: AnalisesRequest): Response<AnalisesResponse>

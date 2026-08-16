@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
@@ -31,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.bragro.mobile.data.local.FarmEntity
 import com.bragro.mobile.data.repo.ConfigRepository
@@ -81,13 +83,25 @@ fun FarmSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onCh
     if (asPill) {
         Row(
             modifier = Modifier
+                // widthIn(max=...) -- pedido do usuário ("limite a tela, não
+                // deixe nenhum caractere passar do limite da tela"): sem
+                // limite, um nome de fazenda longo media a Text no tamanho
+                // intrínseco (1 linha) e empurrava a pill inteira pra fora
+                // da tela em vez de truncar com "...".
+                .widthIn(max = 160.dp)
                 .clip(RoundedCornerShape(999.dp))
                 .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), RoundedCornerShape(999.dp))
                 .clickable { menuOpen = true }
                 .padding(horizontal = 10.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(selected ?: "Todas as fazendas", style = MaterialTheme.typography.labelSmall, maxLines = 1)
+            Text(
+                selected ?: "Todas as fazendas",
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
+            )
             Icon(Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.size(14.dp).padding(start = 2.dp))
         }
     } else if (showLabel) {

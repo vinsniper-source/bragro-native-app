@@ -1,6 +1,7 @@
 package com.bragro.mobile.ui.livrocaixa
 
 import android.app.Application
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -17,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import com.bragro.mobile.ui.theme.Card
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.FilterAlt
@@ -58,7 +60,9 @@ import com.bragro.mobile.data.model.ColumnConfig
 import com.bragro.mobile.data.model.DomainConfig
 import com.bragro.mobile.data.model.LivroCaixaData
 import com.bragro.mobile.data.model.LivroCaixaLancamentoData
+import com.bragro.mobile.data.model.ProdutorRuralConfigData
 import com.bragro.mobile.data.repo.LivroCaixaRepository
+import com.bragro.mobile.data.repo.ProdutorRuralRepository
 import com.bragro.mobile.ui.domain.FarmSelectorButton
 import com.bragro.mobile.ui.domain.LabeledIconButton
 import com.bragro.mobile.ui.domain.exportXlsx
@@ -79,6 +83,7 @@ import java.util.Locale
 // Excel/PDF/Imprimir reaproveitando a infra generica dos 16 modulos).
 class LivroCaixaViewModel(app: Application) : AndroidViewModel(app) {
     private val repository = LivroCaixaRepository(app)
+    private val produtorRuralRepository = ProdutorRuralRepository(app)
 
     var resultado = mutableStateOf<LivroCaixaData?>(null)
         private set
@@ -89,6 +94,21 @@ class LivroCaixaViewModel(app: Application) : AndroidViewModel(app) {
     var ano = mutableStateOf(java.util.Calendar.getInstance().get(java.util.Calendar.YEAR))
         private set
     var banco = mutableStateOf<String?>(null)
+        private set
+    // imovel/saldoInicial -- pedido do usuário ("implemente tudo que falta
+    // ainda para o app native da plataforma"): os dois já existiam no site
+    // (livro-caixa-client.tsx) mas faltavam por completo no app.
+    var imovel = mutableStateOf<String?>(null)
+        private set
+    var saldoInicial = mutableStateOf(0.0)
+        private set
+
+    // Config Produtor Rural / IRPF -- sem cache local de propósito (ver
+    // comentário em ProdutorRuralRepository.kt), busca sob demanda quando o
+    // card é aberto.
+    var produtorRural = mutableStateOf<ProdutorRuralConfigData?>(null)
+        private set
+    var produtorRuralLoading = mutableStateOf(false)
         private set
 
     init {
@@ -110,16 +130,42 @@ class LivroCaixaViewModel(app: Application) : AndroidViewModel(app) {
         refresh()
     }
 
+    fun setImovel(value: String?) {
+        imovel.value = value
+        refresh()
+    }
+
+    fun setSaldoInicial(value: Double) {
+        saldoInicial.value = value
+        refresh()
+    }
+
     fun refresh() {
         if (loading.value) return
         loading.value = true
         viewModelScope.launch {
-            // Saldo inicial fica sempre 0 aqui (mesmo padrao default do
-            // site) -- o usuario que precisar de um saldo de abertura
-            // diferente ajusta na tela web, que tem esse campo explicito.
-            val ok = repository.refresh(ano.value, 0.0, banco.value)
+            val ok = repository.refresh(ano.value, saldoInicial.value, banco.value, imovel.value)
             offline.value = !ok
             loading.value = false
+        }
+    }
+
+    fun loadProdutorRural() {
+        if (produtorRuralLoading.value) return
+        produtorRuralLoading.value = true
+        viewModelScope.launch {
+            produtorRural.value = produtorRuralRepository.fetch()
+            produtorRuralLoading.value = false
+        }
+    }
+
+    fun saveProdutorRural(config: ProdutorRuralConfigData, onDone: (Boolean) -> Unit) {
+        produtorRuralLoading.value = true
+        viewModelScope.launch {
+            val result = produtorRuralRepository.save(config)
+            if (result != null) produtorRural.value = result
+            produtorRuralLoading.value = false
+            onDone(result != null)
         }
     }
 }
@@ -134,9 +180,16 @@ private fun formatDataBr(iso: String): String = try {
     iso.take(10)
 }
 
+// Imóvel + Doc. adicionadas -- pedido do usuário ("implemente tudo que
+// falta ainda para o app native da plataforma"): as 2 colunas já existiam
+// na exportação/impressão web (livro-caixa-client.tsx) e nos dados que a
+// rota mobile já mandava (tipoDocumento/banco já estavam no modelo, imovel
+// era o único campo realmente ausente até agora).
 private val LIVRO_CAIXA_EXPORT_COLUMNS = listOf(
     ColumnConfig(key = "data", label = "Data", type = "text"),
+    ColumnConfig(key = "imovel", label = "Imóvel", type = "text"),
     ColumnConfig(key = "historico", label = "Histórico", type = "text"),
+    ColumnConfig(key = "tipoDocumento", label = "Doc.", type = "text"),
     ColumnConfig(key = "entrada", label = "Entrada", type = "number", money = true),
     ColumnConfig(key = "saida", label = "Saída", type = "number", money = true),
     ColumnConfig(key = "saldo", label = "Saldo", type = "number", money = true),
@@ -148,7 +201,9 @@ private fun livroCaixaExportRecords(lancamentos: List<LivroCaixaLancamentoData>)
     lancamentos.map { l ->
         mapOf(
             "data" to formatDataBr(l.data),
+            "imovel" to l.imovel,
             "historico" to l.historico,
+            "tipoDocumento" to l.tipoDocumento,
             "entrada" to (if (l.entrada > 0) l.entrada.toString() else null),
             "saida" to (if (l.saida > 0) l.saida.toString() else null),
             "saldo" to l.saldo.toString(),
@@ -200,6 +255,54 @@ private fun BancoDropdown(banco: String?, opcoes: List<String>, onSelect: (Strin
     }
 }
 
+// Filtro de imóvel rural (COD_IMOVEL do LCDPR) -- pedido do usuário
+// ("implemente tudo que falta ainda para o app native da plataforma"): já
+// existia na tela web (livro-caixa-client.tsx), faltava no app.
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ImovelDropdown(imovel: String?, opcoes: List<String>, onSelect: (String?) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+        OutlinedTextField(
+            value = imovel ?: "Todos os imóveis",
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Imóvel") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.fillMaxWidth().menuAnchor(),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(text = { Text("Todos os imóveis") }, onClick = { onSelect(null); expanded = false })
+            for (opt in opcoes) {
+                DropdownMenuItem(text = { Text(opt) }, onClick = { onSelect(opt); expanded = false })
+            }
+        }
+    }
+}
+
+// Saldo inicial editável -- pedido do usuário ("implemente tudo que falta
+// ainda para o app native da plataforma"): antes fixo em 0 no app (ver
+// comentário removido do ViewModel), já existia como campo editável na tela
+// web (input + botão "Aplicar", livro-caixa-client.tsx).
+@Composable
+private fun SaldoInicialField(saldoInicial: Double, onApply: (Double) -> Unit) {
+    var texto by remember(saldoInicial) { mutableStateOf(if (saldoInicial != 0.0) saldoInicial.toString() else "") }
+    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        OutlinedTextField(
+            value = texto,
+            onValueChange = { texto = it },
+            label = { Text("Saldo inicial (R$)") },
+            singleLine = true,
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+            modifier = Modifier.weight(1f),
+        )
+        androidx.compose.material3.TextButton(onClick = {
+            val normalizado = texto.trim().replace(",", ".")
+            onApply(normalizado.toDoubleOrNull() ?: 0.0)
+        }) { Text("Aplicar") }
+    }
+}
+
 // Mesmo padrão de bloco/barra oval de DreScreen.kt (DreBlockSpec/
 // DreCategoryTabs) -- duplicado aqui em vez de compartilhado, mesmo
 // critério já usado entre os módulos (evitar risco de mexer em código
@@ -242,6 +345,16 @@ private fun LancamentoRow(l: LivroCaixaLancamentoData) {
         Column(modifier = Modifier.weight(2f)) {
             Text(formatDataBr(l.data), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
             Text(l.historico, style = MaterialTheme.typography.bodySmall)
+            // Imóvel + Doc. -- pedido do usuário ("implemente tudo que falta
+            // ainda para o app native da plataforma"): colunas que a tela
+            // web mostra (livro-caixa-client.tsx) e o app não mostrava.
+            val detalhe = listOfNotNull(
+                l.imovel.takeIf { it.isNotBlank() },
+                l.tipoDocumento?.takeIf { it.isNotBlank() },
+            ).joinToString(" · ")
+            if (detalhe.isNotBlank()) {
+                Text(detalhe, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         Column(modifier = Modifier.weight(1f), horizontalAlignment = androidx.compose.ui.Alignment.End) {
             if (l.entrada > 0) Text("+ ${formatMoneyBrl(l.entrada)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
@@ -252,6 +365,114 @@ private fun LancamentoRow(l: LivroCaixaLancamentoData) {
     HorizontalDivider()
 }
 
+// Card Produtor Rural / IRPF -- pedido do usuário ("implemente tudo que
+// falta ainda para o app native da plataforma"): 0% presente no app antes
+// (nem rota, nem tela); já existia no site (produtor-rural-card.tsx),
+// preenchendo Organization.cnpj/cpfProdutorRural/inscricaoEstadualProdutor/
+// certificadoDigitalRef/contaIrpfPadrao. Mesmos campos, mesma validação
+// leve (CPF/CNPJ só dígitos, resto texto livre) -- a validação "de verdade"
+// (14/11 dígitos) é refeita no servidor (route.ts), aqui só formata a
+// entrada.
+@Composable
+private fun ProdutorRuralCard(
+    config: ProdutorRuralConfigData?,
+    loading: Boolean,
+    onSave: (ProdutorRuralConfigData) -> Unit,
+) {
+    var cnpj by remember(config) { mutableStateOf(config?.cnpj ?: "") }
+    var cpf by remember(config) { mutableStateOf(config?.cpfProdutorRural ?: "") }
+    var ie by remember(config) { mutableStateOf(config?.inscricaoEstadualProdutor ?: "") }
+    var certificado by remember(config) { mutableStateOf(config?.certificadoDigitalRef ?: "") }
+    var contaIrpf by remember(config) { mutableStateOf(config?.contaIrpfPadrao ?: "") }
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Produtor Rural / IRPF", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(
+                "Dados usados na apuração do Livro Caixa da Atividade Rural (LCDPR) -- confira com seu contador antes de declarar.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            OutlinedTextField(value = cnpj, onValueChange = { cnpj = it }, label = { Text("CNPJ") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = cpf, onValueChange = { cpf = it }, label = { Text("CPF do produtor") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = ie, onValueChange = { ie = it }, label = { Text("Inscrição Estadual") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = certificado, onValueChange = { certificado = it }, label = { Text("Referência do certificado digital") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = contaIrpf, onValueChange = { contaIrpf = it }, label = { Text("Conta padrão para IRPF") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                androidx.compose.material3.Button(
+                    enabled = !loading,
+                    onClick = {
+                        onSave(
+                            ProdutorRuralConfigData(
+                                cnpj = cnpj,
+                                cpfProdutorRural = cpf,
+                                inscricaoEstadualProdutor = ie,
+                                certificadoDigitalRef = certificado,
+                                contaIrpfPadrao = contaIrpf,
+                            ),
+                        )
+                    },
+                ) { Text(if (loading) "Salvando..." else "Salvar") }
+            }
+        }
+    }
+}
+
+// Resumo por imóvel -- pedido do usuário ("implemente tudo que falta ainda
+// para o app native da plataforma"): mesma tabela clicável (filtra ao
+// tocar) que já existia na tela web, ausente no app.
+@Composable
+private fun ResumoPorImovelCard(imoveis: List<com.bragro.mobile.data.model.LivroCaixaImovelResumoData>, onSelect: (String) -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text("Resumo por imóvel rural", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Column(modifier = Modifier.padding(top = 6.dp)) {
+                imoveis.forEach { i ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelect(i.imovel) }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(i.imovel, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                            Text("${i.quantidade} lançamento(s)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Text(formatMoneyBrl(i.saldo), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                    }
+                    HorizontalDivider()
+                }
+            }
+        }
+    }
+}
+
+// Resumo mensal -- pedido do usuário ("implemente tudo que falta ainda para
+// o app native da plataforma"): tabela (mês, entradas, saídas, saldo
+// acumulado) que já existia na web (`porMes`, já vinha na resposta da rota
+// mobile, mas nunca era exibida na tela).
+@Composable
+private fun ResumoMensalCard(porMes: List<com.bragro.mobile.data.model.LivroCaixaMesData>) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text("Resumo mensal", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Column(modifier = Modifier.padding(top = 6.dp)) {
+                porMes.forEach { m ->
+                    if (m.entradas > 0 || m.saidas > 0) {
+                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
+                            Text(m.label, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                            Column(horizontalAlignment = androidx.compose.ui.Alignment.End) {
+                                Text(formatMoneyBrl(m.saldoFinal), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewModel()) {
@@ -260,9 +481,19 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
     val offline by viewModel.offline
     val ano by viewModel.ano
     val banco by viewModel.banco
+    // imovel/saldoInicial/produtorRural -- pedido do usuário ("implemente
+    // tudo que falta ainda para o app native da plataforma").
+    val imovel by viewModel.imovel
+    val saldoInicialAtual by viewModel.saldoInicial
+    val produtorRural by viewModel.produtorRural
+    val produtorRuralLoading by viewModel.produtorRuralLoading
     val context = LocalContext.current
     var filtrosOpen by remember { mutableStateOf(false) }
     var contentExpanded by remember { mutableStateOf(false) }
+    var produtorRuralOpen by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(produtorRuralOpen) {
+        if (produtorRuralOpen && produtorRural == null) viewModel.loadProdutorRural()
+    }
 
     Scaffold(
         topBar = {
@@ -325,6 +556,15 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                             onClick = { contentExpanded = !contentExpanded },
                         )
                     }
+                    // Produtor Rural / IRPF -- pedido do usuário ("implemente
+                    // tudo que falta ainda para o app native da
+                    // plataforma"): atalho pro card que faltava por completo.
+                    LabeledIconButton(
+                        icon = Icons.Filled.Badge,
+                        label = "Produtor Rural",
+                        tint = if (produtorRuralOpen) MaterialTheme.colorScheme.primary else androidx.compose.material3.LocalContentColor.current,
+                        onClick = { produtorRuralOpen = !produtorRuralOpen },
+                    )
                 }
                 val operacoesBlock = LivroCaixaBlockSpec("Operações") {
                     LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.refresh() })
@@ -339,12 +579,24 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
             }
             if (filtrosOpen) {
                 item {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Column(modifier = Modifier.weight(1f)) { AnoDropdown(ano) { viewModel.setAno(it) } }
-                        Column(modifier = Modifier.weight(1f)) {
-                            BancoDropdown(banco, data?.contas?.map { it.banco }.orEmpty()) { viewModel.setBanco(it) }
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Column(modifier = Modifier.weight(1f)) { AnoDropdown(ano) { viewModel.setAno(it) } }
+                            Column(modifier = Modifier.weight(1f)) {
+                                BancoDropdown(banco, data?.contas?.map { it.banco }.orEmpty()) { viewModel.setBanco(it) }
+                            }
                         }
+                        // Imóvel + saldo inicial -- pedido do usuário
+                        // ("implemente tudo que falta ainda para o app
+                        // native da plataforma"): já existiam na tela web.
+                        ImovelDropdown(imovel, data?.imoveis?.map { it.imovel }.orEmpty()) { viewModel.setImovel(it) }
+                        SaldoInicialField(saldoInicialAtual) { viewModel.setSaldoInicial(it) }
                     }
+                }
+            }
+            if (produtorRuralOpen) {
+                item {
+                    ProdutorRuralCard(produtorRural, produtorRuralLoading) { config -> viewModel.saveProdutorRural(config) {} }
                 }
             }
             if (offline) {
@@ -370,15 +622,53 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                                 Text("Resumo por conta", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                 Column(modifier = Modifier.padding(top = 6.dp)) {
                                     data.contas.forEach { c ->
-                                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
-                                            Text(c.banco, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                                        // Clicável (filtra por essa conta) +
+                                        // quantidade/entradas/saídas + badge
+                                        // "Conta IRPF" -- pedido do usuário
+                                        // ("implemente tudo que falta ainda
+                                        // para o app native da plataforma"):
+                                        // a tela web já mostrava tudo isso
+                                        // (livro-caixa-client.tsx), o app só
+                                        // mostrava banco+saldo.
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable { viewModel.setBanco(c.banco) }
+                                                .padding(vertical = 4.dp),
+                                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                                    Text(c.banco, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                                                    if (produtorRural != null && c.banco == produtorRural.contaIrpfPadrao && produtorRural.contaIrpfPadrao.isNotBlank()) {
+                                                        Text(
+                                                            " · Conta IRPF",
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            color = MaterialTheme.colorScheme.primary,
+                                                            fontWeight = FontWeight.Bold,
+                                                        )
+                                                    }
+                                                }
+                                                Text(
+                                                    "${c.quantidade} lanç. · +${formatMoneyBrl(c.entradas)} / -${formatMoneyBrl(c.saidas)}",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                )
+                                            }
                                             Text(formatMoneyBrl(c.saldo), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                                         }
+                                        HorizontalDivider()
                                     }
                                 }
                             }
                         }
                     }
+                }
+                if (data.imoveis.isNotEmpty()) {
+                    item { ResumoPorImovelCard(data.imoveis) { imovelSelecionado -> viewModel.setImovel(imovelSelecionado) } }
+                }
+                if (data.porMes.any { it.entradas > 0 || it.saidas > 0 }) {
+                    item { ResumoMensalCard(data.porMes) }
                 }
                 item {
                     Text("Extrato (${data.lancamentos.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))

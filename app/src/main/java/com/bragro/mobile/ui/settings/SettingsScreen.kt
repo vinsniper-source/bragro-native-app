@@ -49,7 +49,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bragro.mobile.data.repo.SettingsRepository
-import com.bragro.mobile.ui.theme.BrGreen
 import com.bragro.mobile.ui.util.openInCustomTab
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
@@ -518,7 +517,7 @@ private fun NotificacoesCard(
 @Composable
 private fun CheckboxRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
-        Checkbox(checked = checked, onCheckedChange = onCheckedChange, colors = androidx.compose.material3.CheckboxDefaults.colors(checkedColor = BrGreen))
+        Checkbox(checked = checked, onCheckedChange = onCheckedChange, colors = androidx.compose.material3.CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary))
         Text(label, style = MaterialTheme.typography.bodyMedium)
     }
 }

@@ -42,6 +42,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -470,9 +471,20 @@ private fun BoundariesList(boundaries: List<FieldBoundaryDto>, modifier: Modifie
         items(boundaries, key = { it.id }) { b ->
             Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Row sem largura definida + Text sem maxLines/overflow --
+                    // pedido do usuário ("limite a tela, não deixe nenhum
+                    // caractere passar do limite da tela"): um nome de
+                    // talhão/KML longo crescia o Row inteiro além da borda
+                    // do Card em vez de truncar.
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Filled.Map, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                        Text(b.nome ?: b.talhao, style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            b.nome ?: b.talhao,
+                            style = MaterialTheme.typography.titleSmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
                     }
                     Text("Talhão: ${b.talhao}", style = MaterialTheme.typography.bodySmall)
                     b.areaHaCalc?.let { Text("Área calculada: $it ha", style = MaterialTheme.typography.bodySmall) }
