@@ -132,9 +132,9 @@ fun GlobalFieldSelectorButton(
 }
 
 @Composable
-fun SafraSelectorButton(showLabel: Boolean = false) =
-    GlobalFieldSelectorButton(SafraSelection, Icons.Filled.Eco, "safra", "safras", showLabel)
+fun SafraSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onChanged: () -> Unit = {}) =
+    GlobalFieldSelectorButton(SafraSelection, Icons.Filled.Eco, "safra", "safras", showLabel, asPill, onChanged)
 
 @Composable
-fun CulturaSelectorButton(showLabel: Boolean = false) =
-    GlobalFieldSelectorButton(CulturaSelection, Icons.Filled.Grass, "cultura", "culturas", showLabel)
+fun CulturaSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onChanged: () -> Unit = {}) =
+    GlobalFieldSelectorButton(CulturaSelection, Icons.Filled.Grass, "cultura", "culturas", showLabel, asPill, onChanged)
