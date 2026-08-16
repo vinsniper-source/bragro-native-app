@@ -33,16 +33,19 @@ class HomeRepository(context: Context) {
             entity?.let { runCatching { json.decodeFromString(HomeData.serializer(), it.homeJson) }.getOrNull() }
         }
 
-    suspend fun fetch(): HomeData? {
+    // janela/safra/cultura/fazendaSelecionada -- mesmos filtros do Canvas web
+    // (ver comentário completo em HomeRequest, Models.kt). Parâmetros com
+    // default pra não quebrar quem ainda chama fetch() sem eles.
+    suspend fun fetch(janela: Int = 60, safra: String? = null, cultura: String? = null, fazendaSelecionada: String? = null): HomeData? {
         val tokens = tokenStore.current() ?: return null
         var (accessToken, refreshToken) = tokens
         return try {
-            var response = NetworkModule.mobileApi.home(HomeRequest(accessToken, refreshToken))
+            var response = NetworkModule.mobileApi.home(HomeRequest(accessToken, refreshToken, janela, safra, cultura, fazendaSelecionada))
             if (response.code() == 401) {
                 val newAccess = TokenRefresher.refreshAccessToken(tokenStore, refreshToken)
                 if (newAccess != null) {
                     accessToken = newAccess
-                    response = NetworkModule.mobileApi.home(HomeRequest(accessToken, refreshToken))
+                    response = NetworkModule.mobileApi.home(HomeRequest(accessToken, refreshToken, janela, safra, cultura, fazendaSelecionada))
                 }
             }
             val body = response.body()

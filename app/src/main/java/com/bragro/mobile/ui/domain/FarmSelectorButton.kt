@@ -1,10 +1,16 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -22,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -33,9 +40,18 @@ import com.bragro.mobile.data.repo.ConfigRepository
  * (cabecalho), ver comentario completo em FarmSelection.kt. Reutilizado no
  * topo de Inicio e de cada tela de modulo. So aparece quando ha pelo menos
  * uma fazenda cadastrada (senao nao ha o que filtrar).
+ *
+ * asPill=true -- pedido do usuário ("substitua os ícones fazenda, safra e
+ * cultura por esses filtros da plataforma"): visual tipo "chip" com o VALOR
+ * atual escrito por extenso ("Todas as fazendas"/nome da fazenda) + seta,
+ * igual ao FarmSelector do cabeçalho web (topbar.tsx) -- em vez do ícone +
+ * rótulo fixo "Fazenda" (showLabel=true, mantido intacto pra quem ainda usa
+ * esse visual, ex. TopAppBar de outros módulos). onChanged é chamado depois
+ * de escolher uma fazenda -- quem usa a pill (Início) passa aqui o callback
+ * que refaz o fetch do Canvas já filtrado (ver HomeViewModel.onFiltroGlobalChanged).
  */
 @Composable
-fun FarmSelectorButton(showLabel: Boolean = false) {
+fun FarmSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onChanged: () -> Unit = {}) {
     val context = LocalContext.current
     // Reativo (Flow/collectAsState), nao mais LaunchedEffect(Unit) + fetch
     // unico -- BUG real corrigido (pedido do usuario: "as listas suspensas
@@ -62,7 +78,19 @@ fun FarmSelectorButton(showLabel: Boolean = false) {
     // filtrada selecionada; em "Todas as fazendas" (selected == null) caia
     // pra LocalContentColor (neutro), o que deixava o icone sem cor de
     // destaque na maior parte do tempo (estado padrao, sem filtro).
-    if (showLabel) {
+    if (asPill) {
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(999.dp))
+                .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), RoundedCornerShape(999.dp))
+                .clickable { menuOpen = true }
+                .padding(horizontal = 10.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(selected ?: "Todas as fazendas", style = MaterialTheme.typography.labelSmall, maxLines = 1)
+            Icon(Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.size(14.dp).padding(start = 2.dp))
+        }
+    } else if (showLabel) {
         Column(
             modifier = Modifier.clickable { menuOpen = true }.padding(horizontal = 6.dp, vertical = 2.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -84,13 +112,13 @@ fun FarmSelectorButton(showLabel: Boolean = false) {
         HorizontalDivider()
         DropdownMenuItem(
             text = { Text("Todas as fazendas", fontWeight = if (selected == null) FontWeight.Bold else FontWeight.Normal) },
-            onClick = { FarmSelection.choose(context, null); menuOpen = false },
+            onClick = { FarmSelection.choose(context, null); menuOpen = false; onChanged() },
         )
         HorizontalDivider()
         farms.forEach { farm ->
             DropdownMenuItem(
                 text = { Text(farm.name, fontWeight = if (selected == farm.name) FontWeight.Bold else FontWeight.Normal) },
-                onClick = { FarmSelection.choose(context, farm.name); menuOpen = false },
+                onClick = { FarmSelection.choose(context, farm.name); menuOpen = false; onChanged() },
             )
         }
     }

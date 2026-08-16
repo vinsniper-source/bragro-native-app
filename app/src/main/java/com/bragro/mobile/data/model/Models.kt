@@ -121,7 +121,42 @@ data class DashboardResponse(
 // retrato das ultimas alteracoes nas mesmas 6 tabelas, atualizado a cada
 // refresh -- ver comentario completo no route.ts.
 @Serializable
-data class HomeRequest(val accessToken: String, val refreshToken: String)
+data class HomeRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    // Filtros do Canvas -- pedido do usuário ("implemente nessa sequência
+    // no app nativo... substitua os ícones fazenda, safra e cultura por
+    // esses filtros da plataforma"), mesmos parâmetros que o dashboard web
+    // manda via searchParams (ver dashboard/page.tsx). janela default 60
+    // (mesmo default do site). fazendaSelecionada é o NOME (não id) da
+    // fazenda escolhida no filtro global (FarmSelection).
+    val janela: Int = 60,
+    val safra: String? = null,
+    val cultura: String? = null,
+    val fazendaSelecionada: String? = null,
+)
+
+@Serializable
+data class CanvasBreakdownItemData(val categoria: String, val valor: Double)
+
+@Serializable
+data class CanvasFazendaCardData(
+    val id: String,
+    val nome: String,
+    val areaHa: Double,
+    val status: String, // "ok" | "alerta" | "risco" | "semdado"
+    val variacaoMedia: Double? = null,
+    val culturaAtual: String? = null,
+    val custoHaMedio: Double? = null,
+    val breakdown: List<CanvasBreakdownItemData> = emptyList(),
+    val tendencia: String? = null, // "melhorando" | "piorando" | "estavel" | null
+)
+
+@Serializable
+data class CanvasSectionData(
+    val estagio: String, // "plantio" | "vegetativo" | "colheita" | "indefinido"
+    val fazendas: List<CanvasFazendaCardData> = emptyList(),
+)
 
 @Serializable
 data class AlertData(
@@ -183,6 +218,15 @@ data class HomeData(
     val alerts: List<AlertData> = emptyList(),
     val notices: List<NoticeData> = emptyList(),
     val recentActivity: List<ActivityEventData> = emptyList(),
+    // Canvas da fazenda + listas dos seletores de Safra/Cultura -- pedido do
+    // usuário ("implemente nessa sequência no app nativo... substitua os
+    // ícones fazenda, safra e cultura por esses filtros da plataforma").
+    // Default null/vazio não quebra a leitura do cache offline salvo antes
+    // desses campos existirem (mesmo motivo do default 0 em numeroFazendas
+    // acima).
+    val canvas: CanvasSectionData? = null,
+    val safrasDisponiveis: List<String> = emptyList(),
+    val culturasDisponiveis: List<String> = emptyList(),
 )
 
 @Serializable

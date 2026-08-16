@@ -79,6 +79,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -119,8 +120,11 @@ import com.bragro.mobile.data.repo.NoticesRepository
 import com.bragro.mobile.data.repo.NotificationsRepository
 import com.bragro.mobile.data.repo.RecordRepository
 import com.bragro.mobile.data.repo.WeatherRepository
+import com.bragro.mobile.ui.domain.CulturaSelection
 import com.bragro.mobile.ui.domain.CulturaSelectorButton
+import com.bragro.mobile.ui.domain.FarmSelection
 import com.bragro.mobile.ui.domain.FarmSelectorButton
+import com.bragro.mobile.ui.domain.SafraSelection
 import com.bragro.mobile.ui.domain.SafraSelectorButton
 import com.bragro.mobile.ui.theme.BrBlue
 import com.bragro.mobile.ui.theme.BrGreen
@@ -168,6 +172,13 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     var home = mutableStateOf<HomeData?>(null)
         private set
+    // Janela do Canvas (30/60/90/180 dias) -- pedido do usuário ("implemente
+    // nessa sequência no app nativo"), mesmo seletor do dashboard web. Fica
+    // aqui (não é um filtro global persistido tipo Fazenda/Safra/Cultura)
+    // porque só afeta o Canvas desta tela, igual ao site (query param
+    // "janela", não cookie).
+    var janela = mutableStateOf(60)
+        private set
     var weather = mutableStateOf<WeatherResponse?>(null)
         private set
     var pendingCount = mutableStateOf(0)
@@ -209,11 +220,24 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         refresh()
     }
 
-    fun refresh() {
+    // context: precisa carregar FarmSelection/SafraSelection/CulturaSelection
+    // (SharedPreferences) antes de ler `.selected.value` -- mesmo padrão já
+    // usado em DomainListScreen.kt (LaunchedEffect(Unit) { FarmSelection.load(context) }).
+    fun refresh(context: android.content.Context? = null) {
         if (loading.value) return
         loading.value = true
+        if (context != null) {
+            FarmSelection.load(context)
+            SafraSelection.load(context)
+            CulturaSelection.load(context)
+        }
         viewModelScope.launch {
-            val fetched = homeRepository.fetch()
+            val fetched = homeRepository.fetch(
+                janela = janela.value,
+                safra = SafraSelection.selected.value,
+                cultura = CulturaSelection.selected.value,
+                fazendaSelecionada = FarmSelection.selected.value,
+            )
             if (fetched != null) {
                 home.value = fetched
                 lastUpdatedAt.value = System.currentTimeMillis()
@@ -235,6 +259,22 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             val s = db.sessionDao().get()
             if (s != null) configRepository.bootstrapAndCacheConfig(s.accessToken, s.refreshToken)
         }
+    }
+
+    /** Troca a janela do Canvas (30/60/90/180d) e refaz o fetch já com o
+     * novo período -- mesmo efeito do clique nos links "30d/60d/90d/180d" do
+     * site (dashboard/page.tsx), só que sem navegação (o app não tem URL). */
+    fun setJanela(context: android.content.Context, dias: Int) {
+        janela.value = dias
+        refresh(context)
+    }
+
+    /** Chamado pelos seletores de fazenda/safra/cultura (FarmSelection/
+     * SafraSelection/CulturaSelection) ao trocar a escolha -- refaz o fetch
+     * do Canvas já filtrado pela nova seleção, mesmo efeito de trocar o
+     * FarmSelector no cabeçalho do site (router.refresh()). */
+    fun onFiltroGlobalChanged(context: android.content.Context) {
+        refresh(context)
     }
 
     // BUG real corrigido -- pedido do usuário ("listas suspensas
@@ -456,6 +496,9 @@ private val NOTICE_TONES = listOf(BrGreen, BrYellow, BrBlue)
 fun HomeScreen(
     onOpenDomain: (String) -> Unit,
     onLoggedOut: () -> Unit,
+    // "Importar KML desta fazenda" -- FieldView tem tela própria (fora do
+    // mecanismo genérico onOpenDomain/domainList), ver BRAgroNavHost.kt.
+    onOpenFieldview: () -> Unit = {},
     viewModel: HomeViewModel = viewModel(),
 ) {
     val home by viewModel.home
@@ -474,6 +517,26 @@ fun HomeScreen(
     val uploadingLogo by viewModel.uploadingLogo
     val uploadingAvatar by viewModel.uploadingAvatar
     val logoScreenContext = LocalContext.current
+    val janelaCanvas by viewModel.janela
+
+    // Fazenda selecionada no Canvas (círculos) -- réplica do
+    // useState(fazendas[0]?.id ?? null) do site (canvas-view.tsx). Chave no
+    // remember = a própria lista de fazendas do Canvas: assim que os dados
+    // (re)carregam (troca de filtro global, refresh etc.) e a fazenda
+    // selecionada não existe mais na nova lista, cai de volta pra primeira
+    // -- evita ficar "presa" numa seleção que sumiu do resultado filtrado.
+    val canvasFazendas = home?.canvas?.fazendas
+    var selecionadaFazendaId by remember(canvasFazendas) {
+        mutableStateOf(canvasFazendas?.firstOrNull()?.id)
+    }
+
+    // Refaz o fetch já com os filtros globais (Fazenda/Safra/Cultura)
+    // carregados do SharedPreferences -- o refresh() do init{} do ViewModel
+    // roda antes da Compose ter um Context pra ler essas seleções, então
+    // esse primeiro carregamento pode vir sem filtro; este LaunchedEffect
+    // corrige na sequência, assim que a tela monta (mesmo efeito de
+    // FarmSelection.load(context) já usado em DomainListScreen.kt).
+    LaunchedEffect(Unit) { viewModel.refresh(logoScreenContext) }
 
     // Upload nativo da logo: abre o seletor de imagens do aparelho direto
     // (sem passar pelo site) -- pedido do usuário ("coloque quando clicar
@@ -723,21 +786,6 @@ fun HomeScreen(
                         color = BrGreen,
                         modifier = Modifier.padding(top = 2.dp),
                     )
-                    // Fazenda/Safra/Cultura -- pedido do usuário ("transfira
-                    // para baixo do slogan os ícones fazenda, safra
-                    // cultura"): saiu de dentro do TopAppBar (ver comentário
-                    // lá em cima) e entra aqui, logo abaixo do slogan
-                    // ("Conectando a força..."). Mesmo visual de antes
-                    // (rótulo + alinhado à direita).
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        FarmSelectorButton(showLabel = true)
-                        SafraSelectorButton(showLabel = true)
-                        CulturaSelectorButton(showLabel = true)
-                    }
                     if (pending > 0) {
                         // Virou um banner destacado (ícone + fundo tonal em
                         // âmbar) em vez de texto simples -- pedido do
@@ -816,6 +864,60 @@ fun HomeScreen(
                     }
                 }
                 return@LazyColumn
+            }
+
+            // Sequência do Canvas (site) portada pro app -- pedido do
+            // usuário ("implemente nessa sequencia no app nativo depois de
+            // mural de avisos pra cima implemente nesta sequencia da
+            // plataforama"): filtros (agora em pill, ver FarmSelectorButton/
+            // GlobalFieldSelectorButton) → círculos das fazendas → card de
+            // detalhe (Custo médio/ha) → estágio da safra/janela → captura
+            // rápida → sugestão adaptativa, TODOS antes do Mural de Avisos,
+            // na mesma ordem do dashboard web (page.tsx).
+            item(key = "filtros-canvas") {
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    FarmSelectorButton(asPill = true, onChanged = { viewModel.onFiltroGlobalChanged(logoScreenContext) })
+                    SafraSelectorButton(asPill = true, onChanged = { viewModel.onFiltroGlobalChanged(logoScreenContext) })
+                    CulturaSelectorButton(asPill = true, onChanged = { viewModel.onFiltroGlobalChanged(logoScreenContext) })
+                    Spacer(modifier = Modifier.width(2.dp))
+                    // "Importar KML desta fazenda" -- réplica do atalho do
+                    // painel do Canvas web (canvas-view.tsx); FieldView tem
+                    // rota própria (onOpenFieldview), não é um domainId
+                    // genérico (ver comentário em BRAgroNavHost.kt).
+                    androidx.compose.material3.OutlinedButton(onClick = onOpenFieldview) {
+                        Icon(Icons.Filled.Map, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Importar KML desta fazenda", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            }
+            data.canvas?.let { canvas ->
+                item(key = "canvas-circles") {
+                    CanvasCirclesRow(
+                        fazendas = canvas.fazendas,
+                        selectedId = selecionadaFazendaId,
+                        onSelect = { id -> selecionadaFazendaId = id },
+                    )
+                }
+                val fazendaSelecionada = canvas.fazendas.find { it.id == selecionadaFazendaId }
+                if (fazendaSelecionada != null) {
+                    item(key = "canvas-detail") { CanvasDetailCard(fazendaSelecionada) }
+                }
+                item(key = "estagio-janela") {
+                    EstagioJanelaRow(
+                        estagio = canvas.estagio,
+                        janelaAtual = janelaCanvas,
+                        onJanelaChange = { dias -> viewModel.setJanela(logoScreenContext, dias) },
+                    )
+                }
+            }
+            item(key = "quick-capture") { QuickCaptureBar(onOpenFinanceiro = { onOpenDomain("financeiro") }) }
+            data.canvas?.let { canvas ->
+                item(key = "sugestao-adaptativa") { AdaptiveSuggestionCard(canvas.estagio, onOpenDomain) }
             }
 
             item(key = "mural") { BulletinBoardCard(data.notices, canManage, viewModel) }

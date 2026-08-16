@@ -1,11 +1,17 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Grass
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -23,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -49,6 +56,11 @@ fun GlobalFieldSelectorButton(
     // Início usa showLabel=true; os demais módulos (TopAppBar) continuam só
     // com o ícone (sem espaço sobrando pra texto ali).
     showLabel: Boolean = false,
+    // asPill/onChanged -- mesmo padrão de FarmSelectorButton.kt (ver
+    // comentário completo lá): pedido do usuário ("substitua os ícones
+    // fazenda, safra e cultura por esses filtros da plataforma").
+    asPill: Boolean = false,
+    onChanged: () -> Unit = {},
 ) {
     val context = LocalContext.current
     // Reativo -- mesmo motivo/comentario completo de FarmSelectorButton.kt
@@ -62,7 +74,25 @@ fun GlobalFieldSelectorButton(
 
     val selected = selection.selected.value
 
-    if (showLabel) {
+    // Plural irregular só pra estes dois campos ("safra"->"safras",
+    // "cultura"->"culturas") -- suficiente pro rótulo "Todas as X" bater com
+    // o texto do site ("Todas as safras"/"Todas as culturas", ver
+    // canvas-filters.tsx). Se um dia entrar um 3º campo global cujo plural
+    // não seja "+s", ajustar aqui.
+    val labelPlural = "${label}s"
+    if (asPill) {
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(999.dp))
+                .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), RoundedCornerShape(999.dp))
+                .clickable { menuOpen = true }
+                .padding(horizontal = 10.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(selected ?: "Todas as $labelPlural", style = MaterialTheme.typography.labelSmall, maxLines = 1)
+            Icon(Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.size(14.dp).padding(start = 2.dp))
+        }
+    } else if (showLabel) {
         Column(
             modifier = Modifier.clickable { menuOpen = true }.padding(horizontal = 6.dp, vertical = 2.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -88,14 +118,14 @@ fun GlobalFieldSelectorButton(
         )
         HorizontalDivider()
         DropdownMenuItem(
-            text = { Text("Todas", fontWeight = if (selected == null) FontWeight.Bold else FontWeight.Normal) },
-            onClick = { selection.choose(context, null); menuOpen = false },
+            text = { Text("Todas as $labelPlural", fontWeight = if (selected == null) FontWeight.Bold else FontWeight.Normal) },
+            onClick = { selection.choose(context, null); menuOpen = false; onChanged() },
         )
         HorizontalDivider()
         options.forEach { opt ->
             DropdownMenuItem(
                 text = { Text(opt.label, fontWeight = if (selected == opt.value) FontWeight.Bold else FontWeight.Normal) },
-                onClick = { selection.choose(context, opt.value); menuOpen = false },
+                onClick = { selection.choose(context, opt.value); menuOpen = false; onChanged() },
             )
         }
     }

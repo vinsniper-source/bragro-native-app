@@ -135,6 +135,12 @@ fun BRAgroNavHost() {
             HomeScreen(
                 onOpenDomain = { domainId -> navController.navigate(Routes.domainList(domainId)) },
                 onLoggedOut = { navController.navigate(Routes.LOGIN) { popUpTo(Routes.HOME) { inclusive = true } } },
+                // "Importar KML desta fazenda" (linha de filtros do Canvas) --
+                // pedido do usuário ("implemente nessa sequência no app
+                // nativo"): FieldView tem tela própria (não é um domainId
+                // genérico), mesma rota que o botão "FieldView" da barra
+                // inferior já usa (onOpenFieldview acima).
+                onOpenFieldview = { navController.navigate(Routes.FIELDVIEW) },
             )
         }
         composable(Routes.DRE) {
