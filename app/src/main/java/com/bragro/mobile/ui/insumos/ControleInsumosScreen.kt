@@ -195,6 +195,7 @@ private fun insumosExportRecords(data: ControleInsumosResponse): List<Map<String
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun InsumoItemRow(i: InsumoItemSituacaoData) {
     Column(modifier = Modifier.padding(vertical = 6.dp)) {

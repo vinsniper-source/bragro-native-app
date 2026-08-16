@@ -640,7 +640,8 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                                             Column(modifier = Modifier.weight(1f)) {
                                                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                                                     Text(c.banco, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
-                                                    if (produtorRural != null && c.banco == produtorRural.contaIrpfPadrao && produtorRural.contaIrpfPadrao.isNotBlank()) {
+                                                    val pr = produtorRural
+                                                    if (pr != null && c.banco == pr.contaIrpfPadrao && pr.contaIrpfPadrao.isNotBlank()) {
                                                         Text(
                                                             " · Conta IRPF",
                                                             style = MaterialTheme.typography.labelSmall,
