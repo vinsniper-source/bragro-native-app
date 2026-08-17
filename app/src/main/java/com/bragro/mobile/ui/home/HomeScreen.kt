@@ -904,7 +904,7 @@ fun HomeScreen(
                     androidx.compose.material3.OutlinedButton(onClick = onOpenFieldview) {
                         Icon(Icons.Filled.Map, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Importar KML desta fazenda", style = MaterialTheme.typography.labelSmall)
+                        Text("Importar KML", style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }

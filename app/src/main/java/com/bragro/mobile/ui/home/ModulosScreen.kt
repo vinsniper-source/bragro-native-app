@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -150,20 +151,22 @@ private fun ModuloCard(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(section.color.copy(alpha = 0.15f)),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     domainIcon(domain.domainId),
                     contentDescription = null,
-                    tint = section.color,
+                    tint = MaterialTheme.colorScheme.primary,
                 )
             }
             Text(
                 domain.label,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.primary,
                 maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
