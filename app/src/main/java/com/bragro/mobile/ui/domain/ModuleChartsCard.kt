@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.ExpandLess
@@ -108,68 +108,67 @@ fun ModuleChartsCard(domainId: String, viewModel: ModuleChartsViewModel = viewMo
                 val context = LocalContext.current
                 val generic = data?.generic
                 val extras = data?.extras.orEmpty().mapNotNull { parseChartSpec(it) }
-                // Um bloco (Card) por gráfico -- pedido do usuário ("separe
-                // os gráficos por blocos"), em vez de todos empilhados soltos
-                // dentro de um Column só. Cada Triple é (título, cabeçalhos,
-                // linhas) já formatado como tabela -- mesma representação
-                // usada pelo Imprimir/PDF abaixo, então os dois sempre
-                // mostram exatamente os mesmos dados.
-                val printable = remember(generic, extras) { chartsToPrintData(domainId, generic, extras) }
-                Row(modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        // Eficiência de Frota (L/h por máquina) mora dentro
-                        // deste mesmo bloco colapsável -- pedido do usuário
-                        // ("esconda o gráfico eficiência de frota dentro do
-                        // bloco gráficos"), em vez de um card próprio sempre
-                        // visível na lista. Ganha seu próprio bloco também.
-                        if (domainId == "frota") {
-                            Card(modifier = Modifier.fillMaxWidth()) {
-                                Column(modifier = Modifier.padding(12.dp)) { FleetEfficiencyCard() }
-                            }
+                // Cards ocupando a largura CHEIA -- pedido do usuário
+                // ("expanda lateralmente cada bloco"): antes dividiam a
+                // linha com uma coluna de ícones Imprimir/PDF compartilhada
+                // do lado de fora (48dp fixos "roubados" de largura); agora
+                // cada card tem seus próprios ícones lá dentro (ver
+                // ChartPrintActions abaixo), então não sobra mais nenhuma
+                // coluna externa disputando espaço -- cada bloco cresce até
+                // o limite da tela.
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    // Eficiência de Frota (L/h por máquina) mora dentro
+                    // deste mesmo bloco colapsável -- pedido do usuário
+                    // ("esconda o gráfico eficiência de frota dentro do
+                    // bloco gráficos"), em vez de um card próprio sempre
+                    // visível na lista. Ganha seu próprio bloco também.
+                    if (domainId == "frota") {
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(12.dp)) { FleetEfficiencyCard() }
                         }
-                        when {
-                            loading && !loaded -> Text("Carregando gráficos...", style = MaterialTheme.typography.bodySmall)
-                            data == null -> Text("Sem conexão -- não foi possível carregar os gráficos.", style = MaterialTheme.typography.bodySmall)
-                            else -> {
-                                if (generic == null && extras.isEmpty() && domainId != "frota") {
-                                    Text("Nenhum gráfico disponível para este módulo ainda.", style = MaterialTheme.typography.bodySmall)
-                                }
-                                if (generic != null && generic.data.isNotEmpty()) {
-                                    Card(modifier = Modifier.fillMaxWidth()) {
-                                        Column(modifier = Modifier.padding(12.dp)) { GenericChartBlock(generic) }
+                    }
+                    when {
+                        loading && !loaded -> Text("Carregando gráficos...", style = MaterialTheme.typography.bodySmall)
+                        data == null -> Text("Sem conexão -- não foi possível carregar os gráficos.", style = MaterialTheme.typography.bodySmall)
+                        else -> {
+                            if (generic == null && extras.isEmpty() && domainId != "frota") {
+                                Text("Nenhum gráfico disponível para este módulo ainda.", style = MaterialTheme.typography.bodySmall)
+                            }
+                            // Ícones Imprimir/PDF individuais por bloco, no
+                            // canto superior direito -- pedido do usuário
+                            // ("dentro do bloco coloque os ícones imprimir e
+                            // pdf no canto superior direito lateral, faça
+                            // isso individualmente em cada bloco"): cada
+                            // Card exporta só o SEU próprio gráfico (não mais
+                            // todos juntos de uma vez).
+                            if (generic != null && generic.data.isNotEmpty()) {
+                                Card(modifier = Modifier.fillMaxWidth()) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        ChartPrintActions(
+                                            onPrint = { HtmlPrinter.printCharts(context, "$domainId - ${generic.title}", listOf(genericToPrintData(generic))) },
+                                            onPdf = { HtmlPrinter.exportChartsPdfDirect(context, "$domainId - ${generic.title}", listOf(genericToPrintData(generic))) },
+                                        )
+                                        GenericChartBlock(generic)
                                     }
                                 }
-                                extras.forEach { spec ->
-                                    Card(modifier = Modifier.fillMaxWidth()) {
-                                        Column(modifier = Modifier.padding(12.dp)) {
-                                            when (spec) {
-                                                is ChartSpec.Bar -> BarChartBlock(spec)
-                                                is ChartSpec.Table -> TableChartBlock(spec)
-                                            }
+                            }
+                            extras.forEach { spec ->
+                                val title = when (spec) { is ChartSpec.Bar -> spec.title; is ChartSpec.Table -> spec.title }
+                                Card(modifier = Modifier.fillMaxWidth()) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        ChartPrintActions(
+                                            onPrint = { HtmlPrinter.printCharts(context, "$domainId - $title", listOf(specToPrintData(spec))) },
+                                            onPdf = { HtmlPrinter.exportChartsPdfDirect(context, "$domainId - $title", listOf(specToPrintData(spec))) },
+                                        )
+                                        when (spec) {
+                                            is ChartSpec.Bar -> BarChartBlock(spec)
+                                            is ChartSpec.Table -> TableChartBlock(spec)
                                         }
                                     }
                                 }
-                            }
-                        }
-                    }
-                    // Imprimir/PDF do lado direito, na vertical -- pedido do
-                    // usuário ("coloque do lado direito na vertical os
-                    // seguintes ícones imprimir e pdf"). Desabilitados
-                    // enquanto não há nenhum gráfico pra exportar.
-                    if (printable.isNotEmpty()) {
-                        Column(
-                            modifier = Modifier.width(48.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            IconButton(onClick = { HtmlPrinter.printCharts(context, domainId, printable) }) {
-                                Icon(Icons.Filled.Print, contentDescription = "Imprimir gráficos")
-                            }
-                            IconButton(onClick = { HtmlPrinter.exportChartsPdfDirect(context, domainId, printable) }) {
-                                Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar gráficos em PDF")
                             }
                         }
                     }
@@ -178,43 +177,46 @@ fun ModuleChartsCard(domainId: String, viewModel: ModuleChartsViewModel = viewMo
     }
 }
 
-/** Converte os gráficos já carregados (genérico + extras) pra tabela
- * simples de título+linhas, usada pelos ícones Imprimir/PDF acima -- os
- * dados são os mesmos exibidos na tela, só sem a barra/gráfico visual. */
-private fun chartsToPrintData(
-    domainId: String,
-    generic: GenericChartData?,
-    extras: List<ChartSpec>,
-): List<HtmlPrinter.ChartPrintData> {
-    val result = mutableListOf<HtmlPrinter.ChartPrintData>()
-    if (generic != null && generic.data.isNotEmpty()) {
-        result += HtmlPrinter.ChartPrintData(
-            title = generic.title,
-            headers = listOf("Item", "Valor"),
-            rows = generic.data.map { listOf(it.name, if (generic.isMoney) formatChartValue(it.value, true) else it.value.toString()) },
-        )
-    }
-    extras.forEach { spec ->
-        when (spec) {
-            is ChartSpec.Bar -> {
-                result += HtmlPrinter.ChartPrintData(
-                    title = spec.title,
-                    headers = listOf("Categoria") + spec.series.map { it.second },
-                    rows = spec.categories.mapIndexed { i, cat ->
-                        listOf(cat) + spec.series.map { (_, _, values) -> if (spec.money) formatChartValue(values.getOrElse(i) { 0.0 }, true) else values.getOrElse(i) { 0.0 }.toString() }
-                    },
-                )
-            }
-            is ChartSpec.Table -> {
-                result += HtmlPrinter.ChartPrintData(
-                    title = spec.title,
-                    headers = spec.columns.map { it.second },
-                    rows = spec.rows.map { row -> spec.columns.map { (_, label, _) -> row[label] ?: "—" } },
-                )
-            }
+// Ícones Imprimir/PDF dentro de cada bloco individual -- pedido do usuário
+// (ver comentário no Card acima). Botões pequenos (32dp/18dp) pra não pesar
+// visualmente em cima do título do gráfico logo abaixo.
+@Composable
+private fun ChartPrintActions(onPrint: () -> Unit, onPdf: () -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        IconButton(onClick = onPrint, modifier = Modifier.size(32.dp)) {
+            Icon(Icons.Filled.Print, contentDescription = "Imprimir gráfico", modifier = Modifier.size(18.dp))
+        }
+        IconButton(onClick = onPdf, modifier = Modifier.size(32.dp)) {
+            Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar gráfico em PDF", modifier = Modifier.size(18.dp))
         }
     }
-    return result
+}
+
+/** Converte UM gráfico (genérico ou extra) pra tabela simples de
+ * título+linhas, usada pelos ícones Imprimir/PDF de cada bloco -- os dados
+ * são os mesmos exibidos na tela, só sem a barra/gráfico visual. Antes
+ * (chartsToPrintData) combinava todos os gráficos numa lista só pra um
+ * ícone compartilhado; agora cada bloco exporta só o seu próprio gráfico. */
+private fun genericToPrintData(generic: GenericChartData): HtmlPrinter.ChartPrintData =
+    HtmlPrinter.ChartPrintData(
+        title = generic.title,
+        headers = listOf("Item", "Valor"),
+        rows = generic.data.map { listOf(it.name, if (generic.isMoney) formatChartValue(it.value, true) else it.value.toString()) },
+    )
+
+private fun specToPrintData(spec: ChartSpec): HtmlPrinter.ChartPrintData = when (spec) {
+    is ChartSpec.Bar -> HtmlPrinter.ChartPrintData(
+        title = spec.title,
+        headers = listOf("Categoria") + spec.series.map { it.second },
+        rows = spec.categories.mapIndexed { i, cat ->
+            listOf(cat) + spec.series.map { (_, _, values) -> if (spec.money) formatChartValue(values.getOrElse(i) { 0.0 }, true) else values.getOrElse(i) { 0.0 }.toString() }
+        },
+    )
+    is ChartSpec.Table -> HtmlPrinter.ChartPrintData(
+        title = spec.title,
+        headers = spec.columns.map { it.second },
+        rows = spec.rows.map { row -> spec.columns.map { (_, label, _) -> row[label] ?: "—" } },
+    )
 }
 
 @Composable

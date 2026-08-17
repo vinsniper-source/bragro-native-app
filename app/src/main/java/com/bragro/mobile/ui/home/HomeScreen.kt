@@ -589,26 +589,39 @@ fun HomeScreen(
                     // ("diminua distância da logo para os ícones fazendas,
                     // safra e cultura"): a linha nova abaixo (Farm/Safra/
                     // Cultura) sobe mais perto da logo.
-                    // Alignment.Bottom (era CenterVertically) -- pedido do
-                    // usuário ("suba a linha delimitadora, mais próxima da
-                    // logo"): como a logo (150dp) é bem mais alta que o
-                    // cluster de ícones (~48dp), centralizar verticalmente
-                    // deixava uma faixa vazia embaixo dos ícones antes do
-                    // HorizontalDivider seguinte -- alinhando pela base, o
-                    // cluster de ícones encosta no divisor, sem gap.
-                    modifier = Modifier.fillMaxWidth().padding(start = 0.dp, end = 8.dp, top = 8.dp, bottom = 2.dp),
-                    verticalAlignment = Alignment.Bottom,
+                    // CenterVertically (era Bottom) -- pedido do usuário
+                    // ("coloque os ícones ao lado da logo, não é pra mexer
+                    // no tamanho da logo"). Causa raiz encontrada (bug real,
+                    // confirmado por captura de tela do usuário): o
+                    // Modifier.height(150.dp) da logo abaixo forçava uma
+                    // CAIXA de layout de 150dp de altura, mas a imagem
+                    // visível dentro dela sempre foi limitada pela LARGURA
+                    // (widthIn(max=190dp) -- o logo tem proporção larga/
+                    // baixa, então o Fit escala pela largura primeiro),
+                    // renderizando de verdade só uns 50-57dp -- o resto
+                    // (quase 100dp) era espaço vazio invisível dentro da
+                    // própria caixa da logo. Como o cluster de ícones se
+                    // alinhava pela BASE dessa caixa de 150dp, ele ficava
+                    // ~90dp abaixo da logo visível, mesmo os dois estando na
+                    // mesma Row -- exatamente o "ícones abaixo da logo" que
+                    // a captura mostrou. Com o height(150dp) removido (ver
+                    // comentário na Image abaixo), a caixa da logo agora
+                    // encolhe pro tamanho real renderizado, e os dois ficam
+                    // genuinamente lado a lado com CenterVertically.
+                    modifier = Modifier.fillMaxWidth().padding(start = 0.dp, end = 8.dp, top = 4.dp, bottom = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Logo nova, ainda maior que antes -- pedido do usuário
-                    // repetiu ("aumente mais o tamanho da logo, login e
-                    // início"). 96dp -> 120dp -> 100dp -> 112dp -> 128dp ->
-                    // 150dp (pedido mais recente: "aumente a logo do
-                    // início"): o ícone fazenda saiu deste cluster e foi
-                    // para a linha nova abaixo da logo (junto de safra/
-                    // cultura, ver Row logo após este bloco), já que agora
-                    // só restam Backup/Notificações/Tema/Conta/Logo-cliente
-                    // disputando espaço com ela nesta linha, em vez de seis
-                    // ícones.
+                    // ATENÇÃO -- height(150.dp) REMOVIDO de propósito (não é
+                    // redução de tamanho, ver comentário no Row acima): o
+                    // tamanho VISÍVEL da logo não muda nem um pixel, porque
+                    // ele sempre foi determinado pelo widthIn(max=190dp), não
+                    // pela altura -- só a caixa de layout invisível ao redor
+                    // dela encolhe pra bater com o tamanho real renderizado.
+                    // Histórico de tentativas de aumentar a logo (96dp ->
+                    // 120dp -> 100dp -> 112dp -> 128dp -> 150dp) documentado
+                    // aqui pra registro -- na prática, qualquer valor de
+                    // altura acima do que os 190dp de largura permitem nunca
+                    // teve efeito visual nenhum (era só caixa vazia).
                     Image(
                         painter = painterResource(R.drawable.logo_bragro),
                         contentDescription = "BRAgro",
@@ -621,7 +634,12 @@ fun HomeScreen(
                         // sem nenhum aviso. O cluster de ícones ainda rola
                         // horizontalmente (Row.horizontalScroll abaixo) como
                         // rede de segurança, mesmo com mais espaço agora.
-                        modifier = Modifier.height(150.dp).widthIn(max = 190.dp),
+                        // Sem .height(150.dp) -- pedido do usuário ("ícones
+                        // ao lado da logo, não é pra mexer no tamanho da
+                        // logo"): removido, mas o tamanho VISÍVEL não muda
+                        // (ver comentário longo no Row acima) -- só a caixa
+                        // de layout invisível ao redor da logo encolhe.
+                        modifier = Modifier.widthIn(max = 190.dp),
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     // Cluster de ícones do cabeçalho com rolagem horizontal --
@@ -783,7 +801,7 @@ fun HomeScreen(
             // que antes ficava entre a logo e essa linha (ver comentário no
             // Row do TopAppBar acima) -- já reduziu boa parte da distância
             // sozinho, essa mudança aqui é o resto.
-            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 2.dp, bottom = 12.dp),
+            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 0.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item(key = "greeting") {
@@ -1815,15 +1833,44 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
             // diferente do "R$" de Dólar/Euro no Câmbio (que ficam colados
             // logo depois do rótulo). Voltando ao padrão inline dos dois,
             // o "R$" começa no mesmo ponto horizontal nos dois cards.
+            // Reformulado -- pedido do usuário (layout exato: "Soja:    R$
+            // 137,88 / 60kg / sacas", com variação+% em TODAS as linhas).
+            // Antes o valor e a unidade ficavam num Text só, sem largura
+            // fixa -- em nomes mais longos ("Milho:", "Sorgo:") o texto
+            // ficava mais comprido que o de Soja e empurrava o ícone de
+            // variação pra fora da largura do card (cortado/invisível,
+            // dava a impressão de "faltar" variação em alguns itens).
+            // Agora: rótulo com largura fixa (cabe "Milho:"/"Sorgo:" sem
+            // quebrar), valor em R$ com largura fixa + alinhado à direita
+            // (tnum já alinha os dígitos, mas números com 2 ou 3 casas
+            // antes da vírgula agora também alinham entre si pela unidade),
+            // e a unidade/variação com weight(fill=false) -- absorve o
+            // texto "/60kg/sacas" truncando com "..." só se precisar, sem
+            // nunca empurrar o ícone de variação (que é medido primeiro,
+            // com prioridade, e sempre cabe).
             itens.forEach { q ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("${q.nome}:", fontWeight = FontWeight.Medium, modifier = Modifier.width(52.dp))
                     Text(
-                        "${formatMoneyBrl(q.valor)} / ${q.unidade}",
-                        fontWeight = FontWeight.Bold,
+                        "${q.nome}:",
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.width(56.dp),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        formatMoneyBrl(q.valor),
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.End,
+                        maxLines = 1,
                         style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+                        modifier = Modifier.width(84.dp),
+                    )
+                    Text(
+                        " / ${q.unidade}",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f, fill = false),
                     )
                     FxVariacaoTag(q.variacaoPct)
                 }
