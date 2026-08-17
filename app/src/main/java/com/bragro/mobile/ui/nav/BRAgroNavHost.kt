@@ -234,7 +234,6 @@ fun BRAgroNavHost() {
                     onEditRecord = { recordId -> navController.navigate(Routes.domainFormEdit(domainId, recordId)) },
                     onOpenBankImport = { navController.navigate(Routes.BANK_IMPORT) },
                     onOpenNfeImport = { navController.navigate(Routes.NFE_IMPORT) },
-                    onOpenNotaMultiItem = { navController.navigate(Routes.NOTA_MULTI_ITEM) },
                 )
             } else {
                 DomainListScreen(
@@ -274,6 +273,7 @@ fun BRAgroNavHost() {
                 recordId = null,
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
+                onOpenNotaMultiItem = { navController.navigate(Routes.NOTA_MULTI_ITEM) },
             )
         }
         composable(

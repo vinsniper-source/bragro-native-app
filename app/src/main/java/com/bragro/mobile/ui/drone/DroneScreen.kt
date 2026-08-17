@@ -21,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -240,9 +241,10 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
             )
         },
         floatingActionButton = {
-            // Um pouco mais acima da posição padrão do Scaffold (pedido do
-            // usuário: "em drone suba um pouco o botão do ícone drone").
-            FloatingActionButton(onClick = { showNovo = true }, modifier = Modifier.padding(bottom = 16.dp)) {
+            // Ainda mais acima -- pedido do usuário repetiu ("erga mais o
+            // ícone drone, deixe no nível do botão + dos outros módulos"):
+            // 16dp não bastou, subiu pra 32dp.
+            FloatingActionButton(onClick = { showNovo = true }, modifier = Modifier.padding(bottom = 32.dp)) {
                 Icon(Icons.Filled.FlightTakeoff, contentDescription = "Novo registro de drone")
             }
         },
@@ -285,6 +287,14 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
             talhoes = talhoes,
             saving = saving,
             error = error,
+            // "Copiar último lançamento" (Task #197) -- pedido do usuário
+            // ("novo lançamento que não tiver o ícone copiar último
+            // lançamento coloque"): Drone tinha sua própria dialog (não
+            // passa pela DomainFormScreen.kt genérica, que já tinha o
+            // ícone), então ficou de fora do rollout anterior (Task #130).
+            // Copia só os campos de texto -- o arquivo (foto/vídeo) precisa
+            // ser escolhido de novo a cada registro, não dá pra "copiar".
+            ultimoRegistro = records.firstOrNull(),
             onDismiss = { showNovo = false },
             onSubmit = { dataBr, talhao, tipo, piloto, altitude, area, obs, bytes, name, mime ->
                 viewModel.submit(dataBr, talhao, tipo, piloto, altitude, area, obs, bytes, name, mime) { ok ->
@@ -333,6 +343,7 @@ private fun NovoDroneRegistroDialog(
     talhoes: List<LookupEntity>,
     saving: Boolean,
     error: String?,
+    ultimoRegistro: DroneRecordDto?,
     onDismiss: () -> Unit,
     onSubmit: (dataBr: String, talhao: String?, tipo: String, piloto: String?, altitude: String, area: String, obs: String?, bytes: ByteArray, name: String, mime: String) -> Unit,
 ) {
@@ -359,7 +370,26 @@ private fun NovoDroneRegistroDialog(
 
     AlertDialog(
         onDismissRequest = { if (!saving) onDismiss() },
-        title = { Text("Novo registro de drone") },
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Novo registro de drone", modifier = Modifier.weight(1f))
+                // "Copiar último lançamento" -- pedido do usuário. Copia só
+                // os campos de texto (Talhão/Tipo/Piloto/Altitude/Área/
+                // Obs); o arquivo em si precisa ser escolhido de novo.
+                if (ultimoRegistro != null) {
+                    IconButton(onClick = {
+                        talhao = ultimoRegistro.talhao ?: ""
+                        tipo = ultimoRegistro.tipoCaptura
+                        piloto = ultimoRegistro.piloto ?: ""
+                        altitude = ultimoRegistro.altitude?.toString() ?: ""
+                        area = ultimoRegistro.areaCoberta?.toString() ?: ""
+                        obs = ultimoRegistro.observacoes ?: ""
+                    }) {
+                        Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último lançamento", tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+        },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),

@@ -1727,12 +1727,30 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: 
             // usado nas cotações agrícolas do site (TrendingUp/TrendingDown
             // + "x,xx%"). Some sozinho quando a fonte não informa variação
             // (fallback exchangerate-api.com).
+            // Rótulo com largura fixa + algarismos tabulares (tnum) no valor
+            // -- pedido do usuário ("alinhe o R$ e alinhe as casas
+            // decimais... é assim que quer a distribuição dos valores"):
+            // com largura fixa no rótulo, o "R$" de todas as linhas começa
+            // no mesmo X; com tnum, cada dígito ocupa a mesma largura, então
+            // a vírgula/casas decimais também ficam alinhadas quando os
+            // valores são empilhados. Mesmo padrão usado em CotacoesCard
+            // logo abaixo, pra alinhar entre os dois KPIs também.
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Dólar: "); Text(fx.usdBrl?.let { formatMoneyBrl(it) } ?: "—", fontWeight = FontWeight.Bold)
+                Text("Dólar:", modifier = Modifier.width(52.dp))
+                Text(
+                    fx.usdBrl?.let { formatMoneyBrl(it) } ?: "—",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+                )
                 FxVariacaoTag(fx.usdVariacaoPct)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Euro: "); Text(fx.eurBrl?.let { formatMoneyBrl(it) } ?: "—", fontWeight = FontWeight.Bold)
+                Text("Euro:", modifier = Modifier.width(52.dp))
+                Text(
+                    fx.eurBrl?.let { formatMoneyBrl(it) } ?: "—",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+                )
                 FxVariacaoTag(fx.eurVariacaoPct)
             }
             // Periodicidade + fonte -- pedido do usuário. Valor real do
@@ -1799,12 +1817,13 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
             // o "R$" começa no mesmo ponto horizontal nos dois cards.
             itens.forEach { q ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("${q.nome}: ", fontWeight = FontWeight.Medium)
+                    Text("${q.nome}:", fontWeight = FontWeight.Medium, modifier = Modifier.width(52.dp))
                     Text(
                         "${formatMoneyBrl(q.valor)} / ${q.unidade}",
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
                     )
                     FxVariacaoTag(q.variacaoPct)
                 }

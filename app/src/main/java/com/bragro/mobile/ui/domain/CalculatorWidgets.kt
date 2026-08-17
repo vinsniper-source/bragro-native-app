@@ -126,14 +126,21 @@ fun CalculatorsCard(domainId: String, showHeader: Boolean = true) {
     // módulo (ModuleIconRow) -- já nasce aberto.
     var open by remember { mutableStateOf(!showHeader) }
 
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column {
+    // Sem Card "por fora" -- pedido do usuário ("dentro de calculadoras
+    // financeiro e agronômicas, separe cada tipo de cálculo em um bloco
+    // individual ao invés de um bloco único abrangendo todas"): cada
+    // calculadora já é seu próprio CalcCard (ver SafraCalculators/
+    // ColheitaCalculators/FinanceiroCalculators, todas usam CalcCard acima),
+    // então essa borda de fora só agrupava tudo visualmente num único bloco
+    // grande por cima dos blocos individuais -- mesmo critério já aplicado
+    // em ModuleChartsCard/FinanceiroCategoryBlock.
+    Column(modifier = Modifier.fillMaxWidth()) {
             if (showHeader) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { open = !open }
-                        .padding(12.dp),
+                        .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(Icons.Filled.Calculate, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
@@ -143,7 +150,7 @@ fun CalculatorsCard(domainId: String, showHeader: Boolean = true) {
             }
             if (open) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     when (domainId) {
@@ -153,6 +160,5 @@ fun CalculatorsCard(domainId: String, showHeader: Boolean = true) {
                     }
                 }
             }
-        }
     }
 }

@@ -379,17 +379,18 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Row {
-                            FarmSelectorButton()
+                            // Fazenda removida / Imprimir antes da Nuvem --
+                            // pedido do usuário.
+                            if (data?.situacaoConsolidada != null) {
+                                IconButton(onClick = { HtmlPrinter.printList(context, insumosExportConfig(), insumosExportRecords(data!!)) }) {
+                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
+                                }
+                            }
                             IconButton(onClick = {
                                 val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                             }) {
                                 Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.primary)
-                            }
-                            if (data?.situacaoConsolidada != null) {
-                                IconButton(onClick = { HtmlPrinter.printList(context, insumosExportConfig(), insumosExportRecords(data!!)) }) {
-                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
-                                }
                             }
                         }
                     }

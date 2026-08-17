@@ -2,6 +2,7 @@ package com.bragro.mobile.ui.domain
 
 import android.app.Application
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -260,6 +261,13 @@ fun DomainFormScreen(
     recordId: String?,
     onBack: () -> Unit,
     onSaved: () -> Unit,
+    // Atalho "Nota com itens" (Task #156/#187) -- pedido do usuário ("em
+    // novo lançamento coloque nota com itens... retire de arquivos e
+    // coloque ao lado do ícone copiar"): só faz sentido no domínio
+    // "financeiro" e só ao CRIAR (não editar), por isso opcional/nulo por
+    // padrão -- os demais domínios que usam esta mesma tela genérica não
+    // passam esse callback.
+    onOpenNotaMultiItem: (() -> Unit)? = null,
     viewModel: DomainFormViewModel = viewModel(),
 ) {
     LaunchedEffect(domainId, recordId) { viewModel.load(domainId, recordId) }
@@ -305,6 +313,17 @@ fun DomainFormScreen(
                     // título/seta (16.dp) pra ficar na mesma altura -- pedido
                     // do usuário ("insira... o ícone copiar na mesma altura
                     // do título no canto superior direito").
+                    // "Nota com itens" (Task #187) -- ao lado do ícone
+                    // Copiar, na horizontal, só em Novo Lançamento de
+                    // Financeiro (não em Editar, não nos demais domínios).
+                    if (recordId == null && domainId == "financeiro" && onOpenNotaMultiItem != null) {
+                        Column {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            IconButton(onClick = onOpenNotaMultiItem) {
+                                Icon(Icons.Filled.Receipt, contentDescription = "Nota com itens", tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
                     if (recordId == null && lastRecord != null) {
                         Column {
                             Spacer(modifier = Modifier.height(16.dp))
@@ -496,6 +515,11 @@ private fun ComputedFieldDisplay(col: ColumnConfig, raw: String, optionLabels: M
                 .fillMaxWidth()
                 .padding(top = 4.dp)
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                // Borda igual à dos campos manuais (OutlinedTextField) --
+                // pedido do usuário ("nos cálculos automáticos dos campos
+                // coloque bordas também como nos campos manuais em todos os
+                // módulos do app native").
+                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp))
                 .padding(horizontal = 12.dp, vertical = 12.dp),
         ) {
             Text(computedDisplayValue(col, raw, optionLabels), style = MaterialTheme.typography.bodyMedium)

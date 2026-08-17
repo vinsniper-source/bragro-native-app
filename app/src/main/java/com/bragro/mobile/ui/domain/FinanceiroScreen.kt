@@ -139,11 +139,10 @@ fun FinanceiroScreen(
     // unifique esses dois módulos"): agora vive DENTRO do Financeiro, ao
     // lado do Extrato bancário.
     onOpenNfeImport: () -> Unit,
-    // Gap encontrado na auditoria módulo-a-módulo contra o site (pedido do
-    // usuário "implemente tudo que falta ainda para o app native da
-    // plataforma"): réplica do diálogo web "Lançar nota com itens"
-    // (nota-multi-item-button.tsx), como tela própria (NotaMultiItemScreen.kt).
-    onOpenNotaMultiItem: () -> Unit,
+    // "Nota com itens" (Task #156) saiu do Financeiro -- agora é um ícone
+    // dentro do formulário "Novo Lançamento" (ver DomainFormScreen.kt/
+    // onOpenNotaMultiItem), pedido do usuário ("em novo lançamento coloque
+    // nota com itens e exclua de arquivos").
     viewModel: DomainListViewModel = viewModel(),
     filtersViewModel: FinanceiroFiltersViewModel = viewModel(),
 ) {
@@ -285,13 +284,17 @@ fun FinanceiroScreen(
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Row {
-                            // Fazendas/Nuvem/Imprimir, nessa ordem -- pedido
-                            // do usuário ("em todos os módulos coloque os
-                            // ícones no topo do lado superior direito... na
-                            // ordem fazendas, nuvem e imprimir"), mesma
-                            // ordem já usada no módulo genérico
-                            // (DomainListScreen.kt).
-                            FarmSelectorButton()
+                            // Ícone fazenda removido -- pedido do usuário
+                            // ("exclua o ícone fazenda de dentro de todos os
+                            // módulos"). Imprimir antes da Nuvem agora --
+                            // pedido do usuário ("insira o ícone imprimir...
+                            // deixe no lado superior direito na borda a
+                            // primeira").
+                            if (config != null && filtered.isNotEmpty()) {
+                                IconButton(onClick = { HtmlPrinter.printList(context, config!!, filtered, effectiveColumns.map { it.key }.toSet()) }) {
+                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
+                                }
+                            }
                             IconButton(onClick = {
                                 val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
@@ -301,11 +304,6 @@ fun FinanceiroScreen(
                                     contentDescription = "Nuvem",
                                     tint = MaterialTheme.colorScheme.primary,
                                 )
-                            }
-                            if (config != null && filtered.isNotEmpty()) {
-                                IconButton(onClick = { HtmlPrinter.printList(context, config!!, filtered, effectiveColumns.map { it.key }.toSet()) }) {
-                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
-                                }
                             }
                         }
                     }
@@ -455,7 +453,11 @@ fun FinanceiroScreen(
                     if (!isQuickView) {
                         LabeledIconButton(icon = Icons.Filled.Upload, label = "Extrato", onClick = onOpenBankImport)
                         LabeledIconButton(icon = Icons.Filled.Description, label = "XML", onClick = onOpenNfeImport)
-                        LabeledIconButton(icon = Icons.Filled.Receipt, label = "Nota c/ itens", onClick = onOpenNotaMultiItem)
+                        // "Nota c/ itens" saiu daqui -- pedido do usuário
+                        // ("em novo lançamento coloque nota com itens e
+                        // exclua de arquivos"): agora é um ícone no topo do
+                        // formulário "Novo Lançamento" (DomainFormScreen.kt),
+                        // ao lado do ícone "Copiar último lançamento".
                     }
                     if (cfg != null && filtered.isNotEmpty()) {
                         // Ícone trocado pra planilha/tabela -- pedido do
@@ -608,14 +610,15 @@ fun FinanceiroScreen(
                                                         if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
                                                         contentDescription = if (expanded) "Recolher lançamento" else "Expandir lançamento",
                                                         modifier = Modifier.size(18.dp),
+                                                        tint = MaterialTheme.colorScheme.primary,
                                                     )
                                                 }
                                             }
                                             IconButton(onClick = { recordBeingViewed = recordId }, modifier = Modifier.size(28.dp)) {
-                                                Icon(Icons.Filled.Visibility, contentDescription = "Ver lançamento completo", modifier = Modifier.size(18.dp))
+                                                Icon(Icons.Filled.Visibility, contentDescription = "Ver lançamento completo", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                                             }
                                             IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
-                                                Icon(Icons.Filled.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp))
+                                                Icon(Icons.Filled.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                                             }
                                             IconButton(onClick = { recordPendingDelete = recordId }, modifier = Modifier.size(28.dp)) {
                                                 Icon(Icons.Filled.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)

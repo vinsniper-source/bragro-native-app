@@ -1,12 +1,14 @@
 package com.bragro.mobile.ui.domain
 
 import android.app.Application
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CompareArrows
 import androidx.compose.material.icons.filled.Edit
@@ -260,7 +262,16 @@ fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel(), 
                 if (loading && farms.isEmpty()) {
                     Text("Carregando...", style = MaterialTheme.typography.bodySmall)
                 } else {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // horizontalScroll -- pedido do usuário ("coloque o
+                    // bloco ajuste na mesma linha horizontal do bloco
+                    // saída"): Row simples não quebra linha sozinho, então
+                    // em telas estreitas o 3º botão (Ajuste) podia ficar
+                    // cortado na borda; com scroll, os 3 continuam sempre na
+                    // mesma linha, sem nunca sumir.
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
                         OutlinedButton(onClick = { transferOpen = true }) {
                             Icon(Icons.Filled.CompareArrows, contentDescription = null, modifier = Modifier.size(18.dp))
                             Text(" Transferir")

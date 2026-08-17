@@ -395,8 +395,17 @@ fun DomainListScreen(
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Row {
-                            if (globalFarmField != null) {
-                                FarmSelectorButton()
+                            // Ícone fazenda removido daqui -- pedido do
+                            // usuário ("exclua o ícone fazenda de dentro de
+                            // todos os módulos"). Imprimir agora vem ANTES
+                            // da Nuvem (era depois) -- pedido do usuário
+                            // ("insira o ícone imprimir... deixe no lado
+                            // superior direito na borda a primeira"), mesmo
+                            // padrão usado em Operações/Insumos/Livro Caixa.
+                            if (config != null && filteredRecords.isNotEmpty()) {
+                                IconButton(onClick = { HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) }) {
+                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
+                                }
                             }
                             IconButton(onClick = {
                                 val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
@@ -407,11 +416,6 @@ fun DomainListScreen(
                                     contentDescription = "Nuvem",
                                     tint = MaterialTheme.colorScheme.primary,
                                 )
-                            }
-                            if (config != null && filteredRecords.isNotEmpty()) {
-                                IconButton(onClick = { HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) }) {
-                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
-                                }
                             }
                         }
                     }
@@ -783,9 +787,10 @@ fun DomainListScreen(
                             onChange = { customVisibleKeys = it },
                         )
                     }
-                    // vertical = true -- pedido do usuário ("cobranças
-                    // coloque o bloco operações com 2 ícones na vertical").
-                    val operacoesBlockCobrancas = ModuleBlockSpec("Operações", vertical = true) {
+                    // vertical = false (era true) -- pedido do usuário
+                    // reverteu ("os ícones estão mal distribuídos, estão na
+                    // vertical, volte para a horizontal").
+                    val operacoesBlockCobrancas = ModuleBlockSpec("Operações", vertical = false) {
                         LabeledIconButton(
                             icon = Icons.Filled.Refresh,
                             label = "Atualizar",
@@ -1072,20 +1077,27 @@ fun DomainListScreen(
                                 modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp),
                                 verticalArrangement = Arrangement.spacedBy(0.dp),
                             ) {
+                                // Verde (primary) nos 3 ícones de ação --
+                                // pedido do usuário ("ainda há ícones e
+                                // rótulos nos módulos que não estão verde
+                                // dentro dos blocos individuais"); Excluir
+                                // continua vermelho (error), cor semântica
+                                // de ação destrutiva.
                                 if (hasMore) {
                                     IconButton(onClick = { cardOverrides[recordId ?: ""] = !expanded }, modifier = Modifier.size(28.dp)) {
                                         Icon(
                                             if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
                                             contentDescription = if (expanded) "Recolher lançamento" else "Expandir lançamento",
                                             modifier = Modifier.size(18.dp),
+                                            tint = MaterialTheme.colorScheme.primary,
                                         )
                                     }
                                 }
                                 IconButton(onClick = { recordBeingViewed = recordId }, modifier = Modifier.size(28.dp)) {
-                                    Icon(Icons.Filled.Visibility, contentDescription = "Ver lançamento completo", modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Filled.Visibility, contentDescription = "Ver lançamento completo", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                                 }
                                 IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
-                                    Icon(Icons.Filled.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Filled.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                                 }
                                 IconButton(onClick = { recordPendingDelete = recordId }, modifier = Modifier.size(28.dp)) {
                                     Icon(Icons.Filled.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)

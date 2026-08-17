@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Wallet
 import com.bragro.mobile.ui.theme.Card
@@ -55,10 +56,11 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bragro.mobile.data.NetworkStatus
+import com.bragro.mobile.data.model.ColumnConfig
+import com.bragro.mobile.data.model.DomainConfig
 import com.bragro.mobile.data.model.OperacaoAgrupadaData
 import com.bragro.mobile.data.repo.OperacoesRepository
-import com.bragro.mobile.ui.domain.FarmSelectorButton
-import com.bragro.mobile.ui.domain.LabeledIconButton
+import com.bragro.mobile.ui.print.HtmlPrinter
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -433,12 +435,26 @@ fun OperacoesScreen(onBack: () -> Unit, onVerEmSafra: () -> Unit, viewModel: Ope
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Row {
-                            FarmSelectorButton()
+                            // Fazenda removida -- pedido do usuário. Ordem
+                            // agora: Imprimir, Nuvem, Atualizar -- pedido do
+                            // usuário ("coloque apenas o ícone atualizar no
+                            // topo ao lado da nuvem e na frente da nuvem o
+                            // ícone imprimir"). Atualizar saiu da linha da
+                            // barra de ciclo (ver mais abaixo), que agora
+                            // expande até o limite da tela.
+                            if (operacoes.isNotEmpty()) {
+                                IconButton(onClick = { HtmlPrinter.printList(context, operacoesExportConfig(), operacoesExportRecords(operacoes)) }) {
+                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
+                                }
+                            }
                             IconButton(onClick = {
                                 val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                             }) {
                                 Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.primary)
+                            }
+                            IconButton(onClick = { viewModel.refresh() }) {
+                                Icon(Icons.Filled.Refresh, contentDescription = "Atualizar", tint = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }
@@ -458,28 +474,23 @@ fun OperacoesScreen(onBack: () -> Unit, onVerEmSafra: () -> Unit, viewModel: Ope
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        SingleChoiceSegmentedButtonRow(modifier = Modifier.weight(1f)) {
-                            JANELAS.forEachIndexed { index, d ->
-                                SegmentedButton(
-                                    selected = janela == d,
-                                    onClick = { viewModel.setJanela(d) },
-                                    shape = SegmentedButtonDefaults.itemShape(index = index, count = JANELAS.size),
-                                    colors = SegmentedButtonDefaults.colors(
-                                        activeContainerColor = MaterialTheme.colorScheme.primary,
-                                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
-                                        inactiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                    ),
-                                    label = { Text("${d}d", maxLines = 1) },
-                                )
-                            }
+                    // Atualizar saiu daqui (subiu pro TopAppBar, ao lado da
+                    // Nuvem) -- pedido do usuário: a barra de ciclo agora
+                    // expande sozinha até o limite da tela.
+                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                        JANELAS.forEachIndexed { index, d ->
+                            SegmentedButton(
+                                selected = janela == d,
+                                onClick = { viewModel.setJanela(d) },
+                                shape = SegmentedButtonDefaults.itemShape(index = index, count = JANELAS.size),
+                                colors = SegmentedButtonDefaults.colors(
+                                    activeContainerColor = MaterialTheme.colorScheme.primary,
+                                    activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                                    inactiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                ),
+                                label = { Text("${d}d", maxLines = 1) },
+                            )
                         }
-                        LabeledIconButton(
-                            icon = Icons.Filled.Refresh,
-                            label = "Atualizar",
-                            loading = loading,
-                            onClick = { viewModel.refresh() },
-                        )
                     }
                 }
             }
@@ -501,3 +512,28 @@ fun OperacoesScreen(onBack: () -> Unit, onVerEmSafra: () -> Unit, viewModel: Ope
         }
     }
 }
+
+private val OPERACOES_EXPORT_COLUMNS = listOf(
+    ColumnConfig(key = "cultura", label = "Cultura", type = "text"),
+    ColumnConfig(key = "safra", label = "Safra", type = "text"),
+    ColumnConfig(key = "local", label = "Local", type = "text"),
+    ColumnConfig(key = "estagio", label = "Estágio", type = "text"),
+    ColumnConfig(key = "realizadoTotal", label = "Realizado", type = "number"),
+    ColumnConfig(key = "planejadoTotal", label = "Planejado", type = "number"),
+    ColumnConfig(key = "variacaoMedia", label = "Variação %", type = "text"),
+)
+
+private fun operacoesExportConfig(): DomainConfig = DomainConfig(id = "operacoes", label = "Operações", columns = OPERACOES_EXPORT_COLUMNS)
+
+private fun operacoesExportRecords(operacoes: List<OperacaoAgrupadaData>): List<Map<String, String?>> =
+    operacoes.map {
+        mapOf(
+            "cultura" to it.cultura,
+            "safra" to it.safra,
+            "local" to it.local,
+            "estagio" to it.estagio,
+            "realizadoTotal" to it.realizadoTotal.toString(),
+            "planejadoTotal" to it.planejadoTotal.toString(),
+            "variacaoMedia" to (it.variacaoMedia?.let { v -> "${v}%" } ?: "—"),
+        )
+    }

@@ -4,6 +4,8 @@ import android.app.Application
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import java.text.SimpleDateFormat
+import java.util.Locale
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -13,14 +15,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.EditLocationAlt
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.AlertDialog
@@ -42,6 +48,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -339,18 +346,29 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, view
             // mapas, retire o botão importar máquinas"): antes só Talhões/
             // Fazendas-KML tinham este botão e Máquinas tinha um botão
             // separado ("+ Lançar máquina manualmente (Frota)"), removido
-            // agora. O diálogo/estado de lançamento manual de talhão
-            // (ManualBoundaryDialog, manualDialogOpen) fica no código, sem
-            // nenhum botão que o abra -- mais simples que desmontar
-            // form/validação/chamada de API que continuam corretos, só sem
-            // gatilho na UI.
-            Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            // agora.
+            //
+            // "Lançar talhão manualmente" (Task #201, auditoria de paridade
+            // com o site): o diálogo (ManualBoundaryDialog), o estado
+            // (manualDialogOpen) e a chamada de API (viewModel.manualBoundary)
+            // já existiam prontos e corretos, mas sem NENHUM botão que
+            // abrisse o diálogo -- feature morta, igual ao "Lançar talhão
+            // manualmente" do site (fieldview-client.tsx), que o app nunca
+            // teve gatilho. Corrigido aqui.
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 OutlinedButton(
                     onClick = { kmlPicker.launch(arrayOf("application/vnd.google-earth.kml+xml", "application/vnd.google-earth.kmz", "application/octet-stream", "*/*")) },
                     enabled = !importing,
                 ) {
                     Icon(Icons.Filled.UploadFile, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                     Text(if (importing) "Importando..." else "Importar KML/KMZ")
+                }
+                OutlinedButton(onClick = { manualDialogOpen = true }, enabled = !importing) {
+                    Icon(Icons.Filled.EditLocationAlt, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                    Text("Lançar talhão manualmente")
                 }
             }
             when {
@@ -443,6 +461,14 @@ private fun MaquinaStatusList(rows: List<JsonObject>) {
     }
     LazyColumn(contentPadding = PaddingValues(16.dp)) {
         items(rows.size) { i ->
+            // proxRevisao vencida -- achado da auditoria de paridade (Task
+            // #201, pedido do usuário "insira tudo que falta no fieldview
+            // da plataforma no app native"): o site calcula `vencida =
+            // proxRevisao < now` e mostra um badge vermelho/verde
+            // (fieldview-client.tsx); o app só mostrava a data crua, sem
+            // nenhuma indicação visual de atraso.
+            val proxRevisaoIso = rows[i]["proxRevisao"]?.jsonPrimitive?.contentOrNull
+            val vencida = proxRevisaoIso?.let { isDatePast(it) } ?: false
             Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     // Ícone SEM rótulo -- achado da auditoria (usuário:
@@ -452,12 +478,39 @@ private fun MaquinaStatusList(rows: List<JsonObject>) {
                     // do app, ex.: BoundariesList abaixo já tem Map + nome).
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.DirectionsCar, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
-                        Text("Máquina", style = MaterialTheme.typography.titleSmall)
+                        Text("Máquina", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                        if (!proxRevisaoIso.isNullOrBlank()) {
+                            Text(
+                                if (vencida) "Revisão vencida" else "Revisão em dia",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (vencida) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .background(
+                                        (if (vencida) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary).copy(alpha = 0.12f),
+                                        RoundedCornerShape(50),
+                                    )
+                                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                            )
+                        }
                     }
                     RawRecordFields(rows[i])
                 }
             }
         }
+    }
+}
+
+/** true se a data (ISO, "yyyy-MM-dd..." ou completa com hora) já passou --
+ * mesmo critério do site (`vencida = proxRevisao < now`, fieldview-client.tsx). */
+private fun isDatePast(iso: String): Boolean {
+    val datePart = iso.take(10)
+    return try {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        val d = sdf.parse(datePart) ?: return false
+        d.time < System.currentTimeMillis()
+    } catch (e: Exception) {
+        false
     }
 }
 

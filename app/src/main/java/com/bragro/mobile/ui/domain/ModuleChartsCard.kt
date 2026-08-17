@@ -86,11 +86,17 @@ fun ModuleChartsCard(domainId: String, viewModel: ModuleChartsViewModel = viewMo
     val loading by viewModel.loading
     val loaded by viewModel.loaded
 
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column {
+    // Sem Card "por fora" envolvendo o painel inteiro -- pedido do usuário
+    // ("em gráficos retire a borda externa que abrange todos os blocos de
+    // gráficos... aplique esse padrão em todos os gráficos do app nativo"):
+    // cada gráfico já é seu próprio Card (GenericChartBlock/BarChartBlock/
+    // TableChartBlock abaixo), então essa borda de fora só duplicava a
+    // borda (card dentro de card), mesmo critério já usado em Dados/
+    // Operações/Arquivos (ver FinanceiroCategoryBlock).
+    Column(modifier = Modifier.fillMaxWidth()) {
             if (showHeader) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().clickable { open = !open }.padding(12.dp),
+                    modifier = Modifier.fillMaxWidth().clickable { open = !open }.padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(Icons.Filled.BarChart, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
@@ -169,7 +175,6 @@ fun ModuleChartsCard(domainId: String, viewModel: ModuleChartsViewModel = viewMo
                     }
                 }
             }
-        }
     }
 }
 

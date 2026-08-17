@@ -443,20 +443,18 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Row {
-                            // Fazendas/Nuvem/Imprimir, nessa ordem -- pedido
-                            // do usuário ("em todos os módulos... na ordem
-                            // fazendas, nuvem e imprimir").
-                            FarmSelectorButton()
+                            // Fazenda removida / Imprimir antes da Nuvem --
+                            // pedido do usuário.
+                            if (dre != null && dre!!.porFazenda.isNotEmpty()) {
+                                IconButton(onClick = { HtmlPrinter.printList(context, dreExportConfig(), dreExportRecords(dre!!)) }) {
+                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
+                                }
+                            }
                             IconButton(onClick = {
                                 val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                             }) {
                                 Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.primary)
-                            }
-                            if (dre != null && dre!!.porFazenda.isNotEmpty()) {
-                                IconButton(onClick = { HtmlPrinter.printList(context, dreExportConfig(), dreExportRecords(dre!!)) }) {
-                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
-                                }
                             }
                         }
                     }
