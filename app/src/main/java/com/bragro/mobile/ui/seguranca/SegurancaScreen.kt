@@ -273,7 +273,15 @@ private fun EquipeCard(
                         Text(fullName ?: email, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                         Text("$email · $role", style = MaterialTheme.typography.labelSmall)
                     }
-                    Switch(checked = ativo, onCheckedChange = { onToggle(id, it) }, enabled = !busy, colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)))
+                    // Bug real encontrado 2026-08-17: este switch nao tinha a
+                    // mesma trava do site (seguranca-client.tsx:
+                    // "disabled={m.role === 'OWNER'}") -- um toque aqui
+                    // desativou o proprio OWNER (unico membro da org) e o
+                    // trancou de fora com "conta sem organizacao ativa".
+                    // Guard tambem reforcado no servidor (actions.ts e
+                    // api/mobile/security/route.ts) pra nao depender so do
+                    // client.
+                    Switch(checked = ativo, onCheckedChange = { onToggle(id, it) }, enabled = !busy && role != "OWNER", colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)))
                     Icon(if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null)
                 }
                 if (expanded) {
