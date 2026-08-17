@@ -359,12 +359,24 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onVerEmSafra: () -> Unit) {
                     op.timeline.takeLast(6).forEach { ev ->
                         Row(modifier = Modifier.padding(vertical = 3.dp)) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                                     Icon(Icons.Filled.CalendarMonth, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text(" ${fmtDataCurta(ev.data)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(
+                                        " ${fmtDataCurta(ev.data)}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                    )
                                     if (!ev.responsavel.isNullOrBlank()) {
                                         Icon(Icons.Filled.Person, contentDescription = null, modifier = Modifier.size(12.dp).padding(start = 4.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text(" ${ev.responsavel}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(
+                                            " ${ev.responsavel}",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f, fill = false),
+                                        )
                                     }
                                 }
                                 Text(

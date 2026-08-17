@@ -532,7 +532,7 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                                     .clickable(onClick = { controleInternoAberto = !controleInternoAberto })
                                     .padding(12.dp),
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                                     Icon(
                                         if (controleInternoAberto) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
                                         contentDescription = null,
@@ -544,7 +544,7 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                                         fontWeight = FontWeight.Bold,
                                         maxLines = 2,
                                         overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.padding(start = 4.dp),
+                                        modifier = Modifier.weight(1f).padding(start = 4.dp),
                                     )
                                 }
                                 if (controleInternoAberto) {
