@@ -589,8 +589,15 @@ fun HomeScreen(
                     // ("diminua distância da logo para os ícones fazendas,
                     // safra e cultura"): a linha nova abaixo (Farm/Safra/
                     // Cultura) sobe mais perto da logo.
+                    // Alignment.Bottom (era CenterVertically) -- pedido do
+                    // usuário ("suba a linha delimitadora, mais próxima da
+                    // logo"): como a logo (150dp) é bem mais alta que o
+                    // cluster de ícones (~48dp), centralizar verticalmente
+                    // deixava uma faixa vazia embaixo dos ícones antes do
+                    // HorizontalDivider seguinte -- alinhando pela base, o
+                    // cluster de ícones encosta no divisor, sem gap.
                     modifier = Modifier.fillMaxWidth().padding(start = 0.dp, end = 8.dp, top = 8.dp, bottom = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalAlignment = Alignment.Bottom,
                 ) {
                     // Logo nova, ainda maior que antes -- pedido do usuário
                     // repetiu ("aumente mais o tamanho da logo, login e
@@ -888,19 +895,27 @@ fun HomeScreen(
             // rápida → sugestão adaptativa, TODOS antes do Mural de Avisos,
             // na mesma ordem do dashboard web (page.tsx).
             item(key = "filtros-canvas") {
-                Row(
-                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    FarmSelectorButton(asPill = true, onChanged = { viewModel.onFiltroGlobalChanged(logoScreenContext) })
-                    SafraSelectorButton(asPill = true, onChanged = { viewModel.onFiltroGlobalChanged(logoScreenContext) })
-                    CulturaSelectorButton(asPill = true, onChanged = { viewModel.onFiltroGlobalChanged(logoScreenContext) })
-                    Spacer(modifier = Modifier.width(2.dp))
-                    // "Importar KML desta fazenda" -- réplica do atalho do
-                    // painel do Canvas web (canvas-view.tsx); FieldView tem
-                    // rota própria (onOpenFieldview), não é um domainId
-                    // genérico (ver comentário em BRAgroNavHost.kt).
+                // Duas linhas em vez de uma só -- pedido do usuário ("os
+                // filtros e o importar kml estão ultrapassando o limite da
+                // tela, distribua de forma limpa abaixo"): com os 3 pills +
+                // botão KML todos numa única Row com horizontalScroll, o
+                // botão ficava colado na borda direita ao rolar (sem
+                // padding/respiro), parecendo cortado. O botão "Importar
+                // KML" agora ocupa uma linha própria abaixo dos pills.
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        FarmSelectorButton(asPill = true, onChanged = { viewModel.onFiltroGlobalChanged(logoScreenContext) })
+                        SafraSelectorButton(asPill = true, onChanged = { viewModel.onFiltroGlobalChanged(logoScreenContext) })
+                        CulturaSelectorButton(asPill = true, onChanged = { viewModel.onFiltroGlobalChanged(logoScreenContext) })
+                    }
+                    // "Importar KML" -- réplica do atalho do painel do
+                    // Canvas web (canvas-view.tsx); FieldView tem rota
+                    // própria (onOpenFieldview), não é um domainId genérico
+                    // (ver comentário em BRAgroNavHost.kt).
                     androidx.compose.material3.OutlinedButton(onClick = onOpenFieldview) {
                         Icon(Icons.Filled.Map, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
@@ -1775,22 +1790,23 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
             // esquerda e preço/variação vão para a ponta direita da linha,
             // usando o espaço extra que sobrou desde que o card passou a
             // ocupar a tela inteira (Task #68).
+            // Row simples (rótulo + valor colados à esquerda), igual ao
+            // Câmbio -- pedido do usuário ("alinhe o R$ do kpi cotações
+            // grãos e câmbio na mesma altura"): o SpaceBetween anterior
+            // empurrava o valor pra ponta direita do card, começando em X
+            // diferente do "R$" de Dólar/Euro no Câmbio (que ficam colados
+            // logo depois do rótulo). Voltando ao padrão inline dos dois,
+            // o "R$" começa no mesmo ponto horizontal nos dois cards.
             itens.forEach { q ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(q.nome, fontWeight = FontWeight.Medium)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "${formatMoneyBrl(q.valor)} / ${q.unidade}",
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        FxVariacaoTag(q.variacaoPct)
-                    }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("${q.nome}: ", fontWeight = FontWeight.Medium)
+                    Text(
+                        "${formatMoneyBrl(q.valor)} / ${q.unidade}",
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    FxVariacaoTag(q.variacaoPct)
                 }
             }
             // Fonte -- pedido do usuário ("a fonte por exemplo cotações é o

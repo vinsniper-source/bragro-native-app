@@ -288,8 +288,8 @@ fun BRAgroBottomBar(
                                 }
                             }
                             DropdownMenuItem(
-                                text = { Text(label) },
-                                leadingIcon = { Icon(icon, contentDescription = null) },
+                                text = { Text(label, color = MaterialTheme.colorScheme.primary) },
+                                leadingIcon = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                                 onClick = { openSector(item) },
                             )
                         }
