@@ -16,10 +16,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -32,7 +35,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -81,6 +86,38 @@ class NotaMultiItemLinha {
 
 private fun hojeIso(): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
 
+// Campo de data desta tela ainda mostrava/pedia "AAAA-MM-DD" -- pedido do
+// usuário ("em lançar notas com itens o campo data não está como padrão
+// Brasil"): todo o resto do app já converteu pra DD/MM/AAAA (ver
+// isoDateToBr/brDateToIso em StatusStyle.kt e o campo "date" de
+// DomainFormScreen.kt), essa tela ficou de fora por ser um formulário
+// próprio (fora do motor genérico de domínio). dataEmissao no ViewModel
+// passa a guardar o texto BR (like os demais campos de DomainFormScreen);
+// só vira ISO na hora de montar o corpo enviado pro servidor (submit()).
+private fun hojeBr(): String = com.bragro.mobile.ui.domain.isoDateToBr(hojeIso())
+
+// Mesmo par de conversão do DatePicker usado em DomainFormScreen.kt (fica
+// duplicado aqui de propósito -- os dois arquivos já duplicam
+// formatMoneyBrl entre si, mesmo critério de não criar acoplamento entre
+// telas por um helper tão pequeno).
+private fun millisToBrDate(millis: Long): String {
+    val cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
+    cal.timeInMillis = millis
+    val d = cal.get(java.util.Calendar.DAY_OF_MONTH)
+    val mo = cal.get(java.util.Calendar.MONTH) + 1
+    val y = cal.get(java.util.Calendar.YEAR)
+    return "%02d/%02d/%04d".format(d, mo, y)
+}
+
+private fun brDateToMillisOrNull(br: String): Long? {
+    val m = Regex("^(\\d{2})/(\\d{2})/(\\d{4})$").find(br.trim()) ?: return null
+    val (d, mo, y) = m.destructured
+    val cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
+    cal.clear()
+    cal.set(y.toInt(), mo.toInt() - 1, d.toInt())
+    return cal.timeInMillis
+}
+
 private fun parseDecimal(s: String): Double =
     s.trim().replace(".", "").replace(",", ".").toDoubleOrNull()
         ?: s.trim().toDoubleOrNull()
@@ -100,7 +137,9 @@ class NotaMultiItemViewModel(app: Application) : AndroidViewModel(app) {
     var numero by mutableStateOf("")
     var serie by mutableStateOf("")
     var emitenteNome by mutableStateOf("")
-    var dataEmissao by mutableStateOf(hojeIso())
+    // Guarda em DD/MM/AAAA (texto que o campo mostra/edita) -- só vira ISO
+    // na hora de montar o corpo enviado pro servidor, em submit() abaixo.
+    var dataEmissao by mutableStateOf(hojeBr())
     var fazendaDestino by mutableStateOf<String?>(null)
 
     val linhas = mutableStateListOf(NotaMultiItemLinha())
@@ -115,7 +154,12 @@ class NotaMultiItemViewModel(app: Application) : AndroidViewModel(app) {
     init {
         viewModelScope.launch {
             farms.value = configRepository.farms()
-            if (fazendaDestino == null) fazendaDestino = farms.value.firstOrNull()?.name
+            // Não pré-seleciona mais a 1ª fazenda automaticamente -- pedido
+            // do usuário ("coloque lista suspensa com opção vazio no campo
+            // fazenda destino"): antes o campo já vinha preenchido sozinho,
+            // arriscando lançar a nota na fazenda errada sem o usuário
+            // perceber que nunca escolheu de fato. Fica vazio até o usuário
+            // selecionar (podeSalvar() já exige fazendaDestino preenchido).
             itensOptions.value = configRepository.lookupsByCategory("itens_estoque").sortedBy { it.label }
             unidadesOptions.value = configRepository.lookupsByCategory("unidades").sortedBy { it.label }
         }
@@ -138,8 +182,8 @@ class NotaMultiItemViewModel(app: Application) : AndroidViewModel(app) {
 
     fun reset() {
         numero = ""; serie = ""; emitenteNome = ""
-        dataEmissao = hojeIso()
-        fazendaDestino = farms.value.firstOrNull()?.name
+        dataEmissao = hojeBr()
+        fazendaDestino = null
         linhas.clear(); linhas.add(NotaMultiItemLinha())
         successMessage.value = null
         errorMessage.value = null
@@ -156,7 +200,10 @@ class NotaMultiItemViewModel(app: Application) : AndroidViewModel(app) {
                 numero = numero.trim(),
                 serie = serie.trim().ifBlank { null },
                 emitenteNome = emitenteNome.trim(),
-                dataEmissao = dataEmissao,
+                // Só converte pra ISO aqui, na hora de montar o corpo pro
+                // servidor -- dataEmissao no ViewModel/campo continua em
+                // DD/MM/AAAA (ver comentário no var acima).
+                dataEmissao = com.bragro.mobile.ui.domain.brDateToIso(dataEmissao),
                 fazendaDestino = fazenda,
                 itens = validas.map {
                     NotaMultiItemItemData(
@@ -181,9 +228,22 @@ class NotaMultiItemViewModel(app: Application) : AndroidViewModel(app) {
 private fun formatMoneyBrlLocal(value: Double): String =
     NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(value)
 
+// allowEmpty -- pedido do usuário ("coloque lista suspensa com opção vazio
+// no campo fazenda destino"): antes a fazenda de destino vinha pré-marcada
+// com a 1ª fazenda cadastrada (nenhuma opção pra "desmarcar"), o que
+// arriscava lançar a nota na fazenda errada sem o usuário perceber que
+// nunca tinha de fato escolhido. Com allowEmpty=true um item em branco
+// aparece no topo do menu, selecionável, que zera o campo (onSelect(null)).
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun StringDropdown(label: String, value: String?, options: List<String>, placeholder: String, onSelect: (String) -> Unit) {
+private fun StringDropdown(
+    label: String,
+    value: String?,
+    options: List<String>,
+    placeholder: String,
+    allowEmpty: Boolean = false,
+    onSelect: (String?) -> Unit,
+) {
     var expanded by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
         OutlinedTextField(
@@ -196,6 +256,9 @@ private fun StringDropdown(label: String, value: String?, options: List<String>,
             modifier = Modifier.fillMaxWidth().menuAnchor(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            if (allowEmpty) {
+                DropdownMenuItem(text = { Text(" ") }, onClick = { onSelect(null); expanded = false })
+            }
             for (opt in options) {
                 DropdownMenuItem(text = { Text(opt, maxLines = 1, overflow = TextOverflow.Ellipsis) }, onClick = { onSelect(opt); expanded = false })
             }
@@ -212,7 +275,7 @@ private fun LinhaItemCard(linha: NotaMultiItemLinha, itensOptions: List<LookupEn
                 value = itensOptions.firstOrNull { it.value == linha.descricao }?.label ?: linha.descricao.ifBlank { null },
                 options = itensOptions.map { it.label },
                 placeholder = "Selecione o item",
-                onSelect = { picked -> linha.descricao = itensOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                onSelect = { picked -> linha.descricao = itensOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
             )
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 StringDropdown(
@@ -220,7 +283,7 @@ private fun LinhaItemCard(linha: NotaMultiItemLinha, itensOptions: List<LookupEn
                     value = unidadesOptions.firstOrNull { it.value == linha.unidade }?.label ?: linha.unidade.ifBlank { null },
                     options = unidadesOptions.map { it.label },
                     placeholder = "Opcional",
-                    onSelect = { picked -> linha.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                    onSelect = { picked -> linha.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -344,12 +407,42 @@ fun NotaMultiItemScreen(onBack: () -> Unit, viewModel: NotaMultiItemViewModel = 
                 )
             }
             item {
+                // Padrão brasileiro DD/MM/AAAA (com calendário) -- pedido do
+                // usuário ("o campo data não está como padrão Brasil"), mesmo
+                // padrão já usado nos campos "date" do motor genérico (ver
+                // DomainFormScreen.kt). Continua guardando/enviando ISO só
+                // internamente (ver dataEmissao no ViewModel e submit()).
+                var showPicker by remember { mutableStateOf(false) }
                 OutlinedTextField(
                     value = viewModel.dataEmissao,
                     onValueChange = { viewModel.dataEmissao = it },
-                    label = { Text("Data de emissão * (AAAA-MM-DD)") },
+                    label = { Text("Data de emissão *") },
+                    placeholder = { Text("DD/MM/AAAA") },
                     modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    trailingIcon = {
+                        IconButton(onClick = { showPicker = true }) {
+                            Icon(Icons.Filled.CalendarMonth, contentDescription = "Escolher data", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    },
                 )
+                if (showPicker) {
+                    val pickerState = rememberDatePickerState(
+                        initialSelectedDateMillis = brDateToMillisOrNull(viewModel.dataEmissao) ?: System.currentTimeMillis(),
+                    )
+                    DatePickerDialog(
+                        onDismissRequest = { showPicker = false },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                pickerState.selectedDateMillis?.let { viewModel.dataEmissao = millisToBrDate(it) }
+                                showPicker = false
+                            }) { Text("OK") }
+                        },
+                        dismissButton = { TextButton(onClick = { showPicker = false }) { Text("Cancelar") } },
+                    ) {
+                        DatePicker(state = pickerState)
+                    }
+                }
             }
             item {
                 StringDropdown(
@@ -357,6 +450,7 @@ fun NotaMultiItemScreen(onBack: () -> Unit, viewModel: NotaMultiItemViewModel = 
                     value = viewModel.fazendaDestino,
                     options = farms.map { it.name },
                     placeholder = "Selecione a fazenda",
+                    allowEmpty = true,
                     onSelect = { viewModel.fazendaDestino = it },
                 )
             }

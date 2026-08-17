@@ -457,6 +457,20 @@ private fun formatMoneyBrl(value: Double): String =
         maximumFractionDigits = 2
     }.format(value)
 
+// So o numero, sem o prefixo "R$" -- usado no KPI Cotações Grãos (ver
+// CotacoesCard) pra separar o "R$" num Text de largura fixa proprio,
+// alinhado igual em Soja/Milho/Sorgo. Antes o "R$" fazia parte da MESMA
+// string formatada (formatMoneyBrl) right-aligned num box só -- como Soja
+// tem 3 digitos inteiros (137) e Milho/Sorgo só 2 (57/46), o texto de
+// Milho/Sorgo era mais curto e, alinhado à direita, o "R$" delas acabava
+// mais deslocado que o de Soja. Sem mexer no valor/formatação em si, só
+// isolando o prefixo numa coluna própria.
+private fun formatMoneyNumberOnly(value: Double): String =
+    NumberFormat.getNumberInstance(Locale("pt", "BR")).apply {
+        minimumFractionDigits = 2
+        maximumFractionDigits = 2
+    }.format(value)
+
 // Subtítulo do KPI "Fazendas cadastradas" -- soma da área (ha) de todas as
 // fazendas do cadastro (mesmo campo areaTotalHa retornado por
 // /api/mobile/home e /api/mobile/dashboard). Sem casas decimais forçadas
@@ -1896,13 +1910,25 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    // "R$" num Text de largura fixa proprio (recuo igual pros
+                    // 3 itens) + o numero right-aligned ao lado -- pedido do
+                    // usuario ("alinhar o R$ de milho e sorgo ao de soja,
+                    // sem mexer nos valores"), ver comentario em
+                    // formatMoneyNumberOnly acima.
                     Text(
-                        formatMoneyBrl(q.valor),
+                        "R$",
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.width(22.dp),
+                    )
+                    Text(
+                        formatMoneyNumberOnly(q.valor),
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.End,
                         maxLines = 1,
                         style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
-                        modifier = Modifier.width(84.dp),
+                        modifier = Modifier.width(62.dp),
                     )
                     Text(
                         " / ${q.unidade}",

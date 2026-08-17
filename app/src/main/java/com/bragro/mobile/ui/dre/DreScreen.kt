@@ -476,7 +476,9 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                     LabeledIconButton(
                         icon = Icons.Filled.FilterAlt,
                         label = "Filtros",
-                        tint = if (filtrosOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                        // Sempre verde -- pedido do usuário, ver comentário
+                        // em DomainListScreen.kt (GenericPeriodoDropdown).
+                        tint = MaterialTheme.colorScheme.primary,
                         onClick = { filtrosOpen = !filtrosOpen },
                     )
                     // Ícone único de recolher/expandir -- pedido do usuário

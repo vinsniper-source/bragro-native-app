@@ -910,7 +910,9 @@ private fun PeriodoDropdown(
         LabeledIconButton(
             icon = Icons.Filled.CalendarMonth,
             label = "Período",
-            tint = if (hasFilter) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+            // Sempre verde -- pedido do usuário, ver comentário em
+            // DomainListScreen.kt (GenericPeriodoDropdown).
+            tint = MaterialTheme.colorScheme.primary,
             onClick = { expanded = true },
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -971,7 +973,9 @@ private fun BancoDropdown(banco: String?, options: List<LookupEntity>, onSelect:
         LabeledIconButton(
             icon = Icons.Filled.FilterAlt,
             label = "Filtros",
-            tint = if (hasFilter) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+            // Sempre verde -- pedido do usuário, ver comentário em
+            // DomainListScreen.kt (GenericPeriodoDropdown).
+            tint = MaterialTheme.colorScheme.primary,
             onClick = { expanded = true },
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {

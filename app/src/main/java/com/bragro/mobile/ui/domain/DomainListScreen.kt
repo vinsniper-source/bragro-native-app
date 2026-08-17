@@ -52,6 +52,7 @@ import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -545,7 +546,19 @@ fun DomainListScreen(
                             ) { if (!active) onSwitchDomain(id) }
                         }
                     }
-                    ModuleCategoryBlock(faturamentoBlock, modifier = Modifier.fillMaxWidth())
+                    // Bloco externo -- pedido do usuário ("coloque um bloco
+                    // externo na categoria faturamento no módulo cobranças"),
+                    // mesmo tratamento (Card com fundo verde translúcido) já
+                    // aplicado em Gestão Financeira (FinanceiroScreen.kt) --
+                    // só ESTE bloco (Faturamento), não ModuleCategoryBlock
+                    // como um todo (que os demais ~14 módulos também usam,
+                    // sem Card externo por pedido anterior).
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                    ) {
+                        ModuleCategoryBlock(faturamentoBlock, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp))
+                    }
                 }
             }
             // Blocos "compatíveis com ícone" (Gráficos, Calculadoras, Clima,
@@ -1479,7 +1492,11 @@ private fun GenericPeriodoDropdown(
         LabeledIconButton(
             icon = Icons.Filled.CalendarMonth,
             label = "Período",
-            tint = if (hasFilter) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+            // Sempre verde -- pedido do usuário ("coloque ícones período e
+            // filtros na cor verde"); antes só ficava verde quando havia um
+            // filtro ativo (LocalContentColor.current nos demais casos),
+            // inconsistente com o resto dos ícones de módulo (sempre verdes).
+            tint = MaterialTheme.colorScheme.primary,
             onClick = { expanded = true },
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {

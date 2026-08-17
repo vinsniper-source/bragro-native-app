@@ -547,7 +547,9 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                     LabeledIconButton(
                         icon = Icons.Filled.FilterAlt,
                         label = "Filtros",
-                        tint = if (filtrosOpen) MaterialTheme.colorScheme.primary else androidx.compose.material3.LocalContentColor.current,
+                        // Sempre verde -- pedido do usuário, ver comentário
+                        // em DomainListScreen.kt (GenericPeriodoDropdown).
+                        tint = MaterialTheme.colorScheme.primary,
                         onClick = { filtrosOpen = !filtrosOpen },
                     )
                     if (temRegistros) {

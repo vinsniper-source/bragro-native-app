@@ -242,10 +242,9 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
             )
         },
         floatingActionButton = {
-            // Ainda mais acima -- pedido do usuário repetiu ("erga mais o
-            // ícone drone, deixe no nível do botão + dos outros módulos"):
-            // 16dp não bastou, subiu pra 32dp.
-            FloatingActionButton(onClick = { showNovo = true }, modifier = Modifier.padding(bottom = 32.dp)) {
+            // Ainda mais acima -- pedido do usuário repetiu de novo ("suba
+            // mais o botão drone"): 16dp não bastou, foi pra 32dp, agora 48dp.
+            FloatingActionButton(onClick = { showNovo = true }, modifier = Modifier.padding(bottom = 48.dp)) {
                 Icon(Icons.Filled.FlightTakeoff, contentDescription = "Novo registro de drone")
             }
         },
