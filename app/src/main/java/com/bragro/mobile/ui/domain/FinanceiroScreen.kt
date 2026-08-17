@@ -59,6 +59,7 @@ import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -290,7 +291,10 @@ fun FinanceiroScreen(
                             // pedido do usuário ("insira o ícone imprimir...
                             // deixe no lado superior direito na borda a
                             // primeira").
-                            if (config != null && filtered.isNotEmpty()) {
+                            // Sem mais "&& filtered.isNotEmpty()" -- pedido
+                            // do usuário ("force todos os ícones
+                            // aparecerem"): ícone Imprimir sempre visível.
+                            if (config != null) {
                                 IconButton(onClick = { HtmlPrinter.printList(context, config!!, filtered, effectiveColumns.map { it.key }.toSet()) }) {
                                     Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
                                 }
@@ -356,21 +360,29 @@ fun FinanceiroScreen(
             // os blocos individuais de forma que preencha toda a linha"),
             // mesmo padrão já usado nos blocos Dados/Operações/Arquivos
             // (ModuleCategoryBlock/FinanceiroCategoryBlock).
-            // Card externo removido -- pedido do usuário ("se houver blocos
-            // individuais com duas camadas retire a camada exterior"):
-            // ModuleIconButton já É seu próprio Card com borda, então esse
-            // Card+Box em volta só duplicava a borda (bloco dentro de
-            // bloco), igual o ajuste já feito em ModuleCategoryBlock/
-            // FinanceiroCategoryBlock.
-            FlowRow(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+            // Card externo DE VOLTA -- pedido do usuário ("em gestão
+            // financeira coloque um bloco externo envolvendo todos os
+            // blocos individuais e coloque a cor de fundo do bloco externo
+            // de verde, apenas o bloco externo"): reversão intencional do
+            // ajuste anterior (que tinha removido esse Card por duplicar
+            // borda -- ver histórico logo acima). Dessa vez é só ESTE bloco
+            // (Gestão Financeira) que ganha o Card externo com fundo verde
+            // translúcido -- os ModuleIconButton individuais dentro dele
+            // continuam com o próprio fundo/borda de sempre, sem mudança.
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
             ) {
-                FinanceiroView.values().forEach { v ->
-                    ModuleIconButton(
-                        ModuleIconItem(v.name, financeiroViewIcon(v), v.label, active = v == view),
-                    ) { view = v }
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    FinanceiroView.values().forEach { v ->
+                        ModuleIconButton(
+                            ModuleIconItem(v.name, financeiroViewIcon(v), v.label, active = v == view),
+                        ) { view = v }
+                    }
                 }
             }
 
@@ -411,13 +423,13 @@ fun FinanceiroScreen(
                     // outro ícone). Mesma ação da setinha ao lado do título
                     // (ver TopAppBar acima) -- pedido do usuário, os dois
                     // controlam o mesmo estado.
-                    if (filtered.isNotEmpty()) {
-                        LabeledIconButton(
-                            icon = if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
-                            label = if (allExpanded) "Recolher" else "Expandir",
-                            onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
-                        )
-                    }
+                    // Sempre visível -- pedido do usuário ("force todos os
+                    // ícones aparecerem").
+                    LabeledIconButton(
+                        icon = if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                        label = if (allExpanded) "Recolher" else "Expandir",
+                        onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
+                    )
                 }
             val operacoesBlock =
                 FinBlockSpec("Operações", MaterialTheme.typography.titleSmall, vertical = false) {
@@ -459,7 +471,9 @@ fun FinanceiroScreen(
                         // formulário "Novo Lançamento" (DomainFormScreen.kt),
                         // ao lado do ícone "Copiar último lançamento".
                     }
-                    if (cfg != null && filtered.isNotEmpty()) {
+                    // Sem mais "&& filtered.isNotEmpty()" -- pedido do
+                    // usuário ("force todos os ícones aparecerem").
+                    if (cfg != null) {
                         // Ícone trocado pra planilha/tabela -- pedido do
                         // usuário ("use os ícones da demonstração...
                         // ficaram mais intuitivos"), em vez de um download

@@ -402,7 +402,13 @@ fun DomainListScreen(
                             // ("insira o ícone imprimir... deixe no lado
                             // superior direito na borda a primeira"), mesmo
                             // padrão usado em Operações/Insumos/Livro Caixa.
-                            if (config != null && filteredRecords.isNotEmpty()) {
+                            // Sem mais o "&& filteredRecords.isNotEmpty()"
+                            // -- pedido do usuário ("force todos os ícones
+                            // aparecerem"): ícone Imprimir sempre visível no
+                            // topo, mesmo com a lista vazia (config != null
+                            // continua checando, é null-safety de verdade,
+                            // não gate de dado vazio).
+                            if (config != null) {
                                 IconButton(onClick = { HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) }) {
                                     Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
                                 }
@@ -556,7 +562,13 @@ fun DomainListScreen(
             val showClima = domainId == "clima"
             val showEstoqueFazenda = domainId == "estoque"
             val showRecalcularArea = domainId == "safra" || domainId == "frota"
-            val showFiltros = filterableSelectCols.isNotEmpty()
+            // Sempre true agora -- pedido do usuário ("force todos os
+            // ícones aparecerem"): antes o ícone Filtros sumia inteiro nos
+            // módulos sem nenhuma coluna filtrável (filterableSelectCols
+            // vazio); agora aparece sempre (o painel só fica sem opções pra
+            // marcar nesse caso, mas o ícone continua visível/consistente
+            // entre módulos).
+            val showFiltros = true
             val activeFilterCountGeneric = columnFilters.values.count { it.isNotBlank() }
             // Layout em blocos (Dados/Registros/Operações/Arquivos/
             // Distribuição), igual ao Financeiro -- pedido do usuário
@@ -587,7 +599,7 @@ fun DomainListScreen(
                             visibleKeys = visibleKeys,
                             onChange = { customVisibleKeys = it },
                         )
-                        if (filteredRecords.isNotEmpty()) {
+                        if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
                                 icon = if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
                                 label = if (allExpanded) "Recolher" else "Expandir",
@@ -620,7 +632,7 @@ fun DomainListScreen(
                     // cabiam lado a lado na largura do bloco Arquivos e
                     // quebravam pra 2 linhas, esticando a fileira inteira.
                     val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
-                        if (filteredRecords.isNotEmpty()) {
+                        if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
                                 icon = Icons.Filled.GridOn,
                                 label = "Excel",
@@ -663,7 +675,7 @@ fun DomainListScreen(
                             visibleKeys = visibleKeys,
                             onChange = { customVisibleKeys = it },
                         )
-                        if (filteredRecords.isNotEmpty()) {
+                        if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
                                 icon = if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
                                 label = if (allExpanded) "Recolher" else "Expandir",
@@ -734,7 +746,7 @@ fun DomainListScreen(
                     // pedido do usuário ("coloque os blocos da linha 2
                     // todos na horizontal e com limite de altura").
                     val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
-                        if (filteredRecords.isNotEmpty()) {
+                        if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
                                 icon = Icons.Filled.GridOn,
                                 label = "Excel",
@@ -774,7 +786,7 @@ fun DomainListScreen(
                                 ModuleIconItem("filtros", Icons.Filled.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
                             ) { filtrosOverride = !filtrosExpanded }
                         }
-                        if (filteredRecords.isNotEmpty()) {
+                        if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
                                 icon = if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
                                 label = if (allExpanded) "Recolher" else "Expandir",
@@ -809,7 +821,7 @@ fun DomainListScreen(
                         }
                     }
                     val arquivosBlockCobrancas = ModuleBlockSpec("Arquivos", vertical = false) {
-                        if (filteredRecords.isNotEmpty()) {
+                        if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
                                 icon = Icons.Filled.GridOn,
                                 label = "Excel",
@@ -892,7 +904,7 @@ fun DomainListScreen(
                         loading = refreshing,
                         onClick = { viewModel.refresh(domainId) },
                     )
-                    if (filteredRecords.isNotEmpty()) {
+                    if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                         // Só mexe nos cards de lançamento -- não fecha Filtros
                         // nem os outros blocos (Gráficos/Calculadoras/etc.),
                         // pedido do usuário.
@@ -907,7 +919,7 @@ fun DomainListScreen(
                         visibleKeys = visibleKeys,
                         onChange = { customVisibleKeys = it },
                     )
-                    if (filteredRecords.isNotEmpty()) {
+                    if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                         // Ícones separados (mesmo padrão do Financeiro) em vez
                         // de um menu único -- pedido do usuário ("implemente
                         // nos módulos que não tiverem... csv, pdf, imprimir,

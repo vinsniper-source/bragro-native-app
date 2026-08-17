@@ -437,6 +437,16 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
+// Controle fino dos blocos da Início por membro -- pedido do usuário ("crie
+// em acessos uma categoria da aba início para escolher o que cada
+// responsável terá acesso no app... site e app nativo juntos"). allowedWidgets
+// vem de /api/mobile/home (ver HomeData em Models.kt); null = backend antigo
+// ou ninguém restringiu nada (mostra tudo, mesmo critério do backend).
+private fun HomeData?.hasWidget(id: String): Boolean {
+    val allowed = this?.allowedWidgets
+    return allowed == null || allowed.contains(id)
+}
+
 // minimum/maximumFractionDigits explícitos -- pedido do usuário ("no bloco
 // kpi financeiro tem que aparecer... o duas casas ,00 depois da vírgula"),
 // garante ",00" mesmo em valores redondos independente do locale/ICU do
@@ -912,6 +922,12 @@ fun HomeScreen(
             // detalhe (Custo médio/ha) → estágio da safra/janela → captura
             // rápida → sugestão adaptativa, TODOS antes do Mural de Avisos,
             // na mesma ordem do dashboard web (page.tsx).
+            // Cada bloco da Início abaixo agora pode ser ligado/desligado
+            // por membro (pedido do usuário, ver Segurança e Acessos no
+            // site -- vale pros dois, site e app) -- data.hasWidget() lê
+            // allowedWidgets vindo de /api/mobile/home; null (backend
+            // antigo ou ninguém restringiu nada) = mostra tudo.
+            if (data.hasWidget("inicio.filtros")) {
             item(key = "filtros-canvas") {
                 // Duas linhas em vez de uma só -- pedido do usuário ("os
                 // filtros e o importar kml estão ultrapassando o limite da
@@ -920,7 +936,6 @@ fun HomeScreen(
                 // botão ficava colado na borda direita ao rolar (sem
                 // padding/respiro), parecendo cortado. O botão "Importar
                 // KML" agora ocupa uma linha própria abaixo dos pills.
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -930,29 +945,31 @@ fun HomeScreen(
                         SafraSelectorButton(asPill = true, onChanged = { viewModel.onFiltroGlobalChanged(logoScreenContext) })
                         CulturaSelectorButton(asPill = true, onChanged = { viewModel.onFiltroGlobalChanged(logoScreenContext) })
                     }
-                    // "Importar KML" -- réplica do atalho do painel do
-                    // Canvas web (canvas-view.tsx); FieldView tem rota
-                    // própria (onOpenFieldview), não é um domainId genérico
-                    // (ver comentário em BRAgroNavHost.kt).
-                    androidx.compose.material3.OutlinedButton(onClick = onOpenFieldview) {
-                        Icon(Icons.Filled.Map, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Importar KML", style = MaterialTheme.typography.labelSmall)
-                    }
-                }
+                    // "Importar KML" saiu daqui -- pedido do usuário ("dentro
+                    // do bloco de fazendas coloque o botão importar kml
+                    // dentro do bloco"): agora mora dentro do card de
+                    // círculos das fazendas (CanvasCirclesRow, ver
+                    // CanvasSection.kt), logo abaixo neste mesmo item.
             }
+            }
+            if (data.hasWidget("inicio.canvas")) {
             data.canvas?.let { canvas ->
                 item(key = "canvas-circles") {
                     CanvasCirclesRow(
                         fazendas = canvas.fazendas,
                         selectedId = selecionadaFazendaId,
                         onSelect = { id -> selecionadaFazendaId = id },
+                        onImportKml = onOpenFieldview,
                     )
                 }
                 val fazendaSelecionada = canvas.fazendas.find { it.id == selecionadaFazendaId }
                 if (fazendaSelecionada != null) {
                     item(key = "canvas-detail") { CanvasDetailCard(fazendaSelecionada) }
                 }
+            }
+            }
+            if (data.hasWidget("inicio.estagio")) {
+            data.canvas?.let { canvas ->
                 item(key = "estagio-janela") {
                     EstagioJanelaRow(
                         estagio = canvas.estagio,
@@ -961,34 +978,50 @@ fun HomeScreen(
                     )
                 }
             }
+            }
+            if (data.hasWidget("inicio.captura")) {
             item(key = "quick-capture") { QuickCaptureBar(onOpenFinanceiro = { onOpenDomain("financeiro") }) }
+            }
+            if (data.hasWidget("inicio.sugestao")) {
             data.canvas?.let { canvas ->
                 item(key = "sugestao-adaptativa") { AdaptiveSuggestionCard(canvas.estagio, onOpenDomain) }
             }
+            }
 
+            if (data.hasWidget("inicio.mural")) {
             item(key = "mural") { BulletinBoardCard(data.notices, canManage, viewModel) }
+            }
+            if (data.hasWidget("inicio.alertas")) {
             item(key = "alertas") { AlertsCard(data.alerts, onOpenDomain) }
+            }
             // Revertido -- pedido do usuário ("os kpis estão dentro do
             // monitor em tempo real, volte eles para a posição original"):
             // dentro do Monitor os cards ficavam espremidos (Card dentro de
             // Card, menos largura disponível) e os rótulos cortavam
             // ("Itens no e...", "Operaç...", "Colabor..."). Volta a ser
             // seção própria, largura cheia.
+            if (data.hasWidget("inicio.monitor")) {
             item(key = "monitor") { ActivityMonitorCard(data.recentActivity, onOpenDomain) }
+            }
+            if (data.hasWidget("inicio.kpis")) {
             item(key = "kpis") { KpiGrid(data) }
+            }
             // Clima ao lado de Câmbio, Cotações ao lado de Destaques -- cada
             // par em blocos separados (Card) lado a lado, pedido do usuário
-            // ("coloque câmbio ao lado de clima separados por blocos").
+            // ("coloque câmbio ao lado de clima separados por blocos"). Cada
+            // um agora também liga/desliga independente.
             val clima = weather?.weather
             val fx = weather?.fx
-            if (clima != null || fx != null) {
+            val showClima = data.hasWidget("inicio.clima") && clima != null
+            val showCambio = data.hasWidget("inicio.cambio") && fx != null
+            if (showClima || showCambio) {
                 item(key = "clima-cambio") {
                     Row(
                         modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        if (clima != null) ClimaCard(clima, onRefresh = { viewModel.refresh() }, modifier = Modifier.weight(1f).fillMaxHeight())
-                        if (fx != null) CambioCard(fx, onRefresh = { viewModel.refresh() }, modifier = Modifier.weight(1f).fillMaxHeight())
+                        if (showClima) ClimaCard(clima!!, onRefresh = { viewModel.refresh() }, modifier = Modifier.weight(1f).fillMaxHeight())
+                        if (showCambio) CambioCard(fx!!, onRefresh = { viewModel.refresh() }, modifier = Modifier.weight(1f).fillMaxHeight())
                     }
                 }
             }
@@ -996,7 +1029,10 @@ fun HomeScreen(
             // pedido do usuário ("realoque o kpi destaques, para o lado de
             // fazendas cadastradas, dividindo os blocos"). Fazendas
             // cadastradas saiu do grid 2x2 de KpiGrid (ver `fazendasKpi`
-            // acima) pra poder formar essa dupla aqui.
+            // acima) pra poder formar essa dupla aqui. Sem toggle próprio no
+            // site (o dashboard web não tem mais esse KPI) -- amarrado ao
+            // MESMO toggle "inicio.destaques" por simplicidade.
+            if (data.hasWidget("inicio.destaques")) {
             item(key = "fazendas-destaques") {
                 Row(
                     modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
@@ -1006,12 +1042,15 @@ fun HomeScreen(
                     DestaquesCard(data, viewModel.lastUpdatedAt.value, modifier = Modifier.weight(1f).fillMaxHeight())
                 }
             }
+            }
             // Cotações Grãos agora ocupa a linha inteira, até o limite da
             // tela -- pedido do usuário ("expanda kpi cotações grãos até o
             // limite da tela"), separado de Destaques (que foi pro lado de
             // Fazendas cadastradas acima).
+            if (data.hasWidget("inicio.cotacoes")) {
             item(key = "cotacoes") {
                 weather?.commodities?.let { CotacoesCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth()) }
+            }
             }
         }
     }

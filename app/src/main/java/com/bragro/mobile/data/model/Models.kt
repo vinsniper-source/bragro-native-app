@@ -234,6 +234,14 @@ data class HomeData(
     val canvas: CanvasSectionData? = null,
     val safrasDisponiveis: List<String> = emptyList(),
     val culturasDisponiveis: List<String> = emptyList(),
+    // Blocos da Início liberados pra este membro -- pedido do usuário
+    // ("crie em acessos uma categoria da aba início... site e app nativo
+    // juntos"), ver allowedInicioWidgets no backend (lib/permissions.ts).
+    // Default null (não lista vazia!) distingue "backend antigo que ainda
+    // não manda esse campo" (cache offline salvo antes dele existir) de
+    // "admin restringiu e não sobrou nenhum bloco" -- null = mostra tudo
+    // (mesmo critério do backend), lista vazia de verdade = esconde tudo.
+    val allowedWidgets: List<String>? = null,
 )
 
 @Serializable

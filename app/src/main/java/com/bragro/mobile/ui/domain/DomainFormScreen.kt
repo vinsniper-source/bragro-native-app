@@ -325,14 +325,29 @@ fun DomainFormScreen(
                             }
                         }
                     }
-                    if (recordId == null && lastRecord != null) {
+                    // Sempre visível em Novo Lançamento, mesmo sem nenhum
+                    // registro anterior pra copiar -- pedido do usuário
+                    // ("force também o ícone copiar em novo lançamento mesmo
+                    // não estando preenchido os campos"): antes o ícone
+                    // inteiro sumia quando lastRecord era null (nenhum
+                    // lançamento anterior no módulo ainda), o que escondia a
+                    // funcionalidade em vez de só desabilitá-la. Agora
+                    // aparece sempre, só fica acinzentado/inerte quando não
+                    // há nada pra copiar (copyFromLastRecord() já retorna
+                    // sem fazer nada nesse caso, com segurança).
+                    if (recordId == null) {
                         Column {
                             Spacer(modifier = Modifier.height(16.dp))
                             // Cor verde -- pedido do usuário ("em novo
                             // lançamento altere a cor do ícone copiar para
                             // verde").
-                            IconButton(onClick = { viewModel.copyFromLastRecord() }) {
-                                Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último lançamento", tint = MaterialTheme.colorScheme.primary)
+                            val hasLastRecord = lastRecord != null
+                            IconButton(onClick = { viewModel.copyFromLastRecord() }, enabled = hasLastRecord) {
+                                Icon(
+                                    Icons.Filled.ContentCopy,
+                                    contentDescription = "Copiar último lançamento",
+                                    tint = if (hasLastRecord) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                )
                             }
                         }
                     }
@@ -523,7 +538,13 @@ private fun ComputedFieldDisplay(col: ColumnConfig, raw: String, optionLabels: M
                 .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp))
                 .padding(horizontal = 12.dp, vertical = 12.dp),
         ) {
-            Text(computedDisplayValue(col, raw, optionLabels), style = MaterialTheme.typography.bodyMedium)
+            // Fonte verde -- pedido do usuário ("nos campos que forem
+            // calculados automaticamente coloque a cor da fonte de verde").
+            Text(
+                computedDisplayValue(col, raw, optionLabels),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
         }
     }
 }

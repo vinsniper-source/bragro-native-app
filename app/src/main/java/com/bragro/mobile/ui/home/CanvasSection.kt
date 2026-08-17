@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Grass
 import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.bragro.mobile.data.model.CanvasFazendaCardData
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.BrBlue
@@ -138,16 +140,21 @@ private fun formatMoney(v: Double): String = moneyFmt.format(v)
  * círculo seleciona a fazenda (mesmo clique do site, abre o card de detalhe
  * logo abaixo). */
 @Composable
-fun CanvasCirclesRow(fazendas: List<CanvasFazendaCardData>, selectedId: String?, onSelect: (String) -> Unit) {
+fun CanvasCirclesRow(
+    fazendas: List<CanvasFazendaCardData>,
+    selectedId: String?,
+    onSelect: (String) -> Unit,
+    onImportKml: () -> Unit,
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
+        Column {
         if (fazendas.isEmpty()) {
             Text(
                 "Nenhuma fazenda ativa cadastrada ainda.",
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(16.dp),
             )
-            return@Card
-        }
+        } else {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -215,6 +222,31 @@ fun CanvasCirclesRow(fazendas: List<CanvasFazendaCardData>, selectedId: String?,
                     }
                 }
             }
+        }
+        }
+        // Importar KML dentro do bloco de fazendas -- pedido do usuário
+        // ("dentro do bloco de fazendas coloque o botão importar kml dentro
+        // do bloco, diminua fonte para ocupar pouco espaço"): antes era um
+        // OutlinedButton numa linha própria, fora deste card (ver
+        // HomeScreen.kt, item "filtros-canvas"). Agora mora no rodapé deste
+        // bloco, ícone/fonte reduzidos (11sp, ícone 12dp) pra ocupar o
+        // mínimo de espaço possível.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onImportKml() }
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End,
+        ) {
+            Icon(Icons.Filled.Map, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(12.dp))
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                "Importar KML",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
         }
     }
 }
