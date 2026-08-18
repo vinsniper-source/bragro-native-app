@@ -37,23 +37,22 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.bragro.mobile.ui.home.domainIcon
 
-// Revertido -- pedido do usuário ("volte a colocar a cor da barra inferior
-// da cor da lista suspensa dos módulos, claro/escuro, fonte verde"): o fundo
-// verde sólido de uma rodada anterior volta a ser a MESMA cor de fundo das
-// listas suspensas (surface -- off-white no claro, quase preto no escuro,
-// ver Theme.kt), e ícone/rótulo passam a usar verde (primary) em vez de
-// branco -- inverso do esquema anterior ("branco sobre fundo verde" virou
-// "verde sobre fundo neutro", que é como o app funcionava antes daquela
-// rodada). Opacidade menor no item não-selecionado continua distinguindo do
-// selecionado (verde cheio + pílula translúcida atrás).
+// Preto/branco (onSurface) em vez de verde -- pedido do usuário ("vc não
+// alterou a cor dos botoes da barra inferiro para branco/preto"), mesmo
+// critério já aplicado aos blocos individuais (MODULE_ICON_FG em
+// ModuleIconRow.kt) e à lista suspensa desta mesma barra. Reverte o esquema
+// anterior (ícone/rótulo = primary/verde). A pílula de fundo do item
+// selecionado também deixa de ser verde (onSurface bem translúcido) -- só a
+// opacidade menor no item não-selecionado continua distinguindo do
+// selecionado.
 private val BottomNavColors: androidx.compose.material3.NavigationBarItemColors
     @Composable
     get() = NavigationBarItemDefaults.colors(
-        selectedIconColor = MaterialTheme.colorScheme.primary,
-        selectedTextColor = MaterialTheme.colorScheme.primary,
-        indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
-        unselectedIconColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.70f),
-        unselectedTextColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.70f),
+        selectedIconColor = MaterialTheme.colorScheme.onSurface,
+        selectedTextColor = MaterialTheme.colorScheme.onSurface,
+        indicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
     )
 
 // Pedido do usuário: "os botões inferiores devem aparecer uma lista
@@ -230,7 +229,12 @@ fun BRAgroBottomBar(
         }
     }
 
-    NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+    // tonalElevation = 0.dp -- mesma correção do tonal elevation overlay
+    // aplicada em ModuleIconRow.kt: sem isso o Material3 mistura um pouco de
+    // primary (verde) por cima do containerColor sempre que ele é
+    // EXATAMENTE colorScheme.surface (NavigationBar tem elevação > 0 por
+    // padrão), deixando a própria barra com um verde residual.
+    NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
         BOTTOM_TABS.forEach { tab ->
             val selected = tab.directDomainId == currentDomainId ||
                 tab.items.any { it is SectorTarget.Domain && it.domainId == currentDomainId }
