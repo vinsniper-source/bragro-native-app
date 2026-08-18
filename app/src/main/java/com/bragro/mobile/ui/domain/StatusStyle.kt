@@ -109,6 +109,15 @@ fun displayValueFor(key: String, rawValue: String, colType: String? = null): Str
     if (key == "origem") {
         ORIGEM_LABELS[rawValue.lowercase()]?.let { return it }
     }
+    // "Conciliado"/"Pendente" em vez do literal true/false -- pedido do
+    // usuário ("troque as palavras true e false no campo conciliar por
+    // conciliado e pendente respectivamente"). Só o campo "conciliar"
+    // (Financeiro, checkbox computado) -- outros checkboxes do app
+    // continuam mostrando o valor cru/Sim-Não deles normalmente, essa troca
+    // é só pro rótulo específico desse campo.
+    if (key == "conciliar") {
+        return if (rawValue == "true") "Conciliado" else "Pendente"
+    }
     if (colType == "date") {
         ISO_DATE_PREFIX.find(rawValue)?.let { m ->
             val (y, mo, d) = m.destructured

@@ -1048,6 +1048,13 @@ data class FieldBoundaryDto(
     val nome: String? = null,
     val areaHaCalc: Double? = null,
     val geojson: JsonElement? = null,
+    // O backend (findMany sem select em /api/mobile/fieldview) já mandava
+    // esse campo há tempos -- só nunca tinha sido declarado aqui (era
+    // silenciosamente ignorado na deserialização). Precisa dele agora pra
+    // montar os links "Abrir no Google Maps/Earth" POR FAZENDA (auditoria de
+    // paridade, Task #226: o site já casa FieldBoundary.farmId com Farm.id
+    // pra centralizar o mapa no talhão certo de cada fazenda).
+    val farmId: String? = null,
 )
 
 @Serializable

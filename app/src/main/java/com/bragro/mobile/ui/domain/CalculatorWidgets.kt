@@ -1,12 +1,16 @@
 package com.bragro.mobile.ui.domain
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
@@ -77,6 +81,13 @@ fun CalcNumField(label: String, unit: String? = null, field: CalcFieldState) {
     )
 }
 
+// Caixa com borda igual à dos campos calculados do formulário genérico
+// (ComputedFieldDisplay em DomainFormScreen.kt) -- achado da auditoria
+// (usuário: "confira se ainda há em qualquer bloco campo a cálculo
+// automático sem bordas"): este era um resultado de calculadora renderizado
+// só como Text solto, sem NENHUMA borda, diferente de todo o resto do app
+// (que já ganhou essa borda no Task #199) e dos campos manuais ao lado
+// (CalcNumField, que é um OutlinedTextField com borda visível).
 @Composable
 fun CalcResultField(label: String, unit: String? = null, value: String) {
     Column {
@@ -84,12 +95,21 @@ fun CalcResultField(label: String, unit: String? = null, value: String) {
             if (unit != null) "$label ($unit)" else label,
             style = MaterialTheme.typography.labelSmall,
         )
-        Text(
-            value,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp))
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+        ) {
+            Text(
+                value,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
     }
 }
 

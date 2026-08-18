@@ -1,6 +1,7 @@
 package com.bragro.mobile.ui.fieldview
 
 import android.app.Application
+import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.EditLocationAlt
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -379,7 +381,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, view
                 else -> when (tab) {
                     0 -> TalhaoStatusList(data!!.talhaoStatus)
                     1 -> MaquinaStatusList(data!!.maquinaStatus)
-                    else -> FazendasKmlTab(boundaries = data!!.boundaries)
+                    else -> FazendasKmlTab(boundaries = data!!.boundaries, farms = farms)
                 }
             }
         }
@@ -547,20 +549,89 @@ private fun BoundariesList(boundaries: List<FieldBoundaryDto>, modifier: Modifie
     }
 }
 
-/** Aba "Fazendas/KML" -- botão de importação nativa de KML/KMZ, mapa
- * (osmdroid) com o contorno de todos os talhões já importados, e a lista
- * resumo (mesma BoundariesList de sempre) embaixo. */
+/** Aba "Fazendas/KML" -- botão de importação nativa de KML/KMZ, links
+ * "Abrir no Google Maps/Earth" POR FAZENDA (auditoria de paridade, Task
+ * #226 -- mesmo recurso do site em fieldview-client.tsx, faltava só aqui no
+ * app), mapa (osmdroid) com o contorno de todos os talhões já importados, e
+ * a lista resumo (mesma BoundariesList de sempre) embaixo. */
 @Composable
 private fun FazendasKmlTab(
     boundaries: List<FieldBoundaryDto>,
+    farms: List<FarmEntity>,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         // Botão "Importar KML/KMZ" que existia aqui foi promovido pra cima
         // (fileira comum acima das abas, ver FieldviewScreen) -- fica
         // visível tanto em Talhões quanto em Fazendas/KML agora, sem
         // duplicar nesta aba.
+        FarmMapLinksRow(boundaries, farms)
         BoundariesMap(boundaries)
         BoundariesList(boundaries, modifier = Modifier.weight(1f))
+    }
+}
+
+/** Centroide aproximado do PRIMEIRO talhão com geometria de verdade
+ * vinculado a uma fazenda (mesmo critério do site, ver geometryCentroid()/
+ * googleMapsUrl() em lib/geo.ts) -- reaproveita geoJsonPolygonToGeoPoints já
+ * usado pra desenhar o overlay do mapa, só que tirando a média dos pontos em
+ * vez de desenhar. */
+private fun farmCentroid(boundaries: List<FieldBoundaryDto>, farmId: String): GeoPoint? {
+    for (b in boundaries) {
+        if (b.farmId != farmId) continue
+        val points = geoJsonPolygonToGeoPoints(b.geojson)
+        if (points.isNotEmpty()) {
+            val lat = points.sumOf { it.latitude } / points.size
+            val lon = points.sumOf { it.longitude } / points.size
+            return GeoPoint(lat, lon)
+        }
+    }
+    return null
+}
+
+/** Mesma URL do Google Maps montada em lib/geo.ts (googleMapsUrl) --
+ * coordenada exata quando o centroide existe, ou uma busca pelo nome como
+ * alternativa (fazenda ainda sem talhão georreferenciado). */
+private fun googleMapsUrl(point: GeoPoint?, fallbackQuery: String): String =
+    if (point != null) "https://www.google.com/maps?q=${point.latitude},${point.longitude}"
+    else "https://www.google.com/maps/search/?api=1&query=${Uri.encode(fallbackQuery)}"
+
+/** Espelho de googleEarthUrl() em lib/geo.ts -- pedido do usuário ("link o
+ * maps do app native ao google earth"). "1000a,1000d" = câmera a ~1000m de
+ * altitude olhando reto pra baixo, zoom suficiente pra enxergar o talhão
+ * inteiro sem o usuário precisar reajustar. */
+private fun googleEarthUrl(point: GeoPoint?, fallbackQuery: String): String =
+    if (point != null) "https://earth.google.com/web/@${point.latitude},${point.longitude},1000a,1000d,35y,0h,0t,0r"
+    else "https://earth.google.com/web/search/${Uri.encode(fallbackQuery)}"
+
+@Composable
+private fun FarmMapLinksRow(boundaries: List<FieldBoundaryDto>, farms: List<FarmEntity>) {
+    if (farms.isEmpty()) return
+    val context = LocalContext.current
+    fun openUrl(url: String) {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    }
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+        Text("Abrir no Google Maps:", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            for (farm in farms) {
+                val ponto = farmCentroid(boundaries, farm.id)
+                OutlinedButton(onClick = { openUrl(googleMapsUrl(ponto, farm.name)) }, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
+                    Icon(Icons.Filled.Map, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                    Text(farm.name, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text("Abrir no Google Earth:", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            for (farm in farms) {
+                val ponto = farmCentroid(boundaries, farm.id)
+                OutlinedButton(onClick = { openUrl(googleEarthUrl(ponto, farm.name)) }, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
+                    Icon(Icons.Filled.Public, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                    Text(farm.name, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        }
     }
 }
 

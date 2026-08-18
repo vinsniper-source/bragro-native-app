@@ -95,6 +95,19 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
     var computedValues = mutableStateOf<Map<String, String>>(emptyMap())
         private set
 
+    // Fazendas reais (cache local, ver ConfigRepository.farms()) -- pedido
+    // do usuário ("em pragas o campo fazenda... deixar apenas fazendas e
+    // excluir as que já não existem mais" / "em clima adicione na lista
+    // suspensa apenas as fazendas habilitadas"). O campo "fazenda" (só
+    // existe em Pragas e Clima, ver registry.ts) usava lookupCategory
+    // "locais" -- uma lista de texto livre digitada manualmente em Base de
+    // Dados, sem NENHUMA relação com o cadastro real de fazendas, então
+    // nunca refletia exclusão/desativação. /api/mobile/bootstrap já filtra
+    // `ativo: true` ao montar essa lista (ver route.ts), então usar farms
+    // aqui resolve os dois pedidos de uma vez, sempre em dia sozinho.
+    var farms = mutableStateOf<List<com.bragro.mobile.data.local.FarmEntity>>(emptyList())
+        private set
+
     val fields = mutableStateMapOf<String, String>()
 
     fun load(domainId: String, recordId: String?) {
@@ -114,6 +127,12 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             val loaded = mutableMapOf<String, List<LookupEntity>>()
             for (cat in categories) loaded[cat] = configRepository.lookupsByCategory(cat)
             lookupsByCategory.value = loaded
+
+            // Só busca se o domínio realmente tem um campo "fazenda" (Pragas/
+            // Clima) -- evita a query à toa nos outros 14 módulos.
+            if (cfg.columns.any { it.key == "fazenda" }) {
+                farms.value = configRepository.farms()
+            }
 
             fields.clear()
             val existing = recordId?.let { recordRepository.getRecord(domainId, it) }
@@ -185,6 +204,19 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
         return col.lookupCategory
+    }
+
+    /** Opções pro campo "select" -- caso especial pro campo "fazenda"
+     * (Pragas/Clima): usa a lista real de fazendas ATIVAS (farms, ver acima)
+     * em vez do lookupCategory "locais" (texto livre, nunca sincronizado com
+     * exclusão/desativação de fazenda). Qualquer outro campo select continua
+     * usando lookups normalmente (inclusive "local", usado por outros
+     * módulos, que fica como estava -- só "fazenda" muda). */
+    fun optionsFor(col: ColumnConfig, lookups: Map<String, List<LookupEntity>>): List<LookupEntity>? {
+        if (col.key == "fazenda") {
+            return farms.value.sortedBy { it.name }.map { LookupEntity("locais", it.name, it.name, 0) }
+        }
+        return effectiveLookupCategory(col)?.let { lookups[it] }
     }
 
     /** Preenche todos os campos (exceto computados) com os valores do
@@ -424,7 +456,7 @@ fun DomainFormScreen(
                     // Categoria) -- campos sem dependsOn continuam usando
                     // lookupCategory direto (effectiveLookupCategory cai
                     // nele automaticamente).
-                    FormField(col = col, options = viewModel.effectiveLookupCategory(col)?.let { lookups[it] }, viewModel = viewModel, isMissing = col.key in missingFields)
+                    FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                 }
                 androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
             }
