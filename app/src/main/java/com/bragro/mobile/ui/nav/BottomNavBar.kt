@@ -266,21 +266,21 @@ fun BRAgroBottomBar(
                     colors = BottomNavColors,
                 )
                 if (tab.directDomainId == null) {
-                    // containerColor + tonalElevation = 0 -- pedido do usuário ("deixe
-                    // a cor de fundo da barra inferior da mesma cor da lista suspensa
-                    // dos módulos"): por padrão o DropdownMenu do Material3 tem 3dp de
-                    // tonalElevation, que mistura verde (primary) por cima do
-                    // containerColor sempre que ele é EXATAMENTE colorScheme.surface --
-                    // mesma causa raiz já corrigida na barra em si (NavigationBar
-                    // acima) e nos blocos individuais (ModuleIconRow.kt). Sem zerar
-                    // aqui também, a lista suspensa ficava com um tom ligeiramente
-                    // diferente (mais esverdeado) do que a barra de baixo.
-                    DropdownMenu(
-                        expanded = openTabId == tab.id,
-                        onDismissRequest = { openTabId = null },
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        tonalElevation = 0.dp,
-                    ) {
+                    // Material3 1.2.1 (versão fixada no build.gradle.kts, não dá pra
+                    // subir sem risco -- ver comentário lá) não expõe containerColor/
+                    // tonalElevation no DropdownMenu; o Surface interno usa sempre 3dp
+                    // de tonalElevation com color = colorScheme.surface, o que mistura
+                    // um pouco de "primary" (verde) por cima -- mesma causa raiz já
+                    // corrigida na barra em si (NavigationBar acima). Workaround:
+                    // redefine só o "primary" ambiente = "surface" ao redor do
+                    // DropdownMenu, então a mistura primary-sobre-surface vira
+                    // surface-sobre-surface (visualmente idêntico, sem tingimento) --
+                    // pedido do usuário ("deixe a cor de fundo da barra inferior da
+                    // mesma cor da lista suspensa dos módulos"). Nada dentro do
+                    // dropdown usa "primary" (os itens abaixo já são onSurface
+                    // explícito), então não muda mais nada visualmente.
+                    MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = MaterialTheme.colorScheme.surface)) {
+                    DropdownMenu(expanded = openTabId == tab.id, onDismissRequest = { openTabId = null }) {
                         tab.items.forEach { item ->
                             val label = when (item) {
                                 is SectorTarget.Domain -> item.label
@@ -316,6 +316,7 @@ fun BRAgroBottomBar(
                             )
                         }
                     }
+                    }
                 }
             }
         }
@@ -327,14 +328,11 @@ fun BRAgroBottomBar(
                 label = { Text("Módulos", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) },
                 colors = BottomNavColors,
             )
-            // Mesma correção acima -- mantém a lista suspensa de "Módulos" na
-            // mesma cor flat da barra (sem tonal elevation).
-            DropdownMenu(
-                expanded = openTabId == "sistema",
-                onDismissRequest = { openTabId = null },
-                containerColor = MaterialTheme.colorScheme.surface,
-                tonalElevation = 0.dp,
-            ) {
+            // Mesmo workaround do dropdown de setor acima (Material3 1.2.1 não
+            // expõe containerColor/tonalElevation) -- redefine "primary" ambiente
+            // = "surface" só ao redor deste DropdownMenu.
+            MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = MaterialTheme.colorScheme.surface)) {
+            DropdownMenu(expanded = openTabId == "sistema", onDismissRequest = { openTabId = null }) {
                 SISTEMA_LINKS.forEach { link ->
                     DropdownMenuItem(
                         text = { Text(link.label, color = MaterialTheme.colorScheme.onSurface) },
@@ -349,6 +347,7 @@ fun BRAgroBottomBar(
                         },
                     )
                 }
+            }
             }
         }
     }
