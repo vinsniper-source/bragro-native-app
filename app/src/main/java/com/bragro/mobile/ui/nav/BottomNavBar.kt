@@ -287,9 +287,13 @@ fun BRAgroBottomBar(
                                     else -> tab.icon
                                 }
                             }
+                            // Preto/branco (onSurface) em vez de verde -- pedido do usuário
+                            // ("na barra inferior dos botões, lista suspensa fontes módulos
+                            // preto/branco"), mesmo critério já aplicado aos blocos
+                            // individuais (MODULE_ICON_FG em ModuleIconRow.kt).
                             DropdownMenuItem(
-                                text = { Text(label, color = MaterialTheme.colorScheme.primary) },
-                                leadingIcon = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                                text = { Text(label, color = MaterialTheme.colorScheme.onSurface) },
+                                leadingIcon = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface) },
                                 onClick = { openSector(item) },
                             )
                         }

@@ -87,6 +87,22 @@ fun ModuleIconButton(item: ModuleIconItem, onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier.widthIn(min = 44.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        // elevation zerada -- sem isso o Material3 aplica um "tonal
+        // elevation overlay" que mistura um pouco de primary (verde) por
+        // cima do containerColor sempre que ele é EXATAMENTE
+        // colorScheme.surface (é a mesma lógica por trás do
+        // surfaceColorAtElevation do tema). Era esse overlay, não o
+        // containerColor em si, que segurava um fundo meio esverdeado
+        // mesmo depois de trocar MODULE_ICON_FG -- pedido do usuário
+        // ("ainda há fundo verde nos blocos individuais").
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 0.dp,
+            focusedElevation = 0.dp,
+            hoveredElevation = 0.dp,
+            draggedElevation = 0.dp,
+            disabledElevation = 0.dp,
+        ),
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
@@ -142,6 +158,17 @@ fun LabeledIconButton(
         enabled = !loading,
         modifier = modifier.widthIn(min = 44.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        // Mesma correção do ModuleIconButton acima -- zera o tonal
+        // elevation overlay que deixava o fundo esverdeado mesmo com
+        // containerColor = surface.
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 0.dp,
+            focusedElevation = 0.dp,
+            hoveredElevation = 0.dp,
+            draggedElevation = 0.dp,
+            disabledElevation = 0.dp,
+        ),
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
