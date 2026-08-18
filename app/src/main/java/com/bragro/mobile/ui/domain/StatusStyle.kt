@@ -118,6 +118,21 @@ fun displayValueFor(key: String, rawValue: String, colType: String? = null): Str
     if (key == "conciliar") {
         return if (rawValue == "true") "Conciliado" else "Pendente"
     }
+    // Fallback GENÉRICO pra qualquer outro checkbox (Despesa Fixa, Entra na
+    // Declaração, Devolução Emb. INPEV, Motorista Terceirizado, Melhor
+    // Opção, Em Estoque etc.) -- bug real encontrado (usuário: "onde houver
+    // ou true substitua o nome pelo que o campo corresponde"): apesar do
+    // comentário antigo acima dizer que "outros checkboxes... continuam
+    // mostrando Sim/Não normalmente", não existia NENHUM código fazendo essa
+    // troca -- RecordFieldLine (DomainListScreen.kt) e o resto do app
+    // chamavam displayValueFor pra TODO campo, inclusive checkbox, que caía
+    // direto no "return rawValue" no fim da função e mostrava o literal
+    // "true"/"false". Mesmo comportamento genérico que o site já tinha
+    // (fmtValue/fmtComputed em data-table.tsx/record-form.tsx: "typeof v ===
+    // boolean ? Sim : Não").
+    if (colType == "checkbox") {
+        return if (rawValue == "true") "Sim" else "Não"
+    }
     if (colType == "date") {
         ISO_DATE_PREFIX.find(rawValue)?.let { m ->
             val (y, mo, d) = m.destructured

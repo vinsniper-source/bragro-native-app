@@ -371,8 +371,11 @@ fun NotaMultiItemScreen(onBack: () -> Unit, viewModel: NotaMultiItemViewModel = 
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item {
+                // Mesmo aviso de duplicidade já adicionado no site (pedido
+                // do usuário: "coloque um aviso exclusivo estoque... dar
+                // duplicidade ou informações desencontradas") -- paridade.
                 Text(
-                    "Preencha o cabeçalho da nota uma vez e adicione quantos itens ela tiver. Cada item baixa automaticamente no Estoque; o valor total da nota vira um único lançamento no Financeiro.",
+                    "Preencha o cabeçalho da nota uma vez e adicione quantos itens ela tiver. Cada item baixa automaticamente no Estoque; o valor total da nota vira um único lançamento no Financeiro. Não lance esta mesma nota de novo em Estoque nem em Financeiro depois -- os dois já são preenchidos por aqui, lançar de novo duplica o saldo em Estoque e distorce relatórios que dependem dele (Livro Caixa, DRE, Análises).",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
