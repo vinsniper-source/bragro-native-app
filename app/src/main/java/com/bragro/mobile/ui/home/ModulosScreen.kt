@@ -142,10 +142,9 @@ private fun ModuloCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    // elevation zerada -- mesma correção do tonal elevation overlay do
-    // ModuleIconRow.kt: mesmo com Icon/Text já em onSurface, o Card (variante
-    // onClick, elevação padrão não-zero) ainda mistura um pouco de "primary"
-    // por cima do fundo sempre que ele resolve pra colorScheme.surface.
+    // elevation zerada -- escopo final (o tom verde fica só na barra
+    // inferior/dropdown, ver BottomNavBar.kt); aqui é só ícone/rótulo
+    // preto/branco, fundo neutro.
     Card(
         onClick = onClick,
         modifier = modifier,

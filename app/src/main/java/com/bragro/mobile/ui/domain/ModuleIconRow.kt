@@ -87,14 +87,15 @@ fun ModuleIconButton(item: ModuleIconItem, onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier.widthIn(min = 44.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        // elevation zerada -- sem isso o Material3 aplica um "tonal
-        // elevation overlay" que mistura um pouco de primary (verde) por
-        // cima do containerColor sempre que ele é EXATAMENTE
-        // colorScheme.surface (é a mesma lógica por trás do
-        // surfaceColorAtElevation do tema). Era esse overlay, não o
-        // containerColor em si, que segurava um fundo meio esverdeado
-        // mesmo depois de trocar MODULE_ICON_FG -- pedido do usuário
-        // ("ainda há fundo verde nos blocos individuais").
+        // elevation zerada -- ESCOPO FINAL (usuário: "isso agora nos blocos
+        // individuais será apenas tirar a cor verde dos icones e rotulos"):
+        // o tom de fundo verde (3.dp de tonal elevation) fica reservado só
+        // pra barra inferior/dropdown (ver BottomNavBar.kt) -- aqui nos
+        // blocos individuais o fundo continua neutro (flat), só ícone/
+        // rótulo (MODULE_ICON_FG) mudam pra onSurface. Sem zerar, o
+        // Material3 mistura um pouco de "primary" por cima do
+        // containerColor sempre que ele é EXATAMENTE colorScheme.surface e
+        // a elevação é > 0.
         elevation = CardDefaults.cardElevation(
             defaultElevation = 0.dp,
             pressedElevation = 0.dp,
@@ -145,12 +146,19 @@ fun LabeledIconButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    // Verde (primary) por padrão agora, mesmo padrão do ModuleIconButton --
-    // call sites que já passam um `tint` próprio (ex.: alternar cor quando
-    // "ativo") continuam funcionando normalmente, já que o fundo deixou de
-    // ser verde (virou surface) e não corre mais risco de "sumir" nenhuma
-    // combinação de cor de conteúdo.
-    tint: Color = MaterialTheme.colorScheme.primary,
+    // Preto/branco (onSurface) por padrão -- BUG real encontrado (usuário:
+    // "nao houve alteraçao nenhuma", print mostrando Gráficos/Filtros/
+    // Colunas/Expandir ainda verdes mesmo com o apk novo confirmado
+    // instalado): eu só removia o `tint = primary` EXPLÍCITO de call sites
+    // específicos (Período/Filtros em alguns arquivos), mas nunca troquei
+    // esse valor padrão aqui -- todo call site que NÃO passa `tint` (a
+    // maioria: Gráficos, Colunas, Expandir, Imprimir, Nuvem, Copiar,
+    // Atualizar, Exportar CSV/PDF etc., em todos os módulos) continuava
+    // caindo em verde por causa deste default, mesmo com MODULE_ICON_FG já
+    // corrigido em ModuleIconButton (que é uma função diferente, sem esse
+    // parâmetro). Call sites que já passam um `tint` próprio (ex.: alternar
+    // cor quando "ativo") continuam funcionando normalmente.
+    tint: Color = MaterialTheme.colorScheme.onSurface,
     loading: Boolean = false,
 ) {
     Card(
@@ -158,9 +166,9 @@ fun LabeledIconButton(
         enabled = !loading,
         modifier = modifier.widthIn(min = 44.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        // Mesma correção do ModuleIconButton acima -- zera o tonal
-        // elevation overlay que deixava o fundo esverdeado mesmo com
-        // containerColor = surface.
+        // elevation zerada -- mesmo escopo final do ModuleIconButton acima:
+        // fundo neutro nos blocos individuais, o tom verde fica só na barra
+        // inferior/dropdown (BottomNavBar.kt).
         elevation = CardDefaults.cardElevation(
             defaultElevation = 0.dp,
             pressedElevation = 0.dp,

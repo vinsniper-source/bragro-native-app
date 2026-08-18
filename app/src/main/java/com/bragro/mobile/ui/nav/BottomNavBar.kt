@@ -229,12 +229,13 @@ fun BRAgroBottomBar(
         }
     }
 
-    // tonalElevation = 0.dp -- mesma correção do tonal elevation overlay
-    // aplicada em ModuleIconRow.kt: sem isso o Material3 mistura um pouco de
-    // primary (verde) por cima do containerColor sempre que ele é
-    // EXATAMENTE colorScheme.surface (NavigationBar tem elevação > 0 por
-    // padrão), deixando a própria barra com um verde residual.
-    NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
+    // tonalElevation = 3.dp -- de propósito, mesmo valor usado por padrão
+    // nos menus suspensos (MenuDefaults.TonalElevation) -- pedido do
+    // usuário ("quero aquele tom de verde de fundo que está na lista
+    // suspensa em todos os módulos no modo escuro e claro"): igualar a
+    // elevação garante o MESMO tom (a mistura de primary sobre surface usa
+    // a mesma fórmula em qualquer Surface/Card/NavigationBar do Material3).
+    NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 3.dp) {
         BOTTOM_TABS.forEach { tab ->
             val selected = tab.directDomainId == currentDomainId ||
                 tab.items.any { it is SectorTarget.Domain && it.domainId == currentDomainId }
@@ -266,20 +267,14 @@ fun BRAgroBottomBar(
                     colors = BottomNavColors,
                 )
                 if (tab.directDomainId == null) {
-                    // Material3 1.2.1 (versão fixada no build.gradle.kts, não dá pra
-                    // subir sem risco -- ver comentário lá) não expõe containerColor/
-                    // tonalElevation no DropdownMenu; o Surface interno usa sempre 3dp
-                    // de tonalElevation com color = colorScheme.surface, o que mistura
-                    // um pouco de "primary" (verde) por cima -- mesma causa raiz já
-                    // corrigida na barra em si (NavigationBar acima). Workaround:
-                    // redefine só o "primary" ambiente = "surface" ao redor do
-                    // DropdownMenu, então a mistura primary-sobre-surface vira
-                    // surface-sobre-surface (visualmente idêntico, sem tingimento) --
-                    // pedido do usuário ("deixe a cor de fundo da barra inferior da
-                    // mesma cor da lista suspensa dos módulos"). Nada dentro do
-                    // dropdown usa "primary" (os itens abaixo já são onSurface
-                    // explícito), então não muda mais nada visualmente.
-                    MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = MaterialTheme.colorScheme.surface)) {
+                    // SEM neutralizador -- pedido do usuário ("quero aquele
+                    // tom de verde de fundo que está na lista suspensa em
+                    // todos os módulos"): o DropdownMenu do Material3 já usa
+                    // 3dp de tonalElevation por padrão (MenuDefaults),
+                    // exatamente o mesmo tom agora replicado na barra
+                    // inferior e nos blocos individuais (ver NavigationBar
+                    // acima e ModuleIconRow.kt) -- não precisa mais mexer
+                    // aqui, o padrão da própria lib já é o efeito desejado.
                     DropdownMenu(expanded = openTabId == tab.id, onDismissRequest = { openTabId = null }) {
                         tab.items.forEach { item ->
                             val label = when (item) {
@@ -316,7 +311,6 @@ fun BRAgroBottomBar(
                             )
                         }
                     }
-                    }
                 }
             }
         }
@@ -328,10 +322,8 @@ fun BRAgroBottomBar(
                 label = { Text("Módulos", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) },
                 colors = BottomNavColors,
             )
-            // Mesmo workaround do dropdown de setor acima (Material3 1.2.1 não
-            // expõe containerColor/tonalElevation) -- redefine "primary" ambiente
-            // = "surface" só ao redor deste DropdownMenu.
-            MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = MaterialTheme.colorScheme.surface)) {
+            // SEM neutralizador -- mesmo critério do dropdown de setor acima
+            // (o padrão da própria lib já é o tom pedido).
             DropdownMenu(expanded = openTabId == "sistema", onDismissRequest = { openTabId = null }) {
                 SISTEMA_LINKS.forEach { link ->
                     DropdownMenuItem(
@@ -347,7 +339,6 @@ fun BRAgroBottomBar(
                         },
                     )
                 }
-            }
             }
         }
     }
