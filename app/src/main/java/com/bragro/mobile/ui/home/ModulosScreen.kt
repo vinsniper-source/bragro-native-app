@@ -142,29 +142,51 @@ private fun ModuloCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    Card(onClick = onClick, modifier = modifier) {
+    // elevation zerada -- mesma correção do tonal elevation overlay do
+    // ModuleIconRow.kt: mesmo com Icon/Text já em onSurface, o Card (variante
+    // onClick, elevação padrão não-zero) ainda mistura um pouco de "primary"
+    // por cima do fundo sempre que ele resolve pra colorScheme.surface.
+    Card(
+        onClick = onClick,
+        modifier = modifier,
+        elevation = androidx.compose.material3.CardDefaults.cardElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 0.dp,
+            focusedElevation = 0.dp,
+            hoveredElevation = 0.dp,
+            draggedElevation = 0.dp,
+            disabledElevation = 0.dp,
+        ),
+    ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            // Preto/branco (onSurface) em vez de verde -- pedido do usuário
+            // ("ainda há blocos individuais com o icone e o rotulo na cor
+            // verde troque por preto/branco"). Esta grade de "Módulos" é um
+            // bloco individual (ícone + rótulo) igual aos das telas de
+            // domínio, mas usa seu próprio Card/Box (ModuloCard) em vez de
+            // ModuleIconButton -- por isso não foi pega pela troca de
+            // MODULE_ICON_FG em ModuleIconRow.kt.
             Box(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     domainIcon(domain.domainId),
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
             Text(
                 domain.label,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
