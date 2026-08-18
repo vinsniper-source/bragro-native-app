@@ -266,7 +266,21 @@ fun BRAgroBottomBar(
                     colors = BottomNavColors,
                 )
                 if (tab.directDomainId == null) {
-                    DropdownMenu(expanded = openTabId == tab.id, onDismissRequest = { openTabId = null }) {
+                    // containerColor + tonalElevation = 0 -- pedido do usuário ("deixe
+                    // a cor de fundo da barra inferior da mesma cor da lista suspensa
+                    // dos módulos"): por padrão o DropdownMenu do Material3 tem 3dp de
+                    // tonalElevation, que mistura verde (primary) por cima do
+                    // containerColor sempre que ele é EXATAMENTE colorScheme.surface --
+                    // mesma causa raiz já corrigida na barra em si (NavigationBar
+                    // acima) e nos blocos individuais (ModuleIconRow.kt). Sem zerar
+                    // aqui também, a lista suspensa ficava com um tom ligeiramente
+                    // diferente (mais esverdeado) do que a barra de baixo.
+                    DropdownMenu(
+                        expanded = openTabId == tab.id,
+                        onDismissRequest = { openTabId = null },
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 0.dp,
+                    ) {
                         tab.items.forEach { item ->
                             val label = when (item) {
                                 is SectorTarget.Domain -> item.label
@@ -313,11 +327,18 @@ fun BRAgroBottomBar(
                 label = { Text("Módulos", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) },
                 colors = BottomNavColors,
             )
-            DropdownMenu(expanded = openTabId == "sistema", onDismissRequest = { openTabId = null }) {
+            // Mesma correção acima -- mantém a lista suspensa de "Módulos" na
+            // mesma cor flat da barra (sem tonal elevation).
+            DropdownMenu(
+                expanded = openTabId == "sistema",
+                onDismissRequest = { openTabId = null },
+                containerColor = MaterialTheme.colorScheme.surface,
+                tonalElevation = 0.dp,
+            ) {
                 SISTEMA_LINKS.forEach { link ->
                     DropdownMenuItem(
-                        text = { Text(link.label) },
-                        leadingIcon = { Icon(link.icon, contentDescription = null) },
+                        text = { Text(link.label, color = MaterialTheme.colorScheme.onSurface) },
+                        leadingIcon = { Icon(link.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface) },
                         onClick = {
                             openTabId = null
                             when (link.path) {
