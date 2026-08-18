@@ -31,10 +31,18 @@ android {
         applicationId = "com.bragro.mobile"
         minSdk = 24
         targetSdk = 34
-        // Bump p/ o release com a correcao do bug #21 (sync offline: campo
-        // numerico com virgula decimal, ver DomainFormScreen.kt).
-        versionCode = 8
-        versionName = "1.1.6"
+        // Bump -- pedido do usuario ("a versao do app continua 1.16 na
+        // informaçoes do app no android" apos instalar um apk que deveria
+        // ter as correçoes de cor da barra inferior/blocos individuais):
+        // versionName/versionCode sao campos fixos no codigo, NAO mudam
+        // sozinhos a cada build -- sem bump, a tela "Informaçoes do app" do
+        // Android sempre mostra o numero antigo, mesmo com o codigo novo
+        // rodando por dentro. Bump serve como confirmaçao confiavel de que
+        // a instalaçao pegou o apk certo (se apos instalar ainda aparecer
+        // 1.1.6, a instalaçao nao pegou o apk novo -- se aparecer 1.1.7,
+        // pegou, e as cores tem que estar corrigidas tambem).
+        versionCode = 9
+        versionName = "1.1.7"
 
         // URLs do backend (o MESMO backend do site publicado -- ver
         // native-app/README.md). Trocaveis por variante/ambiente sem
