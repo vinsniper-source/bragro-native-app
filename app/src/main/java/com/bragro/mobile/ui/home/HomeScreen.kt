@@ -1914,13 +1914,17 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
                     // 3 itens) + o numero right-aligned ao lado -- pedido do
                     // usuario ("alinhar o R$ de milho e sorgo ao de soja,
                     // sem mexer nos valores"), ver comentario em
-                    // formatMoneyNumberOnly acima.
+                    // formatMoneyNumberOnly acima. 22dp era estreito demais
+                    // pro "R$" em negrito -- cortava o "$" (TextOverflow.Clip
+                    // padrao); 28dp com softWrap=false garante o texto
+                    // completo numa linha só.
                     Text(
                         "R$",
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
+                        softWrap = false,
                         style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.width(22.dp),
+                        modifier = Modifier.width(28.dp),
                     )
                     Text(
                         formatMoneyNumberOnly(q.valor),
@@ -1928,7 +1932,7 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
                         textAlign = TextAlign.End,
                         maxLines = 1,
                         style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
-                        modifier = Modifier.width(62.dp),
+                        modifier = Modifier.width(56.dp),
                     )
                     Text(
                         " / ${q.unidade}",

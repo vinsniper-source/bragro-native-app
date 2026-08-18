@@ -538,26 +538,47 @@ fun DomainListScreen(
                     // no canto superior direito... retire o bloco e os
                     // rótulos dos dois"). Faturamento volta a ocupar a linha
                     // inteira sozinho.
-                    val faturamentoBlock = ModuleBlockSpec("Faturamento", vertical = false) {
-                        linkedDomains.forEach { (id, label) ->
-                            val active = id == domainId
-                            ModuleIconButton(
-                                ModuleIconItem(id, linkedDomainIcon(id), label, active = active),
-                            ) { if (!active) onSwitchDomain(id) }
+                    // Título "Faturamento" FORA do bloco/Card -- pedido do
+                    // usuário ("em cobrança deixe a palavra faturamento fora
+                    // do bloco"): mesmo estilo que ModuleCategoryBlock usava
+                    // pro título (titleSmall, negrito), só que desenhado
+                    // manualmente aqui em vez de vir de dentro do Card. Os
+                    // dois (título + Card) precisam estar dentro de um
+                    // Column -- sem isso, dois composables "soltos" dentro de
+                    // um item() de LazyColumn se sobrepõem em vez de
+                    // empilhar.
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            "Faturamento",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+                        )
+                        // Bloco externo -- pedido do usuário ("coloque um
+                        // bloco externo na categoria faturamento no módulo
+                        // cobranças"), mesmo tratamento (Card com fundo verde
+                        // translúcido) já aplicado em Gestão Financeira
+                        // (FinanceiroScreen.kt) -- só ESTE bloco
+                        // (Faturamento), não ModuleCategoryBlock como um todo
+                        // (que os demais ~14 módulos também usam, sem Card
+                        // externo por pedido anterior).
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                        ) {
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                linkedDomains.forEach { (id, label) ->
+                                    val active = id == domainId
+                                    ModuleIconButton(
+                                        ModuleIconItem(id, linkedDomainIcon(id), label, active = active),
+                                    ) { if (!active) onSwitchDomain(id) }
+                                }
+                            }
                         }
-                    }
-                    // Bloco externo -- pedido do usuário ("coloque um bloco
-                    // externo na categoria faturamento no módulo cobranças"),
-                    // mesmo tratamento (Card com fundo verde translúcido) já
-                    // aplicado em Gestão Financeira (FinanceiroScreen.kt) --
-                    // só ESTE bloco (Faturamento), não ModuleCategoryBlock
-                    // como um todo (que os demais ~14 módulos também usam,
-                    // sem Card externo por pedido anterior).
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
-                    ) {
-                        ModuleCategoryBlock(faturamentoBlock, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp))
                     }
                 }
             }
@@ -1492,11 +1513,10 @@ private fun GenericPeriodoDropdown(
         LabeledIconButton(
             icon = Icons.Filled.CalendarMonth,
             label = "Período",
-            // Sempre verde -- pedido do usuário ("coloque ícones período e
-            // filtros na cor verde"); antes só ficava verde quando havia um
-            // filtro ativo (LocalContentColor.current nos demais casos),
-            // inconsistente com o resto dos ícones de módulo (sempre verdes).
-            tint = MaterialTheme.colorScheme.primary,
+            // Sem tint proprio -- herda o padrao onSurface (preto/branco) do
+            // LabeledIconButton, pedido do usuario ("tire o fundo verde de
+            // todos os blocos individuais... coloque fontes e icones
+            // branco/preto"). O tint=primary fixo de antes foi removido.
             onClick = { expanded = true },
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {

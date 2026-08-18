@@ -910,9 +910,8 @@ private fun PeriodoDropdown(
         LabeledIconButton(
             icon = Icons.Filled.CalendarMonth,
             label = "Período",
-            // Sempre verde -- pedido do usuário, ver comentário em
-            // DomainListScreen.kt (GenericPeriodoDropdown).
-            tint = MaterialTheme.colorScheme.primary,
+            // Sem tint proprio -- herda onSurface (preto/branco), pedido do
+            // usuario ("tire o fundo verde de todos os blocos individuais").
             onClick = { expanded = true },
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -973,9 +972,8 @@ private fun BancoDropdown(banco: String?, options: List<LookupEntity>, onSelect:
         LabeledIconButton(
             icon = Icons.Filled.FilterAlt,
             label = "Filtros",
-            // Sempre verde -- pedido do usuário, ver comentário em
-            // DomainListScreen.kt (GenericPeriodoDropdown).
-            tint = MaterialTheme.colorScheme.primary,
+            // Sem tint proprio -- herda onSurface (preto/branco), pedido do
+            // usuario ("tire o fundo verde de todos os blocos individuais").
             onClick = { expanded = true },
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {

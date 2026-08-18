@@ -60,17 +60,18 @@ data class ModuleIconItem(
 // FinanceiroScreen.kt), não o ícone que encolhe.
 private val MODULE_ICON_SIZE = 22.dp
 
-// Fundo dos blocos de ícone = MESMA cor da barra inferior (surface -- ver
-// BottomNavBar.kt) -- pedido do usuário ("nos módulos coloque o fundo dos
-// blocos dos ícones na mesma cor da barra inferior e corrija os que
-// tiverem sem padrão"). Passou por duas cores diferentes antes (translúcido
-// verde, depois verde sólido) e os dois componentes (ModuleIconButton/
-// LabeledIconButton) tinham ficado com fundos DIFERENTES entre si -- exatamente
-// o "sem padrão" que o usuário apontou. Agora os dois usam o mesmo par
-// fundo/conteúdo: fundo = surface, ícone/rótulo = primary (verde), idêntico
-// ao esquema já usado na barra inferior (mesmo "padrão" pedido).
+// Fundo dos blocos de ícone = surface (sem preenchimento verde) -- ver
+// BottomNavBar.kt. Ícone/rótulo em preto/branco (onSurface, adapta sozinho
+// ao tema claro/escuro) -- pedido do usuário ("coloque fontes e ícones
+// branco/preto e tire o fundo verde de todos os blocos individuais do app
+// native"): reverte o esquema anterior (fundo = surface, ícone/rótulo =
+// primary/verde) pro ícone/rótulo também deixarem de ser verdes. Como TODOS
+// os blocos individuais (Dados/Operações/Arquivos, Filtros, Período,
+// Gráficos, Calculadoras, Imprimir, Nuvem, Copiar etc., em todos os
+// módulos) passam por ModuleIconButton/LabeledIconButton, essa única
+// mudança já vale pra "todos os blocos individuais" de uma vez.
 private val MODULE_ICON_FG: Color
-    @Composable get() = MaterialTheme.colorScheme.primary
+    @Composable get() = MaterialTheme.colorScheme.onSurface
 
 // Cada ícone virou seu próprio bloco (Card individual) -- pedido do usuário
 // ("em todos os módulos, por categorias: dados, operações, arquivos torne-os

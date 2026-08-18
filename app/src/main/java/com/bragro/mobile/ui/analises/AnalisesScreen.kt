@@ -411,9 +411,9 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                     LabeledIconButton(
                         icon = Icons.Filled.FilterAlt,
                         label = "Filtros",
-                        // Sempre verde -- pedido do usuário, ver comentário
-                        // em DomainListScreen.kt (GenericPeriodoDropdown).
-                        tint = MaterialTheme.colorScheme.primary,
+                        // Sem tint proprio -- herda onSurface (preto/branco),
+                        // pedido do usuario ("tire o fundo verde de todos os
+                        // blocos individuais").
                         onClick = { filtrosOpen = !filtrosOpen },
                     )
                     // Ícone de recolher/expandir movido pra dentro de Dados,
