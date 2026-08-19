@@ -34,6 +34,8 @@ import com.bragro.mobile.ui.login.LoginScreen
 import com.bragro.mobile.ui.insumos.ControleInsumosScreen
 import com.bragro.mobile.ui.nfe.NfeImportScreen
 import com.bragro.mobile.ui.nfe.NotaMultiItemScreen
+import com.bragro.mobile.ui.pedidos.PedidoMultiItemScreen
+import com.bragro.mobile.ui.cotacoes.CotacaoMultiItemScreen
 import com.bragro.mobile.ui.operacoes.OperacoesScreen
 import com.bragro.mobile.ui.romaneio.RomaneioQuickScreen
 import com.bragro.mobile.ui.seguranca.SegurancaScreen
@@ -268,13 +270,27 @@ fun BRAgroNavHost() {
             arguments = listOf(navArgument("domainId") { type = NavType.StringType }),
         ) { backStackEntry ->
             val domainId = backStackEntry.arguments?.getString("domainId") ?: return@composable
-            DomainFormScreen(
-                domainId = domainId,
-                recordId = null,
-                onBack = { navController.popBackStack() },
-                onSaved = { navController.popBackStack() },
-                onOpenNotaMultiItem = { navController.navigate(Routes.NOTA_MULTI_ITEM) },
-            )
+            // "Novo modelo" de Pedidos/Cotações (vários itens no mesmo
+            // lançamento) -- pedido do usuário ("insira o novo modelo dos
+            // modulos cotaçoes e pedidos no app native"), réplica de
+            // data-table.tsx no site: pra CRIAR um registro novo nesses 2
+            // domínios, a tela de vários itens substitui COMPLETAMENTE o
+            // formulário genérico de 1 item só (igual no site, onde
+            // PedidoMultiItemForm/CotacaoMultiItemForm tomam o lugar de
+            // RecordForm quando "!editing"). Editar um registro já existente
+            // (DOMAIN_FORM_EDIT, abaixo) continua na tela genérica -- "vários
+            // itens de uma vez" só faz sentido ao criar.
+            when (domainId) {
+                "pedidos" -> PedidoMultiItemScreen(onBack = { navController.popBackStack() })
+                "cotacoesfornecedores" -> CotacaoMultiItemScreen(onBack = { navController.popBackStack() })
+                else -> DomainFormScreen(
+                    domainId = domainId,
+                    recordId = null,
+                    onBack = { navController.popBackStack() },
+                    onSaved = { navController.popBackStack() },
+                    onOpenNotaMultiItem = { navController.navigate(Routes.NOTA_MULTI_ITEM) },
+                )
+            }
         }
         composable(
             Routes.DOMAIN_FORM_EDIT,

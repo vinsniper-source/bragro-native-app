@@ -49,6 +49,10 @@ import com.bragro.mobile.data.model.NoticesRequest
 import com.bragro.mobile.data.model.NoticesResponse
 import com.bragro.mobile.data.model.NotaMultiItemRequest
 import com.bragro.mobile.data.model.NotaMultiItemResponse
+import com.bragro.mobile.data.model.PedidoMultiItemRequest
+import com.bragro.mobile.data.model.PedidoMultiItemResponse
+import com.bragro.mobile.data.model.CotacaoMultiItemRequest
+import com.bragro.mobile.data.model.CotacaoMultiItemResponse
 import com.bragro.mobile.data.model.OperacoesRequest
 import com.bragro.mobile.data.model.OperacoesResponse
 import com.bragro.mobile.data.model.NotificationsRequest
@@ -155,6 +159,15 @@ interface MobileApi {
     // ("implemente tudo que falta ainda para o app native da plataforma").
     @POST("api/mobile/nota-multi-item")
     suspend fun notaMultiItem(@Body body: NotaMultiItemRequest): Response<NotaMultiItemResponse>
+
+    // Pedidos/Cotações: "novo modelo" de vários itens (pedido do usuario
+    // "insira o novo modelo dos modulos cotaçoes e pedidos no app native"),
+    // mesmo padrao do notaMultiItem acima.
+    @POST("api/mobile/pedido-multi-item")
+    suspend fun pedidoMultiItem(@Body body: PedidoMultiItemRequest): Response<PedidoMultiItemResponse>
+
+    @POST("api/mobile/cotacao-multi-item")
+    suspend fun cotacaoMultiItem(@Body body: CotacaoMultiItemRequest): Response<CotacaoMultiItemResponse>
 
     // Visão "Operação" agrupada (gap encontrado na auditoria módulo-a-módulo,
     // pedido do usuario "implemente tudo que falta ainda para o app native

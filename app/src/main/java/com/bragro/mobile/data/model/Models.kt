@@ -684,6 +684,74 @@ data class NotaMultiItemResponse(
     val error: String? = null,
 )
 
+// Pedidos/Cotações: "novo modelo" de vários itens no mesmo lançamento --
+// pedido do usuário ("insira o novo modelo dos modulos cotaçoes e pedidos no
+// app native"), réplica de pedido-multi-item-button.tsx/
+// cotacao-multi-item-button.tsx no site (tasks #234/#235). Mesmo critério do
+// NotaMultiItem* acima: chama DIRETO createPedidoMultiItemAction()/
+// createCotacaoMultiItemAction() via /api/mobile/pedido-multi-item e
+// /api/mobile/cotacao-multi-item -- nenhuma lógica de negócio duplicada em
+// Kotlin (Saldo/%/Status cumulativos, baixa em Estoque, Índice de Vantagem
+// continuam calculados só no servidor).
+@Serializable
+data class PedidoMultiItemItemData(
+    val categoria: String? = null,
+    val item: String = "",
+    val unidade: String? = null,
+    val qtdPedida: Double = 0.0,
+    val qtdEntregue: Double? = null,
+)
+
+@Serializable
+data class PedidoMultiItemRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val noPedido: String,
+    val setor: String? = null,
+    val fornecedor: String? = null,
+    val safra: String? = null,
+    val cultura: String? = null,
+    val dataEntrega: String? = null,
+    val nf: String? = null,
+    val itens: List<PedidoMultiItemItemData>,
+)
+
+@Serializable
+data class PedidoMultiItemResponse(
+    val ok: Boolean,
+    val count: Int? = null,
+    val error: String? = null,
+)
+
+@Serializable
+data class CotacaoMultiItemItemData(
+    val categoria: String = "",
+    val item: String = "",
+    val quantidade: Double? = null,
+    val unidade: String? = null,
+    val precoUnitario: Double = 0.0,
+    val prazoEntregaDias: Double? = null,
+)
+
+@Serializable
+data class CotacaoMultiItemRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val data: String,
+    val fornecedor: String,
+    val condicaoPagamento: String? = null,
+    val validadeProposta: String? = null,
+    val observacoes: String? = null,
+    val itens: List<CotacaoMultiItemItemData>,
+)
+
+@Serializable
+data class CotacaoMultiItemResponse(
+    val ok: Boolean,
+    val count: Int? = null,
+    val error: String? = null,
+)
+
 // Painel "Controle de Insumos" (gap encontrado na auditoria módulo-a-módulo
 // contra o site, pedido do usuário "implemente tudo que falta ainda para o
 // app native da plataforma") -- painel SOMENTE-LEITURA, ver
