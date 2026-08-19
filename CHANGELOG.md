@@ -18,6 +18,16 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.0] -- 2026-08-19
+
+- Pedidos e Cotações de Fornecedores ganharam o "novo modelo" de vários
+  itens no mesmo lançamento (cabeçalho preenchido uma vez + itens
+  repetíveis), igual ao que o site já tinha -- antes, criar um Pedido ou
+  uma Cotação no app usava o formulário genérico de 1 item só. Chama
+  direto as mesmas Server Actions do site (`createPedidoMultiItemAction`/
+  `createCotacaoMultiItemAction`), nenhuma lógica de negócio duplicada em
+  Kotlin.
+
 ## [1.1.0] -- 2026-08-12
 
 - Preenchimento automático de despesas fixas mensais (Financeiro).
