@@ -18,6 +18,21 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.3] -- 2026-08-21
+
+- Fundo do app (claro e escuro) trocado pra mesma tonalidade da barra
+  inferior (verde da marca bem diluído sobre o branco/grafite, mesma
+  mistura que o Material3 já usa na própria barra e nos menus suspensos)
+  -- antes o fundo geral era neutro, sem nenhum tom, enquanto a barra
+  inferior aparecia com um véu esverdeado sutil.
+
+## [1.2.2] -- 2026-08-21
+
+- Fundo do app (claro e escuro) ajustado pra bater com a cor real de
+  --background do site (quase branco no claro, grafite quente no escuro,
+  sem nenhum terracota) -- antes era um bege/cinza neutro levemente
+  diferente.
+
 ## [1.2.1] -- 2026-08-21
 
 - Início: removida a borda de todos os blocos (Canvas, Estágio/Janela,
