@@ -18,6 +18,13 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.1] -- 2026-08-21
+
+- Início: removida a borda de todos os blocos (Canvas, Estágio/Janela,
+  Sugestão adaptativa, Mural, Alertas, Monitor, KPIs, Clima, Câmbio,
+  Cotações, Destaques), igual ao ajuste equivalente feito no site --
+  mesmas cores de tema, só sem o contorno verde.
+
 ## [1.2.0] -- 2026-08-19
 
 - Pedidos e Cotações de Fornecedores ganharam o "novo modelo" de vários

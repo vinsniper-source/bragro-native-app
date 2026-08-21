@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -92,7 +93,7 @@ private val JANELAS_CANVAS = listOf(30, 60, 90, 180)
  * linha (estágio + seletor) já cobre o essencial desta sequência. */
 @Composable
 fun EstagioJanelaRow(estagio: String, janelaAtual: Int, onJanelaChange: (Int) -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Estágio da safra na janela: ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -146,7 +147,7 @@ fun CanvasCirclesRow(
     onSelect: (String) -> Unit,
     onImportKml: () -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
         Column {
         if (fazendas.isEmpty()) {
             Text(
@@ -256,7 +257,7 @@ fun CanvasCirclesRow(
  * site pro motivo do agrupamento). */
 @Composable
 fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -368,6 +369,7 @@ fun AdaptiveSuggestionCard(estagio: String, onOpenDomain: (String) -> Unit) {
         modifier = Modifier.fillMaxWidth().let { m ->
             if (sugestao.domainId != null) m.clickable { onOpenDomain(sugestao.domainId) } else m
         },
+        border = BorderStroke(0.dp, Color.Transparent),
     ) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(

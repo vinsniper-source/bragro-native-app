@@ -3,6 +3,7 @@ package com.bragro.mobile.ui.home
 import android.app.Application
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -918,7 +919,7 @@ fun HomeScreen(
 
             if (data == null) {
                 item(key = "empty") {
-                    Card(modifier = Modifier.fillMaxWidth()) {
+                    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
                         Text(
                             if (loading) "Carregando..." else "Sem dados ainda. Conecte-se à internet e atualize.",
                             modifier = Modifier.padding(16.dp),
@@ -1228,7 +1229,7 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, vie
         )
     }
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 // Ícone estilo KPI (badge circular colorido) no cabeçalho --
@@ -1356,7 +1357,7 @@ private fun AlertsCard(alerts: List<AlertData>, onOpenDomain: (String) -> Unit) 
     // Fechado por padrão -- pedido do usuário ("os blocos mural, alertas e
     // monitor tem que aparecer fechados").
     var expanded by remember { mutableStateOf(false) }
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 SectionBadgeIcon(Icons.Filled.WarningAmber, BrOrange)
@@ -1427,7 +1428,7 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (
     // Fechado por padrão -- pedido do usuário ("os blocos mural, alertas e
     // monitor tem que aparecer fechados").
     var expanded by remember { mutableStateOf(false) }
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Bolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
@@ -1660,7 +1661,7 @@ private fun KpiCard(kpi: Kpi, modifier: Modifier = Modifier, fillHeight: Boolean
     // no card do Financeiro. Agora o valor/quantidade fica numa linha
     // PRÓPRIA, com a largura TOTAL do card, sem nenhum vizinho disputando
     // espaço -- nunca mais é cortado nem força a altura de ninguém.
-    Card(modifier = modifier) {
+    Card(modifier = modifier, border = BorderStroke(0.dp, Color.Transparent)) {
         Column(modifier = Modifier.padding(12.dp).fillMaxWidth().let { if (fillHeight) it.fillMaxHeight() else it }) {
             Row(verticalAlignment = Alignment.Top, modifier = Modifier.let { if (fillHeight) it.weight(1f) else it }) {
                 // Só contorno, sem preenchimento -- pedido do usuário
@@ -1756,7 +1757,7 @@ private fun MiniCardHeaderWithRefresh(
 
 @Composable
 private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
-    Card(modifier = modifier) {
+    Card(modifier = modifier, border = BorderStroke(0.dp, Color.Transparent)) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MiniCardHeaderWithRefresh("Clima", Icons.Filled.WbSunny, BrYellow, MaterialTheme.typography.titleMedium, onRefresh)
             // Temperatura atual centralizada, máx/mín centralizado na linha
@@ -1789,7 +1790,7 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh
 
 @Composable
 private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
-    Card(modifier = modifier) {
+    Card(modifier = modifier, border = BorderStroke(0.dp, Color.Transparent)) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MiniCardHeaderWithRefresh("Câmbio", Icons.Filled.CurrencyExchange, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
             // Ícone de variação (alta/baixa) + porcentagem do dia ao lado do
@@ -1860,7 +1861,7 @@ private fun FxVariacaoTag(pct: Double?) {
 // sem negrito seguido do valor em negrito, cada um na sua própria linha.
 @Composable
 private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
-    Card(modifier = modifier) {
+    Card(modifier = modifier, border = BorderStroke(0.dp, Color.Transparent)) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             // Renomeado -- pedido do usuário ("altere o kpi cotações
             // agrícolas para cotações grãos").
@@ -1970,7 +1971,7 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
 
 @Composable
 private fun DestaquesCard(data: HomeData, updatedAtMillis: Long?, modifier: Modifier = Modifier.fillMaxWidth()) {
-    Card(modifier = modifier) {
+    Card(modifier = modifier, border = BorderStroke(0.dp, Color.Transparent)) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MiniCardHeader("Destaques", Icons.Filled.Star, BrYellow, MaterialTheme.typography.titleMedium)
             Row {
