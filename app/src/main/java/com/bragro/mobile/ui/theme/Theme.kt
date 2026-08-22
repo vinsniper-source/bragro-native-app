@@ -93,21 +93,19 @@ private val LightColors = lightColorScheme(
     secondaryContainer = Color(0xFFFCEFCD),
     onSecondaryContainer = Color(0xFF4D3C00),
     tertiary = BrBlue,
-    // Fundo na MESMA tonalidade da barra inferior -- pedido do usuário
-    // ("coloque o fundo na tonalidade da cor da barra inferior do app").
-    // A barra inferior (BRAgroBottomBar, ver BottomNavBar.kt) usa
-    // containerColor = surface + tonalElevation = 3.dp -- o Material3 NÃO
-    // pinta o container com a cor "surface" pura nesse caso, ele mistura
-    // "primary" (surfaceTint) por cima em 8,24% de opacidade (fórmula oficial
-    // ColorScheme.surfaceColorAtElevation: alpha = (4.5*ln(dp+1)+2)/100).
-    // Calculado à mão aqui (primary=BrGreenPrimaryLight sobre o branco quase
-    // puro do site, oklch(0.99 0.002 60) = 0xFFFDFBFA) porque cor de tema
-    // não pode ser uma função composable neste nível -- resultado: um
-    // branco com leve véu esverdeado, igual ao tom que já aparecia na barra
-    // inferior/menus suspensos.
-    background = Color(0xFFEAEDEA),
-    surface = Color(0xFFEAEDEA),
-    surfaceVariant = Color(0xFFEAEDEA),
+    // Fundo verde bem mais perceptível -- pedido do usuário ("deixe o tom
+    // bem mais forte/perceptível, puxando mais pro verde... a cor da barra
+    // inferior seja verde também"). Primeira tentativa (8,24%, igual à
+    // mistura padrão de tonalElevation=3.dp do Material3) ficou sutil
+    // demais pra notar no aparelho. Agora primary=BrGreenPrimaryLight
+    // misturado a 22% sobre o branco quase puro do site (0xFFFDFBFA) --
+    // resultado um verde-sálvia claramente visível, não mais um véu quase
+    // imperceptível. A barra inferior usa esta MESMA cor (ver
+    // BottomNavBar.kt, tonalElevation zerado pra não somar outra camada de
+    // verde em cima e ficar mais escura/dessincronizada do resto do fundo).
+    background = Color(0xFFCBD5CE),
+    surface = Color(0xFFCBD5CE),
+    surfaceVariant = Color(0xFFCBD5CE),
     outline = Color(0xFF4A5C57),
     outlineVariant = Color(0xFFC3D0CB),
 )
@@ -125,13 +123,12 @@ private val DarkColors = darkColorScheme(
     secondaryContainer = Color(0xFF5E4F26),
     onSecondaryContainer = Color(0xFFF4DFA5),
     tertiary = BrBlueTertiaryDark,
-    // Mesmo raciocínio do LightColors acima (ver comentário lá) -- fundo na
-    // tonalidade da barra inferior (surface + tonalElevation 3dp, primary
-    // misturado em 8,24%), agora com o par claro/escuro do verde
-    // (BrGreenPrimaryDark sobre o grafite quase-preto do site).
-    background = Color(0xFF1D1D16),
-    surface = Color(0xFF1D1D16),
-    surfaceVariant = Color(0xFF1D1D16),
+    // Mesmo raciocínio do LightColors acima (ver comentário lá) -- 22% de
+    // BrGreenPrimaryDark sobre o grafite quase-preto do site (0xFF16100B),
+    // um verde musgo escuro nitidamente visível.
+    background = Color(0xFF2A3227),
+    surface = Color(0xFF2A3227),
+    surfaceVariant = Color(0xFF2A3227),
     outline = Color(0xFF7A9186),
     outlineVariant = Color(0xFF3F4A46),
 )

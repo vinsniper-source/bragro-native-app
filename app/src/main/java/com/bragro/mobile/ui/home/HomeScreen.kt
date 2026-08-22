@@ -983,23 +983,18 @@ fun HomeScreen(
                 }
             }
             }
-            if (data.hasWidget("inicio.estagio")) {
+            if (data.hasWidget("inicio.estagio") || data.hasWidget("inicio.sugestao")) {
             data.canvas?.let { canvas ->
-                item(key = "estagio-janela") {
-                    EstagioJanelaRow(
+                item(key = "estagio-sugestao") {
+                    EstagioSugestaoCard(
                         estagio = canvas.estagio,
+                        mostrarEstagio = data.hasWidget("inicio.estagio"),
                         janelaAtual = janelaCanvas,
                         onJanelaChange = { dias -> viewModel.setJanela(logoScreenContext, dias) },
+                        mostrarSugestao = data.hasWidget("inicio.sugestao"),
+                        onOpenDomain = onOpenDomain,
                     )
                 }
-            }
-            }
-            if (data.hasWidget("inicio.captura")) {
-            item(key = "quick-capture") { QuickCaptureBar(onOpenFinanceiro = { onOpenDomain("financeiro") }) }
-            }
-            if (data.hasWidget("inicio.sugestao")) {
-            data.canvas?.let { canvas ->
-                item(key = "sugestao-adaptativa") { AdaptiveSuggestionCard(canvas.estagio, onOpenDomain) }
             }
             }
 

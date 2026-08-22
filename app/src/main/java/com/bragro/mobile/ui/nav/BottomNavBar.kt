@@ -229,13 +229,15 @@ fun BRAgroBottomBar(
         }
     }
 
-    // tonalElevation = 3.dp -- de propósito, mesmo valor usado por padrão
-    // nos menus suspensos (MenuDefaults.TonalElevation) -- pedido do
-    // usuário ("quero aquele tom de verde de fundo que está na lista
-    // suspensa em todos os módulos no modo escuro e claro"): igualar a
-    // elevação garante o MESMO tom (a mistura de primary sobre surface usa
-    // a mesma fórmula em qualquer Surface/Card/NavigationBar do Material3).
-    NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 3.dp) {
+    // tonalElevation = 0.dp -- pedido do usuário ("a cor da barra inferior
+    // seja verde também", depois de eu deixar o fundo geral do app num
+    // verde bem mais forte). "surface" já É o verde forte agora (ver
+    // Theme.kt, 22% de primary misturado no fundo) -- manter tonalElevation
+    // em 3.dp somaria MAIS uma camada de verde por cima só na barra,
+    // deixando ela mais escura/dessincronizada do resto do fundo em vez de
+    // "igual". Sem elevação extra aqui, containerColor = surface bate 1:1
+    // com o fundo das telas.
+    NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
         BOTTOM_TABS.forEach { tab ->
             val selected = tab.directDomainId == currentDomainId ||
                 tab.items.any { it is SectorTarget.Domain && it.domainId == currentDomainId }

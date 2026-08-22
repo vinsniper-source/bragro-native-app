@@ -18,6 +18,21 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.5] -- 2026-08-21
+
+- Bloco de Estágio da safra e a sugestão adaptativa (dica de pragas etc.)
+  viraram um card só, sem repetir o nome da fase -- antes eram dois blocos
+  separados e a sugestão começava repetindo a mesma fase que já aparecia
+  no rótulo de estágio.
+
+## [1.2.4] -- 2026-08-21
+
+- Fundo do app bem mais verde/perceptível (22% de mistura em vez de 8%) --
+  a versão anterior ficou sutil demais pra notar no aparelho.
+- Barra inferior agora usa exatamente o mesmo tom verde do fundo (sem
+  elevação extra por cima), ficando visivelmente verde igual pedido.
+- Removido o bloco de captura rápida por voz/texto (microfone) da Início.
+
 ## [1.2.3] -- 2026-08-21
 
 - Fundo do app (claro e escuro) trocado pra mesma tonalidade da barra

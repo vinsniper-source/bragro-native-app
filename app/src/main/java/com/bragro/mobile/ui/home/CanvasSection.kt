@@ -23,7 +23,6 @@ import androidx.compose.material.icons.filled.Agriculture
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Grass
-import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -85,37 +84,80 @@ private val ESTAGIO_LABEL: Map<String, String> = mapOf(
 
 private val JANELAS_CANVAS = listOf(30, 60, 90, 180)
 
-/** Estágio da safra + seletor de janela (30/60/90/180d) -- mesma linha do
- * site, logo abaixo do Canvas (ver dashboard/page.tsx). Trocar de janela
- * refaz o fetch do Canvas já com o novo período (onJanelaChange). "Ver por
- * operação" (link pro módulo de Operações agrupadas) não tem equivalente no
- * app ainda -- omitido aqui em vez de virar um link quebrado; o resto da
- * linha (estágio + seletor) já cobre o essencial desta sequência. */
+/** Estágio da safra + seletor de janela (30/60/90/180d) + sugestão
+ * adaptativa, unidos num card só -- pedido do usuário ("junte estagio e
+ * sugestao num bloco só, sem repetir a fase"), mesmo ajuste feito no site
+ * (ver dashboard/page.tsx). Antes eram 2 blocos separados e a sugestão
+ * repetia o nome da fase que já aparecia no rótulo de estágio (ex.: rótulo
+ * "Vegetativo" + sugestão "Fase vegetativa: bom momento..."). Cada metade
+ * ainda liga/desliga pelo próprio toggle de permissão (mostrarEstagio/
+ * mostrarSugestao) -- só o Card em volta é compartilhado quando os dois
+ * estão ligados. "Ver por operação" (link pro módulo de Operações
+ * agrupadas) não tem equivalente no app ainda -- omitido em vez de virar
+ * um link quebrado. */
 @Composable
-fun EstagioJanelaRow(estagio: String, janelaAtual: Int, onJanelaChange: (Int) -> Unit) {
+fun EstagioSugestaoCard(
+    estagio: String,
+    mostrarEstagio: Boolean,
+    janelaAtual: Int,
+    onJanelaChange: (Int) -> Unit,
+    mostrarSugestao: Boolean,
+    onOpenDomain: (String) -> Unit,
+) {
+    val sugestao = if (mostrarSugestao) ESTAGIO_SUGESTAO[estagio] else null
+    if (!mostrarEstagio && sugestao == null) return
     Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Estágio da safra na janela: ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(ESTAGIO_LABEL[estagio] ?: estagio, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+        Column {
+            if (mostrarEstagio) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Estágio da safra na janela: ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(ESTAGIO_LABEL[estagio] ?: estagio, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        JANELAS_CANVAS.forEach { dias ->
+                            val ativo = dias == janelaAtual
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(if (ativo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                                    .clickable { onJanelaChange(dias) }
+                                    .padding(horizontal = 10.dp, vertical = 5.dp),
+                            ) {
+                                Text(
+                                    "${dias}d",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (ativo) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
             }
-            Spacer(modifier = Modifier.height(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                JANELAS_CANVAS.forEach { dias ->
-                    val ativo = dias == janelaAtual
+            if (sugestao != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .let { m -> if (sugestao.domainId != null) m.clickable { onOpenDomain(sugestao.domainId) } else m }
+                        .padding(horizontal = 12.dp, vertical = if (mostrarEstagio) 8.dp else 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(if (ativo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable { onJanelaChange(dias) }
-                            .padding(horizontal = 10.dp, vertical = 5.dp),
+                        modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Text(
-                            "${dias}d",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Medium,
-                            color = if (ativo) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        Icon(sugestao.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(sugestao.texto, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                    if (sugestao.domainId != null) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(sugestao.label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                        }
                     }
                 }
             }
@@ -350,43 +392,13 @@ fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
 
 private data class Sugestao(val texto: String, val domainId: String?, val label: String, val icon: ImageVector)
 
-// Mesma troca sozinha conforme o estágio calculado pro Canvas (ver
-// ESTAGIO_SUGESTAO em dashboard/page.tsx) -- zero consulta nova, reaproveita
-// canvas.estagio que já alimenta EstagioJanelaRow acima. "indefinido" no
-// site aponta pro módulo de Operações agrupadas, que ainda não tem
-// equivalente no app -- fica só o texto informativo, sem botão quebrado.
+// Texto sem repetir o nome da fase -- pedido do usuário ("junte estagio e
+// sugestao num bloco só, sem repetir a fase"), mesmo critério do site (ver
+// ESTAGIO_SUGESTAO em dashboard/page.tsx). "indefinido" saiu do mapa -- sem
+// operação de safra lançada, a dica seria só mais uma repetição do próprio
+// rótulo de estágio (ver EstagioSugestaoCard acima), sem nenhuma ação nova.
 private val ESTAGIO_SUGESTAO: Map<String, Sugestao> = mapOf(
-    "plantio" to Sugestao("Época de plantio: registre cada operação (data, hectare, insumo) conforme for plantando.", "safra", "Ir para Safra", Icons.Filled.Grass),
-    "vegetativo" to Sugestao("Fase vegetativa: bom momento pra acompanhar pragas e manter os receituários em dia.", "pragas", "Ir para Pragas", Icons.Filled.BugReport),
-    "colheita" to Sugestao("Colheita em andamento: registre romaneios e a produtividade realizada.", "colheita", "Ir para Colheita", Icons.Filled.Agriculture),
-    "indefinido" to Sugestao("Nenhuma operação de safra lançada nesta janela ainda.", null, "", Icons.Filled.HelpOutline),
+    "plantio" to Sugestao("Registre cada operação (data, hectare, insumo) conforme for plantando.", "safra", "Ir para Safra", Icons.Filled.Grass),
+    "vegetativo" to Sugestao("Bom momento pra acompanhar pragas e manter os receituários em dia.", "pragas", "Ir para Pragas", Icons.Filled.BugReport),
+    "colheita" to Sugestao("Registre romaneios e a produtividade realizada.", "colheita", "Ir para Colheita", Icons.Filled.Agriculture),
 )
-
-@Composable
-fun AdaptiveSuggestionCard(estagio: String, onOpenDomain: (String) -> Unit) {
-    val sugestao = ESTAGIO_SUGESTAO[estagio] ?: return
-    Card(
-        modifier = Modifier.fillMaxWidth().let { m ->
-            if (sugestao.domainId != null) m.clickable { onOpenDomain(sugestao.domainId) } else m
-        },
-        border = BorderStroke(0.dp, Color.Transparent),
-    ) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(sugestao.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-            }
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(sugestao.texto, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-            if (sugestao.domainId != null) {
-                Spacer(modifier = Modifier.width(6.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(sugestao.label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
-                    Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-                }
-            }
-        }
-    }
-}
