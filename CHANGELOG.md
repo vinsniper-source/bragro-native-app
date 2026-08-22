@@ -18,6 +18,15 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.6] -- 2026-08-21
+
+- Corrigido: os blocos (Cards) tinham ficado com a MESMA cor do fundo da
+  tela (sem borda + sem contraste = bloco invisível). Cards agora usam um
+  tom próprio, mais claro que o fundo verde (mais escuro no modo escuro),
+  se destacando sem precisar trazer a borda de volta. A barra inferior
+  continua no verde forte de antes (agora presa a "background", não mais a
+  "surface", pra não herdar a nova cor mais clara dos Cards).
+
 ## [1.2.5] -- 2026-08-21
 
 - Bloco de Estágio da safra e a sugestão adaptativa (dica de pragas etc.)

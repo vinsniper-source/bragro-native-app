@@ -229,15 +229,16 @@ fun BRAgroBottomBar(
         }
     }
 
-    // tonalElevation = 0.dp -- pedido do usuário ("a cor da barra inferior
-    // seja verde também", depois de eu deixar o fundo geral do app num
-    // verde bem mais forte). "surface" já É o verde forte agora (ver
-    // Theme.kt, 22% de primary misturado no fundo) -- manter tonalElevation
-    // em 3.dp somaria MAIS uma camada de verde por cima só na barra,
-    // deixando ela mais escura/dessincronizada do resto do fundo em vez de
-    // "igual". Sem elevação extra aqui, containerColor = surface bate 1:1
-    // com o fundo das telas.
-    NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
+    // containerColor = "background" (não mais "surface") -- pedido do
+    // usuário ("a cor da barra inferior seja verde também"). "surface"
+    // passou a ser a cor dos Cards (ver Theme.kt, comentário no
+    // LightColors/DarkColors: precisou virar um tom DIFERENTE do fundo pra
+    // os blocos se destacarem sem borda), então a barra inferior teria
+    // herdado essa cor mais clara/neutra dos Cards por engano se
+    // continuasse presa a "surface". "background" é o verde forte de
+    // verdade (o mesmo da tela toda) -- tonalElevation em 0.dp continua
+    // zerado, sem somar nenhuma camada extra por cima.
+    NavigationBar(containerColor = MaterialTheme.colorScheme.background, tonalElevation = 0.dp) {
         BOTTOM_TABS.forEach { tab ->
             val selected = tab.directDomainId == currentDomainId ||
                 tab.items.any { it is SectorTarget.Domain && it.domainId == currentDomainId }

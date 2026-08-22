@@ -95,17 +95,22 @@ private val LightColors = lightColorScheme(
     tertiary = BrBlue,
     // Fundo verde bem mais perceptível -- pedido do usuário ("deixe o tom
     // bem mais forte/perceptível, puxando mais pro verde... a cor da barra
-    // inferior seja verde também"). Primeira tentativa (8,24%, igual à
-    // mistura padrão de tonalElevation=3.dp do Material3) ficou sutil
-    // demais pra notar no aparelho. Agora primary=BrGreenPrimaryLight
-    // misturado a 22% sobre o branco quase puro do site (0xFFFDFBFA) --
-    // resultado um verde-sálvia claramente visível, não mais um véu quase
-    // imperceptível. A barra inferior usa esta MESMA cor (ver
-    // BottomNavBar.kt, tonalElevation zerado pra não somar outra camada de
-    // verde em cima e ficar mais escura/dessincronizada do resto do fundo).
+    // inferior seja verde também"). primary=BrGreenPrimaryLight misturado a
+    // 22% sobre o branco quase puro do site -- verde-sálvia claramente
+    // visível. A barra inferior usa esta MESMA cor (ver BottomNavBar.kt,
+    // containerColor = colorScheme.background, não mais .surface).
     background = Color(0xFFCBD5CE),
-    surface = Color(0xFFCBD5CE),
-    surfaceVariant = Color(0xFFCBD5CE),
+    // "surface" (cor dos Cards -- AppCard.kt/CardDefaults.cardColors() usam
+    // este token, não "background") virou uma cor DIFERENTE do fundo --
+    // pedido do usuário ("os blocos não tem contorno e não se destacam por
+    // a cor ser a mesma"): antes eu tinha igualado surface=background pra
+    // bater com a barra inferior, só que isso também apagou a diferença
+    // Card vs fundo da tela (sem borda E sem contraste de cor, o bloco
+    // sumia visualmente). Agora surface é um tom bem mais claro/branco
+    // (só 6% de verde) -- os Cards ficam claramente mais claros que o
+    // fundo verde da página, sem precisar trazer a borda de volta.
+    surface = Color(0xFFEFF1EE),
+    surfaceVariant = Color(0xFFEFF1EE),
     outline = Color(0xFF4A5C57),
     outlineVariant = Color(0xFFC3D0CB),
 )
@@ -127,8 +132,12 @@ private val DarkColors = darkColorScheme(
     // BrGreenPrimaryDark sobre o grafite quase-preto do site (0xFF16100B),
     // um verde musgo escuro nitidamente visível.
     background = Color(0xFF2A3227),
-    surface = Color(0xFF2A3227),
-    surfaceVariant = Color(0xFF2A3227),
+    // Cards mais CLAROS que o fundo (convenção Material de elevação no
+    // escuro: quem "flutua" por cima fica mais claro, não mais escuro) --
+    // mesmo motivo do LightColors acima, pra não ficarem invisíveis sem
+    // borda e com a cor igual ao fundo.
+    surface = Color(0xFF434B40),
+    surfaceVariant = Color(0xFF434B40),
     outline = Color(0xFF7A9186),
     outlineVariant = Color(0xFF3F4A46),
 )
