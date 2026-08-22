@@ -18,6 +18,17 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.11] -- 2026-08-22
+
+- KPI Cotações Grãos reescrito pra ficar IDÊNTICO ao card do site (dashboard
+  do site, grid-cols-3 divide-x) -- pedido do usuário ("coloque o kpi
+  cotações grãos como está na plataforma sem abreviar nada"). Antes: 3
+  linhas horizontais (Soja/Milho/Sorgo) com "R$ valor / 60kg / sacas"
+  (unidade abreviada) e sem a praça de referência. Agora: 3 colunas lado a
+  lado, cada uma com ícone+rótulo, preço "R$ valor" sem nenhuma unidade do
+  lado, variação% com seta, e a praça de referência (Grão Direto) por
+  extenso -- exatamente como o site renderiza cada commodity.
+
 ## [1.2.10] -- 2026-08-22
 
 - KPI Cotações Grãos: cada linha (Soja/Milho/Sorgo) agora se distribui em 3

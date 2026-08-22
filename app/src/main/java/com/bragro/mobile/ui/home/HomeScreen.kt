@@ -1900,60 +1900,81 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
             // texto "/60kg/sacas" truncando com "..." só se precisar, sem
             // nunca empurrar o ícone de variação (que é medido primeiro,
             // com prioridade, e sempre cabe).
-            // Linha em 3 colunas de peso igual (rótulo | preço | variação) --
-            // pedido do usuário ("centralize as informações do bloco...
-            // distribua cada linha por todo bloco de forma homogênea"): a
-            // versão anterior deixava tudo colado à esquerda (rótulo+R$+
-            // valor+unidade em sequência), sobrando um vão vazio à direita
-            // do card. Agora as 3 colunas dividem a largura toda em partes
-            // iguais -- rótulo no início da 1ª, preço CENTRALIZADO na 2ª,
-            // variação alinhada ao fim da 3ª -- então as 3 linhas (Soja/
-            // Milho/Sorgo) ocupam o bloco inteiro de ponta a ponta, iguais
-            // entre si.
-            itens.forEach { q ->
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "${q.nome}:",
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.weight(1f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        // "R$" e o número com largura fixa própria -- mesmo
-                        // motivo de antes (alinhar Soja/Milho/Sorgo entre
-                        // si, ver formatMoneyNumberOnly acima), só que agora
-                        // o conjunto inteiro fica centralizado na coluna do
-                        // meio em vez de colado à esquerda.
-                        Text(
-                            "R$",
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            softWrap = false,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.width(28.dp),
-                        )
-                        Text(
-                            formatMoneyNumberOnly(q.valor),
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.End,
-                            maxLines = 1,
-                            style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
-                            modifier = Modifier.width(56.dp),
-                        )
-                        Text(
-                            " / ${q.unidade}",
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            style = MaterialTheme.typography.bodyMedium,
+            // Reescrito pra ser IDÊNTICO ao card do site (dashboard/page.tsx,
+            // grid-cols-3 divide-x) -- pedido do usuário ("coloque o kpi
+            // cotações grãos como está na plataforma sem abreviar nada").
+            // A versão anterior (linhas horizontais Soja/Milho/Sorgo com
+            // "/60kg/sacas" abreviado) foi trocada por 3 colunas verticais
+            // lado a lado, cada uma com: ícone+rótulo, preço em R$ (sem
+            // nenhuma unidade abreviada do lado -- o site não mostra
+            // "/60kg/sacas" nesse card), variação%, e a praça de referência
+            // POR EXTENSO (sem cortar/abreviar o nome da região), exatamente
+            // como o site renderiza cada commodity.
+            Row(modifier = Modifier.fillMaxWidth()) {
+                itens.forEachIndexed { index, q ->
+                    if (index > 0) {
+                        Box(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .padding(vertical = 2.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant)
+                                .fillMaxHeight(),
                         )
                     }
-                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-                        FxVariacaoTag(q.variacaoPct)
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = if (index > 0) 8.dp else 0.dp),
+                        verticalArrangement = Arrangement.spacedBy(1.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(
+                                Icons.Filled.Eco,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(12.dp),
+                            )
+                            Text(
+                                q.nome,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        Text(
+                            "R$ ${formatMoneyNumberOnly(q.valor)}",
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+                        )
+                        val positivo = q.variacaoPct >= 0
+                        val corVariacao = if (positivo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Icon(
+                                if (positivo) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
+                                contentDescription = null,
+                                tint = corVariacao,
+                                modifier = Modifier.size(12.dp),
+                            )
+                            Text(
+                                formatVariacaoPct(q.variacaoPct),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = corVariacao,
+                            )
+                        }
+                        // Praça de referência por extenso, sem abreviar --
+                        // mesmo campo "praca" que o site exibe (Grão Direto).
+                        if (q.praca.isNotBlank()) {
+                            Text(
+                                q.praca,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     }
                 }
             }
