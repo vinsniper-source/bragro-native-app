@@ -18,6 +18,22 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.10] -- 2026-08-22
+
+- KPI Cotações Grãos: cada linha (Soja/Milho/Sorgo) agora se distribui em 3
+  colunas de peso igual (rótulo | preço centralizado | variação), ocupando
+  o bloco de ponta a ponta -- antes tudo ficava colado à esquerda, sobrando
+  um vão vazio à direita.
+- Corrigido bug real: em Configurações, o download do APK às vezes ficava
+  preso em "Baixando..." sem nunca mostrar "concluído". Causa: o card
+  "Aplicativo mobile (Android)" é um item de LazyColumn -- se ele saísse da
+  janela composta da lista (rolar a tela) e voltasse, o Compose recriava a
+  composição e o estado do download (downloading/downloadId), que só usava
+  `remember` simples, era perdido -- a instância nova não sabia mais que um
+  download estava rolando, então quando ele terminava de verdade, nada
+  disparava. Trocado por `rememberSaveable`, que sobrevive a essa recriação
+  (mesmo mecanismo usado pra rotação de tela).
+
 ## [1.2.9] -- 2026-08-22
 
 - Removidas as últimas bordas remanescentes do app inteiro -- pedido do

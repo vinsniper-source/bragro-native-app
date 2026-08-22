@@ -40,6 +40,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -256,8 +257,24 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
     // segunda vez às vezes não"): dentro de um Custom Tab o download roda
     // inteiro no processo do navegador e o app nunca fica sabendo quando
     // termina. Ver ApkInstaller.kt pro porquê completo.
-    var downloading by remember { mutableStateOf(false) }
-    var downloadId by remember { mutableStateOf<Long?>(null) }
+    //
+    // rememberSaveable (não só remember) -- 2º bug real encontrado (usuário
+    // relatou o MESMO sintoma de novo mesmo com o fix acima): este card é
+    // um item de LazyColumn (ver "app-android" em SettingsScreen.kt), então
+    // se ele sair da janela visível/composta da lista (rolar a tela) e
+    // voltar, o Compose descarta e recria a composição -- com `remember`
+    // simples isso zera "downloading"/"downloadId" e desregistra o
+    // BroadcastReceiver (DisposableEffect) SEM avisar o usuário; quando o
+    // download termina de verdade, a instância nova nem sabe que existia um
+    // download em andamento (downloadId perdido), então o toast/instalador
+    // nunca dispara e o botão só volta pra "Baixar" silenciosamente na
+    // próxima recomposição -- exatamente "não passa a mensagem de
+    // concluído". rememberSaveable sobrevive a essa recriação (mesmo
+    // mecanismo usado pra rotação de tela), então o downloadId certo
+    // continua disponível pro receiver comparar quando o download realmente
+    // terminar, não importa quantas vezes o item saia/volte da tela.
+    var downloading by rememberSaveable { mutableStateOf(false) }
+    var downloadId by rememberSaveable { mutableStateOf<Long?>(null) }
     androidx.compose.runtime.DisposableEffect(Unit) {
         val downloadManager = context.getSystemService(android.content.Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
         val receiver = object : android.content.BroadcastReceiver() {

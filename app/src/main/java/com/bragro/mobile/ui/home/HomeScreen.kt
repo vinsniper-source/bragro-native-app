@@ -1900,47 +1900,61 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
             // texto "/60kg/sacas" truncando com "..." só se precisar, sem
             // nunca empurrar o ícone de variação (que é medido primeiro,
             // com prioridade, e sempre cabe).
+            // Linha em 3 colunas de peso igual (rótulo | preço | variação) --
+            // pedido do usuário ("centralize as informações do bloco...
+            // distribua cada linha por todo bloco de forma homogênea"): a
+            // versão anterior deixava tudo colado à esquerda (rótulo+R$+
+            // valor+unidade em sequência), sobrando um vão vazio à direita
+            // do card. Agora as 3 colunas dividem a largura toda em partes
+            // iguais -- rótulo no início da 1ª, preço CENTRALIZADO na 2ª,
+            // variação alinhada ao fim da 3ª -- então as 3 linhas (Soja/
+            // Milho/Sorgo) ocupam o bloco inteiro de ponta a ponta, iguais
+            // entre si.
             itens.forEach { q ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         "${q.nome}:",
                         fontWeight = FontWeight.Medium,
-                        modifier = Modifier.width(56.dp),
+                        modifier = Modifier.weight(1f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    // "R$" num Text de largura fixa proprio (recuo igual pros
-                    // 3 itens) + o numero right-aligned ao lado -- pedido do
-                    // usuario ("alinhar o R$ de milho e sorgo ao de soja,
-                    // sem mexer nos valores"), ver comentario em
-                    // formatMoneyNumberOnly acima. 22dp era estreito demais
-                    // pro "R$" em negrito -- cortava o "$" (TextOverflow.Clip
-                    // padrao); 28dp com softWrap=false garante o texto
-                    // completo numa linha só.
-                    Text(
-                        "R$",
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        softWrap = false,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.width(28.dp),
-                    )
-                    Text(
-                        formatMoneyNumberOnly(q.valor),
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.End,
-                        maxLines = 1,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
-                        modifier = Modifier.width(56.dp),
-                    )
-                    Text(
-                        " / ${q.unidade}",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                    FxVariacaoTag(q.variacaoPct)
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        // "R$" e o número com largura fixa própria -- mesmo
+                        // motivo de antes (alinhar Soja/Milho/Sorgo entre
+                        // si, ver formatMoneyNumberOnly acima), só que agora
+                        // o conjunto inteiro fica centralizado na coluna do
+                        // meio em vez de colado à esquerda.
+                        Text(
+                            "R$",
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.width(28.dp),
+                        )
+                        Text(
+                            formatMoneyNumberOnly(q.valor),
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.End,
+                            maxLines = 1,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+                            modifier = Modifier.width(56.dp),
+                        )
+                        Text(
+                            " / ${q.unidade}",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+                        FxVariacaoTag(q.variacaoPct)
+                    }
                 }
             }
             // Fonte -- pedido do usuário ("a fonte por exemplo cotações é o
