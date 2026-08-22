@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.appFieldColors
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -120,7 +121,20 @@ fun CalcCard(icon: String, title: String, content: @Composable () -> Unit) {
     // agronomic-calculators.tsx no site) -- o Card padrão do tema
     // (ui/theme/AppCard.kt) sempre desenha uma borda verde fina, sobrescrita
     // aqui só nesta calculadora.
-    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
+    // Fundo verde translúcido -- pedido do usuário ("em calculadoras deixe o
+    // fundo verde e os campos brancos como está no restante do app"): antes
+    // usava o Card padrão (colorScheme.surface, neutro/esbranquiçado), igual
+    // qualquer outro bloco -- sem se destacar como os blocos de categoria em
+    // outros módulos. Mesmo tom (colorScheme.primary a 15% de opacidade) já
+    // usado no bloco externo de Gestão Financeira (FinanceiroScreen.kt) e
+    // Cobranças -- os campos continuam brancos por dentro (CalcNumField usa
+    // appFieldColors(), CalcResultField usa colorScheme.surface), então o
+    // contraste "campo branco sobre bloco verde" fica igual ao resto do app.
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+        border = BorderStroke(0.dp, Color.Transparent),
+    ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("$icon $title", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
             content()

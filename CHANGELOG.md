@@ -18,6 +18,35 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.12] -- 2026-08-22
+
+- Calculadoras (Semeadura/Pulverização/Adubação/Colheita/Financeiro):
+  CalcCard agora usa fundo verde translúcido (colorScheme.primary a 15%),
+  mesmo padrão já usado no bloco externo de Gestão Financeira/Cobranças --
+  pedido do usuário ("em calculadoras deixe o fundo verde e os campos
+  brancos como está no restante do app"). Campos continuam brancos por
+  dentro (appFieldColors/colorScheme.surface), então o contraste fica igual
+  ao resto do app.
+- Corrigido bug real (3ª vez que o usuário relatou o mesmo sintoma, mesmo
+  após o fix de rememberSaveable em 1.2.10): "mesmo com o download
+  concluído não aparece a mensagem concluído". Causa: o BroadcastReceiver
+  só recebe o aviso do DownloadManager enquanto o processo do app está
+  vivo -- se o Android mata o processo em segundo plano durante o download,
+  ou atrasa a entrega do broadcast (Doze/economia de bateria), a conclusão
+  passa em branco e o app fica preso em "Baixando..." pra sempre, mesmo com
+  o APK já baixado de verdade. Adicionado um polling de segurança
+  (LaunchedEffect a cada 1,5s consultando DownloadManager.query() direto
+  pelo downloadId) que não depende de broadcast nenhum -- cobre inclusive
+  reabrir o app depois do download ter terminado com o app fechado.
+- Acessos e Segurança: contraste do switch do próprio OWNER (sempre
+  travado/desabilitado, pra não se autodesativar) corrigido -- pedido do
+  usuário ("este botão de selecionar está ativo? parece que ele tá
+  apagado"). O Material3 usava cores padrão de "desabilitado" iguais pra
+  ligado e desligado, deixando um switch realmente ativo com a MESMA
+  aparência apagada de um inativo. Agora tem cores explícitas pro estado
+  desabilitado+ligado (verde da marca, um pouco mais claro), então o OWNER
+  continua vendo claramente que está ativo.
+
 ## [1.2.11] -- 2026-08-22
 
 - KPI Cotações Grãos reescrito pra ficar IDÊNTICO ao card do site (dashboard

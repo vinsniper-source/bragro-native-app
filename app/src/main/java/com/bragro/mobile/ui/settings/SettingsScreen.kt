@@ -52,6 +52,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bragro.mobile.data.repo.SettingsRepository
 import com.bragro.mobile.ui.util.openInCustomTab
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
@@ -275,16 +276,24 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
     // terminar, não importa quantas vezes o item saia/volte da tela.
     var downloading by rememberSaveable { mutableStateOf(false) }
     var downloadId by rememberSaveable { mutableStateOf<Long?>(null) }
+    // finalizarDownload -- extraído pra fora do BroadcastReceiver porque
+    // agora tem DOIS caminhos que podem detectar a conclusão (ver
+    // LaunchedEffect(downloadId) abaixo): o broadcast (mais rápido, quando
+    // funciona) e o polling de segurança (sempre funciona, mesmo se o
+    // broadcast se perder).
+    fun finalizarDownload(downloadManager: android.app.DownloadManager, finishedId: Long) {
+        if (finishedId == -1L || finishedId != downloadId) return
+        downloading = false
+        downloadId = null
+        android.widget.Toast.makeText(context, "Download concluído -- abrindo instalador...", android.widget.Toast.LENGTH_SHORT).show()
+        com.bragro.mobile.ui.util.openApkInstaller(context, downloadManager, finishedId)
+    }
     androidx.compose.runtime.DisposableEffect(Unit) {
         val downloadManager = context.getSystemService(android.content.Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
         val receiver = object : android.content.BroadcastReceiver() {
             override fun onReceive(ctx: android.content.Context, intent: android.content.Intent) {
                 val finishedId = intent.getLongExtra(android.app.DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
-                if (finishedId == -1L || finishedId != downloadId) return
-                downloading = false
-                downloadId = null
-                android.widget.Toast.makeText(context, "Download concluído -- abrindo instalador...", android.widget.Toast.LENGTH_SHORT).show()
-                com.bragro.mobile.ui.util.openApkInstaller(context, downloadManager, finishedId)
+                finalizarDownload(downloadManager, finishedId)
             }
         }
         androidx.core.content.ContextCompat.registerReceiver(
@@ -294,6 +303,56 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
             androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED,
         )
         onDispose { context.unregisterReceiver(receiver) }
+    }
+    // 3º bug real encontrado (usuário relatou de novo, MESMO com o fix de
+    // rememberSaveable acima): "mesmo com o download concluído não aparece a
+    // mensagem concluído". Causa: o BroadcastReceiver dinâmico (acima) só
+    // recebe o aviso enquanto o PROCESSO do app está vivo -- se o Android
+    // matar o processo em segundo plano durante o download (bem comum: apk
+    // grande, usuário troca de app), ou se o sistema atrasar a entrega do
+    // broadcast (Doze/economia de bateria), a conclusão passa em branco: o
+    // DownloadManager termina de verdade e mostra a notificação DELE, mas o
+    // app nunca fica sabendo -- fica preso em "Baixando..." pra sempre, com
+    // downloadId certo salvo (rememberSaveable) mas sem ninguém pra avisar
+    // que já pode limpar o estado. Resolvido com um polling de segurança:
+    // enquanto downloading=true, consulta o status REAL do downloadId no
+    // DownloadManager a cada 1,5s (não depende de broadcast nenhum) -- assim
+    // que STATUS_SUCCESSFUL aparece, finaliza igual ao receiver. Cobre
+    // inclusive o caso de reabrir o app depois que o download já tinha
+    // terminado com o app fechado.
+    LaunchedEffect(downloadId) {
+        val id = downloadId ?: return@LaunchedEffect
+        val downloadManager = context.getSystemService(android.content.Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
+        while (downloadId == id) {
+            val cursor = downloadManager.query(android.app.DownloadManager.Query().setFilterById(id))
+            cursor.use {
+                if (it.moveToFirst()) {
+                    val statusIdx = it.getColumnIndex(android.app.DownloadManager.COLUMN_STATUS)
+                    if (statusIdx >= 0) {
+                        when (it.getInt(statusIdx)) {
+                            android.app.DownloadManager.STATUS_SUCCESSFUL -> {
+                                finalizarDownload(downloadManager, id)
+                                return@LaunchedEffect
+                            }
+                            android.app.DownloadManager.STATUS_FAILED -> {
+                                downloading = false
+                                downloadId = null
+                                android.widget.Toast.makeText(context, "Falha no download -- toque em Baixar pra tentar de novo.", android.widget.Toast.LENGTH_LONG).show()
+                                return@LaunchedEffect
+                            }
+                        }
+                    }
+                } else {
+                    // Registro sumiu do DownloadManager (ex.: usuário limpou
+                    // "Downloads" do sistema manualmente) -- não fica preso
+                    // pra sempre esperando algo que não existe mais.
+                    downloading = false
+                    downloadId = null
+                    return@LaunchedEffect
+                }
+            }
+            delay(1_500)
+        }
     }
     CollapsibleCard("Aplicativo mobile (Android)", icon = { Icon(Icons.Filled.Smartphone, contentDescription = null) }) {
         if (appRelease == null) {

@@ -283,7 +283,36 @@ private fun EquipeCard(
                     // Guard tambem reforcado no servidor (actions.ts e
                     // api/mobile/security/route.ts) pra nao depender so do
                     // client.
-                    Switch(checked = ativo, onCheckedChange = { onToggle(id, it) }, enabled = !busy && role != "OWNER", colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)))
+                    // 2º bug real encontrado (usuário: "este botão de
+                    // selecionar está ativo? parece que ele tá apagado"): o
+                    // OWNER (único membro) É ativo (ativo=true, checked=true
+                    // por padrão do backend), mas como o switch fica
+                    // desabilitado pro próprio OWNER (trava acima), o
+                    // Material3 aplicava as cores PADRÃO de "desabilitado"
+                    // (cinza bem apagado, com a mesma opacidade baixa pra
+                    // ligado OU desligado) -- um switch ativo e um inativo
+                    // ficavam visualmente idênticos quando travados, dando a
+                    // impressão de estar quebrado/apagado mesmo estando
+                    // ligado de verdade. Cores explícitas pro estado
+                    // desabilitado+ligado (verde da marca, só um pouco mais
+                    // claro que o habilitado) resolvem -- o OWNER continua
+                    // vendo claramente "isto está ativo", só não pode
+                    // desativar a si mesmo.
+                    Switch(
+                        checked = ativo,
+                        onCheckedChange = { onToggle(id, it) },
+                        enabled = !busy && role != "OWNER",
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = MaterialTheme.colorScheme.primary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                            disabledCheckedThumbColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                            disabledCheckedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
+                            disabledCheckedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
+                            disabledUncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            disabledUncheckedTrackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f),
+                            disabledUncheckedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+                        ),
+                    )
                     Icon(if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null)
                 }
                 if (expanded) {
