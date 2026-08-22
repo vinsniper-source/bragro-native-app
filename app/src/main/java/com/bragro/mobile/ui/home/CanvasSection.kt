@@ -251,8 +251,10 @@ fun CanvasCirclesRow(
                             modifier = Modifier
                                 .size(18.dp)
                                 .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surface)
-                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
+                                // Sem borda -- pedido do usuário ("tire todas
+                                // as bordas de todo app"); já tinha fundo
+                                // (surface), então continua visível igual.
+                                .background(MaterialTheme.colorScheme.surface),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(

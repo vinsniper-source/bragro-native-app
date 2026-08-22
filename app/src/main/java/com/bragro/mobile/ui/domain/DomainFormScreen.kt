@@ -2,7 +2,6 @@ package com.bragro.mobile.ui.domain
 
 import android.app.Application
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -563,12 +562,11 @@ private fun ComputedFieldDisplay(col: ColumnConfig, raw: String, optionLabels: M
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 4.dp)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
-                // Borda igual à dos campos manuais (OutlinedTextField) --
-                // pedido do usuário ("nos cálculos automáticos dos campos
-                // coloque bordas também como nos campos manuais em todos os
-                // módulos do app native").
-                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp))
+                // Preenchimento igual aos campos manuais (appFieldColors, ver
+                // AppCard.kt), sem borda -- pedido do usuário ("tire todas as
+                // bordas de todo app"), revertendo a borda que antes
+                // igualava este campo aos manuais.
+                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
                 .padding(horizontal = 12.dp, vertical = 12.dp),
         ) {
             // Fonte verde -- pedido do usuário ("nos campos que forem

@@ -6,7 +6,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -1332,17 +1331,19 @@ private fun CollapsibleHeader(title: String, expanded: Boolean, onToggle: () -> 
     }
 }
 
-// Badge circular colorido -- pedido do usuário ("retire o preenchimento
-// verde e deixe apenas a borda em verde, em todo app"): era um círculo com
-// fundo colorido (alpha 0.14), agora é só o contorno fino, sem
-// preenchimento, mesmo critério da borda dos Cards (AppCard.kt).
+// Badge circular colorido -- pedido do usuário ("tire todas as bordas de
+// todo app"), que reverte a fase anterior (só contorno, sem preenchimento).
+// Volta a ter fundo translúcido na própria cor do ícone (mesmo tom de antes
+// da fase de "só borda") pra não ficar sem NENHUM contorno visível --
+// mesmo critério aplicado em AppCard.kt (Cards) e nas pills de seletor
+// (FarmSelectorButton.kt/GlobalFieldSelectorButton.kt).
 @Composable
 private fun SectionBadgeIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color, size: androidx.compose.ui.unit.Dp = 28.dp) {
     Box(
         modifier = Modifier
             .size(size)
             .clip(CircleShape)
-            .border(1.dp, color, CircleShape),
+            .background(color.copy(alpha = 0.14f)),
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(size * 0.55f))
@@ -1661,14 +1662,14 @@ private fun KpiCard(kpi: Kpi, modifier: Modifier = Modifier, fillHeight: Boolean
     Card(modifier = modifier, border = BorderStroke(0.dp, Color.Transparent)) {
         Column(modifier = Modifier.padding(12.dp).fillMaxWidth().let { if (fillHeight) it.fillMaxHeight() else it }) {
             Row(verticalAlignment = Alignment.Top, modifier = Modifier.let { if (fillHeight) it.weight(1f) else it }) {
-                // Só contorno, sem preenchimento -- pedido do usuário
-                // ("retire o preenchimento verde e deixe apenas a borda em
-                // verde, em todo app").
+                // Fundo translúcido em vez de contorno -- pedido do usuário
+                // ("tire todas as bordas de todo app"), mesmo critério de
+                // SectionBadgeIcon acima.
                 Box(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .border(1.dp, kpi.color, CircleShape),
+                        .background(kpi.color.copy(alpha = 0.14f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(kpi.icon, contentDescription = null, tint = kpi.color, modifier = Modifier.size(20.dp))

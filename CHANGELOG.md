@@ -18,6 +18,32 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.9] -- 2026-08-22
+
+- Removidas as últimas bordas remanescentes do app inteiro -- pedido do
+  usuário ("faltou alguns módulos que não retiraram as bordas... tire
+  todas as bordas de todo app"):
+  - `AppCard.kt`: borda padrão de TODO Card do app zerada (era verde fina
+    por padrão, sobrescrita manualmente só no Início/calculadoras). Como
+    todo Card do app passa por aqui, isso já resolve de uma vez os blocos
+    de ícone+rótulo (Dados/Operações/Arquivos, Filtros, Período, Gráficos,
+    Imprimir, Nuvem, Copiar etc. em ModuleIconRow.kt) e a tela "Módulos"
+    (ModulosScreen.kt), que ainda estavam com a borda antiga.
+  - Pills dos seletores globais de fazenda/safra/cultura
+    (FarmSelectorButton.kt/GlobalFieldSelectorButton.kt): borda trocada
+    por preenchimento (mesmo tom dos Cards).
+  - Campo calculado do formulário genérico (DomainFormScreen.kt): borda
+    trocada por preenchimento, igual já feito no CalcResultField das
+    calculadoras.
+  - Badges de ícone de seção (Mural de Avisos, KPIs -- HomeScreen.kt):
+    voltaram a ter fundo translúcido na cor do ícone em vez de só contorno.
+  - Selo de tendência no círculo do Canvas (CanvasSection.kt): borda
+    removida (já tinha fundo).
+  - Mantidos de propósito: o contorno colorido dos círculos de fazenda no
+    Canvas (indica status de custo -- dado real, mesmo critério do site) e
+    o contorno do indicador "Conciliado" no Financeiro (espelha
+    ConciliarDot do site, também dado real).
+
 ## [1.2.8] -- 2026-08-22
 
 - Estendido o preenchimento sem borda (appFieldColors -- ver AppCard.kt) pra

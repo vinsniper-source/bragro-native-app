@@ -15,25 +15,21 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 
-/** Borda fina em TODO Card do app -- pedido do usuário ("borda verde bem
- * fina de acordo com o modo claro/escuro para não dar problema em todos os
- * blocos de toda app"). Em vez de editar centenas de chamadas Card(...)
- * espalhadas pelas telas, cada arquivo troca só o import de
- * androidx.compose.material3.Card por este (MESMA assinatura, MESMOS nomes
- * de parâmetro -- nenhuma chamada existente precisa mudar) e o app inteiro
- * ganha a borda de uma vez, sem duplicar o Card do Material3 (ele só
- * delega, acrescentando o `border` como default).
+/** SEM borda em TODO Card do app -- pedido do usuário ("tire todas as
+ * bordas de todo app"), que reverte a fase anterior deste arquivo (borda
+ * verde fina por padrão). Vários call sites (Início, calculadoras) já
+ * vinham sobrescrevendo a borda pra Transparent manualmente; blocos de
+ * ícone/rótulo (ModuleIconButton/LabeledIconButton em ModuleIconRow.kt) e
+ * cards de outros módulos (ex.: ModuloCard em ModulosScreen.kt) NÃO
+ * sobrescreviam e continuavam com a borda verde antiga -- esse era o "faltou
+ * alguns módulos que não retiraram as bordas" relatado pelo usuário. Como
+ * TODO Card do app passa por aqui (mesmo padrão de import-swap descrito
+ * antes), zerar o default de uma vez só resolve pra tudo, sem precisar
+ * caçar call site por call site. Mesmo critério do site (globals.css:
+ * `--border: transparent`).
  *
- * Verde (MaterialTheme.colorScheme.primary, já ajustado por tema em
- * Theme.kt: mais escuro/saturado no claro, mais suave no escuro) -- pedido
- * do usuário ("todas as bordas finas contornadas com verde"), depois que a
- * textura de fundo/bloco passou a ser uma cor plana só (branco/quase-preto,
- * ver Theme.kt) e a borda ficou responsável por demarcar cada bloco.
- *
- * No modo escuro a borda ganha transparência (35%) além do verde já mais
- * suave -- pedido do usuário ("aumente a transparência, ex: 20% a 40% de
- * opacidade na borda... evita o efeito de vibração visual"). No claro
- * fica opaca, pra manter o contraste alto pedido também.
+ * cardBorderColor() fica só como referência caso o usuário peça borda de
+ * volta em algum ponto específico no futuro -- nenhum call site usa mais.
  */
 @Composable
 private fun cardBorderColor(): androidx.compose.ui.graphics.Color {
@@ -48,7 +44,7 @@ fun Card(
     shape: Shape = CardDefaults.shape,
     colors: CardColors = CardDefaults.cardColors(),
     elevation: CardElevation = CardDefaults.cardElevation(),
-    border: BorderStroke = BorderStroke(1.dp, cardBorderColor()),
+    border: BorderStroke = BorderStroke(0.dp, Color.Transparent),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     androidx.compose.material3.Card(
@@ -69,7 +65,7 @@ fun Card(
     shape: Shape = CardDefaults.shape,
     colors: CardColors = CardDefaults.cardColors(),
     elevation: CardElevation = CardDefaults.elevatedCardElevation(),
-    border: BorderStroke = BorderStroke(1.dp, cardBorderColor()),
+    border: BorderStroke = BorderStroke(0.dp, Color.Transparent),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     androidx.compose.material3.Card(

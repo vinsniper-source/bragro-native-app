@@ -1,7 +1,6 @@
 package com.bragro.mobile.ui.domain
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -90,7 +89,11 @@ fun FarmSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onCh
                 // da tela em vez de truncar com "...".
                 .widthIn(max = 160.dp)
                 .clip(RoundedCornerShape(999.dp))
-                .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), RoundedCornerShape(999.dp))
+                // Preenchimento em vez de borda -- pedido do usuário ("tire
+                // todas as bordas de todo app"); sem fundo a pill ficaria sem
+                // nenhum contorno visível (mesmo erro já corrigido antes nos
+                // Cards, ver AppCard.kt).
+                .background(MaterialTheme.colorScheme.surface)
                 .clickable { menuOpen = true }
                 .padding(horizontal = 10.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,

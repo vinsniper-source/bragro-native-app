@@ -1,7 +1,6 @@
 package com.bragro.mobile.ui.domain
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -91,7 +90,10 @@ fun GlobalFieldSelectorButton(
                 // passar do limite da tela").
                 .widthIn(max = 160.dp)
                 .clip(RoundedCornerShape(999.dp))
-                .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), RoundedCornerShape(999.dp))
+                // Preenchimento em vez de borda -- pedido do usuário ("tire
+                // todas as bordas de todo app"); mesmo critério de
+                // FarmSelectorButton.kt (ver comentário completo lá).
+                .background(MaterialTheme.colorScheme.surface)
                 .clickable { menuOpen = true }
                 .padding(horizontal = 10.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
