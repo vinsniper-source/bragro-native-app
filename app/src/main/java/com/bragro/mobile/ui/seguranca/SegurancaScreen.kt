@@ -72,6 +72,32 @@ private val MODULES = listOf(
     "cobrancas" to "Cobranças", "nfse" to "NFS-e",
 )
 
+// Paridade com o site (seguranca-client.tsx/INICIO_WIDGETS em
+// lib/permissions.ts) -- BUG real de paridade encontrado (usuário: "há
+// ainda campos que não estão selecionados, estão em bloco único"): o site
+// já tinha essa categoria "Início (blocos do painel)" com um Checkbox
+// PRÓPRIO por bloco (Filtros, Canvas, Estágio, Mural, Alertas, Monitor,
+// Insights, KPIs, Clima, Câmbio, Cotações, Destaques -- ids "inicio.*",
+// mesmo array modulosPermitidos, sem coluna nova no banco), mas o app só
+// listava os módulos de topo -- os blocos da Início ficavam de fora da
+// tela de Acessos por completo, sem nenhuma forma de restringir bloco a
+// bloco pra um papel customizado. Mesmos ids/rótulos do site.
+private val INICIO_WIDGETS = listOf(
+    "inicio.filtros" to "Filtros (fazenda/safra/cultura) + Importar KML",
+    "inicio.canvas" to "Fazendas (círculos do Canvas)",
+    "inicio.estagio" to "Estágio da safra / janela",
+    "inicio.sugestao" to "Sugestão adaptativa",
+    "inicio.mural" to "Mural de Avisos",
+    "inicio.alertas" to "Central de Alertas",
+    "inicio.monitor" to "Monitor em tempo real",
+    "inicio.insights" to "Insights proativos",
+    "inicio.kpis" to "KPIs (Financeiro/Estoque/Colaboradores)",
+    "inicio.clima" to "Clima",
+    "inicio.cambio" to "Câmbio (Dólar/Euro)",
+    "inicio.cotacoes" to "Cotações agrícolas (Grão Direto)",
+    "inicio.destaques" to "Destaques",
+)
+
 class SegurancaViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = SecurityRepository(app)
 
@@ -227,17 +253,36 @@ private fun RoleDropdown(selected: String, onSelect: (String) -> Unit) {
 private fun ModulesChecklist(selected: List<String>, onChange: (List<String>) -> Unit) {
     Column {
         MODULES.forEach { (id, label) ->
-            val checked = selected.contains(id)
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 1.dp)) {
-                Switch(
-                    checked = checked,
-                    onCheckedChange = { on -> onChange(if (on) selected + id else selected - id) },
-                    colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(label, style = MaterialTheme.typography.bodySmall)
-            }
+            ModuleToggleRow(id, label, selected, onChange)
         }
+        // Categoria "Início (blocos do painel)" -- ver comentário completo
+        // acima de INICIO_WIDGETS. Mesmo padrão visual do site: um Switch
+        // PRÓPRIO por bloco, em vez de um único toggle cobrindo a Início
+        // inteira -- é exatamente essa granularidade que faltava aqui.
+        Text(
+            "Início (blocos do painel)",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 10.dp, bottom = 2.dp),
+        )
+        INICIO_WIDGETS.forEach { (id, label) ->
+            ModuleToggleRow(id, label, selected, onChange)
+        }
+    }
+}
+
+@Composable
+private fun ModuleToggleRow(id: String, label: String, selected: List<String>, onChange: (List<String>) -> Unit) {
+    val checked = selected.contains(id)
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 1.dp)) {
+        Switch(
+            checked = checked,
+            onCheckedChange = { on -> onChange(if (on) selected + id else selected - id) },
+            colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(label, style = MaterialTheme.typography.bodySmall)
     }
 }
 

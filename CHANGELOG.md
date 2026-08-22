@@ -18,6 +18,36 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.14] -- 2026-08-22
+
+- Acessos e Segurança (app): adicionada a categoria "Início (blocos do
+  painel)" com um switch PRÓPRIO por bloco (Filtros, Canvas, Estágio,
+  Sugestão, Mural, Alertas, Monitor, Insights, KPIs, Clima, Câmbio,
+  Cotações, Destaques) -- bug de paridade real encontrado (usuário: "há
+  ainda campos que não estão selecionados, estão em bloco único"): essa
+  categoria já existia no site (seguranca-client.tsx/INICIO_WIDGETS) desde
+  a Task #214, mas nunca tinha sido replicada no app -- os blocos da Início
+  ficavam de fora da tela de Acessos por completo, sem forma de restringir
+  bloco a bloco pra um papel customizado.
+
+## [1.2.13] -- 2026-08-22
+
+- Início: quando o filtro global reduz o Canvas a 1 fazenda só (org com uma
+  única fazenda ou fazenda selecionada no pill de filtro), o círculo grande
+  agora fica CENTRALIZADO no bloco -- pedido do usuário ("em início quando
+  selecionar uma fazenda centralize-a dentro do bloco"). Causa: o círculo
+  único ficava no mesmo Row com horizontalScroll usado pra lista de várias
+  fazendas -- sob scroll horizontal o Row mede os filhos com largura
+  infinita (é assim que o conteúdo consegue ficar maior que a tela pra
+  rolar), então Arrangement.Center não tinha nenhum espaço sobrando pra
+  distribuir e o círculo ficava colado na borda esquerda mesmo tentando
+  centralizar. Com 1 fazenda só o scroll nem é necessário -- removido nesse
+  caso, e Arrangement.Center passa a centralizar de verdade.
+- Avisos de Safra, Planejamento de Safra, Frota, Estoque, RH e Controle
+  Interno (bloco "Novo Lançamento") reescritos mais diretos e objetivos --
+  pedido do usuário. Vem do backend (registry.ts), então atualiza os dois
+  (site e app) sem precisar mudar nada em Kotlin.
+
 ## [1.2.12] -- 2026-08-22
 
 - Calculadoras (Semeadura/Pulverização/Adubação/Colheita/Financeiro):

@@ -198,12 +198,27 @@ fun CanvasCirclesRow(
                 modifier = Modifier.padding(16.dp),
             )
         } else {
+        // Centralizado quando sobra só 1 fazenda (org com uma única fazenda
+        // OU filtro global de fazenda selecionado, ver FarmSelectorButton --
+        // o backend já filtra canvasData.fazendas pra conter só ela) --
+        // pedido do usuário ("em início quando selecionar uma fazenda
+        // centralize-a dentro do bloco"): antes o círculo único ficava
+        // dentro do MESMO Row com .horizontalScroll() usado pra lista de
+        // várias fazendas -- sob scroll horizontal o Row mede os filhos com
+        // largura infinita (é assim que o conteúdo pode ficar maior que a
+        // tela pra rolar), então Arrangement.Center não tem "espaço sobrando"
+        // nenhum pra distribuir e o círculo ficava colado na borda esquerda
+        // mesmo tentando centralizar. Sem scroll nenhum (não precisa, é 1
+        // círculo só) o Row respeita fillMaxWidth() de verdade e o Center
+        // passa a centralizar igual esperado. Com 2+ fazendas continua igual
+        // (Start, scroll horizontal, spacedBy).
+        val unicaFazenda = fazendas.size == 1
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
+                .then(if (unicaFazenda) Modifier else Modifier.horizontalScroll(rememberScrollState()))
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = if (unicaFazenda) Arrangement.Center else Arrangement.spacedBy(16.dp),
         ) {
             fazendas.forEach { f ->
                 val unica = fazendas.size == 1
