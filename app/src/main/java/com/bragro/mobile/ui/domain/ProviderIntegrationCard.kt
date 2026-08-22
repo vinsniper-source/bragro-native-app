@@ -40,6 +40,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.bragro.mobile.data.model.ProviderIntegrationDto
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.appFieldColors
 
 /** "Ocupado com" -- espelha o `busy` (union "salvar"|"sync"|"desconectar"|
  * null) do ProviderIntegrationCard do site, só que tipado em vez de String
@@ -116,6 +117,7 @@ fun ProviderIntegrationCard(
                         label = { Text("Provedor") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        colors = appFieldColors(),
                     )
                     ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                         providers.forEach { p -> DropdownMenuItem(text = { Text(p) }, onClick = { provedor = p; expanded = false }) }
@@ -131,6 +133,7 @@ fun ProviderIntegrationCard(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

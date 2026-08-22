@@ -6,8 +6,11 @@ import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CardElevation
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
@@ -80,3 +83,24 @@ fun Card(
         content = content,
     )
 }
+
+/** Cores compartilhadas de OutlinedTextField pro app inteiro fora do motor
+ * genérico (DomainFormScreen.kt já tem sua própria versão, greenFieldColors)
+ * -- pedido do usuário ("preeencha os campos da mesma cor dos blocos e
+ * rretire as bordas odss campos"), estendido às telas de vários itens
+ * (Pedido/Cotação/Nota) que montam seus próprios OutlinedTextField em vez de
+ * usar o motor genérico. Container = colorScheme.surface (mesmo tom dos
+ * Cards, ver Theme.kt) e borda transparente nos dois estados -- quem
+ * demarca o campo agora é só o preenchimento, igual um bloco. */
+@Composable
+fun appFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = Color.Transparent,
+    unfocusedBorderColor = Color.Transparent,
+    disabledBorderColor = Color.Transparent,
+    focusedContainerColor = MaterialTheme.colorScheme.surface,
+    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+    disabledContainerColor = MaterialTheme.colorScheme.surface,
+    focusedLabelColor = MaterialTheme.colorScheme.primary,
+    cursorColor = MaterialTheme.colorScheme.primary,
+    focusedTrailingIconColor = MaterialTheme.colorScheme.primary,
+)

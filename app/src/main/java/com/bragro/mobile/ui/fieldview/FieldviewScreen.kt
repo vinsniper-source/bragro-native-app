@@ -35,6 +35,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -751,6 +752,7 @@ private fun ImportBoundaryDialog(
                     value = talhao, onValueChange = { talhao = it },
                     label = { Text("Talhão *") }, singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
                 // Dropdown opcional -- mesma lista de fazendas já cacheada
                 // pelo bootstrap (ConfigRepository.farms(), reaproveitada de
@@ -810,11 +812,13 @@ private fun ManualBoundaryDialog(
                     value = talhao, onValueChange = { talhao = it },
                     label = { Text("Talhão (número/nome) *") }, singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
                 OutlinedTextField(
                     value = nome, onValueChange = { nome = it },
                     label = { Text("Nome (opcional)") }, singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
                 OptionalFarmDropdown(
                     farms = farms,
@@ -853,6 +857,7 @@ private fun OptionalFarmDropdown(farms: List<FarmEntity>, selected: FarmEntity?,
             label = { Text("Fazenda (opcional)") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.fillMaxWidth().menuAnchor(),
+            colors = appFieldColors(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(text = { Text("Nenhuma") }, onClick = { onSelect(null); expanded = false })

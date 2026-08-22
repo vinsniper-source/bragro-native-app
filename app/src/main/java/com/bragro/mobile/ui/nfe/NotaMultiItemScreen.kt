@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -254,6 +255,7 @@ private fun StringDropdown(
             placeholder = { Text(placeholder) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.fillMaxWidth().menuAnchor(),
+            colors = appFieldColors(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             if (allowEmpty) {
@@ -293,6 +295,7 @@ private fun LinhaItemCard(linha: NotaMultiItemLinha, itensOptions: List<LookupEn
                     label = { Text("Quantidade *") },
                     placeholder = { Text("0") },
                     modifier = Modifier.weight(1f),
+                    colors = appFieldColors(),
                 )
                 OutlinedTextField(
                     value = linha.valorUnitario,
@@ -300,6 +303,7 @@ private fun LinhaItemCard(linha: NotaMultiItemLinha, itensOptions: List<LookupEn
                     label = { Text("Valor unit. (R$) *") },
                     placeholder = { Text("0,00") },
                     modifier = Modifier.weight(1f),
+                    colors = appFieldColors(),
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -389,6 +393,7 @@ fun NotaMultiItemScreen(onBack: () -> Unit, viewModel: NotaMultiItemViewModel = 
                     label = { Text("Número da nota *") },
                     placeholder = { Text("Ex.: 12345") },
                     modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
             }
             item {
@@ -398,6 +403,7 @@ fun NotaMultiItemScreen(onBack: () -> Unit, viewModel: NotaMultiItemViewModel = 
                     label = { Text("Série") },
                     placeholder = { Text("Opcional") },
                     modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
             }
             item {
@@ -407,6 +413,7 @@ fun NotaMultiItemScreen(onBack: () -> Unit, viewModel: NotaMultiItemViewModel = 
                     label = { Text("Fornecedor *") },
                     placeholder = { Text("Nome do fornecedor") },
                     modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
             }
             item {
@@ -423,6 +430,7 @@ fun NotaMultiItemScreen(onBack: () -> Unit, viewModel: NotaMultiItemViewModel = 
                     placeholder = { Text("DD/MM/AAAA") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = appFieldColors(),
                     trailingIcon = {
                         IconButton(onClick = { showPicker = true }) {
                             Icon(Icons.Filled.CalendarMonth, contentDescription = "Escolher data", tint = MaterialTheme.colorScheme.primary)

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Smartphone
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -359,7 +360,7 @@ private fun OrgCard(org: JsonObject?, saving: Boolean, onSave: (String, Double, 
     var tolerancia by remember(org) { mutableStateOf((org?.get("toleranciaPct")?.jsonPrimitive?.doubleOrNull ?: 5.0).toString()) }
 
     CollapsibleCard("Organização") {
-        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nome") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nome") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = appFieldColors())
         OutlinedTextField(
             value = tolerancia,
             onValueChange = { tolerancia = it },
@@ -367,6 +368,7 @@ private fun OrgCard(org: JsonObject?, saving: Boolean, onSave: (String, Double, 
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             singleLine = true,
+            colors = appFieldColors(),
         )
         Spacer(Modifier.height(12.dp))
         androidx.compose.material3.Button(
@@ -458,10 +460,12 @@ private fun NotificacoesCard(
                 value = telegramBotToken, onValueChange = { telegramBotToken = it },
                 label = { Text("Bot Token") }, visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp), singleLine = true,
+                colors = appFieldColors(),
             )
             OutlinedTextField(
                 value = telegramChatId, onValueChange = { telegramChatId = it },
                 label = { Text("Chat ID") }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp), singleLine = true,
+                colors = appFieldColors(),
             )
             TextButton(
                 onClick = { testingChannel = "telegram"; onSendTest("telegram") { msg, _ -> testingChannel = null; testResult = msg } },
@@ -475,16 +479,19 @@ private fun NotificacoesCard(
             OutlinedTextField(
                 value = whatsappPhoneId, onValueChange = { whatsappPhoneId = it },
                 label = { Text("Phone Number ID") }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp), singleLine = true,
+                colors = appFieldColors(),
             )
             OutlinedTextField(
                 value = whatsappToken, onValueChange = { whatsappToken = it },
                 label = { Text("Token de acesso") }, visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp), singleLine = true,
+                colors = appFieldColors(),
             )
             OutlinedTextField(
                 value = whatsappTo, onValueChange = { whatsappTo = it },
                 label = { Text("Número de destino") }, placeholder = { Text("5511999999999") },
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp), singleLine = true,
+                colors = appFieldColors(),
             )
             TextButton(
                 onClick = { testingChannel = "whatsapp"; onSendTest("whatsapp") { msg, _ -> testingChannel = null; testResult = msg } },

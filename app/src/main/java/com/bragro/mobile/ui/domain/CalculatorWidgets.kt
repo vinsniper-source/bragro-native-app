@@ -2,7 +2,6 @@ package com.bragro.mobile.ui.domain
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +16,7 @@ import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -78,16 +78,16 @@ fun CalcNumField(label: String, unit: String? = null, field: CalcFieldState) {
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
+        colors = appFieldColors(),
     )
 }
 
-// Caixa com borda igual à dos campos calculados do formulário genérico
-// (ComputedFieldDisplay em DomainFormScreen.kt) -- achado da auditoria
-// (usuário: "confira se ainda há em qualquer bloco campo a cálculo
-// automático sem bordas"): este era um resultado de calculadora renderizado
-// só como Text solto, sem NENHUMA borda, diferente de todo o resto do app
-// (que já ganhou essa borda no Task #199) e dos campos manuais ao lado
-// (CalcNumField, que é um OutlinedTextField com borda visível).
+// Preenchimento igual ao dos campos manuais ao lado (CalcNumField, agora
+// sem borda e preenchido via appFieldColors() -- ver AppCard.kt), sem borda
+// -- mantém a paridade entre campo manual e resultado calculado que já
+// existia (Task #199), só trocando "borda" por "preenchimento" como critério
+// de contraste, igual o resto do app depois do pedido "retire as bordas dos
+// campos".
 @Composable
 fun CalcResultField(label: String, unit: String? = null, value: String) {
     Column {
@@ -99,8 +99,7 @@ fun CalcResultField(label: String, unit: String? = null, value: String) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 4.dp)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
-                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp))
+                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
                 .padding(horizontal = 12.dp, vertical = 10.dp),
         ) {
             Text(

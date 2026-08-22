@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Badge
@@ -224,6 +225,7 @@ private fun AnoDropdown(ano: Int, onSelect: (Int) -> Unit) {
             label = { Text("Ano") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.fillMaxWidth().menuAnchor(),
+            colors = appFieldColors(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             for (a in anos) {
@@ -245,6 +247,7 @@ private fun BancoDropdown(banco: String?, opcoes: List<String>, onSelect: (Strin
             label = { Text("Conta") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.fillMaxWidth().menuAnchor(),
+            colors = appFieldColors(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(text = { Text("Todas as contas") }, onClick = { onSelect(null); expanded = false })
@@ -270,6 +273,7 @@ private fun ImovelDropdown(imovel: String?, opcoes: List<String>, onSelect: (Str
             label = { Text("Imóvel") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.fillMaxWidth().menuAnchor(),
+            colors = appFieldColors(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(text = { Text("Todos os imóveis") }, onClick = { onSelect(null); expanded = false })
@@ -295,6 +299,7 @@ private fun SaldoInicialField(saldoInicial: Double, onApply: (Double) -> Unit) {
             singleLine = true,
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
             modifier = Modifier.weight(1f),
+            colors = appFieldColors(),
         )
         androidx.compose.material3.TextButton(onClick = {
             val normalizado = texto.trim().replace(",", ".")
@@ -393,11 +398,11 @@ private fun ProdutorRuralCard(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            OutlinedTextField(value = cnpj, onValueChange = { cnpj = it }, label = { Text("CNPJ") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = cpf, onValueChange = { cpf = it }, label = { Text("CPF do produtor") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = ie, onValueChange = { ie = it }, label = { Text("Inscrição Estadual") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = certificado, onValueChange = { certificado = it }, label = { Text("Referência do certificado digital") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = contaIrpf, onValueChange = { contaIrpf = it }, label = { Text("Conta padrão para IRPF") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = cnpj, onValueChange = { cnpj = it }, label = { Text("CNPJ") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+            OutlinedTextField(value = cpf, onValueChange = { cpf = it }, label = { Text("CPF do produtor") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+            OutlinedTextField(value = ie, onValueChange = { ie = it }, label = { Text("Inscrição Estadual") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+            OutlinedTextField(value = certificado, onValueChange = { certificado = it }, label = { Text("Referência do certificado digital") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+            OutlinedTextField(value = contaIrpf, onValueChange = { contaIrpf = it }, label = { Text("Conta padrão para IRPF") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
             Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
                 androidx.compose.material3.Button(
                     enabled = !loading,

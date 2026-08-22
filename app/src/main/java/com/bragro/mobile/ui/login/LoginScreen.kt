@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bragro.mobile.BuildConfig
+import com.bragro.mobile.ui.theme.appFieldColors
 import com.bragro.mobile.R
 import com.bragro.mobile.data.repo.AuthRepository
 import com.bragro.mobile.data.repo.LoginResult
@@ -121,6 +122,7 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
+            colors = appFieldColors(),
         )
         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 12.dp))
         OutlinedTextField(
@@ -131,6 +133,7 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
+            colors = appFieldColors(),
         )
 
         if (error != null) {

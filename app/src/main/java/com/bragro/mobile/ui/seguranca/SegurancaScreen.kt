@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -212,6 +213,7 @@ private fun RoleDropdown(selected: String, onSelect: (String) -> Unit) {
             value = selected, onValueChange = {}, readOnly = true, label = { Text("Papel") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.menuAnchor(),
+            colors = appFieldColors(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             ROLES.forEach { role ->
@@ -302,7 +304,7 @@ private fun EquipeCard(
             Button(onClick = { showInviteForm = true }, modifier = Modifier.padding(top = 8.dp)) { Text("Convidar colaborador") }
         } else {
             Column(modifier = Modifier.padding(top = 12.dp)) {
-                OutlinedTextField(value = inviteEmail, onValueChange = { inviteEmail = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                OutlinedTextField(value = inviteEmail, onValueChange = { inviteEmail = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = appFieldColors())
                 RoleDropdown(selected = inviteRole) { inviteRole = it }
                 Text("Módulos liberados", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 8.dp))
                 ModulesChecklist(selected = inviteModules) { inviteModules = it }

@@ -18,6 +18,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -164,6 +165,7 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
                 OutlinedTextField(
                     value = viewModel.unitario,
@@ -172,6 +174,7 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
                 OutlinedTextField(
                     value = viewModel.horimetro,
@@ -180,6 +183,7 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
                 LookupDropdown("Talhão/Fazenda (opcional)", locais, viewModel.local) { viewModel.local = it }
                 LookupDropdown("Responsável (opcional)", colaboradores, viewModel.responsavel) { viewModel.responsavel = it }
@@ -210,6 +214,7 @@ private fun LookupDropdown(label: String, options: List<LookupEntity>, value: St
             label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.fillMaxWidth().menuAnchor(),
+            colors = appFieldColors(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { opt ->

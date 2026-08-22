@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -400,21 +401,24 @@ private fun NovoDroneRegistroDialog(
                     label = { Text("Data *") }, placeholder = { Text("DD/MM/AAAA") },
                     keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                     singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
                 DroneLookupDropdown("Talhão", talhoes, talhao) { talhao = it }
                 DroneStaticDropdown("Tipo de captura *", TIPOS_CAPTURA, tipo) { tipo = it }
-                OutlinedTextField(value = piloto, onValueChange = { piloto = it }, label = { Text("Piloto") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = piloto, onValueChange = { piloto = it }, label = { Text("Piloto") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
                 OutlinedTextField(
                     value = altitude, onValueChange = { altitude = it }, label = { Text("Altitude (m)") },
                     keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
                     singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
                 OutlinedTextField(
                     value = area, onValueChange = { area = it }, label = { Text("Área coberta (ha)") },
                     keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
                     singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
-                OutlinedTextField(value = obs, onValueChange = { obs = it }, label = { Text("Observações") }, minLines = 2, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = obs, onValueChange = { obs = it }, label = { Text("Observações") }, minLines = 2, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
                 OutlinedButton(
                     onClick = { filePicker.launch(arrayOf("image/*", "video/*")) },
                     modifier = Modifier.fillMaxWidth(),
@@ -453,6 +457,7 @@ private fun DroneLookupDropdown(label: String, options: List<LookupEntity>, valu
             label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.fillMaxWidth().menuAnchor(),
+            colors = appFieldColors(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(text = { Text("(nenhum)") }, onClick = { onChange(""); expanded = false })
@@ -472,6 +477,7 @@ private fun DroneStaticDropdown(label: String, options: List<Pair<String, String
             label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.fillMaxWidth().menuAnchor(),
+            colors = appFieldColors(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { (key, lbl) -> DropdownMenuItem(text = { Text(lbl) }, onClick = { onChange(key); expanded = false }) }

@@ -142,12 +142,16 @@ private fun ModuloCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    // elevation zerada -- escopo final (o tom verde fica só na barra
-    // inferior/dropdown, ver BottomNavBar.kt); aqui é só ícone/rótulo
-    // preto/branco, fundo neutro.
+    // Fundo verde forte (background, mesmo tom da barra inferior/dropdown)
+    // -- pedido do usuário ("coloque nas listas suspensas e módulos o mesmo
+    // verde do app"), escopado só pra esta tela "Módulos" (grade de
+    // domínios); os blocos individuais DENTRO de cada módulo continuam
+    // neutros, conforme decisão anterior documentada em ModuleIconRow.kt.
+    // Ícone/rótulo continuam preto/branco (onSurface), só o fundo muda.
     Card(
         onClick = onClick,
         modifier = modifier,
+        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
         elevation = androidx.compose.material3.CardDefaults.cardElevation(
             defaultElevation = 0.dp,
             pressedElevation = 0.dp,

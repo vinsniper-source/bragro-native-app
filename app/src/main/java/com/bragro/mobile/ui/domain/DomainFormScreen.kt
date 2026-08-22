@@ -51,6 +51,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
@@ -593,9 +594,22 @@ private fun ComputedFieldDisplay(col: ColumnConfig, raw: String, optionLabels: M
 // Theme.kt) -- com BrGreen fixo, o campo ficava com um verde ligeiramente
 // diferente do da barra inferior no modo escuro. colorScheme.primary garante
 // que os dois sempre batem, em qualquer tema.
+// Preenchido com a MESMA cor dos blocos (Cards) + sem borda -- pedido do
+// usuário ("preeencha os campos da mesma cor dos blocos e rretire as
+// bordas odss campos"). Antes o campo tinha fundo transparente (só a
+// borda demarcava onde clicar) -- agora container = colorScheme.surface,
+// o mesmo token que os Cards usam (ver AppCard.kt/Theme.kt), então campo e
+// bloco ficam visualmente no mesmo tom. Bordas (focada e não-focada) viram
+// transparentes nos dois estados -- quem demarca o campo agora é só o
+// preenchimento, igual um bloco.
 @Composable
 private fun greenFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = MaterialTheme.colorScheme.primary,
+    focusedBorderColor = Color.Transparent,
+    unfocusedBorderColor = Color.Transparent,
+    disabledBorderColor = Color.Transparent,
+    focusedContainerColor = MaterialTheme.colorScheme.surface,
+    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+    disabledContainerColor = MaterialTheme.colorScheme.surface,
     focusedLabelColor = MaterialTheme.colorScheme.primary,
     cursorColor = MaterialTheme.colorScheme.primary,
     focusedTrailingIconColor = MaterialTheme.colorScheme.primary,
@@ -606,10 +620,17 @@ private fun greenFieldColors() = OutlinedTextFieldDefaults.colors(
 // usuário: validação de obrigatório em todos os módulos) -- também some o
 // cursor e ícones da cor de erro, senão fica um vermelho só na borda e o
 // resto verde, inconsistente.
+// Borda vermelha PRESERVADA de propósito aqui (diferente de greenFieldColors
+// acima) -- não é decoração, é o único sinal visual de "campo obrigatório
+// faltando" depois de uma tentativa de Salvar. Container também preenchido
+// com a cor dos blocos (mesmo critério do campo normal), só a borda que
+// continua vermelha em vez de transparente.
 @Composable
 private fun errorFieldColors() = OutlinedTextFieldDefaults.colors(
     unfocusedBorderColor = MaterialTheme.colorScheme.error,
     focusedBorderColor = MaterialTheme.colorScheme.error,
+    focusedContainerColor = MaterialTheme.colorScheme.surface,
+    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
     unfocusedLabelColor = MaterialTheme.colorScheme.error,
     focusedLabelColor = MaterialTheme.colorScheme.error,
     cursorColor = MaterialTheme.colorScheme.error,

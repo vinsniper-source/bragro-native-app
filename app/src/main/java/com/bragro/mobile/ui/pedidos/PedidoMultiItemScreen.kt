@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -225,6 +226,7 @@ private fun StringDropdown(
             placeholder = { Text(placeholder) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.fillMaxWidth().menuAnchor(),
+            colors = appFieldColors(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             if (allowEmpty) {
@@ -271,6 +273,7 @@ private fun PedidoLinhaCard(linha: PedidoLinha, categoriasOptions: List<LookupEn
                     label = { Text("Qtd. pedida *") },
                     placeholder = { Text("0") },
                     modifier = Modifier.weight(1f),
+                    colors = appFieldColors(),
                 )
                 OutlinedTextField(
                     value = linha.qtdEntregue,
@@ -278,6 +281,7 @@ private fun PedidoLinhaCard(linha: PedidoLinha, categoriasOptions: List<LookupEn
                     label = { Text("Qtd. entregue") },
                     placeholder = { Text("0") },
                     modifier = Modifier.weight(1f),
+                    colors = appFieldColors(),
                 )
             }
             if (showRemove) {
@@ -359,6 +363,7 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                     label = { Text("Nº do pedido *") },
                     placeholder = { Text("Ex.: 12345") },
                     modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
             }
             item {
@@ -368,6 +373,7 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                     label = { Text("NF") },
                     placeholder = { Text("Opcional") },
                     modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
             }
             item {
@@ -419,6 +425,7 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                     placeholder = { Text("DD/MM/AAAA") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = appFieldColors(),
                     trailingIcon = {
                         IconButton(onClick = { showPicker = true }) {
                             Icon(Icons.Filled.CalendarMonth, contentDescription = "Escolher data", tint = MaterialTheme.colorScheme.primary)

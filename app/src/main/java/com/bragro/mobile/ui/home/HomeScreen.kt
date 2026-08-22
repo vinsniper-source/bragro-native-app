@@ -65,6 +65,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -1293,8 +1294,8 @@ private fun AddNoticeDialog(onDismiss: () -> Unit, onSave: (String, String, Stri
         title = { Text("Novo aviso") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = titulo, onValueChange = { titulo = it }, label = { Text("Título") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = mensagem, onValueChange = { mensagem = it }, label = { Text("Mensagem") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = titulo, onValueChange = { titulo = it }, label = { Text("Título") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+                OutlinedTextField(value = mensagem, onValueChange = { mensagem = it }, label = { Text("Mensagem") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
                 OutlinedTextField(
                     value = expiraEm,
                     onValueChange = { expiraEm = it },
@@ -1302,6 +1303,7 @@ private fun AddNoticeDialog(onDismiss: () -> Unit, onSave: (String, String, Stri
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                     modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = fixado, onCheckedChange = { fixado = it })

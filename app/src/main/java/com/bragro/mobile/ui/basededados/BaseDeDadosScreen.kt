@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Sync
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -322,6 +323,7 @@ private fun FarmsCard(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.width(100.dp),
+                    colors = appFieldColors(),
                 )
                 IconButton(onClick = { areaText.toDoubleOrNull()?.let { onUpdate(id, it) } }, enabled = !busy) {
                     Icon(Icons.Filled.Check, contentDescription = "Salvar área")
@@ -332,11 +334,12 @@ private fun FarmsCard(
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
-            OutlinedTextField(value = newName, onValueChange = { newName = it }, label = { Text("Nova fazenda") }, modifier = Modifier.weight(1f), singleLine = true)
+            OutlinedTextField(value = newName, onValueChange = { newName = it }, label = { Text("Nova fazenda") }, modifier = Modifier.weight(1f), singleLine = true, colors = appFieldColors())
             Spacer(Modifier.width(8.dp))
             OutlinedTextField(
                 value = newArea, onValueChange = { newArea = it }, label = { Text("ha") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(90.dp),
+                colors = appFieldColors(),
             )
         }
         Row(modifier = Modifier.padding(top = 8.dp)) {
@@ -383,7 +386,7 @@ private fun SectorCard(
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)) {
-                OutlinedTextField(value = newValue, onValueChange = { newValue = it }, label = { Text("Novo valor") }, modifier = Modifier.weight(1f), singleLine = true)
+                OutlinedTextField(value = newValue, onValueChange = { newValue = it }, label = { Text("Novo valor") }, modifier = Modifier.weight(1f), singleLine = true, colors = appFieldColors())
                 Spacer(Modifier.width(8.dp))
                 Button(onClick = { if (newValue.isNotBlank()) { onAddValue(category, newValue.trim()); newValue = "" } }, enabled = !busy) { Text("+") }
             }

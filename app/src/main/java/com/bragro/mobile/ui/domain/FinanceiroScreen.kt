@@ -59,6 +59,7 @@ import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -939,6 +940,7 @@ private fun PeriodoDropdown(
                     placeholder = { Text("AAAA-MM-DD") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                    colors = appFieldColors(),
                 )
                 OutlinedTextField(
                     value = toText,
@@ -947,6 +949,7 @@ private fun PeriodoDropdown(
                     placeholder = { Text("AAAA-MM-DD") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
                 Button(
                     onClick = { onInterval(fromText, toText); expanded = false },

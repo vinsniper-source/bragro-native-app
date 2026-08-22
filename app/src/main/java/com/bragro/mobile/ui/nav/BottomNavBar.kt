@@ -270,14 +270,17 @@ fun BRAgroBottomBar(
                     colors = BottomNavColors,
                 )
                 if (tab.directDomainId == null) {
-                    // SEM neutralizador -- pedido do usuário ("quero aquele
-                    // tom de verde de fundo que está na lista suspensa em
-                    // todos os módulos"): o DropdownMenu do Material3 já usa
-                    // 3dp de tonalElevation por padrão (MenuDefaults),
-                    // exatamente o mesmo tom agora replicado na barra
-                    // inferior e nos blocos individuais (ver NavigationBar
-                    // acima e ModuleIconRow.kt) -- não precisa mais mexer
-                    // aqui, o padrão da própria lib já é o efeito desejado.
+                    // Fundo do menu suspenso = MESMO verde forte da barra
+                    // inferior/fundo do app -- pedido do usuário ("coloque
+                    // nas listas suspensas... o mesmo verde do app"). O
+                    // DropdownMenu do Material3 1.2.1 não expõe um parâmetro
+                    // de cor direto (arriscado assumir uma API não conferida
+                    // -- ver lição do bug ExposedDropdownMenu), então em vez
+                    // disso sobrescrevemos "colorScheme.surface" (a cor que
+                    // ele lê por dentro) só dentro deste escopo, via
+                    // MaterialTheme(colorScheme = ...) -- API estável desde
+                    // sempre no Material3, sem risco de incompatibilidade.
+                    MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(surface = MaterialTheme.colorScheme.background)) {
                     DropdownMenu(expanded = openTabId == tab.id, onDismissRequest = { openTabId = null }) {
                         tab.items.forEach { item ->
                             val label = when (item) {
@@ -314,6 +317,7 @@ fun BRAgroBottomBar(
                             )
                         }
                     }
+                    }
                 }
             }
         }
@@ -325,8 +329,11 @@ fun BRAgroBottomBar(
                 label = { Text("Módulos", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) },
                 colors = BottomNavColors,
             )
-            // SEM neutralizador -- mesmo critério do dropdown de setor acima
-            // (o padrão da própria lib já é o tom pedido).
+            // Mesmo critério do dropdown de setor acima: sobrescreve `surface`
+            // com `background` pra pegar o verde forte, já que o container
+            // padrão do DropdownMenu (Material3 1.2.1) lê `surface`, que
+            // agora é o tom mais claro dos Cards (ver Theme.kt).
+            MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(surface = MaterialTheme.colorScheme.background)) {
             DropdownMenu(expanded = openTabId == "sistema", onDismissRequest = { openTabId = null }) {
                 SISTEMA_LINKS.forEach { link ->
                     DropdownMenuItem(
@@ -342,6 +349,7 @@ fun BRAgroBottomBar(
                         },
                     )
                 }
+            }
             }
         }
     }

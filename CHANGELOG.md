@@ -18,6 +18,35 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.8] -- 2026-08-22
+
+- Estendido o preenchimento sem borda (appFieldColors -- ver AppCard.kt) pra
+  todos os campos de formulário do app que ainda estavam no padrão antigo
+  (bordado, sem preenchimento): Configurações, Segurança, Romaneio Rápido,
+  Login, Livro Caixa, FieldView, Drone, Base de Dados, DRE, Análises,
+  Estoque (transferir/ajustar/devolver), Financeiro (filtro de datas),
+  lista genérica de domínio (filtro de datas), calculadoras, importação
+  bancária, integração de provedor, importação de NF-e e abastecimento
+  rápido. Cobertura completa dos campos ativos do app (o único
+  OutlinedTextField restante sem o tratamento é o de QuickCaptureBar.kt,
+  arquivo órfão desde a remoção do bloco de captura por voz, task #268).
+- Resultado de calculadora (CalcResultField) trocou borda por preenchimento
+  pra continuar igual ao campo manual ao lado, agora que os campos não têm
+  mais borda.
+
+## [1.2.7] -- 2026-08-22
+
+- Campos de formulário (Pedido/Cotação/Nota multi-item) sem borda,
+  preenchidos com o mesmo tom dos Cards -- pedido do usuário ("preeencha
+  os campos da mesma cor dos blocos e rretire as bordas odss campos").
+- Listas suspensas da barra inferior (setor e "Módulos") agora mostram o
+  mesmo verde forte do fundo/barra em vez do tom mais claro dos Cards.
+- Tela "Módulos" (grade de domínios): fundo dos cards no mesmo verde forte
+  do app -- pedido do usuário ("coloque nas listas suspensas e módulos o
+  mesmo verde do app"). Escopo confirmado com o usuário: só esta tela, os
+  blocos individuais dentro de cada módulo continuam neutros (decisão
+  anterior preservada, ver ModuleIconRow.kt).
+
 ## [1.2.6] -- 2026-08-21
 
 - Corrigido: os blocos (Cards) tinham ficado com a MESMA cor do fundo da

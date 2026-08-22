@@ -23,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -298,6 +299,7 @@ private fun LookupDropdown(label: String, value: String?, options: List<LookupEn
             label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.fillMaxWidth().menuAnchor(),
+            colors = appFieldColors(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             for (opt in options) {
@@ -400,6 +402,7 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
                     onValueChange = { viewModel.setNoRomaneio(it) },
                     label = { Text("Nº Romaneio *") },
                     modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
             }
             item {
@@ -409,12 +412,14 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
                         onValueChange = { viewModel.setPesoBruto(it) },
                         label = { Text("Peso Bruto (kg) *") },
                         modifier = Modifier.weight(1f),
+                        colors = appFieldColors(),
                     )
                     OutlinedTextField(
                         value = taraKg,
                         onValueChange = { viewModel.setTara(it) },
                         label = { Text("Tara (kg) *") },
                         modifier = Modifier.weight(1f),
+                        colors = appFieldColors(),
                     )
                 }
             }
@@ -425,12 +430,14 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
                         onValueChange = { viewModel.setUmidade(it) },
                         label = { Text("Umidade (%)") },
                         modifier = Modifier.weight(1f),
+                        colors = appFieldColors(),
                     )
                     OutlinedTextField(
                         value = impureza,
                         onValueChange = { viewModel.setImpureza(it) },
                         label = { Text("Impureza (%)") },
                         modifier = Modifier.weight(1f),
+                        colors = appFieldColors(),
                     )
                 }
             }

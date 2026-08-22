@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material3.Button
 import androidx.compose.material3.AlertDialog
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -195,6 +196,7 @@ private fun FazendaDropdown(label: String, options: List<FazendaOpt>, placeholde
             value = selectedName, onValueChange = {}, readOnly = true, label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.menuAnchor().fillMaxWidth(),
+            colors = appFieldColors(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { f ->
@@ -218,6 +220,7 @@ private fun ItemDropdown(label: String, options: List<LookupEntity>, placeholder
             value = selectedLabel, onValueChange = {}, readOnly = true, label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.menuAnchor().fillMaxWidth(),
+            colors = appFieldColors(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { i ->
@@ -351,8 +354,8 @@ private fun TransferirFazendaDialog(farms: List<FazendaOpt>, itens: List<LookupE
                 Text("Sai do depósito de origem e entra na fazenda de destino.", style = MaterialTheme.typography.bodySmall)
                 ItemDropdown("Item *", itens, "Selecione", item) { item = it }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = quantidade, onValueChange = { quantidade = it }, label = { Text("Quantidade *") }, modifier = Modifier.weight(1f))
-                    OutlinedTextField(value = unidade, onValueChange = { unidade = it }, label = { Text("Unidade") }, modifier = Modifier.weight(1f))
+                    OutlinedTextField(value = quantidade, onValueChange = { quantidade = it }, label = { Text("Quantidade *") }, modifier = Modifier.weight(1f), colors = appFieldColors())
+                    OutlinedTextField(value = unidade, onValueChange = { unidade = it }, label = { Text("Unidade") }, modifier = Modifier.weight(1f), colors = appFieldColors())
                 }
                 FazendaDropdown("Origem", farms, "Depósito Central", fazendaOrigemId) { fazendaOrigemId = it }
                 FazendaDropdown("Destino *", farms, "Selecione", fazendaDestinoId) { fazendaDestinoId = it }
@@ -395,13 +398,14 @@ private fun SaidaFazendaDialog(farms: List<FazendaOpt>, itens: List<LookupEntity
                 Text("Baixa manual do item (consumo, perda, quebra etc.) -- não é transferência pra outra fazenda.", style = MaterialTheme.typography.bodySmall)
                 ItemDropdown("Item *", itens, "Selecione", item) { item = it }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = quantidade, onValueChange = { quantidade = it }, label = { Text("Quantidade *") }, modifier = Modifier.weight(1f))
-                    OutlinedTextField(value = unidade, onValueChange = { unidade = it }, label = { Text("Unidade") }, modifier = Modifier.weight(1f))
+                    OutlinedTextField(value = quantidade, onValueChange = { quantidade = it }, label = { Text("Quantidade *") }, modifier = Modifier.weight(1f), colors = appFieldColors())
+                    OutlinedTextField(value = unidade, onValueChange = { unidade = it }, label = { Text("Unidade") }, modifier = Modifier.weight(1f), colors = appFieldColors())
                 }
                 FazendaDropdown("Origem", farms, "Depósito Central", fazendaId) { fazendaId = it }
                 OutlinedTextField(
                     value = motivo, onValueChange = { motivo = it }, label = { Text("Motivo") },
                     placeholder = { Text("Opcional -- ex.: consumo, perda, quebra") }, modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
             }
         },
@@ -454,6 +458,7 @@ private fun AjusteManualFazendaDialog(farms: List<FazendaOpt>, itens: List<Looku
                         onValueChange = {}, readOnly = true, label = { Text("Tipo *") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = tipoExpanded) },
                         modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        colors = appFieldColors(),
                     )
                     ExposedDropdownMenu(expanded = tipoExpanded, onDismissRequest = { tipoExpanded = false }) {
                         DropdownMenuItem(text = { Text("Entrada (aumenta o saldo)") }, onClick = { tipo = "ENTRADA"; tipoExpanded = false })
@@ -461,13 +466,14 @@ private fun AjusteManualFazendaDialog(farms: List<FazendaOpt>, itens: List<Looku
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = quantidade, onValueChange = { quantidade = it }, label = { Text("Quantidade *") }, modifier = Modifier.weight(1f))
-                    OutlinedTextField(value = unidade, onValueChange = { unidade = it }, label = { Text("Unidade") }, modifier = Modifier.weight(1f))
+                    OutlinedTextField(value = quantidade, onValueChange = { quantidade = it }, label = { Text("Quantidade *") }, modifier = Modifier.weight(1f), colors = appFieldColors())
+                    OutlinedTextField(value = unidade, onValueChange = { unidade = it }, label = { Text("Unidade") }, modifier = Modifier.weight(1f), colors = appFieldColors())
                 }
                 FazendaDropdown("Origem", farms, "Depósito Central", fazendaId) { fazendaId = it }
                 OutlinedTextField(
                     value = motivo, onValueChange = { motivo = it }, label = { Text("Motivo *") },
                     placeholder = { Text("Obrigatório -- justifique o ajuste") }, modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
             }
         },
@@ -501,6 +507,7 @@ private fun DevolverFazendaDialog(transferenciaEntradaId: String, onDismiss: () 
                 value = quantidade, onValueChange = { quantidade = it },
                 label = { Text("Quantidade que está voltando *") },
                 modifier = Modifier.fillMaxWidth(),
+                colors = appFieldColors(),
             )
         },
         confirmButton = {

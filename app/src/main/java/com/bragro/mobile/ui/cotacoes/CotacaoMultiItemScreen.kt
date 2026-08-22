@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -227,6 +228,7 @@ private fun StringDropdown(
             placeholder = { Text(placeholder) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.fillMaxWidth().menuAnchor(),
+            colors = appFieldColors(),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             if (allowEmpty) {
@@ -272,6 +274,7 @@ private fun CotacaoLinhaCard(linha: CotacaoLinha, categoriasOptions: List<Lookup
                     label = { Text("Quantidade") },
                     placeholder = { Text("0") },
                     modifier = Modifier.weight(1f),
+                    colors = appFieldColors(),
                 )
                 OutlinedTextField(
                     value = linha.precoUnitario,
@@ -279,6 +282,7 @@ private fun CotacaoLinhaCard(linha: CotacaoLinha, categoriasOptions: List<Lookup
                     label = { Text("Preço unit. (R$) *") },
                     placeholder = { Text("0,00") },
                     modifier = Modifier.weight(1f),
+                    colors = appFieldColors(),
                 )
             }
             OutlinedTextField(
@@ -287,6 +291,7 @@ private fun CotacaoLinhaCard(linha: CotacaoLinha, categoriasOptions: List<Lookup
                 label = { Text("Prazo entrega (dias)") },
                 placeholder = { Text("Opcional") },
                 modifier = Modifier.fillMaxWidth(),
+                colors = appFieldColors(),
             )
             if (showRemove) {
                 IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
@@ -364,6 +369,7 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                     label = { Text("Fornecedor *") },
                     placeholder = { Text("Nome do fornecedor") },
                     modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
                 )
             }
             item {
@@ -375,6 +381,7 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                     placeholder = { Text("DD/MM/AAAA") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = appFieldColors(),
                     trailingIcon = {
                         IconButton(onClick = { showPicker = true }) {
                             Icon(Icons.Filled.CalendarMonth, contentDescription = "Escolher data", tint = MaterialTheme.colorScheme.primary)
@@ -418,6 +425,7 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                     placeholder = { Text("DD/MM/AAAA") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = appFieldColors(),
                     trailingIcon = {
                         IconButton(onClick = { showPicker = true }) {
                             Icon(Icons.Filled.CalendarMonth, contentDescription = "Escolher data", tint = MaterialTheme.colorScheme.primary)
@@ -467,6 +475,7 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                     label = { Text("Observações (opcional, vale para todos os itens)") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2,
+                    colors = appFieldColors(),
                 )
             }
             item {
