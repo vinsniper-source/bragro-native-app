@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
@@ -56,6 +57,7 @@ import com.bragro.mobile.data.local.LookupEntity
 import com.bragro.mobile.data.model.PedidoMultiItemItemData
 import com.bragro.mobile.data.repo.ConfigRepository
 import com.bragro.mobile.data.repo.PedidoMultiItemRepository
+import com.bragro.mobile.data.repo.RecordRepository
 import kotlinx.coroutines.launch
 
 // "Novo modelo" de Pedidos (vários itens no mesmo lançamento) -- pedido do
@@ -69,6 +71,12 @@ import kotlinx.coroutines.launch
 // /api/mobile/pedido-multi-item, que chama DIRETO
 // createPedidoMultiItemAction() no servidor -- mesmo motor que o site usa.
 // Mesmo padrão de tela/ViewModel já usado em NotaMultiItemScreen.kt.
+//
+// "Copiar último lançamento" (varredura de auditoria, pedido do usuário
+// "implemente tudo"): usa RecordRepository.mostRecent("pedidos"), que já lê
+// do cache local (Room) sem precisar de nenhum endpoint novo -- mesmo
+// mecanismo genérico usado no resto do app (Task #51/#77), só que essa tela
+// própria (fora do motor genérico de domínio) precisava ligar ela mesma.
 
 class PedidoLinha {
     var categoria by mutableStateOf("")
@@ -104,6 +112,7 @@ private fun brDateToMillisOrNull(br: String): Long? {
 class PedidoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
     private val repository = PedidoMultiItemRepository(app)
     private val configRepository = ConfigRepository(app)
+    private val recordRepository = RecordRepository(app)
 
     var setoresOptions = mutableStateOf<List<LookupEntity>>(emptyList())
         private set
@@ -138,6 +147,8 @@ class PedidoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var successMessage = mutableStateOf<String?>(null)
         private set
+    var copiando = mutableStateOf(false)
+        private set
 
     init {
         viewModelScope.launch {
@@ -170,6 +181,39 @@ class PedidoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         linhas.clear(); linhas.add(PedidoLinha())
         successMessage.value = null
         errorMessage.value = null
+    }
+
+    /** "Copiar último lançamento" -- busca o último Pedido lançado (qualquer
+     * fornecedor/item) no cache local e preenche o cabeçalho + a primeira
+     * linha de item, mesmo padrão de preencherComUltimo() em
+     * pedido-multi-item-button.tsx (site). */
+    fun preencherComUltimo() {
+        viewModelScope.launch {
+            copiando.value = true
+            val last = recordRepository.mostRecent("pedidos")
+            copiando.value = false
+            if (last == null) {
+                errorMessage.value = "Nenhum pedido lançado ainda para copiar."
+                return@launch
+            }
+            last["noPedido"]?.let { noPedido = it }
+            last["setor"]?.let { setor = it }
+            last["fornecedor"]?.let { fornecedor = it }
+            last["safra"]?.let { safra = it }
+            last["cultura"]?.let { cultura = it }
+            last["dataEntrega"]?.let { dataEntrega = com.bragro.mobile.ui.domain.isoDateToBr(it) }
+            last["nf"]?.let { nf = it }
+            val linha = PedidoLinha()
+            last["categoria"]?.let { linha.categoria = it }
+            last["item"]?.let { linha.item = it }
+            last["unidade"]?.let { linha.unidade = it }
+            last["qtdPedida"]?.let { linha.qtdPedida = it }
+            last["qtdEntregue"]?.let { linha.qtdEntregue = it }
+            linhas.clear()
+            linhas.add(linha)
+            successMessage.value = null
+            errorMessage.value = null
+        }
     }
 
     fun submit() {
@@ -306,6 +350,7 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
     val pending by viewModel.pending
     val errorMessage by viewModel.errorMessage
     val successMessage by viewModel.successMessage
+    val copiando by viewModel.copiando
 
     Scaffold(
         topBar = {
@@ -352,6 +397,16 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                     "Pedidos controla o que foi comprado x o que já chegou do fornecedor. Ao preencher \"Qtd. entregue\", o sistema já lança essa quantidade como entrada em Estoque -- não precisa repetir lá.",
                     style = MaterialTheme.typography.bodySmall,
                 )
+            }
+            item {
+                OutlinedButton(
+                    onClick = { viewModel.preencherComUltimo() },
+                    enabled = !copiando,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Filled.ContentCopy, contentDescription = null, modifier = Modifier.padding(end = 6.dp).size(16.dp))
+                    Text(if (copiando) "Copiando..." else "Copiar último pedido")
+                }
             }
             if (errorMessage != null) {
                 item { Text(errorMessage ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }

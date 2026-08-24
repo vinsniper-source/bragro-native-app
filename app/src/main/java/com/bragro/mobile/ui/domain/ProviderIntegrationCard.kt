@@ -161,6 +161,25 @@ fun ProviderIntegrationCard(
                             Text("Testar sincronização")
                         }
                     }
+                    // Nota permanente (não só depois de clicar "Testar
+                    // sincronização") -- pedido do usuário via auditoria
+                    // ("deixar claro na UI que sync depende de parceria
+                    // externa"): o site já mostra isso uma vez, num toast,
+                    // logo após salvar a credencial (ver savedDescription em
+                    // provider-integration-card.tsx) -- mas um toast some da
+                    // tela; o app não tinha NENHUM aviso proativo, só a
+                    // mensagem reativa (syncMessage) depois de tentar (que
+                    // sempre falha, já que é um stub aguardando aprovação de
+                    // parceiro -- ver comentário completo em
+                    // provider-integration.ts). Com o texto fixo aqui, quem
+                    // reabre a tela mais tarde (sem ter visto o toast) já
+                    // entende que "conectado" não significa "sincronizando
+                    // automaticamente" ainda.
+                    Text(
+                        "A sincronização automática ainda depende de aprovação de parceiro do fabricante junto ao provedor -- \"Testar sincronização\" confirma que a credencial está salva, mas não puxa dados novos por enquanto.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                     integration?.ultimaSincronizacaoEm?.let {
                         Text("Última sincronização: ${formatIsoDateTime(it)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }

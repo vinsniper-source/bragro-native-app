@@ -310,6 +310,11 @@ data class ModuleActionRequest(
     // produção, que ignora campos extras que não usa).
     val motivo: String? = null,
     val tipo: String? = null,
+    // Só usado por "emitir-nfse" (varredura de auditoria, pedido do usuário
+    // "implemente tudo") -- id do registro Nfse a emitir. Réplica mobile do
+    // botão "Emitir NFS-e" da tabela genérica do site (data-table.tsx,
+    // domain.id === "nfse").
+    val id: String? = null,
 )
 
 @Serializable

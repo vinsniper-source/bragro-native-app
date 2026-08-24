@@ -45,6 +45,7 @@ import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.GridOn
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -98,6 +99,7 @@ import com.bragro.mobile.data.model.DomainConfig
 import com.bragro.mobile.data.model.WeatherResponse
 import com.bragro.mobile.data.repo.AuditInfoRepository
 import com.bragro.mobile.data.repo.ConfigRepository
+import com.bragro.mobile.data.repo.ModuleActionsRepository
 import com.bragro.mobile.data.repo.RecordRepository
 import com.bragro.mobile.data.repo.WeatherRepository
 import com.bragro.mobile.ui.print.HtmlPrinter
@@ -110,6 +112,11 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
     private val recordRepository = RecordRepository(app)
     private val weatherRepository = WeatherRepository()
     private val auditInfoRepository = AuditInfoRepository(app)
+    // "Emitir NFS-e" (varredura de auditoria, pedido do usuário "implemente
+    // tudo") -- só usado quando domainId == "nfse" (ver botão por linha mais
+    // abaixo). Reaproveita o mesmo endpoint genérico de module-actions já
+    // usado por Recalcular Vencimentos/Área e Eficiência de Frota.
+    private val moduleActionsRepository = ModuleActionsRepository(app)
 
     var config = mutableStateOf<DomainConfig?>(null)
         private set
@@ -185,6 +192,32 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
     fun deleteRecord(domainId: String, recordId: String) {
         viewModelScope.launch { recordRepository.deleteRecord(domainId, recordId) }
     }
+
+    // "Emitir NFS-e" -- réplica mobile de onEmitirNfse() em data-table.tsx
+    // (site). "nfseBusyId" é o id sendo emitido agora (só ele fica
+    // desabilitado -- mesmo critério de "emitirNfseIdBusy" no site: não
+    // trava a lista inteira por causa de UMA nota em emissão).
+    // "nfseResult" guarda a mensagem de retorno (sucesso ou erro) pra
+    // mostrar num diálogo simples; refresh() só é chamado quando deu certo,
+    // pra não sobrescrever um registro que o usuário ainda não viu o erro.
+    var nfseBusyId = mutableStateOf<String?>(null)
+        private set
+    var nfseResult = mutableStateOf<Pair<String, Boolean>?>(null)
+        private set
+
+    fun emitirNfse(id: String) {
+        nfseBusyId.value = id
+        viewModelScope.launch {
+            val (ok, mensagem) = moduleActionsRepository.emitirNfse(id)
+            nfseBusyId.value = null
+            nfseResult.value = mensagem to ok
+            if (ok) refresh("nfse")
+        }
+    }
+
+    fun clearNfseResult() {
+        nfseResult.value = null
+    }
 }
 
 /** Uma unica tela de lista serve TODOS os 16 modulos -- guiada pelo
@@ -219,6 +252,8 @@ fun DomainListScreen(
     val offline by viewModel.offline
     val weather by viewModel.weather
     val auditInfo by viewModel.auditInfo
+    val nfseBusyId by viewModel.nfseBusyId
+    val nfseResult by viewModel.nfseResult
     val context = LocalContext.current
 
     // "Editado por" (ver comentário no ViewModel) -- busca em lote sempre
@@ -250,6 +285,15 @@ fun DomainListScreen(
         it.type == "select" && !it.computed && (it.lookupCategory != null || !it.staticOptions.isNullOrEmpty())
     } ?: emptyList()
     val columnFilters = remember(domainId) { mutableStateMapOf<String, String>() }
+
+    // Filtro "de passagem" vindo de outra tela (ex.: "Pedido rápido" em
+    // Controle de Insumos) -- ver PendingDomainFilter.kt. Consumido (lido e
+    // limpo) UMA vez ao montar esta tela pra este domainId -- réplica do
+    // que o site faz de verdade em "/m/pedidos?item=X" (abre a lista já
+    // filtrada, não um formulário pré-preenchido).
+    LaunchedEffect(domainId) {
+        PendingDomainFilter.consume(domainId)?.let { (key, value) -> columnFilters[key] = value }
+    }
 
     // Filtro global de fazenda (ver FarmSelection.kt, equivalente ao
     // FarmSelector do cabecalho do site) -- quando ha uma fazenda escolhida
@@ -1140,6 +1184,25 @@ fun DomainListScreen(
                                         )
                                     }
                                 }
+                                // "Emitir NFS-e" (varredura de auditoria,
+                                // pedido do usuário "implemente tudo") --
+                                // réplica mobile do botão só-do-domínio-nfse
+                                // do site (data-table.tsx, onEmitirNfse): só
+                                // aparece aqui, e só enquanto a nota ainda
+                                // não foi emitida.
+                                if (domainId == "nfse" && record["status"] != "EMITIDA" && recordId != null) {
+                                    IconButton(
+                                        onClick = { viewModel.emitirNfse(recordId) },
+                                        enabled = nfseBusyId == null,
+                                        modifier = Modifier.size(28.dp),
+                                    ) {
+                                        if (nfseBusyId == recordId) {
+                                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                        } else {
+                                            Icon(Icons.Filled.Send, contentDescription = "Emitir NFS-e", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                        }
+                                    }
+                                }
                                 IconButton(onClick = { recordBeingViewed = recordId }, modifier = Modifier.size(28.dp)) {
                                     Icon(Icons.Filled.Visibility, contentDescription = "Ver lançamento completo", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                                 }
@@ -1172,6 +1235,21 @@ fun DomainListScreen(
             },
             dismissButton = {
                 TextButton(onClick = { recordPendingDelete = null }) { Text("Cancelar") }
+            },
+        )
+    }
+    // Resultado de "Emitir NFS-e" -- pode ser sucesso (AUTORIZADA), "ainda
+    // processando" (a prefeitura não respondeu na hora) ou erro de
+    // validação (ex.: falta Valor/prestador não configurado); os 3 casos
+    // chegam aqui como uma mensagem simples, mesmo texto que o site mostra
+    // no toast (ver onEmitirNfse em data-table.tsx).
+    nfseResult?.let { (mensagem, ok) ->
+        AlertDialog(
+            onDismissRequest = { viewModel.clearNfseResult() },
+            title = { Text(if (ok) "NFS-e" else "Erro ao emitir NFS-e") },
+            text = { Text(mensagem) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.clearNfseResult() }) { Text("OK") }
             },
         )
     }

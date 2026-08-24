@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
@@ -56,6 +57,7 @@ import com.bragro.mobile.data.local.LookupEntity
 import com.bragro.mobile.data.model.CotacaoMultiItemItemData
 import com.bragro.mobile.data.repo.ConfigRepository
 import com.bragro.mobile.data.repo.CotacaoMultiItemRepository
+import com.bragro.mobile.data.repo.RecordRepository
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -72,10 +74,13 @@ import java.util.Locale
 // createCotacaoMultiItemAction() no servidor. Mesmo padrão de tela/
 // ViewModel já usado em NotaMultiItemScreen.kt/PedidoMultiItemScreen.kt.
 //
-// Gap conhecido (não replicado aqui): o site tem um botão "Copiar última
-// cotação" no topo desta tela (getLastRecordAction) -- não existe endpoint
-// mobile equivalente ainda, então essa conveniência ficou de fora desta
-// primeira versão nativa; o resto do formulário (cabeçalho + itens) é igual.
+// "Copiar último lançamento" (varredura de auditoria, pedido do usuário
+// "implemente tudo" -- corrige a nota antiga deste comentário, que dizia
+// "não existe endpoint mobile equivalente ainda": na verdade
+// RecordRepository.mostRecent(domainId) já lê do cache local (Room) sem
+// precisar de endpoint nenhum, mesmo mecanismo genérico do resto do app;
+// só faltava esta tela própria -- fora do motor genérico de domínio --
+// ligar ela mesma, igual replicado agora em PedidoMultiItemScreen.kt).
 
 class CotacaoLinha {
     var categoria by mutableStateOf("")
@@ -115,6 +120,7 @@ private fun brDateToMillisOrNull(br: String): Long? {
 class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
     private val repository = CotacaoMultiItemRepository(app)
     private val configRepository = ConfigRepository(app)
+    private val recordRepository = RecordRepository(app)
 
     var categoriasOptions = mutableStateOf<List<LookupEntity>>(emptyList())
         private set
@@ -141,6 +147,8 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
     var errorMessage = mutableStateOf<String?>(null)
         private set
     var successMessage = mutableStateOf<String?>(null)
+        private set
+    var copiando = mutableStateOf(false)
         private set
 
     init {
@@ -173,6 +181,38 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         linhas.clear(); linhas.add(CotacaoLinha())
         successMessage.value = null
         errorMessage.value = null
+    }
+
+    /** "Copiar último lançamento" -- busca a última proposta de cotação
+     * lançada (qualquer fornecedor/item) no cache local e preenche o
+     * cabeçalho + a primeira linha de item, mesmo padrão de
+     * preencherComUltimo() em cotacao-multi-item-button.tsx (site). */
+    fun preencherComUltimo() {
+        viewModelScope.launch {
+            copiando.value = true
+            val last = recordRepository.mostRecent("cotacoesfornecedores")
+            copiando.value = false
+            if (last == null) {
+                errorMessage.value = "Nenhuma cotação lançada ainda para copiar."
+                return@launch
+            }
+            last["fornecedor"]?.let { fornecedor = it }
+            last["data"]?.let { data = com.bragro.mobile.ui.domain.isoDateToBr(it) }
+            last["condicaoPagamento"]?.let { condicaoPagamento = it }
+            last["validadeProposta"]?.let { validadeProposta = com.bragro.mobile.ui.domain.isoDateToBr(it) }
+            last["observacoes"]?.let { observacoes = it }
+            val linha = CotacaoLinha()
+            last["categoria"]?.let { linha.categoria = it }
+            last["item"]?.let { linha.item = it }
+            last["unidade"]?.let { linha.unidade = it }
+            last["quantidade"]?.let { linha.quantidade = it }
+            last["precoUnitario"]?.let { linha.precoUnitario = it }
+            last["prazoEntregaDias"]?.let { linha.prazoEntregaDias = it }
+            linhas.clear()
+            linhas.add(linha)
+            successMessage.value = null
+            errorMessage.value = null
+        }
     }
 
     fun submit() {
@@ -312,6 +352,7 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
     val pending by viewModel.pending
     val errorMessage by viewModel.errorMessage
     val successMessage by viewModel.successMessage
+    val copiando by viewModel.copiando
 
     Scaffold(
         topBar = {
@@ -358,6 +399,16 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                     "Cada linha é UMA proposta de UM fornecedor. Lance 2+ propostas com a MESMA Categoria + Item pra comparar automaticamente -- Índice de Vantagem e Avaliação recalculam sozinhos.",
                     style = MaterialTheme.typography.bodySmall,
                 )
+            }
+            item {
+                OutlinedButton(
+                    onClick = { viewModel.preencherComUltimo() },
+                    enabled = !copiando,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Filled.ContentCopy, contentDescription = null, modifier = Modifier.padding(end = 6.dp).size(16.dp))
+                    Text(if (copiando) "Copiando..." else "Copiar última cotação")
+                }
             }
             if (errorMessage != null) {
                 item { Text(errorMessage ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }

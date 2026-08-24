@@ -8,6 +8,9 @@ import com.bragro.mobile.data.model.ModuleChartsRequest
 import com.bragro.mobile.data.model.ModuleChartsResponse
 import com.bragro.mobile.data.remote.NetworkModule
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.booleanOrNull
 
 /** Bloco "Gráficos" (Task de réplica completa dos módulos) -- busca em
  * /api/mobile/module-charts, que reaproveita getModuleChartData()/
@@ -83,6 +86,47 @@ class ModuleActionsRepository(context: Context) {
         } catch (e: Exception) {
             AppLog.e("ModuleActionsRepository", "Falha ao executar ação de módulo '$action'", e)
             null
+        }
+    }
+
+    /** "Emitir NFS-e" (varredura de auditoria, pedido do usuário "implemente
+     * tudo") -- réplica mobile de onEmitirNfse() em data-table.tsx (site).
+     * Função própria (em vez de reaproveitar run()) porque aqui a MENSAGEM
+     * de erro/sucesso do resultado importa pro usuário (run() descarta o
+     * campo "error"/"mensagem" no caminho de falha, ok pras demais actions
+     * que só mostram "sucesso ou não", mas não pra esta). Duas camadas de
+     * "falha" possíveis, mesmo comportamento do servidor
+     * (module-actions/route.ts -> emitirNfseAction):
+     * 1) erro de validação (ex.: "Informe o Valor antes de emitir") -> HTTP
+     *    não-2xx, corpo com "error" (ModuleActionResponse.error).
+     * 2) chamada OK, mas a prefeitura/SEFAZ recusou ou ainda está
+     *    processando -> HTTP 2xx com result.ok=false e result.mensagem
+     *    explicando o motivo. */
+    suspend fun emitirNfse(id: String): Pair<Boolean, String> {
+        val tokens = tokenStore.current() ?: return false to "Sem sessão -- faça login novamente."
+        var (accessToken, refreshToken) = tokens
+        fun buildRequest(token: String) = ModuleActionRequest(token, refreshToken, "emitir-nfse", id = id)
+        return try {
+            var response = NetworkModule.mobileApi.moduleActions(buildRequest(accessToken))
+            if (response.code() == 401) {
+                val newAccess = TokenRefresher.refreshAccessToken(tokenStore, refreshToken)
+                if (newAccess != null) {
+                    accessToken = newAccess
+                    response = NetworkModule.mobileApi.moduleActions(buildRequest(accessToken))
+                }
+            }
+            val body = response.body()
+            if (!response.isSuccessful || body == null) {
+                return false to (body?.error ?: "Erro ao emitir NFS-e (código ${response.code()}).")
+            }
+            if (!body.ok) return false to (body.error ?: "Erro ao emitir NFS-e.")
+            val result = body.result
+            val ok = (result?.get("ok") as? JsonPrimitive)?.booleanOrNull ?: true
+            val mensagem = (result?.get("mensagem") as? JsonPrimitive)?.contentOrNull ?: "NFS-e processada."
+            ok to mensagem
+        } catch (e: Exception) {
+            AppLog.e("ModuleActionsRepository", "Falha ao emitir NFS-e (id=$id)", e)
+            false to "Falha de conexão ao emitir NFS-e."
         }
     }
 }

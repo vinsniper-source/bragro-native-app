@@ -18,6 +18,39 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.15] -- 2026-08-24
+
+Varredura de auditoria completa (site + app) e implementação dos itens
+levantados (pedido do usuário: "faça uma varredura completa profunda...
+para sugestões de implementação e exclusão" + "implemente tudo").
+
+- "Copiar último lançamento" nas 3 telas "vários itens" (Pedidos, Cotações,
+  Nota com itens): Pedidos e Nota nunca tinham essa conveniência no app;
+  Cotações tinha um comentário dizendo que precisava de endpoint mobile
+  novo -- não precisava (RecordRepository.mostRecent(domainId) já lê do
+  cache local pra qualquer domínio, mesmo mecanismo genérico usado em todo
+  o resto do app). Site também ganhou o mesmo botão em Pedidos
+  (pedido-multi-item-button.tsx), que só Cotações tinha.
+- Pedido Rápido (Controle de Insumos): corrigido pra abrir a LISTA de
+  Pedidos filtrada pelo item, igual o site faz de verdade -- antes pulava
+  direto pro formulário em branco sem usar o item recebido.
+- Credenciais de integração de provedor (FieldView/John Deere/DJI/SEFAZ)
+  agora são criptografadas em repouso (AES-256-GCM) antes de salvar no
+  banco -- sem mudar a coluna do banco (String? continua igual), só o
+  formato do conteúdo salvo. Compatível com credenciais antigas já salvas
+  em texto simples.
+- Card de integração de provedor: mensagem sobre a sincronização depender
+  de aprovação de parceiro do fabricante agora fica sempre visível quando
+  conectado, não só depois de clicar em "Testar sincronização".
+- Emissão de NFS-e (Focus NFe) agora funciona pelo app nativo: botão
+  "Emitir NFS-e" na lista do módulo NFS-e (só quando ainda não emitida),
+  réplica do mesmo botão do site -- reaproveita o endpoint genérico
+  /api/mobile/module-actions (mesma Server Action do site, nenhuma lógica
+  de emissão duplicada em Kotlin).
+- QuickCaptureBar.kt/quick-capture-bar.tsx e ModulosScreen.kt confirmados
+  órfãos (zero referências reais fora do próprio arquivo) -- remoção via
+  comando manual, ver instruções da conversa.
+
 ## [1.2.14] -- 2026-08-22
 
 - Acessos e Segurança (app): adicionada a categoria "Início (blocos do

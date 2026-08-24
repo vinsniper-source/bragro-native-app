@@ -184,13 +184,20 @@ fun BRAgroNavHost() {
         composable(Routes.CONTROLE_INSUMOS) {
             ControleInsumosScreen(
                 onBack = { navController.popBackStack() },
-                // "Pedido rápido" (item já filtrado) -- o formulário genérico
-                // (DomainFormScreen.kt) ainda não aceita valor inicial vindo
-                // por navegação, então o atalho leva pro Novo Lançamento de
-                // Pedidos (o usuário escolhe o item lá) em vez de pré-
-                // preencher, diferente do site (/m/pedidos?item=X). Gap
-                // conhecido, documentado aqui.
-                onPedidoRapido = { navController.navigate(Routes.domainFormNew("pedidos")) },
+                // "Pedido rápido" -- corrigido pra replicar o que o site
+                // realmente faz em "/m/pedidos?item=X" (ver
+                // PendingDomainFilter.kt pro porquê): abre a LISTA de
+                // Pedidos já filtrada por esse item, não um formulário em
+                // branco. com.bragro.mobile.ui.domain.PendingDomainFilter
+                // guarda o item "de passagem" -- DomainListScreen consome no
+                // onMount quando domainId == "pedidos".
+                onPedidoRapido = { item ->
+                    com.bragro.mobile.ui.domain.PendingDomainFilter.set("pedidos", "item", item)
+                    navController.navigate(Routes.domainList("pedidos")) {
+                        popUpTo(Routes.HOME)
+                        launchSingleTop = true
+                    }
+                },
             )
         }
         composable(Routes.OPERACOES) {

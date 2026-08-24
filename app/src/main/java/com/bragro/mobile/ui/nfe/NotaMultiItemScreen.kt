@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
@@ -58,6 +59,7 @@ import com.bragro.mobile.data.local.LookupEntity
 import com.bragro.mobile.data.model.NotaMultiItemItemData
 import com.bragro.mobile.data.repo.ConfigRepository
 import com.bragro.mobile.data.repo.NotaMultiItemRepository
+import com.bragro.mobile.data.repo.RecordRepository
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -74,6 +76,19 @@ import java.util.Locale
 // servidor -- mesmo motor que o site usa (1 Invoice + N InvoiceItem, baixa
 // automática no Estoque, 1 lançamento no Financeiro). Nenhuma lógica de
 // negócio duplicada em Kotlin.
+//
+// "Copiar último lançamento" (varredura de auditoria, pedido do usuário
+// "implemente tudo"): no SITE, o cabeçalho desta tela (Doc/NF, Data, Local,
+// Entidade) vem do RecordForm genérico do domínio "financeiro" LOGO ACIMA
+// (ver nota-multi-item-button.tsx, "Quinta"/"Sexta rodada"), que já tem seu
+// próprio "Copiar último lançamento" -- não precisa de nada extra ali. Aqui
+// no app, porém, esta tela é INDEPENDENTE (não embutida dentro de um
+// formulário genérico de Financeiro), então ganha seu próprio botão,
+// buscando o último registro do domínio "financeiro" no cache local
+// (RecordRepository.mostRecent) e traduzindo os nomes de campo
+// equivalentes: docNf->numero, data->dataEmissao, local->fazendaDestino,
+// entidade->emitenteNome. Só o cabeçalho é copiado (itens não têm
+// equivalente 1:1 num lançamento de Financeiro genérico).
 
 /** Uma linha de item digitada -- campos em texto (não Double) pra aceitar
  * digitação livre (vírgula/ponto), convertidos só na hora de enviar, mesmo
@@ -127,6 +142,7 @@ private fun parseDecimal(s: String): Double =
 class NotaMultiItemViewModel(app: Application) : AndroidViewModel(app) {
     private val repository = NotaMultiItemRepository(app)
     private val configRepository = ConfigRepository(app)
+    private val recordRepository = RecordRepository(app)
 
     var farms = mutableStateOf<List<FarmEntity>>(emptyList())
         private set
@@ -150,6 +166,8 @@ class NotaMultiItemViewModel(app: Application) : AndroidViewModel(app) {
     var errorMessage = mutableStateOf<String?>(null)
         private set
     var successMessage = mutableStateOf<String?>(null)
+        private set
+    var copiando = mutableStateOf(false)
         private set
 
     init {
@@ -188,6 +206,30 @@ class NotaMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         linhas.clear(); linhas.add(NotaMultiItemLinha())
         successMessage.value = null
         errorMessage.value = null
+    }
+
+    /** "Copiar último lançamento" -- busca o último lançamento do domínio
+     * "financeiro" no cache local (o mesmo "pai" que, no site, alimenta
+     * esta seção via props ao vivo -- ver comentário no topo do arquivo) e
+     * preenche só o cabeçalho, traduzindo os nomes de campo equivalentes.
+     * Itens não são copiados (sem correspondência 1:1 num lançamento
+     * genérico de Financeiro). */
+    fun preencherComUltimo() {
+        viewModelScope.launch {
+            copiando.value = true
+            val last = recordRepository.mostRecent("financeiro")
+            copiando.value = false
+            if (last == null) {
+                errorMessage.value = "Nenhum lançamento de Financeiro ainda para copiar."
+                return@launch
+            }
+            last["docNf"]?.let { numero = it }
+            last["data"]?.let { dataEmissao = com.bragro.mobile.ui.domain.isoDateToBr(it) }
+            last["local"]?.let { fazendaDestino = it }
+            last["entidade"]?.let { emitenteNome = it }
+            successMessage.value = null
+            errorMessage.value = null
+        }
     }
 
     fun submit() {
@@ -333,6 +375,7 @@ fun NotaMultiItemScreen(onBack: () -> Unit, viewModel: NotaMultiItemViewModel = 
     val pending by viewModel.pending
     val errorMessage by viewModel.errorMessage
     val successMessage by viewModel.successMessage
+    val copiando by viewModel.copiando
 
     Scaffold(
         topBar = {
@@ -382,6 +425,16 @@ fun NotaMultiItemScreen(onBack: () -> Unit, viewModel: NotaMultiItemViewModel = 
                     "Preencha o cabeçalho da nota uma vez e adicione quantos itens ela tiver. Cada item baixa automaticamente no Estoque; o valor total da nota vira um único lançamento no Financeiro. Não lance esta mesma nota de novo em Estoque nem em Financeiro depois -- os dois já são preenchidos por aqui, lançar de novo duplica o saldo em Estoque e distorce relatórios que dependem dele (Livro Caixa, DRE, Análises).",
                     style = MaterialTheme.typography.bodySmall,
                 )
+            }
+            item {
+                OutlinedButton(
+                    onClick = { viewModel.preencherComUltimo() },
+                    enabled = !copiando,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Filled.ContentCopy, contentDescription = null, modifier = Modifier.padding(end = 6.dp).size(16.dp))
+                    Text(if (copiando) "Copiando..." else "Copiar cabeçalho do último lançamento")
+                }
             }
             if (errorMessage != null) {
                 item { Text(errorMessage ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
