@@ -874,6 +874,18 @@ data class OperacaoAgrupadaData(
     val estagio: String, // "plantio" | "vegetativo" | "colheita" | "indefinido"
     val dataInicio: String,
     val dataFim: String? = null,
+    // Progresso OPERACIONAL (O.S. concluídas/totais), não mais tempo
+    // decorrido -- varredura de auditoria, pedido do usuário ("a
+    // porcentagem está em 650%... a barra continua contando o tempo
+    // decorrido mesmo após a conclusão das tarefas"). Já vem calculado do
+    // servidor (getOperacoes, services/operacoes.ts) -- nunca recalcular
+    // aqui, réplica exata do mesmo raciocínio de "nenhuma lógica de
+    // negócio duplicada em Kotlin" usado no resto do app.
+    val osTotal: Int = 0,
+    val osConcluidas: Int = 0,
+    val progressoPct: Int = 0,
+    val concluida: Boolean = false,
+    val atrasada: Boolean = false,
     val realizadoTotal: Double,
     val planejadoTotal: Double,
     val variacaoMedia: Double? = null,

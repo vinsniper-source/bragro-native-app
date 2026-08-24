@@ -18,6 +18,27 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.16] -- 2026-08-24
+
+- Corrigido bug real no card "Operação" (Safra agrupada por Safra+Cultura+
+  Local, site e app): a barra "Progresso da janela" podia mostrar números
+  como 650% -- pedido do usuário, com diagnóstico correto: o cálculo
+  comparava tempo decorrido (Date.now() - início) com uma "janela"
+  (dataFim - início), mas "dataFim" ali NÃO é um prazo planejado -- é a
+  data em que cada O.S. foi de fato concluída (SafraRegistro.dataFim, ver
+  computeSafraFields em services/safra.ts). Como o cálculo continuava
+  comparando com a data de HOJE mesmo depois da operação já ter terminado
+  há muitos dias, o "progresso" crescia sem limite pra sempre (13 dias
+  decorridos ÷ 2 dias de janela = 650%). Trocado por progresso OPERACIONAL
+  de verdade: % de O.S. concluídas sobre o total do grupo (osConcluidas/
+  osTotal), que nunca ultrapassa 100% por construção (é uma razão de
+  contagens, não de tempo) -- quando todas concluídas, badge verde
+  "Concluído" com a barra travada em 100%; quando nenhuma concluída e
+  alguma está com mais de 5 dias em andamento (mesmo critério de "ATRASADO"
+  já usado no Status de Safra), badge vermelho "Atrasado" em vez de deixar
+  crescer. Calculado 1x no servidor (getOperacoes) e reaproveitado igual
+  pelo site e pelo app -- nenhuma lógica duplicada em Kotlin.
+
 ## [1.2.15] -- 2026-08-24
 
 Varredura de auditoria completa (site + app) e implementação dos itens

@@ -162,13 +162,21 @@ private fun EstagioChip(estagio: String) {
 // compartilhado novo, mesmo critério já usado pelas outras telas
 // (DreScreen/FinanceiroScreen) de não arriscar mexer em código usado por
 // outros módulos.
+// Progresso OPERACIONAL (O.S. concluídas/totais) -- substitui a antiga
+// JanelaProgressBar (tempo decorrido vs "janela", que dava 650% em
+// operações concluídas há muito tempo, ver comentário em OperacaoCard
+// acima). "pct" já vem 0-100 do servidor (razão de contagens, nunca
+// ultrapassa 100 por construção), mas o coerceIn(0.0, 1.0) fica como trava
+// defensiva mesmo assim -- mesmo raciocínio do "Cap/Clamp" pedido pelo
+// usuário, só que aqui é redundante (não decorativo) porque a métrica já
+// nasceu limitada.
 @Composable
-private fun JanelaProgressBar(pct: Double) {
+private fun OperacaoProgressBar(pct: Double, concluida: Boolean, atrasada: Boolean) {
     val fracao = (pct / 100.0).coerceIn(0.0, 1.0).toFloat()
     val cor = when {
-        pct >= 100 -> MaterialTheme.colorScheme.error
-        pct >= 80 -> MaterialTheme.colorScheme.secondary
-        else -> MaterialTheme.colorScheme.primary
+        concluida -> MaterialTheme.colorScheme.primary
+        atrasada -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.secondary
     }
     Box(modifier = Modifier.fillMaxWidth().height(6.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(3.dp))) {
         Box(modifier = Modifier.fillMaxWidth(fracao).height(6.dp).background(cor, RoundedCornerShape(3.dp)))
@@ -180,20 +188,12 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onVerEmSafra: () -> Unit) {
     var abrirFinanceiro by remember { mutableStateOf(false) }
     var abrirEstoque by remember { mutableStateOf(false) }
 
-    val progresso = remember(op.dataInicio, op.dataFim) {
-        if (op.dataFim == null) return@remember null
-        try {
-            val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
-            val inicio = parser.parse(op.dataInicio)?.time ?: return@remember null
-            val fim = parser.parse(op.dataFim)?.time ?: return@remember null
-            if (fim <= inicio) return@remember null
-            val diasTotal = ((fim - inicio) / 86400000.0).let { Math.round(it) }
-            val diasDecorridos = ((System.currentTimeMillis() - inicio) / 86400000.0).let { Math.round(it) }
-            Triple((diasDecorridos.toDouble() / diasTotal.toDouble()) * 100.0, maxOf(0L, diasDecorridos), diasTotal)
-        } catch (e: Exception) {
-            null
-        }
-    }
+    // Progresso OPERACIONAL (O.S. concluídas/totais), não mais tempo
+    // decorrido -- varredura de auditoria, pedido do usuário ("a
+    // porcentagem está em 650%... a barra continua contando o tempo
+    // decorrido mesmo após a conclusão das tarefas"). Já vem pronto de
+    // OperacaoAgrupadaData (osTotal/osConcluidas/progressoPct/concluida/
+    // atrasada), calculado no servidor -- ver comentário no Models.kt.
 
     val variacaoCor = when {
         op.variacaoMedia == null -> MaterialTheme.colorScheme.onSurfaceVariant
@@ -221,19 +221,27 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onVerEmSafra: () -> Unit) {
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                EstagioChip(op.estagio)
+                Column(horizontalAlignment = Alignment.End) {
+                    EstagioChip(op.estagio)
+                    if (op.concluida) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        com.bragro.mobile.ui.domain.StatusBadge("FINALIZADO")
+                    } else if (op.atrasada) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        com.bragro.mobile.ui.domain.StatusBadge("ATRASADO")
+                    }
+                }
             }
 
-            if (progresso != null) {
-                val (pct, decorridos, total) = progresso
+            if (op.osTotal > 0) {
                 Column {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Progresso da janela", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("$decorridos/$total dias", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Progresso (O.S. concluídas)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("${op.osConcluidas}/${op.osTotal} O.S.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Spacer(modifier = Modifier.height(2.dp))
-                    JanelaProgressBar(pct)
-                    Text("${Math.round(pct)}%", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 2.dp))
+                    OperacaoProgressBar(pct = op.progressoPct.toDouble(), concluida = op.concluida, atrasada = op.atrasada)
+                    Text("${op.progressoPct}%", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 2.dp))
                 }
             }
 
