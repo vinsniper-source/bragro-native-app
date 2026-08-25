@@ -224,10 +224,21 @@ fun CanvasCirclesRow(
         ) {
             fazendas.forEach { f ->
                 val unica = fazendas.size == 1
+                // areaFiltroHa (área de fato coberta pelos lançamentos da
+                // safra/cultura filtrada, ex.: safrinha ocupa menos área
+                // que a safra verão na mesma fazenda) tem prioridade sobre
+                // a área cadastral (areaHa) -- espelho exato de
+                // canvas-view.tsx (site), mesmo pedido do usuário
+                // ("gostaria que o círculo tivesse áreas diferentes da
+                // mesma fazenda dependendo a seleção dos filtros"). Sem
+                // filtro de safra/cultura, ou sem lançamento com hectare
+                // preenchido ainda, cai de volta pra areaHa.
+                val areaExibida = f.areaFiltroHa ?: f.areaHa
+                val filtroAtivo = f.areaFiltroHa != null
                 val sizeDp = if (unica) {
-                    (56 + f.areaHa * 0.06).coerceIn(90.0, 130.0).dp
+                    (56 + areaExibida * 0.06).coerceIn(90.0, 130.0).dp
                 } else {
-                    (42 + f.areaHa * 0.05).coerceIn(56.0, 84.0).dp
+                    (42 + areaExibida * 0.05).coerceIn(56.0, 84.0).dp
                 }
                 val selecionada = f.id == selectedId
                 val seta = tendenciaSeta(f.tendencia)
@@ -257,10 +268,17 @@ fun CanvasCirclesRow(
                                 modifier = Modifier.padding(horizontal = 6.dp),
                             )
                             Text(
-                                "${NumberFormat.getNumberInstance(Locale("pt", "BR")).format(f.areaHa)} ha",
+                                "${NumberFormat.getNumberInstance(Locale("pt", "BR")).format(areaExibida)} ha",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = statusColor(f.status).copy(alpha = 0.8f),
                             )
+                            if (filtroAtivo) {
+                                Text(
+                                    "da safra selecionada",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                                    color = statusColor(f.status).copy(alpha = 0.6f),
+                                )
+                            }
                         }
                     }
                     if (seta != null) {

@@ -35,6 +35,11 @@ o que mudou (o CI não faz isso sozinho).
 - Início (Custo médio/ha): legendas do detalhamento por safra/cultura
   viram `FlowRow` (quebra horizontal até o fim do bloco, só desce de linha
   se necessário) em vez de empilhadas verticalmente.
+- Início (Canvas): o círculo de cada fazenda agora reflete a área de fato
+  coberta pelos lançamentos de Safra da safra/cultura filtrada (ex.:
+  safrinha ocupa um círculo menor que a safra verão na mesma fazenda), em
+  vez de sempre mostrar a área cadastral total. Sem filtro de safra/cultura
+  ativo, continua mostrando a área total, igual antes.
 
 ## [1.2.18] -- 2026-08-25
 

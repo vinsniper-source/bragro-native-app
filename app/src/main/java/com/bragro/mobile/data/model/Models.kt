@@ -151,6 +151,12 @@ data class CanvasFazendaCardData(
     val id: String,
     val nome: String,
     val areaHa: Double,
+    // Área de fato coberta pelos lançamentos de Safra que batem no filtro
+    // de safra/cultura selecionado -- espelho exato de areaFiltroHa em
+    // lib/services/canvas.ts (site). null = sem filtro de safra/cultura
+    // ativo (ou sem lançamento com hectare preenchido ainda), o círculo cai
+    // de volta pra areaHa (área cadastral da fazenda inteira).
+    val areaFiltroHa: Double? = null,
     val status: String, // "ok" | "alerta" | "risco" | "semdado"
     val variacaoMedia: Double? = null,
     val culturaAtual: String? = null,
