@@ -18,6 +18,24 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.19] -- 2026-08-25
+
+- Operações: ícone de editar em cada lançamento (Financeiro e Safra) agora
+  navega direto pra tela de edição do registro (`domain/{id}/edit/{recordId}`),
+  em vez do único link genérico "Ver em Safra" que existia antes.
+- Início: removido o bloco de Estágio da safra + Sugestão adaptativa
+  (pedido do usuário -- não é mais necessário na Início).
+- Financeiro (Gestão Financeira): removido o fundo do bloco externo único;
+  os blocos de ícone individuais (visualização) agora têm fundo verde
+  escuro (`BrGreen`) com fonte branca, sem alterar o `ModuleIconButton`
+  compartilhado usado no resto do app.
+- Frota: barra de progresso da próxima revisão agora mostra também quantos
+  dias faltam (ou quantos dias está atrasada), espelhando o mesmo texto do
+  site.
+- Início (Custo médio/ha): legendas do detalhamento por safra/cultura
+  viram `FlowRow` (quebra horizontal até o fim do bloco, só desce de linha
+  se necessário) em vez de empilhadas verticalmente.
+
 ## [1.2.18] -- 2026-08-25
 
 - Barras de progresso nos 5 módulos que ganharam a mesma feature no site
