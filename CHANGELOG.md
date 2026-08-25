@@ -18,6 +18,23 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.18] -- 2026-08-25
+
+- Barras de progresso nos 5 módulos que ganharam a mesma feature no site
+  (pedido do usuário: "a barra de progresso deve ser aplicada em módulos
+  que envolvem metas, limites, etapas contínuas ou consumo de recursos" +
+  confirmação "sim" pra replicar no app): Colheita (% colhido, cor pelo
+  status do lançamento), Pedidos (% entregue, cor pelo status),
+  Planejamento de Safra (área realizada vs. planejada, e custo realizado
+  vs. orçado), Frota (dias desde a Entrada até a próxima revisão, janela
+  de 180 dias) e Contratos (Valor Pago vs. Valor do contrato -- novo campo
+  manual "Valor Pago", exceção de schema explicitamente autorizada pelo
+  usuário). Tudo calculado no cliente (Kotlin) em cima de colunas que já
+  chegavam do servidor -- nenhum campo novo, nenhum cálculo duplicado além
+  do já existente no site (`domainProgressCellInfo` em StatusStyle.kt é o
+  espelho exato de `progressCellInfo` em data-table.tsx). Mesmos limiares
+  de cor já usados no app (verde/amarelo/vermelho) e no site.
+
 ## [1.2.17] -- 2026-08-24
 
 - Nova barra de progresso "Área utilizada" no card "Operação" (Safra

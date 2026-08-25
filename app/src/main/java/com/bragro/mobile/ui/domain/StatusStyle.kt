@@ -1,6 +1,10 @@
 package com.bragro.mobile.ui.domain
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -11,6 +15,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Spacer
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -22,7 +27,11 @@ import java.util.Locale
 // cor correspondente (verde/amarelo/vermelho), igual ao site.
 private val STATUS_LIKE_KEY = Regex("status|^acaoRh$|^confere$|^conferenNf$|^desvio$", RegexOption.IGNORE_CASE)
 
-private enum class Tone { GOOD, WARN, BAD }
+// Nao mais "private" -- reaproveitado por progressCellInfo/DomainProgressBar
+// abaixo (mesmo pacote com.bragro.mobile.ui.domain, chamado de
+// DomainListScreen.kt) pra colorir a barra de progresso com o mesmo criterio
+// visual (verde/amarelo/vermelho) que StatusBadge ja usa pra badges de texto.
+enum class Tone { GOOD, WARN, BAD }
 
 private val STATUS_TONE: Map<String, Tone> = mapOf(
     "OK" to Tone.GOOD, "ATIVO" to Tone.GOOD, "EM DIA" to Tone.GOOD, "ATENDIDO" to Tone.GOOD, "PAGO" to Tone.GOOD,
@@ -168,7 +177,7 @@ fun formatMoneyValue(rawValue: String): String {
     return if (n == null) rawValue else NumberFormat.getCurrencyInstance(PT_BR_MONEY).format(n)
 }
 
-private fun statusTone(raw: String): Tone? {
+fun statusTone(raw: String): Tone? {
     val v = raw.trim().uppercase()
     if (v.isEmpty() || v == "—") return null
     STATUS_TONE[v]?.let { return it }
@@ -209,4 +218,141 @@ fun StatusBadge(rawValue: String) {
             .background(bg)
             .padding(horizontal = 10.dp, vertical = 3.dp),
     )
+}
+
+// Espelho de progressCellInfo() em data-table.tsx (site) -- pedido do
+// usuario ("a barra de progresso deve ser aplicada em modulos que envolvem
+// metas, limites, etapas continuas ou consumo de recursos", depois "sim"
+// pra replicar no app nativo). Mesmo criterio: dominio+coluna especificos,
+// tudo calculado em cima de campos que ja chegam do servidor (colhido/
+// entregue/areaRealizada/areaPlanejada/custoRealizado/custoOrcado/valorR/
+// valorPago/entrada/proxRevisao) -- NENHUM calculo novo/duplicado, so
+// leitura + razao simples, exatamente como no site.
+enum class BarTone { GOOD, WARN, BAD, NEUTRAL }
+
+data class DomainProgressInfo(val value: Double, val barTone: BarTone, val label: String? = null)
+
+private fun toneToBar(tone: Tone?): BarTone = when (tone) {
+    Tone.GOOD -> BarTone.GOOD
+    Tone.WARN -> BarTone.WARN
+    Tone.BAD -> BarTone.BAD
+    null -> BarTone.NEUTRAL
+}
+
+// Mesmo criterio ja usado no bloco "% do orcado ja gasto" de Analises
+// (site, analises-client.tsx) -- Custo Orcado (Planejamento de Safra),
+// Contratos (Valor Pago) e Frota (dias ate a proxima revisao) reaproveitam
+// este mesmo threshold.
+private fun budgetBarTone(pct: Double): BarTone = when {
+    pct >= 100 -> BarTone.BAD
+    pct >= 80 -> BarTone.WARN
+    else -> BarTone.GOOD
+}
+
+// Mesmo criterio ja usado na barra de Area Total x Parcial de Operacoes
+// (OperacoesScreen.kt) -- reaproveitado aqui pra Area Realizada x Planejada.
+private fun areaBarTone(pct: Double): BarTone = when {
+    pct > 100 -> BarTone.BAD
+    pct >= 90 -> BarTone.WARN
+    else -> BarTone.NEUTRAL
+}
+
+private fun fmtNum1(v: Double): String =
+    NumberFormat.getNumberInstance(PT_BR_MONEY).apply { maximumFractionDigits = 2 }.format(v)
+
+/** Extrai millis (UTC, meia-noite) de uma data ISO -- mesmo prefixo usado em
+ * ISO_DATE_PREFIX/isoDateOnly acima, so que convertido pra epoch millis (pra
+ * calcular "dias desde a Entrada" da barra de revisao de Frota). */
+private fun isoDateMillis(raw: String): Long? {
+    val m = ISO_DATE_PREFIX.find(raw) ?: return null
+    val (y, mo, d) = m.destructured
+    val cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
+    cal.clear()
+    cal.set(y.toInt(), mo.toInt() - 1, d.toInt())
+    return cal.timeInMillis
+}
+
+/** Retorna os dados pra renderizar uma barra de progresso neste campo
+ * (dominio+coluna especificos), ou null quando esta celula nao e uma delas
+ * (RecordFieldLine continua com a renderizacao normal, sem mudanca nenhuma).
+ * "record" e o Map<String, String?> cru que ja chega do servidor (mesmo
+ * formato usado no resto do app, ver DomainListViewModel.records). */
+fun domainProgressCellInfo(domainId: String, key: String, record: Map<String, String?>): DomainProgressInfo? {
+    fun num(k: String): Double? = record[k]?.toDoubleOrNull()
+
+    if (domainId == "colheita" && key == "colhido") {
+        val value = num("colhido") ?: return null
+        return DomainProgressInfo(value, toneToBar(statusTone(record["status"] ?: "")))
+    }
+    if (domainId == "pedidos" && key == "entregue") {
+        val value = num("entregue") ?: return null
+        return DomainProgressInfo(value, toneToBar(statusTone(record["status"] ?: "")))
+    }
+    if (domainId == "planejamentosafra" && key == "areaRealizada") {
+        val planejada = num("areaPlanejada")
+        if (planejada == null || planejada == 0.0) return null
+        val realizada = num("areaRealizada") ?: 0.0
+        val value = (realizada / planejada) * 100
+        return DomainProgressInfo(value, areaBarTone(value), label = "${fmtNum1(realizada)}/${fmtNum1(planejada)} ha")
+    }
+    if (domainId == "planejamentosafra" && key == "custoRealizado") {
+        val orcado = num("custoOrcado")
+        if (orcado == null || orcado == 0.0) return null
+        val realizado = num("custoRealizado") ?: 0.0
+        val value = (realizado / orcado) * 100
+        return DomainProgressInfo(value, budgetBarTone(value))
+    }
+    if (domainId == "contratos" && key == "valorPago") {
+        val total = num("valorR")
+        if (total == null || total == 0.0) return null
+        val pago = num("valorPago") ?: 0.0
+        val value = (pago / total) * 100
+        return DomainProgressInfo(value, budgetBarTone(value))
+    }
+    if (domainId == "frota" && key == "proxRevisao") {
+        val entradaRaw = record["entrada"] ?: return null
+        val entradaMs = isoDateMillis(entradaRaw) ?: return null
+        val dias = (System.currentTimeMillis() - entradaMs) / 86400000.0
+        val value = (dias / 180.0) * 100
+        // Mantem a data da proxima revisao visivel no label (mesmo motivo do
+        // site: a barra so acrescenta "quanto da janela ja passou", nao
+        // deveria fazer a data sumir da celula).
+        val label = record["proxRevisao"]?.let { isoDateToBr(isoDateOnly(it)) }
+        return DomainProgressInfo(value, budgetBarTone(value), label = label)
+    }
+    return null
+}
+
+/** Barra de progresso dentro de um card de lançamento (RecordFieldLine) --
+ * mesmo "Rótulo: valor" das outras linhas, so que com uma barrinha embaixo
+ * em vez de so texto. Cores seguem BarTone (GOOD=primary, WARN=tertiary,
+ * BAD=error, NEUTRAL=secondary), mesmo padrao ja usado em
+ * OperacaoProgressBar/AreaProgressBar (OperacoesScreen.kt). */
+@Composable
+fun DomainProgressCell(colLabel: String, info: DomainProgressInfo) {
+    val fracao = (info.value / 100.0).coerceIn(0.0, 1.0).toFloat()
+    val cor = when (info.barTone) {
+        BarTone.GOOD -> MaterialTheme.colorScheme.primary
+        BarTone.WARN -> MaterialTheme.colorScheme.tertiary
+        BarTone.BAD -> MaterialTheme.colorScheme.error
+        BarTone.NEUTRAL -> MaterialTheme.colorScheme.secondary
+    }
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+        Text(
+            "$colLabel: ${info.label ?: "${Math.round(info.value)}%"}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Spacer(Modifier.height(2.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(5.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(3.dp)),
+        ) {
+            Box(modifier = Modifier.fillMaxWidth(fracao).height(5.dp).background(cor, RoundedCornerShape(3.dp)))
+        }
+    }
 }

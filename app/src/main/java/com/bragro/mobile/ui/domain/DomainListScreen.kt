@@ -1141,13 +1141,13 @@ fun DomainListScreen(
                                     colsToShow.chunked(2).forEach { pair ->
                                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                             pair.forEach { col ->
-                                                Column(modifier = Modifier.weight(1f)) { RecordFieldLine(col, record[col.key]!!) }
+                                                Column(modifier = Modifier.weight(1f)) { RecordFieldLine(col, record[col.key]!!, record, domainId) }
                                             }
                                             if (pair.size == 1) Spacer(Modifier.weight(1f))
                                         }
                                     }
                                 } else {
-                                    colsToShow.forEach { col -> RecordFieldLine(col, record[col.key]!!) }
+                                    colsToShow.forEach { col -> RecordFieldLine(col, record[col.key]!!, record, domainId) }
                                 }
                                 // "Editado por" + data/hora (pedido do
                                 // usuário) -- só aparece quando já existe
@@ -1274,7 +1274,7 @@ fun DomainListScreen(
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         viewedConfig.columns.filter { !it.hideInTable && !viewedRecord[it.key].isNullOrBlank() }.forEach { col ->
-                            RecordFieldLine(col, viewedRecord[col.key]!!)
+                            RecordFieldLine(col, viewedRecord[col.key]!!, viewedRecord, domainId)
                         }
                         auditInfo[recordBeingViewed]?.let { entry ->
                             Text(
@@ -1456,8 +1456,22 @@ fun formatAuditEntry(entry: com.bragro.mobile.data.model.AuditEntry): String {
 // pro resto), com maxLines/ellipsis porque agora divide espaço em 2 colunas
 // quando expandido (sem isso, um valor longo espremia o layout).
 @Composable
-private fun RecordFieldLine(col: com.bragro.mobile.data.model.ColumnConfig, value: String) {
-    if (isStatusLikeColumn(col.key)) {
+private fun RecordFieldLine(
+    col: com.bragro.mobile.data.model.ColumnConfig,
+    value: String,
+    record: Map<String, String?> = emptyMap(),
+    domainId: String = "",
+) {
+    // Espelho de progressCellInfo()/ProgressCell em data-table.tsx (site) --
+    // pedido do usuário ("sim" pra replicar as 5 barras novas no app
+    // nativo). Checado ANTES de isStatusLikeColumn pra não perder nenhum
+    // caso -- nenhuma das colunas com barra (colhido/entregue/areaRealizada/
+    // custoRealizado/valorPago/proxRevisao) é status-like, então na prática
+    // nunca colidem, mas a ordem segue a mesma do site por consistência.
+    val progress = if (domainId.isNotEmpty()) domainProgressCellInfo(domainId, col.key, record) else null
+    if (progress != null) {
+        DomainProgressCell(col.label, progress)
+    } else if (isStatusLikeColumn(col.key)) {
         StatusBadge(value)
     } else {
         val displayValue = if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)
