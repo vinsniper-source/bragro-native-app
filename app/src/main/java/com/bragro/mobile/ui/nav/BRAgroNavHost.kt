@@ -203,11 +203,15 @@ fun BRAgroNavHost() {
         composable(Routes.OPERACOES) {
             OperacoesScreen(
                 onBack = { navController.popBackStack() },
-                onVerEmSafra = {
-                    navController.navigate(Routes.domainList("safra")) {
-                        popUpTo(Routes.HOME)
-                        launchSingleTop = true
-                    }
+                // Icone de editar por linha (Safra/Financeiro) navega direto
+                // pro registro especifico -- pedido do usuario ("preciso que
+                // abra a janela para editar e salvar, aplique tambem essas
+                // opcoes no native app"). Reaproveita a MESMA rota que
+                // "Copiar ultimo lancamento" ja usa (domain/{domainId}/edit/
+                // {recordId}), so que chegando aqui a partir do card de
+                // Operacao em vez do link generico "Ver em Safra" (removido).
+                onEditRecord = { domainId, recordId ->
+                    navController.navigate(Routes.domainFormEdit(domainId, recordId))
                 },
             )
         }

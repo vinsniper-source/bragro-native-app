@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Person
@@ -37,7 +38,6 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -205,7 +205,7 @@ private fun AreaProgressBar(pct: Int) {
 }
 
 @Composable
-private fun OperacaoCard(op: OperacaoAgrupadaData, onVerEmSafra: () -> Unit) {
+private fun OperacaoCard(op: OperacaoAgrupadaData, onEditRecord: (String, String) -> Unit) {
     var abrirFinanceiro by remember { mutableStateOf(false) }
     var abrirEstoque by remember { mutableStateOf(false) }
 
@@ -336,7 +336,7 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onVerEmSafra: () -> Unit) {
                                         .padding(8.dp),
                                 ) {
                                     op.financeiroDetalhe.forEach { f ->
-                                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
                                             Text(
                                                 "${fmtDataCurta(f.data)} · ${f.categoria}${f.subcategoria?.let { " / $it" } ?: ""}${f.entidade?.let { " — $it" } ?: ""}",
                                                 style = MaterialTheme.typography.labelSmall,
@@ -346,6 +346,17 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onVerEmSafra: () -> Unit) {
                                                 modifier = Modifier.weight(1f),
                                             )
                                             Text(fmtMoney(f.valor), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                            // Icone de editar por linha, direto pro registro certo em
+                                            // Financeiro -- pedido do usuario ("preciso que abra a
+                                            // janela para editar e salvar, aplique tambem essas opcoes
+                                            // no native app"). Mesmo destino (rota domain/{id}/edit/
+                                            // {recordId}) ja usado por Copiar ultimo lancamento/Base de
+                                            // Dados -- so nao existia ainda um jeito de chegar num
+                                            // registro ESPECIFICO a partir do card de Operacao (so tinha
+                                            // "Ver em Safra" generico, ver comentario mais abaixo).
+                                            IconButton(onClick = { onEditRecord("financeiro", f.id) }, modifier = Modifier.size(24.dp)) {
+                                                Icon(Icons.Filled.Edit, contentDescription = "Editar em Financeiro", modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
                                         }
                                     }
                                 }
@@ -404,7 +415,7 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onVerEmSafra: () -> Unit) {
             if (op.timeline.isNotEmpty()) {
                 Column {
                     op.timeline.takeLast(6).forEach { ev ->
-                        Row(modifier = Modifier.padding(vertical = 3.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 3.dp)) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                                     Icon(Icons.Filled.CalendarMonth, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -434,24 +445,35 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onVerEmSafra: () -> Unit) {
                                     overflow = TextOverflow.Ellipsis,
                                 )
                             }
+                            // Icone de editar por linha, direto pro registro certo em
+                            // Safra -- antes so existia o link generico "Ver em Safra"
+                            // no rodape do card (removido, ver comentario abaixo),
+                            // que abria a lista inteira do modulo sem apontar pra
+                            // nenhum lancamento especifico. Mesmo padrao ja aplicado
+                            // no site (operacao-card.tsx, "?editId="), so que aqui
+                            // navega direto pra rota domain/{id}/edit/{recordId} que
+                            // ja existia no app (usada por Copiar ultimo lancamento).
+                            IconButton(onClick = { onEditRecord("safra", ev.id) }, modifier = Modifier.size(24.dp)) {
+                                Icon(Icons.Filled.Edit, contentDescription = "Editar em Safra", modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
                     }
                 }
             }
 
-            // "Ver em Safra" continua indo pro módulo (único jeito de editar/
-            // excluir os lançamentos que formam esta operação) -- mesmo
-            // critério do site.
-            TextButton(onClick = onVerEmSafra, modifier = Modifier.padding(0.dp)) {
-                Text("Ver em Safra →", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-            }
+            // Link generico "Ver em Safra →" REMOVIDO -- pedido do usuario
+            // ("preciso que abra a janela para editar e salvar" em vez de um
+            // link generico pro modulo inteiro): cada linha (Safra acima,
+            // Financeiro mais acima) agora tem seu proprio icone de editar
+            // apontando pro registro exato, entao o link generico ficou
+            // redundante (mesma decisao ja tomada no site).
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OperacoesScreen(onBack: () -> Unit, onVerEmSafra: () -> Unit, viewModel: OperacoesViewModel = viewModel()) {
+fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, viewModel: OperacoesViewModel = viewModel()) {
     val operacoes by viewModel.operacoes
     val loading by viewModel.loading
     val offline by viewModel.offline
@@ -551,7 +573,7 @@ fun OperacoesScreen(onBack: () -> Unit, onVerEmSafra: () -> Unit, viewModel: Ope
                 }
             } else {
                 items(operacoes, key = { it.chave }) { op ->
-                    OperacaoCard(op, onVerEmSafra = onVerEmSafra)
+                    OperacaoCard(op, onEditRecord = onEditRecord)
                 }
             }
         }

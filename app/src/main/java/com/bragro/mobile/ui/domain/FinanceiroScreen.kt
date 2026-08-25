@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -361,18 +362,22 @@ fun FinanceiroScreen(
             // os blocos individuais de forma que preencha toda a linha"),
             // mesmo padrão já usado nos blocos Dados/Operações/Arquivos
             // (ModuleCategoryBlock/FinanceiroCategoryBlock).
-            // Card externo DE VOLTA -- pedido do usuário ("em gestão
-            // financeira coloque um bloco externo envolvendo todos os
-            // blocos individuais e coloque a cor de fundo do bloco externo
-            // de verde, apenas o bloco externo"): reversão intencional do
-            // ajuste anterior (que tinha removido esse Card por duplicar
-            // borda -- ver histórico logo acima). Dessa vez é só ESTE bloco
-            // (Gestão Financeira) que ganha o Card externo com fundo verde
-            // translúcido -- os ModuleIconButton individuais dentro dele
-            // continuam com o próprio fundo/borda de sempre, sem mudança.
+            // Card externo SEM FUNDO agora -- pedido do usuário mais recente
+            // ("em financeiro gestão financeira retire o fundo do bloco
+            // único e nos blocos dos ícones individuais coloque o fundo dos
+            // blocos de verde escuro e a cor da fonte branco"): reverte o
+            // fundo verde translúcido do Card externo (ver histórico acima,
+            // era uma decisão anterior) e move a cor pros blocos individuais
+            // em vez disso -- só ESTES ícones (visão do Financeiro) usam
+            // FinanceiroViewIconButton, com fundo verde escuro fixo (BrGreen)
+            // + fonte branca; os demais blocos individuais do app inteiro
+            // continuam em ModuleIconButton (fundo neutro, ver ESCOPO FINAL
+            // em ModuleIconRow.kt) -- SEM tocar nesse componente compartilhado,
+            // pra não reverter a decisão já confirmada de tirar o verde dos
+            // blocos individuais dos OUTROS módulos.
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
             ) {
                 FlowRow(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
@@ -380,7 +385,7 @@ fun FinanceiroScreen(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     FinanceiroView.values().forEach { v ->
-                        ModuleIconButton(
+                        FinanceiroViewIconButton(
                             ModuleIconItem(v.name, financeiroViewIcon(v), v.label, active = v == view),
                         ) { view = v }
                     }
@@ -754,6 +759,47 @@ private fun ConciliarDot(conciliado: Boolean) {
             .background(if (conciliado) MaterialTheme.colorScheme.primary else Color.Transparent)
             .border(1.dp, borderColor, CircleShape),
     )
+}
+
+// Ícone individual do seletor de visão "Gestão Financeira" -- cópia
+// intencional de ModuleIconButton (ModuleIconRow.kt), NÃO uma alteração
+// nele: aquele componente é compartilhado por TODOS os blocos individuais
+// do app (Dados/Operações/Arquivos, Filtros, Período etc., em todos os
+// módulos) e já tem um "ESCOPO FINAL" confirmado (fundo neutro, sem verde) —
+// mexer nele mudaria o app inteiro. Pedido do usuário desta vez foi só pros
+// blocos da "Gestão Financeira": fundo verde escuro (BrGreen, cor fixa da
+// marca, não MaterialTheme.colorScheme.primary porque essa muda de tom entre
+// os temas claro/escuro) + fonte/ícone branco.
+@Composable
+private fun FinanceiroViewIconButton(item: ModuleIconItem, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.widthIn(min = 44.dp),
+        colors = CardDefaults.cardColors(containerColor = com.bragro.mobile.ui.theme.BrGreen),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 0.dp,
+            focusedElevation = 0.dp,
+            hoveredElevation = 0.dp,
+            draggedElevation = 0.dp,
+            disabledElevation = 0.dp,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Icon(item.icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+            Text(
+                item.label,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
 }
 
 // Bloco 2 desmembrado em 5 categorias -- pedido do usuário ("desmembre todo

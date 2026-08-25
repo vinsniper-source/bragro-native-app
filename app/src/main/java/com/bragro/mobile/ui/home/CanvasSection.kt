@@ -8,6 +8,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -314,6 +316,7 @@ fun CanvasCirclesRow(
 /** Card de detalhe da fazenda selecionada -- Custo médio/ha + barra
  * empilhada de categorias (top 3 + "Outros", ver lib/services/canvas.ts no
  * site pro motivo do agrupamento). */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
     Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
@@ -378,19 +381,30 @@ fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
                         }
                     }
                 }
-                Row(modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
-                    Column {
-                        fazenda.breakdown.forEachIndexed { i, b ->
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = if (i == 0) 0.dp else 2.dp)) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(8.dp)
-                                        .clip(CircleShape)
-                                        .background(BREAKDOWN_COLORS[i % BREAKDOWN_COLORS.size]),
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(b.categoria, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
+                // FlowRow (pedido do usuario: "coloque as legendas na
+                // horizontal ate o final do bloco e depois se necessario na
+                // linha debaixo") -- antes era uma Column empilhada, uma
+                // categoria por linha. Agora ficam lado a lado ocupando a
+                // largura do card, so quebrando pra proxima linha quando nao
+                // cabe mais (mesmo padrao ja usado em ModuleIconRow.kt).
+                // SpaceBetween espalha os itens ate a borda direita do card
+                // em vez de deixar tudo grudado a esquerda -- mesmo raciocinio
+                // do "justify-between" aplicado no site (canvas-view.tsx).
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    fazenda.breakdown.forEachIndexed { i, b ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(BREAKDOWN_COLORS[i % BREAKDOWN_COLORS.size]),
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(b.categoria, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }

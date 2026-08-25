@@ -316,8 +316,20 @@ fun domainProgressCellInfo(domainId: String, key: String, record: Map<String, St
         val value = (dias / 180.0) * 100
         // Mantem a data da proxima revisao visivel no label (mesmo motivo do
         // site: a barra so acrescenta "quanto da janela ja passou", nao
-        // deveria fazer a data sumir da celula).
-        val label = record["proxRevisao"]?.let { isoDateToBr(isoDateOnly(it)) }
+        // deveria fazer a data sumir da celula). "faltam Nd"/"atrasada Nd"
+        // acrescentado a pedido do usuario ("coloque na barra de progresso
+        // quantos dias faltam para proxima revisao") -- mesmo calculo do
+        // site (data-table.tsx), contando a partir de HOJE ate proxRevisao.
+        val proxRevisaoRaw = record["proxRevisao"]
+        val proxRevisaoMs = proxRevisaoRaw?.let { isoDateMillis(it) }
+        val label = proxRevisaoRaw?.let {
+            val dataFmt = isoDateToBr(isoDateOnly(it))
+            val diasRestantes = proxRevisaoMs?.let { ms -> Math.round((ms - System.currentTimeMillis()) / 86400000.0) }
+            if (diasRestantes != null) {
+                val restante = if (diasRestantes >= 0) "faltam ${diasRestantes}d" else "atrasada ${-diasRestantes}d"
+                "$dataFmt — $restante"
+            } else dataFmt
+        }
         return DomainProgressInfo(value, budgetBarTone(value), label = label)
     }
     return null

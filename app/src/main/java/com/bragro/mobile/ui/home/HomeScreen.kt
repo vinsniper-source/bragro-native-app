@@ -983,20 +983,16 @@ fun HomeScreen(
                 }
             }
             }
-            if (data.hasWidget("inicio.estagio") || data.hasWidget("inicio.sugestao")) {
-            data.canvas?.let { canvas ->
-                item(key = "estagio-sugestao") {
-                    EstagioSugestaoCard(
-                        estagio = canvas.estagio,
-                        mostrarEstagio = data.hasWidget("inicio.estagio"),
-                        janelaAtual = janelaCanvas,
-                        onJanelaChange = { dias -> viewModel.setJanela(logoScreenContext, dias) },
-                        mostrarSugestao = data.hasWidget("inicio.sugestao"),
-                        onOpenDomain = onOpenDomain,
-                    )
-                }
-            }
-            }
+            // Bloco "Estagio da safra + Sugestao" REMOVIDO da Início --
+            // pedido do usuario ("não é necessário o bloco no dashboard do
+            // estágio e pragas na plataforma e no app native"): mesma
+            // remocao ja feita no site (dashboard/page.tsx) -- a sugestao da
+            // fase "vegetativo" apontava pra Pragas, e nem esse card nem o
+            // de Estagio sao necessarios na Início nos dois lados agora.
+            // EstagioSugestaoCard (CanvasSection.kt) fica sem uso aqui --
+            // nao apagado do arquivo pra nao arriscar quebrar outro call
+            // site sem confirmar, mas pode ser removido numa faxina futura
+            // se ninguem mais chamar.
 
             if (data.hasWidget("inicio.mural")) {
             item(key = "mural") { BulletinBoardCard(data.notices, canManage, viewModel) }
