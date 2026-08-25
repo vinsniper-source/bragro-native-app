@@ -18,6 +18,22 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.17] -- 2026-08-24
+
+- Nova barra de progresso "Área utilizada" no card "Operação" (Safra
+  agrupada, site e app) -- pedido do usuário: "em safra modulo operações
+  preciso que crie uma barra de progresso da area total com a areas
+  parcial. e aplique o mesmo padrao da plataforma em native". Compara o
+  hectare lançado na própria operação (área parcial) com a Área Total
+  cadastrada da fazenda (Farm.areaHa, mesmo lookup por nome usado em
+  computeSafraFields/Safra). Calculado 1x no servidor (getOperacoes,
+  services/operacoes.ts) e só consumido no app -- nenhuma lógica duplicada
+  em Kotlin. Cores seguem o padrão de threshold já usado em Estoque
+  (verde/amarelo/vermelho): acima de 100% (área lançada maior que a
+  cadastrada) fica vermelho como sinal de possível divergência de
+  cadastro. Só aparece quando o "Local" da operação bate com uma fazenda
+  cadastrada com área preenchida.
+
 ## [1.2.16] -- 2026-08-24
 
 - Corrigido bug real no card "Operação" (Safra agrupada por Safra+Cultura+

@@ -183,6 +183,27 @@ private fun OperacaoProgressBar(pct: Double, concluida: Boolean, atrasada: Boole
     }
 }
 
+// Barra de área utilizada (hectare da operação) vs. Área Total da fazenda --
+// pedido do usuário ("crie uma barra de progresso da area total com a areas
+// parcial. e aplique o mesmo padrao da plataforma em native"). Cores
+// seguem o mesmo padrão de threshold usado no site (insumos-arvore-client.tsx
+// STATUS_BAR_COLOR: OK/ATENCAO/CRITICO) em vez do padrão concluida/atrasada
+// da barra de O.S. acima -- aqui não há um "concluído", é só uma comparação
+// de área, então >100% (possível divergência de cadastro) vira vermelho,
+// >=90% amarelo, resto verde/cor padrão.
+@Composable
+private fun AreaProgressBar(pct: Int) {
+    val fracao = (pct / 100.0).coerceIn(0.0, 1.0).toFloat()
+    val cor = when {
+        pct > 100 -> MaterialTheme.colorScheme.error
+        pct >= 90 -> MaterialTheme.colorScheme.tertiary
+        else -> MaterialTheme.colorScheme.secondary
+    }
+    Box(modifier = Modifier.fillMaxWidth().height(6.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(3.dp))) {
+        Box(modifier = Modifier.fillMaxWidth(fracao).height(6.dp).background(cor, RoundedCornerShape(3.dp)))
+    }
+}
+
 @Composable
 private fun OperacaoCard(op: OperacaoAgrupadaData, onVerEmSafra: () -> Unit) {
     var abrirFinanceiro by remember { mutableStateOf(false) }
@@ -242,6 +263,22 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onVerEmSafra: () -> Unit) {
                     Spacer(modifier = Modifier.height(2.dp))
                     OperacaoProgressBar(pct = op.progressoPct.toDouble(), concluida = op.concluida, atrasada = op.atrasada)
                     Text("${op.progressoPct}%", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 2.dp))
+                }
+            }
+
+            if (op.areaTotal != null && op.areaPct != null) {
+                Column {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Área utilizada", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "${op.hectare?.let { fmtNum(it) } ?: "—"} / ${fmtNum(op.areaTotal)} ha",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    AreaProgressBar(pct = op.areaPct)
+                    Text("${op.areaPct}%", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 2.dp))
                 }
             }
 

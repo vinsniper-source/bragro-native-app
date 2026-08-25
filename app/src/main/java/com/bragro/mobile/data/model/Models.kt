@@ -871,6 +871,14 @@ data class OperacaoAgrupadaData(
     val cultura: String,
     val local: String,
     val hectare: Double? = null,
+    // Área TOTAL da fazenda (Local) desta operação / % ocupado -- pedido do
+    // usuário ("em safra modulo operações crie uma barra de progresso da
+    // area total com a areas parcial"). Já vem calculado do servidor
+    // (getOperacoes, services/operacoes.ts, mesmo lookup de Farm.areaHa por
+    // normalizeName usado em computeSafraFields) -- nunca recalcular aqui.
+    // null quando o "local" não bate com nenhuma fazenda cadastrada.
+    val areaTotal: Double? = null,
+    val areaPct: Int? = null,
     val estagio: String, // "plantio" | "vegetativo" | "colheita" | "indefinido"
     val dataInicio: String,
     val dataFim: String? = null,
