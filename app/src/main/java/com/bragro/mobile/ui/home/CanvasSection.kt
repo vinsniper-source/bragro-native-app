@@ -179,6 +179,20 @@ private val BREAKDOWN_COLORS = listOf(BrGreen, BrBlue, BrYellow, Color(0xFF9E9E9
 private val moneyFmt = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
 private fun formatMoney(v: Double): String = moneyFmt.format(v)
 
+// Texto do rótulo abaixo da área do círculo quando areaFiltroHa != null --
+// espelho exato de labelFiltro() em canvas-view.tsx (site), mesmo pedido do
+// usuário: primeiro anotou "CULTURA" na screenshot do Dashboard ao lado do
+// texto "da safra selecionada" (fix: refletir qual filtro está ativo), e
+// depois pediu explicitamente "onde está escrito dentro do círculo 'da
+// cultura selecionada' troque pelo nome da cultura, no caso sorgo" -- agora
+// mostra o valor de fato selecionado (ex.: "Sorgo"), não uma frase genérica.
+private fun labelFiltro(safra: String?, cultura: String?): String = when {
+    !safra.isNullOrBlank() && !cultura.isNullOrBlank() -> "$safra · $cultura"
+    !safra.isNullOrBlank() -> safra
+    !cultura.isNullOrBlank() -> cultura
+    else -> ""
+}
+
 /** Fileira de círculos (um por fazenda), rolável horizontalmente -- o site
  * usa flex-wrap centralizado; num celular estreito, rolagem horizontal cabe
  * melhor que quebrar linha (círculos ficariam pequenos demais). Tocar num
@@ -190,7 +204,10 @@ fun CanvasCirclesRow(
     selectedId: String?,
     onSelect: (String) -> Unit,
     onImportKml: () -> Unit,
+    safra: String? = null,
+    cultura: String? = null,
 ) {
+    val filtroLabel = labelFiltro(safra, cultura)
     Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
         Column {
         if (fazendas.isEmpty()) {
@@ -274,7 +291,7 @@ fun CanvasCirclesRow(
                             )
                             if (filtroAtivo) {
                                 Text(
-                                    "da safra selecionada",
+                                    filtroLabel,
                                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
                                     color = statusColor(f.status).copy(alpha = 0.6f),
                                 )

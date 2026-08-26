@@ -975,6 +975,8 @@ fun HomeScreen(
                         selectedId = selecionadaFazendaId,
                         onSelect = { id -> selecionadaFazendaId = id },
                         onImportKml = onOpenFieldview,
+                        safra = SafraSelection.selected.value,
+                        cultura = CulturaSelection.selected.value,
                     )
                 }
                 val fazendaSelecionada = canvas.fazendas.find { it.id == selecionadaFazendaId }

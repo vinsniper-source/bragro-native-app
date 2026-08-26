@@ -341,23 +341,19 @@ private fun FarmsCard(
                 OutlinedTextField(
                     value = areaText,
                     onValueChange = { areaText = it },
-                    label = { Text("ha") },
+                    label = { Text("TOTAL (ha)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
-                    modifier = Modifier.width(90.dp),
+                    modifier = Modifier.width(100.dp),
                     colors = appFieldColors(),
                 )
                 Spacer(Modifier.width(4.dp))
-                OutlinedTextField(
-                    value = areaSafrinhaText,
-                    onValueChange = { areaSafrinhaText = it },
-                    label = { Text("safrinha") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true,
-                    modifier = Modifier.width(90.dp),
-                    colors = appFieldColors(),
-                )
-                Spacer(Modifier.width(4.dp))
+                // Campo genérico "safrinha" REMOVIDO da UI -- pedido do
+                // usuário (X na screenshot): só Milho/Sorgo ficam visíveis
+                // agora. areaSafrinhaText continua existindo e sendo
+                // reenviado sem alteração em onUpdate (pré-populado do JSON
+                // acima), preservando o valor antigo no backend/fallback do
+                // Canvas pra fazendas que já tinham esse campo preenchido.
                 OutlinedTextField(
                     value = areaSafrinhaMilhoText,
                     onValueChange = { areaSafrinhaMilhoText = it },
@@ -389,17 +385,16 @@ private fun FarmsCard(
             OutlinedTextField(value = newName, onValueChange = { newName = it }, label = { Text("Nova fazenda") }, modifier = Modifier.weight(1f), singleLine = true, colors = appFieldColors())
             Spacer(Modifier.width(8.dp))
             OutlinedTextField(
-                value = newArea, onValueChange = { newArea = it }, label = { Text("ha") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(80.dp),
+                value = newArea, onValueChange = { newArea = it }, label = { Text("TOTAL (ha)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(100.dp),
                 colors = appFieldColors(),
             )
             Spacer(Modifier.width(4.dp))
-            OutlinedTextField(
-                value = newAreaSafrinha, onValueChange = { newAreaSafrinha = it }, label = { Text("safrinha") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(90.dp),
-                colors = appFieldColors(),
-            )
-            Spacer(Modifier.width(4.dp))
+            // Campo genérico "safrinha" REMOVIDO da UI pra fazendas novas --
+            // pedido do usuário (X na screenshot): só Milho/Sorgo abaixo.
+            // newAreaSafrinha continua "" e nunca populado (onAdd recebe
+            // null pra esse parâmetro), o que é o comportamento correto pra
+            // cadastros novos daqui em diante.
             OutlinedTextField(
                 value = newAreaSafrinhaMilho, onValueChange = { newAreaSafrinhaMilho = it }, label = { Text("milho") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(90.dp),
