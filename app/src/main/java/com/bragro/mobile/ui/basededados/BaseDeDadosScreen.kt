@@ -2,6 +2,7 @@ package com.bragro.mobile.ui.basededados
 
 import android.app.Application
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -48,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -336,76 +339,114 @@ private fun FarmsCard(
             var areaSafrinhaText by remember(id) { mutableStateOf(f["areaSafrinhaHa"]?.jsonPrimitive?.doubleOrNull?.toString() ?: "") }
             var areaSafrinhaMilhoText by remember(id) { mutableStateOf(f["areaSafrinhaMilhoHa"]?.jsonPrimitive?.doubleOrNull?.toString() ?: "") }
             var areaSafrinhaSorgoText by remember(id) { mutableStateOf(f["areaSafrinhaSorgoHa"]?.jsonPrimitive?.doubleOrNull?.toString() ?: "") }
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
-                Text(name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                OutlinedTextField(
-                    value = areaText,
-                    onValueChange = { areaText = it },
-                    label = { Text("TOTAL (ha)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true,
-                    modifier = Modifier.width(100.dp),
-                    colors = appFieldColors(),
-                )
-                Spacer(Modifier.width(4.dp))
-                // Campo genérico "safrinha" REMOVIDO da UI -- pedido do
-                // usuário (X na screenshot): só Milho/Sorgo ficam visíveis
-                // agora. areaSafrinhaText continua existindo e sendo
-                // reenviado sem alteração em onUpdate (pré-populado do JSON
-                // acima), preservando o valor antigo no backend/fallback do
-                // Canvas pra fazendas que já tinham esse campo preenchido.
-                OutlinedTextField(
-                    value = areaSafrinhaMilhoText,
-                    onValueChange = { areaSafrinhaMilhoText = it },
-                    label = { Text("milho") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true,
-                    modifier = Modifier.width(90.dp),
-                    colors = appFieldColors(),
-                )
-                Spacer(Modifier.width(4.dp))
-                OutlinedTextField(
-                    value = areaSafrinhaSorgoText,
-                    onValueChange = { areaSafrinhaSorgoText = it },
-                    label = { Text("sorgo") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true,
-                    modifier = Modifier.width(90.dp),
-                    colors = appFieldColors(),
-                )
-                IconButton(onClick = { areaText.toDoubleOrNull()?.let { onUpdate(id, it, areaSafrinhaText.toDoubleOrNull(), areaSafrinhaMilhoText.toDoubleOrNull(), areaSafrinhaSorgoText.toDoubleOrNull()) } }, enabled = !busy) {
-                    Icon(Icons.Filled.Check, contentDescription = "Salvar área")
+            // Layout em DUAS linhas (nome+excluir / campos de área com
+            // rolagem horizontal) -- CORREÇÃO DE BUG REAL: com nome +
+            // TOTAL(ha) + milho + sorgo + 2 ícones tudo numa Row só (sem
+            // rolagem), a soma das larguras fixas (100+90+90dp de campos +
+            // 2×48dp de ícones ≈ 376dp) já estourava a tela sozinha, sem
+            // sobrar espaço nenhum pro nome (Modifier.weight(1f) ficava
+            // espremido a ~0dp) -- o texto do nome então quebrava
+            // caractere-por-caractere numa coluna quase invisível, criando
+            // aquele vão vertical enorme reportado pelo usuário ("ficou todo
+            // desconfigurado"), e o botão excluir saía cortado da tela.
+            // Agora a 1ª linha (nome + excluir) sempre cabe, e a 2ª linha
+            // (campos numéricos + salvar) rola horizontalmente se precisar
+            // -- nunca mais estoura nem esmaga o nome, em qualquer largura
+            // de tela.
+            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        name,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    IconButton(onClick = { onDelete(id) }, enabled = !busy) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Excluir fazenda")
+                    }
                 }
-                IconButton(onClick = { onDelete(id) }, enabled = !busy) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Excluir fazenda")
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                ) {
+                    OutlinedTextField(
+                        value = areaText,
+                        onValueChange = { areaText = it },
+                        label = { Text("TOTAL (ha)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true,
+                        modifier = Modifier.width(100.dp),
+                        colors = appFieldColors(),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    // Campo genérico "safrinha" REMOVIDO da UI -- pedido do
+                    // usuário (X na screenshot): só Milho/Sorgo ficam
+                    // visíveis agora. areaSafrinhaText continua existindo e
+                    // sendo reenviado sem alteração em onUpdate
+                    // (pré-populado do JSON acima), preservando o valor
+                    // antigo no backend/fallback do Canvas pra fazendas que
+                    // já tinham esse campo preenchido.
+                    OutlinedTextField(
+                        value = areaSafrinhaMilhoText,
+                        onValueChange = { areaSafrinhaMilhoText = it },
+                        label = { Text("milho") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true,
+                        modifier = Modifier.width(90.dp),
+                        colors = appFieldColors(),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    OutlinedTextField(
+                        value = areaSafrinhaSorgoText,
+                        onValueChange = { areaSafrinhaSorgoText = it },
+                        label = { Text("sorgo") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true,
+                        modifier = Modifier.width(90.dp),
+                        colors = appFieldColors(),
+                    )
+                    IconButton(onClick = { areaText.toDoubleOrNull()?.let { onUpdate(id, it, areaSafrinhaText.toDoubleOrNull(), areaSafrinhaMilhoText.toDoubleOrNull(), areaSafrinhaSorgoText.toDoubleOrNull()) } }, enabled = !busy) {
+                        Icon(Icons.Filled.Check, contentDescription = "Salvar área")
+                    }
                 }
             }
         }
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
-            OutlinedTextField(value = newName, onValueChange = { newName = it }, label = { Text("Nova fazenda") }, modifier = Modifier.weight(1f), singleLine = true, colors = appFieldColors())
-            Spacer(Modifier.width(8.dp))
+        // Mesmo layout em 2 linhas do bloco acima (nome / campos com
+        // rolagem horizontal), mesmo motivo -- ver comentário completo ali.
+        Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
             OutlinedTextField(
-                value = newArea, onValueChange = { newArea = it }, label = { Text("TOTAL (ha)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(100.dp),
-                colors = appFieldColors(),
+                value = newName, onValueChange = { newName = it }, label = { Text("Nova fazenda") },
+                modifier = Modifier.fillMaxWidth(), singleLine = true, colors = appFieldColors(),
             )
-            Spacer(Modifier.width(4.dp))
-            // Campo genérico "safrinha" REMOVIDO da UI pra fazendas novas --
-            // pedido do usuário (X na screenshot): só Milho/Sorgo abaixo.
-            // newAreaSafrinha continua "" e nunca populado (onAdd recebe
-            // null pra esse parâmetro), o que é o comportamento correto pra
-            // cadastros novos daqui em diante.
-            OutlinedTextField(
-                value = newAreaSafrinhaMilho, onValueChange = { newAreaSafrinhaMilho = it }, label = { Text("milho") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(90.dp),
-                colors = appFieldColors(),
-            )
-            Spacer(Modifier.width(4.dp))
-            OutlinedTextField(
-                value = newAreaSafrinhaSorgo, onValueChange = { newAreaSafrinhaSorgo = it }, label = { Text("sorgo") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(90.dp),
-                colors = appFieldColors(),
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.horizontalScroll(rememberScrollState()).padding(top = 4.dp),
+            ) {
+                OutlinedTextField(
+                    value = newArea, onValueChange = { newArea = it }, label = { Text("TOTAL (ha)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(100.dp),
+                    colors = appFieldColors(),
+                )
+                Spacer(Modifier.width(4.dp))
+                // Campo genérico "safrinha" REMOVIDO da UI pra fazendas
+                // novas -- pedido do usuário (X na screenshot): só
+                // Milho/Sorgo abaixo. newAreaSafrinha continua "" e nunca
+                // populado (onAdd recebe null pra esse parâmetro), o que é
+                // o comportamento correto pra cadastros novos daqui em
+                // diante.
+                OutlinedTextField(
+                    value = newAreaSafrinhaMilho, onValueChange = { newAreaSafrinhaMilho = it }, label = { Text("milho") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(90.dp),
+                    colors = appFieldColors(),
+                )
+                Spacer(Modifier.width(4.dp))
+                OutlinedTextField(
+                    value = newAreaSafrinhaSorgo, onValueChange = { newAreaSafrinhaSorgo = it }, label = { Text("sorgo") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(90.dp),
+                    colors = appFieldColors(),
+                )
+            }
         }
         Row(modifier = Modifier.padding(top = 8.dp)) {
             Button(

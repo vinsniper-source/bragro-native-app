@@ -57,6 +57,15 @@ o que mudou (o CI não faz isso sozinho).
   (badge e inputs) -- pedido do usuário, agora só aparecem "Área TOTAL
   (ha)", "milho" e "sorgo". O valor antigo continua no banco e no fallback
   do Canvas/"Área Total" pra fazendas que já tinham esse campo preenchido.
+- Corrigido bug real de layout em Base de Dados > Fazendas: a linha de cada
+  fazenda (nome + TOTAL/milho/sorgo + salvar + excluir) estourava a largura
+  da tela -- a soma das larguras fixas dos campos numéricos já passava de
+  280dp, sem sobrar espaço nenhum pro nome (que ficava espremido a quase
+  0dp de largura, quebrando caractere por caractere numa coluna gigante e
+  quase invisível) e cortando o ícone de excluir da tela. Agora o nome
+  fica numa linha própria (sempre visível, com "..." se for muito longo) e
+  os campos numéricos ficam numa segunda linha com rolagem horizontal --
+  nunca mais estoura, em qualquer tamanho de tela.
 
 ## [1.2.19] -- 2026-08-25
 
