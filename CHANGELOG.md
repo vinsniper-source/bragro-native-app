@@ -40,6 +40,40 @@ o que mudou (o CI não faz isso sozinho).
   safrinha ocupa um círculo menor que a safra verão na mesma fazenda), em
   vez de sempre mostrar a área cadastral total. Sem filtro de safra/cultura
   ativo, continua mostrando a área total, igual antes.
+- Base de Dados: novo campo opcional "Área safrinha (ha)" por fazenda, ao
+  lado da área total -- exceção de schema explicitamente autorizada pelo
+  usuário (`Farm.areaSafrinhaHa`, ver MEMORY.md). Quando preenchido, o
+  círculo do Canvas passa a usar esse valor (em vez da soma de hectare dos
+  lançamentos) sempre que a safra selecionada no filtro bater "SAFRINHA
+  ...". Sem preenchimento, cai no fallback anterior.
+
+## [1.2.20] -- 2026-08-26
+
+- Financeiro e Colheita: "Área Total (ha)" agora também respeita
+  `areaSafrinhaHa` (mesmo fix já aplicado a Safra/Frota na 1.2.19) --
+  faltava nos dois módulos, usuário reportou que continuavam mostrando a
+  área cadastral cheia em vez da área safrinha.
+- Canvas: círculo não troca mais de área sozinho sem nenhum filtro de
+  Safra/Cultura selecionado (bug real: mesmo com "Todas as safras/Todas as
+  culturas" escolhido, o círculo às vezes já mostrava a área safrinha).
+  Também passou a detectar safrinha pelo campo Safra de cada lançamento da
+  fazenda (não só pelo dropdown de filtro), então filtrar só por Cultura
+  (ex.: Sorgo) já é suficiente quando todos os lançamentos daquela cultura
+  forem de uma safra "SAFRINHA ...".
+- Base de Dados: novos campos opcionais "Área safrinha - Milho (ha)" e
+  "Área safrinha - Sorgo (ha)" por fazenda -- exceção de schema autorizada
+  (`Farm.areaSafrinhaMilhoHa`/`areaSafrinhaSorgoHa`, ver MEMORY.md), pra
+  quando a fazenda planta os dois na mesma safrinha, cada um ocupando uma
+  parte diferente do total. O Canvas e o "Área Total (ha)" de
+  Safra/Colheita/Financeiro usam o campo certo conforme a cultura filtrada
+  (ou a cultura dos lançamentos, se só houver uma).
+- Base de Dados: badge da área safrinha mostrava "100 ha safrinha" (o
+  rótulo colado no valor); agora mostra só o número, com "safrinha"/"milho"/
+  "sorgo" como legenda pequena abaixo.
+- Corrigido erro genérico do sistema ("An error occurred in the Server
+  Components render... omitted in production builds") ao tentar recadastrar
+  uma fazenda com nome "TOTAL FAZENDAS" -- agora mostra a mensagem real de
+  validação.
 
 ## [1.2.18] -- 2026-08-25
 

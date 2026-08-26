@@ -83,10 +83,10 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun act(action: String, category: String? = null, value: String? = null, id: String? = null, ativo: Boolean? = null, name: String? = null, areaHa: Double? = null, onDone: (Boolean) -> Unit = {}) {
+    private fun act(action: String, category: String? = null, value: String? = null, id: String? = null, ativo: Boolean? = null, name: String? = null, areaHa: Double? = null, areaSafrinhaHa: Double? = null, areaSafrinhaMilhoHa: Double? = null, areaSafrinhaSorgoHa: Double? = null, onDone: (Boolean) -> Unit = {}) {
         busy.value = true
         viewModelScope.launch {
-            val result = repo.run(action, category, value, id, ativo, name, areaHa)
+            val result = repo.run(action, category, value, id, ativo, name, areaHa, areaSafrinhaHa, areaSafrinhaMilhoHa, areaSafrinhaSorgoHa)
             busy.value = false
             result.onSuccess { load(); onDone(true) }.onFailure { errorMessage.value = it.message; onDone(false) }
         }
@@ -100,8 +100,17 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
     // recusar"), espelho de declineDefaultsAction no site: lapideia os
     // itens faltando agora, o aviso some sem importar nada.
     fun declineDefaults() = act("decline_defaults")
-    fun addFarm(name: String, areaHa: Double) = act("add_farm", name = name, areaHa = areaHa)
-    fun updateFarm(id: String, areaHa: Double) = act("update_farm", id = id, areaHa = areaHa)
+    // areaSafrinhaHa (2ª safra, área menor que a área total) -- exceção de
+    // schema autorizada (ver MEMORY.md), opcional, ao lado da área
+    // principal (pedido do usuário). Alimenta o círculo do Canvas quando a
+    // safra filtrada bate "SAFRINHA ..." (ver lib/services/canvas.ts).
+    // areaSafrinhaMilhoHa/SorgoHa (5ª exceção de schema, ver MEMORY.md) --
+    // área safrinha POR CULTURA, pra quando a fazenda planta Milho E Sorgo
+    // na mesma safrinha, cada um com sua parte do total.
+    fun addFarm(name: String, areaHa: Double, areaSafrinhaHa: Double? = null, areaSafrinhaMilhoHa: Double? = null, areaSafrinhaSorgoHa: Double? = null) =
+        act("add_farm", name = name, areaHa = areaHa, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaMilhoHa = areaSafrinhaMilhoHa, areaSafrinhaSorgoHa = areaSafrinhaSorgoHa)
+    fun updateFarm(id: String, areaHa: Double, areaSafrinhaHa: Double? = null, areaSafrinhaMilhoHa: Double? = null, areaSafrinhaSorgoHa: Double? = null) =
+        act("update_farm", id = id, areaHa = areaHa, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaMilhoHa = areaSafrinhaMilhoHa, areaSafrinhaSorgoHa = areaSafrinhaSorgoHa)
     fun deleteFarm(id: String) = act("delete_farm", id = id)
     fun syncLocais() = act("sync_locais")
 }
@@ -206,8 +215,8 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
                 FarmsCard(
                     farms = farms,
                     busy = busy,
-                    onAdd = { name, area -> viewModel.addFarm(name, area) },
-                    onUpdate = { id, area -> viewModel.updateFarm(id, area) },
+                    onAdd = { name, area, areaSafrinha, areaSafrinhaMilho, areaSafrinhaSorgo -> viewModel.addFarm(name, area, areaSafrinha, areaSafrinhaMilho, areaSafrinhaSorgo) },
+                    onUpdate = { id, area, areaSafrinha, areaSafrinhaMilho, areaSafrinhaSorgo -> viewModel.updateFarm(id, area, areaSafrinha, areaSafrinhaMilho, areaSafrinhaSorgo) },
                     onDelete = { id -> viewModel.deleteFarm(id) },
                     onSync = { viewModel.syncLocais() },
                 )
@@ -300,13 +309,23 @@ private fun CollapsibleCard(title: String, initiallyOpen: Boolean = false, conte
 private fun FarmsCard(
     farms: kotlinx.serialization.json.JsonArray?,
     busy: Boolean,
-    onAdd: (String, Double) -> Unit,
-    onUpdate: (String, Double) -> Unit,
+    onAdd: (String, Double, Double?, Double?, Double?) -> Unit,
+    onUpdate: (String, Double, Double?, Double?, Double?) -> Unit,
     onDelete: (String) -> Unit,
     onSync: () -> Unit,
 ) {
     var newName by remember { mutableStateOf("") }
     var newArea by remember { mutableStateOf("") }
+    // Área "safrinha" -- exceção de schema autorizada (ver MEMORY.md),
+    // opcional, ao lado da área principal (pedido do usuário: "acrescente
+    // um campo ao lado da área maior"). Alimenta o círculo do Canvas quando
+    // a safra filtrada bate "SAFRINHA ..." (ver lib/services/canvas.ts).
+    var newAreaSafrinha by remember { mutableStateOf("") }
+    // Área safrinha POR CULTURA (5ª exceção de schema, ver MEMORY.md) -- pra
+    // quando a fazenda planta Milho E Sorgo na mesma safrinha, cada um com
+    // sua parte do total.
+    var newAreaSafrinhaMilho by remember { mutableStateOf("") }
+    var newAreaSafrinhaSorgo by remember { mutableStateOf("") }
 
     CollapsibleCard("Fazendas (${farms?.size ?: 0})", initiallyOpen = true) {
         farms?.forEach { el ->
@@ -314,6 +333,9 @@ private fun FarmsCard(
             val id = f["id"]?.jsonPrimitive?.contentOrNull ?: return@forEach
             val name = f["name"]?.jsonPrimitive?.contentOrNull ?: ""
             var areaText by remember(id) { mutableStateOf((f["areaHa"]?.jsonPrimitive?.doubleOrNull ?: 0.0).toString()) }
+            var areaSafrinhaText by remember(id) { mutableStateOf(f["areaSafrinhaHa"]?.jsonPrimitive?.doubleOrNull?.toString() ?: "") }
+            var areaSafrinhaMilhoText by remember(id) { mutableStateOf(f["areaSafrinhaMilhoHa"]?.jsonPrimitive?.doubleOrNull?.toString() ?: "") }
+            var areaSafrinhaSorgoText by remember(id) { mutableStateOf(f["areaSafrinhaSorgoHa"]?.jsonPrimitive?.doubleOrNull?.toString() ?: "") }
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
                 Text(name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
                 OutlinedTextField(
@@ -322,10 +344,40 @@ private fun FarmsCard(
                     label = { Text("ha") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
-                    modifier = Modifier.width(100.dp),
+                    modifier = Modifier.width(90.dp),
                     colors = appFieldColors(),
                 )
-                IconButton(onClick = { areaText.toDoubleOrNull()?.let { onUpdate(id, it) } }, enabled = !busy) {
+                Spacer(Modifier.width(4.dp))
+                OutlinedTextField(
+                    value = areaSafrinhaText,
+                    onValueChange = { areaSafrinhaText = it },
+                    label = { Text("safrinha") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    modifier = Modifier.width(90.dp),
+                    colors = appFieldColors(),
+                )
+                Spacer(Modifier.width(4.dp))
+                OutlinedTextField(
+                    value = areaSafrinhaMilhoText,
+                    onValueChange = { areaSafrinhaMilhoText = it },
+                    label = { Text("milho") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    modifier = Modifier.width(90.dp),
+                    colors = appFieldColors(),
+                )
+                Spacer(Modifier.width(4.dp))
+                OutlinedTextField(
+                    value = areaSafrinhaSorgoText,
+                    onValueChange = { areaSafrinhaSorgoText = it },
+                    label = { Text("sorgo") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    modifier = Modifier.width(90.dp),
+                    colors = appFieldColors(),
+                )
+                IconButton(onClick = { areaText.toDoubleOrNull()?.let { onUpdate(id, it, areaSafrinhaText.toDoubleOrNull(), areaSafrinhaMilhoText.toDoubleOrNull(), areaSafrinhaSorgoText.toDoubleOrNull()) } }, enabled = !busy) {
                     Icon(Icons.Filled.Check, contentDescription = "Salvar área")
                 }
                 IconButton(onClick = { onDelete(id) }, enabled = !busy) {
@@ -338,6 +390,24 @@ private fun FarmsCard(
             Spacer(Modifier.width(8.dp))
             OutlinedTextField(
                 value = newArea, onValueChange = { newArea = it }, label = { Text("ha") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(80.dp),
+                colors = appFieldColors(),
+            )
+            Spacer(Modifier.width(4.dp))
+            OutlinedTextField(
+                value = newAreaSafrinha, onValueChange = { newAreaSafrinha = it }, label = { Text("safrinha") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(90.dp),
+                colors = appFieldColors(),
+            )
+            Spacer(Modifier.width(4.dp))
+            OutlinedTextField(
+                value = newAreaSafrinhaMilho, onValueChange = { newAreaSafrinhaMilho = it }, label = { Text("milho") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(90.dp),
+                colors = appFieldColors(),
+            )
+            Spacer(Modifier.width(4.dp))
+            OutlinedTextField(
+                value = newAreaSafrinhaSorgo, onValueChange = { newAreaSafrinhaSorgo = it }, label = { Text("sorgo") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(90.dp),
                 colors = appFieldColors(),
             )
@@ -346,7 +416,10 @@ private fun FarmsCard(
             Button(
                 onClick = {
                     val area = newArea.toDoubleOrNull()
-                    if (newName.isNotBlank() && area != null && area > 0) { onAdd(newName.trim(), area); newName = ""; newArea = "" }
+                    if (newName.isNotBlank() && area != null && area > 0) {
+                        onAdd(newName.trim(), area, newAreaSafrinha.toDoubleOrNull(), newAreaSafrinhaMilho.toDoubleOrNull(), newAreaSafrinhaSorgo.toDoubleOrNull())
+                        newName = ""; newArea = ""; newAreaSafrinha = ""; newAreaSafrinhaMilho = ""; newAreaSafrinhaSorgo = ""
+                    }
                 },
                 enabled = !busy,
             ) { Text("Adicionar") }

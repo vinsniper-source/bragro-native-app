@@ -444,6 +444,14 @@ data class BaseDeDadosRequest(
     val ativo: Boolean? = null,
     val name: String? = null,
     val areaHa: Double? = null,
+    // Área "safrinha" -- exceção de schema autorizada (ver MEMORY.md),
+    // opcional. null = campo omitido do JSON (encodeDefaults=false), então
+    // o backend não mexe no valor já salvo (ver route.ts "areaSafrinhaData").
+    val areaSafrinhaHa: Double? = null,
+    // Área safrinha POR CULTURA (5ª exceção de schema, ver MEMORY.md) --
+    // mesmo padrão de areaSafrinhaHa acima (omitido = não mexe).
+    val areaSafrinhaMilhoHa: Double? = null,
+    val areaSafrinhaSorgoHa: Double? = null,
 )
 
 @Serializable
