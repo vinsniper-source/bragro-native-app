@@ -82,10 +82,12 @@ class BaseDeDadosRepository(context: Context) {
         areaSafrinhaHa: Double? = null,
         areaSafrinhaMilhoHa: Double? = null,
         areaSafrinhaSorgoHa: Double? = null,
+        latitude: Double? = null,
+        longitude: Double? = null,
     ): Result<JsonElement?> {
         val tokens = tokenStore.current() ?: return Result.failure(IllegalStateException("Sessão expirada. Entre novamente."))
         var (accessToken, refreshToken) = tokens
-        fun body() = BaseDeDadosRequest(accessToken, refreshToken, action, category, value, id, ativo, name, areaHa, areaSafrinhaHa, areaSafrinhaMilhoHa, areaSafrinhaSorgoHa)
+        fun body() = BaseDeDadosRequest(accessToken, refreshToken, action, category, value, id, ativo, name, areaHa, areaSafrinhaHa, areaSafrinhaMilhoHa, areaSafrinhaSorgoHa, latitude, longitude)
         return try {
             var response = NetworkModule.mobileApi.baseDeDados(body())
             if (response.code() == 401) {

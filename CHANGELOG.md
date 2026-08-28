@@ -66,6 +66,22 @@ o que mudou (o CI não faz isso sozinho).
   fica numa linha própria (sempre visível, com "..." se for muito longo) e
   os campos numéricos ficam numa segunda linha com rolagem horizontal --
   nunca mais estoura, em qualquer tamanho de tela.
+- Início: tour de orientação de 3 telas (Canvas/filtros, barra inferior de
+  módulos, atalhos "Copiar último lançamento"/Romaneio/Abastecimento),
+  mostrado uma única vez na primeira abertura da Início depois do login
+  (Task #296/#344, auditoria 2026-08-28 item 1 -- "onboarding leve no app
+  nativo"). Diferente do wizard de 3 passos do site (que cria organização),
+  este é só um tour: quem usa o app já entra com conta pronta.
+- Base de Dados: novo campo "lat, lon" por fazenda (`Farm.latitude`/
+  `longitude`, 6ª exceção de schema autorizada, ver MEMORY.md) -- localização
+  real usada pelo clima (Dashboard, /clima, "Preencher com o clima de hoje"
+  no site) em vez do fallback fixo (Tupaciguara/MG), assim que cadastrada
+  aqui ou no site. O clima do próprio app nativo (rota pública
+  `/api/mobile/weather`) continua no fallback fixo por enquanto -- essa
+  rota não sabe de qual organização é a chamada (auditoria 2026-08-28).
+- Removido `DashboardScreen.kt` -- tela órfã sem rota nenhuma no NavHost,
+  sobra de uma versão anterior da Início (achado da varredura profunda de
+  código morto, auditoria 2026-08-28 item 2).
 
 ## [1.2.19] -- 2026-08-25
 

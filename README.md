@@ -259,11 +259,19 @@ campo) -- não há mais nenhum item pendente conhecido nesta lista.
   organização) que a própria web ainda não trata -- decisão explícita de
   não construir agora.
 
-- **Relatórios**: a aba foi removida do PRÓPRIO site a pedido do cliente
-  (`src/app/(app)/relatorios/page.tsx` hoje só redireciona pro Dashboard) --
-  os gráficos "por setor" que ela mostrava já aparecem dentro de cada
-  módulo. Não existe nenhuma lógica de backend própria pra reaproveitar;
-  não é uma tela "faltando", é uma tela que não existe mais em lugar nenhum.
+- **Relatórios e Cotações (abas soltas)**: ambas foram removidas do PRÓPRIO
+  site a pedido do cliente -- `src/app/(app)/relatorios/page.tsx` e
+  `src/app/(app)/cotacoes/page.tsx` hoje só redirecionam pro Dashboard, sem
+  nenhuma lógica de backend própria pra reaproveitar. Os gráficos "por
+  setor" de Relatórios já aparecem dentro de cada módulo (ModuleChart);
+  moedas/commodities/widgets externos de Cotações já ficam só no Início
+  (dashboard). O app nativo nunca teve rota, item de menu ou aba equivalente
+  pra nenhuma das duas (confirmado: nenhuma referência a `"relatorios"` ou
+  `"cotacoes"` como destino de navegação em `BRAgroNavHost.kt`,
+  `BottomNavBar.kt` ou no registro de domínios) -- não são telas
+  "faltando", são telas que não existem mais em lugar nenhum. Não há link
+  quebrado pra "redirecionar": o comportamento equivalente ao redirect do
+  site é simplesmente a ausência de qualquer entrada pra essas duas no app.
 - **Painel Admin**: existem dois "admin" diferentes no projeto -- o painel
   de configurações da organização (`/configuracoes`, OWNER/ADMIN da conta)
   já é coberto pelo motor genérico de módulos, e o "Painel Admin" citado

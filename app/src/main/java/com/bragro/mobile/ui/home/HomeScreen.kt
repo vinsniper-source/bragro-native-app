@@ -547,6 +547,17 @@ fun HomeScreen(
     val canManage = isAdminRole(session?.role)
     var userMenuOpen by remember { mutableStateOf(false) }
     var notificationsOpen by remember { mutableStateOf(false) }
+
+    // Onboarding leve (Task #296/#344, auditoria 2026-08-28) -- tour de 3
+    // telas mostrado só na primeira vez que a Início abre depois do login
+    // (ver OnboardingStore.kt pro porquê de não replicar aqui o wizard de
+    // criar organização do site: quem entra pelo app já tem conta pronta).
+    val onboardingContext = LocalContext.current
+    var showOnboardingTour by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        val store = com.bragro.mobile.data.OnboardingStore(onboardingContext)
+        if (!store.tourSeen()) showOnboardingTour = true
+    }
     val uploadingLogo by viewModel.uploadingLogo
     val uploadingAvatar by viewModel.uploadingAvatar
     val logoScreenContext = LocalContext.current
@@ -815,6 +826,17 @@ fun HomeScreen(
 
         if (pendingDialogOpen) {
             PendingSyncDialog(items = pendingItems, onDismiss = { pendingDialogOpen = false })
+        }
+
+        if (showOnboardingTour) {
+            OnboardingTourDialog(
+                onFinish = {
+                    showOnboardingTour = false
+                    viewModel.viewModelScope.launch {
+                        com.bragro.mobile.data.OnboardingStore(onboardingContext).markTourSeen()
+                    }
+                },
+            )
         }
 
         LazyColumn(

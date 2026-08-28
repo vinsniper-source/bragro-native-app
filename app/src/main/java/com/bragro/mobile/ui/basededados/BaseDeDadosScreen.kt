@@ -86,10 +86,10 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun act(action: String, category: String? = null, value: String? = null, id: String? = null, ativo: Boolean? = null, name: String? = null, areaHa: Double? = null, areaSafrinhaHa: Double? = null, areaSafrinhaMilhoHa: Double? = null, areaSafrinhaSorgoHa: Double? = null, onDone: (Boolean) -> Unit = {}) {
+    private fun act(action: String, category: String? = null, value: String? = null, id: String? = null, ativo: Boolean? = null, name: String? = null, areaHa: Double? = null, areaSafrinhaHa: Double? = null, areaSafrinhaMilhoHa: Double? = null, areaSafrinhaSorgoHa: Double? = null, latitude: Double? = null, longitude: Double? = null, onDone: (Boolean) -> Unit = {}) {
         busy.value = true
         viewModelScope.launch {
-            val result = repo.run(action, category, value, id, ativo, name, areaHa, areaSafrinhaHa, areaSafrinhaMilhoHa, areaSafrinhaSorgoHa)
+            val result = repo.run(action, category, value, id, ativo, name, areaHa, areaSafrinhaHa, areaSafrinhaMilhoHa, areaSafrinhaSorgoHa, latitude, longitude)
             busy.value = false
             result.onSuccess { load(); onDone(true) }.onFailure { errorMessage.value = it.message; onDone(false) }
         }
@@ -112,8 +112,12 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
     // na mesma safrinha, cada um com sua parte do total.
     fun addFarm(name: String, areaHa: Double, areaSafrinhaHa: Double? = null, areaSafrinhaMilhoHa: Double? = null, areaSafrinhaSorgoHa: Double? = null) =
         act("add_farm", name = name, areaHa = areaHa, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaMilhoHa = areaSafrinhaMilhoHa, areaSafrinhaSorgoHa = areaSafrinhaSorgoHa)
-    fun updateFarm(id: String, areaHa: Double, areaSafrinhaHa: Double? = null, areaSafrinhaMilhoHa: Double? = null, areaSafrinhaSorgoHa: Double? = null) =
-        act("update_farm", id = id, areaHa = areaHa, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaMilhoHa = areaSafrinhaMilhoHa, areaSafrinhaSorgoHa = areaSafrinhaSorgoHa)
+    // Localização (6ª exceção de schema, ver MEMORY.md) -- latitude/
+    // longitude sempre viajam juntas (as duas null limpa, as duas
+    // preenchidas define; validação de "uma sem a outra" já é feita no
+    // backend, ver update_farm em api/mobile/base-de-dados/route.ts).
+    fun updateFarm(id: String, areaHa: Double, areaSafrinhaHa: Double? = null, areaSafrinhaMilhoHa: Double? = null, areaSafrinhaSorgoHa: Double? = null, latitude: Double? = null, longitude: Double? = null) =
+        act("update_farm", id = id, areaHa = areaHa, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaMilhoHa = areaSafrinhaMilhoHa, areaSafrinhaSorgoHa = areaSafrinhaSorgoHa, latitude = latitude, longitude = longitude)
     fun deleteFarm(id: String) = act("delete_farm", id = id)
     fun syncLocais() = act("sync_locais")
 }
@@ -219,7 +223,7 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
                     farms = farms,
                     busy = busy,
                     onAdd = { name, area, areaSafrinha, areaSafrinhaMilho, areaSafrinhaSorgo -> viewModel.addFarm(name, area, areaSafrinha, areaSafrinhaMilho, areaSafrinhaSorgo) },
-                    onUpdate = { id, area, areaSafrinha, areaSafrinhaMilho, areaSafrinhaSorgo -> viewModel.updateFarm(id, area, areaSafrinha, areaSafrinhaMilho, areaSafrinhaSorgo) },
+                    onUpdate = { id, area, areaSafrinha, areaSafrinhaMilho, areaSafrinhaSorgo, latitude, longitude -> viewModel.updateFarm(id, area, areaSafrinha, areaSafrinhaMilho, areaSafrinhaSorgo, latitude, longitude) },
                     onDelete = { id -> viewModel.deleteFarm(id) },
                     onSync = { viewModel.syncLocais() },
                 )
@@ -313,7 +317,9 @@ private fun FarmsCard(
     farms: kotlinx.serialization.json.JsonArray?,
     busy: Boolean,
     onAdd: (String, Double, Double?, Double?, Double?) -> Unit,
-    onUpdate: (String, Double, Double?, Double?, Double?) -> Unit,
+    // 2 últimos parâmetros = latitude/longitude (6ª exceção de schema, ver
+    // MEMORY.md) -- null/null limpa, ambos preenchidos define.
+    onUpdate: (String, Double, Double?, Double?, Double?, Double?, Double?) -> Unit,
     onDelete: (String) -> Unit,
     onSync: () -> Unit,
 ) {
@@ -339,6 +345,15 @@ private fun FarmsCard(
             var areaSafrinhaText by remember(id) { mutableStateOf(f["areaSafrinhaHa"]?.jsonPrimitive?.doubleOrNull?.toString() ?: "") }
             var areaSafrinhaMilhoText by remember(id) { mutableStateOf(f["areaSafrinhaMilhoHa"]?.jsonPrimitive?.doubleOrNull?.toString() ?: "") }
             var areaSafrinhaSorgoText by remember(id) { mutableStateOf(f["areaSafrinhaSorgoHa"]?.jsonPrimitive?.doubleOrNull?.toString() ?: "") }
+            // Localização real (6ª exceção de schema, ver MEMORY.md) -- um
+            // único campo "lat, lon" (mesmo formato que o Google Maps mostra
+            // ao tocar e segurar num ponto do mapa), espelhando o site.
+            // Usada por resolveFarmCoords() (lib/services/weather.ts) pra
+            // trocar o fallback fixo de clima (Tupaciguara/MG) pela
+            // localização real assim que cadastrada aqui ou no site.
+            val fLat = f["latitude"]?.jsonPrimitive?.doubleOrNull
+            val fLon = f["longitude"]?.jsonPrimitive?.doubleOrNull
+            var locationText by remember(id) { mutableStateOf(if (fLat != null && fLon != null) "$fLat, $fLon" else "") }
             // Layout em DUAS linhas (nome+excluir / campos de área com
             // rolagem horizontal) -- CORREÇÃO DE BUG REAL: com nome +
             // TOTAL(ha) + milho + sorgo + 2 ícones tudo numa Row só (sem
@@ -406,7 +421,37 @@ private fun FarmsCard(
                         modifier = Modifier.width(90.dp),
                         colors = appFieldColors(),
                     )
-                    IconButton(onClick = { areaText.toDoubleOrNull()?.let { onUpdate(id, it, areaSafrinhaText.toDoubleOrNull(), areaSafrinhaMilhoText.toDoubleOrNull(), areaSafrinhaSorgoText.toDoubleOrNull()) } }, enabled = !busy) {
+                    Spacer(Modifier.width(4.dp))
+                    OutlinedTextField(
+                        value = locationText,
+                        onValueChange = { locationText = it },
+                        label = { Text("lat, lon") },
+                        singleLine = true,
+                        modifier = Modifier.width(130.dp),
+                        colors = appFieldColors(),
+                    )
+                    IconButton(
+                        onClick = {
+                            areaText.toDoubleOrNull()?.let { area ->
+                                // "lat, lon" num campo só -- em branco limpa
+                                // (null/null), preenchido precisa dos dois
+                                // números separados por vírgula (mesma regra
+                                // do site, ver saveFarmArea em
+                                // base-de-dados-client.tsx).
+                                val locTrim = locationText.trim()
+                                var lat: Double? = null
+                                var lon: Double? = null
+                                if (locTrim.isNotEmpty()) {
+                                    val partes = locTrim.split(",").map { it.trim() }
+                                    lat = partes.getOrNull(0)?.toDoubleOrNull()
+                                    lon = partes.getOrNull(1)?.toDoubleOrNull()
+                                    if (partes.size != 2 || lat == null || lon == null) return@let
+                                }
+                                onUpdate(id, area, areaSafrinhaText.toDoubleOrNull(), areaSafrinhaMilhoText.toDoubleOrNull(), areaSafrinhaSorgoText.toDoubleOrNull(), lat, lon)
+                            }
+                        },
+                        enabled = !busy,
+                    ) {
                         Icon(Icons.Filled.Check, contentDescription = "Salvar área")
                     }
                 }

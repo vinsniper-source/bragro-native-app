@@ -452,6 +452,12 @@ data class BaseDeDadosRequest(
     // mesmo padrão de areaSafrinhaHa acima (omitido = não mexe).
     val areaSafrinhaMilhoHa: Double? = null,
     val areaSafrinhaSorgoHa: Double? = null,
+    // Localização real (6ª exceção de schema, ver MEMORY.md) -- mesmo
+    // padrão partial-update: omitido = não mexe. Usada por
+    // resolveFarmCoords() (lib/services/weather.ts, site) pra trocar o
+    // fallback fixo de clima (Tupaciguara/MG) pela localização real.
+    val latitude: Double? = null,
+    val longitude: Double? = null,
 )
 
 @Serializable
