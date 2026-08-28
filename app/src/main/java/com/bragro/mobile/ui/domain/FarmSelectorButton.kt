@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -51,6 +53,7 @@ import com.bragro.mobile.data.repo.ConfigRepository
  * de escolher uma fazenda -- quem usa a pill (Início) passa aqui o callback
  * que refaz o fetch do Canvas já filtrado (ver HomeViewModel.onFiltroGlobalChanged).
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FarmSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onChanged: () -> Unit = {}) {
     val context = LocalContext.current
@@ -102,8 +105,8 @@ fun FarmSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onCh
                 selected ?: "Todas as fazendas",
                 style = MaterialTheme.typography.labelSmall,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false),
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.weight(1f, fill = false).basicMarquee(),
             )
             Icon(Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.size(14.dp).padding(start = 2.dp))
         }
@@ -142,7 +145,8 @@ fun FarmSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onCh
                         farm.name,
                         fontWeight = if (selected == farm.name) FontWeight.Bold else FontWeight.Normal,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        overflow = TextOverflow.Clip,
+                        modifier = Modifier.basicMarquee(),
                     )
                 },
                 onClick = { FarmSelection.choose(context, farm.name); menuOpen = false; onChanged() },

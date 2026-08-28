@@ -3,6 +3,8 @@ package com.bragro.mobile.ui.basededados
 import android.app.Application
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -312,6 +314,7 @@ private fun CollapsibleCard(title: String, initiallyOpen: Boolean = false, conte
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FarmsCard(
     farms: kotlinx.serialization.json.JsonArray?,
@@ -372,10 +375,10 @@ private fun FarmsCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         name,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).basicMarquee(),
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        overflow = TextOverflow.Clip,
                     )
                     IconButton(onClick = { onDelete(id) }, enabled = !busy) {
                         Icon(Icons.Filled.Delete, contentDescription = "Excluir fazenda")

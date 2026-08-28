@@ -2,6 +2,8 @@ package com.bragro.mobile.ui.domain
 
 import android.app.Application
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -287,7 +289,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
  * Os campos "computed" (calculados pelo servidor -- rateio, vencimento,
  * numeracao de O.S. etc.) nao aparecem aqui: so existem depois da
  * sincronizacao, quando o servidor devolve o registro definitivo. */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun DomainFormScreen(
     domainId: String,
@@ -326,8 +328,9 @@ fun DomainFormScreen(
                         Text(
                             if (recordId == null) "Novo lançamento" else "Editar lançamento",
                             maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
                             color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.basicMarquee(),
                         )
                     }
                 },

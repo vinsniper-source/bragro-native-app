@@ -1,6 +1,8 @@
 package com.bragro.mobile.ui.domain
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,6 +48,7 @@ private fun fmtChartValue(v: Double, isMoney: Boolean): String {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SimpleBarChart(
     categories: List<String>,
@@ -93,8 +96,8 @@ fun SimpleBarChart(
                                         fmtChartValue(v, isMoney),
                                         style = MaterialTheme.typography.labelSmall,
                                         maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.padding(bottom = 2.dp),
+                                        overflow = TextOverflow.Clip,
+                                        modifier = Modifier.padding(bottom = 2.dp).basicMarquee(),
                                     )
                                 }
                                 Box(
@@ -112,8 +115,8 @@ fun SimpleBarChart(
                         cat,
                         style = MaterialTheme.typography.labelSmall,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 2.dp),
+                        overflow = TextOverflow.Clip,
+                        modifier = Modifier.padding(top = 2.dp).basicMarquee(),
                     )
                 }
             }

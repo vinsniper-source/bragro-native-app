@@ -1,6 +1,8 @@
 package com.bragro.mobile.ui.analises
 
 import android.app.Application
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -239,7 +241,7 @@ private fun AnalisesCategoryBlock(spec: AnalisesBlockSpec, modifier: Modifier = 
 // ModuleCategoryTabs (DomainListScreen.kt)/DreCategoryTabs (DreScreen.kt),
 // duplicado aqui pelo mesmo motivo de AnalisesCategoryBlock (evitar mexer
 // em código compartilhado entre os módulos).
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun AnalisesCategoryTabs(blocks: List<AnalisesBlockSpec>, modifier: Modifier = Modifier) {
     var selected by remember { mutableStateOf(0) }
@@ -261,7 +263,8 @@ private fun AnalisesCategoryTabs(blocks: List<AnalisesBlockSpec>, modifier: Modi
                             block.title,
                             maxLines = 1,
                             softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
+                            overflow = TextOverflow.Clip,
+                            modifier = Modifier.basicMarquee(),
                         )
                     },
                 )

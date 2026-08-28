@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -128,7 +130,7 @@ class FinanceiroFiltersViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun FinanceiroScreen(
     onBack: () -> Unit,
@@ -258,7 +260,7 @@ fun FinanceiroScreen(
                         // maxLines/ellipsis defensivo -- pedido do usuário
                         // ("adapte ao tamanho da fonte sem cortes e dentro
                         // do limite da tela").
-                        Text(if (isQuickView) view.label else "Financeiro", maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.primary)
+                        Text(if (isQuickView) view.label else "Financeiro", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.primary, modifier = Modifier.basicMarquee())
                     }
                 },
                 // A seta de voltar ganha o mesmo espaçador de cima do título
@@ -781,7 +783,7 @@ private val FINANCEIRO_VIEW_ROW_2 = listOf(FinanceiroView.FLUXO, FinanceiroView.
 // agora com uma leve diferença de opacidade entre selecionado/não
 // selecionado (antes nenhum dos 7 ícones mudava de cor ao ser tocado; só o
 // título acima alternava pro nome da visão).
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 private fun FinanceiroViewSegmentedRow(items: List<FinanceiroView>, selected: FinanceiroView, onSelect: (FinanceiroView) -> Unit) {
     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
@@ -802,7 +804,8 @@ private fun FinanceiroViewSegmentedRow(items: List<FinanceiroView>, selected: Fi
                         v.label,
                         maxLines = 1,
                         softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
+                        overflow = TextOverflow.Clip,
+                        modifier = Modifier.basicMarquee(),
                     )
                 },
             )
@@ -892,7 +895,7 @@ private fun FinanceiroCategoryBlock(spec: FinBlockSpec, modifier: Modifier = Mod
 // módulos; duplicado aqui (em vez de compartilhado) pelo mesmo motivo de
 // FinanceiroCategoryBlock/ModuleCategoryBlock -- evitar mexer em código
 // compartilhado entre os dois arquivos.
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun FinanceiroCategoryTabs(blocks: List<FinBlockSpec>, modifier: Modifier = Modifier) {
     var selected by remember { mutableStateOf(0) }
@@ -921,7 +924,8 @@ private fun FinanceiroCategoryTabs(blocks: List<FinBlockSpec>, modifier: Modifie
                             block.title,
                             maxLines = 1,
                             softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
+                            overflow = TextOverflow.Clip,
+                            modifier = Modifier.basicMarquee(),
                         )
                     },
                 )
@@ -954,7 +958,7 @@ private fun FinanceiroCategoryTabs(blocks: List<FinBlockSpec>, modifier: Modifie
  * manual (De/Até), espelho do dropdown Período do site (data-table.tsx). Em
  * Contas a Pagar/Receber as categorias viram janela de Vencimento; nas
  * demais visões casam pelo campo "Periodo" do lançamento. */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 private fun PeriodoDropdown(
     periodo: PeriodoCategoria?,
@@ -990,7 +994,7 @@ private fun PeriodoDropdown(
             )
             PeriodoCategoria.values().forEach { cat ->
                 DropdownMenuItem(
-                    text = { Text(cat.label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    text = { Text(cat.label, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee()) },
                     onClick = { onPeriodo(cat); expanded = false },
                 )
             }
@@ -1033,7 +1037,7 @@ private fun PeriodoDropdown(
  * lançamento. Ícone de filtro em vez do específico de banco -- pedido do
  * usuário ("consolide todos os filtros de coluna num bloco Filtros, só
  * ícone"), mesmo critério do site (data-table.tsx). */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 private fun BancoDropdown(banco: String?, options: List<LookupEntity>, onSelect: (String?) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
@@ -1056,7 +1060,7 @@ private fun BancoDropdown(banco: String?, options: List<LookupEntity>, onSelect:
                 // cadastrado pelo usuário pode ser mais longo que "Todos os
                 // bancos".
                 DropdownMenuItem(
-                    text = { Text(opt.label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    text = { Text(opt.label, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee()) },
                     onClick = { onSelect(opt.value); expanded = false },
                 )
             }
@@ -1084,6 +1088,7 @@ private fun financeiroViewIcon(v: FinanceiroView) = when (v) {
     FinanceiroView.RATEIO_INDIRETO -> Icons.Filled.AccountTree
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FluxoCard(row: FluxoRow, onClick: () -> Unit) {
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
@@ -1092,7 +1097,8 @@ private fun FluxoCard(row: FluxoRow, onClick: () -> Unit) {
                 "${row.original["entidade"] ?: "—"} — ${row.original["categoria"] ?: "—"}",
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.basicMarquee(),
             )
             Text("Data movimento: ${row.dataMovimento?.let { displayValueFor("data", it, "date") } ?: "—"}", style = MaterialTheme.typography.bodySmall)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

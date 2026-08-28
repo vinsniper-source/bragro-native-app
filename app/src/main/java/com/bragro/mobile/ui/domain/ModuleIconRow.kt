@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -90,6 +92,7 @@ private val MODULE_ICON_FG: Color
 // Financeiro em FinanceiroScreen.kt) montam seu conteúdo chamando este
 // composable, a mudança aqui já vale pra "todos os módulos" de uma vez, sem
 // precisar editar bloco por bloco.
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ModuleIconButton(item: ModuleIconItem, onClick: () -> Unit) {
     Card(
@@ -132,7 +135,13 @@ fun ModuleIconButton(item: ModuleIconItem, onClick: () -> Unit) {
                 color = MODULE_ICON_FG,
                 maxLines = 1,
                 softWrap = false,
-                overflow = TextOverflow.Ellipsis,
+                overflow = TextOverflow.Clip,
+                // Letreiro (marquee) em vez de "..." -- pedido do usuário
+                // ("tem como aparecer como um letreiro se movendo? aplique
+                // em todo app que tiver fontes cortadas"). Só anima quando o
+                // texto realmente não cabe no espaço disponível -- rótulo
+                // que cabe fica parado normal, sem nenhum efeito.
+                modifier = Modifier.basicMarquee(),
             )
         }
     }
@@ -149,6 +158,7 @@ fun ModuleIconButton(item: ModuleIconItem, onClick: () -> Unit) {
  * `loading = true` troca o ícone por um spinner do mesmo tamanho (usado no
  * ícone Atualizar enquanto `refreshing` está true).
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LabeledIconButton(
     icon: ImageVector,
@@ -202,7 +212,8 @@ fun LabeledIconButton(
                 color = tint,
                 maxLines = 1,
                 softWrap = false,
-                overflow = TextOverflow.Ellipsis,
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.basicMarquee(),
             )
         }
     }

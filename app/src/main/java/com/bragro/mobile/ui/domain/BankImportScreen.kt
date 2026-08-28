@@ -4,6 +4,8 @@ import android.app.Application
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -193,7 +195,7 @@ private fun formatDateBr(iso: String): String {
     return if (parts.size == 3) "${parts[2]}/${parts[1]}/${parts[0]}" else iso
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun BankImportScreen(onBack: () -> Unit, viewModel: BankImportViewModel = viewModel()) {
     val fileName by viewModel.fileName
@@ -311,7 +313,7 @@ fun BankImportScreen(onBack: () -> Unit, viewModel: BankImportViewModel = viewMo
                         Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(checked = r.include, onCheckedChange = { viewModel.toggleInclude(i, it) })
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(r.row.descricao, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(r.row.descricao, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
                                 Text(formatDateBr(r.row.dataIso), style = MaterialTheme.typography.labelSmall)
                                 if (r.duplicate) {
                                     Text("Possível duplicado", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)

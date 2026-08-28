@@ -2,6 +2,8 @@ package com.bragro.mobile.ui.livrocaixa
 
 import android.app.Application
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -316,7 +318,7 @@ private fun SaldoInicialField(saldoInicial: Double, onApply: (Double) -> Unit) {
 // usado por telas que já funcionam).
 private data class LivroCaixaBlockSpec(val title: String, val content: @Composable () -> Unit)
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun LivroCaixaCategoryTabs(blocks: List<LivroCaixaBlockSpec>, modifier: Modifier = Modifier) {
     var selected by remember { mutableStateOf(0) }
@@ -338,7 +340,8 @@ private fun LivroCaixaCategoryTabs(blocks: List<LivroCaixaBlockSpec>, modifier: 
                             block.title,
                             maxLines = 1,
                             softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
+                            overflow = TextOverflow.Clip,
+                            modifier = Modifier.basicMarquee(),
                         )
                     },
                 )

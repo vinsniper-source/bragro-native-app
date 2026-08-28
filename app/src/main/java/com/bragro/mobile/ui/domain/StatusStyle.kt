@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -340,6 +342,7 @@ fun domainProgressCellInfo(domainId: String, key: String, record: Map<String, St
  * em vez de so texto. Cores seguem BarTone (GOOD=primary, WARN=tertiary,
  * BAD=error, NEUTRAL=secondary), mesmo padrao ja usado em
  * OperacaoProgressBar/AreaProgressBar (OperacoesScreen.kt). */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DomainProgressCell(colLabel: String, info: DomainProgressInfo) {
     val fracao = (info.value / 100.0).coerceIn(0.0, 1.0).toFloat()
@@ -355,7 +358,8 @@ fun DomainProgressCell(colLabel: String, info: DomainProgressInfo) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            overflow = TextOverflow.Clip,
+            modifier = Modifier.basicMarquee(),
         )
         Spacer(Modifier.height(2.dp))
         Box(

@@ -1,6 +1,8 @@
 package com.bragro.mobile.ui.dre
 
 import android.app.Application
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -323,7 +325,7 @@ private fun DreCategoryBlock(spec: DreBlockSpec, modifier: Modifier = Modifier, 
 // ModuleCategoryTabs (DomainListScreen.kt)/FinanceiroCategoryTabs
 // (FinanceiroScreen.kt), duplicado aqui pelo mesmo motivo de DreCategoryBlock
 // (evitar mexer em código compartilhado entre os módulos).
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun DreCategoryTabs(blocks: List<DreBlockSpec>, modifier: Modifier = Modifier) {
     var selected by remember { mutableStateOf(0) }
@@ -345,7 +347,8 @@ private fun DreCategoryTabs(blocks: List<DreBlockSpec>, modifier: Modifier = Mod
                             block.title,
                             maxLines = 1,
                             softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
+                            overflow = TextOverflow.Clip,
+                            modifier = Modifier.basicMarquee(),
                         )
                     },
                 )

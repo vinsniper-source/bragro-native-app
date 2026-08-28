@@ -3,6 +3,8 @@ package com.bragro.mobile.ui.operacoes
 import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -136,6 +138,7 @@ private val ESTAGIO_LABEL = mapOf(
     "plantio" to "Plantio", "vegetativo" to "Vegetativo", "colheita" to "Colheita", "indefinido" to "Sem operação na janela",
 )
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun EstagioChip(estagio: String) {
     val (bg, fg) = when (estagio) {
@@ -149,9 +152,10 @@ private fun EstagioChip(estagio: String) {
         style = MaterialTheme.typography.labelSmall,
         color = fg,
         maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
+        overflow = TextOverflow.Clip,
         modifier = Modifier
             .background(bg, RoundedCornerShape(50))
+            .basicMarquee()
             .padding(horizontal = 8.dp, vertical = 3.dp),
     )
 }
@@ -204,6 +208,7 @@ private fun AreaProgressBar(pct: Int) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun OperacaoCard(op: OperacaoAgrupadaData, onEditRecord: (String, String) -> Unit) {
     var abrirFinanceiro by remember { mutableStateOf(false) }
@@ -232,14 +237,16 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onEditRecord: (String, String
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        overflow = TextOverflow.Clip,
+                        modifier = Modifier.basicMarquee(),
                     )
                     Text(
                         op.local + (op.hectare?.let { " — ${fmtNum(it)} ha" } ?: ""),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        overflow = TextOverflow.Clip,
+                        modifier = Modifier.basicMarquee(),
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
@@ -310,9 +317,9 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onEditRecord: (String, String
                                 Text(
                                     "  Financeiro vinculado: ${fmtMoney(op.financeiroTotal)}",
                                     style = MaterialTheme.typography.labelSmall,
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.weight(1f).basicMarquee(),
                                     maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
+                                    overflow = TextOverflow.Clip,
                                 )
                                 Text(
                                     "${op.financeiroDetalhe.size} lanç.",
@@ -342,8 +349,8 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onEditRecord: (String, String
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis,
-                                                modifier = Modifier.weight(1f),
+                                                overflow = TextOverflow.Clip,
+                                                modifier = Modifier.weight(1f).basicMarquee(),
                                             )
                                             Text(fmtMoney(f.valor), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                                             // Icone de editar por linha, direto pro registro certo em
@@ -432,8 +439,8 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onEditRecord: (String, String
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            modifier = Modifier.weight(1f, fill = false),
+                                            overflow = TextOverflow.Clip,
+                                            modifier = Modifier.weight(1f, fill = false).basicMarquee(),
                                         )
                                     }
                                 }
@@ -442,7 +449,8 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onEditRecord: (String, String
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
                                     maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
+                                    overflow = TextOverflow.Clip,
+                                    modifier = Modifier.basicMarquee(),
                                 )
                             }
                             // Icone de editar por linha, direto pro registro certo em
@@ -471,7 +479,7 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onEditRecord: (String, String
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, viewModel: OperacoesViewModel = viewModel()) {
     val operacoes by viewModel.operacoes
@@ -487,7 +495,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Operações", color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text("Operações", color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
                     }
                 },
                 navigationIcon = {

@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -46,6 +48,7 @@ import com.bragro.mobile.data.repo.ConfigRepository
  * Verde sempre (tint = primary), mesma cor do ícone fazenda -- pedido do
  * usuário ("fazenda, safra e cultura, cor verde de fazenda").
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GlobalFieldSelectorButton(
     selection: GlobalFieldSelection,
@@ -102,8 +105,8 @@ fun GlobalFieldSelectorButton(
                 selected ?: "Todas as $labelPlural",
                 style = MaterialTheme.typography.labelSmall,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false),
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.weight(1f, fill = false).basicMarquee(),
             )
             Icon(Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.size(14.dp).padding(start = 2.dp))
         }
@@ -146,7 +149,8 @@ fun GlobalFieldSelectorButton(
                         opt.label,
                         fontWeight = if (selected == opt.value) FontWeight.Bold else FontWeight.Normal,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        overflow = TextOverflow.Clip,
+                        modifier = Modifier.basicMarquee(),
                     )
                 },
                 onClick = { selection.choose(context, opt.value); menuOpen = false; onChanged() },

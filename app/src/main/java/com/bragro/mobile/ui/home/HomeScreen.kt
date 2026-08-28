@@ -7,6 +7,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -1086,6 +1088,7 @@ fun HomeScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun NotificationsDialog(items: List<NotificationItemData>, onMarkAllRead: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
@@ -1107,8 +1110,8 @@ private fun NotificationsDialog(items: List<NotificationItemData>, onMarkAllRead
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = if (!n.lida) FontWeight.Bold else FontWeight.Normal,
                                     maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f, fill = false),
+                                    overflow = TextOverflow.Clip,
+                                    modifier = Modifier.weight(1f, fill = false).basicMarquee(),
                                 )
                                 Spacer(Modifier.width(4.dp))
                                 Text("· ${n.tipo}", style = MaterialTheme.typography.labelSmall, maxLines = 1)
@@ -1441,6 +1444,7 @@ private fun AlertsCard(alerts: List<AlertData>, onOpenDomain: (String) -> Unit) 
 // MESMA linha em vez de empilhar em 2 -- pedido do usuário ("aplique a
 // mesma lógica no monitor do app mobile e coloque toda descrição de um item
 // em uma linha só").
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (String) -> Unit) {
     // Fechado por padrão -- pedido do usuário ("os blocos mural, alertas e
@@ -1505,8 +1509,8 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Medium,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f).padding(end = 8.dp),
+                                overflow = TextOverflow.Clip,
+                                modifier = Modifier.weight(1f).padding(end = 8.dp).basicMarquee(),
                             )
                             Text(formatEventTime(e.at), style = MaterialTheme.typography.labelSmall, maxLines = 1)
                         }
@@ -1666,6 +1670,7 @@ private fun fazendasKpi(data: HomeData): Kpi = Kpi(
 // garantida por nenhum vizinho) continua com `fillHeight = false` (padrão) --
 // aplicar `fillMaxHeight()` ali, sem um Row pai com IntrinsicSize.Min pra
 // dar uma altura de verdade, quebraria o layout (altura infinita).
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun KpiCard(kpi: Kpi, modifier: Modifier = Modifier, fillHeight: Boolean = false) {
     // Reestruturado -- pedido do usuário ("resolva de uma vez por todas o
@@ -1701,7 +1706,8 @@ private fun KpiCard(kpi: Kpi, modifier: Modifier = Modifier, fillHeight: Boolean
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        overflow = TextOverflow.Clip,
+                        modifier = Modifier.basicMarquee(),
                     )
                     // Sem maxLines/ellipsis -- pedido do usuário ("aumente a
                     // altura pra caber todas as informações sem cortar"): a
@@ -1726,8 +1732,8 @@ private fun KpiCard(kpi: Kpi, modifier: Modifier = Modifier, fillHeight: Boolean
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.End,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth(),
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.fillMaxWidth().basicMarquee(),
             )
         }
     }
@@ -1741,12 +1747,13 @@ private fun KpiCard(kpi: Kpi, modifier: Modifier = Modifier, fillHeight: Boolean
 // Cabeçalho com badge de ícone + título, mesmo padrão em Clima/Câmbio/
 // Cotações/Destaques -- pedido do usuário ("coloque ícones em clima, câmbio,
 // cotações agrícolas e destaques").
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MiniCardHeader(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color, titleStyle: androidx.compose.ui.text.TextStyle) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         SectionBadgeIcon(icon, color, size = 22.dp)
         Spacer(Modifier.width(6.dp))
-        Text(title, style = titleStyle, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(title, style = titleStyle, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
     }
 }
 
@@ -1758,6 +1765,7 @@ private fun MiniCardHeader(title: String, icon: androidx.compose.ui.graphics.vec
 // `onRefresh` fica sem uso aqui de propósito -- as 3 chamadas (ClimaCard/
 // CambioCard/CotacoesCard) continuam recebendo o parâmetro sem precisar
 // mudar a assinatura delas nem os pontos onde são chamadas.
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MiniCardHeaderWithRefresh(
     title: String,
@@ -1769,7 +1777,7 @@ private fun MiniCardHeaderWithRefresh(
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         SectionBadgeIcon(icon, color, size = 22.dp)
         Spacer(Modifier.width(6.dp))
-        Text(title, style = titleStyle, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        Text(title, style = titleStyle, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f).basicMarquee())
     }
 }
 
@@ -1877,6 +1885,7 @@ private fun FxVariacaoTag(pct: Double?) {
 // cotações e destaques pulando uma linha, alternando com negrito e sem
 // negrito"): título titleMedium, padding 16dp, uma Row por item com o rótulo
 // sem negrito seguido do valor em negrito, cada um na sua própria linha.
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier, border = BorderStroke(0.dp, Color.Transparent)) {
@@ -1959,15 +1968,17 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                                overflow = TextOverflow.Clip,
+                                modifier = Modifier.basicMarquee(),
                             )
                         }
                         Text(
                             "R$ ${formatMoneyNumberOnly(q.valor)}",
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
+                            overflow = TextOverflow.Clip,
                             style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+                            modifier = Modifier.basicMarquee(),
                         )
                         val positivo = q.variacaoPct >= 0
                         val corVariacao = if (positivo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
@@ -1992,7 +2003,8 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                                overflow = TextOverflow.Clip,
+                                modifier = Modifier.basicMarquee(),
                             )
                         }
                     }
@@ -2022,6 +2034,7 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DestaquesCard(data: HomeData, updatedAtMillis: Long?, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier, border = BorderStroke(0.dp, Color.Transparent)) {
@@ -2029,11 +2042,11 @@ private fun DestaquesCard(data: HomeData, updatedAtMillis: Long?, modifier: Modi
             MiniCardHeader("Destaques", Icons.Filled.Star, BrYellow, MaterialTheme.typography.titleMedium)
             Row {
                 Text("Cultura líder: ")
-                Text(data.culturaLider ?: "—", fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(data.culturaLider ?: "—", fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
             }
             Row {
                 Text("Pedidos em atraso: ")
-                Text(data.pedidosAtrasados.toString(), fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(data.pedidosAtrasados.toString(), fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
             }
             // Sem info extra aqui -- pedido do usuário ("retire no kpi os
             // destaques que você colocou, não faz sentido, são informações

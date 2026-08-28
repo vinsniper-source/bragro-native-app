@@ -1,6 +1,8 @@
 package com.bragro.mobile.ui.domain
 
 import android.app.Application
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -223,7 +225,7 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
 /** Uma unica tela de lista serve TODOS os 16 modulos -- guiada pelo
  * DomainConfig (mesma ideia do motor generico do site, ver
  * components/domain/data-table.tsx). */
-@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun DomainListScreen(
     domainId: String,
@@ -414,7 +416,7 @@ fun DomainListScreen(
                         // longos (ex.: "Transferências entre Fazendas") sem
                         // isso podiam quebrar linha e cortar embaixo, já
                         // que a AppBar tem altura fixa.
-                        Text(config?.label ?: domainId, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.primary)
+                        Text(config?.label ?: domainId, maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.primary, modifier = Modifier.basicMarquee())
                     }
                 },
                 // A seta de voltar ganha o mesmo espaçador do título -- pedido
@@ -1381,7 +1383,7 @@ private fun ModuleCategoryBlock(spec: ModuleBlockSpec, modifier: Modifier = Modi
 // juntos de uma vez. Substitui o Column de N ModuleCategoryBlock nos 3
 // pontos que usam esse padrão (blocos genéricos, blocos por módulo em
 // PER_MODULE_BLOCK_DOMAINS, e Cobranças/NFS-e).
-@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun ModuleCategoryTabs(blocks: List<ModuleBlockSpec>, modifier: Modifier = Modifier) {
     var selected by remember { mutableStateOf(0) }
@@ -1416,7 +1418,8 @@ private fun ModuleCategoryTabs(blocks: List<ModuleBlockSpec>, modifier: Modifier
                             block.title,
                             maxLines = 1,
                             softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
+                            overflow = TextOverflow.Clip,
+                            modifier = Modifier.basicMarquee(),
                         )
                     },
                 )
@@ -1586,7 +1589,7 @@ private fun weekdayShortBr(isoDate: String): String {
  * "Diário") como janela de data PARA TRÁS a partir de hoje + intervalo
  * manual, sobre a 1ª coluna de data do domínio -- mesmo critério de
  * genericPeriodoRange (data-table.tsx). */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 private fun GenericPeriodoDropdown(
     periodo: PeriodoCategoria?,
@@ -1619,7 +1622,7 @@ private fun GenericPeriodoDropdown(
             HorizontalDivider()
             PeriodoCategoria.values().forEach { cat ->
                 DropdownMenuItem(
-                    text = { Text(cat.label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    text = { Text(cat.label, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee()) },
                     onClick = { onPeriodo(cat); expanded = false },
                 )
             }
@@ -1661,6 +1664,7 @@ private fun GenericPeriodoDropdown(
  * Safra etc.), espelho do <Select> por coluna do site (filterableSelectCols
  * em data-table.tsx). Opções vêm dos valores distintos já presentes nos
  * registros carregados (sem chamada de rede extra). */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ColumnFilterRow(
     col: com.bragro.mobile.data.model.ColumnConfig,
@@ -1675,12 +1679,12 @@ private fun ColumnFilterRow(
             col.label,
             style = MaterialTheme.typography.labelSmall,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(bottom = 2.dp),
+            overflow = TextOverflow.Clip,
+            modifier = Modifier.padding(bottom = 2.dp).basicMarquee(),
         )
         Box(modifier = Modifier.fillMaxWidth()) {
             OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
-                Text(selected.ifBlank { "Todos" }, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(selected.ifBlank { "Todos" }, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
             }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 DropdownMenuItem(text = { Text("Todos") }, onClick = { onSelect(""); expanded = false })
@@ -1690,7 +1694,7 @@ private fun ColumnFilterRow(
                     // distintos de coluna (nome de item/fazenda/categoria
                     // etc.) podem ser bem mais longos que "Todos".
                     DropdownMenuItem(
-                        text = { Text(opt, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        text = { Text(opt, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee()) },
                         onClick = { onSelect(opt); expanded = false },
                     )
                 }

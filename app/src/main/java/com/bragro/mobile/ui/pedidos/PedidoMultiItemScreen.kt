@@ -1,6 +1,8 @@
 package com.bragro.mobile.ui.pedidos
 
 import android.app.Application
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -250,7 +252,7 @@ class PedidoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 private fun StringDropdown(
     label: String,
@@ -277,7 +279,7 @@ private fun StringDropdown(
                 DropdownMenuItem(text = { Text(" ") }, onClick = { onSelect(null); expanded = false })
             }
             for (opt in options) {
-                DropdownMenuItem(text = { Text(opt, maxLines = 1, overflow = TextOverflow.Ellipsis) }, onClick = { onSelect(opt); expanded = false })
+                DropdownMenuItem(text = { Text(opt, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee()) }, onClick = { onSelect(opt); expanded = false })
             }
         }
     }
@@ -337,7 +339,7 @@ private fun PedidoLinhaCard(linha: PedidoLinha, categoriasOptions: List<LookupEn
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewModel = viewModel()) {
     val setoresOptions by viewModel.setoresOptions
@@ -358,7 +360,7 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Novo Pedido", color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text("Novo Pedido", color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
                     }
                 },
                 navigationIcon = {

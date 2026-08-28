@@ -1,6 +1,8 @@
 package com.bragro.mobile.ui.nfe
 
 import android.app.Application
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -277,7 +279,7 @@ private fun formatMoneyBrlLocal(value: Double): String =
 // arriscava lançar a nota na fazenda errada sem o usuário perceber que
 // nunca tinha de fato escolhido. Com allowEmpty=true um item em branco
 // aparece no topo do menu, selecionável, que zera o campo (onSelect(null)).
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 private fun StringDropdown(
     label: String,
@@ -304,7 +306,7 @@ private fun StringDropdown(
                 DropdownMenuItem(text = { Text(" ") }, onClick = { onSelect(null); expanded = false })
             }
             for (opt in options) {
-                DropdownMenuItem(text = { Text(opt, maxLines = 1, overflow = TextOverflow.Ellipsis) }, onClick = { onSelect(opt); expanded = false })
+                DropdownMenuItem(text = { Text(opt, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee()) }, onClick = { onSelect(opt); expanded = false })
             }
         }
     }
@@ -366,7 +368,7 @@ private fun LinhaItemCard(linha: NotaMultiItemLinha, itensOptions: List<LookupEn
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun NotaMultiItemScreen(onBack: () -> Unit, viewModel: NotaMultiItemViewModel = viewModel()) {
     val farms by viewModel.farms
@@ -383,7 +385,7 @@ fun NotaMultiItemScreen(onBack: () -> Unit, viewModel: NotaMultiItemViewModel = 
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Lançar nota com itens", color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text("Lançar nota com itens", color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
                     }
                 },
                 navigationIcon = {

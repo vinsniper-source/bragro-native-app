@@ -7,6 +7,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import java.text.SimpleDateFormat
 import java.util.Locale
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -517,6 +519,7 @@ private fun isDatePast(iso: String): Boolean {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BoundariesList(boundaries: List<FieldBoundaryDto>, modifier: Modifier = Modifier) {
     if (boundaries.isEmpty()) {
@@ -538,8 +541,8 @@ private fun BoundariesList(boundaries: List<FieldBoundaryDto>, modifier: Modifie
                             b.nome ?: b.talhao,
                             style = MaterialTheme.typography.titleSmall,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
+                            overflow = TextOverflow.Clip,
+                            modifier = Modifier.weight(1f).basicMarquee(),
                         )
                     }
                     Text("Talhão: ${b.talhao}", style = MaterialTheme.typography.bodySmall)
@@ -604,6 +607,7 @@ private fun googleEarthUrl(point: GeoPoint?, fallbackQuery: String): String =
     if (point != null) "https://earth.google.com/web/@${point.latitude},${point.longitude},1000a,1000d,35y,0h,0t,0r"
     else "https://earth.google.com/web/search/${Uri.encode(fallbackQuery)}"
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FarmMapLinksRow(boundaries: List<FieldBoundaryDto>, farms: List<FarmEntity>) {
     if (farms.isEmpty()) return
@@ -618,7 +622,7 @@ private fun FarmMapLinksRow(boundaries: List<FieldBoundaryDto>, farms: List<Farm
                 val ponto = farmCentroid(boundaries, farm.id)
                 OutlinedButton(onClick = { openUrl(googleMapsUrl(ponto, farm.name)) }, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
                     Icon(Icons.Filled.Map, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                    Text(farm.name, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(farm.name, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
                 }
             }
         }
@@ -629,7 +633,7 @@ private fun FarmMapLinksRow(boundaries: List<FieldBoundaryDto>, farms: List<Farm
                 val ponto = farmCentroid(boundaries, farm.id)
                 OutlinedButton(onClick = { openUrl(googleEarthUrl(ponto, farm.name)) }, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
                     Icon(Icons.Filled.Public, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                    Text(farm.name, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(farm.name, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
                 }
             }
         }

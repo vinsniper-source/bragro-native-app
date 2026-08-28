@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.nav
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -197,6 +199,7 @@ private val SISTEMA_LINKS = listOf(
     SistemaLink("seguranca", "Acessos", Icons.Filled.Security),
 )
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BRAgroBottomBar(
     currentDomainId: String?,
@@ -321,7 +324,8 @@ fun BRAgroBottomBar(
                                         label,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
+                                        overflow = TextOverflow.Clip,
+                                        modifier = Modifier.basicMarquee(),
                                     )
                                 },
                                 leadingIcon = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface) },
@@ -354,7 +358,8 @@ fun BRAgroBottomBar(
                                 link.label,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                                overflow = TextOverflow.Clip,
+                                modifier = Modifier.basicMarquee(),
                             )
                         },
                         leadingIcon = { Icon(link.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface) },

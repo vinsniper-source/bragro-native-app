@@ -3,6 +3,8 @@ package com.bragro.mobile.ui.insumos
 import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -196,7 +198,7 @@ private fun insumosExportRecords(data: ControleInsumosResponse): List<Map<String
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun InsumoItemRow(i: InsumoItemSituacaoData) {
     Column(modifier = Modifier.padding(vertical = 6.dp)) {
@@ -206,8 +208,8 @@ private fun InsumoItemRow(i: InsumoItemSituacaoData) {
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.weight(1f).basicMarquee(),
             )
             StatusPill(i.status)
         }
@@ -292,6 +294,7 @@ private fun ItemCriticoCard(i: InsumoSaldoData, onPedidoRapido: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RamoNode(item: InsumosRamoItemData, depth: Int) {
     Row(modifier = Modifier.padding(start = (depth * 16).dp, top = 3.dp, bottom = 3.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -300,8 +303,8 @@ private fun RamoNode(item: InsumosRamoItemData, depth: Int) {
             style = MaterialTheme.typography.bodySmall,
             fontWeight = if (depth == 0) FontWeight.Bold else FontWeight.Normal,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
+            overflow = TextOverflow.Clip,
+            modifier = Modifier.weight(1f).basicMarquee(),
         )
         if (item.status != null && item.status != "OK") {
             StatusPill(item.status)
@@ -318,7 +321,7 @@ private fun RamoNode(item: InsumosRamoItemData, depth: Int) {
 
 private data class InsumosBlockSpec(val title: String, val content: @Composable () -> Unit)
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun InsumosCategoryTabs(blocks: List<InsumosBlockSpec>, modifier: Modifier = Modifier) {
     var selected by remember { mutableStateOf(0) }
@@ -340,7 +343,8 @@ private fun InsumosCategoryTabs(blocks: List<InsumosBlockSpec>, modifier: Modifi
                             block.title,
                             maxLines = 1,
                             softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
+                            overflow = TextOverflow.Clip,
+                            modifier = Modifier.basicMarquee(),
                         )
                     },
                 )
@@ -353,7 +357,7 @@ private fun InsumosCategoryTabs(blocks: List<InsumosBlockSpec>, modifier: Modifi
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, viewModel: ControleInsumosViewModel = viewModel()) {
     val data by viewModel.data
@@ -370,7 +374,7 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Controle de Insumos", color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text("Controle de Insumos", color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
                     }
                 },
                 navigationIcon = {

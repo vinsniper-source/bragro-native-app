@@ -18,6 +18,18 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.22] -- 2026-08-28
+
+- Letreiro (marquee) em vez de "..." em todo texto de uma linha só que
+  ultrapassa o espaço disponível -- pedido do usuário ("tem como aparecer
+  como um letreiro se movendo? aplique em todo app que tiver fontes
+  cortadas"). `Modifier.basicMarquee()` só anima quando o texto realmente
+  não cabe; se cabe, fica parado normal. Aplicado nos ~61 pontos que antes
+  usavam `TextOverflow.Ellipsis` com uma linha só (blocos individuais,
+  abas, dropdowns, KPIs, cards etc.), em 21 arquivos. Textos de parágrafo
+  com 2+ linhas (ex.: descrição de alerta) continuam com "..." normal --
+  letreiro é só pra uma linha.
+
 ## [1.2.21] -- 2026-08-28
 
 - Blocos individuais dentro de cada categoria (Dados/Operações/Arquivos e
