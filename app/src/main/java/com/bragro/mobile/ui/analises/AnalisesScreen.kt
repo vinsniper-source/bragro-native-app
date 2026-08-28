@@ -54,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -62,6 +63,7 @@ import com.bragro.mobile.data.NetworkStatus
 import com.bragro.mobile.data.model.ColumnConfig
 import com.bragro.mobile.data.model.DomainConfig
 import com.bragro.mobile.data.repo.AnalisesRepository
+import com.bragro.mobile.ui.domain.EqualWidthBlockRow
 import com.bragro.mobile.ui.domain.FarmSelectorButton
 import com.bragro.mobile.ui.domain.LabeledIconButton
 import com.bragro.mobile.ui.domain.exportXlsx
@@ -223,11 +225,10 @@ private fun AnalisesCategoryBlock(spec: AnalisesBlockSpec, modifier: Modifier = 
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) { spec.content() }
             } else {
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                ) { spec.content() }
+                // EqualWidthBlockRow (ui/domain/ModuleIconRow.kt) -- achado
+                // de auditoria: células de mesma largura, borda vertical
+                // entre elas, numa linha só (ellipsis se não couber).
+                EqualWidthBlockRow(modifier = Modifier.padding(8.dp)) { spec.content() }
             }
         }
     }
@@ -255,7 +256,14 @@ private fun AnalisesCategoryTabs(blocks: List<AnalisesBlockSpec>, modifier: Modi
                         activeContentColor = MaterialTheme.colorScheme.onPrimary,
                         inactiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                     ),
-                    label = { Text(block.title) },
+                    label = {
+                        Text(
+                            block.title,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
                 )
             }
         }
@@ -268,11 +276,9 @@ private fun AnalisesCategoryTabs(blocks: List<AnalisesBlockSpec>, modifier: Modi
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) { active.content() }
         } else {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) { active.content() }
+            // EqualWidthBlockRow (ui/domain/ModuleIconRow.kt) -- mesmo
+            // ajuste de AnalisesCategoryBlock acima.
+            EqualWidthBlockRow { active.content() }
         }
     }
 }

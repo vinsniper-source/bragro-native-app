@@ -18,6 +18,20 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.21] -- 2026-08-28
+
+- Blocos individuais dentro de cada categoria (Dados/Operações/Arquivos e
+  equivalentes) agora têm largura igual entre si, borda vertical separando
+  cada um e gerador de caracteres (ellipsis) automático quando o rótulo não
+  couber -- novo `EqualWidthBlockRow` (`ui/domain/ModuleIconRow.kt`),
+  aplicado em todos os módulos: DomainListScreen (genéricos + Cobranças),
+  FinanceiroScreen, DreScreen, LivroCaixaScreen, AnalisesScreen e
+  ControleInsumosScreen.
+- Gerador de caracteres app-wide: rótulos de `SegmentedButton`
+  (Dados/Operações/Arquivos) e itens de dropdown (seletor de setor/módulos
+  na barra inferior, seletor de fazenda, filtros de período/coluna
+  genéricos) que ultrapassavam o bloco ou a tela agora truncam com "...".
+
 ## [1.2.20] -- 2026-08-26
 
 - Financeiro e Colheita: "Área Total (ha)" agora também respeita

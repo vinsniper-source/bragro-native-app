@@ -70,6 +70,7 @@ import com.bragro.mobile.data.model.InsumoSaldoData
 import com.bragro.mobile.data.model.InsumosRamoItemData
 import com.bragro.mobile.data.repo.ControleInsumosRepository
 import com.bragro.mobile.ui.domain.BarSeries
+import com.bragro.mobile.ui.domain.EqualWidthBlockRow
 import com.bragro.mobile.ui.domain.FarmSelectorButton
 import com.bragro.mobile.ui.domain.LabeledIconButton
 import com.bragro.mobile.ui.domain.SimpleBarChart
@@ -334,16 +335,21 @@ private fun InsumosCategoryTabs(blocks: List<InsumosBlockSpec>, modifier: Modifi
                         activeContentColor = MaterialTheme.colorScheme.onPrimary,
                         inactiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                     ),
-                    label = { Text(block.title) },
+                    label = {
+                        Text(
+                            block.title,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
                 )
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) { blocks[safeSelected].content() }
+        // EqualWidthBlockRow (ui/domain/ModuleIconRow.kt) -- mesmo
+        // ajuste aplicado nas demais telas de categoria do app.
+        EqualWidthBlockRow { blocks[safeSelected].content() }
     }
 }
 

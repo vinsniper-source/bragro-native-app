@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CardDefaults
@@ -16,11 +18,18 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import com.bragro.mobile.ui.theme.Card
 
@@ -215,5 +224,79 @@ fun ModuleIconRow(items: List<ModuleIconItem>, onClick: (String) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         items.forEach { item -> ModuleIconButton(item) { onClick(item.key) } }
+    }
+}
+
+/**
+ * Fileira de blocos INTEIROS: mesma largura entre si, nunca quebra pra uma
+ * 2ª linha (rótulo que não couber vira "..." em vez de empurrar o bloco pra
+ * baixo), dentro de um contorno único com uma borda vertical fina separando
+ * cada célula -- pedido do usuário (achado de auditoria: "nos blocos
+ * individuais de dentro dos módulos das categorias dados, operações e
+ * arquivos, crie bloco inteiro separados por bordas na vertical na mesma
+ * linha, com as mesmas medidas entre eles, se algum rótulo não couber
+ * coloque como gerador de caracteres"). Usado por ModuleCategoryBlock/
+ * ModuleCategoryTabs (DomainListScreen.kt) e FinanceiroCategoryBlock/
+ * FinanceiroCategoryTabs (FinanceiroScreen.kt) -- os ÚNICOS 4 pontos que
+ * renderizam o conteúdo horizontal de Dados/Operações/Arquivos (e blocos
+ * equivalentes) em TODOS os módulos, então trocar só ali (de FlowRow pra
+ * este composable) já vale pro app inteiro, sem precisar editar bloco por
+ * bloco em cada módulo.
+ *
+ * Não é um SegmentedButtonRow do Material3 (mesmo efeito visual: células
+ * iguais + borda entre elas) porque aqui dentro nem todo item é uma escolha
+ * única/exclusiva -- tem ação pura (Imprimir, Atualizar, Exportar) misturada
+ * com toggle (Gráficos, Filtros) e até dropdown (Banco, Colunas Visíveis),
+ * então não cabe a semântica de "selected" do SegmentedButton.
+ *
+ * Layout customizado (em vez de Row + weight por item) porque o número real
+ * de células só é conhecido depois de compor o conteúdo -- vários ícones são
+ * condicionais (ex.: "Gráficos" some quando isQuickView), então cada bloco
+ * tem uma contagem diferente e variável; este Layout mede quantos filhos
+ * realmente vieram e divide a largura igualmente entre eles.
+ */
+@Composable
+fun EqualWidthBlockRow(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    val dividerColor = MaterialTheme.colorScheme.outlineVariant
+    // Contagem de células só é conhecida durante a medição (measurables.size
+    // abaixo) -- guardada aqui pra o drawBehind (fase de desenho, que roda
+    // DEPOIS da medição desse mesmo nó, no mesmo frame) saber onde
+    // desenhar as bordas verticais entre as células.
+    val itemCount = remember { mutableIntStateOf(0) }
+    Layout(
+        content = content,
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .border(1.dp, dividerColor, RoundedCornerShape(10.dp))
+            .drawBehind {
+                val n = itemCount.intValue
+                if (n > 1) {
+                    val itemWidthPx = size.width / n
+                    val strokeWidthPx = 1.dp.toPx()
+                    for (i in 1 until n) {
+                        val x = itemWidthPx * i
+                        drawLine(dividerColor, Offset(x, 0f), Offset(x, size.height), strokeWidth = strokeWidthPx)
+                    }
+                }
+            },
+    ) { measurables, constraints ->
+        if (measurables.isEmpty()) {
+            itemCount.intValue = 0
+            return@Layout layout(constraints.minWidth, 0) {}
+        }
+        itemCount.intValue = measurables.size
+        val totalWidth = constraints.maxWidth
+        val itemWidth = totalWidth / measurables.size
+        val itemConstraints = Constraints(minWidth = itemWidth, maxWidth = itemWidth, minHeight = 0, maxHeight = constraints.maxHeight)
+        val placeables = measurables.map { it.measure(itemConstraints) }
+        val height = placeables.maxOf { it.height }
+        layout(totalWidth, height) {
+            var x = 0
+            placeables.forEach { placeable ->
+                placeable.placeRelative(x, 0)
+                x += itemWidth
+            }
+        }
     }
 }

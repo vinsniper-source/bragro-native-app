@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -61,7 +60,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.appFieldColors
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -375,21 +373,29 @@ fun FinanceiroScreen(
             // em ModuleIconRow.kt) -- SEM tocar nesse componente compartilhado,
             // pra não reverter a decisão já confirmada de tirar o verde dos
             // blocos individuais dos OUTROS módulos.
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+            // Seletor de visão "Gestão Financeira" -- redesenhado (achado de
+            // auditoria: "crie bloco inteiro separados por bordas na
+            // vertical na mesma linha, com as mesmas medidas entre eles...
+            // terão que ficar em duas linhas"). Era um FlowRow de 7 chips de
+            // largura própria (SpaceEvenly, quebra imprevisível conforme a
+            // tela); agora são 2 fileiras de SegmentedButtonRow -- mesmo
+            // padrão já usado em Dados/Operações/Arquivos (ver
+            // FinanceiroCategoryTabs acima) -- cada fileira é um bloco único
+            // de segmentos INTEIROS, todos com a mesma largura entre si,
+            // separados pela borda vertical do próprio SegmentedButton, com
+            // ellipsis se o rótulo não couber. As 7 visões não cabem numa
+            // linha só sem espremer os rótulos mais longos ("Contas a
+            // Pagar", "Rateio Indireto"), então ficam distribuídas em 2
+            // linhas que melhor preenchem cada uma: a 1ª com as 4 visões de
+            // status mais usadas no dia a dia (Todos/Pagar/Receber/
+            // Conciliado), a 2ª com as 3 visões analíticas (Fluxo de Caixa/
+            // Rateio Direto/Rateio Indireto).
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    FinanceiroView.values().forEach { v ->
-                        FinanceiroViewIconButton(
-                            ModuleIconItem(v.name, financeiroViewIcon(v), v.label, active = v == view),
-                        ) { view = v }
-                    }
-                }
+                FinanceiroViewSegmentedRow(FINANCEIRO_VIEW_ROW_1, view) { view = it }
+                FinanceiroViewSegmentedRow(FINANCEIRO_VIEW_ROW_2, view) { view = it }
             }
 
             Spacer(modifier = Modifier.size(8.dp))
@@ -761,42 +767,44 @@ private fun ConciliarDot(conciliado: Boolean) {
     )
 }
 
-// Ícone individual do seletor de visão "Gestão Financeira" -- cópia
-// intencional de ModuleIconButton (ModuleIconRow.kt), NÃO uma alteração
-// nele: aquele componente é compartilhado por TODOS os blocos individuais
-// do app (Dados/Operações/Arquivos, Filtros, Período etc., em todos os
-// módulos) e já tem um "ESCOPO FINAL" confirmado (fundo neutro, sem verde) —
-// mexer nele mudaria o app inteiro. Pedido do usuário desta vez foi só pros
-// blocos da "Gestão Financeira": fundo verde escuro (BrGreen, cor fixa da
-// marca, não MaterialTheme.colorScheme.primary porque essa muda de tom entre
-// os temas claro/escuro) + fonte/ícone branco.
+// Distribuição das 7 visões em 2 fileiras (ver comentário no call site,
+// acima) -- 1ª linha com os status mais usados no dia a dia, 2ª com as
+// visões analíticas.
+private val FINANCEIRO_VIEW_ROW_1 = listOf(FinanceiroView.TODOS, FinanceiroView.PAGAR, FinanceiroView.RECEBER, FinanceiroView.CONCILIADO)
+private val FINANCEIRO_VIEW_ROW_2 = listOf(FinanceiroView.FLUXO, FinanceiroView.RATEIO_DIRETO, FinanceiroView.RATEIO_INDIRETO)
+
+// Fileira de blocos INTEIROS (SegmentedButton) do seletor de visão "Gestão
+// Financeira" -- substitui o antigo FinanceiroViewIconButton (Card solto por
+// ícone, largura própria). Cor mantida igual à decisão anterior: fundo
+// verde escuro fixo (BrGreen, não MaterialTheme.colorScheme.primary porque
+// essa muda de tom entre os temas claro/escuro) + fonte/ícone branco, só que
+// agora com uma leve diferença de opacidade entre selecionado/não
+// selecionado (antes nenhum dos 7 ícones mudava de cor ao ser tocado; só o
+// título acima alternava pro nome da visão).
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FinanceiroViewIconButton(item: ModuleIconItem, onClick: () -> Unit) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.widthIn(min = 44.dp),
-        colors = CardDefaults.cardColors(containerColor = com.bragro.mobile.ui.theme.BrGreen),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 0.dp,
-            pressedElevation = 0.dp,
-            focusedElevation = 0.dp,
-            hoveredElevation = 0.dp,
-            draggedElevation = 0.dp,
-            disabledElevation = 0.dp,
-        ),
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Icon(item.icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-            Text(
-                item.label,
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis,
+private fun FinanceiroViewSegmentedRow(items: List<FinanceiroView>, selected: FinanceiroView, onSelect: (FinanceiroView) -> Unit) {
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+        items.forEachIndexed { index, v ->
+            SegmentedButton(
+                selected = v == selected,
+                onClick = { onSelect(v) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = items.size),
+                colors = SegmentedButtonDefaults.colors(
+                    activeContainerColor = com.bragro.mobile.ui.theme.BrGreen,
+                    activeContentColor = Color.White,
+                    inactiveContainerColor = com.bragro.mobile.ui.theme.BrGreen.copy(alpha = 0.55f),
+                    inactiveContentColor = Color.White,
+                ),
+                icon = { Icon(financeiroViewIcon(v), contentDescription = null, modifier = Modifier.size(18.dp)) },
+                label = {
+                    Text(
+                        v.label,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                },
             )
         }
     }
@@ -867,10 +875,12 @@ private fun FinanceiroCategoryBlock(spec: FinBlockSpec, modifier: Modifier = Mod
             // weight(1f) condicional preservado aqui (migrado do Card antigo)
             // -- é o que faz Dados/Operações combinarem em altura com
             // Nuvem/Imprimir ao lado, dentro da Row com IntrinsicSize.Min.
-            FlowRow(
-                modifier = Modifier.fillMaxWidth().let { if (fillHeight) it.weight(1f) else it },
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+            // EqualWidthBlockRow (ModuleIconRow.kt) -- achado de auditoria:
+            // ícones viram células de mesma largura, bloco único com borda
+            // vertical entre elas, numa linha só (ellipsis se não couber),
+            // em vez do FlowRow de Cards soltos de largura própria.
+            EqualWidthBlockRow(
+                modifier = Modifier.let { if (fillHeight) it.weight(1f) else it },
             ) { spec.content() }
         }
     }
@@ -902,7 +912,18 @@ private fun FinanceiroCategoryTabs(blocks: List<FinBlockSpec>, modifier: Modifie
                         activeContentColor = MaterialTheme.colorScheme.onPrimary,
                         inactiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                     ),
-                    label = { Text(block.title) },
+                    // maxLines/ellipsis -- achado de auditoria (mesma razão
+                    // do ModuleCategoryTabs em DomainListScreen.kt: título
+                    // longo quebrando linha desalinha a altura dos 3
+                    // blocos).
+                    label = {
+                        Text(
+                            block.title,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
                 )
             }
         }
@@ -917,11 +938,9 @@ private fun FinanceiroCategoryTabs(blocks: List<FinBlockSpec>, modifier: Modifie
                 horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
             ) { active.content() }
         } else {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) { active.content() }
+            // EqualWidthBlockRow (ModuleIconRow.kt) -- mesmo ajuste de
+            // FinanceiroCategoryBlock acima.
+            EqualWidthBlockRow { active.content() }
         }
     }
 }
@@ -970,7 +989,10 @@ private fun PeriodoDropdown(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
             )
             PeriodoCategoria.values().forEach { cat ->
-                DropdownMenuItem(text = { Text(cat.label) }, onClick = { onPeriodo(cat); expanded = false })
+                DropdownMenuItem(
+                    text = { Text(cat.label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    onClick = { onPeriodo(cat); expanded = false },
+                )
             }
             HorizontalDivider()
             Text(
@@ -1030,7 +1052,13 @@ private fun BancoDropdown(banco: String?, options: List<LookupEntity>, onSelect:
             HorizontalDivider()
             Text("Filtrar por banco", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
             options.forEach { opt ->
-                DropdownMenuItem(text = { Text(opt.label) }, onClick = { onSelect(opt.value); expanded = false })
+                // maxLines/ellipsis -- achado de auditoria: nome de banco
+                // cadastrado pelo usuário pode ser mais longo que "Todos os
+                // bancos".
+                DropdownMenuItem(
+                    text = { Text(opt.label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    onClick = { onSelect(opt.value); expanded = false },
+                )
             }
         }
     }

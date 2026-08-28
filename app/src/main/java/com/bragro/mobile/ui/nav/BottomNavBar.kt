@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.bragro.mobile.ui.home.domainIcon
 
@@ -311,7 +312,18 @@ fun BRAgroBottomBar(
                             // preto/branco"), mesmo critério já aplicado aos blocos
                             // individuais (MODULE_ICON_FG em ModuleIconRow.kt).
                             DropdownMenuItem(
-                                text = { Text(label, color = MaterialTheme.colorScheme.onSurface) },
+                                // maxLines/ellipsis -- achado de auditoria: nomes de módulo
+                                // mais longos (ex. "Cotações de Fornecedores", "Planejamento
+                                // de Safra") sem proteção nenhuma contra quebra de linha
+                                // dentro do menu suspenso.
+                                text = {
+                                    Text(
+                                        label,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                },
                                 leadingIcon = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface) },
                                 onClick = { openSector(item) },
                             )
@@ -337,7 +349,14 @@ fun BRAgroBottomBar(
             DropdownMenu(expanded = openTabId == "sistema", onDismissRequest = { openTabId = null }) {
                 SISTEMA_LINKS.forEach { link ->
                     DropdownMenuItem(
-                        text = { Text(link.label, color = MaterialTheme.colorScheme.onSurface) },
+                        text = {
+                            Text(
+                                link.label,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        },
                         leadingIcon = { Icon(link.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface) },
                         onClick = {
                             openTabId = null

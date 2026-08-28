@@ -134,7 +134,17 @@ fun FarmSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onCh
         HorizontalDivider()
         farms.forEach { farm ->
             DropdownMenuItem(
-                text = { Text(farm.name, fontWeight = if (selected == farm.name) FontWeight.Bold else FontWeight.Normal) },
+                // maxLines/ellipsis -- achado de auditoria (nome de fazenda
+                // pode ser bem mais longo que "Todas as fazendas" acima, sem
+                // proteção nenhuma contra quebra de linha no menu).
+                text = {
+                    Text(
+                        farm.name,
+                        fontWeight = if (selected == farm.name) FontWeight.Bold else FontWeight.Normal,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                },
                 onClick = { FarmSelection.choose(context, farm.name); menuOpen = false; onChanged() },
             )
         }

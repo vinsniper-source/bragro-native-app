@@ -139,7 +139,16 @@ fun GlobalFieldSelectorButton(
         HorizontalDivider()
         options.forEach { opt ->
             DropdownMenuItem(
-                text = { Text(opt.label, fontWeight = if (selected == opt.value) FontWeight.Bold else FontWeight.Normal) },
+                // maxLines/ellipsis -- achado de auditoria (mesmo critério
+                // de FarmSelectorButton.kt).
+                text = {
+                    Text(
+                        opt.label,
+                        fontWeight = if (selected == opt.value) FontWeight.Bold else FontWeight.Normal,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                },
                 onClick = { selection.choose(context, opt.value); menuOpen = false; onChanged() },
             )
         }

@@ -917,17 +917,11 @@ fun DomainListScreen(
                     // usuário.
                     ModuleCategoryTabs(listOf(dadosBlockCobrancas, operacoesBlockCobrancas, arquivosBlockCobrancas), modifier = Modifier.fillMaxWidth())
                 } else {
-                // Sem Card "por fora" -- cada ícone já é seu próprio Card
-                // (ModuleIconButton/LabeledIconButton), e SpaceEvenly
-                // distribui pra preencher a linha inteira -- pedido do
-                // usuário ("padronize o tamanho dos blocos dos ícones e que
-                // preencha toda a linha"), mesmo padrão já usado nos blocos
-                // Dados/Operações/Arquivos dos outros módulos.
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
+                // EqualWidthBlockRow (ui/domain/ModuleIconRow.kt) -- mesmo
+                // ajuste aplicado nos blocos Dados/Operações/Arquivos dos
+                // outros módulos: largura igual, borda vertical entre
+                // blocos, gerador de caracteres se o rótulo não couber.
+                EqualWidthBlockRow(modifier = Modifier.fillMaxWidth()) {
                     ModuleIconButton(
                         ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
                     ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
@@ -1364,18 +1358,16 @@ private fun ModuleCategoryBlock(spec: ModuleBlockSpec, modifier: Modifier = Modi
                 horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
             ) { spec.content() }
         } else {
-            // Sem Card "por fora" -- mesmo ajuste de FinanceiroCategoryBlock
-            // (FinanceiroScreen.kt): pedido do usuário ("em todos os
-            // módulos, por categorias: dados, operações, arquivos torne-os
-            // blocos com ícones individuais e redistribua de forma que
-            // preencha toda a linha"). Cada ícone já é seu próprio Card
-            // (ModuleIconButton/LabeledIconButton, ModuleIconRow.kt) -- essa
+            // EqualWidthBlockRow (ModuleIconRow.kt) -- achado de auditoria:
+            // ícones viram células de mesma largura, bloco único com borda
+            // vertical entre elas, numa linha só (ellipsis se não couber).
+            // Antes era FlowRow (Cards soltos, largura própria, quebrava
+            // linha se não coubesse tudo). Cada ícone continua sendo seu
+            // próprio ModuleIconButton/LabeledIconButton por dentro -- essa
             // troca vale pros 14 módulos que usam CATEGORIZED_BLOCK_DOMAINS/
             // PER_MODULE_BLOCK_DOMAINS de uma vez só.
-            FlowRow(
-                modifier = Modifier.fillMaxWidth().let { if (fillHeight) it.weight(1f) else it },
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+            EqualWidthBlockRow(
+                modifier = Modifier.let { if (fillHeight) it.weight(1f) else it },
             ) { spec.content() }
         }
     }
@@ -1414,7 +1406,19 @@ private fun ModuleCategoryTabs(blocks: List<ModuleBlockSpec>, modifier: Modifier
                         activeContentColor = MaterialTheme.colorScheme.onPrimary,
                         inactiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                     ),
-                    label = { Text(block.title) },
+                    // maxLines/ellipsis -- achado de auditoria (nomes de
+                    // categoria mais longos, ex. módulos com blocos
+                    // renomeados, podiam quebrar linha dentro do
+                    // SegmentedButton e desalinhar a altura dos 3 blocos,
+                    // que precisam ficar com a MESMA medida entre eles).
+                    label = {
+                        Text(
+                            block.title,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
                 )
             }
         }
@@ -1428,11 +1432,9 @@ private fun ModuleCategoryTabs(blocks: List<ModuleBlockSpec>, modifier: Modifier
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) { active.content() }
         } else {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) { active.content() }
+            // EqualWidthBlockRow (ModuleIconRow.kt) -- mesmo ajuste de
+            // ModuleCategoryBlock acima.
+            EqualWidthBlockRow { active.content() }
         }
     }
 }
@@ -1616,7 +1618,10 @@ private fun GenericPeriodoDropdown(
             DropdownMenuItem(text = { Text("Todos os períodos") }, onClick = { onPeriodo(null); expanded = false })
             HorizontalDivider()
             PeriodoCategoria.values().forEach { cat ->
-                DropdownMenuItem(text = { Text(cat.label) }, onClick = { onPeriodo(cat); expanded = false })
+                DropdownMenuItem(
+                    text = { Text(cat.label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    onClick = { onPeriodo(cat); expanded = false },
+                )
             }
             HorizontalDivider()
             Text(
@@ -1681,7 +1686,13 @@ private fun ColumnFilterRow(
                 DropdownMenuItem(text = { Text("Todos") }, onClick = { onSelect(""); expanded = false })
                 if (options.isNotEmpty()) HorizontalDivider()
                 options.forEach { opt ->
-                    DropdownMenuItem(text = { Text(opt) }, onClick = { onSelect(opt); expanded = false })
+                    // maxLines/ellipsis -- achado de auditoria: valores
+                    // distintos de coluna (nome de item/fazenda/categoria
+                    // etc.) podem ser bem mais longos que "Todos".
+                    DropdownMenuItem(
+                        text = { Text(opt, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        onClick = { onSelect(opt); expanded = false },
+                    )
                 }
             }
         }
