@@ -147,6 +147,7 @@ fun ModuleProviderIntegrationCard(domainId: String) {
             onSave = { provedor, apiKey -> vm.save(provedor, apiKey) },
             onDisconnect = { vm.disconnect() },
             onSync = { vm.sync() },
+            initiallyOpen = true,
         )
     } else if (domainId == "romaneios") {
         val vm: RomaneioIntegrationViewModel = viewModel()
@@ -163,6 +164,7 @@ fun ModuleProviderIntegrationCard(domainId: String) {
             onSave = { provedor, apiKey -> vm.save(provedor, apiKey) },
             onDisconnect = { vm.disconnect() },
             onSync = { vm.sync() },
+            initiallyOpen = true,
         )
     }
 }

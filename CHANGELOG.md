@@ -18,6 +18,33 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.29] -- 2026-08-29
+
+- **Frota/Romaneios: acesso "Bomba"/"Balança" virou FAB dedicado** -- pedido
+  do usuário ("coloque o botão balança acima do botão +, o mesmo faça em
+  frota, botão bomba acima do botão +, e exclua os botoes bomba e balança e
+  reposicione os outros botoes de dados"). O ícone que ficava dentro do
+  bloco "Dados" saiu de lá (os ícones restantes se redistribuem sozinhos --
+  `EqualWidthBlockRow` já divide a largura pelos filhos que sobraram, sem
+  código extra) e virou um novo `FloatingActionButton` posicionado acima do
+  "+", que abre o mesmo card de integração dentro de um `AlertDialog`.
+- **Início: círculo único da fazenda agora mostra foto de satélite real e
+  abre o Google Earth ao tocar** -- pedido do usuário, a partir de um
+  mockup anexado ("retire da lado inferior direito a palavra importar kml,
+  sendo que ao clicar no círculo será direcionado para o google earth para
+  kml, o círculo será preenchido com o mapa"). O texto/ícone "Importar KML"
+  que ficava no rodapé do bloco de fazendas foi removido; agora, quando só
+  uma fazenda está em exibição e ela tem latitude/longitude cadastrada
+  (Base de Dados), o próprio círculo mostra a imagem aérea real de fundo
+  (Esri World Imagery, endpoint público sem chave de API -- mesmo critério
+  do osmdroid usado no mapa do FieldView, pra não depender de Google
+  Maps/Mapbox pagos) e o toque no círculo abre o Google Earth centrado
+  naquele ponto. Fazenda sem localização cadastrada mantém o preenchimento
+  de cor simples de sempre (comportamento anterior, sem quebra).
+- **Site: `/api/mobile/home` passou a enviar `latitude`/`longitude` de cada
+  fazenda** (já existentes no schema desde a 6ª exceção) pro app nativo
+  poder montar a foto de satélite e o link do Google Earth acima.
+
 ## [1.2.28] -- 2026-08-29
 
 - **Novo: card "Acesso automático via prestadora de serviço" em Frota

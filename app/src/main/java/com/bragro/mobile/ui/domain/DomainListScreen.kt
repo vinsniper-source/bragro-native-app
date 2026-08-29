@@ -271,6 +271,10 @@ fun DomainListScreen(
     // Abastecimento rápido (Frota): FAB extra que abre um Dialog com só o
     // essencial preenchido -- espelho de quick-abastecimento-button.tsx.
     var showQuickAbastecimento by remember { mutableStateOf(false) }
+    // Card "Acesso automático via prestadora de serviço" (bomba/balança):
+    // outro FAB extra, mesmo padrão -- pedido do usuário ("coloque o botão
+    // bomba/balança acima do botão +"), ver ModuleProviderIntegrationCard.kt.
+    var showIntegracaoDialog by remember { mutableStateOf(false) }
 
     // Período genérico (espelho de genericPeriodoRange em data-table.tsx):
     // janela de data pra trás sobre a 1ª coluna de data do domínio -- só
@@ -502,6 +506,16 @@ fun DomainListScreen(
                     ) {
                         Icon(Icons.Filled.LocalGasStation, contentDescription = "Abastecimento rápido")
                     }
+                    // Card "Acesso automático via prestadora de serviço"
+                    // (bomba de combustível) -- saiu do bloco Dados e virou
+                    // FAB próprio, acima do + -- pedido do usuário ("coloque
+                    // o botão bomba acima do botão +").
+                    FloatingActionButton(
+                        onClick = { showIntegracaoDialog = true },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    ) {
+                        Icon(Icons.Filled.Bolt, contentDescription = "Acesso automático (bomba de combustível)")
+                    }
                     FloatingActionButton(
                     onClick = onNewRecord,
                     // Cores invertidas -- pedido do usuário ("inverta também
@@ -526,6 +540,16 @@ fun DomainListScreen(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
                         Icon(Icons.Filled.MonitorWeight, contentDescription = "Romaneio rápido (balança)")
+                    }
+                    // Card "Acesso automático via prestadora de serviço"
+                    // (balança) -- saiu do bloco Dados e virou FAB próprio,
+                    // acima do + -- pedido do usuário ("coloque o botão
+                    // balança acima do botão +").
+                    FloatingActionButton(
+                        onClick = { showIntegracaoDialog = true },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    ) {
+                        Icon(Icons.Filled.Bolt, contentDescription = "Acesso automático (balança)")
                     }
                     FloatingActionButton(
                     onClick = onNewRecord,
@@ -709,15 +733,6 @@ fun DomainListScreen(
                                 onClick = { tableView = !tableView },
                             )
                         }
-                        // Balança (leitura automática de peso) -- pedido do
-                        // usuário ("api implementado tambem para balanca"),
-                        // scaffolding tipo FieldView/Drone (ver
-                        // ModuleProviderIntegrationCard.kt).
-                        if (domainId == "romaneios") {
-                            ModuleIconButton(
-                                ModuleIconItem("integracao", Icons.Filled.Bolt, "Balança", active = expandedBlocks["integracao"] == true),
-                            ) { expandedBlocks["integracao"] = expandedBlocks["integracao"] != true }
-                        }
                     }
                     val operacoesBlock = ModuleBlockSpec("Operações", vertical = false) {
                         LabeledIconButton(
@@ -822,15 +837,11 @@ fun DomainListScreen(
                                 ModuleIconItem("clima-weather", Icons.Filled.WbSunny, "Previsão", active = expandedBlocks["clima-weather"] == true),
                             ) { expandedBlocks["clima-weather"] = expandedBlocks["clima-weather"] != true }
                         }
-                        // Bomba de combustível (leitura automática) --
-                        // pedido do usuário ("api para bomba de combustivel
-                        // implemente"), scaffolding tipo FieldView/Drone
-                        // (ver ModuleProviderIntegrationCard.kt).
-                        if (domainId == "frota") {
-                            ModuleIconButton(
-                                ModuleIconItem("integracao", Icons.Filled.Bolt, "Bomba", active = expandedBlocks["integracao"] == true),
-                            ) { expandedBlocks["integracao"] = expandedBlocks["integracao"] != true }
-                        }
+                        // Bomba de combustível saiu daqui e virou um FAB
+                        // próprio (acima do botão +) -- pedido do usuário
+                        // ("coloque o botão bomba acima do botão +... exclua
+                        // os botoes bomba e balança [do bloco Dados]"), ver
+                        // Column de FloatingActionButton mais abaixo.
                     }
                     // Operações: varia por módulo -- Safra (recalcular área +
                     // atualizar + período + calculadora), Clima/Planejamento
@@ -1097,13 +1108,11 @@ fun DomainListScreen(
                 item(key = "recalcular-area") { RecalcularAreaButton(domainId, showHeader = false) }
             }
             // Card "Acesso automático via prestadora de serviço" pra bomba
-            // de combustível (Frota) e balança (Romaneios) -- pedido do
-            // usuário, scaffolding tipo FieldView/Drone (ver
-            // ModuleProviderIntegrationCard.kt e ícone "integracao" nos
-            // blocos Dados acima).
-            if ((domainId == "frota" || domainId == "romaneios") && expandedBlocks["integracao"] == true) {
-                item(key = "integracao") { ModuleProviderIntegrationCard(domainId) }
-            }
+            // de combustível (Frota) e balança (Romaneios) -- saiu daqui
+            // (ícone dentro do bloco Dados) e virou um diálogo aberto por um
+            // FAB próprio, acima do botão + (ver showIntegracaoDialog mais
+            // abaixo e o floatingActionButton do Scaffold) -- pedido do
+            // usuário.
             // Bloco "Filtros" -- conteúdo (só os dropdowns de coluna) some
             // se abre pelo ícone da fileira acima, sem cabeçalho próprio
             // (o ícone já cumpre esse papel agora).
@@ -1394,6 +1403,23 @@ fun DomainListScreen(
             onSaved = {
                 showQuickAbastecimento = false
                 viewModel.refresh(domainId)
+            },
+        )
+    }
+
+    // Card "Acesso automático via prestadora de serviço" (bomba/balança) --
+    // aberto pelo FAB próprio (ver floatingActionButton acima), não mais
+    // por um ícone dentro do bloco Dados -- pedido do usuário. Mesmo
+    // ModuleProviderIntegrationCard.kt de antes, só que agora dentro de um
+    // AlertDialog dedicado (já abre expandido -- initiallyOpen = true --
+    // já que o usuário tocou num botão especificamente pra ver isto).
+    if (showIntegracaoDialog && (domainId == "frota" || domainId == "romaneios")) {
+        AlertDialog(
+            onDismissRequest = { showIntegracaoDialog = false },
+            title = { Text(if (domainId == "frota") "Bomba de combustível" else "Balança") },
+            text = { ModuleProviderIntegrationCard(domainId) },
+            confirmButton = {
+                TextButton(onClick = { showIntegracaoDialog = false }) { Text("Fechar") }
             },
         )
     }

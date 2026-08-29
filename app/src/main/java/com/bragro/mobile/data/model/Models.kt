@@ -163,6 +163,15 @@ data class CanvasFazendaCardData(
     val custoHaMedio: Double? = null,
     val breakdown: List<CanvasBreakdownItemData> = emptyList(),
     val tendencia: String? = null, // "melhorando" | "piorando" | "estavel" | null
+    // Localização real (6ª exceção de schema, ver MEMORY.md) -- pro círculo
+    // único (fazenda selecionada) mostrar foto de satélite de fundo e o
+    // clique abrir o Google Earth naquele ponto, em vez do antigo botão
+    // "Importar KML" -- pedido do usuário. null = fazenda ainda sem
+    // latitude/longitude cadastrada em Base de Dados (círculo cai de volta
+    // pro preenchimento de cor simples, ver CanvasCirclesRow em
+    // CanvasSection.kt).
+    val latitude: Double? = null,
+    val longitude: Double? = null,
 )
 
 @Serializable

@@ -70,8 +70,15 @@ fun ProviderIntegrationCard(
     onDisconnect: () -> Unit,
     onSync: () -> Unit,
     modifier: Modifier = Modifier,
+    // true quando o card é o ÚNICO conteúdo de um diálogo dedicado (ex.:
+    // FAB "Bomba"/"Balança" em Frota/Romaneios, ver DomainListScreen.kt) --
+    // não faz sentido abrir fechado se o usuário já tocou num botão
+    // especificamente pra ver isto. FieldView/Drone não passam este
+    // parâmetro (continuam fechados por padrão, mesmo comportamento de
+    // sempre).
+    initiallyOpen: Boolean = false,
 ) {
-    var open by remember { mutableStateOf(false) }
+    var open by remember { mutableStateOf(initiallyOpen) }
     var expanded by remember { mutableStateOf(false) }
     var provedor by remember(integration?.provedor) { mutableStateOf(integration?.provedor ?: "") }
     var apiKey by remember { mutableStateOf("") }

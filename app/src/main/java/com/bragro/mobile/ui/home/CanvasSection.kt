@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.home
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,7 +28,6 @@ import androidx.compose.material.icons.filled.Agriculture
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Grass
-import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,12 +37,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.bragro.mobile.data.model.CanvasFazendaCardData
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.BrBlue
@@ -203,11 +208,14 @@ fun CanvasCirclesRow(
     fazendas: List<CanvasFazendaCardData>,
     selectedId: String?,
     onSelect: (String) -> Unit,
-    onImportKml: () -> Unit,
     safra: String? = null,
     cultura: String? = null,
 ) {
     val filtroLabel = labelFiltro(safra, cultura)
+    val context = LocalContext.current
+    fun openUrl(url: String) {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    }
     Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
         Column {
         if (fazendas.isEmpty()) {
@@ -259,26 +267,62 @@ fun CanvasCirclesRow(
                 }
                 val selecionada = f.id == selectedId
                 val seta = tendenciaSeta(f.tendencia)
+                // Foto de satélite de fundo -- só no círculo único (fazenda
+                // selecionada/única), igual ao mockup do usuário: em vez do
+                // preenchimento de cor lisa, mostra a imagem aérea real da
+                // fazenda (Esri World Imagery, endpoint público SEM chave de
+                // API -- mesmo critério do mapa do FieldView, que usa
+                // osmdroid em vez de Google Maps/Mapbox de propósito, por
+                // exigirem cadastro/cobrança, ver comentário em
+                // build.gradle.kts). Precisa de latitude/longitude
+                // cadastrada (Base de Dados, 6ª exceção de schema); sem
+                // isso cai de volta pro preenchimento de cor de sempre.
+                val temMapa = unica && f.latitude != null && f.longitude != null
                 Box(contentAlignment = Alignment.TopEnd) {
                     Box(
                         modifier = Modifier
                             .size(sizeDp)
                             .clip(CircleShape)
-                            .background(statusColor(f.status).copy(alpha = 0.12f))
+                            .then(if (!temMapa) Modifier.background(statusColor(f.status).copy(alpha = 0.12f)) else Modifier)
                             .border(
                                 width = if (selecionada) 2.5.dp else 1.5.dp,
                                 color = statusColor(f.status),
                                 shape = CircleShape,
                             )
-                            .clickable { onSelect(f.id) },
+                            .clickable {
+                                // Círculo único: o toque não "seleciona" mais
+                                // nada (já é a única fazenda) -- abre o
+                                // Google Earth naquele ponto, no lugar do
+                                // antigo botão "Importar KML" -- pedido do
+                                // usuário ("retire... a palavra importar kml,
+                                // sendo que ao clicar no círculo será
+                                // direcionado para o google earth para kml").
+                                if (unica) {
+                                    openUrl(googleEarthUrl(f.latitude, f.longitude, f.nome))
+                                } else {
+                                    onSelect(f.id)
+                                }
+                            },
                         contentAlignment = Alignment.Center,
                     ) {
+                        if (temMapa) {
+                            AsyncImage(
+                                model = esriSatelliteUrl(f.latitude!!, f.longitude!!),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.matchParentSize(),
+                            )
+                            // Escurece a foto por baixo do texto -- mesmo
+                            // critério do mockup (nome/ha em branco sobre a
+                            // imagem, precisa de contraste garantido).
+                            Box(modifier = Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.38f)))
+                        }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 f.nome,
                                 style = if (unica) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
-                                color = statusColor(f.status),
+                                color = if (temMapa) Color.White else statusColor(f.status),
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center,
@@ -287,13 +331,13 @@ fun CanvasCirclesRow(
                             Text(
                                 "${NumberFormat.getNumberInstance(Locale("pt", "BR")).format(areaExibida)} ha",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = statusColor(f.status).copy(alpha = 0.8f),
+                                color = if (temMapa) Color.White.copy(alpha = 0.9f) else statusColor(f.status).copy(alpha = 0.8f),
                             )
                             if (filtroAtivo) {
                                 Text(
                                     filtroLabel,
                                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                                    color = statusColor(f.status).copy(alpha = 0.6f),
+                                    color = if (temMapa) Color.White.copy(alpha = 0.75f) else statusColor(f.status).copy(alpha = 0.6f),
                                 )
                             }
                         }
@@ -321,31 +365,33 @@ fun CanvasCirclesRow(
             }
         }
         }
-        // Importar KML dentro do bloco de fazendas -- pedido do usuário
-        // ("dentro do bloco de fazendas coloque o botão importar kml dentro
-        // do bloco, diminua fonte para ocupar pouco espaço"): antes era um
-        // OutlinedButton numa linha própria, fora deste card (ver
-        // HomeScreen.kt, item "filtros-canvas"). Agora mora no rodapé deste
-        // bloco, ícone/fonte reduzidos (11sp, ícone 12dp) pra ocupar o
-        // mínimo de espaço possível.
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onImportKml() }
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End,
-        ) {
-            Icon(Icons.Filled.Map, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(12.dp))
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                "Importar KML",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
+        // Bloco "Importar KML" removido daqui -- pedido do usuário ("retire
+        // do lado inferior direito a palavra importar kml, sendo que ao
+        // clicar no círculo será direcionado para o google earth"): a ação
+        // agora mora no próprio clique do círculo único (ver
+        // Modifier.clickable acima), que abre o Google Earth diretamente.
         }
     }
+}
+
+// Deep link do Google Earth Web pro ponto da fazenda -- mesmo padrão já
+// usado em FieldviewScreen.kt (câmera a ~1000m de altitude, olhando reto
+// pra baixo). Sem lat/lon cadastrada (fazenda ainda sem localização em
+// Base de Dados), cai pra busca por texto do nome da fazenda.
+private fun googleEarthUrl(lat: Double?, lon: Double?, fallbackQuery: String): String =
+    if (lat != null && lon != null) "https://earth.google.com/web/@$lat,$lon,1000a,1000d,35y,0h,0t,0r"
+    else "https://earth.google.com/web/search/${Uri.encode(fallbackQuery)}"
+
+// Foto de satélite estática via Esri World Imagery -- endpoint público
+// "export" da ArcGIS Online, SEM chave de API (ao contrário de Google
+// Static Maps/Mapbox, descartados de propósito no projeto todo por
+// exigirem cadastro/cobrança -- ver comentário do osmdroid em
+// build.gradle.kts). delta=0.006 graus (~650m) dá um recorte que mostra a
+// fazenda com contexto ao redor, sem zoom excessivo nem de menos.
+private fun esriSatelliteUrl(lat: Double, lon: Double, delta: Double = 0.006): String {
+    val (xmin, ymin, xmax, ymax) = listOf(lon - delta, lat - delta, lon + delta, lat + delta)
+    return "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export" +
+        "?bbox=$xmin,$ymin,$xmax,$ymax&bboxSR=4326&size=300,300&format=png&f=image"
 }
 
 /** Card de detalhe da fazenda selecionada -- Custo médio/ha + barra

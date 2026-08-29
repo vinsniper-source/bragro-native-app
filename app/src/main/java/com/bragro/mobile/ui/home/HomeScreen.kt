@@ -998,7 +998,6 @@ fun HomeScreen(
                         fazendas = canvas.fazendas,
                         selectedId = selecionadaFazendaId,
                         onSelect = { id -> selecionadaFazendaId = id },
-                        onImportKml = onOpenFieldview,
                         safra = SafraSelection.selected.value,
                         cultura = CulturaSelection.selected.value,
                     )
