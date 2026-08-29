@@ -1589,7 +1589,7 @@ private fun weekdayShortBr(isoDate: String): String {
  * "Diário") como janela de data PARA TRÁS a partir de hoje + intervalo
  * manual, sobre a 1ª coluna de data do domínio -- mesmo critério de
  * genericPeriodoRange (data-table.tsx). */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun GenericPeriodoDropdown(
     periodo: PeriodoCategoria?,
@@ -1622,7 +1622,7 @@ private fun GenericPeriodoDropdown(
             HorizontalDivider()
             PeriodoCategoria.values().forEach { cat ->
                 DropdownMenuItem(
-                    text = { Text(cat.label, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee()) },
+                    text = { Text(cat.label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     onClick = { onPeriodo(cat); expanded = false },
                 )
             }
@@ -1694,7 +1694,7 @@ private fun ColumnFilterRow(
                     // distintos de coluna (nome de item/fazenda/categoria
                     // etc.) podem ser bem mais longos que "Todos".
                     DropdownMenuItem(
-                        text = { Text(opt, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee()) },
+                        text = { Text(opt, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                         onClick = { onSelect(opt); expanded = false },
                     )
                 }

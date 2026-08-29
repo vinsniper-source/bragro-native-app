@@ -18,6 +18,25 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.23] -- 2026-08-28
+
+- **Fix real (bug reportado pelo usuário): botões da barra inferior com
+  lista suspensa (Safra, Financeiro, RH, Módulos) paravam de responder ao
+  toque** -- causado pelo letreiro (marquee) da v1.2.22: `DropdownMenu`/
+  `DropdownMenuItem`/`ExposedDropdownMenu` do Material3 1.2.1 mede o
+  conteúdo de cada item com largura não-limitada numa passada interna, e
+  `Modifier.basicMarquee()` exige largura máxima finita -- a combinação
+  travava a abertura do menu silenciosamente (sem crash visível, "nada
+  acontece"). Confirmado reproduzindo em build debug E release (não era
+  R8/minify) e confirmado que os botões de acesso direto sem dropdown
+  (Frota, Estoque) continuavam funcionando -- isolou o problema pro
+  `DropdownMenuItem` especificamente. Revertido só esses casos pra
+  "..." (`TextOverflow.Ellipsis`, sem `basicMarquee`) em todos os módulos
+  que usam dropdown/combobox (barra inferior, seletor de fazenda, filtro
+  global, filtros de coluna/período, comboboxes de Entidade/Fazenda/Banco
+  em Pedidos/Cotações/NF-e). O letreiro continua ativo em tudo que NÃO é
+  dropdown (abas, blocos individuais, KPIs, cards) -- não foi tocado.
+
 ## [1.2.22] -- 2026-08-28
 
 - Letreiro (marquee) em vez de "..." em todo texto de uma linha só que

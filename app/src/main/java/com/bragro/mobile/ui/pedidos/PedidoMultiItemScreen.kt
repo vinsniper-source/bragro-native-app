@@ -252,7 +252,7 @@ class PedidoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StringDropdown(
     label: String,
@@ -279,7 +279,7 @@ private fun StringDropdown(
                 DropdownMenuItem(text = { Text(" ") }, onClick = { onSelect(null); expanded = false })
             }
             for (opt in options) {
-                DropdownMenuItem(text = { Text(opt, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee()) }, onClick = { onSelect(opt); expanded = false })
+                DropdownMenuItem(text = { Text(opt, maxLines = 1, overflow = TextOverflow.Ellipsis) }, onClick = { onSelect(opt); expanded = false })
             }
         }
     }

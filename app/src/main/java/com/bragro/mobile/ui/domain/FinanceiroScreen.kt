@@ -958,7 +958,7 @@ private fun FinanceiroCategoryTabs(blocks: List<FinBlockSpec>, modifier: Modifie
  * manual (De/Até), espelho do dropdown Período do site (data-table.tsx). Em
  * Contas a Pagar/Receber as categorias viram janela de Vencimento; nas
  * demais visões casam pelo campo "Periodo" do lançamento. */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PeriodoDropdown(
     periodo: PeriodoCategoria?,
@@ -994,7 +994,7 @@ private fun PeriodoDropdown(
             )
             PeriodoCategoria.values().forEach { cat ->
                 DropdownMenuItem(
-                    text = { Text(cat.label, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee()) },
+                    text = { Text(cat.label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     onClick = { onPeriodo(cat); expanded = false },
                 )
             }
@@ -1037,7 +1037,7 @@ private fun PeriodoDropdown(
  * lançamento. Ícone de filtro em vez do específico de banco -- pedido do
  * usuário ("consolide todos os filtros de coluna num bloco Filtros, só
  * ícone"), mesmo critério do site (data-table.tsx). */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BancoDropdown(banco: String?, options: List<LookupEntity>, onSelect: (String?) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
@@ -1060,7 +1060,7 @@ private fun BancoDropdown(banco: String?, options: List<LookupEntity>, onSelect:
                 // cadastrado pelo usuário pode ser mais longo que "Todos os
                 // bancos".
                 DropdownMenuItem(
-                    text = { Text(opt.label, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee()) },
+                    text = { Text(opt.label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     onClick = { onSelect(opt.value); expanded = false },
                 )
             }

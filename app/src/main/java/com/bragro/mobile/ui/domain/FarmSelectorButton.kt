@@ -145,8 +145,7 @@ fun FarmSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onCh
                         farm.name,
                         fontWeight = if (selected == farm.name) FontWeight.Bold else FontWeight.Normal,
                         maxLines = 1,
-                        overflow = TextOverflow.Clip,
-                        modifier = Modifier.basicMarquee(),
+                        overflow = TextOverflow.Ellipsis,
                     )
                 },
                 onClick = { FarmSelection.choose(context, farm.name); menuOpen = false; onChanged() },
