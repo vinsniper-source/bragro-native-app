@@ -680,12 +680,20 @@ data class ProdutorRuralResponse(
 // com itens", ver nota-multi-item-button.tsx no site). Chama DIRETO
 // criarNotaComItensAction() via /api/mobile/nota-multi-item (mesmo motor de
 // baixa em Estoque + geração de Financeiro que o XML já usa).
+//
+// "valorUnitario" por item SAIU -- pedido do usuário no site (sétima
+// rodada, ver comentário em nota-multi-item-button.tsx): a nota inteira
+// usa só 1 total ("bruto" em NotaMultiItemRequest abaixo), distribuído por
+// item proporcional à quantidade só no servidor. /api/mobile/nota-multi-item
+// ainda aceita o payload ANTIGO (item.valorUnitario) de APKs já instalados
+// -- não quebra quem não atualizou -- mas esta tela (embutida no Novo
+// Lançamento, ver FinanceiroItensInlineSection em DomainFormScreen.kt) já
+// manda o payload NOVO.
 @Serializable
 data class NotaMultiItemItemData(
     val descricao: String = "",
     val quantidade: Double = 0.0,
     val unidade: String? = null,
-    val valorUnitario: Double = 0.0,
 )
 
 @Serializable
@@ -697,6 +705,19 @@ data class NotaMultiItemRequest(
     val emitenteNome: String,
     val dataEmissao: String? = null,
     val fazendaDestino: String,
+    // Campos "unificados" com o formulário genérico (mesmo critério do
+    // site, ver "Quinta rodada" em nota-multi-item-button.tsx) -- lidos AO
+    // VIVO do DomainFormScreen.kt em vez de duplicar campo próprio nesta
+    // tela.
+    val periodo: String? = null,
+    val safra: String? = null,
+    val cultura: String? = null,
+    val setor: String? = null,
+    val banco: String? = null,
+    val formaPgto: String? = null,
+    // Total da nota inteira (substituiu valorUnitario por item, ver
+    // comentário acima de NotaMultiItemItemData).
+    val bruto: Double,
     val itens: List<NotaMultiItemItemData>,
 )
 

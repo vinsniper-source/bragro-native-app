@@ -46,13 +46,19 @@ private val TABLE_ACTIONS_WIDTH = 100.dp
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RecordTableHeader(columns: List<ColumnConfig>, hScroll: ScrollState, showActions: Boolean = true) {
-    val dividerColor = MaterialTheme.colorScheme.outlineVariant
+    // Borda mais escura que o PRÓPRIO fundo da célula (mesmo critério de
+    // ModuleIconRow.kt/darkerBorderColor) -- achado de auditoria ("as linhas
+    // das tabelas estão desconfiguradas"): outlineVariant ficava quase
+    // idêntico ao fundo no tema escuro do app, então a grade inteira
+    // parecia sem bordas nenhuma.
+    val headerBg = MaterialTheme.colorScheme.surfaceVariant
+    val dividerColor = darkerBorderColor(headerBg)
     Row(modifier = Modifier.horizontalScroll(hScroll)) {
         columns.forEach { col ->
             Box(
                 modifier = Modifier
                     .width(TABLE_CELL_WIDTH)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .background(headerBg)
                     .border(1.dp, dividerColor)
                     .padding(horizontal = 8.dp, vertical = 10.dp),
                 contentAlignment = Alignment.CenterStart,
@@ -79,7 +85,7 @@ fun RecordTableHeader(columns: List<ColumnConfig>, hScroll: ScrollState, showAct
             Box(
                 modifier = Modifier
                     .width(TABLE_ACTIONS_WIDTH)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .background(headerBg)
                     .border(1.dp, dividerColor)
                     .padding(horizontal = 8.dp, vertical = 10.dp),
                 contentAlignment = Alignment.CenterStart,
@@ -110,14 +116,15 @@ fun RecordTableRow(
     onEdit: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
 ) {
-    val dividerColor = MaterialTheme.colorScheme.outlineVariant
+    val rowBg = MaterialTheme.colorScheme.surface
+    val dividerColor = darkerBorderColor(rowBg)
     val showActions = onView != null || onEdit != null || onDelete != null
     Row(modifier = Modifier.horizontalScroll(hScroll)) {
         columns.forEach { col ->
             Box(
                 modifier = Modifier
                     .width(TABLE_CELL_WIDTH)
-                    .background(MaterialTheme.colorScheme.surface)
+                    .background(rowBg)
                     .border(1.dp, dividerColor)
                     .padding(horizontal = 8.dp, vertical = 10.dp),
                 contentAlignment = Alignment.CenterStart,
@@ -129,7 +136,7 @@ fun RecordTableRow(
             Box(
                 modifier = Modifier
                     .width(TABLE_ACTIONS_WIDTH)
-                    .background(MaterialTheme.colorScheme.surface)
+                    .background(rowBg)
                     .border(1.dp, dividerColor)
                     .padding(horizontal = 2.dp),
                 contentAlignment = Alignment.Center,
@@ -176,6 +183,15 @@ private fun RecordTableCellValue(col: ColumnConfig, value: String, record: Map<S
                 displayValue,
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
+                // BUG real de auditoria ("as linhas das tabelas estão
+                // desconfiguradas"): sem `color` explícito aqui, o texto
+                // herdava o LocalContentColor ambiente do resto da tela (não
+                // o desta célula específica) -- num fundo `surface` escuro,
+                // esse tom ambiente ficava ilegível/invisível na maioria das
+                // colunas (só "—" e os badges de status, que já tinham cor
+                // própria, apareciam). onSurface = mesma cor que qualquer
+                // outro texto normal sobre um fundo `surface` no app.
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Clip,

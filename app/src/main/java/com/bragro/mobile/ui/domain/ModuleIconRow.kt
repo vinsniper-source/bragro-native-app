@@ -28,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.style.TextOverflow
@@ -82,6 +83,17 @@ private val MODULE_ICON_SIZE = 22.dp
 // mudança já vale pra "todos os blocos individuais" de uma vez.
 private val MODULE_ICON_FG: Color
     @Composable get() = MaterialTheme.colorScheme.onSurface
+
+// Borda um pouco mais ESCURA que o fundo do bloco (em vez de outlineVariant,
+// que num tema escuro fica quase idêntico ao fundo -- pedido do usuário
+// (achado de auditoria: "os icones não estão centralizados e sem aborda
+// vertical para separar, coloque a borda um pouco mais escura do que a cor
+// do retangulo"): mistura 18% de preto na própria cor do bloco em vez de
+// usar um tom fixo do tema, então a borda SEMPRE contrasta com o fundo dela
+// mesma, no claro e no escuro. Usado tanto pela borda externa quanto pelas
+// divisórias verticais do EqualWidthBlockRow, e reaproveitado pelas células
+// da vista Tabela (ver RecordTable.kt, mesmo pacote).
+fun darkerBorderColor(base: Color, amount: Float = 0.18f): Color = lerp(base, Color.Black, amount)
 
 // Cada ícone virou seu próprio bloco (Card individual) -- pedido do usuário
 // ("em todos os módulos, por categorias: dados, operações, arquivos torne-os
@@ -253,8 +265,8 @@ fun EqualWidthBlockRow(modifier: Modifier = Modifier, content: @Composable () ->
     // visível de bloco. Borda = outlineVariant (já era o tom mais leve
     // disponível no Material3 -- "na tonalidade do retângulo inteiro" quer
     // dizer sutil/próxima do fundo, não um contraste forte).
-    val dividerColor = MaterialTheme.colorScheme.outlineVariant
     val blockBg = MaterialTheme.colorScheme.surface
+    val dividerColor = darkerBorderColor(blockBg)
     // Contagem de células só é conhecida durante a medição (measurables.size
     // abaixo) -- guardada aqui pra o drawBehind (fase de desenho, que roda
     // DEPOIS da medição desse mesmo nó, no mesmo frame) saber onde
@@ -289,15 +301,21 @@ fun EqualWidthBlockRow(modifier: Modifier = Modifier, content: @Composable () ->
         val placeables = measurables.map { it.measure(itemConstraints) }
         val height = placeables.maxOf { it.height }
         layout(totalWidth, height) {
-            var x = 0
-            // Centralizado verticalmente também -- pedido do usuário
-            // ("centralizando o rótulo e ícones"), não só horizontalmente
-            // (que já vinha do Column/Alignment.CenterHorizontally de cada
-            // item).
-            placeables.forEach { placeable ->
+            // Centralizado nos dois eixos -- BUG real de auditoria
+            // encontrado ("os icones não estão centralizados"): o item já
+            // recebia Constraints(minWidth=maxWidth=itemWidth), então em
+            // teoria devia preencher a célula sozinho, mas alguns filhos
+            // (ex.: BancoDropdown/ColumnsPickerButton, que não são só
+            // ModuleIconButton/LabeledIconButton) medem mais estreito que
+            // isso -- antes cada placeable ia pro CANTO ESQUERDO da sua
+            // célula (x = índice * itemWidth), sobrando o espaço vazio
+            // inteiro à direita. Agora X também centraliza o placeable
+            // dentro da largura da própria célula, igual já acontecia com Y.
+            placeables.forEachIndexed { index, placeable ->
+                val cellX = index * itemWidth
+                val x = cellX + (itemWidth - placeable.width) / 2
                 val y = (height - placeable.height) / 2
                 placeable.placeRelative(x, y)
-                x += itemWidth
             }
         }
     }

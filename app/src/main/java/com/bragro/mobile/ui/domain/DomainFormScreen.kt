@@ -450,6 +450,38 @@ fun DomainFormScreen(
                     FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                 }
                 androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
+
+                // "Lançar nota com itens" EMBUTIDO logo depois do campo
+                // Doc/NF -- pedido do usuário (achado de auditoria: "não foi
+                // inserido no native como está na plataforma o módulo
+                // lançamentos, está faltando adicionar itens na sequência
+                // dos campos, como está em plataforma"), mesma posição do
+                // site (ver insertAfterField="docNf" em data-table.tsx).
+                // Só ao CRIAR (recordId == null) e só em Financeiro --
+                // complementa o formulário genérico em vez de substituí-lo,
+                // já que Financeiro cobre muitos outros tipos de lançamento
+                // sem "itens" (salário, aluguel, venda...). Ver
+                // FinanceiroItensInlineSection (FinanceiroItensInline.kt),
+                // que lê Doc/NF/Data/Local/Entidade/Safra/Cultura/Setor/
+                // Banco/Forma Pgto./Período/Bruto AO VIVO deste mesmo
+                // viewModel.fields, sem duplicar nenhum campo.
+                if (recordId == null && domainId == "financeiro" && col.key == "docNf") {
+                    FinanceiroItensInlineSection(
+                        docNf = viewModel.fields["docNf"] ?: "",
+                        data = viewModel.fields["data"] ?: "",
+                        local = viewModel.fields["local"] ?: "",
+                        entidade = viewModel.fields["entidade"] ?: "",
+                        safra = viewModel.fields["safra"] ?: "",
+                        cultura = viewModel.fields["cultura"] ?: "",
+                        setor = viewModel.fields["setor"] ?: "",
+                        banco = viewModel.fields["banco"] ?: "",
+                        formaPgto = viewModel.fields["formaPgto"] ?: "",
+                        periodo = viewModel.fields["periodo"] ?: "",
+                        bruto = viewModel.fields["bruto"] ?: "",
+                        onDone = onSaved,
+                    )
+                    androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
+                }
             }
 
             if (error != null) {

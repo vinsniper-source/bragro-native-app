@@ -26,6 +26,13 @@ class NotaMultiItemRepository(context: Context) {
         emitenteNome: String,
         dataEmissao: String?,
         fazendaDestino: String,
+        periodo: String?,
+        safra: String?,
+        cultura: String?,
+        setor: String?,
+        banco: String?,
+        formaPgto: String?,
+        bruto: Double,
         itens: List<NotaMultiItemItemData>,
     ): NotaMultiItemResponse? {
         val tokens = tokenStore.current() ?: return null
@@ -39,6 +46,13 @@ class NotaMultiItemRepository(context: Context) {
                 emitenteNome = emitenteNome,
                 dataEmissao = dataEmissao,
                 fazendaDestino = fazendaDestino,
+                periodo = periodo,
+                safra = safra,
+                cultura = cultura,
+                setor = setor,
+                banco = banco,
+                formaPgto = formaPgto,
+                bruto = bruto,
                 itens = itens,
             )
             var response = NetworkModule.mobileApi.notaMultiItem(buildRequest())

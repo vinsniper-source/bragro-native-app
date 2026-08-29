@@ -332,6 +332,12 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, view
                 onSync = { viewModel.syncIntegration() },
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
+            // Espaço maior entre o card "Acesso automático" e as abas
+            // Talhões/Máquinas/Fazendas -- pedido do usuário ("dê um espaço
+            // maior entre o bloco acesso automático do bloco talhões
+            // máquinas fazendas"): antes o TabRow vinha colado direto embaixo
+            // do card, sem nenhum respiro.
+            Spacer(modifier = Modifier.height(20.dp))
             // Ícone em cada aba (Eco/DirectionsCar/Map, mesmos já usados no
             // conteudo de cada uma abaixo) -- pedido do usuário ("outros
             // tantos ícones"), TabRow antes só tinha texto.
@@ -361,8 +367,12 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, view
             // manualmente" do site (fieldview-client.tsx), que o app nunca
             // teve gatilho. Corrigido aqui.
             Row(
+                // Espaço maior entre os dois botões -- pedido do usuário
+                // ("dê um espaço maior também para importar kml e lançar
+                // talhão"): 8.dp ficava os dois quase colados/cortando o 2º
+                // rótulo na tela.
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
             ) {
                 OutlinedButton(
                     onClick = { kmlPicker.launch(arrayOf("application/vnd.google-earth.kml+xml", "application/vnd.google-earth.kmz", "application/octet-stream", "*/*")) },

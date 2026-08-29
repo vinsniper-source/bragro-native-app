@@ -18,6 +18,51 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.26] -- 2026-08-29
+
+- **"Lançar nota com itens" embutido na sequência de campos de Novo
+  Lançamento (Financeiro)** -- pedido do usuário (achado de auditoria: "não
+  foi inserido no native como está na plataforma o módulo lançamentos, está
+  faltando adicionar itens na sequência dos campos, como está em
+  plataforma"). Réplica do que o site já fazia (nota-multi-item-button.tsx):
+  a seção "Itens da nota" aparece INLINE, logo depois do campo Doc/NF,
+  lendo Doc/NF/Data/Local/Entidade/Safra/Cultura/Setor/Banco/Forma Pgto./
+  Período/Bruto (R$) AO VIVO do mesmo formulário -- sem campo duplicado.
+  Substituiu a tela separada antiga (NotaMultiItemScreen.kt, cujo único
+  gatilho de navegação tinha sido removido na 1.2.24) que já estava
+  desatualizada em relação ao site havia várias rodadas (campos duplicados,
+  "Valor unitário" por item que o site já tinha tirado -- agora usa 1 total
+  só, o campo Bruto (R$), distribuído pelos itens no servidor). Endpoint
+  /api/mobile/nota-multi-item atualizado pra aceitar o novo payload
+  (bruto/periodo/safra/cultura/setor/banco/formaPgto diretos), mantendo
+  compatibilidade com o payload antigo pra quem ainda não atualizou o app.
+- **Blocos de ícone (Gráficos/Filtros/Colunas/Recolher/Coluna etc.):
+  centralização real + borda vertical visível** -- pedido do usuário
+  (achado de auditoria: "os icones não estão centralizados e sem aborda
+  vertical para separar, coloque a borda um pouco mais escura do que a cor
+  do retangulo"). Dois bugs reais no `EqualWidthBlockRow`
+  (ModuleIconRow.kt): (1) cada célula só centralizava o conteúdo
+  verticalmente -- horizontalmente ficava sempre encostado na borda
+  esquerda da célula quando o filho media mais estreito que a célula
+  inteira (caso de blocos como o dropdown de Banco); corrigido calculando
+  o X centralizado igual já acontecia com o Y. (2) a borda usava
+  `outlineVariant` do tema, que no visual escuro do app fica quase idêntica
+  ao fundo do bloco -- ficava lá, mas invisível. Trocada por uma cor
+  calculada (18% de preto misturado na própria cor do bloco), que sempre
+  contrasta com o fundo dela mesma.
+- **Vista Tabela: linhas "desconfiguradas" (células em branco, sem
+  grade visível)** -- mesma causa raiz da borda invisível acima
+  (RecordTable.kt também usava `outlineVariant`), MAIS um segundo bug: o
+  texto de valor normal de cada célula não tinha `color` explícita, então
+  herdava a cor de texto ambiente da tela (não a da célula) -- num fundo
+  escuro isso deixava a maioria das colunas ilegível (só os badges de
+  status e o "—" de campo vazio, que já tinham cor própria, apareciam).
+  Corrigido com `color = onSurface` explícito + mesma borda mais escura do
+  item acima.
+- **FieldView: mais espaço entre "Acesso automático" e as abas, e entre
+  "Importar KML/KMZ" e "Lançar talhão manualmente"** -- pedido do usuário.
+  20.dp de respiro em cada um dos dois pontos (antes: 0 e 8.dp).
+
 ## [1.2.25] -- 2026-08-29
 
 - **Vista Tabela estendida a Operações, Análises, DRE e Livro Caixa** --

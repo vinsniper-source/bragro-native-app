@@ -33,7 +33,6 @@ import com.bragro.mobile.ui.home.HomeScreen
 import com.bragro.mobile.ui.login.LoginScreen
 import com.bragro.mobile.ui.insumos.ControleInsumosScreen
 import com.bragro.mobile.ui.nfe.NfeImportScreen
-import com.bragro.mobile.ui.nfe.NotaMultiItemScreen
 import com.bragro.mobile.ui.pedidos.PedidoMultiItemScreen
 import com.bragro.mobile.ui.cotacoes.CotacaoMultiItemScreen
 import com.bragro.mobile.ui.operacoes.OperacoesScreen
@@ -50,7 +49,6 @@ private object Routes {
     const val DRONE = "drone"
     const val FIELDVIEW = "fieldview"
     const val NFE_IMPORT = "nfe_import"
-    const val NOTA_MULTI_ITEM = "nota_multi_item"
     const val CONTROLE_INSUMOS = "controle_insumos"
     const val OPERACOES = "operacoes"
     const val ROMANEIO_QUICK = "romaneio_quick"
@@ -178,9 +176,16 @@ fun BRAgroNavHost() {
         composable(Routes.NFE_IMPORT) {
             NfeImportScreen(onBack = { navController.popBackStack() })
         }
-        composable(Routes.NOTA_MULTI_ITEM) {
-            NotaMultiItemScreen(onBack = { navController.popBackStack() })
-        }
+        // Rota NOTA_MULTI_ITEM removida -- pedido do usuário (achado de
+        // auditoria: "não foi inserido no native como está na plataforma o
+        // módulo lançamentos, está faltando adicionar itens na sequência
+        // dos campos, como está em plataforma"): a tela separada
+        // (NotaMultiItemScreen.kt) já estava desatualizada em relação ao
+        // site havia várias rodadas (campos duplicados, "Valor unitário"
+        // por item que o site já tinha removido) e não tinha mais nenhum
+        // gatilho na UI desde a v1.2.24. Substituída por
+        // FinanceiroItensInlineSection, embutida direto na sequência de
+        // campos do Novo Lançamento (ver DomainFormScreen.kt).
         composable(Routes.CONTROLE_INSUMOS) {
             ControleInsumosScreen(
                 onBack = { navController.popBackStack() },

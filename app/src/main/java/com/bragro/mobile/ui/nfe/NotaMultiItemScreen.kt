@@ -1,5 +1,18 @@
 package com.bragro.mobile.ui.nfe
 
+// ARQUIVO MORTO (v1.2.26) -- sem nenhuma rota/gatilho de navegação
+// apontando pra cá desde que a rota NOTA_MULTI_ITEM foi removida de
+// BRAgroNavHost.kt. Substituído por FinanceiroItensInlineSection
+// (ui/domain/FinanceiroItensInline.kt), embutida direto na sequência de
+// campos do Novo Lançamento -- ver comentário lá. Este arquivo ficou
+// desatualizado em relação ao site havia várias rodadas (campos Número/
+// Fornecedor/Data/Fazenda duplicados aqui em vez de lidos do formulário
+// genérico, "Valor unitário" por item que o site já tinha removido) e não
+// compensava atualizar em vez de substituir. Não foi apagado do disco
+// porque a ferramenta de shell estava indisponível nesta sessão -- pode ser
+// excluído com segurança (nenhum outro arquivo importa nada daqui, só
+// comentários mencionam o nome).
+
 import android.app.Application
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
@@ -250,12 +263,24 @@ class NotaMultiItemViewModel(app: Application) : AndroidViewModel(app) {
                 // DD/MM/AAAA (ver comentário no var acima).
                 dataEmissao = com.bragro.mobile.ui.domain.brDateToIso(dataEmissao),
                 fazendaDestino = fazenda,
+                // Tela morta (ver aviso no topo do arquivo) -- não tem
+                // campos Safra/Cultura/Setor/Banco/Forma Pgto/Período
+                // próprios, então manda null/"A VISTA" pra esses. "bruto"
+                // reaproveita valorTotal() (soma quantidade*valorUnitario
+                // desta tela antiga), já que NotaMultiItemItemData não
+                // aceita mais valor por item (ver Models.kt).
+                periodo = "A VISTA",
+                safra = null,
+                cultura = null,
+                setor = null,
+                banco = null,
+                formaPgto = null,
+                bruto = valorTotal(),
                 itens = validas.map {
                     NotaMultiItemItemData(
                         descricao = it.descricao,
                         quantidade = parseDecimal(it.quantidade),
                         unidade = it.unidade.ifBlank { null },
-                        valorUnitario = parseDecimal(it.valorUnitario),
                     )
                 },
             )
