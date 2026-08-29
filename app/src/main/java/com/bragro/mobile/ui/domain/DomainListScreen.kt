@@ -49,6 +49,8 @@ import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.GridOn
+import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.WbSunny
@@ -345,6 +347,17 @@ fun DomainListScreen(
     // Começa fechado -- pedido do usuário ("ao clicar no módulo a tela
     // deverá estar vazia").
     var allExpanded by remember(domainId) { mutableStateOf(false) }
+    // Alterna vista Coluna (cards, padrão) / Tabela (grade real, colunas
+    // fixas, rolagem horizontal) -- pedido do usuário (achado de auditoria:
+    // "insira tambem o icone e rótulo tabela intercalando com coluna, no
+    // mesmo modelo de expandir e recolher no mesmo botao"): um único botão
+    // alterna ícone+rótulo igual ao Expandir/Recolher, em vez de dois
+    // botões separados. Ver [RecordTableView] (RecordTable.kt).
+    var tableView by remember(domainId) { mutableStateOf(false) }
+    // Rolagem horizontal compartilhada entre cabeçalho e todas as linhas da
+    // tabela -- pedido do usuário ("mesma medida entre eles"): um único
+    // ScrollState lido por todo mundo mantém colunas alinhadas ao arrastar.
+    val tableHScroll = remember(domainId) { androidx.compose.foundation.ScrollState(0) }
     val cardOverrides = remember(domainId) { mutableStateMapOf<String, Boolean>() }
     // Confirmação antes de excluir um lançamento (ícone Excluir, pedido do
     // usuário) -- guarda o id do lançamento aguardando confirmação; null =
@@ -686,6 +699,14 @@ fun DomainListScreen(
                                 label = if (allExpanded) "Recolher" else "Expandir",
                                 onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
                             )
+                            // Tabela/Coluna -- mesmo botão único alternando
+                            // ícone+rótulo do Expandir/Recolher acima (achado
+                            // de auditoria, pedido do usuário).
+                            LabeledIconButton(
+                                icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
+                                label = if (tableView) "Coluna" else "Tabela",
+                                onClick = { tableView = !tableView },
+                            )
                         }
                     }
                     val operacoesBlock = ModuleBlockSpec("Operações", vertical = false) {
@@ -761,6 +782,14 @@ fun DomainListScreen(
                                 icon = if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
                                 label = if (allExpanded) "Recolher" else "Expandir",
                                 onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
+                            )
+                            // Tabela/Coluna -- mesmo botão único alternando
+                            // ícone+rótulo do Expandir/Recolher acima (achado
+                            // de auditoria, pedido do usuário).
+                            LabeledIconButton(
+                                icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
+                                label = if (tableView) "Coluna" else "Tabela",
+                                onClick = { tableView = !tableView },
                             )
                         }
                         // Transferências entra dentro de Dados (5º ícone) em
@@ -872,6 +901,14 @@ fun DomainListScreen(
                                 icon = if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
                                 label = if (allExpanded) "Recolher" else "Expandir",
                                 onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
+                            )
+                            // Tabela/Coluna -- mesmo botão único alternando
+                            // ícone+rótulo do Expandir/Recolher acima (achado
+                            // de auditoria, pedido do usuário).
+                            LabeledIconButton(
+                                icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
+                                label = if (tableView) "Coluna" else "Tabela",
+                                onClick = { tableView = !tableView },
                             )
                         }
                         ColumnsPickerButton(
@@ -989,6 +1026,13 @@ fun DomainListScreen(
                             onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
                         )
                     }
+                    if (true) {
+                        LabeledIconButton(
+                            icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
+                            label = if (tableView) "Coluna" else "Tabela",
+                            onClick = { tableView = !tableView },
+                        )
+                    }
                     ColumnsPickerButton(
                         allColumns = cfg.columns.filter { !it.hideInTable },
                         visibleKeys = visibleKeys,
@@ -1084,6 +1128,18 @@ fun DomainListScreen(
                 // no mesmo bloco) foi implementado e DESFEITO a pedido do
                 // usuário na mesma sessão -- volta a ser uma lista plana,
                 // cada lançamento seu próprio card, igual aos demais módulos.
+                // Vista Tabela -- pedido do usuário (achado de auditoria:
+                // "insira tambem o icone e rótulo tabela intercalando com
+                // coluna"): colunas FIXAS (mesmas pra toda linha, não varia
+                // por registro como o resumo do card) pra cabeçalho e linhas
+                // ficarem sempre alinhados -- mesmo critério de
+                // ColumnsPickerButton/exportXlsx (visibleKeys).
+                val tableColumns = cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }
+                if (tableView && tableColumns.isNotEmpty()) {
+                    item(key = "table-header") {
+                        RecordTableHeader(tableColumns, tableHScroll)
+                    }
+                }
                 items(filteredRecords, key = { it["id"] ?: it.hashCode().toString() }) { record ->
                     val recordId = record["id"]
                     val isLastOfGroup = isPedidos && run {
@@ -1123,6 +1179,22 @@ fun DomainListScreen(
                     // HtmlPrinter/exportXlsx leem os registros direto do
                     // banco/lista, nunca essa árvore de UI, então nunca
                     // aparecem no Excel/PDF/impressão.
+                    if (tableView && tableColumns.isNotEmpty()) {
+                        // Linha da tabela -- mesmas 3 ações do card (Ver/
+                        // Editar/Excluir), só que em ícones compactos no
+                        // final da linha em vez de coluna própria à direita
+                        // (ver RecordTable.kt).
+                        RecordTableRow(
+                            columns = tableColumns,
+                            record = record,
+                            domainId = domainId,
+                            hScroll = tableHScroll,
+                            onView = { recordBeingViewed = recordId },
+                            onEdit = { if (recordId != null) onEditRecord(recordId) },
+                            onDelete = { recordPendingDelete = recordId },
+                        )
+                        return@items
+                    }
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()

@@ -299,7 +299,6 @@ fun BRAgroNavHost() {
                     recordId = null,
                     onBack = { navController.popBackStack() },
                     onSaved = { navController.popBackStack() },
-                    onOpenNotaMultiItem = { navController.navigate(Routes.NOTA_MULTI_ITEM) },
                 )
             }
         }

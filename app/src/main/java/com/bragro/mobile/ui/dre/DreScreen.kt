@@ -33,6 +33,8 @@ import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.GridOn
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.appFieldColors
@@ -78,6 +80,8 @@ import com.bragro.mobile.data.repo.DreRepository
 import com.bragro.mobile.ui.domain.EqualWidthBlockRow
 import com.bragro.mobile.ui.domain.FarmSelectorButton
 import com.bragro.mobile.ui.domain.LabeledIconButton
+import com.bragro.mobile.ui.domain.RecordTableHeader
+import com.bragro.mobile.ui.domain.RecordTableRow
 import com.bragro.mobile.ui.domain.exportXlsx
 import com.bragro.mobile.ui.print.HtmlPrinter
 import kotlinx.coroutines.flow.collectLatest
@@ -428,6 +432,16 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
     // expandir quando clicar no ícone"), mesmo critério já usado em
     // allExpanded nos módulos genéricos.
     var contentExpanded by remember { mutableStateOf(false) }
+    // Tabela/Coluna -- mesmo botão único (achado de auditoria, pedido do
+    // usuário: "coloque em todos os módulos"). Fazendas em DRE são dados
+    // COMPUTADOS por fazenda (DreFazendaData), sem um registro único por
+    // trás pra editar/excluir -- a tabela reaproveita a mesma exportação
+    // (DRE_EXPORT_COLUMNS/dreExportRecords) já usada em Excel/PDF/Imprimir,
+    // sem coluna de ações. Substitui Totais/Composição/cards de fazenda
+    // pela grade quando ativa (mesmo critério de troca total já usado nas
+    // listas de lançamento).
+    var tableView by remember { mutableStateOf(false) }
+    val tableHScroll = remember { androidx.compose.foundation.ScrollState(0) }
 
     Scaffold(
         topBar = {
@@ -509,6 +523,11 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                             label = if (contentExpanded) "Recolher" else "Expandir",
                             onClick = { contentExpanded = !contentExpanded },
                         )
+                        LabeledIconButton(
+                            icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
+                            label = if (tableView) "Coluna" else "Tabela",
+                            onClick = { tableView = !tableView },
+                        )
                     }
                 }
                 val operacoesBlock = DreBlockSpec("Operações", vertical = false) {
@@ -565,6 +584,11 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
             if (data == null) {
                 item {
                     Text(if (loading) "Carregando..." else "Sem dados ainda. Conecte-se à internet e atualize.")
+                }
+            } else if (tableView) {
+                item(key = "table-header") { RecordTableHeader(DRE_EXPORT_COLUMNS, tableHScroll, showActions = false) }
+                items(dreExportRecords(data), key = { it["farmName"] ?: it.hashCode().toString() }) { row ->
+                    RecordTableRow(columns = DRE_EXPORT_COLUMNS, record = row, domainId = "", hScroll = tableHScroll)
                 }
             } else if (contentExpanded) {
                 item {

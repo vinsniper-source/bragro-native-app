@@ -2,7 +2,9 @@ package com.bragro.mobile.ui.domain
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -11,10 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +33,6 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
-import com.bragro.mobile.ui.theme.Card
 
 /**
  * Um item da fileira de ícones do módulo -- pedido do usuário ("reduza os
@@ -92,58 +91,48 @@ private val MODULE_ICON_FG: Color
 // Financeiro em FinanceiroScreen.kt) montam seu conteúdo chamando este
 // composable, a mudança aqui já vale pra "todos os módulos" de uma vez, sem
 // precisar editar bloco por bloco.
+// SEM Card próprio -- pedido do usuário (achado de auditoria: "os blocos
+// icones e rotulos continuam desconfigurados... não foi aplicado a forma de
+// retângulo com divisão em bordas verticais"): antes cada ícone tinha seu
+// PRÓPRIO Card (cantos arredondados + fundo), dentro do retângulo já
+// arredondado/bordado do [EqualWidthBlockRow] -- um Card dentro de outro,
+// then cada célula ainda parecia um "chip" flutuante separado em vez de uma
+// fatia lisa de UM retângulo único. Agora o "bloco" é só o container
+// [EqualWidthBlockRow] (fundo + borda leve + divisórias verticais); cada
+// ícone aqui dentro é só conteúdo (ícone+rótulo) clicável, sem fundo/forma
+// próprios.
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ModuleIconButton(item: ModuleIconItem, onClick: () -> Unit) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.widthIn(min = 44.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        // elevation zerada -- ESCOPO FINAL (usuário: "isso agora nos blocos
-        // individuais será apenas tirar a cor verde dos icones e rotulos"):
-        // o tom de fundo verde (3.dp de tonal elevation) fica reservado só
-        // pra barra inferior/dropdown (ver BottomNavBar.kt) -- aqui nos
-        // blocos individuais o fundo continua neutro (flat), só ícone/
-        // rótulo (MODULE_ICON_FG) mudam pra onSurface. Sem zerar, o
-        // Material3 mistura um pouco de "primary" por cima do
-        // containerColor sempre que ele é EXATAMENTE colorScheme.surface e
-        // a elevação é > 0.
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 0.dp,
-            pressedElevation = 0.dp,
-            focusedElevation = 0.dp,
-            hoveredElevation = 0.dp,
-            draggedElevation = 0.dp,
-            disabledElevation = 0.dp,
-        ),
+    Column(
+        modifier = Modifier
+            .widthIn(min = 44.dp)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            BadgedBox(badge = { if (item.badgeCount > 0) Badge { Text("${item.badgeCount}") } }) {
-                Icon(
-                    item.icon,
-                    contentDescription = null,
-                    tint = MODULE_ICON_FG,
-                    modifier = Modifier.size(MODULE_ICON_SIZE),
-                )
-            }
-            Text(
-                item.label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MODULE_ICON_FG,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Clip,
-                // Letreiro (marquee) em vez de "..." -- pedido do usuário
-                // ("tem como aparecer como um letreiro se movendo? aplique
-                // em todo app que tiver fontes cortadas"). Só anima quando o
-                // texto realmente não cabe no espaço disponível -- rótulo
-                // que cabe fica parado normal, sem nenhum efeito.
-                modifier = Modifier.basicMarquee(),
+        BadgedBox(badge = { if (item.badgeCount > 0) Badge { Text("${item.badgeCount}") } }) {
+            Icon(
+                item.icon,
+                contentDescription = null,
+                tint = MODULE_ICON_FG,
+                modifier = Modifier.size(MODULE_ICON_SIZE),
             )
         }
+        Text(
+            item.label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MODULE_ICON_FG,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Clip,
+            // Letreiro (marquee) em vez de "..." -- pedido do usuário
+            // ("tem como aparecer como um letreiro se movendo? aplique
+            // em todo app que tiver fontes cortadas"). Só anima quando o
+            // texto realmente não cabe no espaço disponível -- rótulo
+            // que cabe fica parado normal, sem nenhum efeito.
+            modifier = Modifier.basicMarquee(),
+        )
     }
 }
 
@@ -180,42 +169,28 @@ fun LabeledIconButton(
     tint: Color = MaterialTheme.colorScheme.onSurface,
     loading: Boolean = false,
 ) {
-    Card(
-        onClick = onClick,
-        enabled = !loading,
-        modifier = modifier.widthIn(min = 44.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        // elevation zerada -- mesmo escopo final do ModuleIconButton acima:
-        // fundo neutro nos blocos individuais, o tom verde fica só na barra
-        // inferior/dropdown (BottomNavBar.kt).
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 0.dp,
-            pressedElevation = 0.dp,
-            focusedElevation = 0.dp,
-            hoveredElevation = 0.dp,
-            draggedElevation = 0.dp,
-            disabledElevation = 0.dp,
-        ),
+    // Sem Card próprio -- mesmo motivo do ModuleIconButton acima.
+    Column(
+        modifier = modifier
+            .widthIn(min = 44.dp)
+            .clickable(enabled = !loading, onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            if (loading) {
-                CircularProgressIndicator(modifier = Modifier.size(MODULE_ICON_SIZE), strokeWidth = 2.dp)
-            } else {
-                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(MODULE_ICON_SIZE))
-            }
-            Text(
-                label,
-                style = MaterialTheme.typography.labelSmall,
-                color = tint,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Clip,
-                modifier = Modifier.basicMarquee(),
-            )
+        if (loading) {
+            CircularProgressIndicator(modifier = Modifier.size(MODULE_ICON_SIZE), strokeWidth = 2.dp)
+        } else {
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(MODULE_ICON_SIZE))
         }
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = tint,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Clip,
+            modifier = Modifier.basicMarquee(),
+        )
     }
 }
 
@@ -268,7 +243,18 @@ fun ModuleIconRow(items: List<ModuleIconItem>, onClick: (String) -> Unit) {
  */
 @Composable
 fun EqualWidthBlockRow(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    // Retângulo reto (SEM cantos arredondados) com fundo preenchido -- pedido
+    // do usuário (achado de auditoria: "retire as bordas redondas e torne um
+    // retângulo com borda bem leve na tonalidade do retângulo inteiro").
+    // Fundo = surface (mesmo tom neutro que cada ícone tinha individualmente
+    // antes) -- precisa de fundo AQUI agora porque ModuleIconButton/
+    // LabeledIconButton deixaram de ter Card/fundo próprios (ver comentário
+    // lá) -- sem isso o conteúdo ficaria "boiando" sem nenhum contorno
+    // visível de bloco. Borda = outlineVariant (já era o tom mais leve
+    // disponível no Material3 -- "na tonalidade do retângulo inteiro" quer
+    // dizer sutil/próxima do fundo, não um contraste forte).
     val dividerColor = MaterialTheme.colorScheme.outlineVariant
+    val blockBg = MaterialTheme.colorScheme.surface
     // Contagem de células só é conhecida durante a medição (measurables.size
     // abaixo) -- guardada aqui pra o drawBehind (fase de desenho, que roda
     // DEPOIS da medição desse mesmo nó, no mesmo frame) saber onde
@@ -278,8 +264,8 @@ fun EqualWidthBlockRow(modifier: Modifier = Modifier, content: @Composable () ->
         content = content,
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .border(1.dp, dividerColor, RoundedCornerShape(10.dp))
+            .background(blockBg)
+            .border(1.dp, dividerColor)
             .drawBehind {
                 val n = itemCount.intValue
                 if (n > 1) {
@@ -304,8 +290,13 @@ fun EqualWidthBlockRow(modifier: Modifier = Modifier, content: @Composable () ->
         val height = placeables.maxOf { it.height }
         layout(totalWidth, height) {
             var x = 0
+            // Centralizado verticalmente também -- pedido do usuário
+            // ("centralizando o rótulo e ícones"), não só horizontalmente
+            // (que já vinha do Column/Alignment.CenterHorizontally de cada
+            // item).
             placeables.forEach { placeable ->
-                placeable.placeRelative(x, 0)
+                val y = (height - placeable.height) / 2
+                placeable.placeRelative(x, y)
                 x += itemWidth
             }
         }

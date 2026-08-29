@@ -18,6 +18,78 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.25] -- 2026-08-29
+
+- **Vista Tabela estendida a Operações, Análises, DRE e Livro Caixa** --
+  pedido do usuário ("estenda para todos"), continuação da 1.2.24 que
+  tinha deixado esses 4 módulos de fora por não terem uma lista "achatada"
+  de registros individuais editáveis. Reaproveitadas as colunas/funções de
+  exportação que cada módulo já tinha pra Excel/PDF/Imprimir
+  (`OPERACOES_EXPORT_COLUMNS`/`operacoesExportRecords`,
+  `ANALISES_EXPORT_COLUMNS`/`analisesExportRecords`,
+  `DRE_EXPORT_COLUMNS`/`dreExportRecords`,
+  `LIVRO_CAIXA_EXPORT_COLUMNS`/`livroCaixaExportRecords`) como fonte de
+  dados da tabela, sem escrever mapeamento novo. Como os 4 mostram dados
+  agrupados/calculados (não um registro único editável por linha), a
+  tabela aparece sem a coluna de Ações (sem Ver/Editar/Excluir). Em
+  Operações o botão Tabela/Coluna é só ícone (o cabeçalho dessa tela usa
+  ícones sem rótulo em todos os botões); nos outros 3 é o mesmo botão
+  ícone+rótulo dos demais módulos.
+- **Ainda fora da vista Tabela**: FieldView (Talhões/Máquinas/Fazendas --
+  dados em JSON genérico, sem um "molde" fixo de colunas hoje), Drone
+  (não existe nenhuma infraestrutura de exportação/colunas pra
+  reaproveitar -- precisaria ser construída do zero) e as 3 telas de
+  lançamento com múltiplos itens (Nota com Itens, Pedidos, Cotações --
+  cada linha ali é um item sendo editado ao vivo pra compor um lançamento
+  novo, não um registro já salvo; a vista de tabela é só leitura, então
+  não serve pra esse caso sem redesenhar a tela). Preciso de decisão do
+  usuário se vale a pena construir isso também.
+
+## [1.2.24] -- 2026-08-29
+
+- **Blocos de ícone: retângulo reto, sem "chip" duplo dentro do bloco** --
+  achado de auditoria do usuário ("os blocos ícones e rótulos continuam
+  desconfigurados... não foi aplicado a forma de retângulo"). Causa real:
+  cada ícone (`ModuleIconButton`/`LabeledIconButton`) tinha seu PRÓPRIO
+  `Card` (cantos arredondados + fundo) dentro do retângulo já
+  arredondado/bordado do bloco (`EqualWidthBlockRow`) -- um Card dentro de
+  outro, então cada célula ainda parecia um chip flutuante em vez de uma
+  fatia de um retângulo único. Removido o `Card` individual (vira só
+  `Column` + `clickable`, sem fundo/forma próprios); `EqualWidthBlockRow`
+  ganhou cantos retos (sem `RoundedCornerShape`), fundo preenchido e
+  centralização vertical do conteúdo. Vale pra todos os blocos
+  Dados/Operações/Arquivos/Filtros/Período/Gráficos/Calculadoras/etc. em
+  todos os módulos (componente único e compartilhado).
+- **Removido o ícone "Nota com itens" do topo de Novo Lançamento
+  (Financeiro)** -- pedido do usuário ("exclua o ícone de adicionar itens
+  do app native"), pra ficar no mesmo modelo enxuto do módulo
+  Lançamentos da plataforma (site não tem esse atalho no cabeçalho do
+  formulário). Mantido só o ícone Copiar.
+- **Gestão Financeira: seletor de visão virou retângulo reto, com cor nova
+  no estado não selecionado** -- pedido do usuário ("altere o formato para
+  retangulo e a cor do seletor"). Antes usava
+  `SegmentedButtonDefaults.itemShape` (pontas arredondadas nas
+  extremidades da fileira) com verde translúcido no estado inativo; agora
+  `RectangleShape` em todos os segmentos e o estado inativo vira neutro
+  (surface/onSurface, mesmo tom dos blocos de ícone comuns) -- só o
+  segmento selecionado continua em verde sólido.
+- **Nova vista Tabela (grade real) em todos os módulos com lista de
+  lançamentos** -- pedido do usuário ("insira também o ícone e rótulo
+  tabela intercalando com coluna, no mesmo modelo de expandir e recolher
+  no mesmo botão, coloque em todos os módulos"). Um botão único
+  (`RecordTable.kt`) alterna ícone+rótulo Tabela/Coluna, igual ao padrão
+  já usado em Expandir/Recolher -- colunas fixas (mesmo conjunto de
+  `visibleKeys` da vista em cards) com rolagem horizontal compartilhada
+  entre cabeçalho e linhas, e as mesmas ações Ver/Editar/Excluir em ícones
+  compactos no final de cada linha. Aplicado no módulo genérico
+  (`DomainListScreen.kt`, cobre a maioria dos módulos: Safra, Clima,
+  Planejamento, Colheita, Frota, Estoque, RH, Cobranças, Pragas,
+  Receituários, Controle Interno, Cotações Grãos, Câmbio, NFS-e etc.) e no
+  Financeiro (`FinanceiroScreen.kt`). Módulos sem uma lista "achatada" de
+  lançamentos (Operações agrupadas, Análises, DRE, Livro Caixa, FieldView,
+  Drone, Pedidos/Cotações multi-item) não têm um equivalente direto pra
+  essa alternância e ficaram de fora desta rodada.
+
 ## [1.2.23] -- 2026-08-28
 
 - **Fix real (bug reportado pelo usuário): botões da barra inferior com

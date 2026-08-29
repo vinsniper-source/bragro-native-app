@@ -55,8 +55,10 @@ import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -191,6 +193,11 @@ fun FinanceiroScreen(
     // estado). Começa fechado -- pedido do usuário ("ao clicar no módulo a
     // tela deverá estar vazia").
     var allExpanded by remember { mutableStateOf(false) }
+    // Alterna vista Coluna (cards, padrão) / Tabela (grade real) -- mesmo
+    // botão único (ícone+rótulo) do módulo genérico, ver RecordTable.kt e
+    // o comentário completo em DomainListScreen.kt.
+    var tableView by remember { mutableStateOf(false) }
+    val tableHScroll = remember { androidx.compose.foundation.ScrollState(0) }
     val cardOverrides = remember { mutableStateMapOf<String, Boolean>() }
     // Confirmação antes de excluir -- mesmo padrão do módulo genérico
     // (DomainListScreen.kt), pedido do usuário ("implemente em todos os
@@ -444,6 +451,14 @@ fun FinanceiroScreen(
                         label = if (allExpanded) "Recolher" else "Expandir",
                         onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
                     )
+                    // Tabela/Coluna -- mesmo botão único do módulo genérico
+                    // (achado de auditoria, pedido do usuário: "coloque em
+                    // todos os módulos").
+                    LabeledIconButton(
+                        icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
+                        label = if (tableView) "Coluna" else "Tabela",
+                        onClick = { tableView = !tableView },
+                    )
                 }
             val operacoesBlock =
                 FinBlockSpec("Operações", MaterialTheme.typography.titleSmall, vertical = false) {
@@ -582,8 +597,23 @@ fun FinanceiroScreen(
                                 item(key = "recalcular-vencimentos") { RecalcularVencimentosButton(showHeader = false) }
                             }
                             if (allExpanded) {
+                            if (tableView && cols.isNotEmpty()) {
+                                item(key = "table-header") { RecordTableHeader(cols, tableHScroll) }
+                            }
                             items(filtered, key = { it["id"] ?: it.hashCode().toString() }) { record ->
                                 val recordId = record["id"]
+                                if (tableView && cols.isNotEmpty()) {
+                                    RecordTableRow(
+                                        columns = cols,
+                                        record = record,
+                                        domainId = "financeiro",
+                                        hScroll = tableHScroll,
+                                        onView = { recordBeingViewed = recordId },
+                                        onEdit = { if (recordId != null) onEditRecord(recordId) },
+                                        onDelete = { recordPendingDelete = recordId },
+                                    )
+                                    return@items
+                                }
                                 // Mostra TODAS as colunas (não só as 6
                                 // primeiras) -- mesmo pedido do usuário já
                                 // aplicado ao módulo genérico
@@ -777,26 +807,31 @@ private val FINANCEIRO_VIEW_ROW_2 = listOf(FinanceiroView.FLUXO, FinanceiroView.
 
 // Fileira de blocos INTEIROS (SegmentedButton) do seletor de visão "Gestão
 // Financeira" -- substitui o antigo FinanceiroViewIconButton (Card solto por
-// ícone, largura própria). Cor mantida igual à decisão anterior: fundo
-// verde escuro fixo (BrGreen, não MaterialTheme.colorScheme.primary porque
-// essa muda de tom entre os temas claro/escuro) + fonte/ícone branco, só que
-// agora com uma leve diferença de opacidade entre selecionado/não
-// selecionado (antes nenhum dos 7 ícones mudava de cor ao ser tocado; só o
-// título acima alternava pro nome da visão).
+// ícone, largura própria).
+// Retângulo reto + cor nova -- pedido do usuário (achado de auditoria: "em
+// gestão financeira altere o formato para retangulo e a cor do seletor"):
+// antes usava SegmentedButtonDefaults.itemShape (pontas arredondadas nas
+// duas extremidades da fileira) com verde translúcido (55% alpha) pro
+// estado NÃO selecionado -- pouco contraste entre ativo/inativo. Agora
+// `shape = RectangleShape` em TODOS os segmentos (nenhuma ponta
+// arredondada, mesmo critério "reto" do EqualWidthBlockRow) e o estado
+// inativo vira neutro (surface/onSurface, mesmo tom dos blocos de ícone
+// comuns) em vez de verde apagado -- só o segmento SELECIONADO continua em
+// BrGreen sólido + branco, o que agora contrasta de verdade com os demais.
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 private fun FinanceiroViewSegmentedRow(items: List<FinanceiroView>, selected: FinanceiroView, onSelect: (FinanceiroView) -> Unit) {
     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-        items.forEachIndexed { index, v ->
+        items.forEach { v ->
             SegmentedButton(
                 selected = v == selected,
                 onClick = { onSelect(v) },
-                shape = SegmentedButtonDefaults.itemShape(index = index, count = items.size),
+                shape = androidx.compose.ui.graphics.RectangleShape,
                 colors = SegmentedButtonDefaults.colors(
                     activeContainerColor = com.bragro.mobile.ui.theme.BrGreen,
                     activeContentColor = Color.White,
-                    inactiveContainerColor = com.bragro.mobile.ui.theme.BrGreen.copy(alpha = 0.55f),
-                    inactiveContentColor = Color.White,
+                    inactiveContainerColor = MaterialTheme.colorScheme.surface,
+                    inactiveContentColor = MaterialTheme.colorScheme.onSurface,
                 ),
                 icon = { Icon(financeiroViewIcon(v), contentDescription = null, modifier = Modifier.size(18.dp)) },
                 label = {

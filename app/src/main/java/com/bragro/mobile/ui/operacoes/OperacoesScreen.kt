@@ -30,7 +30,11 @@ import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.Wallet
+import com.bragro.mobile.ui.domain.RecordTableHeader
+import com.bragro.mobile.ui.domain.RecordTableRow
 import com.bragro.mobile.ui.theme.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -488,6 +492,15 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
     val temCache by viewModel.temCache
     val janela by viewModel.janela
     val context = LocalContext.current
+    // Tabela/Coluna -- mesmo botão único (achado de auditoria, pedido do
+    // usuário: "coloque em todos os módulos"). Aqui os dados já são
+    // AGRUPADOS (OperacaoAgrupadaData, uma combinação Safra+Cultura+Local
+    // por linha, sem um único registro editável por trás), então a tabela
+    // reaproveita as mesmas OPERACOES_EXPORT_COLUMNS/operacoesExportRecords
+    // já usadas em Excel/PDF, sem coluna de ações (ver RecordTable.kt,
+    // showActions).
+    var tableView by remember { mutableStateOf(false) }
+    val tableHScroll = remember { androidx.compose.foundation.ScrollState(0) }
 
     Scaffold(
         topBar = {
@@ -530,6 +543,13 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                             }
                             IconButton(onClick = { viewModel.refresh() }) {
                                 Icon(Icons.Filled.Refresh, contentDescription = "Atualizar", tint = MaterialTheme.colorScheme.primary)
+                            }
+                            IconButton(onClick = { tableView = !tableView }) {
+                                Icon(
+                                    if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
+                                    contentDescription = if (tableView) "Ver em Coluna" else "Ver em Tabela",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
                             }
                         }
                     }
@@ -578,6 +598,11 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                         if (loading) "Carregando..." else if (!temCache) "Sem dados ainda. Conecte-se à internet e atualize." else "Nenhuma operação de safra lançada nesta janela.",
                         modifier = Modifier.padding(vertical = 24.dp),
                     )
+                }
+            } else if (tableView) {
+                item(key = "table-header") { RecordTableHeader(OPERACOES_EXPORT_COLUMNS, tableHScroll, showActions = false) }
+                items(operacoesExportRecords(operacoes), key = { it["cultura"] + "|" + it["safra"] + "|" + it["local"] }) { row ->
+                    RecordTableRow(columns = OPERACOES_EXPORT_COLUMNS, record = row, domainId = "", hScroll = tableHScroll)
                 }
             } else {
                 items(operacoes, key = { it.chave }) { op ->

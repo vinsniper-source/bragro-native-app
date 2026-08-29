@@ -27,6 +27,8 @@ import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.GridOn
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.appFieldColors
@@ -68,6 +70,8 @@ import com.bragro.mobile.data.repo.AnalisesRepository
 import com.bragro.mobile.ui.domain.EqualWidthBlockRow
 import com.bragro.mobile.ui.domain.FarmSelectorButton
 import com.bragro.mobile.ui.domain.LabeledIconButton
+import com.bragro.mobile.ui.domain.RecordTableHeader
+import com.bragro.mobile.ui.domain.RecordTableRow
 import com.bragro.mobile.ui.domain.exportXlsx
 import com.bragro.mobile.ui.print.HtmlPrinter
 import kotlinx.coroutines.flow.collectLatest
@@ -365,6 +369,13 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
     // FECHADO -- pedido do usuário ("sempre aparecer a tela vazia, só
     // expandir quando clicar no ícone").
     var contentExpanded by remember { mutableStateOf(false) }
+    // Tabela/Coluna -- mesmo botão único (achado de auditoria, pedido do
+    // usuário: "coloque em todos os módulos"). Análises não tem um registro
+    // único por trás (é um JSON genérico com 15 cruzamentos diferentes), a
+    // tabela reaproveita a mesma exportação "longa" (Seção/Item/Campo/
+    // Valor) já usada em Excel/PDF/Imprimir, sem coluna de ações.
+    var tableView by remember { mutableStateOf(false) }
+    val tableHScroll = remember { androidx.compose.foundation.ScrollState(0) }
 
     Scaffold(
         topBar = {
@@ -437,6 +448,11 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                             label = if (contentExpanded) "Recolher" else "Expandir",
                             onClick = { contentExpanded = !contentExpanded },
                         )
+                        LabeledIconButton(
+                            icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
+                            label = if (tableView) "Coluna" else "Tabela",
+                            onClick = { tableView = !tableView },
+                        )
                     }
                 }
                 val operacoesBlock = AnalisesBlockSpec("Operações", vertical = false) {
@@ -497,6 +513,12 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
             if (data == null) {
                 item {
                     Text(if (loading) "Carregando..." else "Sem dados ainda. Conecte-se à internet e atualize.")
+                }
+            } else if (tableView) {
+                item(key = "table-header") { RecordTableHeader(ANALISES_EXPORT_COLUMNS, tableHScroll, showActions = false) }
+                val linhas = analisesExportRecords(data)
+                items(linhas.size, key = { linhas[it].hashCode() }) { i ->
+                    RecordTableRow(columns = ANALISES_EXPORT_COLUMNS, record = linhas[i], domainId = "", hScroll = tableHScroll)
                 }
             } else if (contentExpanded) {
                 data.entries.forEachIndexed { index, (chave, valor) ->
