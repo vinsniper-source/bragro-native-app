@@ -1010,8 +1010,12 @@ private fun PeriodoDropdown(
 
     // Ganhou rótulo "Período" -- varredura geral pedida pelo usuário
     // ("alguns ícones não receberam rótulos como colunas e períodos,
-    // filtros").
-    Box {
+    // filtros"). contentAlignment = Center -- BUG real de auditoria
+    // ("ainda há ícones que não estão centralizados"): sem isso o Box
+    // "âncora" do DropdownMenu posicionava o LabeledIconButton no canto
+    // superior-esquerdo em vez de centralizado dentro da célula de
+    // EqualWidthBlockRow.
+    Box(contentAlignment = Alignment.Center) {
         LabeledIconButton(
             icon = Icons.Filled.CalendarMonth,
             label = "Período",
@@ -1078,7 +1082,8 @@ private fun BancoDropdown(banco: String?, options: List<LookupEntity>, onSelect:
     var expanded by remember { mutableStateOf(false) }
     val hasFilter = !banco.isNullOrBlank()
 
-    Box {
+    // contentAlignment = Center -- mesmo fix de PeriodoDropdown acima.
+    Box(contentAlignment = Alignment.Center) {
         LabeledIconButton(
             icon = Icons.Filled.FilterAlt,
             label = "Filtros",

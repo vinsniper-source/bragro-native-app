@@ -8,12 +8,26 @@ import com.bragro.mobile.data.model.GetProviderIntegrationRequest
 import com.bragro.mobile.data.model.ProviderIntegrationDto
 import com.bragro.mobile.data.model.SaveProviderIntegrationRequest
 import com.bragro.mobile.data.model.SyncProviderIntegrationRequest
+import com.bragro.mobile.data.model.GetModuleIntegrationRequest
+import com.bragro.mobile.data.model.SaveModuleIntegrationRequest
+import com.bragro.mobile.data.model.DisconnectModuleIntegrationRequest
+import com.bragro.mobile.data.model.SyncModuleIntegrationRequest
 import com.bragro.mobile.data.remote.NetworkModule
 
 /** Módulo em que o card "Acesso automático via prestadora de serviço" está
- * sendo usado -- só decide qual par de rotas (/api/mobile/fieldview ou
- * /api/mobile/drone) o Retrofit chama, ver [ProviderIntegrationRepository]. */
-enum class IntegrationModule { FIELDVIEW, DRONE }
+ * sendo usado -- decide qual rota o Retrofit chama, ver
+ * [ProviderIntegrationRepository]. FIELDVIEW/DRONE têm rota dedicada
+ * (/api/mobile/fieldview, /api/mobile/drone); FROTA_COMBUSTIVEL (bomba de
+ * combustível) e ROMANEIO_BALANCA (balança) são módulos genéricos e usam a
+ * mesma rota /api/mobile/module-integration, parametrizada por [wireValue]
+ * (precisa bater com o enum IntegrationModule do Prisma, ver
+ * schema.prisma). */
+enum class IntegrationModule(val wireValue: String) {
+    FIELDVIEW("FIELDVIEW"),
+    DRONE("DRONE"),
+    FROTA_COMBUSTIVEL("FROTA_COMBUSTIVEL"),
+    ROMANEIO_BALANCA("ROMANEIO_BALANCA"),
+}
 
 /** Resultado de "Testar sincronização" -- [ok] reflete se a sincronização
  * em si funcionou (hoje sempre false, ver comentário de topo em
@@ -120,23 +134,31 @@ class ProviderIntegrationRepository(context: Context, private val module: Integr
         when (module) {
             IntegrationModule.FIELDVIEW -> NetworkModule.mobileApi.fieldviewGetIntegration(GetProviderIntegrationRequest(accessToken, refreshToken))
             IntegrationModule.DRONE -> NetworkModule.mobileApi.droneGetIntegration(GetProviderIntegrationRequest(accessToken, refreshToken))
+            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA ->
+                NetworkModule.mobileApi.moduleGetIntegration(GetModuleIntegrationRequest(accessToken, refreshToken, modulo = module.wireValue))
         }
 
     private suspend fun callSave(accessToken: String, refreshToken: String, provedor: String, apiKey: String) =
         when (module) {
             IntegrationModule.FIELDVIEW -> NetworkModule.mobileApi.fieldviewSaveIntegration(SaveProviderIntegrationRequest(accessToken, refreshToken, provedor = provedor, apiKey = apiKey))
             IntegrationModule.DRONE -> NetworkModule.mobileApi.droneSaveIntegration(SaveProviderIntegrationRequest(accessToken, refreshToken, provedor = provedor, apiKey = apiKey))
+            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA ->
+                NetworkModule.mobileApi.moduleSaveIntegration(SaveModuleIntegrationRequest(accessToken, refreshToken, modulo = module.wireValue, provedor = provedor, apiKey = apiKey))
         }
 
     private suspend fun callDisconnect(accessToken: String, refreshToken: String) =
         when (module) {
             IntegrationModule.FIELDVIEW -> NetworkModule.mobileApi.fieldviewDisconnectIntegration(DisconnectProviderIntegrationRequest(accessToken, refreshToken))
             IntegrationModule.DRONE -> NetworkModule.mobileApi.droneDisconnectIntegration(DisconnectProviderIntegrationRequest(accessToken, refreshToken))
+            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA ->
+                NetworkModule.mobileApi.moduleDisconnectIntegration(DisconnectModuleIntegrationRequest(accessToken, refreshToken, modulo = module.wireValue))
         }
 
     private suspend fun callSync(accessToken: String, refreshToken: String) =
         when (module) {
             IntegrationModule.FIELDVIEW -> NetworkModule.mobileApi.fieldviewSyncIntegration(SyncProviderIntegrationRequest(accessToken, refreshToken))
             IntegrationModule.DRONE -> NetworkModule.mobileApi.droneSyncIntegration(SyncProviderIntegrationRequest(accessToken, refreshToken))
+            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA ->
+                NetworkModule.mobileApi.moduleSyncIntegration(SyncModuleIntegrationRequest(accessToken, refreshToken, modulo = module.wireValue))
         }
 }

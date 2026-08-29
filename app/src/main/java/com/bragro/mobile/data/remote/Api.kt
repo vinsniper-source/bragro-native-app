@@ -65,6 +65,10 @@ import com.bragro.mobile.data.model.DisconnectProviderIntegrationRequest
 import com.bragro.mobile.data.model.DisconnectProviderIntegrationResponse
 import com.bragro.mobile.data.model.SyncProviderIntegrationRequest
 import com.bragro.mobile.data.model.SyncProviderIntegrationResponse
+import com.bragro.mobile.data.model.GetModuleIntegrationRequest
+import com.bragro.mobile.data.model.SaveModuleIntegrationRequest
+import com.bragro.mobile.data.model.DisconnectModuleIntegrationRequest
+import com.bragro.mobile.data.model.SyncModuleIntegrationRequest
 import com.bragro.mobile.data.model.RecordsRequest
 import com.bragro.mobile.data.model.RecordsResponse
 import com.bragro.mobile.data.model.SecurityRequest
@@ -229,6 +233,24 @@ interface MobileApi {
 
     @POST("api/mobile/drone")
     suspend fun droneSyncIntegration(@Body body: SyncProviderIntegrationRequest): Response<SyncProviderIntegrationResponse>
+
+    // Mesmo card, agora pra bomba de combustível (Frota) e balança
+    // (Romaneios) -- diferente de FieldView/Drone (endpoint dedicado por
+    // módulo), esses dois já são módulos genéricos, então usam UMA rota só
+    // (/api/mobile/module-integration) com "modulo" no corpo (ver
+    // GetModuleIntegrationRequest/etc. em Models.kt e MODULE_TO_DOMAIN em
+    // module-integration/route.ts no site).
+    @POST("api/mobile/module-integration")
+    suspend fun moduleGetIntegration(@Body body: GetModuleIntegrationRequest): Response<GetProviderIntegrationResponse>
+
+    @POST("api/mobile/module-integration")
+    suspend fun moduleSaveIntegration(@Body body: SaveModuleIntegrationRequest): Response<SaveProviderIntegrationResponse>
+
+    @POST("api/mobile/module-integration")
+    suspend fun moduleDisconnectIntegration(@Body body: DisconnectModuleIntegrationRequest): Response<DisconnectProviderIntegrationResponse>
+
+    @POST("api/mobile/module-integration")
+    suspend fun moduleSyncIntegration(@Body body: SyncModuleIntegrationRequest): Response<SyncProviderIntegrationResponse>
 
     @POST("api/mobile/nfe-preview")
     suspend fun nfePreview(@Body body: NfePreviewRequest): Response<NfePreviewResponse>

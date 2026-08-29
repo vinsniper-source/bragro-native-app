@@ -18,6 +18,57 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.28] -- 2026-08-29
+
+- **Novo: card "Acesso automático via prestadora de serviço" em Frota
+  (bomba de combustível) e Romaneios (balança)** -- pedido do usuário ("api
+  para bomba de combustivel implemente e api implementado tambem para
+  balanca"), aprovado como scaffolding igual ao de FieldView/Drone (não é
+  integração real de fabricante: só persiste a credencial escolhida pelo
+  usuário por organização, a leitura automática em si ainda depende de
+  aprovação de parceiro do fabricante, mesmo aviso permanente do card).
+  Ícone "Bomba"/"Balança" no bloco Dados de cada módulo revela o card. Como
+  Frota e Romaneios são módulos genéricos (sem tela própria, diferente de
+  FieldView/Drone), a integração usa uma rota só no backend
+  (`/api/mobile/module-integration`, parametrizada por "modulo") em vez de
+  duplicar rota por módulo.
+- **Schema: 2 novos valores no enum `IntegrationModule`**
+  (`FROTA_COMBUSTIVEL`, `ROMANEIO_BALANCA`) -- migration aditiva (`ALTER
+  TYPE ... ADD VALUE`), autorizada explicitamente pelo usuário (7ª exceção
+  à regra de não mexer em schema, ver memória do projeto). Reaproveita
+  100% a mesma tabela `provider_integrations` já usada por FieldView/Drone/
+  SEFAZ -- nenhuma tabela nova.
+
+## [1.2.27] -- 2026-08-29
+
+- **Fix real: build da 1.2.26 quebrada (`Unresolved reference:
+  ExposedDropdownMenu`)** -- `FinanceiroItensInline.kt` importava
+  `androidx.compose.material3.ExposedDropdownMenu` como símbolo de pacote,
+  mas nesta versão do Material3 esse composable só existe como membro do
+  escopo de `ExposedDropdownMenuBox` (chamado sem import, igual o resto do
+  app já fazia). Removido o import indevido.
+- **Mais ícones não centralizados encontrados e corrigidos** -- pedido do
+  usuário ("ainda há ícones que não estão centralizados"). Causa raiz
+  diferente da 1.2.26: os botões "Colunas" (ColumnsPickerButton), "Período"
+  (PeriodoDropdown/GenericPeriodoDropdown) e "Filtros" (BancoDropdown)
+  embrulham o LabeledIconButton num `Box` extra só pra ancorar o
+  DropdownMenu -- esse `Box`, sem `contentAlignment` explícito, posiciona o
+  filho no canto superior-esquerdo (padrão do Box) em vez de centralizado,
+  então mesmo com o fix de EqualWidthBlockRow da 1.2.26 esses 3 botões
+  específicos continuavam deslocados. Corrigido com
+  `contentAlignment = Alignment.Center` nos 4 pontos (ColumnsAndExport.kt,
+  FinanceiroScreen.kt x2, DomainListScreen.kt).
+- **Vista Tabela: bordas verticais removidas, altura das linhas
+  uniformizada** -- pedido do usuário ("retire as bordas verticais das
+  tabelas e alinha a altura das linhas uniforme"). Cada célula usava
+  `.border(1.dp, cor)` (retângulo completo, 4 lados) -- trocado por uma
+  linha só embaixo de cada célula (`drawBehind`), que empilhada forma um
+  separador horizontal contínuo sem nenhuma linha vertical cortando as
+  colunas. Altura: `Row` com `Modifier.height(IntrinsicSize.Max)` +
+  `fillMaxHeight()` em cada célula, pra todas as células de uma mesma linha
+  esticarem até a mais alta, em vez de cada uma parar na altura do próprio
+  conteúdo.
+
 ## [1.2.26] -- 2026-08-29
 
 - **"Lançar nota com itens" embutido na sequência de campos de Novo

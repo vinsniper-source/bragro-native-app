@@ -1292,6 +1292,38 @@ data class SyncProviderIntegrationResponse(
     val ok: Boolean, val mensagem: String? = null, val error: String? = null,
 )
 
+// Mesmo card "Acesso automático via prestadora de serviço", agora pra bomba
+// de combustível (Frota) e balança (Romaneios/Colheita) -- pedido do
+// usuário ("api para bomba de combustivel implemente e api implementado
+// tambem para balanca"), aprovado como scaffolding tipo FieldView/Drone.
+// Diferente do bloco acima (endpoint dedicado por módulo, ex.:
+// /api/mobile/drone), Frota/Romaneios já são módulos genéricos -- então usam
+// UMA rota só (/api/mobile/module-integration), com "modulo" indicando qual
+// dos dois (ver IntegrationModule no schema.prisma e MODULE_TO_DOMAIN em
+// module-integration/route.ts). Reaproveita os MESMOS Response acima
+// (GetProviderIntegrationResponse etc., já genéricos), só os Request mudam
+// (precisam do campo "modulo" extra).
+@Serializable
+data class GetModuleIntegrationRequest(
+    val accessToken: String, val refreshToken: String, val modulo: String, val action: String = "get_integration",
+)
+
+@Serializable
+data class SaveModuleIntegrationRequest(
+    val accessToken: String, val refreshToken: String, val modulo: String, val action: String = "save_integration",
+    val provedor: String, val apiKey: String,
+)
+
+@Serializable
+data class DisconnectModuleIntegrationRequest(
+    val accessToken: String, val refreshToken: String, val modulo: String, val action: String = "disconnect_integration",
+)
+
+@Serializable
+data class SyncModuleIntegrationRequest(
+    val accessToken: String, val refreshToken: String, val modulo: String, val action: String = "sync_integration",
+)
+
 // "Editado por" no card de cada lançamento (pedido do usuário: "editado
 // por + data/hora dentro do card, via histórico de alterações") -- devolve
 // só a última edição de cada recordId pedido, num único lote por tela de

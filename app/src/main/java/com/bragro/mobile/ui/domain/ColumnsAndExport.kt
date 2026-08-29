@@ -19,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.bragro.mobile.data.export.XlsxWriter
@@ -36,7 +37,16 @@ import java.util.Locale
 @Composable
 fun ColumnsPickerButton(allColumns: List<ColumnConfig>, visibleKeys: Set<String>, onChange: (Set<String>) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    Box {
+    // contentAlignment = Center -- BUG real de auditoria ("ainda há ícones
+    // que não estão centralizados"): este Box existe só pra ancorar o
+    // DropdownMenu, mas sem alinhamento explícito ele posiciona o filho no
+    // canto superior-ESQUERDO (padrão do Box), não no centro -- diferente
+    // de ModuleIconButton/LabeledIconButton (que já se centralizam
+    // sozinhos dentro de EqualWidthBlockRow). Mesmo problema potencial em
+    // qualquer outro botão de EqualWidthBlockRow que precise de um Box
+    // "âncora" pra um menu -- ver mesmo fix em FinanceiroScreen.kt
+    // (BancoDropdown/PeriodoDropdown).
+    Box(contentAlignment = Alignment.Center) {
         // Rótulo abaixo do ícone -- varredura geral pedida pelo usuário
         // ("alguns ícones não receberam rótulos como colunas e períodos,
         // filtros"), mesmo padrão visual do LabeledIconButton.

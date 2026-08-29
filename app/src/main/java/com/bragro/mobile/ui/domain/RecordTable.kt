@@ -3,10 +3,12 @@ package com.bragro.mobile.ui.domain
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,10 +24,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.foundation.ScrollState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.bragro.mobile.data.model.ColumnConfig
+
+// Só linha horizontal embaixo de cada célula (SEM borda vertical entre
+// colunas) -- pedido do usuário (achado de auditoria: "retire as bordas
+// verticais das tabelas e alinha a altura das linhas uniforme"): antes cada
+// célula tinha `.border(1.dp, cor)` (retângulo completo, 4 lados), o que
+// desenhava uma grade cheia; agora só a borda de BAIXO de cada célula, que
+// empilhada linha após linha forma um separador horizontal contínuo entre
+// registros, sem nenhuma linha vertical cortando as colunas.
+private fun Modifier.bottomDivider(color: Color): Modifier = drawBehind {
+    val strokeWidthPx = 1.dp.toPx()
+    drawLine(color, Offset(0f, size.height), Offset(size.width, size.height), strokeWidthPx)
+}
 
 // Vista Tabela (grade real, colunas fixas + rolagem horizontal
 // compartilhada) -- pedido do usuário (achado de auditoria: "insira tambem
@@ -53,13 +70,20 @@ fun RecordTableHeader(columns: List<ColumnConfig>, hScroll: ScrollState, showAct
     // parecia sem bordas nenhuma.
     val headerBg = MaterialTheme.colorScheme.surfaceVariant
     val dividerColor = darkerBorderColor(headerBg)
-    Row(modifier = Modifier.horizontalScroll(hScroll)) {
+    // IntrinsicSize.Max no Row + fillMaxHeight() em cada célula -- pedido
+    // do usuário ("alinha a altura das linhas uniforme"): sem isso, cada
+    // Box só crescia até a altura do PRÓPRIO conteúdo (uma célula com
+    // rótulo mais longo/2 linhas ficava mais alta que as vizinhas, com
+    // fundo/borda parando num ponto diferente) -- agora todas esticam até
+    // a mais alta da fileira.
+    Row(modifier = Modifier.horizontalScroll(hScroll).height(IntrinsicSize.Max)) {
         columns.forEach { col ->
             Box(
                 modifier = Modifier
                     .width(TABLE_CELL_WIDTH)
+                    .fillMaxHeight()
                     .background(headerBg)
-                    .border(1.dp, dividerColor)
+                    .bottomDivider(dividerColor)
                     .padding(horizontal = 8.dp, vertical = 10.dp),
                 contentAlignment = Alignment.CenterStart,
             ) {
@@ -85,8 +109,9 @@ fun RecordTableHeader(columns: List<ColumnConfig>, hScroll: ScrollState, showAct
             Box(
                 modifier = Modifier
                     .width(TABLE_ACTIONS_WIDTH)
+                    .fillMaxHeight()
                     .background(headerBg)
-                    .border(1.dp, dividerColor)
+                    .bottomDivider(dividerColor)
                     .padding(horizontal = 8.dp, vertical = 10.dp),
                 contentAlignment = Alignment.CenterStart,
             ) {
@@ -119,13 +144,16 @@ fun RecordTableRow(
     val rowBg = MaterialTheme.colorScheme.surface
     val dividerColor = darkerBorderColor(rowBg)
     val showActions = onView != null || onEdit != null || onDelete != null
-    Row(modifier = Modifier.horizontalScroll(hScroll)) {
+    // IntrinsicSize.Max/fillMaxHeight -- mesmo fix de altura uniforme do
+    // RecordTableHeader acima.
+    Row(modifier = Modifier.horizontalScroll(hScroll).height(IntrinsicSize.Max)) {
         columns.forEach { col ->
             Box(
                 modifier = Modifier
                     .width(TABLE_CELL_WIDTH)
+                    .fillMaxHeight()
                     .background(rowBg)
-                    .border(1.dp, dividerColor)
+                    .bottomDivider(dividerColor)
                     .padding(horizontal = 8.dp, vertical = 10.dp),
                 contentAlignment = Alignment.CenterStart,
             ) {
@@ -136,8 +164,9 @@ fun RecordTableRow(
             Box(
                 modifier = Modifier
                     .width(TABLE_ACTIONS_WIDTH)
+                    .fillMaxHeight()
                     .background(rowBg)
-                    .border(1.dp, dividerColor)
+                    .bottomDivider(dividerColor)
                     .padding(horizontal = 2.dp),
                 contentAlignment = Alignment.Center,
             ) {

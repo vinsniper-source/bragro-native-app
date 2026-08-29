@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.CompareArrows
@@ -708,6 +709,15 @@ fun DomainListScreen(
                                 onClick = { tableView = !tableView },
                             )
                         }
+                        // Balança (leitura automática de peso) -- pedido do
+                        // usuário ("api implementado tambem para balanca"),
+                        // scaffolding tipo FieldView/Drone (ver
+                        // ModuleProviderIntegrationCard.kt).
+                        if (domainId == "romaneios") {
+                            ModuleIconButton(
+                                ModuleIconItem("integracao", Icons.Filled.Bolt, "Balança", active = expandedBlocks["integracao"] == true),
+                            ) { expandedBlocks["integracao"] = expandedBlocks["integracao"] != true }
+                        }
                     }
                     val operacoesBlock = ModuleBlockSpec("Operações", vertical = false) {
                         LabeledIconButton(
@@ -811,6 +821,15 @@ fun DomainListScreen(
                             ModuleIconButton(
                                 ModuleIconItem("clima-weather", Icons.Filled.WbSunny, "Previsão", active = expandedBlocks["clima-weather"] == true),
                             ) { expandedBlocks["clima-weather"] = expandedBlocks["clima-weather"] != true }
+                        }
+                        // Bomba de combustível (leitura automática) --
+                        // pedido do usuário ("api para bomba de combustivel
+                        // implemente"), scaffolding tipo FieldView/Drone
+                        // (ver ModuleProviderIntegrationCard.kt).
+                        if (domainId == "frota") {
+                            ModuleIconButton(
+                                ModuleIconItem("integracao", Icons.Filled.Bolt, "Bomba", active = expandedBlocks["integracao"] == true),
+                            ) { expandedBlocks["integracao"] = expandedBlocks["integracao"] != true }
                         }
                     }
                     // Operações: varia por módulo -- Safra (recalcular área +
@@ -1076,6 +1095,14 @@ fun DomainListScreen(
             }
             if (showRecalcularArea && expandedBlocks["recalcular-area"] == true) {
                 item(key = "recalcular-area") { RecalcularAreaButton(domainId, showHeader = false) }
+            }
+            // Card "Acesso automático via prestadora de serviço" pra bomba
+            // de combustível (Frota) e balança (Romaneios) -- pedido do
+            // usuário, scaffolding tipo FieldView/Drone (ver
+            // ModuleProviderIntegrationCard.kt e ícone "integracao" nos
+            // blocos Dados acima).
+            if ((domainId == "frota" || domainId == "romaneios") && expandedBlocks["integracao"] == true) {
+                item(key = "integracao") { ModuleProviderIntegrationCard(domainId) }
             }
             // Bloco "Filtros" -- conteúdo (só os dropdowns de coluna) some
             // se abre pelo ícone da fileira acima, sem cabeçalho próprio
@@ -1679,7 +1706,12 @@ private fun GenericPeriodoDropdown(
     // Ganhou rótulo "Período" -- varredura geral pedida pelo usuário
     // ("alguns ícones não receberam rótulos como colunas e períodos,
     // filtros"). Estado ativo continua visível pela cor preenchida.
-    Box {
+    // contentAlignment = Center -- BUG real de auditoria ("ainda há ícones
+    // que não estão centralizados"): mesmo fix de PeriodoDropdown/
+    // BancoDropdown (FinanceiroScreen.kt) e ColumnsPickerButton
+    // (ColumnsAndExport.kt) -- Box sem alinhamento explícito jogava o
+    // conteúdo pro canto superior-esquerdo em vez do centro da célula.
+    Box(contentAlignment = Alignment.Center) {
         LabeledIconButton(
             icon = Icons.Filled.CalendarMonth,
             label = "Período",
