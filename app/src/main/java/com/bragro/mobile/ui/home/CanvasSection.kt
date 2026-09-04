@@ -280,23 +280,14 @@ fun CanvasCirclesRow(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
                     )
+                    // Linhas de culturaAtual/safraAtual REMOVIDAS daqui --
+                    // pedido do usuário ("exclua as linhas 4 e 5 do primeiro
+                    // bloco"): duplicavam a mesma informação já mostrada em
+                    // filtroLabel logo acima ("SAFRINHA 26 · SORGO"), então
+                    // repetir "SORGO" e "Safra SAFRINHA 26" embaixo era
+                    // redundante.
                     if (filtroAtivo) {
                         Text(filtroLabel, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f))
-                    }
-                    Text(
-                        f.culturaAtual ?: "Sem cultura registrada na janela",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
-                    )
-                    // Safra atual (ex.: "24/25", "SAFRINHA 26") -- pedido do
-                    // usuário, novo campo (ver Models.kt/canvas.ts). Só
-                    // aparece quando há lançamento de Safra na janela.
-                    if (!f.safraAtual.isNullOrBlank()) {
-                        Text(
-                            "Safra ${f.safraAtual}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
-                        )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Box(

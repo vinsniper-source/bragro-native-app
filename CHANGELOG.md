@@ -39,6 +39,15 @@ o que mudou (o CI não faz isso sozinho).
      propagado pela rota `/api/mobile/home`, `CanvasFazendaCardData.kt`
      (native) e exibido nos dois lados: painel de fazenda única (site e
      native) e card de detalhe da fazenda selecionada (site e native).
+  3. Ajuste fino após revisão visual do usuário: as linhas de "cultura atual"
+     e "Safra X" do item 2 duplicavam a mesma informação já condensada em
+     "SAFRINHA 26 · SORGO" (filtroLabel) logo acima -- removidas do painel de
+     fazenda única nos dois lados (site + native), mantendo só nome/área/
+     filtro/status. O card de detalhe (abaixo do bloco) continua mostrando
+     cultura+safra normalmente.
+  4. Correção de build: faltava uma chave de fechamento em
+     `CanvasCirclesRow` (Kotlin) após separar o layout de fazenda única do
+     layout multi-fazenda -- causava `Expecting '}'` no `assembleRelease`.
 
 ## [1.2.35] -- 2026-09-04
 
