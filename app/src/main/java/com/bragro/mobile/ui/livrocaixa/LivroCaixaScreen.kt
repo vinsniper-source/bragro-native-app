@@ -292,6 +292,31 @@ private fun ImovelDropdown(imovel: String?, opcoes: List<String>, onSelect: (Str
     }
 }
 
+// Tipo do certificado digital (A1 = arquivo, A3 = token/cartão) -- mesmas
+// opções do card no site (produtor-rural-card.tsx).
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CertificadoTipoDropdown(tipo: String, onSelect: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val opcoes = listOf("" to "Não informado", "A1" to "A1 (arquivo)", "A3" to "A3 (token/cartão)")
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+        OutlinedTextField(
+            value = opcoes.firstOrNull { it.first == tipo }?.second ?: "Não informado",
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Tipo") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.fillMaxWidth().menuAnchor(),
+            colors = appFieldColors(),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            for ((valor, rotulo) in opcoes) {
+                DropdownMenuItem(text = { Text(rotulo) }, onClick = { onSelect(valor); expanded = false })
+            }
+        }
+    }
+}
+
 // Saldo inicial editável -- pedido do usuário ("implemente tudo que falta
 // ainda para o app native da plataforma"): antes fixo em 0 no app (ver
 // comentário removido do ViewModel), já existia como campo editável na tela
@@ -402,7 +427,13 @@ private fun ProdutorRuralCard(
     var cnpj by remember(config) { mutableStateOf(config?.cnpj ?: "") }
     var cpf by remember(config) { mutableStateOf(config?.cpfProdutorRural ?: "") }
     var ie by remember(config) { mutableStateOf(config?.inscricaoEstadualProdutor ?: "") }
-    var certificado by remember(config) { mutableStateOf(config?.certificadoDigitalRef ?: "") }
+    // Certificado digital estruturado (tipo/emissor/validade) -- espelha a
+    // mudança do site (produtor-rural-card.tsx): antes um único texto livre
+    // (certificadoDigitalRef), agora com validade de verdade pra alertar
+    // vencimento (mesmo padrão dos outros campos "AAAA-MM-DD" do app).
+    var certTipo by remember(config) { mutableStateOf(config?.certificadoDigitalTipo ?: "") }
+    var certEmissor by remember(config) { mutableStateOf(config?.certificadoDigitalEmissor ?: "") }
+    var certValidade by remember(config) { mutableStateOf(config?.certificadoDigitalValidade ?: "") }
     var contaIrpf by remember(config) { mutableStateOf(config?.contaIrpfPadrao ?: "") }
 
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -416,7 +447,15 @@ private fun ProdutorRuralCard(
             OutlinedTextField(value = cnpj, onValueChange = { cnpj = it }, label = { Text("CNPJ") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
             OutlinedTextField(value = cpf, onValueChange = { cpf = it }, label = { Text("CPF do produtor") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
             OutlinedTextField(value = ie, onValueChange = { ie = it }, label = { Text("Inscrição Estadual") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
-            OutlinedTextField(value = certificado, onValueChange = { certificado = it }, label = { Text("Referência do certificado digital") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+            Text("Certificado digital (e-CAC / LCDPR)", style = MaterialTheme.typography.labelLarge)
+            CertificadoTipoDropdown(tipo = certTipo, onSelect = { certTipo = it })
+            OutlinedTextField(value = certEmissor, onValueChange = { certEmissor = it }, label = { Text("Emissor (AC)") }, placeholder = { Text("Ex.: Serasa, Certisign") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+            OutlinedTextField(value = certValidade, onValueChange = { certValidade = it }, label = { Text("Validade (AAAA-MM-DD)") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+            Text(
+                "Só metadado p/ controle de vencimento -- o arquivo .pfx/.p12 nunca é enviado aqui.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             OutlinedTextField(value = contaIrpf, onValueChange = { contaIrpf = it }, label = { Text("Conta padrão para IRPF") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
             Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
                 androidx.compose.material3.Button(
@@ -427,7 +466,9 @@ private fun ProdutorRuralCard(
                                 cnpj = cnpj,
                                 cpfProdutorRural = cpf,
                                 inscricaoEstadualProdutor = ie,
-                                certificadoDigitalRef = certificado,
+                                certificadoDigitalTipo = certTipo,
+                                certificadoDigitalEmissor = certEmissor,
+                                certificadoDigitalValidade = certValidade,
                                 contaIrpfPadrao = contaIrpf,
                             ),
                         )

@@ -18,6 +18,18 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.31] -- 2026-09-04
+
+- **Livro Caixa: certificado digital agora é estruturado (Tipo/Emissor/
+  Validade), não só uma referência em texto** -- pedido do usuário ("o
+  certificado digital não só apenas colocar a referência, substitua este
+  campo"): antes um único campo de texto livre (`certificadoDigitalRef`),
+  agora 3 campos (tipo A1/A3, emissor, validade real) com badge de status
+  (Válido/Vence em Xd/Vencido) calculado a partir da validade, mesmo padrão
+  do vencimento de seguro em Inventário/Frota. O arquivo .pfx/.p12 em si
+  continua nunca sendo enviado -- só metadado de controle. Espelhado no
+  site (`produtor-rural-card.tsx`) e no app (`LivroCaixaScreen.kt`).
+
 ## [1.2.30] -- 2026-09-04
 
 - **Início: primeiro bloco (Canvas) com visual próprio, destacado do resto

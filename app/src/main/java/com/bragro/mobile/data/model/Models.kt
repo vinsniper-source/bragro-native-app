@@ -666,7 +666,15 @@ data class ProdutorRuralConfigData(
     val cnpj: String = "",
     val cpfProdutorRural: String = "",
     val inscricaoEstadualProdutor: String = "",
-    val certificadoDigitalRef: String = "",
+    // Certificado digital estruturado (tipo/emissor/validade) -- espelha a
+    // mudanca feita no site (produtor-rural-card.tsx): antes um unico texto
+    // livre (certificadoDigitalRef), agora com validade de verdade pra
+    // calcular status de vencimento. certificadoDigitalValidade em
+    // "yyyy-MM-dd" (mesmo formato usado nos outros campos de data da rota
+    // /api/mobile/*).
+    val certificadoDigitalTipo: String = "",
+    val certificadoDigitalEmissor: String = "",
+    val certificadoDigitalValidade: String = "",
     val contaIrpfPadrao: String = "",
 )
 
