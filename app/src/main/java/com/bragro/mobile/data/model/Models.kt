@@ -160,6 +160,11 @@ data class CanvasFazendaCardData(
     val status: String, // "ok" | "alerta" | "risco" | "semdado"
     val variacaoMedia: Double? = null,
     val culturaAtual: String? = null,
+    // Safra/ano-safra atual (ex.: "24/25", "SAFRINHA 26") -- espelho exato
+    // de safraAtual em lib/services/canvas.ts (site). Pedido do usuário: "o
+    // primeiro bloco do native não tem a mesma configuração da plataforma,
+    // insira também nas informações a safra".
+    val safraAtual: String? = null,
     val custoHaMedio: Double? = null,
     val breakdown: List<CanvasBreakdownItemData> = emptyList(),
     val tendencia: String? = null, // "melhorando" | "piorando" | "estavel" | null

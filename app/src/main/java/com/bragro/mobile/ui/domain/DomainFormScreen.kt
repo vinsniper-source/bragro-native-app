@@ -51,6 +51,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -510,18 +511,46 @@ fun DomainFormScreen(
 // digitar "970000" no app dar "970.000,00" igual no site.
 
 /** So digitos (+ 1 "-" opcional na frente e 1 "," opcional) -- ponto de
- * milhar automatico, ",00" completado quando o usuario nao digitou
- * centavos. Ex.: "970000" -> "970.000,00", "1234,5" -> "1.234,50". */
+ * milhar automatico. NAO completa ",00" aqui (ver finalizeMoneyMask abaixo)
+ * -- bug real reportado pelo usuário ("não consigo preencher nenhum campo
+ * do app... quando clico em outro campo"): completar ",00" a CADA tecla
+ * fazia o valor exibido crescer com um ",00" fantasma que o usuário nunca
+ * digitou; como o campo é recomposto a partir desse valor formatado, o
+ * cursor sempre ficava reposicionado no fim de uma string maior do que o
+ * que foi realmente digitado, e a tecla seguinte caía dentro da parte
+ * decimal fantasma (sempre truncada em 2 dígitos) em vez de continuar a
+ * parte inteira -- dava a impressão de campo travado em 1 caractere. Sem
+ * completar ",00" durante a digitação, o fim da string sempre coincide com
+ * o que o usuário realmente digitou. Ex. enquanto digita: "1" -> "1",
+ * "1234" -> "1.234", "123,5" -> "123,5". */
 private fun formatMoneyMask(raw: String): String {
     val negative = raw.trim().startsWith("-")
     val cleaned = raw.filter { it.isDigit() || it == ',' }
     val firstComma = cleaned.indexOf(',')
     val intPartRaw = if (firstComma == -1) cleaned else cleaned.substring(0, firstComma)
-    val decPartRaw = if (firstComma == -1) "" else cleaned.substring(firstComma + 1).replace(",", "")
+    // No maximo 2 casas decimais, exatamente as que o usuario ja digitou --
+    // SEM completar com "00" aqui (isso so acontece no blur, ver
+    // finalizeMoneyMask).
+    val decPartRaw = if (firstComma == -1) "" else cleaned.substring(firstComma + 1).replace(",", "").take(2)
     val intDigits = intPartRaw.replaceFirst(Regex("^0+(?=\\d)"), "")
     if (intDigits.isEmpty() && decPartRaw.isEmpty() && firstComma == -1) return ""
     val intFormatted = groupThousands(intDigits.ifEmpty { "0" })
-    val decFormatted = (decPartRaw + "00").take(2)
+    if (firstComma == -1) return "${if (negative) "-" else ""}$intFormatted"
+    return "${if (negative) "-" else ""}$intFormatted,$decPartRaw"
+}
+
+/** Completa a formatação quando o campo perde o foco: garante ",00" (ou
+ * completa "1,5" -> "1,50") -- mesma aparência final de sempre
+ * ("970.000,00"), só que aplicada ao SAIR do campo em vez de a cada tecla
+ * (ver comentário acima em formatMoneyMask sobre por que isso quebrava a
+ * digitação). Réplica de finalizeBrMoneyInput em money-input.tsx (site). */
+private fun finalizeMoneyMask(display: String): String {
+    if (display.isEmpty()) return ""
+    val negative = display.startsWith("-")
+    val unsigned = if (negative) display.substring(1) else display
+    val parts = unsigned.split(",")
+    val intFormatted = parts.getOrElse(0) { "" }.ifEmpty { "0" }
+    val decFormatted = (parts.getOrElse(1) { "" } + "00").take(2)
     return "${if (negative) "-" else ""}$intFormatted,$decFormatted"
 }
 
@@ -740,17 +769,50 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
             if (col.money) {
                 // Mascara de milhar/centavos automatica (pedido do usuario:
                 // "970000" -> "970.000,00" enquanto digita, mesma mascara
-                // do site -- ver money-input.tsx). "value" (viewModel.fields)
-                // continua guardando o numero cru ("970000.00", igual antes),
-                // so a EXIBICAO e formatada -- o parser do servidor no
-                // Number(raw)/toDoubleOrNull nao precisou mudar.
+                // do site -- ver money-input.tsx). "viewModel.fields"
+                // continua guardando o numero cru ("970000.00", igual
+                // antes), so a EXIBICAO e formatada -- o parser do servidor
+                // no Number(raw)/toDoubleOrNull nao precisou mudar.
+                //
+                // Estado local "display" (em vez de recalcular sempre via
+                // moneyRawToDisplay(value)) -- bug real reportado pelo
+                // usuário ("não consigo preencher nenhum campo... quando
+                // clico em outro campo"): recalcular a exibição a partir do
+                // valor cru a cada tecla sempre reintroduzia ",00" (2 casas
+                // fixas), mesmo depois de tirar o auto-preenchimento de
+                // formatMoneyMask -- o valor cru sempre carrega centavos
+                // (".00" por padrão). Com estado local, o campo mostra
+                // exatamente o que foi digitado enquanto o usuário digita, e
+                // só sincroniza com o valor cru (útil ao ABRIR um registro
+                // existente, carregado de forma assíncrona) enquanto o
+                // campo não está com foco -- padrão "uncontrolled enquanto
+                // focado, sincronizado quando não".
+                var focused by remember { mutableStateOf(false) }
+                var display by remember { mutableStateOf(moneyRawToDisplay(value)) }
+                LaunchedEffect(value, focused) {
+                    if (!focused) display = moneyRawToDisplay(value)
+                }
                 OutlinedTextField(
-                    value = moneyRawToDisplay(value),
-                    onValueChange = { typed -> viewModel.setField(col.key, moneyDisplayToRaw(formatMoneyMask(typed))) },
+                    value = display,
+                    onValueChange = { typed ->
+                        val formatted = formatMoneyMask(typed)
+                        display = formatted
+                        viewModel.setField(col.key, moneyDisplayToRaw(formatted))
+                    },
                     label = { Text(fieldLabel(col)) },
                     prefix = { Text("R$ ") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().onFocusChanged { state ->
+                        val wasFocused = focused
+                        focused = state.isFocused
+                        if (wasFocused && !state.isFocused) {
+                            // Perdeu o foco -- completa ",00"/casas decimais
+                            // faltando (ver finalizeMoneyMask acima).
+                            val finalized = finalizeMoneyMask(display)
+                            display = finalized
+                            viewModel.setField(col.key, moneyDisplayToRaw(finalized))
+                        }
+                    },
                     singleLine = true,
                     colors = fieldColors,
                 )

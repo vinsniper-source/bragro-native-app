@@ -18,6 +18,44 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.36] -- 2026-09-04
+
+- **Bloco do Canvas (fazenda única) sem paridade com o site + campo "Safra"
+  ausente** -- usuário reportou ("o primeiro bloco do native não tem a mesma
+  configuração da plataforma, insira também nas informações a safra"). Duas
+  correções:
+  1. Quando há só 1 fazenda visível, `CanvasCirclesRow` desenhava só o
+     círculo (nome/área/filtro dentro dele) -- faltava o painel de texto ao
+     lado (nome maior, área, safra·cultura do filtro, cultura atual e o
+     rótulo de status por extenso) que o site já tinha (`canvas-view.tsx`,
+     layout "fazenda única", texto à esquerda + círculo à direita). Agora o
+     native espelha essa mesma disposição: só a cor da borda do círculo
+     indicava o status antes, agora também aparece como texto (badge com a
+     mesma cor da borda).
+  2. Nenhuma das duas plataformas expunha a Safra atual (ex.: "24/25",
+     "SAFRINHA 26") no card do Canvas -- só a Cultura. Adicionado
+     `safraAtual` em `lib/services/canvas.ts` (mesmo cálculo que já existia
+     pra `culturaAtual`, só que lendo o campo "safra" em vez de "cultura"),
+     propagado pela rota `/api/mobile/home`, `CanvasFazendaCardData.kt`
+     (native) e exibido nos dois lados: painel de fazenda única (site e
+     native) e card de detalhe da fazenda selecionada (site e native).
+
+## [1.2.35] -- 2026-09-04
+
+- **Bug real corrigido: campos monetários travavam em 1 caractere** --
+  usuário reportou ("o campo Bruto não consigo digitar mais de um número" no
+  site; "não consigo preencher nenhum campo... quando clico em outro campo"
+  no app). Causa: a máscara de moeda completava ",00" a CADA tecla digitada;
+  como o campo é recomposto a partir desse texto formatado, o cursor sempre
+  ia parar no fim de uma string com 2 dígitos fantasmas (",00") que o
+  usuário nunca digitou, e a tecla seguinte caía dentro dessa parte decimal
+  fantasma (sempre truncada em 2 dígitos) em vez de continuar a parte
+  inteira. Corrigido nos dois lados: ",00" só é completado quando o campo
+  perde o foco (blur), nunca durante a digitação. No app, o campo monetário
+  também ganhou estado local de exibição (antes recalculava a exibição a
+  partir do valor cru a cada tecla, o que sozinho já reintroduzia o mesmo
+  problema mesmo sem a máscara).
+
 ## [1.2.34] -- 2026-09-04
 
 - **Cotações Fornecedores: campo Fornecedor virou lista suspensa (Base de

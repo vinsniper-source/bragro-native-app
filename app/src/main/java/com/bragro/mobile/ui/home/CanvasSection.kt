@@ -254,15 +254,104 @@ fun CanvasCirclesRow(
         // passa a centralizar igual esperado. Com 2+ fazendas continua igual
         // (Start, scroll horizontal, spacedBy).
         val unicaFazenda = fazendas.size == 1
+        // Layout de fazenda única: texto (nome/área/safra/cultura/status) à
+        // esquerda + círculo à direita -- espelho exato do bloco "fazenda
+        // única" do site (canvas-view.tsx, linhas ~235-277). Até aqui o
+        // native só desenhava o círculo (sem esse painel de texto do lado),
+        // então faltavam culturaAtual/STATUS_LABEL como TEXTO (só a cor da
+        // borda do círculo indicava o status) -- pedido do usuário: "o
+        // primeiro bloco do native não tem a mesma configuração da
+        // plataforma, insira também nas informações a safra".
+        if (unicaFazenda) {
+            val f = fazendas[0]
+            val areaExibida = f.areaFiltroHa ?: f.areaHa
+            val filtroAtivo = f.areaFiltroHa != null
+            val temMapa = f.latitude != null && f.longitude != null
+            val sizeDp = (56 + areaExibida * 0.06).coerceIn(90.0, 130.0).dp
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                    Text(f.nome, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "${NumberFormat.getNumberInstance(Locale("pt", "BR")).format(areaExibida)} ha",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
+                    )
+                    if (filtroAtivo) {
+                        Text(filtroLabel, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f))
+                    }
+                    Text(
+                        f.culturaAtual ?: "Sem cultura registrada na janela",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+                    )
+                    // Safra atual (ex.: "24/25", "SAFRINHA 26") -- pedido do
+                    // usuário, novo campo (ver Models.kt/canvas.ts). Só
+                    // aparece quando há lançamento de Safra na janela.
+                    if (!f.safraAtual.isNullOrBlank()) {
+                        Text(
+                            "Safra ${f.safraAtual}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(MaterialTheme.colorScheme.surface)
+                            .border(width = 1.dp, color = statusColor(f.status), shape = RoundedCornerShape(50))
+                            .padding(horizontal = 8.dp, vertical = 3.dp),
+                    ) {
+                        Text(
+                            statusLabel(f.status),
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Medium,
+                            color = statusColor(f.status),
+                        )
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .size(sizeDp)
+                        .clip(CircleShape)
+                        .then(if (!temMapa) Modifier.background(MaterialTheme.colorScheme.surface) else Modifier)
+                        .border(width = 1.5.dp, color = statusColor(f.status), shape = CircleShape)
+                        .clickable { openUrl(googleEarthUrl(f.latitude, f.longitude, f.nome)) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (temMapa) {
+                        AsyncImage(
+                            model = esriSatelliteUrl(f.latitude!!, f.longitude!!),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.matchParentSize(),
+                        )
+                        Box(modifier = Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.38f)))
+                    } else {
+                        Text(
+                            "Google Earth",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                            color = statusColor(f.status),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 6.dp),
+                        )
+                    }
+                }
+            }
+        } else {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .then(if (unicaFazenda) Modifier else Modifier.horizontalScroll(rememberScrollState()))
+                .horizontalScroll(rememberScrollState())
                 .padding(16.dp),
-            horizontalArrangement = if (unicaFazenda) Arrangement.Center else Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             fazendas.forEach { f ->
-                val unica = fazendas.size == 1
+                val unica = false
                 // areaFiltroHa (área de fato coberta pelos lançamentos da
                 // safra/cultura filtrada, ex.: safrinha ocupa menos área
                 // que a safra verão na mesma fazenda) tem prioridade sobre

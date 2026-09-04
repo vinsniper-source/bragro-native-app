@@ -41,8 +41,8 @@ android {
         // a instalaçao pegou o apk certo (se apos instalar ainda aparecer
         // 1.1.6, a instalaçao nao pegou o apk novo -- se aparecer 1.1.7,
         // pegou, e as cores tem que estar corrigidas tambem).
-        versionCode = 44
-        versionName = "1.2.34"
+        versionCode = 46
+        versionName = "1.2.36"
 
         // URLs do backend (o MESMO backend do site publicado -- ver
         // native-app/README.md). Trocaveis por variante/ambiente sem
