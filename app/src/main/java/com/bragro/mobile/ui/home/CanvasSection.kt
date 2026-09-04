@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Agriculture
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Grass
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -215,12 +216,26 @@ fun CanvasCirclesRow(
     fun openUrl(url: String) {
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     }
-    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
+    // Forma/cor do bloco -- pedido do usuario ("bloco 3 [cantos assimetricos]
+    // com estilo do 4 [cor cheia], a cor tem que seguir o modo
+    // escuro/claro"): colorScheme.primary/onPrimary ja tem par
+    // light/dark definido em Theme.kt (mesmo verde da marca usado em botoes
+    // no resto do app), entao o bloco muda de tom sozinho com o tema, sem
+    // hex fixo. Cantos assimetricos (36/8/36/8) quebram a grade retangular
+    // do resto da Início de proposito (pedido: "nao comunicar visualmente
+    // com o restante da pagina").
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(topStart = 36.dp, topEnd = 8.dp, bottomEnd = 36.dp, bottomStart = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
+        border = BorderStroke(0.dp, Color.Transparent),
+    ) {
         Column {
         if (fazendas.isEmpty()) {
             Text(
                 "Nenhuma fazenda ativa cadastrada ainda.",
                 style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
                 modifier = Modifier.padding(16.dp),
             )
         } else {
@@ -282,7 +297,15 @@ fun CanvasCirclesRow(
                         modifier = Modifier
                             .size(sizeDp)
                             .clip(CircleShape)
-                            .then(if (!temMapa) Modifier.background(statusColor(f.status).copy(alpha = 0.12f)) else Modifier)
+                            // bg-surface fixo (nao mais o status tintado) --
+                            // pedido do usuario ("bloco com estilo do 4 [cor
+                            // cheia]"): um circulo "ok" com fundo verde
+                            // translucido ficava quase invisivel em cima do
+                            // Card verde cheio (ver Card acima). Fundo neutro
+                            // opaco + borda/texto com a cor do status mantem
+                            // a leitura de sempre, legivel em cima de
+                            // qualquer cor.
+                            .then(if (!temMapa) Modifier.background(MaterialTheme.colorScheme.surface) else Modifier)
                             .border(
                                 width = if (selecionada) 2.5.dp else 1.5.dp,
                                 color = statusColor(f.status),

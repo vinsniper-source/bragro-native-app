@@ -18,6 +18,25 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.30] -- 2026-09-04
+
+- **Início: primeiro bloco (Canvas) com visual próprio, destacado do resto
+  da página** -- pedido do usuário, a partir de 4 opções mostradas em
+  mockup ("gostei da forma do bloco 3, mas com estilo da 4, agora a cor tem
+  que seguir o modo escuro/claro"): o card que envolve os círculos das
+  fazendas trocou o retângulo branco de sempre por cantos assimétricos
+  (36/8/36/8, quebra a grade reta do resto da Início de propósito) e fundo
+  verde cheio (`--primary`/`colorScheme.primary`, já tinha par claro/escuro
+  definido -- nenhuma cor nova, só reaproveitado onde antes só aparecia em
+  botões). Textos e o painel de import de KML dentro do bloco foram
+  ajustados pra continuar legíveis em cima do verde cheio (site e app).
+- **Fix de contraste: círculo "ok" quase invisível em cima do bloco verde**
+  -- efeito colateral direto da mudança acima: o círculo usava um
+  preenchimento verde translúcido pra status "ok", que sumia de vista
+  sobre o novo fundo verde cheio do bloco. Trocado por um fundo neutro
+  opaco fixo (mesma cor em qualquer status); a cor do status continua só
+  na borda e no texto, leitura igual a de sempre.
+
 ## [1.2.29] -- 2026-08-29
 
 - **Frota/Romaneios: acesso "Bomba"/"Balança" virou FAB dedicado** -- pedido
