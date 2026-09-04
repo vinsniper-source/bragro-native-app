@@ -280,14 +280,29 @@ fun CanvasCirclesRow(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
                     )
-                    // Linhas de culturaAtual/safraAtual REMOVIDAS daqui --
-                    // pedido do usuário ("exclua as linhas 4 e 5 do primeiro
-                    // bloco"): duplicavam a mesma informação já mostrada em
-                    // filtroLabel logo acima ("SAFRINHA 26 · SORGO"), então
-                    // repetir "SORGO" e "Safra SAFRINHA 26" embaixo era
-                    // redundante.
+                    // Com filtro ativo, filtroLabel já junta safra+cultura
+                    // ("SAFRINHA 26 · SORGO") -- mostrar culturaAtual/
+                    // safraAtual embaixo seria repetir (pedido do usuário:
+                    // "exclua as linhas 4 e 5"). SEM filtro ("Todas as
+                    // safras/culturas"), filtroLabel fica vazio e o bloco
+                    // ficava sem nenhuma info de safra/cultura -- usuário
+                    // reportou de volta ("insira a informação da safra e
+                    // cultura"). Mostra um OU outro.
                     if (filtroAtivo) {
                         Text(filtroLabel, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f))
+                    } else {
+                        Text(
+                            f.culturaAtual ?: "Sem cultura registrada na janela",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+                        )
+                        if (!f.safraAtual.isNullOrBlank()) {
+                            Text(
+                                "Safra ${f.safraAtual}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Box(

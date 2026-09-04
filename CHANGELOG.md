@@ -48,6 +48,12 @@ o que mudou (o CI não faz isso sozinho).
   4. Correção de build: faltava uma chave de fechamento em
      `CanvasCirclesRow` (Kotlin) após separar o layout de fazenda única do
      layout multi-fazenda -- causava `Expecting '}'` no `assembleRelease`.
+  5. Ajuste do item 3: sem filtro de safra/cultura selecionado ("Todas as
+     safras/culturas"), filtroLabel fica vazio -- removendo culturaAtual/
+     safraAtual incondicionalmente, o bloco ficava SEM nenhuma info de
+     safra/cultura nesse caso (usuário reportou de volta: "insira a
+     informação da safra e cultura"). Agora mostra um OU outro: filtroLabel
+     quando há filtro ativo, culturaAtual/safraAtual quando não há.
 
 ## [1.2.35] -- 2026-09-04
 
