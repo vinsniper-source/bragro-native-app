@@ -484,6 +484,7 @@ fun CanvasCirclesRow(
         }
     }
 }
+}
 
 // Deep link do Google Earth Web pro ponto da fazenda -- mesmo padrão já
 // usado em FieldviewScreen.kt (câmera a ~1000m de altitude, olhando reto
