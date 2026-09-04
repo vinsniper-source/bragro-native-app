@@ -298,24 +298,20 @@ fun FinanceiroItensInlineSection(
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        // Aviso encurtado + tira label:valor (pedido do usuário: "seja mais
+        // direto, TEXTO LONGO") -- mesmo texto/formato já usado no site
+        // (nota-multi-item-button.tsx, "Sétima rodada"): o parágrafo cru foi
+        // reduzido e a frase corrida "Usa Doc/NF X, Data Y..." virou uma
+        // tira curta "Doc/NF: X · Data: Y · Local: Z · Entidade: W", mais
+        // rápida de ler igual num resumo de pedido.
         Text("Lançar nota com itens", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
         Text(
-            "Uso exclusivo para compras que abastecem o Estoque (usa Doc/NF, Data, Local e Entidade preenchidos acima, e o total do campo Bruto (R$) mais abaixo). Cada item vira uma entrada no Estoque; o total vira lançamento(s) no Financeiro. Lançamentos sem produto (salário, aluguel, serviço...) usam os campos normais do formulário. Não relance esta nota depois -- ela já gera Estoque e Financeiro juntos.",
+            "Só pra compras que abastecem o Estoque (usa Doc/NF, Data, Local e Entidade acima). Cada item vira entrada no Estoque; o total vira Financeiro. Sem produto (salário, aluguel...)? Use os campos normais. Não relance esta nota — ela já gera os dois juntos.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            buildString {
-                append("Usa Doc/NF ")
-                append(docNf.ifBlank { "(preencha acima)" })
-                append(", Data ")
-                append(data.ifBlank { "(preencha acima)" })
-                append(", Local ")
-                append(local.ifBlank { "(preencha acima)" })
-                append(", Entidade ")
-                append(entidade.ifBlank { "(preencha acima)" })
-                append(".")
-            },
+            "Doc/NF: ${docNf.ifBlank { "—" }} · Data: ${data.ifBlank { "—" }} · Local: ${local.ifBlank { "—" }} · Entidade: ${entidade.ifBlank { "—" }}",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

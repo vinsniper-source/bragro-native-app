@@ -3,6 +3,9 @@ package com.bragro.mobile.data.repo
 import android.content.Context
 import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.TokenStore
+import com.bragro.mobile.data.model.CotacaoComparacaoPropostaData
+import com.bragro.mobile.data.model.CotacaoComparacaoRequest
+import com.bragro.mobile.data.model.CotacaoComparacaoResponse
 import com.bragro.mobile.data.model.CotacaoMultiItemItemData
 import com.bragro.mobile.data.model.CotacaoMultiItemRequest
 import com.bragro.mobile.data.model.CotacaoMultiItemResponse
@@ -57,6 +60,53 @@ class CotacaoMultiItemRepository(context: Context) {
         } catch (e: Exception) {
             AppLog.e("CotacaoMultiItemRepository", "Falha ao lançar cotação com itens", e)
             CotacaoMultiItemResponse(ok = false, error = "Sem conexão. Tente novamente.")
+        }
+    }
+
+    /** Inverso de criar() acima -- pedido do usuário ("Cotações Fornecedores:
+     * múltiplos fornecedores por operação", task #404): 1 item, N propostas
+     * de fornecedores diferentes na mesma submissão. Chama
+     * /api/mobile/cotacao-comparacao, que chama DIRETO
+     * createCotacaoComparacaoAction() no servidor. */
+    suspend fun criarComparacao(
+        data: String,
+        categoria: String,
+        item: String,
+        quantidade: Double?,
+        unidade: String?,
+        observacoes: String?,
+        propostas: List<CotacaoComparacaoPropostaData>,
+    ): CotacaoComparacaoResponse? {
+        val tokens = tokenStore.current() ?: return null
+        var (accessToken, refreshToken) = tokens
+        return try {
+            fun buildRequest() = CotacaoComparacaoRequest(
+                accessToken = accessToken,
+                refreshToken = refreshToken,
+                data = data,
+                categoria = categoria,
+                item = item,
+                quantidade = quantidade,
+                unidade = unidade,
+                observacoes = observacoes,
+                propostas = propostas,
+            )
+            var response = NetworkModule.mobileApi.cotacaoComparacao(buildRequest())
+            if (response.code() == 401) {
+                val newAccess = TokenRefresher.refreshAccessToken(tokenStore, refreshToken)
+                if (newAccess != null) {
+                    accessToken = newAccess
+                    response = NetworkModule.mobileApi.cotacaoComparacao(buildRequest())
+                }
+            }
+            val body = response.body()
+            if (!response.isSuccessful || body == null) {
+                return body ?: CotacaoComparacaoResponse(ok = false, error = "Falha ao lançar as propostas.")
+            }
+            body
+        } catch (e: Exception) {
+            AppLog.e("CotacaoMultiItemRepository", "Falha ao lançar propostas de comparação", e)
+            CotacaoComparacaoResponse(ok = false, error = "Sem conexão. Tente novamente.")
         }
     }
 }

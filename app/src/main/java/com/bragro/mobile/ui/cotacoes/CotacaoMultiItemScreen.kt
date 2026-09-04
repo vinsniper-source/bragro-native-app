@@ -56,6 +56,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bragro.mobile.data.local.LookupEntity
+import com.bragro.mobile.data.model.CotacaoComparacaoPropostaData
 import com.bragro.mobile.data.model.CotacaoMultiItemItemData
 import com.bragro.mobile.data.repo.ConfigRepository
 import com.bragro.mobile.data.repo.CotacaoMultiItemRepository
@@ -91,6 +92,18 @@ class CotacaoLinha {
     var quantidade by mutableStateOf("")
     var precoUnitario by mutableStateOf("")
     var prazoEntregaDias by mutableStateOf("")
+}
+
+// Linha do modo "Comparar fornecedores" (task #404) -- inverso de
+// CotacaoLinha acima: aqui é 1 item comum (categoria/item/data/quantidade/
+// unidade ficam no cabeçalho, fora da linha) e cada linha é UMA proposta de
+// fornecedor pra esse mesmo item.
+class PropostaLinha {
+    var fornecedor by mutableStateOf("")
+    var precoUnitario by mutableStateOf("")
+    var prazoEntregaDias by mutableStateOf("")
+    var condicaoPagamento by mutableStateOf<String?>(null)
+    var validadeProposta by mutableStateOf("")
 }
 
 private fun hojeIso(): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
@@ -132,10 +145,14 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var formasPgtoOptions = mutableStateOf<List<LookupEntity>>(emptyList())
         private set
+    var entidadesOptions = mutableStateOf<List<LookupEntity>>(emptyList())
+        private set
 
-    // Fornecedor aqui é TEXTO LIVRE (não dropdown de Base de Dados) -- mesmo
-    // critério do site (cotacao-multi-item-button.tsx: <Input>, não
-    // <Select>); diferente do Pedido, que usa "entidades_financeiro".
+    // Fornecedor agora é dropdown de Base de Dados (pedido do usuário: "em
+    // cotações campo fornecedores crie lista suspensa, tem que cadastrar
+    // primeiro para acessar o campo") -- mesma categoria já usada em Pedido
+    // ("entidades_financeiro"), replicando o site (cotacao-multi-item-
+    // button.tsx). Antes era texto livre.
     var fornecedor by mutableStateOf("")
     var data by mutableStateOf(hojeBr())
     var condicaoPagamento by mutableStateOf<String?>(null)
@@ -143,6 +160,17 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
     var observacoes by mutableStateOf("")
 
     val linhas = mutableStateListOf(CotacaoLinha())
+
+    // Estado do modo "Comparar fornecedores" (task #404) -- ver mesmo
+    // raciocínio no site (cotacao-multi-item-button.tsx).
+    var modo by mutableStateOf("itens")
+    var categoriaComp by mutableStateOf("")
+    var itemComp by mutableStateOf("")
+    var dataComp by mutableStateOf(hojeBr())
+    var quantidadeComp by mutableStateOf("")
+    var unidadeComp by mutableStateOf("")
+    var observacoesComp by mutableStateOf("")
+    val propostas = mutableStateListOf(PropostaLinha(), PropostaLinha())
 
     var pending = mutableStateOf(false)
         private set
@@ -153,12 +181,57 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
     var copiando = mutableStateOf(false)
         private set
 
+    fun addProposta() {
+        propostas.add(PropostaLinha())
+    }
+
+    fun removeProposta(i: Int) {
+        if (propostas.size > 1) propostas.removeAt(i)
+    }
+
+    private fun propostasValidas() = propostas.filter { it.fornecedor.isNotBlank() && it.precoUnitario.isNotBlank() }
+
+    fun podeSalvarComp(): Boolean = categoriaComp.isNotBlank() && itemComp.isNotBlank() && dataComp.isNotBlank() && propostasValidas().isNotEmpty()
+
+    fun submitComparacao() {
+        if (!podeSalvarComp()) return
+        val validas = propostasValidas()
+        pending.value = true
+        errorMessage.value = null
+        viewModelScope.launch {
+            val resultado = repository.criarComparacao(
+                data = com.bragro.mobile.ui.domain.brDateToIso(dataComp),
+                categoria = categoriaComp,
+                item = itemComp,
+                quantidade = quantidadeComp.takeIf { it.isNotBlank() }?.let { parseDecimal(it) },
+                unidade = unidadeComp.ifBlank { null },
+                observacoes = observacoesComp.trim().ifBlank { null },
+                propostas = validas.map {
+                    CotacaoComparacaoPropostaData(
+                        fornecedor = it.fornecedor.trim(),
+                        precoUnitario = parseDecimal(it.precoUnitario),
+                        prazoEntregaDias = it.prazoEntregaDias.takeIf { v -> v.isNotBlank() }?.let { v -> parseDecimal(v) },
+                        condicaoPagamento = it.condicaoPagamento,
+                        validadeProposta = it.validadeProposta.takeIf { v -> v.isNotBlank() }?.let { v -> com.bragro.mobile.ui.domain.brDateToIso(v) },
+                    )
+                },
+            )
+            pending.value = false
+            if (resultado == null || !resultado.ok) {
+                errorMessage.value = resultado?.error ?: "Erro ao lançar as propostas."
+                return@launch
+            }
+            successMessage.value = "${resultado.count ?: validas.size} proposta(s) lançada(s) para comparação."
+        }
+    }
+
     init {
         viewModelScope.launch {
             categoriasOptions.value = configRepository.lookupsByCategory("categorias_cotacao").sortedBy { it.label }
             itensOptions.value = configRepository.lookupsByCategory("itens_estoque").sortedBy { it.label }
             unidadesOptions.value = configRepository.lookupsByCategory("unidades").sortedBy { it.label }
             formasPgtoOptions.value = configRepository.lookupsByCategory("formas_pgto").sortedBy { it.label }
+            entidadesOptions.value = configRepository.lookupsByCategory("entidades_financeiro").sortedBy { it.label }
         }
     }
 
@@ -181,6 +254,13 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         validadeProposta = ""
         observacoes = ""
         linhas.clear(); linhas.add(CotacaoLinha())
+        categoriaComp = ""
+        itemComp = ""
+        dataComp = hojeBr()
+        quantidadeComp = ""
+        unidadeComp = ""
+        observacoesComp = ""
+        propostas.clear(); propostas.add(PropostaLinha()); propostas.add(PropostaLinha())
         successMessage.value = null
         errorMessage.value = null
     }
@@ -344,6 +424,67 @@ private fun CotacaoLinhaCard(linha: CotacaoLinha, categoriasOptions: List<Lookup
     }
 }
 
+// Card de UMA proposta de fornecedor no modo "Comparar fornecedores" (task
+// #404) -- inverso de CotacaoLinhaCard acima: aqui não tem categoria/item
+// (ficam no cabeçalho comum), só fornecedor + condições da proposta.
+@Composable
+private fun PropostaCard(proposta: PropostaLinha, entidadesOptions: List<LookupEntity>, formasPgtoOptions: List<LookupEntity>, showRemove: Boolean, onRemove: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            // Fornecedor agora é dropdown de Base de Dados (pedido do
+            // usuário: "em cotações campo fornecedores crie lista suspensa,
+            // tem que cadastrar primeiro para acessar o campo") -- antes era
+            // texto livre.
+            StringDropdown(
+                label = "Fornecedor *",
+                value = entidadesOptions.firstOrNull { it.value == proposta.fornecedor }?.label ?: proposta.fornecedor.ifBlank { null },
+                options = entidadesOptions.map { it.label },
+                placeholder = "Selecione o fornecedor",
+                onSelect = { picked -> proposta.fornecedor = entidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                OutlinedTextField(
+                    value = proposta.precoUnitario,
+                    onValueChange = { proposta.precoUnitario = it },
+                    label = { Text("Preço unit. (R$) *") },
+                    placeholder = { Text("0,00") },
+                    modifier = Modifier.weight(1f),
+                    colors = appFieldColors(),
+                )
+                OutlinedTextField(
+                    value = proposta.prazoEntregaDias,
+                    onValueChange = { proposta.prazoEntregaDias = it },
+                    label = { Text("Prazo (dias)") },
+                    placeholder = { Text("Opcional") },
+                    modifier = Modifier.weight(1f),
+                    colors = appFieldColors(),
+                )
+            }
+            StringDropdown(
+                label = "Condição de pagamento",
+                value = formasPgtoOptions.firstOrNull { it.value == proposta.condicaoPagamento }?.label ?: proposta.condicaoPagamento,
+                options = formasPgtoOptions.map { it.label },
+                placeholder = "Opcional",
+                allowEmpty = true,
+                onSelect = { picked -> proposta.condicaoPagamento = formasPgtoOptions.firstOrNull { it.label == picked }?.value ?: picked },
+            )
+            OutlinedTextField(
+                value = proposta.validadeProposta,
+                onValueChange = { proposta.validadeProposta = it },
+                label = { Text("Validade da proposta") },
+                placeholder = { Text("DD/MM/AAAA") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = appFieldColors(),
+            )
+            if (showRemove) {
+                IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Filled.Delete, contentDescription = "Remover proposta", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewModel = viewModel()) {
@@ -351,6 +492,7 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
     val itensOptions by viewModel.itensOptions
     val unidadesOptions by viewModel.unidadesOptions
     val formasPgtoOptions by viewModel.formasPgtoOptions
+    val entidadesOptions by viewModel.entidadesOptions
     val pending by viewModel.pending
     val errorMessage by viewModel.errorMessage
     val successMessage by viewModel.successMessage
@@ -396,6 +538,33 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
             contentPadding = PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            // Alternador de modo (task #404, pedido do usuário: "múltiplos
+            // fornecedores por operação") -- mesmo padrão do site
+            // (cotacao-multi-item-button.tsx). "Vários itens" é o modo
+            // original (1 fornecedor, N itens); "Comparar fornecedores" é o
+            // novo (1 item, N fornecedores lado a lado).
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(
+                        onClick = { viewModel.modo = "itens" },
+                        modifier = Modifier.weight(1f),
+                        colors = if (viewModel.modo == "itens") androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) else androidx.compose.material3.ButtonDefaults.outlinedButtonColors(),
+                    ) {
+                        Text("Vários itens", style = MaterialTheme.typography.bodySmall)
+                    }
+                    OutlinedButton(
+                        onClick = { viewModel.modo = "fornecedores" },
+                        modifier = Modifier.weight(1f),
+                        colors = if (viewModel.modo == "fornecedores") androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) else androidx.compose.material3.ButtonDefaults.outlinedButtonColors(),
+                    ) {
+                        Text("Comparar fornecedores", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+            if (errorMessage != null) {
+                item { Text(errorMessage ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+            }
+            if (viewModel.modo == "itens") {
             item {
                 Text(
                     "Cada linha é UMA proposta de UM fornecedor. Lance 2+ propostas com a MESMA Categoria + Item pra comparar automaticamente -- Índice de Vantagem e Avaliação recalculam sozinhos.",
@@ -412,17 +581,17 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                     Text(if (copiando) "Copiando..." else "Copiar última cotação")
                 }
             }
-            if (errorMessage != null) {
-                item { Text(errorMessage ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
-            }
             item {
-                OutlinedTextField(
-                    value = viewModel.fornecedor,
-                    onValueChange = { viewModel.fornecedor = it },
-                    label = { Text("Fornecedor *") },
-                    placeholder = { Text("Nome do fornecedor") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = appFieldColors(),
+                // Fornecedor agora é dropdown de Base de Dados (pedido do
+                // usuário: "em cotações campo fornecedores crie lista
+                // suspensa, tem que cadastrar primeiro para acessar o
+                // campo") -- antes era texto livre.
+                StringDropdown(
+                    label = "Fornecedor *",
+                    value = entidadesOptions.firstOrNull { it.value == viewModel.fornecedor }?.label ?: viewModel.fornecedor.ifBlank { null },
+                    options = entidadesOptions.map { it.label },
+                    placeholder = "Selecione o fornecedor",
+                    onSelect = { picked -> viewModel.fornecedor = entidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
                 )
             }
             item {
@@ -540,6 +709,128 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                     if (pending) CircularProgressIndicator(modifier = Modifier.padding(4.dp))
                     else Text("Lançar cotação")
                 }
+            }
+            } else {
+            // Modo "Comparar fornecedores" (task #404) -- 1 item comum
+            // (categoria/item/data/quantidade/unidade), N propostas de
+            // fornecedores diferentes lado a lado.
+            item {
+                Text(
+                    "Descreva o item que está cotando uma vez e lance o preço de cada fornecedor que cotou ele -- todas as propostas entram no mesmo grupo de comparação.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            item {
+                StringDropdown(
+                    label = "Categoria *",
+                    value = categoriasOptions.firstOrNull { it.value == viewModel.categoriaComp }?.label ?: viewModel.categoriaComp.ifBlank { null },
+                    options = categoriasOptions.map { it.label },
+                    placeholder = "Categoria",
+                    onSelect = { picked -> viewModel.categoriaComp = categoriasOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                )
+            }
+            item {
+                StringDropdown(
+                    label = "Item *",
+                    value = itensOptions.firstOrNull { it.value == viewModel.itemComp }?.label ?: viewModel.itemComp.ifBlank { null },
+                    options = itensOptions.map { it.label },
+                    placeholder = "Selecione o item",
+                    onSelect = { picked -> viewModel.itemComp = itensOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                )
+            }
+            item {
+                var showPicker by remember { mutableStateOf(false) }
+                OutlinedTextField(
+                    value = viewModel.dataComp,
+                    onValueChange = { viewModel.dataComp = it },
+                    label = { Text("Data *") },
+                    placeholder = { Text("DD/MM/AAAA") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = appFieldColors(),
+                    trailingIcon = {
+                        IconButton(onClick = { showPicker = true }) {
+                            Icon(Icons.Filled.CalendarMonth, contentDescription = "Escolher data", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    },
+                )
+                if (showPicker) {
+                    val pickerState = rememberDatePickerState(
+                        initialSelectedDateMillis = brDateToMillisOrNull(viewModel.dataComp) ?: System.currentTimeMillis(),
+                    )
+                    DatePickerDialog(
+                        onDismissRequest = { showPicker = false },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                pickerState.selectedDateMillis?.let { viewModel.dataComp = millisToBrDate(it) }
+                                showPicker = false
+                            }) { Text("OK") }
+                        },
+                        dismissButton = { TextButton(onClick = { showPicker = false }) { Text("Cancelar") } },
+                    ) {
+                        DatePicker(state = pickerState)
+                    }
+                }
+            }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    OutlinedTextField(
+                        value = viewModel.quantidadeComp,
+                        onValueChange = { viewModel.quantidadeComp = it },
+                        label = { Text("Quantidade") },
+                        placeholder = { Text("Opcional") },
+                        modifier = Modifier.weight(1f),
+                        colors = appFieldColors(),
+                    )
+                }
+            }
+            item {
+                StringDropdown(
+                    label = "Unidade",
+                    value = unidadesOptions.firstOrNull { it.value == viewModel.unidadeComp }?.label ?: viewModel.unidadeComp.ifBlank { null },
+                    options = unidadesOptions.map { it.label },
+                    placeholder = "Opcional",
+                    allowEmpty = true,
+                    onSelect = { picked -> viewModel.unidadeComp = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                )
+            }
+            item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
+            item { Text("Propostas dos fornecedores *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold) }
+            items(viewModel.propostas.size) { i ->
+                PropostaCard(
+                    proposta = viewModel.propostas[i],
+                    entidadesOptions = entidadesOptions,
+                    formasPgtoOptions = formasPgtoOptions,
+                    showRemove = viewModel.propostas.size > 1,
+                    onRemove = { viewModel.removeProposta(i) },
+                )
+            }
+            item {
+                OutlinedButton(onClick = { viewModel.addProposta() }, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
+                    Text("Adicionar fornecedor")
+                }
+            }
+            item {
+                OutlinedTextField(
+                    value = viewModel.observacoesComp,
+                    onValueChange = { viewModel.observacoesComp = it },
+                    label = { Text("Observações (opcional, vale para todas as propostas)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    colors = appFieldColors(),
+                )
+            }
+            item {
+                Button(
+                    onClick = { viewModel.submitComparacao() },
+                    enabled = !pending && viewModel.podeSalvarComp(),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (pending) CircularProgressIndicator(modifier = Modifier.padding(4.dp))
+                    else Text("Lançar propostas")
+                }
+            }
             }
         }
     }

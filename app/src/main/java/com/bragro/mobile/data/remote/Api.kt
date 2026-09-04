@@ -53,6 +53,8 @@ import com.bragro.mobile.data.model.PedidoMultiItemRequest
 import com.bragro.mobile.data.model.PedidoMultiItemResponse
 import com.bragro.mobile.data.model.CotacaoMultiItemRequest
 import com.bragro.mobile.data.model.CotacaoMultiItemResponse
+import com.bragro.mobile.data.model.CotacaoComparacaoRequest
+import com.bragro.mobile.data.model.CotacaoComparacaoResponse
 import com.bragro.mobile.data.model.OperacoesRequest
 import com.bragro.mobile.data.model.OperacoesResponse
 import com.bragro.mobile.data.model.NotificationsRequest
@@ -172,6 +174,12 @@ interface MobileApi {
 
     @POST("api/mobile/cotacao-multi-item")
     suspend fun cotacaoMultiItem(@Body body: CotacaoMultiItemRequest): Response<CotacaoMultiItemResponse>
+
+    // Inverso do multi-item acima -- pedido do usuario ("Cotações
+    // Fornecedores: múltiplos fornecedores por operação", task #404): 1
+    // item, N propostas de fornecedores diferentes na mesma submissão.
+    @POST("api/mobile/cotacao-comparacao")
+    suspend fun cotacaoComparacao(@Body body: CotacaoComparacaoRequest): Response<CotacaoComparacaoResponse>
 
     // Visão "Operação" agrupada (gap encontrado na auditoria módulo-a-módulo,
     // pedido do usuario "implemente tudo que falta ainda para o app native

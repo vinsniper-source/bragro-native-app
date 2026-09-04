@@ -166,6 +166,23 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
             Text("Esqueci minha senha", style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
         }
 
+        // "Criar conta gratuita" -- pedido do usuário ("replique a mesma
+        // página de login da plataforma no native"): faltava esse link
+        // (site tinha, login-form.tsx). Sem tela de cadastro própria no app
+        // (self-signup completo -- CPF/CNPJ, onboarding de organização --
+        // não compensa reconstruir em Compose) -- abre a mesma página do
+        // site /cadastro numa Custom Tab, mesmo padrão já usado acima pra
+        // "Esqueci minha senha". O botão "Entrar com o Google" do site foi
+        // REMOVIDO (não configurado no Supabase/Google Cloud, sem como
+        // consertar por código) -- nunca existiu aqui no native, então não
+        // há nada a remover deste lado.
+        androidx.compose.material3.TextButton(
+            onClick = { openInCustomTab(context, "${BuildConfig.API_BASE_URL}/cadastro") },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Ainda não tem conta? Criar conta gratuita", style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+        }
+
         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 4.dp))
         Text(
             "Precisa de internet na primeira vez. Depois de logar, o app continua funcionando sem conexao.",

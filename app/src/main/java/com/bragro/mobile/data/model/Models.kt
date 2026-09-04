@@ -815,6 +815,41 @@ data class CotacaoMultiItemResponse(
     val error: String? = null,
 )
 
+// Inverso do multi-item acima -- pedido do usuário ("Cotações Fornecedores:
+// múltiplos fornecedores por operação", task #404): 1 item (categoria/item/
+// data/quantidade/unidade comuns), N propostas de fornecedores diferentes
+// na mesma submissão. Ver comentário completo em cotacao-multi-item-button.tsx
+// (site) e createCotacaoComparacaoAction() (lib/domains/actions.ts) -- chama
+// /api/mobile/cotacao-comparacao, que chama DIRETO essa Server Action.
+@Serializable
+data class CotacaoComparacaoPropostaData(
+    val fornecedor: String = "",
+    val precoUnitario: Double = 0.0,
+    val prazoEntregaDias: Double? = null,
+    val condicaoPagamento: String? = null,
+    val validadeProposta: String? = null,
+)
+
+@Serializable
+data class CotacaoComparacaoRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val data: String,
+    val categoria: String,
+    val item: String,
+    val quantidade: Double? = null,
+    val unidade: String? = null,
+    val observacoes: String? = null,
+    val propostas: List<CotacaoComparacaoPropostaData>,
+)
+
+@Serializable
+data class CotacaoComparacaoResponse(
+    val ok: Boolean,
+    val count: Int? = null,
+    val error: String? = null,
+)
+
 // Painel "Controle de Insumos" (gap encontrado na auditoria módulo-a-módulo
 // contra o site, pedido do usuário "implemente tudo que falta ainda para o
 // app native da plataforma") -- painel SOMENTE-LEITURA, ver

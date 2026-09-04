@@ -18,6 +18,46 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.34] -- 2026-09-04
+
+- **Cotações Fornecedores: campo Fornecedor virou lista suspensa (Base de
+  Dados)** -- pedido do usuário ("em cotações campo fornecedores crie lista
+  suspensa, tem que cadastrar primeiro para acessar o campo"): nos dois
+  modos de "Nova Cotação" (Vários itens/Comparar fornecedores), o campo
+  Fornecedor era texto livre; agora é dropdown da mesma categoria já usada
+  em Pedidos (`entidades_financeiro`) -- precisa estar cadastrado em Base
+  de Dados pra aparecer na lista. O formulário de edição de 1 registro já
+  usava esse dropdown (sem mudança ali). Espelhado no site
+  (`cotacao-multi-item-button.tsx`).
+
+## [1.2.33] -- 2026-09-04
+
+- **"Lançar nota com itens" (Financeiro nativo): aviso mais curto e direto**
+  -- pedido do usuário ("seja mais direto, TEXTO LONGO"): o parágrafo de
+  aviso em `FinanceiroItensInline.kt` estava mais longo que a versão já
+  encurtada no site; agora usa o mesmo texto conciso do site
+  (nota-multi-item-button.tsx). A frase corrida "Usa Doc/NF X, Data Y,
+  Local Z, Entidade W" também virou uma tira curta "Doc/NF: X · Data: Y ·
+  Local: Z · Entidade: W", igual ao formato já usado no site.
+
+## [1.2.32] -- 2026-09-04
+
+- **Cotações Fornecedores: novo modo "Comparar fornecedores" (1 item, N
+  propostas)** -- pedido do usuário ("Cotações Fornecedores: múltiplos
+  fornecedores por operação", task #404): a tela de nova cotação
+  (`CotacaoMultiItemScreen.kt`) ganhou um alternador de modo. "Vários itens"
+  é o comportamento original (1 fornecedor, N itens numa submissão);
+  "Comparar fornecedores" é o novo -- descreve o item cotado uma vez
+  (categoria/item/data/quantidade/unidade) e lança lado a lado o preço de
+  cada fornecedor que cotou ele, sem repetir o formulário inteiro trocando
+  só o fornecedor. Sem mudança de schema: cada proposta continua virando
+  sua própria linha de `CotacaoFornecedor` (mesma tabela flat), e todas
+  entram no mesmo grupo de comparação (Categoria+Item) já existente --
+  Índice de Vantagem/Avaliação recalculados normalmente. Espelhado no site
+  (`cotacao-multi-item-button.tsx`, novo modo) e chamando o novo endpoint
+  `/api/mobile/cotacao-comparacao` (nova Server Action
+  `createCotacaoComparacaoAction`).
+
 ## [1.2.31] -- 2026-09-04
 
 - **Livro Caixa: certificado digital agora é estruturado (Tipo/Emissor/
