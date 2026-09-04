@@ -2,8 +2,6 @@ package com.bragro.mobile.ui.domain
 
 import android.app.Application
 import androidx.compose.foundation.background
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -289,7 +287,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
  * Os campos "computed" (calculados pelo servidor -- rateio, vencimento,
  * numeracao de O.S. etc.) nao aparecem aqui: so existem depois da
  * sincronizacao, quando o servidor devolve o registro definitivo. */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DomainFormScreen(
     domainId: String,
@@ -318,12 +316,26 @@ fun DomainFormScreen(
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
+                        // basicMarquee() REMOVIDO -- suspeita forte de causa
+                        // do crash "app fecha ao preencher qualquer campo
+                        // (menos Data)" reportado pelo usuário: o único campo
+                        // que não fecha é o único preenchível SEM abrir o
+                        // teclado (o seletor de calendário); todos os outros
+                        // exigem o teclado, e abrir/fechar o teclado
+                        // redimensiona a janela (Scaffold), o que pode
+                        // recalcular a largura do marquee em condição de
+                        // corrida -- já houve um bug real confirmado de
+                        // marquee travando a barra inferior neste mesmo app
+                        // (ver StatusStyle.kt, "Reverter marquee dentro de
+                        // DropdownMenuItem"). Aqui o texto é sempre um destes
+                        // dois literais curtos e fixos ("Novo lançamento"/
+                        // "Editar lançamento"), nunca precisou de letreiro --
+                        // Ellipsis é suficiente e nunca vai nem aparecer.
                         Text(
                             if (recordId == null) "Novo lançamento" else "Editar lançamento",
                             maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                             color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.basicMarquee(),
                         )
                     }
                 },

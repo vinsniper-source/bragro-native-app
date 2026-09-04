@@ -18,6 +18,10 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.37] -- 2026-09-04
+
+- **Forte candidato ao crash "app fecha ao preencher qualquer campo" (confirmado pelo usuário mesmo após instalar a 1.2.36)** -- usuário relatou que, do formulário genérico (Novo/Editar lançamento), SÓ o campo Data conseguia ser preenchido sem o app fechar; qualquer outro campo (texto, select, número, moeda) derrubava o app. O denominador comum: Data é o único campo que pode ser preenchido inteiramente pelo seletor de calendário, SEM abrir o teclado -- todos os outros exigem teclado. `DomainFormScreen.kt` usava `Modifier.basicMarquee()` (API experimental) no título da TopAppBar ("Novo lançamento"/"Editar lançamento"); abrir/fechar o teclado redimensiona a janela do Scaffold, o que pode recalcular a largura do marquee em condição de corrida -- já existe um bug real e confirmado de marquee travando a UI neste mesmo app (ver entrada de tarefa "Reverter marquee dentro de DropdownMenuItem", causava a barra inferior travar). Removido: o texto do título é sempre um destes dois literais curtos e fixos, nunca precisou de letreiro (Ellipsis nunca chega a aparecer). Sem acesso a logcat pra confirmar 100% a causa raiz -- se o crash persistir mesmo na 1.2.37, precisamos de mais detalhe (qual módulo, stack trace se possível).
+
 ## [1.2.36] -- 2026-09-04
 
 - **Bloco do Canvas (fazenda única) sem paridade com o site + campo "Safra"
