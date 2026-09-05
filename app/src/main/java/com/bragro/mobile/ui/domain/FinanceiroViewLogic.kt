@@ -9,7 +9,12 @@ package com.bragro.mobile.ui.domain
 // 100% offline (mesmo critério do resto do app), sem precisar de nenhum
 // endpoint novo.
 enum class FinanceiroView(val label: String) {
-    TODOS("Todos"),
+    // "Todos" -> "Lançamentos" -- pedido do usuário ("deixe apenas o módulo
+    // Lançamentos sozinho", fora do agrupamento "Gestão Financeira" que
+    // reúne as 6 visões especializadas abaixo, ver FINANCEIRO_VIEW_GESTAO em
+    // FinanceiroScreen.kt): mesmo nome genérico "Lançamentos" já usado pra
+    // essa visão (todos os registros, sem filtro) em todo o resto do app.
+    TODOS("Lançamentos"),
     PAGAR("Contas a Pagar"),
     RECEBER("Contas a Receber"),
     CONCILIADO("Conciliado"),

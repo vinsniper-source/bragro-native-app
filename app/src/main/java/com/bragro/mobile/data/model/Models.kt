@@ -462,6 +462,9 @@ data class BaseDeDadosRequest(
     val ativo: Boolean? = null,
     val name: String? = null,
     val areaHa: Double? = null,
+    // Cultura (safra principal/verão) que ocupa a Área Total -- 8ª exceção
+    // de schema (ver MEMORY.md), opcional. Mesmo padrão: omitido = não mexe.
+    val cultura: String? = null,
     // Área "safrinha" -- exceção de schema autorizada (ver MEMORY.md),
     // opcional. null = campo omitido do JSON (encodeDefaults=false), então
     // o backend não mexe no valor já salvo (ver route.ts "areaSafrinhaData").

@@ -342,69 +342,59 @@ fun FinanceiroScreen(
     ) { padding ->
         val cfg = config
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            // Seletor de visão (Todos/Contas a Pagar/Contas a Receber/
-            // Conciliado/Fluxo de Caixa/Rateio Direto/Rateio Indireto) virou
-            // ícone (em vez de chip com texto) dentro de um bloco com borda
-            // fina, título "Gestão Financeira" acima -- pedido do usuário
-            // ("no bloco 1 acima dele crie o título gestão financeira e
-            // distribua os ícones dentro do bloco que chegue até o final do
-            // bloco"). Sem scroll horizontal -- SpaceEvenly espalha os 7
-            // ícones pela largura toda do bloco; toque no ícone já alterna o
-            // título pro nome da visão (ver título acima), dispensando o
-            // rótulo escrito.
-            Text(
-                "Gestão Financeira",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 2.dp),
-            )
-            // Cada visão (Todos/Contas a Pagar/.../Rateio Indireto) agora é
-            // seu PRÓPRIO bloco (Card individual), em vez de todos os 7
-            // ícones dividindo um único Card por baixo do título "Gestão
-            // Financeira" -- pedido do usuário ("coloque cada ícone em um
-            // bloco individual, retire o bloco único"). FlowRow (não Row
-            // fixo) deixa cada bloco quebrar pra próxima linha sozinho
-            // conforme a largura da tela, sem espremer.
-            // SpaceEvenly (era spacedBy) -- pedido do usuário ("reposicione
-            // os blocos individuais de forma que preencha toda a linha"),
-            // mesmo padrão já usado nos blocos Dados/Operações/Arquivos
-            // (ModuleCategoryBlock/FinanceiroCategoryBlock).
-            // Card externo SEM FUNDO agora -- pedido do usuário mais recente
-            // ("em financeiro gestão financeira retire o fundo do bloco
-            // único e nos blocos dos ícones individuais coloque o fundo dos
-            // blocos de verde escuro e a cor da fonte branco"): reverte o
-            // fundo verde translúcido do Card externo (ver histórico acima,
-            // era uma decisão anterior) e move a cor pros blocos individuais
-            // em vez disso -- só ESTES ícones (visão do Financeiro) usam
-            // FinanceiroViewIconButton, com fundo verde escuro fixo (BrGreen)
-            // + fonte branca; os demais blocos individuais do app inteiro
-            // continuam em ModuleIconButton (fundo neutro, ver ESCOPO FINAL
-            // em ModuleIconRow.kt) -- SEM tocar nesse componente compartilhado,
-            // pra não reverter a decisão já confirmada de tirar o verde dos
-            // blocos individuais dos OUTROS módulos.
-            // Seletor de visão "Gestão Financeira" -- redesenhado (achado de
-            // auditoria: "crie bloco inteiro separados por bordas na
-            // vertical na mesma linha, com as mesmas medidas entre eles...
-            // terão que ficar em duas linhas"). Era um FlowRow de 7 chips de
-            // largura própria (SpaceEvenly, quebra imprevisível conforme a
-            // tela); agora são 2 fileiras de SegmentedButtonRow -- mesmo
-            // padrão já usado em Dados/Operações/Arquivos (ver
-            // FinanceiroCategoryTabs acima) -- cada fileira é um bloco único
-            // de segmentos INTEIROS, todos com a mesma largura entre si,
-            // separados pela borda vertical do próprio SegmentedButton, com
-            // ellipsis se o rótulo não couber. As 7 visões não cabem numa
-            // linha só sem espremer os rótulos mais longos ("Contas a
-            // Pagar", "Rateio Indireto"), então ficam distribuídas em 2
-            // linhas que melhor preenchem cada uma: a 1ª com as 4 visões de
-            // status mais usadas no dia a dia (Todos/Pagar/Receber/
-            // Conciliado), a 2ª com as 3 visões analíticas (Fluxo de Caixa/
-            // Rateio Direto/Rateio Indireto).
-            Column(
+            // Seletor de visão REORGANIZADO -- pedido do usuário ("crie um
+            // módulo Gestão Financeira, na lista suspensa do botão
+            // Financeiro, e realoque Contas a Pagar/Receber, Fluxo,
+            // Conciliado, Rateio Direto e Indireto... deixe apenas o módulo
+            // Lançamentos sozinho"): as antigas 2 fileiras de 7 segmentos
+            // (Todos/Pagar/Receber/Conciliado/Fluxo/RateioDireto/
+            // RateioIndireto, ver histórico abaixo) ocupavam permanentemente
+            // 2 linhas inteiras de tela só pra alternar de visão. Agora só
+            // "Lançamentos" (era "Todos", ver FinanceiroView.TODOS) fica
+            // como botão direto, sozinho -- as outras 6 visões especializadas
+            // (status/analíticas) viram itens de uma lista suspensa única
+            // "Gestão Financeira" (FinanceiroGestaoDropdownButton abaixo),
+            // que ocupa a MESMA linha, reduzindo o seletor de 2 linhas pra
+            // 1. Ícones Imprimir/Nuvem continuam no TopAppBar (ver actions
+            // acima), já no canto superior direito, mesma linha do título,
+            // mesma altura dos demais módulos -- nenhuma mudança necessária
+            // ali.
+            //
+            // HISTÓRICO (mantido pra contexto): o layout anterior evoluiu de
+            // um FlowRow de 7 chips soltos (SpaceEvenly, quebra imprevisível)
+            // pra 2 fileiras de SegmentedButtonRow com título "Gestão
+            // Financeira" fixo acima (achado de auditoria: "crie bloco
+            // inteiro separados por bordas na vertical, com as mesmas
+            // medidas... terão que ficar em duas linhas"). O nome "Gestão
+            // Financeira" migrou desse título pro botão-dropdown atual.
+            Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                FinanceiroViewSegmentedRow(FINANCEIRO_VIEW_ROW_1, view) { view = it }
-                FinanceiroViewSegmentedRow(FINANCEIRO_VIEW_ROW_2, view) { view = it }
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.weight(1f)) {
+                    SegmentedButton(
+                        selected = view == FinanceiroView.TODOS,
+                        onClick = { view = FinanceiroView.TODOS },
+                        shape = androidx.compose.ui.graphics.RectangleShape,
+                        colors = SegmentedButtonDefaults.colors(
+                            activeContainerColor = com.bragro.mobile.ui.theme.BrGreen,
+                            activeContentColor = Color.White,
+                            inactiveContainerColor = MaterialTheme.colorScheme.surface,
+                            inactiveContentColor = MaterialTheme.colorScheme.onSurface,
+                        ),
+                        icon = { Icon(financeiroViewIcon(FinanceiroView.TODOS), contentDescription = null, modifier = Modifier.size(18.dp)) },
+                        label = {
+                            Text(
+                                FinanceiroView.TODOS.label,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Clip,
+                                modifier = Modifier.basicMarquee(),
+                            )
+                        },
+                    )
+                }
+                FinanceiroGestaoDropdownButton(view = view, onSelect = { view = it }, modifier = Modifier.weight(1f))
             }
 
             Spacer(modifier = Modifier.size(8.dp))
@@ -822,51 +812,65 @@ private fun ConciliarDot(conciliado: Boolean) {
     )
 }
 
-// Distribuição das 7 visões em 2 fileiras (ver comentário no call site,
-// acima) -- 1ª linha com os status mais usados no dia a dia, 2ª com as
-// visões analíticas.
-private val FINANCEIRO_VIEW_ROW_1 = listOf(FinanceiroView.TODOS, FinanceiroView.PAGAR, FinanceiroView.RECEBER, FinanceiroView.CONCILIADO)
-private val FINANCEIRO_VIEW_ROW_2 = listOf(FinanceiroView.FLUXO, FinanceiroView.RATEIO_DIRETO, FinanceiroView.RATEIO_INDIRETO)
+// As 6 visões especializadas agrupadas no dropdown "Gestão Financeira" --
+// pedido do usuário ("crie um módulo Gestão Financeira... e realoque Contas
+// a Pagar/Receber, Fluxo, Conciliado, Rateio Direto e Indireto"). TODOS
+// ("Lançamentos") fica de fora de propósito -- vira o botão sozinho ao lado
+// (ver call site acima), não faz parte deste grupo.
+private val FINANCEIRO_VIEW_GESTAO = listOf(
+    FinanceiroView.PAGAR,
+    FinanceiroView.RECEBER,
+    FinanceiroView.CONCILIADO,
+    FinanceiroView.FLUXO,
+    FinanceiroView.RATEIO_DIRETO,
+    FinanceiroView.RATEIO_INDIRETO,
+)
 
-// Fileira de blocos INTEIROS (SegmentedButton) do seletor de visão "Gestão
-// Financeira" -- substitui o antigo FinanceiroViewIconButton (Card solto por
-// ícone, largura própria).
-// Retângulo reto + cor nova -- pedido do usuário (achado de auditoria: "em
-// gestão financeira altere o formato para retangulo e a cor do seletor"):
-// antes usava SegmentedButtonDefaults.itemShape (pontas arredondadas nas
-// duas extremidades da fileira) com verde translúcido (55% alpha) pro
-// estado NÃO selecionado -- pouco contraste entre ativo/inativo. Agora
-// `shape = RectangleShape` em TODOS os segmentos (nenhuma ponta
-// arredondada, mesmo critério "reto" do EqualWidthBlockRow) e o estado
-// inativo vira neutro (surface/onSurface, mesmo tom dos blocos de ícone
-// comuns) em vez de verde apagado -- só o segmento SELECIONADO continua em
-// BrGreen sólido + branco, o que agora contrasta de verdade com os demais.
+// Botão-dropdown "Gestão Financeira" -- substitui a antiga 2ª fileira de
+// SegmentedButton (Pagar/Receber/Conciliado/Fluxo/RateioDireto/
+// RateioIndireto, ver histórico no call site acima). Mesmo visual de
+// destaque do antigo seletor (BrGreen sólido + branco quando uma dessas 6
+// visões está ativa, neutro quando não) -- só que agora como lista suspensa
+// (DropdownMenu, mesmo componente já usado em PeriodoDropdown/BancoDropdown
+// nesta mesma tela) em vez de ocupar uma linha inteira sempre visível. O
+// rótulo do botão mostra o nome da visão ativa quando é uma destas 6, ou
+// "Gestão Financeira" quando nenhuma está selecionada (visão atual é
+// Lançamentos ou nenhuma ainda escolhida deste grupo).
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-private fun FinanceiroViewSegmentedRow(items: List<FinanceiroView>, selected: FinanceiroView, onSelect: (FinanceiroView) -> Unit) {
-    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-        items.forEach { v ->
-            SegmentedButton(
-                selected = v == selected,
-                onClick = { onSelect(v) },
-                shape = androidx.compose.ui.graphics.RectangleShape,
-                colors = SegmentedButtonDefaults.colors(
-                    activeContainerColor = com.bragro.mobile.ui.theme.BrGreen,
-                    activeContentColor = Color.White,
-                    inactiveContainerColor = MaterialTheme.colorScheme.surface,
-                    inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-                ),
-                icon = { Icon(financeiroViewIcon(v), contentDescription = null, modifier = Modifier.size(18.dp)) },
-                label = {
-                    Text(
-                        v.label,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Clip,
-                        modifier = Modifier.basicMarquee(),
-                    )
-                },
+private fun FinanceiroGestaoDropdownButton(view: FinanceiroView, onSelect: (FinanceiroView) -> Unit, modifier: Modifier = Modifier) {
+    var expanded by remember { mutableStateOf(false) }
+    val ativo = view in FINANCEIRO_VIEW_GESTAO
+    Box(modifier = modifier) {
+        androidx.compose.material3.OutlinedButton(
+            onClick = { expanded = true },
+            shape = androidx.compose.ui.graphics.RectangleShape,
+            modifier = Modifier.fillMaxWidth(),
+            colors = if (ativo) {
+                androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = com.bragro.mobile.ui.theme.BrGreen, contentColor = Color.White)
+            } else {
+                androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.surface, contentColor = MaterialTheme.colorScheme.onSurface)
+            },
+        ) {
+            Icon(if (ativo) financeiroViewIcon(view) else Icons.Filled.AccountTree, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.size(4.dp))
+            Text(
+                if (ativo) view.label else "Gestão Financeira",
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.weight(1f).basicMarquee(),
             )
+            Icon(Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.size(18.dp))
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            FINANCEIRO_VIEW_GESTAO.forEach { v ->
+                DropdownMenuItem(
+                    text = { Text(v.label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    leadingIcon = { Icon(financeiroViewIcon(v), contentDescription = null, modifier = Modifier.size(18.dp)) },
+                    onClick = { onSelect(v); expanded = false },
+                )
+            }
         }
     }
 }

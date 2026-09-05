@@ -2,11 +2,12 @@ package com.bragro.mobile.ui.basededados
 
 import android.app.Application
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,7 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -91,10 +91,10 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun act(action: String, category: String? = null, value: String? = null, id: String? = null, ativo: Boolean? = null, name: String? = null, areaHa: Double? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null, onDone: (Boolean) -> Unit = {}) {
+    private fun act(action: String, category: String? = null, value: String? = null, id: String? = null, ativo: Boolean? = null, name: String? = null, areaHa: Double? = null, cultura: String? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null, onDone: (Boolean) -> Unit = {}) {
         busy.value = true
         viewModelScope.launch {
-            val result = repo.run(action, category, value, id, ativo, name, areaHa, areaSafrinhaHa, areaSafrinhaCultura1, areaSafrinhaCultura1Ha, areaSafrinhaCultura2, areaSafrinhaCultura2Ha, latitude, longitude)
+            val result = repo.run(action, category, value, id, ativo, name, areaHa, cultura, areaSafrinhaHa, areaSafrinhaCultura1, areaSafrinhaCultura1Ha, areaSafrinhaCultura2, areaSafrinhaCultura2Ha, latitude, longitude)
             busy.value = false
             result.onSuccess { load(); onDone(true) }.onFailure { errorMessage.value = it.message; onDone(false) }
         }
@@ -117,14 +117,20 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
     // vez de Milho/Sorgo fixos) -- área safrinha POR CULTURA, pra quando a
     // fazenda planta duas culturas na mesma safrinha, cada uma com sua parte
     // do total.
-    fun addFarm(name: String, areaHa: Double, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null) =
-        act("add_farm", name = name, areaHa = areaHa, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaCultura1 = areaSafrinhaCultura1, areaSafrinhaCultura1Ha = areaSafrinhaCultura1Ha, areaSafrinhaCultura2 = areaSafrinhaCultura2, areaSafrinhaCultura2Ha = areaSafrinhaCultura2Ha)
+    // Cultura (safra principal/verão) que ocupa a Área Total -- 8ª exceção
+    // de schema (ver MEMORY.md), opcional, escolhida via dropdown ANTES do
+    // campo de Área Total (pedido do usuário).
+    // Localização (6ª exceção de schema, ver MEMORY.md) -- agora também no
+    // cadastro (antes só existia em updateFarm/edição). Pedido do usuário:
+    // "coloque o campo latitude longitude depois da área 2".
+    fun addFarm(name: String, areaHa: Double, cultura: String? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null) =
+        act("add_farm", name = name, areaHa = areaHa, cultura = cultura, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaCultura1 = areaSafrinhaCultura1, areaSafrinhaCultura1Ha = areaSafrinhaCultura1Ha, areaSafrinhaCultura2 = areaSafrinhaCultura2, areaSafrinhaCultura2Ha = areaSafrinhaCultura2Ha, latitude = latitude, longitude = longitude)
     // Localização (6ª exceção de schema, ver MEMORY.md) -- latitude/
     // longitude sempre viajam juntas (as duas null limpa, as duas
     // preenchidas define; validação de "uma sem a outra" já é feita no
     // backend, ver update_farm em api/mobile/base-de-dados/route.ts).
-    fun updateFarm(id: String, areaHa: Double, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null) =
-        act("update_farm", id = id, areaHa = areaHa, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaCultura1 = areaSafrinhaCultura1, areaSafrinhaCultura1Ha = areaSafrinhaCultura1Ha, areaSafrinhaCultura2 = areaSafrinhaCultura2, areaSafrinhaCultura2Ha = areaSafrinhaCultura2Ha, latitude = latitude, longitude = longitude)
+    fun updateFarm(id: String, areaHa: Double, cultura: String? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null) =
+        act("update_farm", id = id, areaHa = areaHa, cultura = cultura, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaCultura1 = areaSafrinhaCultura1, areaSafrinhaCultura1Ha = areaSafrinhaCultura1Ha, areaSafrinhaCultura2 = areaSafrinhaCultura2, areaSafrinhaCultura2Ha = areaSafrinhaCultura2Ha, latitude = latitude, longitude = longitude)
     fun deleteFarm(id: String) = act("delete_farm", id = id)
     fun syncLocais() = act("sync_locais")
 }
@@ -229,8 +235,12 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
                 FarmsCard(
                     farms = farms,
                     busy = busy,
-                    onAdd = { name, area, areaSafrinha, cultura1, cultura1Ha, cultura2, cultura2Ha -> viewModel.addFarm(name, area, areaSafrinha, cultura1, cultura1Ha, cultura2, cultura2Ha) },
-                    onUpdate = { id, area, areaSafrinha, cultura1, cultura1Ha, cultura2, cultura2Ha, latitude, longitude -> viewModel.updateFarm(id, area, areaSafrinha, cultura1, cultura1Ha, cultura2, cultura2Ha, latitude, longitude) },
+                    onAdd = { name, area, cultura, areaSafrinha, cultura1, cultura1Ha, cultura2, cultura2Ha, latitude, longitude ->
+                        viewModel.addFarm(name, area, cultura = cultura, areaSafrinhaHa = areaSafrinha, areaSafrinhaCultura1 = cultura1, areaSafrinhaCultura1Ha = cultura1Ha, areaSafrinhaCultura2 = cultura2, areaSafrinhaCultura2Ha = cultura2Ha, latitude = latitude, longitude = longitude)
+                    },
+                    onUpdate = { id, area, cultura, areaSafrinha, cultura1, cultura1Ha, cultura2, cultura2Ha, latitude, longitude ->
+                        viewModel.updateFarm(id, area, cultura = cultura, areaSafrinhaHa = areaSafrinha, areaSafrinhaCultura1 = cultura1, areaSafrinhaCultura1Ha = cultura1Ha, areaSafrinhaCultura2 = cultura2, areaSafrinhaCultura2Ha = cultura2Ha, latitude = latitude, longitude = longitude)
+                    },
                     onDelete = { id -> viewModel.deleteFarm(id) },
                     onSync = { viewModel.syncLocais() },
                 )
@@ -365,22 +375,29 @@ private fun CulturaDropdownField(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun FarmsCard(
     farms: kotlinx.serialization.json.JsonArray?,
     busy: Boolean,
-    // 3º/4º = cultura1/área1, 5º/6º = cultura2/área2 (slots livres, 5ª
-    // exceção de schema, ver MEMORY.md, atualizada no mega-lote).
-    onAdd: (String, Double, Double?, String?, Double?, String?, Double?) -> Unit,
+    // 3º = cultura da Área Total (8ª exceção de schema, ver MEMORY.md),
+    // 4º/5º = cultura1/área1, 6º/7º = cultura2/área2 (slots livres de
+    // safrinha, 5ª exceção de schema), 8º/9º = latitude/longitude (6ª
+    // exceção de schema) -- pedido do usuário: "coloque o campo latitude
+    // longitude depois da área 2".
+    onAdd: (String, Double, String?, Double?, String?, Double?, String?, Double?, Double?, Double?) -> Unit,
     // 2 últimos parâmetros = latitude/longitude (6ª exceção de schema, ver
     // MEMORY.md) -- null/null limpa, ambos preenchidos define.
-    onUpdate: (String, Double, Double?, String?, Double?, String?, Double?, Double?, Double?) -> Unit,
+    onUpdate: (String, Double, String?, Double?, String?, Double?, String?, Double?, Double?, Double?) -> Unit,
     onDelete: (String) -> Unit,
     onSync: () -> Unit,
 ) {
     var newName by remember { mutableStateOf("") }
     var newArea by remember { mutableStateOf("") }
+    // Cultura (safra principal/verão) que ocupa a Área Total -- 8ª exceção
+    // de schema (ver MEMORY.md), opcional. Pedido do usuário: "crie um
+    // campo cultura com lista suspensa antes de área total".
+    var newCultura by remember { mutableStateOf("") }
     // Área "safrinha" -- exceção de schema autorizada (ver MEMORY.md),
     // opcional, ao lado da área principal (pedido do usuário: "acrescente
     // um campo ao lado da área maior"). Alimenta o círculo do Canvas quando
@@ -394,6 +411,11 @@ private fun FarmsCard(
     var newCultura1Ha by remember { mutableStateOf("") }
     var newCultura2 by remember { mutableStateOf("") }
     var newCultura2Ha by remember { mutableStateOf("") }
+    // Localização (lat, lon) -- 6ª exceção de schema (ver MEMORY.md), mesmo
+    // campo único "lat, lon" já usado na edição, agora também no cadastro.
+    // Pedido do usuário: "coloque o campo latitude longitude depois da área
+    // 2" -- por isso vem depois de newCultura2Ha abaixo.
+    var newLocation by remember { mutableStateOf("") }
 
     CollapsibleCard("Fazendas (${farms?.size ?: 0})", initiallyOpen = true) {
         farms?.forEach { el ->
@@ -401,6 +423,7 @@ private fun FarmsCard(
             val id = f["id"]?.jsonPrimitive?.contentOrNull ?: return@forEach
             val name = f["name"]?.jsonPrimitive?.contentOrNull ?: ""
             var areaText by remember(id) { mutableStateOf((f["areaHa"]?.jsonPrimitive?.doubleOrNull ?: 0.0).toString()) }
+            var culturaTotal by remember(id) { mutableStateOf(f["cultura"]?.jsonPrimitive?.contentOrNull ?: "") }
             var areaSafrinhaText by remember(id) { mutableStateOf(f["areaSafrinhaHa"]?.jsonPrimitive?.doubleOrNull?.toString() ?: "") }
             var cultura1 by remember(id) { mutableStateOf(f["areaSafrinhaCultura1"]?.jsonPrimitive?.contentOrNull ?: "") }
             var cultura1HaText by remember(id) { mutableStateOf(f["areaSafrinhaCultura1Ha"]?.jsonPrimitive?.doubleOrNull?.toString() ?: "") }
@@ -441,10 +464,30 @@ private fun FarmsCard(
                         Icon(Icons.Filled.Delete, contentDescription = "Excluir fazenda")
                     }
                 }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                // FlowRow em vez de Row com rolagem horizontal -- pedido do
+                // usuário ("coloque o cadastro das fazendas em mais de uma
+                // linha, não dá pra visualizar, delimite a tela"): com 7
+                // campos + botão salvar numa Row só, mesmo rolando, o
+                // usuário não enxergava tudo de uma vez e alguns rótulos
+                // (ex.: "Cultura 1") quebravam de forma estranha. Agora os
+                // campos quebram pra próxima linha sozinhos, sempre dentro
+                // da largura da tela, sem cortar ou sobrepor texto.
+                FlowRow(
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                 ) {
+                    // Cultura (safra principal/verão) que ocupa a Área Total
+                    // -- 8ª exceção de schema (ver MEMORY.md). Pedido do
+                    // usuário: "crie um campo cultura com lista suspensa
+                    // antes de área total" -- por isso vem ANTES do campo
+                    // TOTAL (ha) abaixo.
+                    CulturaDropdownField(
+                        value = culturaTotal,
+                        onValueChange = { culturaTotal = it },
+                        label = "Cultura",
+                        modifier = Modifier.width(120.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
                     OutlinedTextField(
                         value = areaText,
                         onValueChange = { areaText = it },
@@ -531,8 +574,10 @@ private fun FarmsCard(
                                 val c1ha = cultura1HaText.toDoubleOrNull()
                                 val c2 = cultura2.trim()
                                 val c2ha = cultura2HaText.toDoubleOrNull()
+                                val culturaTotalTrim = culturaTotal.trim()
                                 onUpdate(
-                                    id, area, areaSafrinhaText.toDoubleOrNull(),
+                                    id, area, if (culturaTotalTrim.isNotEmpty()) culturaTotalTrim else null,
+                                    areaSafrinhaText.toDoubleOrNull(),
                                     if (c1.isNotEmpty()) c1 else null, if (c1.isNotEmpty()) c1ha else null,
                                     if (c2.isNotEmpty()) c2 else null, if (c2.isNotEmpty()) c2ha else null,
                                     lat, lon,
@@ -546,17 +591,27 @@ private fun FarmsCard(
                 }
             }
         }
-        // Mesmo layout em 2 linhas do bloco acima (nome / campos com
-        // rolagem horizontal), mesmo motivo -- ver comentário completo ali.
+        // Mesmo layout em 2 linhas do bloco acima (nome / campos que quebram
+        // em várias linhas com FlowRow), mesmo motivo -- ver comentário
+        // completo ali.
         Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
             OutlinedTextField(
                 value = newName, onValueChange = { newName = it }, label = { Text("Nova fazenda") },
                 modifier = Modifier.fillMaxWidth(), singleLine = true, colors = appFieldColors(),
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.horizontalScroll(rememberScrollState()).padding(top = 4.dp),
+            FlowRow(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
             ) {
+                // Cultura (safra principal/verão) que ocupa a Área Total --
+                // 8ª exceção de schema (ver MEMORY.md). Pedido do usuário:
+                // "crie um campo cultura com lista suspensa antes de área
+                // total" -- por isso vem ANTES do campo TOTAL (ha) abaixo.
+                CulturaDropdownField(
+                    value = newCultura, onValueChange = { newCultura = it }, label = "Cultura",
+                    modifier = Modifier.width(120.dp),
+                )
+                Spacer(Modifier.width(4.dp))
                 OutlinedTextField(
                     value = newArea, onValueChange = { newArea = it }, label = { Text("TOTAL (ha)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(100.dp),
@@ -590,6 +645,16 @@ private fun FarmsCard(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(80.dp),
                     colors = appFieldColors(),
                 )
+                Spacer(Modifier.width(4.dp))
+                // Localização (lat, lon) -- 6ª exceção de schema (ver
+                // MEMORY.md). Pedido do usuário: "coloque o campo latitude
+                // longitude depois da área 2" -- por isso vem logo após o
+                // slot 2 acima.
+                OutlinedTextField(
+                    value = newLocation, onValueChange = { newLocation = it }, label = { Text("lat, lon") },
+                    singleLine = true, modifier = Modifier.width(140.dp),
+                    colors = appFieldColors(),
+                )
             }
         }
         Row(modifier = Modifier.padding(top = 8.dp)) {
@@ -597,15 +662,36 @@ private fun FarmsCard(
                 onClick = {
                     val area = newArea.toDoubleOrNull()
                     if (newName.isNotBlank() && area != null && area > 0) {
+                        val culturaTrim = newCultura.trim()
                         val c1 = newCultura1.trim()
                         val c2 = newCultura2.trim()
-                        onAdd(
-                            newName.trim(), area, newAreaSafrinha.toDoubleOrNull(),
-                            if (c1.isNotEmpty()) c1 else null, if (c1.isNotEmpty()) newCultura1Ha.toDoubleOrNull() else null,
-                            if (c2.isNotEmpty()) c2 else null, if (c2.isNotEmpty()) newCultura2Ha.toDoubleOrNull() else null,
-                        )
-                        newName = ""; newArea = ""; newAreaSafrinha = ""
-                        newCultura1 = ""; newCultura1Ha = ""; newCultura2 = ""; newCultura2Ha = ""
+                        // "lat, lon" num campo só -- mesma regra da edição
+                        // (locationText acima): em branco limpa (null/null),
+                        // preenchido precisa dos dois números separados por
+                        // vírgula, senão o cadastro é ignorado em silêncio
+                        // (mesmo comportamento do botão de salvar área).
+                        val locTrim = newLocation.trim()
+                        var lat: Double? = null
+                        var lon: Double? = null
+                        var locationOk = true
+                        if (locTrim.isNotEmpty()) {
+                            val partes = locTrim.split(",").map { it.trim() }
+                            lat = partes.getOrNull(0)?.toDoubleOrNull()
+                            lon = partes.getOrNull(1)?.toDoubleOrNull()
+                            if (partes.size != 2 || lat == null || lon == null) locationOk = false
+                        }
+                        if (locationOk) {
+                            onAdd(
+                                newName.trim(), area, if (culturaTrim.isNotEmpty()) culturaTrim else null,
+                                newAreaSafrinha.toDoubleOrNull(),
+                                if (c1.isNotEmpty()) c1 else null, if (c1.isNotEmpty()) newCultura1Ha.toDoubleOrNull() else null,
+                                if (c2.isNotEmpty()) c2 else null, if (c2.isNotEmpty()) newCultura2Ha.toDoubleOrNull() else null,
+                                lat, lon,
+                            )
+                            newName = ""; newArea = ""; newCultura = ""; newAreaSafrinha = ""
+                            newCultura1 = ""; newCultura1Ha = ""; newCultura2 = ""; newCultura2Ha = ""
+                            newLocation = ""
+                        }
                     }
                 },
                 enabled = !busy,

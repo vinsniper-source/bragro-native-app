@@ -265,6 +265,34 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         errorMessage.value = null
     }
 
+    /** Mesma ideia de preencherComUltimo() abaixo, mas pro modo "Comparar
+     * fornecedores" (task #404): preenche só o cabeçalho comum (categoria/
+     * item/data/quantidade/unidade/observações), já que a lista de
+     * propostas em si é nova a cada comparação -- pedido do usuário
+     * ("coloque um ícone copiar do lado superior direito" também na aba
+     * Comparar fornecedores, mesmo ícone único do topo da tela). Site não
+     * tem equivalente pra este modo (cotacao-multi-item-button.tsx só copia
+     * no modo "itens") -- funcionalidade nova, exclusiva do app. */
+    fun preencherComparacaoComUltimo() {
+        viewModelScope.launch {
+            copiando.value = true
+            val last = recordRepository.mostRecent("cotacoesfornecedores")
+            copiando.value = false
+            if (last == null) {
+                errorMessage.value = "Nenhuma cotação lançada ainda para copiar."
+                return@launch
+            }
+            last["categoria"]?.let { categoriaComp = it }
+            last["item"]?.let { itemComp = it }
+            last["data"]?.let { dataComp = com.bragro.mobile.ui.domain.isoDateToBr(it) }
+            last["quantidade"]?.let { quantidadeComp = it }
+            last["unidade"]?.let { unidadeComp = it }
+            last["observacoes"]?.let { observacoesComp = it }
+            successMessage.value = null
+            errorMessage.value = null
+        }
+    }
+
     /** "Copiar último lançamento" -- busca a última proposta de cotação
      * lançada (qualquer fornecedor/item) no cache local e preenche o
      * cabeçalho + a primeira linha de item, mesmo padrão de
@@ -338,10 +366,11 @@ private fun StringDropdown(
     options: List<String>,
     placeholder: String,
     allowEmpty: Boolean = false,
+    modifier: Modifier = Modifier,
     onSelect: (String?) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = modifier) {
         OutlinedTextField(
             value = value ?: "",
             onValueChange = {},
@@ -381,15 +410,21 @@ private fun CotacaoLinhaCard(linha: CotacaoLinha, categoriasOptions: List<Lookup
                 placeholder = "Selecione o item",
                 onSelect = { picked -> linha.item = itensOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
             )
-            StringDropdown(
-                label = "Unidade",
-                value = unidadesOptions.firstOrNull { it.value == linha.unidade }?.label ?: linha.unidade.ifBlank { null },
-                options = unidadesOptions.map { it.label },
-                placeholder = "Opcional",
-                allowEmpty = true,
-                onSelect = { picked -> linha.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
-            )
+            // Blocos individuais em pares (pedido do usuário: "crie blocos
+            // individuais, se der pra colocar dois blocos na mesma linha sem
+            // cortar palavras coloque") -- Categoria/Item ficam sozinhos
+            // (rótulos de lista suspensa podem ser longos), Unidade+
+            // Quantidade e Preço+Prazo são curtos e cabem 2 por linha.
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                StringDropdown(
+                    label = "Unidade",
+                    value = unidadesOptions.firstOrNull { it.value == linha.unidade }?.label ?: linha.unidade.ifBlank { null },
+                    options = unidadesOptions.map { it.label },
+                    placeholder = "Opcional",
+                    allowEmpty = true,
+                    onSelect = { picked -> linha.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                    modifier = Modifier.weight(1f),
+                )
                 OutlinedTextField(
                     value = linha.quantidade,
                     onValueChange = { linha.quantidade = it },
@@ -398,6 +433,8 @@ private fun CotacaoLinhaCard(linha: CotacaoLinha, categoriasOptions: List<Lookup
                     modifier = Modifier.weight(1f),
                     colors = appFieldColors(),
                 )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 OutlinedTextField(
                     value = linha.precoUnitario,
                     onValueChange = { linha.precoUnitario = it },
@@ -406,15 +443,15 @@ private fun CotacaoLinhaCard(linha: CotacaoLinha, categoriasOptions: List<Lookup
                     modifier = Modifier.weight(1f),
                     colors = appFieldColors(),
                 )
+                OutlinedTextField(
+                    value = linha.prazoEntregaDias,
+                    onValueChange = { linha.prazoEntregaDias = it },
+                    label = { Text("Prazo (dias)") },
+                    placeholder = { Text("Opcional") },
+                    modifier = Modifier.weight(1f),
+                    colors = appFieldColors(),
+                )
             }
-            OutlinedTextField(
-                value = linha.prazoEntregaDias,
-                onValueChange = { linha.prazoEntregaDias = it },
-                label = { Text("Prazo entrega (dias)") },
-                placeholder = { Text("Opcional") },
-                modifier = Modifier.fillMaxWidth(),
-                colors = appFieldColors(),
-            )
             if (showRemove) {
                 IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
                     Icon(Icons.Filled.Delete, contentDescription = "Remover item", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
@@ -460,22 +497,29 @@ private fun PropostaCard(proposta: PropostaLinha, entidadesOptions: List<LookupE
                     colors = appFieldColors(),
                 )
             }
-            StringDropdown(
-                label = "Condição de pagamento",
-                value = formasPgtoOptions.firstOrNull { it.value == proposta.condicaoPagamento }?.label ?: proposta.condicaoPagamento,
-                options = formasPgtoOptions.map { it.label },
-                placeholder = "Opcional",
-                allowEmpty = true,
-                onSelect = { picked -> proposta.condicaoPagamento = formasPgtoOptions.firstOrNull { it.label == picked }?.value ?: picked },
-            )
-            OutlinedTextField(
-                value = proposta.validadeProposta,
-                onValueChange = { proposta.validadeProposta = it },
-                label = { Text("Validade da proposta") },
-                placeholder = { Text("DD/MM/AAAA") },
-                modifier = Modifier.fillMaxWidth(),
-                colors = appFieldColors(),
-            )
+            // Blocos individuais em pares (pedido do usuário: "crie blocos
+            // individuais, se der pra colocar dois blocos na mesma linha sem
+            // cortar palavras coloque") -- Condição de pagamento + Validade
+            // são valores curtos, cabem lado a lado igual Preço+Prazo acima.
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                StringDropdown(
+                    label = "Condição pgto.",
+                    value = formasPgtoOptions.firstOrNull { it.value == proposta.condicaoPagamento }?.label ?: proposta.condicaoPagamento,
+                    options = formasPgtoOptions.map { it.label },
+                    placeholder = "Opcional",
+                    allowEmpty = true,
+                    onSelect = { picked -> proposta.condicaoPagamento = formasPgtoOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                    modifier = Modifier.weight(1f),
+                )
+                OutlinedTextField(
+                    value = proposta.validadeProposta,
+                    onValueChange = { proposta.validadeProposta = it },
+                    label = { Text("Validade") },
+                    placeholder = { Text("DD/MM/AAAA") },
+                    modifier = Modifier.weight(1f),
+                    colors = appFieldColors(),
+                )
+            }
             if (showRemove) {
                 IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
                     Icon(Icons.Filled.Delete, contentDescription = "Remover proposta", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
@@ -512,6 +556,28 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                         Spacer(modifier = Modifier.height(16.dp))
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                },
+                // Ícone de copiar no topo direito -- pedido do usuário ("coloque
+                // um ícone copiar do lado superior direito" nas duas abas, aqui
+                // e em Comparar fornecedores), mesmo padrão já usado em
+                // PedidoMultiItemScreen.kt: substitui o botão largo "Copiar
+                // última cotação" que só existia no modo "itens" (ver comentário
+                // no botão removido abaixo) -- um ícone só, sempre visível,
+                // que dispara a função certa pro modo ativo no momento.
+                actions = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        IconButton(
+                            onClick = { if (viewModel.modo == "itens") viewModel.preencherComUltimo() else viewModel.preencherComparacaoComUltimo() },
+                            enabled = !copiando,
+                        ) {
+                            if (copiando) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            } else {
+                                Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar última cotação", tint = MaterialTheme.colorScheme.primary)
+                            }
                         }
                     }
                 },
@@ -570,16 +636,6 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                     "Cada linha é UMA proposta de UM fornecedor. Lance 2+ propostas com a MESMA Categoria + Item pra comparar automaticamente -- Índice de Vantagem e Avaliação recalculam sozinhos.",
                     style = MaterialTheme.typography.bodySmall,
                 )
-            }
-            item {
-                OutlinedButton(
-                    onClick = { viewModel.preencherComUltimo() },
-                    enabled = !copiando,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Icon(Icons.Filled.ContentCopy, contentDescription = null, modifier = Modifier.padding(end = 6.dp).size(16.dp))
-                    Text(if (copiando) "Copiando..." else "Copiar última cotação")
-                }
             }
             item {
                 // Fornecedor agora é dropdown de Base de Dados (pedido do
@@ -715,8 +771,10 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
             // (categoria/item/data/quantidade/unidade), N propostas de
             // fornecedores diferentes lado a lado.
             item {
+                // Instrução resumida -- pedido do usuário ("resuma as
+                // instruções").
                 Text(
-                    "Descreva o item que está cotando uma vez e lance o preço de cada fornecedor que cotou ele -- todas as propostas entram no mesmo grupo de comparação.",
+                    "Descreva o item uma vez e lance o preço de cada fornecedor -- entram no mesmo grupo de comparação.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
