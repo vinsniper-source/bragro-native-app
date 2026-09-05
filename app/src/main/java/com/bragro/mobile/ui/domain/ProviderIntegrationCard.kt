@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -61,7 +62,7 @@ enum class IntegrationBusy { SALVANDO, SINCRONIZANDO, DESCONECTANDO }
  * em [onSync]). Compartilhado entre FieldviewScreen e DroneScreen: só muda
  * a lista de provedores e a descrição por módulo (ver chamadas em cada
  * tela). */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ProviderIntegrationCard(
     providers: List<String>,
