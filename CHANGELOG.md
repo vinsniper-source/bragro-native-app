@@ -18,6 +18,42 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.39] -- 2026-09-05
+
+Mega-lote de correções (mensagem com pedidos de plataforma + Romaneio
+Rápido + Análises + O.S. por fazenda):
+
+- **Drone**: card de integração de provedor com blocos individuais
+  (Provedor/API Key), igual ao padrão já usado em Frota/Romaneios.
+- **Base de Dados**: cada fazenda cadastrada em bloco próprio, campos
+  reorganizados em 2 linhas com fonte reduzida (dense) pra caber sem
+  cortar.
+- **Site**: botão único Tabela/Bloco com ícones invertidos (LayoutGrid
+  para "Bloco", Rows3 para "Tabela").
+- **Romaneio Rápido (app)**: ícone "Copiar último lançamento" no canto
+  superior direito da TopAppBar.
+- **Romaneio Rápido (app)**: corrigido crash ao tirar foto do ticket --
+  declarado `<queries>` no Manifest para `ACTION_IMAGE_CAPTURE` e o
+  arquivo de destino agora é criado antes de gerar a URI (proteção
+  contra apps de câmera de alguns fabricantes que falhavam nesse ponto).
+- **Bomba/Balança/FieldView**: texto do aviso agora quebra em
+  `basicMarquee()` (letreiro) em vez de quebrar linha no meio da
+  palavra.
+- **Análises**: valores agora mostram moeda (R$) e "%" conforme o campo,
+  literal "label" some da lista genérica (vira título do card), demais
+  campos usam nome amigável em vez da chave crua.
+- **Varredura true/false**: literais "true"/"false" que vazavam pra UI
+  em campos sem tipo `checkbox` (renderizador genérico de Análises)
+  agora mostram "Sim"/"Não".
+- **"Lançar talhão manualmente" → "Lançar talhão"** (botão, site e
+  app; o diálogo mantém o texto completo).
+- **O.S. por fazenda**: a numeração automática de Ordem de Serviço
+  (Safra/Frota) agora tem uma sequência PRÓPRIA POR FAZENDA em vez de
+  uma sequência única da organização inteira -- tanto ao pré-visualizar
+  o próximo número (antes de salvar) quanto ao salvar de fato. No app,
+  o número sugerido agora também se atualiza ao trocar a fazenda no
+  formulário, igual o site.
+
 ## [1.2.38] -- 2026-09-05
 
 Mega-lote de correções e ajustes (mensagem com 7 imagens, tarefa #424) --

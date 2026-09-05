@@ -64,6 +64,12 @@ class ModuleActionsRepository(context: Context) {
         tipo: String? = null,
         // Só usado por "preview-next-os" -- ver ModuleActionRequest.domainId.
         domainId: String? = null,
+        // Também só usado por "preview-next-os" -- valor atual do campo
+        // Local/Fazenda no formulário, pra calcular o próximo número de O.S.
+        // NA SEQUÊNCIA DAQUELA FAZENDA (pedido do usuário: "uma sequência
+        // por fazenda"), mesmo parâmetro que o site já manda (ver
+        // record-form.tsx -> previewNextOsAction).
+        local: String? = null,
     ): JsonObject? {
         val tokens = tokenStore.current() ?: return null
         var (accessToken, refreshToken) = tokens
@@ -72,7 +78,7 @@ class ModuleActionsRepository(context: Context) {
             item = item, unidade = unidade, quantidade = quantidade,
             fazendaOrigemId = fazendaOrigemId, fazendaDestinoId = fazendaDestinoId,
             transferenciaEntradaId = transferenciaEntradaId,
-            motivo = motivo, tipo = tipo, domainId = domainId,
+            motivo = motivo, tipo = tipo, domainId = domainId, local = local,
         )
         return try {
             var response = NetworkModule.mobileApi.moduleActions(buildRequest(accessToken))

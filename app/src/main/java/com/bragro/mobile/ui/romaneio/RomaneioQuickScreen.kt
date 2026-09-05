@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.appFieldColors
@@ -115,6 +116,8 @@ class RomaneioQuickViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var savedOk = mutableStateOf(false)
         private set
+    var copiando = mutableStateOf(false)
+        private set
 
     init {
         viewModelScope.launch {
@@ -136,6 +139,13 @@ class RomaneioQuickViewModel(app: Application) : AndroidViewModel(app) {
      * lancamento, so avisa o motivo em vez de nao acontecer nada visivel. */
     fun onPhotoCancelled() {
         ocrMensagem.value = "Nenhuma foto capturada -- você pode lançar sem foto ou tentar de novo."
+    }
+
+    /** Chamado pela tela quando launchCamera() falha ao abrir a câmera
+     * (ActivityNotFoundException/SecurityException etc. -- ver comentário
+     * completo em launchCamera() abaixo). */
+    fun onCameraLaunchFailed() {
+        ocrMensagem.value = "Não foi possível abrir a câmera neste aparelho -- você pode lançar sem foto."
     }
 
     /** Chamado depois que a foto ja foi tirada e salva no Uri temporario
@@ -271,6 +281,30 @@ class RomaneioQuickViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Ícone "Copiar" no topo (pedido do usuário, mesmo padrão já usado em
+     * Cotações/Pedidos -- ver preencherComUltimo em CotacaoMultiItemScreen.kt):
+     * traz Frota/Veículo, Responsável, Umidade e Impureza do último romaneio
+     * lançado, já que essas costumam se repetir de carga em carga na mesma
+     * rota/dia. Nº Romaneio, Peso Bruto e Tara ficam de fora de propósito --
+     * são específicos de cada carga e não devem ser copiados (evita
+     * duplicar um número de romaneio ou levar um peso errado adiante). */
+    fun preencherComUltimo() {
+        viewModelScope.launch {
+            copiando.value = true
+            val last = recordRepository.mostRecent("romaneios")
+            copiando.value = false
+            if (last == null) {
+                resultMessage.value = "Nenhum romaneio lançado ainda para copiar."
+                return@launch
+            }
+            last["frotaVeiculo"]?.let { frotaVeiculo.value = it }
+            last["responsavel"]?.let { responsavel.value = it }
+            last["umidade"]?.let { umidade.value = it }
+            last["impureza"]?.let { impureza.value = it }
+            resultMessage.value = null
+        }
+    }
+
     fun reset() {
         noRomaneio.value = ""
         pesoBrutoKg.value = ""
@@ -328,6 +362,7 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
     val saving by viewModel.saving
     val resultMessage by viewModel.resultMessage
     val savedOk by viewModel.savedOk
+    val copiando by viewModel.copiando
 
     var pendingPhotoUri by remember { mutableStateOf<Uri?>(null) }
     val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
@@ -343,10 +378,29 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
     }
 
     fun launchCamera() {
-        val file = File(File(context.cacheDir, "romaneio").apply { mkdirs() }, "ticket_${System.currentTimeMillis()}.jpg")
-        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-        pendingPhotoUri = uri
-        takePicture.launch(uri)
+        try {
+            val file = File(File(context.cacheDir, "romaneio").apply { mkdirs() }, "ticket_${System.currentTimeMillis()}.jpg")
+            // createNewFile() ANTES de gerar o Uri -- alguns apps de Camera
+            // de fabricante (Xiaomi/MIUI, Samsung) falham em abrir/travam se
+            // o arquivo de destino ainda nao existir fisicamente no disco,
+            // mesmo com a pasta ja criada. Criar o arquivo vazio primeiro
+            // evita essa incompatibilidade sem custo nenhum (o app de
+            // Camera sobrescreve o conteudo normalmente).
+            file.createNewFile()
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            pendingPhotoUri = uri
+            takePicture.launch(uri)
+        } catch (e: Exception) {
+            // Bug relatado pelo usuario: "botao de tirar foto nao abre a
+            // camera, o app fecha". Sem esse try/catch, qualquer falha aqui
+            // (ActivityNotFoundException se nenhum app de Camera resolver o
+            // Intent, SecurityException de permissao do FileProvider, etc.)
+            // derrubava o app inteiro. Agora so avisa e deixa lancar sem
+            // foto -- mesmo espirito de onPhotoCancelled() acima (a foto e
+            // sempre opcional).
+            AppLog.e("RomaneioQuickScreen", "Falha ao abrir a camera pra foto do ticket do Romaneio Rapido", e)
+            viewModel.onCameraLaunchFailed()
+        }
     }
 
     Scaffold(
@@ -363,6 +417,19 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
                         Spacer(modifier = Modifier.height(16.dp))
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                },
+                // Ícone Copiar no canto superior direito -- pedido do
+                // usuário, mesmo padrão de "copiar último lançamento" já
+                // aplicado em Cotações/Pedidos (ver preencherComUltimo
+                // acima no ViewModel).
+                actions = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        IconButton(onClick = { viewModel.preencherComUltimo() }, enabled = !copiando) {
+                            if (copiando) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            else Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último romaneio", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 },

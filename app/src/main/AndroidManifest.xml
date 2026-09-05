@@ -12,6 +12,21 @@
          Ver ApkInstaller.kt. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
+    <!-- Necessario a partir do Android 11 (targetSdk 30+, aqui targetSdk 34):
+         sem declarar a intent de camera aqui, o sistema pode nao conseguir
+         RESOLVER o app de camera pra abrir via Intent implicito
+         (MediaStore.ACTION_IMAGE_CAPTURE) em alguns aparelhos/ROMs,
+         derrubando o app com ActivityNotFoundException ao tocar em "Tirar
+         foto" (bug relatado pelo usuario no Romaneio Rapido, mesmo apos
+         reinstalar a versao mais atual -- essa e a causa mais provavel
+         numa instalacao limpa, ja que o restante do fluxo -- FileProvider,
+         file_paths.xml -- ja estava correto). -->
+    <queries>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+    </queries>
+
     <application
         android:name=".BRAgroApplication"
         android:allowBackup="true"

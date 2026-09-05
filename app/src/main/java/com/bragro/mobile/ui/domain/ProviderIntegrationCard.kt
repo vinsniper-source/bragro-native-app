@@ -1,6 +1,8 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -37,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.bragro.mobile.data.model.ProviderIntegrationDto
 import com.bragro.mobile.ui.theme.Card
@@ -90,10 +93,22 @@ fun ProviderIntegrationCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(Icons.Filled.Bolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
+            // Título em UMA linha com letreiro (marquee) em vez de deixar
+            // quebrar livre -- pedido do usuário ("coloque a frase em
+            // linhas, não em coluna, não divida as palavras"): esse título
+            // divide espaço com o Icon + badge de status (provedor
+            // conectado / "Não conectado") + botão de expandir, todos de
+            // largura fixa; em telas estreitas o weight(1f) sobrava pouco
+            // espaço e o texto quebrava letra por letra numa coluna vertical
+            // enorme (mesmo bug já corrigido em Base de Dados, task #338).
+            // Card compartilhado por FieldView/Drone/Frota(Bomba)/
+            // Romaneios(Balança) -- corrige nos 4 de uma vez.
             Text(
                 "Acesso automático via prestadora de serviço",
                 style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).basicMarquee(),
+                maxLines = 1,
+                overflow = TextOverflow.Clip,
             )
             if (conectado) {
                 Surface(
@@ -118,38 +133,48 @@ fun ProviderIntegrationCard(
             ) {
                 Text(descricao, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-                // Provedor + API Key lado a lado em vez de empilhados --
-                // pedido do usuário ("divida os campos"). Cada um ocupa
-                // metade da largura do card.
+                // Provedor + API Key em blocos individuais lado a lado --
+                // pedido do usuário ("crie blocos individuais separando
+                // dentro do bloco inteiro"): antes os dois campos só
+                // dividiam a largura via Row/weight, sem nenhum limite
+                // visível entre eles (ficavam "flutuando" dentro do card
+                // maior, sem separação clara). Agora cada campo vive dentro
+                // do seu próprio FieldBlock (Surface com tom levemente
+                // diferente do card externo) -- mesma ideia de "bloco dentro
+                // do bloco" já usada em Base de Dados/Cotações.
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = it },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        OutlinedTextField(
-                            value = provedor, onValueChange = {}, readOnly = true,
-                            label = { Text("Provedor") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                            modifier = Modifier.fillMaxWidth().menuAnchor(),
-                            colors = appFieldColors(),
-                        )
-                        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                            providers.forEach { p -> DropdownMenuItem(text = { Text(p) }, onClick = { provedor = p; expanded = false }) }
+                    FieldBlock(modifier = Modifier.weight(1f)) {
+                        ExposedDropdownMenuBox(
+                            expanded = expanded,
+                            onExpandedChange = { expanded = it },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            OutlinedTextField(
+                                value = provedor, onValueChange = {}, readOnly = true,
+                                label = { Text("Provedor") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                                modifier = Modifier.fillMaxWidth().menuAnchor(),
+                                colors = appFieldColors(),
+                            )
+                            ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                                providers.forEach { p -> DropdownMenuItem(text = { Text(p) }, onClick = { provedor = p; expanded = false }) }
+                            }
                         }
                     }
 
-                    OutlinedTextField(
-                        value = apiKey, onValueChange = { apiKey = it },
-                        label = { Text("API Key / Token") },
-                        placeholder = { Text(if (integration?.apiKeyConfigurado == true) "•••• (salvo)" else "Cole a credencial") },
-                        leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
-                        colors = appFieldColors(),
-                    )
+                    FieldBlock(modifier = Modifier.weight(1f)) {
+                        OutlinedTextField(
+                            value = apiKey, onValueChange = { apiKey = it },
+                            label = { Text("API Key / Token") },
+                            placeholder = { Text(if (integration?.apiKeyConfigurado == true) "•••• (salvo)" else "Cole a credencial") },
+                            leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
+                            visualTransformation = PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = appFieldColors(),
+                        )
+                    }
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -216,6 +241,25 @@ fun ProviderIntegrationCard(
 private fun IconButtonToggle(open: Boolean, onClick: () -> Unit) {
     androidx.compose.material3.IconButton(onClick = onClick) {
         Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
+    }
+}
+
+/** Bloco individual pra separar campos dentro do card de integração --
+ * pedido do usuário ("crie blocos individuais separando dentro do bloco
+ * inteiro"). Usa um tom (surfaceVariant) diferente do container do Card
+ * (colorScheme.surface, ver appFieldColors/Card em AppCard.kt) em vez de
+ * borda, respeitando a regra do app de não ter bordas em lugar nenhum
+ * (tasks anteriores "tire todas as bordas de todo app"). */
+@Composable
+private fun FieldBlock(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = MaterialTheme.shapes.small,
+    ) {
+        Box(modifier = Modifier.padding(6.dp)) {
+            content()
+        }
     }
 }
 

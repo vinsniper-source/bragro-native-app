@@ -36,10 +36,12 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -353,6 +355,11 @@ private fun CulturaDropdownField(
     onValueChange: (String) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
+    // Fonte menor pra caber nas linhas do bloco por fazenda -- pedido do
+    // usuário ("diminua o tamanho da letra da fonte para caber em uma
+    // linha"). Só usado nas linhas de fazenda já cadastrada (dense = true);
+    // o formulário "Nova fazenda" mantém o tamanho normal.
+    dense: Boolean = false,
 ) {
     var expanded by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = modifier) {
@@ -360,7 +367,8 @@ private fun CulturaDropdownField(
             value = value,
             onValueChange = {},
             readOnly = true,
-            label = { Text(label) },
+            label = { Text(label, style = if (dense) MaterialTheme.typography.labelSmall else LocalTextStyle.current) },
+            textStyle = if (dense) MaterialTheme.typography.bodySmall else LocalTextStyle.current,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().menuAnchor(),
@@ -438,155 +446,161 @@ private fun FarmsCard(
             val fLat = f["latitude"]?.jsonPrimitive?.doubleOrNull
             val fLon = f["longitude"]?.jsonPrimitive?.doubleOrNull
             var locationText by remember(id) { mutableStateOf(if (fLat != null && fLon != null) "$fLat, $fLon" else "") }
-            // Layout em DUAS linhas (nome+excluir / campos de área com
-            // rolagem horizontal) -- CORREÇÃO DE BUG REAL: com nome +
-            // TOTAL(ha) + slots + 2 ícones tudo numa Row só (sem rolagem), a
-            // soma das larguras fixas já estourava a tela sozinha, sem
-            // sobrar espaço nenhum pro nome (Modifier.weight(1f) ficava
-            // espremido a ~0dp) -- o texto do nome então quebrava
-            // caractere-por-caractere numa coluna quase invisível, criando
-            // aquele vão vertical enorme reportado pelo usuário ("ficou todo
-            // desconfigurado"), e o botão excluir saía cortado da tela.
-            // Agora a 1ª linha (nome + excluir) sempre cabe, e a 2ª linha
-            // (campos numéricos + salvar) rola horizontalmente se precisar
-            // -- nunca mais estoura nem esmaga o nome, em qualquer largura
-            // de tela.
-            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        name,
-                        modifier = Modifier.weight(1f).basicMarquee(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Clip,
-                    )
-                    IconButton(onClick = { onDelete(id) }, enabled = !busy) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Excluir fazenda")
+            // Bloco individual por fazenda -- pedido do usuário ("divida
+            // cada fazenda em um bloco e dentro do bloco individual separe
+            // os campos, coloque todos os campos em apenas duas linhas"):
+            // antes as fazendas eram só linhas soltas dentro do CollapsibleCard
+            // "Fazendas (N)" (sem nenhuma separação visual entre uma e
+            // outra), e os campos quebravam em quantas linhas o FlowRow
+            // decidisse. Agora cada fazenda vive dentro do seu próprio
+            // Surface (tom surfaceVariant, mesmo critério do FieldBlock em
+            // ProviderIntegrationCard.kt -- sem borda, só diferença de tom,
+            // respeitando a regra "sem bordas" do app) e os 6 campos +
+            // ícone salvar ficam distribuídos em EXATAMENTE 2 linhas fixas
+            // (não FlowRow), com fonte reduzida (dense = true / bodySmall)
+            // pra cada campo caber sem cortar ou quebrar palavra.
+            Surface(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = MaterialTheme.shapes.small,
+            ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            name,
+                            modifier = Modifier.weight(1f).basicMarquee(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Clip,
+                        )
+                        IconButton(onClick = { onDelete(id) }, enabled = !busy) {
+                            Icon(Icons.Filled.Delete, contentDescription = "Excluir fazenda")
+                        }
                     }
-                }
-                // FlowRow em vez de Row com rolagem horizontal -- pedido do
-                // usuário ("coloque o cadastro das fazendas em mais de uma
-                // linha, não dá pra visualizar, delimite a tela"): com 7
-                // campos + botão salvar numa Row só, mesmo rolando, o
-                // usuário não enxergava tudo de uma vez e alguns rótulos
-                // (ex.: "Cultura 1") quebravam de forma estranha. Agora os
-                // campos quebram pra próxima linha sozinhos, sempre dentro
-                // da largura da tela, sem cortar ou sobrepor texto.
-                FlowRow(
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                ) {
-                    // Cultura (safra principal/verão) que ocupa a Área Total
-                    // -- 8ª exceção de schema (ver MEMORY.md). Pedido do
-                    // usuário: "crie um campo cultura com lista suspensa
-                    // antes de área total" -- por isso vem ANTES do campo
-                    // TOTAL (ha) abaixo.
-                    CulturaDropdownField(
-                        value = culturaTotal,
-                        onValueChange = { culturaTotal = it },
-                        label = "Cultura",
-                        modifier = Modifier.width(120.dp),
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    OutlinedTextField(
-                        value = areaText,
-                        onValueChange = { areaText = it },
-                        label = { Text("TOTAL (ha)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true,
-                        modifier = Modifier.width(100.dp),
-                        colors = appFieldColors(),
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    // Campo genérico "safrinha" REMOVIDO da UI -- pedido do
-                    // usuário (X na screenshot): só os 2 slots por cultura
-                    // ficam visíveis agora. areaSafrinhaText continua
-                    // existindo e sendo reenviado sem alteração em onUpdate
-                    // (pré-populado do JSON acima), preservando o valor
-                    // antigo no backend/fallback do Canvas pra fazendas que
-                    // já tinham esse campo preenchido.
-                    CulturaDropdownField(
-                        value = cultura1,
-                        onValueChange = { cultura1 = it },
-                        label = "Cultura 1",
-                        modifier = Modifier.width(140.dp),
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    OutlinedTextField(
-                        value = cultura1HaText,
-                        onValueChange = { cultura1HaText = it },
-                        label = { Text("ha") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true,
-                        modifier = Modifier.width(80.dp),
-                        colors = appFieldColors(),
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    CulturaDropdownField(
-                        value = cultura2,
-                        onValueChange = { cultura2 = it },
-                        label = "Cultura 2",
-                        modifier = Modifier.width(140.dp),
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    OutlinedTextField(
-                        value = cultura2HaText,
-                        onValueChange = { cultura2HaText = it },
-                        label = { Text("ha") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true,
-                        modifier = Modifier.width(80.dp),
-                        colors = appFieldColors(),
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    OutlinedTextField(
-                        value = locationText,
-                        onValueChange = { locationText = it },
-                        label = { Text("lat, lon") },
-                        singleLine = true,
-                        modifier = Modifier.width(130.dp),
-                        colors = appFieldColors(),
-                    )
-                    IconButton(
-                        onClick = {
-                            areaText.toDoubleOrNull()?.let { area ->
-                                // "lat, lon" num campo só -- em branco limpa
-                                // (null/null), preenchido precisa dos dois
-                                // números separados por vírgula (mesma regra
-                                // do site, ver saveFarmArea em
-                                // base-de-dados-client.tsx).
-                                val locTrim = locationText.trim()
-                                var lat: Double? = null
-                                var lon: Double? = null
-                                if (locTrim.isNotEmpty()) {
-                                    val partes = locTrim.split(",").map { it.trim() }
-                                    lat = partes.getOrNull(0)?.toDoubleOrNull()
-                                    lon = partes.getOrNull(1)?.toDoubleOrNull()
-                                    if (partes.size != 2 || lat == null || lon == null) return@let
-                                }
-                                // Slot só é enviado se cultura+área estiverem
-                                // AMBOS preenchidos (ou ambos vazios) -- mesma
-                                // regra "tudo ou nada" do site
-                                // (parseSlot em base-de-dados-client.tsx),
-                                // pra não salvar cultura sem área nem área
-                                // órfã sem cultura.
-                                val c1 = cultura1.trim()
-                                val c1ha = cultura1HaText.toDoubleOrNull()
-                                val c2 = cultura2.trim()
-                                val c2ha = cultura2HaText.toDoubleOrNull()
-                                val culturaTotalTrim = culturaTotal.trim()
-                                onUpdate(
-                                    id, area, if (culturaTotalTrim.isNotEmpty()) culturaTotalTrim else null,
-                                    areaSafrinhaText.toDoubleOrNull(),
-                                    if (c1.isNotEmpty()) c1 else null, if (c1.isNotEmpty()) c1ha else null,
-                                    if (c2.isNotEmpty()) c2 else null, if (c2.isNotEmpty()) c2ha else null,
-                                    lat, lon,
-                                )
-                            }
-                        },
-                        enabled = !busy,
+                    // Linha 1 de campos: Cultura + TOTAL(ha) + Cultura 1 + ha.
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                     ) {
-                        Icon(Icons.Filled.Check, contentDescription = "Salvar área")
+                        // Cultura (safra principal/verão) que ocupa a Área
+                        // Total -- 8ª exceção de schema (ver MEMORY.md).
+                        CulturaDropdownField(
+                            value = culturaTotal,
+                            onValueChange = { culturaTotal = it },
+                            label = "Cultura",
+                            modifier = Modifier.weight(1f),
+                            dense = true,
+                        )
+                        OutlinedTextField(
+                            value = areaText,
+                            onValueChange = { areaText = it },
+                            label = { Text("TOTAL (ha)", style = MaterialTheme.typography.labelSmall) },
+                            textStyle = MaterialTheme.typography.bodySmall,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            colors = appFieldColors(),
+                        )
+                        // Campo genérico "safrinha" REMOVIDO da UI -- pedido
+                        // do usuário (X na screenshot): só os 2 slots por
+                        // cultura ficam visíveis agora. areaSafrinhaText
+                        // continua existindo e sendo reenviado sem alteração
+                        // em onUpdate (pré-populado do JSON acima),
+                        // preservando o valor antigo no backend/fallback do
+                        // Canvas pra fazendas que já tinham esse campo
+                        // preenchido.
+                        CulturaDropdownField(
+                            value = cultura1,
+                            onValueChange = { cultura1 = it },
+                            label = "Cultura 1",
+                            modifier = Modifier.weight(1f),
+                            dense = true,
+                        )
+                        OutlinedTextField(
+                            value = cultura1HaText,
+                            onValueChange = { cultura1HaText = it },
+                            label = { Text("ha", style = MaterialTheme.typography.labelSmall) },
+                            textStyle = MaterialTheme.typography.bodySmall,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            colors = appFieldColors(),
+                        )
+                    }
+                    // Linha 2 de campos: Cultura 2 + ha + lat/lon + salvar.
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    ) {
+                        CulturaDropdownField(
+                            value = cultura2,
+                            onValueChange = { cultura2 = it },
+                            label = "Cultura 2",
+                            modifier = Modifier.weight(1f),
+                            dense = true,
+                        )
+                        OutlinedTextField(
+                            value = cultura2HaText,
+                            onValueChange = { cultura2HaText = it },
+                            label = { Text("ha", style = MaterialTheme.typography.labelSmall) },
+                            textStyle = MaterialTheme.typography.bodySmall,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            colors = appFieldColors(),
+                        )
+                        OutlinedTextField(
+                            value = locationText,
+                            onValueChange = { locationText = it },
+                            label = { Text("lat, lon", style = MaterialTheme.typography.labelSmall) },
+                            textStyle = MaterialTheme.typography.bodySmall,
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            colors = appFieldColors(),
+                        )
+                        IconButton(
+                            onClick = {
+                                areaText.toDoubleOrNull()?.let { area ->
+                                    // "lat, lon" num campo só -- em branco
+                                    // limpa (null/null), preenchido precisa
+                                    // dos dois números separados por vírgula
+                                    // (mesma regra do site, ver saveFarmArea
+                                    // em base-de-dados-client.tsx).
+                                    val locTrim = locationText.trim()
+                                    var lat: Double? = null
+                                    var lon: Double? = null
+                                    if (locTrim.isNotEmpty()) {
+                                        val partes = locTrim.split(",").map { it.trim() }
+                                        lat = partes.getOrNull(0)?.toDoubleOrNull()
+                                        lon = partes.getOrNull(1)?.toDoubleOrNull()
+                                        if (partes.size != 2 || lat == null || lon == null) return@let
+                                    }
+                                    // Slot só é enviado se cultura+área
+                                    // estiverem AMBOS preenchidos (ou ambos
+                                    // vazios) -- mesma regra "tudo ou nada"
+                                    // do site (parseSlot em
+                                    // base-de-dados-client.tsx), pra não
+                                    // salvar cultura sem área nem área órfã
+                                    // sem cultura.
+                                    val c1 = cultura1.trim()
+                                    val c1ha = cultura1HaText.toDoubleOrNull()
+                                    val c2 = cultura2.trim()
+                                    val c2ha = cultura2HaText.toDoubleOrNull()
+                                    val culturaTotalTrim = culturaTotal.trim()
+                                    onUpdate(
+                                        id, area, if (culturaTotalTrim.isNotEmpty()) culturaTotalTrim else null,
+                                        areaSafrinhaText.toDoubleOrNull(),
+                                        if (c1.isNotEmpty()) c1 else null, if (c1.isNotEmpty()) c1ha else null,
+                                        if (c2.isNotEmpty()) c2 else null, if (c2.isNotEmpty()) c2ha else null,
+                                        lat, lon,
+                                    )
+                                }
+                            },
+                            enabled = !busy,
+                        ) {
+                            Icon(Icons.Filled.Check, contentDescription = "Salvar área")
+                        }
                     }
                 }
             }

@@ -400,7 +400,12 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, view
                 }
                 OutlinedButton(onClick = { manualDialogOpen = true }, enabled = !importing) {
                     Icon(Icons.Filled.EditLocationAlt, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                    Text("Lançar talhão manualmente")
+                    // Encurtado de "Lançar talhão manualmente" pra "Lançar
+                    // talhão" -- pedido do usuário. O diálogo que abre
+                    // (título "Lançar talhão manualmente" logo abaixo)
+                    // continua com o nome completo, já que ali o contexto
+                    // "manualmente" ainda esclarece a ação.
+                    Text("Lançar talhão")
                 }
             }
             when {

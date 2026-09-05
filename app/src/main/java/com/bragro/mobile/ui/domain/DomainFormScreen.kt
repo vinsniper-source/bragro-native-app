@@ -112,7 +112,17 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
 
     val fields = mutableStateMapOf<String, String>()
 
+    // Guarda domainId/recordId da carga atual -- preview de O.S. (ver
+    // refreshOsPreview()) precisa deles fora de load() pra poder ser
+    // rechamado quando o usuário troca a fazenda (setField("local")),
+    // mesmo comportamento reativo do site (useEffect [localValue] em
+    // record-form.tsx).
+    private var currentDomainId: String? = null
+    private var currentRecordId: String? = null
+
     fun load(domainId: String, recordId: String?) {
+        currentDomainId = domainId
+        currentRecordId = recordId
         viewModelScope.launch {
             val cfg = configRepository.domainConfig(domainId) ?: return@launch
             config.value = cfg
@@ -179,13 +189,33 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             // Coroutine separada pra não atrasar a exibição do formulário
             // enquanto o preview ainda não voltou.
             if (recordId == null && cfg.columns.any { it.key == "os" }) {
-                viewModelScope.launch {
-                    val preview = ModuleActionsRepository(getApplication()).run("preview-next-os", domainId = domainId)
-                    val os = (preview?.get("os") as? JsonPrimitive)?.contentOrNull
-                    if (!os.isNullOrBlank() && fields["os"].isNullOrBlank()) {
-                        fields["os"] = os
-                    }
-                }
+                refreshOsPreview(overwrite = false)
+            }
+        }
+    }
+
+    /** Recalcula o preview do próximo número de O.S., agora considerando a
+     * fazenda atual do campo "local" (pedido do usuário: "uma sequência de
+     * O.S. por fazenda") -- mesma Server Action do site (previewNextOsAction),
+     * chamada tanto na carga inicial (load()) quanto de novo sempre que o
+     * usuário troca a fazenda (setField("local")), pra manter paridade com o
+     * comportamento reativo do site (useEffect [localValue] + key={osPreview}
+     * em record-form.tsx, que troca o número exibido a cada troca de
+     * fazenda). "overwrite=false" (carga inicial) só preenche se "os" ainda
+     * estiver vazio; "overwrite=true" (troca de fazenda) sempre substitui,
+     * igual o remount por key do site. */
+    private fun refreshOsPreview(overwrite: Boolean) {
+        val domainId = currentDomainId ?: return
+        if (currentRecordId != null) return
+        val cfg = config.value ?: return
+        if (cfg.columns.none { it.key == "os" }) return
+        viewModelScope.launch {
+            val preview = ModuleActionsRepository(getApplication()).run(
+                "preview-next-os", domainId = domainId, local = fields["local"],
+            )
+            val os = (preview?.get("os") as? JsonPrimitive)?.contentOrNull
+            if (!os.isNullOrBlank() && (overwrite || fields["os"].isNullOrBlank())) {
+                fields["os"] = os
             }
         }
     }
@@ -206,6 +236,12 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
         // começa a corrigir -- sem isso ficava marcado até o próximo Salvar.
         if (value.isNotBlank() && key in missingFields.value) {
             missingFields.value = missingFields.value - key
+        }
+        // Troca de fazenda ("local") num lançamento novo: recalcula o
+        // próximo número de O.S. NA SEQUÊNCIA DAQUELA FAZENDA (ver
+        // refreshOsPreview() acima).
+        if (key == "local") {
+            refreshOsPreview(overwrite = true)
         }
     }
 

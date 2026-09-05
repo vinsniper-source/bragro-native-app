@@ -339,6 +339,11 @@ data class ModuleActionRequest(
     // controleinterno) pedir o próximo número de O.S. (previewNextOsAction,
     // mesma Server Action do site).
     val domainId: String? = null,
+    // Também só usado por "preview-next-os" -- valor do campo Local/Fazenda
+    // já escolhido no formulário, pra calcular o próximo número NA
+    // SEQUÊNCIA DAQUELA FAZENDA (pedido do usuário: "uma sequência por
+    // fazenda"), mesmo parâmetro que o site manda (record-form.tsx).
+    val local: String? = null,
 )
 
 @Serializable

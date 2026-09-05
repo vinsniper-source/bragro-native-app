@@ -157,11 +157,65 @@ private fun tituloSecao(chave: String): String {
     return comEspacos.replaceFirstChar { it.uppercase() }
 }
 
-private fun valorParaTexto(el: JsonElement): String = when (el) {
+// Campos monetários conhecidos do backend (getAnalisesCruzadas, ver
+// lib/services/analises.ts no site) -- comparação por "contains" pra pegar
+// variações (custoHa, custoHaTotal, custoFonte, custoFazenda, etc.) sem
+// precisar listar toda combinação. Pedido do usuário ("em análises coloque
+// a moeda"): o renderizador genérico (ObjetoCard) só imprimia o número cru,
+// sem "R$", diferente do site que já formata esses mesmos campos como
+// moeda (ver analises-client.tsx).
+private val CAMPOS_MOEDA = setOf(
+    "valor", "custo", "gasto", "receita", "despesa", "bruto", "liquido",
+    "preco", "pago", "orcado", "rateado", "saldo", "folhamensal", "base",
+)
+
+private fun formatarMoedaBr(numero: Double): String =
+    "R$ " + String.format(java.util.Locale("pt", "BR"), "%,.2f", numero)
+
+/** Espelho de tituloSecao() só que pra nomes de CAMPO em vez de SEÇÃO --
+ * pedido do usuário ("corrija toda a ortografia do módulo, há palavras que
+ * são maiúsculas estão minúsculas e vice-versa"): antes o card genérico
+ * (ObjetoCard) imprimia a chave crua do JSON ("custoHaTotal",
+ * "percentualFolha") direto na tela; agora todo nome de campo passa por
+ * aqui e sai formatado de forma consistente ("Custo Ha Total"), em vez de
+ * uma mistura de camelCase cru com o resto da tela em Title Case normal. */
+private fun tituloCampo(campo: String): String = tituloSecao(campo)
+
+/** @param campo nome do campo no JSON -- usado só pra decidir formatação
+ * (moeda/porcentagem), nunca alterado nem exibido por essa função. */
+private fun valorParaTexto(campo: String, el: JsonElement): String = when (el) {
     is JsonNull -> "—"
     is JsonArray -> "${el.size} item(ns)"
     is JsonObject -> "${el.size} campo(s)"
-    is JsonPrimitive -> el.content.ifBlank { "—" }
+    is JsonPrimitive -> {
+        val texto = el.content
+        if (texto.isBlank()) {
+            "—"
+        } else if (texto == "true" || texto == "false") {
+            // Booleano cru ("pago", "ativo" etc. -- ver getAnalisesCruzadas
+            // em lib/services/analises.ts) virando literalmente "true"/
+            // "false" na tela -- pedido do usuário ("procure as palavras
+            // true e false e substitua pelo nome que ela refere"). Análises
+            // renderiza o JSON de forma genérica (ObjetoCard) e não passava
+            // por nenhuma tradução Sim/Não, diferente do restante do app
+            // (ver colType == "checkbox" em StatusStyle.kt).
+            if (texto == "true") "Sim" else "Não"
+        } else {
+            val numero = texto.toDoubleOrNull()
+            val campoMin = campo.lowercase()
+            when {
+                // "porcentagem" -- pedido do usuário: campos percentuais
+                // (percentualFolha etc.) só mostravam o número cru (ex.:
+                // "35.5"), sem "%", diferente do site (ver
+                // analises-client.tsx: "...percentualFolha.toLocaleString
+                // ("pt-BR")}%").
+                numero != null && (campoMin.contains("percentual") || campoMin.contains("pct")) ->
+                    "${String.format(java.util.Locale("pt", "BR"), "%.1f", numero)}%"
+                numero != null && CAMPOS_MOEDA.any { campoMin.contains(it) } -> formatarMoedaBr(numero)
+                else -> texto
+            }
+        }
+    }
     else -> "—"
 }
 
@@ -190,14 +244,14 @@ private fun analisesExportRecords(data: JsonObject): List<Map<String, String?>> 
             is JsonArray -> valor.forEachIndexed { indice, item ->
                 if (item is JsonObject) {
                     item.entries.forEach { (campo, v) ->
-                        linhas.add(mapOf("secao" to secao, "item" to (indice + 1).toString(), "campo" to campo, "valor" to valorParaTexto(v)))
+                        linhas.add(mapOf("secao" to secao, "item" to (indice + 1).toString(), "campo" to tituloCampo(campo), "valor" to valorParaTexto(campo, v)))
                     }
                 }
             }
             is JsonObject -> valor.entries.forEach { (campo, v) ->
-                linhas.add(mapOf("secao" to secao, "item" to "", "campo" to campo, "valor" to valorParaTexto(v)))
+                linhas.add(mapOf("secao" to secao, "item" to "", "campo" to tituloCampo(campo), "valor" to valorParaTexto(campo, v)))
             }
-            else -> linhas.add(mapOf("secao" to secao, "item" to "", "campo" to "", "valor" to valorParaTexto(valor)))
+            else -> linhas.add(mapOf("secao" to secao, "item" to "", "campo" to "", "valor" to valorParaTexto(chave, valor)))
         }
     }
     return linhas
@@ -294,10 +348,26 @@ private fun AnalisesCategoryTabs(blocks: List<AnalisesBlockSpec>, modifier: Modi
 private fun ObjetoCard(obj: JsonObject) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            // Campo "label" tratado à parte -- pedido do usuário ("tem uma
+            // palavra escrita label, substitua"): é o nome técnico que a
+            // API usa pra identificar o item (ex.: "Safra 23/24 · Soja ·
+            // Fazenda X", ver lib/services/analises.ts no site), sem
+            // nenhum significado pro usuário final. Antes aparecia
+            // literalmente "label: <valor>" na tela; agora vira o título do
+            // card, sem o nome do campo na frente.
+            obj["label"]?.let { labelValor ->
+                Text(valorParaTexto("label", labelValor), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+            }
             obj.entries.forEach { (campo, valor) ->
+                if (campo == "label") return@forEach
                 Row {
-                    Text("$campo: ", style = MaterialTheme.typography.bodySmall)
-                    Text(valorParaTexto(valor), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                    // tituloCampo() em vez do nome cru do JSON -- pedido do
+                    // usuário ("corrija a ortografia, há palavras maiúsculas
+                    // que deveriam ser minúsculas e vice-versa"): antes
+                    // aparecia a chave crua ("custoHaTotal"), misturando
+                    // camelCase técnico com o resto da tela em Title Case.
+                    Text("${tituloCampo(campo)}: ", style = MaterialTheme.typography.bodySmall)
+                    Text(valorParaTexto(campo, valor), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -319,7 +389,7 @@ private fun SecaoAnalise(chave: String, valor: JsonElement) {
                 }
             }
             is JsonObject -> ObjetoCard(valor)
-            else -> Text(valorParaTexto(valor), style = MaterialTheme.typography.bodySmall)
+            else -> Text(valorParaTexto(chave, valor), style = MaterialTheme.typography.bodySmall)
         }
     }
 }
