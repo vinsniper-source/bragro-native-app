@@ -20,7 +20,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -60,10 +59,13 @@ import com.bragro.mobile.data.local.LookupEntity
 import com.bragro.mobile.data.model.ColumnConfig
 import com.bragro.mobile.data.model.DomainConfig
 import com.bragro.mobile.data.repo.ConfigRepository
+import com.bragro.mobile.data.repo.ModuleActionsRepository
 import com.bragro.mobile.data.repo.RecordRepository
 import com.bragro.mobile.data.repo.SaveResult
 import com.bragro.mobile.ui.theme.BrGreen
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 
 class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
     private val configRepository = ConfigRepository(app)
@@ -166,6 +168,25 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             computedValues.value = computed
 
             lastRecord.value = if (recordId == null) recordRepository.mostRecent(domainId) else null
+
+            // Preview do próximo número de O.S. num lançamento NOVO (pedido
+            // do usuário: "aplique tambem no app o que foi aplicado na
+            // plataforma do preenchimento automático da O.S. posterior") --
+            // mesmo critério do site (record-form.tsx): só dispara se o
+            // domínio de fato tem a coluna "os" (evita chamada à toa nos
+            // ~13 módulos que não usam O.S.; o servidor também confere
+            // OS_AUTO_DOMAINS, mas checar aqui evita a requisição inteira).
+            // Coroutine separada pra não atrasar a exibição do formulário
+            // enquanto o preview ainda não voltou.
+            if (recordId == null && cfg.columns.any { it.key == "os" }) {
+                viewModelScope.launch {
+                    val preview = ModuleActionsRepository(getApplication()).run("preview-next-os", domainId = domainId)
+                    val os = (preview?.get("os") as? JsonPrimitive)?.contentOrNull
+                    if (!os.isNullOrBlank() && fields["os"].isNullOrBlank()) {
+                        fields["os"] = os
+                    }
+                }
+            }
         }
     }
 
@@ -410,37 +431,15 @@ fun DomainFormScreen(
                 Text(cfg.notice, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 12.dp))
             }
 
-            // "Copiar último lançamento" (Task #51/#77) agora é o ícone no
-            // topo à direita (ver TopAppBar acima) -- aqui fica só o aviso
-            // de que funciona offline, pra quem tocar no ícone entender o
-            // que aconteceu (preencheu os campos com o último lançamento).
-            if (recordId == null && lastRecord != null) {
-                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
-                    Icon(
-                        Icons.Filled.CloudDone,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp).padding(end = 4.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        "Ícone de copiar no topo preenche com o último lançamento salvo neste aparelho (funciona online e offline)",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            // Nota sobre os campos calculados -- mesmo aviso do site
-            // (record-form.tsx), só quando o módulo realmente tem algum.
-            val computedCols = cfg.columns.filter { it.computed }
-            if (computedCols.isNotEmpty()) {
-                Text(
-                    "Campos calculados (${computedCols.joinToString(", ") { it.label }}) são recalculados automaticamente ao salvar.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 12.dp),
-                )
-            }
+            // Avisos da nuvem/copiar e de campos calculados REMOVIDOS daqui --
+            // pedido do usuário ("retire os avisos da nuvem copiar e dos
+            // campos calculados automaticamente"): o rótulo "(calculado
+            // automaticamente)" que já aparece acima de cada campo calculado
+            // (ver ComputedFieldDisplay abaixo) já deixa isso claro sem
+            // precisar de um parágrafo extra repetindo a mesma informação; o
+            // ícone de copiar (TopAppBar) também não precisa mais de legenda
+            // -- é auto-explicativo (ícone de copiar + tooltip/contentDescription
+            // "Copiar último lançamento").
 
             // Mostra TODAS as colunas na ordem natural do domínio (mesma
             // ordem de cfg.columns, que já reflete a ordem da operação em
@@ -618,7 +617,7 @@ private fun computedDisplayValue(col: ColumnConfig, raw: String, optionLabels: M
 private fun ComputedFieldDisplay(col: ColumnConfig, raw: String, optionLabels: Map<String, String>) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-            "${col.label} (calculado)",
+            "${col.label} (calculado automaticamente)",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

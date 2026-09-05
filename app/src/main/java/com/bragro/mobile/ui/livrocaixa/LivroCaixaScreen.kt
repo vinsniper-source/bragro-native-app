@@ -629,7 +629,7 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                         )
                         LabeledIconButton(
                             icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
-                            label = if (tableView) "Coluna" else "Tabela",
+                            label = if (tableView) "Bloco" else "Tabela",
                             onClick = { tableView = !tableView },
                         )
                     }

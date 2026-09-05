@@ -335,6 +335,10 @@ data class ModuleActionRequest(
     // botão "Emitir NFS-e" da tabela genérica do site (data-table.tsx,
     // domain.id === "nfse").
     val id: String? = null,
+    // Só usado por "preview-next-os" -- qual domínio (safra/frota/
+    // controleinterno) pedir o próximo número de O.S. (previewNextOsAction,
+    // mesma Server Action do site).
+    val domainId: String? = null,
 )
 
 @Serializable
@@ -462,10 +466,14 @@ data class BaseDeDadosRequest(
     // opcional. null = campo omitido do JSON (encodeDefaults=false), então
     // o backend não mexe no valor já salvo (ver route.ts "areaSafrinhaData").
     val areaSafrinhaHa: Double? = null,
-    // Área safrinha POR CULTURA (5ª exceção de schema, ver MEMORY.md) --
-    // mesmo padrão de areaSafrinhaHa acima (omitido = não mexe).
-    val areaSafrinhaMilhoHa: Double? = null,
-    val areaSafrinhaSorgoHa: Double? = null,
+    // Área safrinha POR CULTURA (5ª exceção de schema, ver MEMORY.md,
+    // atualizada no mega-lote de "Milho/Sorgo fixos" pra 2 slots LIVRES:
+    // cultura escolhida via dropdown + área cada) -- mesmo padrão de
+    // areaSafrinhaHa acima (omitido = não mexe).
+    val areaSafrinhaCultura1: String? = null,
+    val areaSafrinhaCultura1Ha: Double? = null,
+    val areaSafrinhaCultura2: String? = null,
+    val areaSafrinhaCultura2Ha: Double? = null,
     // Localização real (6ª exceção de schema, ver MEMORY.md) -- mesmo
     // padrão partial-update: omitido = não mexe. Usada por
     // resolveFarmCoords() (lib/services/weather.ts, site) pra trocar o

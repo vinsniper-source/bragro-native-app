@@ -3,6 +3,7 @@ package com.bragro.mobile.ui.domain
 import android.app.Application
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -729,7 +730,7 @@ fun DomainListScreen(
                             // de auditoria, pedido do usuário).
                             LabeledIconButton(
                                 icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
-                                label = if (tableView) "Coluna" else "Tabela",
+                                label = if (tableView) "Bloco" else "Tabela",
                                 onClick = { tableView = !tableView },
                             )
                         }
@@ -813,7 +814,7 @@ fun DomainListScreen(
                             // de auditoria, pedido do usuário).
                             LabeledIconButton(
                                 icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
-                                label = if (tableView) "Coluna" else "Tabela",
+                                label = if (tableView) "Bloco" else "Tabela",
                                 onClick = { tableView = !tableView },
                             )
                         }
@@ -937,7 +938,7 @@ fun DomainListScreen(
                             // de auditoria, pedido do usuário).
                             LabeledIconButton(
                                 icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
-                                label = if (tableView) "Coluna" else "Tabela",
+                                label = if (tableView) "Bloco" else "Tabela",
                                 onClick = { tableView = !tableView },
                             )
                         }
@@ -1059,7 +1060,7 @@ fun DomainListScreen(
                     if (true) {
                         LabeledIconButton(
                             icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
-                            label = if (tableView) "Coluna" else "Tabela",
+                            label = if (tableView) "Bloco" else "Tabela",
                             onClick = { tableView = !tableView },
                         )
                     }
@@ -1416,6 +1417,21 @@ fun DomainListScreen(
     if (showIntegracaoDialog && (domainId == "frota" || domainId == "romaneios")) {
         AlertDialog(
             onDismissRequest = { showIntegracaoDialog = false },
+            // Largura fixa + usePlatformDefaultWidth=false -- bug real
+            // reportado pelo usuário (screenshot): o texto "Acesso automático
+            // via prestadora de serviço" quebrava quase palavra por palavra
+            // em várias linhas, em vez de ficar numa linha só/2 linhas
+            // normais. Causa: por padrão o AlertDialog do Material3 mede seu
+            // conteúdo com IntrinsicSize.Min pra decidir a largura do
+          // diálogo -- e a largura mínima intrínseca de um Row com um Text
+            // com weight(1f) é praticamente a palavra mais larga sozinha
+            // (bug conhecido do Compose Material3 com Row+weight dentro de
+            // AlertDialog). Fixando a largura do diálogo em si (em vez de
+            // deixar o Compose calcular a "mínima"), o Row interno passa a
+            // ser medido com a largura real disponível e o texto volta a
+            // quebrar normalmente, como parágrafo.
+            modifier = Modifier.width(340.dp),
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
             title = { Text(if (domainId == "frota") "Bomba de combustível" else "Balança") },
             text = { ModuleProviderIntegrationCard(domainId) },
             confirmButton = {
@@ -1605,13 +1621,19 @@ private fun RecordFieldLine(
         StatusBadge(value)
     } else {
         val displayValue = if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)
+        // Verde (receita) / laranja-âmbar (despesa) só nas colunas Bruto/
+        // Liquido do Financeiro -- pedido do usuário sobre a cor da fonte dos
+        // valores (mesmo critério de FinanceiroFieldLine/RecordTable).
+        val moneyColor = if (domainId == "financeiro" && (col.key == "bruto" || col.key == "liquido")) {
+            if (isReceitaOp(record["operacao"])) MaterialTheme.colorScheme.primary else com.bragro.mobile.ui.theme.BrOrange
+        } else null
         // Negrito só no valor preenchido, cabeçalho fica normal/mais claro --
         // pedido do usuário ("coloque ou o cabeçalho ou o campo preenchido em
         // negrito"), assim a linha não fica toda em negrito nem toda plana.
         Text(
             buildAnnotatedString {
                 withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) { append("${col.label}: ") }
-                withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(displayValue) }
+                withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = moneyColor ?: Color.Unspecified)) { append(displayValue) }
             },
             style = MaterialTheme.typography.bodySmall,
             maxLines = 2,

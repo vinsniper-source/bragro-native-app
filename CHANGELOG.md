@@ -18,6 +18,41 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.38] -- 2026-09-05
+
+Mega-lote de correções e ajustes (mensagem com 7 imagens, tarefa #424) --
+últimos 3 itens implementados nesta versão (os demais itens do mega-lote já
+tinham sido cobertos em versões anteriores):
+
+- **Preview automático do próximo número de O.S.** -- pedido do usuário
+  ("aplique também no app o que foi aplicado na plataforma do preenchimento
+  automático da O.S. posterior"). `DomainFormScreen.kt` agora chama a mesma
+  ação `preview-next-os` (endpoint `/api/mobile/module-actions`, já usado
+  por outras 9+ ações leves) ao abrir um lançamento NOVO num domínio que tem
+  coluna "os" (Safra/Frota/Controle Interno), pré-preenchendo o campo com o
+  próximo número em vez de deixá-lo em branco -- mesmo comportamento que já
+  existia no site (`previewNextOsAction`).
+- **Lentidão percebida nos filtros do dashboard (site)** -- corrigida com
+  `useTransition`/`isPending`: o dashboard é `force-dynamic` (não pode ser
+  cacheado) e os filtros de Safra/Cultura/fazenda disparavam
+  `router.push`/`router.refresh` sem nenhum feedback visual durante a
+  espera, dando a sensação de "travado". Agora os selects ficam
+  desabilitados e semitransparentes com um spinner até a navegação
+  terminar.
+- **Área Safrinha por cultura: de campos fixos (Milho/Sorgo) para 2 slots
+  livres com dropdown** -- reversão de uma decisão anterior, reconfirmada
+  com o usuário nesta sessão (contradição encontrada entre a memória
+  persistida e o pedido do mega-lote; usuário escolheu explicitamente
+  "Trocar p/ dropdown flexível"). Os campos `areaSafrinhaMilhoHa`/
+  `areaSafrinhaSorgoHa` viraram 4 campos (`areaSafrinhaCultura1`/`1Ha`/
+  `2`/`2Ha`), cada slot com cultura escolhida via dropdown (mesma lista
+  fixa de culturas do site) + área em hectares. Migração de banco preserva
+  os dados antigos (Milho -> slot 1, Sorgo -> slot 2) antes de derrubar as
+  colunas velhas. Espelhado no site (Base de Dados, Canvas,
+  `resolveAreaTotal`) e no app nativo (tela Base de Dados/Fazendas, com 2
+  dropdowns `ExposedDropdownMenuBox` substituindo os campos fixos "milho"/
+  "sorgo").
+
 ## [1.2.37] -- 2026-09-04
 
 - **Forte candidato ao crash "app fecha ao preencher qualquer campo" (confirmado pelo usuário mesmo após instalar a 1.2.36)** -- usuário relatou que, do formulário genérico (Novo/Editar lançamento), SÓ o campo Data conseguia ser preenchido sem o app fechar; qualquer outro campo (texto, select, número, moeda) derrubava o app. O denominador comum: Data é o único campo que pode ser preenchido inteiramente pelo seletor de calendário, SEM abrir o teclado -- todos os outros exigem teclado. `DomainFormScreen.kt` usava `Modifier.basicMarquee()` (API experimental) no título da TopAppBar ("Novo lançamento"/"Editar lançamento"); abrir/fechar o teclado redimensiona a janela do Scaffold, o que pode recalcular a largura do marquee em condição de corrida -- já existe um bug real e confirmado de marquee travando a UI neste mesmo app (ver entrada de tarefa "Reverter marquee dentro de DropdownMenuItem", causava a barra inferior travar). Removido: o texto do título é sempre um destes dois literais curtos e fixos, nunca precisou de letreiro (Ellipsis nunca chega a aparecer). Sem acesso a logcat pra confirmar 100% a causa raiz -- se o crash persistir mesmo na 1.2.37, precisamos de mais detalhe (qual módulo, stack trace se possível).

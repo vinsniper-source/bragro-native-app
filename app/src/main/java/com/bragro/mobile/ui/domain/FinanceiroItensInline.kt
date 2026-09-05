@@ -225,6 +225,10 @@ private fun ItemNotaLinhaRow(
             .padding(10.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
+        // Item fica sozinho na própria linha (dropdown de pesquisa, precisa
+        // de largura pra mostrar nomes longos); Unidade + Quantidade dividem
+        // a linha de baixo -- pedido do usuário ("divida os campos"), em vez
+        // de cada campo numa linha própria.
         ItemStringDropdown(
             label = "Item *",
             value = itensOptions.firstOrNull { it.value == linha.descricao }?.label ?: linha.descricao.ifBlank { null },
@@ -232,16 +236,16 @@ private fun ItemNotaLinhaRow(
             placeholder = "Selecione o item",
             onSelect = { picked -> linha.descricao = itensOptions.firstOrNull { it.label == picked }?.value ?: picked },
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            ItemStringDropdown(
-                label = "Unidade",
-                value = unidadesOptions.firstOrNull { it.value == linha.unidade }?.label ?: linha.unidade.ifBlank { null },
-                options = unidadesOptions.map { it.label },
-                placeholder = "Opcional",
-                onSelect = { picked -> linha.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked },
-            )
-        }
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(modifier = Modifier.weight(1f)) {
+                ItemStringDropdown(
+                    label = "Unidade",
+                    value = unidadesOptions.firstOrNull { it.value == linha.unidade }?.label ?: linha.unidade.ifBlank { null },
+                    options = unidadesOptions.map { it.label },
+                    placeholder = "Opcional",
+                    onSelect = { picked -> linha.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                )
+            }
             OutlinedTextField(
                 value = linha.quantidade,
                 onValueChange = { linha.quantidade = it },
@@ -305,8 +309,11 @@ fun FinanceiroItensInlineSection(
         // tira curta "Doc/NF: X · Data: Y · Local: Z · Entidade: W", mais
         // rápida de ler igual num resumo de pedido.
         Text("Lançar nota com itens", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        // Aviso resumido de novo -- pedido do usuário ("resuma os avisos e
+        // divida os campos"): a versão anterior já tinha sido encurtada uma
+        // vez (ver comentário acima), mas ainda cabia num só sentido direto.
         Text(
-            "Só pra compras que abastecem o Estoque (usa Doc/NF, Data, Local e Entidade acima). Cada item vira entrada no Estoque; o total vira Financeiro. Sem produto (salário, aluguel...)? Use os campos normais. Não relance esta nota — ela já gera os dois juntos.",
+            "Só pra compras com produto/Estoque. Cada item vira entrada; o total vira Financeiro (não relance).",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

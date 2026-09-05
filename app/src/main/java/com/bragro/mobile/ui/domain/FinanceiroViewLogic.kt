@@ -24,7 +24,11 @@ enum class FinanceiroView(val label: String) {
 // digitação na lista suspensa "Operação".
 private val RECEITA_OPS = setOf("venda", "recebimento", "resgate", "estorno", "devolucao", "devolução")
 
-private fun isReceitaOp(operacao: String?): Boolean {
+// Não é mais "private": também usada por FinanceiroFieldLine/FluxoCard
+// (FinanceiroScreen.kt) pra decidir a cor da fonte de Bruto/Liquido -- verde
+// (receita) / laranja-âmbar (despesa), mesmo pedido do usuário aplicado no
+// site (ver financeiroMoneyColorClass em data-table.tsx).
+fun isReceitaOp(operacao: String?): Boolean {
     val v = operacao?.trim()?.lowercase() ?: return false
     return RECEITA_OPS.contains(v)
 }

@@ -118,30 +118,39 @@ fun ProviderIntegrationCard(
             ) {
                 Text(descricao, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-                ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+                // Provedor + API Key lado a lado em vez de empilhados --
+                // pedido do usuário ("divida os campos"). Cada um ocupa
+                // metade da largura do card.
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = it },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        OutlinedTextField(
+                            value = provedor, onValueChange = {}, readOnly = true,
+                            label = { Text("Provedor") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor(),
+                            colors = appFieldColors(),
+                        )
+                        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                            providers.forEach { p -> DropdownMenuItem(text = { Text(p) }, onClick = { provedor = p; expanded = false }) }
+                        }
+                    }
+
                     OutlinedTextField(
-                        value = provedor, onValueChange = {}, readOnly = true,
-                        label = { Text("Provedor") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        value = apiKey, onValueChange = { apiKey = it },
+                        label = { Text("API Key / Token") },
+                        placeholder = { Text(if (integration?.apiKeyConfigurado == true) "•••• (salvo)" else "Cole a credencial") },
+                        leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
                         colors = appFieldColors(),
                     )
-                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        providers.forEach { p -> DropdownMenuItem(text = { Text(p) }, onClick = { provedor = p; expanded = false }) }
-                    }
                 }
-
-                OutlinedTextField(
-                    value = apiKey, onValueChange = { apiKey = it },
-                    label = { Text("API Key / Token") },
-                    placeholder = { Text(if (integration?.apiKeyConfigurado == true) "•••••••• (salvo)" else "Cole aqui a credencial do provedor") },
-                    leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = appFieldColors(),
-                )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
@@ -182,8 +191,11 @@ fun ProviderIntegrationCard(
                     // reabre a tela mais tarde (sem ter visto o toast) já
                     // entende que "conectado" não significa "sincronizando
                     // automaticamente" ainda.
+                    // Aviso resumido -- pedido do usuário ("resuma os
+                    // avisos"). O comportamento (sync automática ainda
+                    // depende de aprovação de parceiro) continua o mesmo.
                     Text(
-                        "A sincronização automática ainda depende de aprovação de parceiro do fabricante junto ao provedor -- \"Testar sincronização\" confirma que a credencial está salva, mas não puxa dados novos por enquanto.",
+                        "Sincronização automática ainda depende de aprovação do parceiro/fabricante.",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

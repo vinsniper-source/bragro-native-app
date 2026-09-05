@@ -431,7 +431,16 @@ fun FinanceiroScreen(
                     // os ícones do bloco"): o Filtro (Banco) agora sempre
                     // aparece em Dados, não só na visão Conciliado.
                     BancoDropdown(banco = banco, options = bancoOptions, onSelect = { banco = it })
-                    if (cfg != null) {
+                    // Botão "Colunas" removido das 6 visões de Gestão
+                    // Financeira (Contas a Receber/Pagar, Fluxo de Caixa,
+                    // Rateio Direto/Indireto, Conciliado) -- pedido do
+                    // usuário ("retire o botão ícone de colunas... e
+                    // redistribua os botões com o mesmo tamanho"). Essas
+                    // visões já têm colunas fixas (FINANCEIRO_VIEW_COLUMN_KEYS),
+                    // então o seletor só faz sentido em "Todos" (!isQuickView).
+                    // EqualWidthBlockRow já redistribui os botões restantes
+                    // automaticamente.
+                    if (cfg != null && !isQuickView) {
                         ColumnsPickerButton(
                             allColumns = viewColumns,
                             visibleKeys = customColumnKeys ?: viewColumns.map { it.key }.toSet(),
@@ -456,7 +465,12 @@ fun FinanceiroScreen(
                     // todos os módulos").
                     LabeledIconButton(
                         icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
-                        label = if (tableView) "Coluna" else "Tabela",
+                        // "Coluna" -> "Bloco" -- pedido do usuário ("no
+                        // native já existe com o nome tabela, apenas troque
+                        // coluna por bloco"). Mesmo botão único do módulo
+                        // genérico (EqualWidthBlockRow), então esse rótulo
+                        // muda em todos os módulos do app de uma vez.
+                        label = if (tableView) "Bloco" else "Tabela",
                         onClick = { tableView = !tableView },
                     )
                 }
@@ -639,12 +653,12 @@ fun FinanceiroScreen(
                                             if (expanded) {
                                                 colsToShow.chunked(2).forEach { pair ->
                                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                                        pair.forEach { col -> Column(modifier = Modifier.weight(1f)) { FinanceiroFieldLine(col, record[col.key]) } }
+                                                        pair.forEach { col -> Column(modifier = Modifier.weight(1f)) { FinanceiroFieldLine(col, record[col.key], record["operacao"]) } }
                                                         if (pair.size == 1) Spacer(modifier = Modifier.weight(1f))
                                                     }
                                                 }
                                             } else {
-                                                colsToShow.forEach { col -> FinanceiroFieldLine(col, record[col.key]) }
+                                                colsToShow.forEach { col -> FinanceiroFieldLine(col, record[col.key], record["operacao"]) }
                                             }
                                             auditInfo[recordId]?.let { entry ->
                                                 Text(
@@ -726,7 +740,7 @@ fun FinanceiroScreen(
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         effectiveColumns.filter { it.key != "conciliar" && !viewedRecord[it.key].isNullOrBlank() }.forEach { col ->
-                            FinanceiroFieldLine(col, viewedRecord[col.key])
+                            FinanceiroFieldLine(col, viewedRecord[col.key], viewedRecord["operacao"])
                         }
                         auditInfo[recordBeingViewed]?.let { entry ->
                             Text(
@@ -750,8 +764,11 @@ fun FinanceiroScreen(
 // caso especial "conciliar" (bolinha) + status-like (pill) + o negrito de
 // isFinanceiroBoldColumn, mesmo critério de antes, só que reaproveitado em
 // 1 ou 2 colunas.
+// "operacao" (do mesmo registro) só é usado pra decidir a cor de Bruto/
+// Liquido -- verde quando a Operação é uma entrada (receita, isReceitaOp),
+// laranja-âmbar quando é saída (despesa). Não afeta nenhuma outra coluna.
 @Composable
-private fun FinanceiroFieldLine(col: com.bragro.mobile.data.model.ColumnConfig, value: String?) {
+private fun FinanceiroFieldLine(col: com.bragro.mobile.data.model.ColumnConfig, value: String?, operacao: String? = null) {
     when {
         col.key == "conciliar" -> {
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
@@ -766,13 +783,19 @@ private fun FinanceiroFieldLine(col: com.bragro.mobile.data.model.ColumnConfig, 
             // Mesmo critério do módulo genérico: negrito só no valor
             // preenchido, cabeçalho normal -- "vcto" (isFinanceiroBoldColumn)
             // ganha um destaque extra de cor, sem dobrar o negrito na linha.
+            // Bruto/Liquido (valores de receita/despesa) ganham prioridade
+            // sobre o negrito azul do vcto -- pedido do usuário sobre a cor
+            // da fonte dos valores.
+            val moneyColor = if (col.key == "bruto" || col.key == "liquido") {
+                if (isReceitaOp(operacao)) MaterialTheme.colorScheme.primary else com.bragro.mobile.ui.theme.BrOrange
+            } else null
             Text(
                 buildAnnotatedString {
                     withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) { append("${col.label}: ") }
                     withStyle(
                         SpanStyle(
                             fontWeight = FontWeight.Bold,
-                            color = if (isFinanceiroBoldColumn(col.key)) MaterialTheme.colorScheme.primary else Color.Unspecified,
+                            color = moneyColor ?: if (isFinanceiroBoldColumn(col.key)) MaterialTheme.colorScheme.primary else Color.Unspecified,
                         ),
                     ) { append(displayValue) }
                 },
@@ -1142,13 +1165,13 @@ private fun FluxoCard(row: FluxoRow, onClick: () -> Unit) {
             )
             Text("Data movimento: ${row.dataMovimento?.let { displayValueFor("data", it, "date") } ?: "—"}", style = MaterialTheme.typography.bodySmall)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                // Color(0xFF2F6F4F) (fixo) -> colorScheme.primary (adapta por
-                // tema) -- pedido do usuário ("coloque as cores das fontes
-                // preto/branco modo claro/escuro"): "Saída" já usava
-                // colorScheme.error corretamente, "Entrada" era o único fora
-                // do padrão.
+                // Verde (receita) / laranja-âmbar (despesa) -- pedido do
+                // usuário ("trocarmos a cor da fonte dos valores de receita e
+                // despesa? -> Verde (receita) / Laranja ou âmbar (despesa)").
+                // "Entrada" já era colorScheme.primary (verde, adapta tema);
+                // "Saída" trocou de colorScheme.error (vermelho) pra BrOrange.
                 if (row.entrada > 0) Text("Entrada: ${formatMoneyValue(row.entrada.toString())}", color = MaterialTheme.colorScheme.primary)
-                if (row.saida > 0) Text("Saída: ${formatMoneyValue(row.saida.toString())}", color = MaterialTheme.colorScheme.error)
+                if (row.saida > 0) Text("Saída: ${formatMoneyValue(row.saida.toString())}", color = com.bragro.mobile.ui.theme.BrOrange)
             }
             Text("Saldo acumulado: ${formatMoneyValue(row.saldoAcumulado.toString())}", fontWeight = FontWeight.Bold)
         }

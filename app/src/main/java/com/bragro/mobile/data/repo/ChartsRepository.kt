@@ -62,6 +62,8 @@ class ModuleActionsRepository(context: Context) {
         transferenciaEntradaId: String? = null,
         motivo: String? = null,
         tipo: String? = null,
+        // Só usado por "preview-next-os" -- ver ModuleActionRequest.domainId.
+        domainId: String? = null,
     ): JsonObject? {
         val tokens = tokenStore.current() ?: return null
         var (accessToken, refreshToken) = tokens
@@ -70,7 +72,7 @@ class ModuleActionsRepository(context: Context) {
             item = item, unidade = unidade, quantidade = quantidade,
             fazendaOrigemId = fazendaOrigemId, fazendaDestinoId = fazendaDestinoId,
             transferenciaEntradaId = transferenciaEntradaId,
-            motivo = motivo, tipo = tipo,
+            motivo = motivo, tipo = tipo, domainId = domainId,
         )
         return try {
             var response = NetworkModule.mobileApi.moduleActions(buildRequest(accessToken))

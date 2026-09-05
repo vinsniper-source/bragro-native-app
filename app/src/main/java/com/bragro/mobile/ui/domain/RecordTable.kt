@@ -208,6 +208,12 @@ private fun RecordTableCellValue(col: ColumnConfig, value: String, record: Map<S
         isStatusLikeColumn(col.key) -> StatusBadge(value)
         else -> {
             val displayValue = if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)
+            // Verde (receita) / laranja-âmbar (despesa) só nas colunas Bruto/
+            // Liquido do Financeiro -- pedido do usuário sobre a cor da fonte
+            // dos valores (mesmo critério de FinanceiroFieldLine).
+            val moneyColor = if (domainId == "financeiro" && (col.key == "bruto" || col.key == "liquido")) {
+                if (isReceitaOp(record["operacao"])) MaterialTheme.colorScheme.primary else com.bragro.mobile.ui.theme.BrOrange
+            } else null
             Text(
                 displayValue,
                 style = MaterialTheme.typography.bodySmall,
@@ -220,7 +226,7 @@ private fun RecordTableCellValue(col: ColumnConfig, value: String, record: Map<S
                 // colunas (só "—" e os badges de status, que já tinham cor
                 // própria, apareciam). onSurface = mesma cor que qualquer
                 // outro texto normal sobre um fundo `surface` no app.
-                color = MaterialTheme.colorScheme.onSurface,
+                color = moneyColor ?: MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Clip,

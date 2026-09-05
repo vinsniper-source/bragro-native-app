@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -371,6 +372,24 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                         }
                     }
                 },
+                // Ícone de copiar no topo direito -- pedido do usuário ("na
+                // imagem 4, crie um icone copiar do lado direito superior e
+                // exclua o botão copiar ultimo pedido"): substitui o botão
+                // largo "Copiar último pedido" que ocupava uma linha
+                // inteira. Mesmo destino (preencherComUltimo), só muda onde
+                // o usuário aciona.
+                actions = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        IconButton(onClick = { viewModel.preencherComUltimo() }, enabled = !copiando) {
+                            if (copiando) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            } else {
+                                Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último pedido", tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
+                },
             )
         },
     ) { padding ->
@@ -395,83 +414,92 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item {
+                // Aviso resumido -- pedido do usuário ("resuma esses
+                // avisos"). O comportamento completo (Qtd. entregue vira
+                // entrada em Estoque automaticamente) continua valendo, só a
+                // explicação ficou mais curta.
                 Text(
-                    "Pedidos controla o que foi comprado x o que já chegou do fornecedor. Ao preencher \"Qtd. entregue\", o sistema já lança essa quantidade como entrada em Estoque -- não precisa repetir lá.",
+                    "Qtd. entregue já lança automaticamente como entrada em Estoque.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
-            item {
-                OutlinedButton(
-                    onClick = { viewModel.preencherComUltimo() },
-                    enabled = !copiando,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Icon(Icons.Filled.ContentCopy, contentDescription = null, modifier = Modifier.padding(end = 6.dp).size(16.dp))
-                    Text(if (copiando) "Copiando..." else "Copiar último pedido")
-                }
-            }
+            // Botão largo "Copiar último pedido" removido -- virou o ícone
+            // de copiar no topo direito da TopAppBar (ver actions acima).
             if (errorMessage != null) {
                 item { Text(errorMessage ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
             }
+            // Campos do cabeçalho em pares (2 por linha) em vez de 1 por
+            // linha -- pedido do usuário ("separe os campos como os acima
+            // na mesma imagem"). Data de entrega fica sozinha na própria
+            // linha por causa do seletor de calendário (precisa de mais
+            // espaço horizontal pro ícone).
             item {
-                OutlinedTextField(
-                    value = viewModel.noPedido,
-                    onValueChange = { viewModel.noPedido = it },
-                    label = { Text("Nº do pedido *") },
-                    placeholder = { Text("Ex.: 12345") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = appFieldColors(),
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = viewModel.noPedido,
+                        onValueChange = { viewModel.noPedido = it },
+                        label = { Text("Nº do pedido *") },
+                        placeholder = { Text("Ex.: 12345") },
+                        modifier = Modifier.weight(1f),
+                        colors = appFieldColors(),
+                    )
+                    OutlinedTextField(
+                        value = viewModel.nf,
+                        onValueChange = { viewModel.nf = it },
+                        label = { Text("NF") },
+                        placeholder = { Text("Opcional") },
+                        modifier = Modifier.weight(1f),
+                        colors = appFieldColors(),
+                    )
+                }
             }
             item {
-                OutlinedTextField(
-                    value = viewModel.nf,
-                    onValueChange = { viewModel.nf = it },
-                    label = { Text("NF") },
-                    placeholder = { Text("Opcional") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = appFieldColors(),
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        StringDropdown(
+                            label = "Setor",
+                            value = setoresOptions.firstOrNull { it.value == viewModel.setor }?.label ?: viewModel.setor,
+                            options = setoresOptions.map { it.label },
+                            placeholder = "Opcional",
+                            allowEmpty = true,
+                            onSelect = { picked -> viewModel.setor = setoresOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                        )
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        StringDropdown(
+                            label = "Fornecedor",
+                            value = fornecedoresOptions.firstOrNull { it.value == viewModel.fornecedor }?.label ?: viewModel.fornecedor,
+                            options = fornecedoresOptions.map { it.label },
+                            placeholder = "Opcional",
+                            allowEmpty = true,
+                            onSelect = { picked -> viewModel.fornecedor = fornecedoresOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                        )
+                    }
+                }
             }
             item {
-                StringDropdown(
-                    label = "Setor",
-                    value = setoresOptions.firstOrNull { it.value == viewModel.setor }?.label ?: viewModel.setor,
-                    options = setoresOptions.map { it.label },
-                    placeholder = "Opcional",
-                    allowEmpty = true,
-                    onSelect = { picked -> viewModel.setor = setoresOptions.firstOrNull { it.label == picked }?.value ?: picked },
-                )
-            }
-            item {
-                StringDropdown(
-                    label = "Fornecedor",
-                    value = fornecedoresOptions.firstOrNull { it.value == viewModel.fornecedor }?.label ?: viewModel.fornecedor,
-                    options = fornecedoresOptions.map { it.label },
-                    placeholder = "Opcional",
-                    allowEmpty = true,
-                    onSelect = { picked -> viewModel.fornecedor = fornecedoresOptions.firstOrNull { it.label == picked }?.value ?: picked },
-                )
-            }
-            item {
-                StringDropdown(
-                    label = "Safra",
-                    value = safrasOptions.firstOrNull { it.value == viewModel.safra }?.label ?: viewModel.safra,
-                    options = safrasOptions.map { it.label },
-                    placeholder = "Opcional",
-                    allowEmpty = true,
-                    onSelect = { picked -> viewModel.safra = safrasOptions.firstOrNull { it.label == picked }?.value ?: picked },
-                )
-            }
-            item {
-                StringDropdown(
-                    label = "Cultura",
-                    value = culturasOptions.firstOrNull { it.value == viewModel.cultura }?.label ?: viewModel.cultura,
-                    options = culturasOptions.map { it.label },
-                    placeholder = "Opcional",
-                    allowEmpty = true,
-                    onSelect = { picked -> viewModel.cultura = culturasOptions.firstOrNull { it.label == picked }?.value ?: picked },
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        StringDropdown(
+                            label = "Safra",
+                            value = safrasOptions.firstOrNull { it.value == viewModel.safra }?.label ?: viewModel.safra,
+                            options = safrasOptions.map { it.label },
+                            placeholder = "Opcional",
+                            allowEmpty = true,
+                            onSelect = { picked -> viewModel.safra = safrasOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                        )
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        StringDropdown(
+                            label = "Cultura",
+                            value = culturasOptions.firstOrNull { it.value == viewModel.cultura }?.label ?: viewModel.cultura,
+                            options = culturasOptions.map { it.label },
+                            placeholder = "Opcional",
+                            allowEmpty = true,
+                            onSelect = { picked -> viewModel.cultura = culturasOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                        )
+                    }
+                }
             }
             item {
                 var showPicker by remember { mutableStateOf(false) }

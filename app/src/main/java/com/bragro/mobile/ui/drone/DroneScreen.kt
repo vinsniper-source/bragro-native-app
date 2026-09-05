@@ -262,7 +262,8 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
             // drone-client.tsx), única peça que ainda faltava no mobile.
             ProviderIntegrationCard(
                 providers = listOf("DJI Cloud", "DJI Terra", "Outro", "Pix4Dfields", "XAG One"),
-                descricao = "Hoje os voos são registrados manualmente com upload de arquivo. A credencial abaixo já fica salva com segurança; a sincronização automática ainda depende de aprovação de parceiro junto ao fabricante.",
+                // Aviso resumido -- pedido do usuário ("resuma os avisos").
+                descricao = "Hoje os voos são registrados manualmente com upload de arquivo. Credencial salva com segurança abaixo.",
                 integration = integration,
                 busy = integrationBusy,
                 syncMessage = integrationMessage,

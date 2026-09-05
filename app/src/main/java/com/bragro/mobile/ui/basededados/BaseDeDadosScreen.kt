@@ -30,7 +30,11 @@ import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenu
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -88,10 +92,10 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun act(action: String, category: String? = null, value: String? = null, id: String? = null, ativo: Boolean? = null, name: String? = null, areaHa: Double? = null, areaSafrinhaHa: Double? = null, areaSafrinhaMilhoHa: Double? = null, areaSafrinhaSorgoHa: Double? = null, latitude: Double? = null, longitude: Double? = null, onDone: (Boolean) -> Unit = {}) {
+    private fun act(action: String, category: String? = null, value: String? = null, id: String? = null, ativo: Boolean? = null, name: String? = null, areaHa: Double? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null, onDone: (Boolean) -> Unit = {}) {
         busy.value = true
         viewModelScope.launch {
-            val result = repo.run(action, category, value, id, ativo, name, areaHa, areaSafrinhaHa, areaSafrinhaMilhoHa, areaSafrinhaSorgoHa, latitude, longitude)
+            val result = repo.run(action, category, value, id, ativo, name, areaHa, areaSafrinhaHa, areaSafrinhaCultura1, areaSafrinhaCultura1Ha, areaSafrinhaCultura2, areaSafrinhaCultura2Ha, latitude, longitude)
             busy.value = false
             result.onSuccess { load(); onDone(true) }.onFailure { errorMessage.value = it.message; onDone(false) }
         }
@@ -109,17 +113,19 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
     // schema autorizada (ver MEMORY.md), opcional, ao lado da área
     // principal (pedido do usuário). Alimenta o círculo do Canvas quando a
     // safra filtrada bate "SAFRINHA ..." (ver lib/services/canvas.ts).
-    // areaSafrinhaMilhoHa/SorgoHa (5ª exceção de schema, ver MEMORY.md) --
-    // área safrinha POR CULTURA, pra quando a fazenda planta Milho E Sorgo
-    // na mesma safrinha, cada um com sua parte do total.
-    fun addFarm(name: String, areaHa: Double, areaSafrinhaHa: Double? = null, areaSafrinhaMilhoHa: Double? = null, areaSafrinhaSorgoHa: Double? = null) =
-        act("add_farm", name = name, areaHa = areaHa, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaMilhoHa = areaSafrinhaMilhoHa, areaSafrinhaSorgoHa = areaSafrinhaSorgoHa)
+    // areaSafrinhaCultura1/2 + suas Ha (5ª exceção de schema, ver MEMORY.md,
+    // atualizada no mega-lote pra 2 slots LIVRES escolhidos via dropdown em
+    // vez de Milho/Sorgo fixos) -- área safrinha POR CULTURA, pra quando a
+    // fazenda planta duas culturas na mesma safrinha, cada uma com sua parte
+    // do total.
+    fun addFarm(name: String, areaHa: Double, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null) =
+        act("add_farm", name = name, areaHa = areaHa, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaCultura1 = areaSafrinhaCultura1, areaSafrinhaCultura1Ha = areaSafrinhaCultura1Ha, areaSafrinhaCultura2 = areaSafrinhaCultura2, areaSafrinhaCultura2Ha = areaSafrinhaCultura2Ha)
     // Localização (6ª exceção de schema, ver MEMORY.md) -- latitude/
     // longitude sempre viajam juntas (as duas null limpa, as duas
     // preenchidas define; validação de "uma sem a outra" já é feita no
     // backend, ver update_farm em api/mobile/base-de-dados/route.ts).
-    fun updateFarm(id: String, areaHa: Double, areaSafrinhaHa: Double? = null, areaSafrinhaMilhoHa: Double? = null, areaSafrinhaSorgoHa: Double? = null, latitude: Double? = null, longitude: Double? = null) =
-        act("update_farm", id = id, areaHa = areaHa, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaMilhoHa = areaSafrinhaMilhoHa, areaSafrinhaSorgoHa = areaSafrinhaSorgoHa, latitude = latitude, longitude = longitude)
+    fun updateFarm(id: String, areaHa: Double, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null) =
+        act("update_farm", id = id, areaHa = areaHa, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaCultura1 = areaSafrinhaCultura1, areaSafrinhaCultura1Ha = areaSafrinhaCultura1Ha, areaSafrinhaCultura2 = areaSafrinhaCultura2, areaSafrinhaCultura2Ha = areaSafrinhaCultura2Ha, latitude = latitude, longitude = longitude)
     fun deleteFarm(id: String) = act("delete_farm", id = id)
     fun syncLocais() = act("sync_locais")
 }
@@ -224,8 +230,8 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
                 FarmsCard(
                     farms = farms,
                     busy = busy,
-                    onAdd = { name, area, areaSafrinha, areaSafrinhaMilho, areaSafrinhaSorgo -> viewModel.addFarm(name, area, areaSafrinha, areaSafrinhaMilho, areaSafrinhaSorgo) },
-                    onUpdate = { id, area, areaSafrinha, areaSafrinhaMilho, areaSafrinhaSorgo, latitude, longitude -> viewModel.updateFarm(id, area, areaSafrinha, areaSafrinhaMilho, areaSafrinhaSorgo, latitude, longitude) },
+                    onAdd = { name, area, areaSafrinha, cultura1, cultura1Ha, cultura2, cultura2Ha -> viewModel.addFarm(name, area, areaSafrinha, cultura1, cultura1Ha, cultura2, cultura2Ha) },
+                    onUpdate = { id, area, areaSafrinha, cultura1, cultura1Ha, cultura2, cultura2Ha, latitude, longitude -> viewModel.updateFarm(id, area, areaSafrinha, cultura1, cultura1Ha, cultura2, cultura2Ha, latitude, longitude) },
                     onDelete = { id -> viewModel.deleteFarm(id) },
                     onSync = { viewModel.syncLocais() },
                 )
@@ -314,15 +320,63 @@ private fun CollapsibleCard(title: String, initiallyOpen: Boolean = false, conte
     }
 }
 
+// Mesma lista fixa de culturas usada no site (DEFAULT_LOOKUPS.culturas.values
+// em default-lookups.ts) -- fonte dos 2 dropdowns de "cultura" dos slots de
+// área safrinha (5ª exceção de schema, ver MEMORY.md, atualizada no
+// mega-lote pra slots LIVRES). Duplicada aqui (não importada do site, que é
+// TypeScript) só pra manter os MESMOS valores exatos -- resolveAreaTotal()
+// (shared.ts, site) faz match exato (trim+uppercase) contra o que for salvo
+// aqui, então essa lista não pode divergir da do site.
+private val CULTURAS_SAFRINHA = listOf(
+    "SOJA", "MILHO", "SORGO", "ALGODÃO", "FEIJÃO", "GIRASSOL", "TRIGO", "CAFÉ",
+    "PASTAGEM", "CROTOLARIA", "MILHETO", "ARROZ", "CANA", "AVEIA", "BRAQUIÁRIA",
+    "CEVADA", "AMENDOIM", "GERGELIM", "MAMONA", "CÁRTAMO", "LINHAÇA", "CENTEIO",
+    "TRITICALE", "NABO FORRAGEIRO", "ERVILHACA", "TREMOÇO", "TRIGO MOURISCO",
+    "CONSÓRCIO MILHO+BRAQUIÁRIA",
+)
+
+// Dropdown de cultura reutilizável pros 2 slots de área safrinha (padrão
+// ExposedDropdownMenuBox já usado em ProviderIntegrationCard.kt).
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CulturaDropdownField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = modifier) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().menuAnchor(),
+            colors = appFieldColors(),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(text = { Text("(nenhuma)") }, onClick = { onValueChange(""); expanded = false })
+            CULTURAS_SAFRINHA.forEach { c ->
+                DropdownMenuItem(text = { Text(c) }, onClick = { onValueChange(c); expanded = false })
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FarmsCard(
     farms: kotlinx.serialization.json.JsonArray?,
     busy: Boolean,
-    onAdd: (String, Double, Double?, Double?, Double?) -> Unit,
+    // 3º/4º = cultura1/área1, 5º/6º = cultura2/área2 (slots livres, 5ª
+    // exceção de schema, ver MEMORY.md, atualizada no mega-lote).
+    onAdd: (String, Double, Double?, String?, Double?, String?, Double?) -> Unit,
     // 2 últimos parâmetros = latitude/longitude (6ª exceção de schema, ver
     // MEMORY.md) -- null/null limpa, ambos preenchidos define.
-    onUpdate: (String, Double, Double?, Double?, Double?, Double?, Double?) -> Unit,
+    onUpdate: (String, Double, Double?, String?, Double?, String?, Double?, Double?, Double?) -> Unit,
     onDelete: (String) -> Unit,
     onSync: () -> Unit,
 ) {
@@ -333,11 +387,14 @@ private fun FarmsCard(
     // um campo ao lado da área maior"). Alimenta o círculo do Canvas quando
     // a safra filtrada bate "SAFRINHA ..." (ver lib/services/canvas.ts).
     var newAreaSafrinha by remember { mutableStateOf("") }
-    // Área safrinha POR CULTURA (5ª exceção de schema, ver MEMORY.md) -- pra
-    // quando a fazenda planta Milho E Sorgo na mesma safrinha, cada um com
-    // sua parte do total.
-    var newAreaSafrinhaMilho by remember { mutableStateOf("") }
-    var newAreaSafrinhaSorgo by remember { mutableStateOf("") }
+    // Área safrinha POR CULTURA (5ª exceção de schema, ver MEMORY.md,
+    // atualizada no mega-lote pra 2 slots LIVRES escolhidos via dropdown em
+    // vez de Milho/Sorgo fixos) -- pra quando a fazenda planta duas culturas
+    // na mesma safrinha, cada uma com sua parte do total.
+    var newCultura1 by remember { mutableStateOf("") }
+    var newCultura1Ha by remember { mutableStateOf("") }
+    var newCultura2 by remember { mutableStateOf("") }
+    var newCultura2Ha by remember { mutableStateOf("") }
 
     CollapsibleCard("Fazendas (${farms?.size ?: 0})", initiallyOpen = true) {
         farms?.forEach { el ->
@@ -346,8 +403,10 @@ private fun FarmsCard(
             val name = f["name"]?.jsonPrimitive?.contentOrNull ?: ""
             var areaText by remember(id) { mutableStateOf((f["areaHa"]?.jsonPrimitive?.doubleOrNull ?: 0.0).toString()) }
             var areaSafrinhaText by remember(id) { mutableStateOf(f["areaSafrinhaHa"]?.jsonPrimitive?.doubleOrNull?.toString() ?: "") }
-            var areaSafrinhaMilhoText by remember(id) { mutableStateOf(f["areaSafrinhaMilhoHa"]?.jsonPrimitive?.doubleOrNull?.toString() ?: "") }
-            var areaSafrinhaSorgoText by remember(id) { mutableStateOf(f["areaSafrinhaSorgoHa"]?.jsonPrimitive?.doubleOrNull?.toString() ?: "") }
+            var cultura1 by remember(id) { mutableStateOf(f["areaSafrinhaCultura1"]?.jsonPrimitive?.contentOrNull ?: "") }
+            var cultura1HaText by remember(id) { mutableStateOf(f["areaSafrinhaCultura1Ha"]?.jsonPrimitive?.doubleOrNull?.toString() ?: "") }
+            var cultura2 by remember(id) { mutableStateOf(f["areaSafrinhaCultura2"]?.jsonPrimitive?.contentOrNull ?: "") }
+            var cultura2HaText by remember(id) { mutableStateOf(f["areaSafrinhaCultura2Ha"]?.jsonPrimitive?.doubleOrNull?.toString() ?: "") }
             // Localização real (6ª exceção de schema, ver MEMORY.md) -- um
             // único campo "lat, lon" (mesmo formato que o Google Maps mostra
             // ao tocar e segurar num ponto do mapa), espelhando o site.
@@ -359,9 +418,8 @@ private fun FarmsCard(
             var locationText by remember(id) { mutableStateOf(if (fLat != null && fLon != null) "$fLat, $fLon" else "") }
             // Layout em DUAS linhas (nome+excluir / campos de área com
             // rolagem horizontal) -- CORREÇÃO DE BUG REAL: com nome +
-            // TOTAL(ha) + milho + sorgo + 2 ícones tudo numa Row só (sem
-            // rolagem), a soma das larguras fixas (100+90+90dp de campos +
-            // 2×48dp de ícones ≈ 376dp) já estourava a tela sozinha, sem
+            // TOTAL(ha) + slots + 2 ícones tudo numa Row só (sem rolagem), a
+            // soma das larguras fixas já estourava a tela sozinha, sem
             // sobrar espaço nenhum pro nome (Modifier.weight(1f) ficava
             // espremido a ~0dp) -- o texto do nome então quebrava
             // caractere-por-caractere numa coluna quase invisível, criando
@@ -399,29 +457,43 @@ private fun FarmsCard(
                     )
                     Spacer(Modifier.width(4.dp))
                     // Campo genérico "safrinha" REMOVIDO da UI -- pedido do
-                    // usuário (X na screenshot): só Milho/Sorgo ficam
-                    // visíveis agora. areaSafrinhaText continua existindo e
-                    // sendo reenviado sem alteração em onUpdate
+                    // usuário (X na screenshot): só os 2 slots por cultura
+                    // ficam visíveis agora. areaSafrinhaText continua
+                    // existindo e sendo reenviado sem alteração em onUpdate
                     // (pré-populado do JSON acima), preservando o valor
                     // antigo no backend/fallback do Canvas pra fazendas que
                     // já tinham esse campo preenchido.
-                    OutlinedTextField(
-                        value = areaSafrinhaMilhoText,
-                        onValueChange = { areaSafrinhaMilhoText = it },
-                        label = { Text("milho") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true,
-                        modifier = Modifier.width(90.dp),
-                        colors = appFieldColors(),
+                    CulturaDropdownField(
+                        value = cultura1,
+                        onValueChange = { cultura1 = it },
+                        label = "Cultura 1",
+                        modifier = Modifier.width(140.dp),
                     )
                     Spacer(Modifier.width(4.dp))
                     OutlinedTextField(
-                        value = areaSafrinhaSorgoText,
-                        onValueChange = { areaSafrinhaSorgoText = it },
-                        label = { Text("sorgo") },
+                        value = cultura1HaText,
+                        onValueChange = { cultura1HaText = it },
+                        label = { Text("ha") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,
-                        modifier = Modifier.width(90.dp),
+                        modifier = Modifier.width(80.dp),
+                        colors = appFieldColors(),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    CulturaDropdownField(
+                        value = cultura2,
+                        onValueChange = { cultura2 = it },
+                        label = "Cultura 2",
+                        modifier = Modifier.width(140.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    OutlinedTextField(
+                        value = cultura2HaText,
+                        onValueChange = { cultura2HaText = it },
+                        label = { Text("ha") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true,
+                        modifier = Modifier.width(80.dp),
                         colors = appFieldColors(),
                     )
                     Spacer(Modifier.width(4.dp))
@@ -450,7 +522,22 @@ private fun FarmsCard(
                                     lon = partes.getOrNull(1)?.toDoubleOrNull()
                                     if (partes.size != 2 || lat == null || lon == null) return@let
                                 }
-                                onUpdate(id, area, areaSafrinhaText.toDoubleOrNull(), areaSafrinhaMilhoText.toDoubleOrNull(), areaSafrinhaSorgoText.toDoubleOrNull(), lat, lon)
+                                // Slot só é enviado se cultura+área estiverem
+                                // AMBOS preenchidos (ou ambos vazios) -- mesma
+                                // regra "tudo ou nada" do site
+                                // (parseSlot em base-de-dados-client.tsx),
+                                // pra não salvar cultura sem área nem área
+                                // órfã sem cultura.
+                                val c1 = cultura1.trim()
+                                val c1ha = cultura1HaText.toDoubleOrNull()
+                                val c2 = cultura2.trim()
+                                val c2ha = cultura2HaText.toDoubleOrNull()
+                                onUpdate(
+                                    id, area, areaSafrinhaText.toDoubleOrNull(),
+                                    if (c1.isNotEmpty()) c1 else null, if (c1.isNotEmpty()) c1ha else null,
+                                    if (c2.isNotEmpty()) c2 else null, if (c2.isNotEmpty()) c2ha else null,
+                                    lat, lon,
+                                )
                             }
                         },
                         enabled = !busy,
@@ -478,20 +565,30 @@ private fun FarmsCard(
                 )
                 Spacer(Modifier.width(4.dp))
                 // Campo genérico "safrinha" REMOVIDO da UI pra fazendas
-                // novas -- pedido do usuário (X na screenshot): só
-                // Milho/Sorgo abaixo. newAreaSafrinha continua "" e nunca
-                // populado (onAdd recebe null pra esse parâmetro), o que é
-                // o comportamento correto pra cadastros novos daqui em
+                // novas -- pedido do usuário (X na screenshot): só os 2
+                // slots por cultura abaixo. newAreaSafrinha continua "" e
+                // nunca populado (onAdd recebe null pra esse parâmetro), o
+                // que é o comportamento correto pra cadastros novos daqui em
                 // diante.
-                OutlinedTextField(
-                    value = newAreaSafrinhaMilho, onValueChange = { newAreaSafrinhaMilho = it }, label = { Text("milho") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(90.dp),
-                    colors = appFieldColors(),
+                CulturaDropdownField(
+                    value = newCultura1, onValueChange = { newCultura1 = it }, label = "Cultura 1",
+                    modifier = Modifier.width(140.dp),
                 )
                 Spacer(Modifier.width(4.dp))
                 OutlinedTextField(
-                    value = newAreaSafrinhaSorgo, onValueChange = { newAreaSafrinhaSorgo = it }, label = { Text("sorgo") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(90.dp),
+                    value = newCultura1Ha, onValueChange = { newCultura1Ha = it }, label = { Text("ha") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(80.dp),
+                    colors = appFieldColors(),
+                )
+                Spacer(Modifier.width(4.dp))
+                CulturaDropdownField(
+                    value = newCultura2, onValueChange = { newCultura2 = it }, label = "Cultura 2",
+                    modifier = Modifier.width(140.dp),
+                )
+                Spacer(Modifier.width(4.dp))
+                OutlinedTextField(
+                    value = newCultura2Ha, onValueChange = { newCultura2Ha = it }, label = { Text("ha") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.width(80.dp),
                     colors = appFieldColors(),
                 )
             }
@@ -501,8 +598,15 @@ private fun FarmsCard(
                 onClick = {
                     val area = newArea.toDoubleOrNull()
                     if (newName.isNotBlank() && area != null && area > 0) {
-                        onAdd(newName.trim(), area, newAreaSafrinha.toDoubleOrNull(), newAreaSafrinhaMilho.toDoubleOrNull(), newAreaSafrinhaSorgo.toDoubleOrNull())
-                        newName = ""; newArea = ""; newAreaSafrinha = ""; newAreaSafrinhaMilho = ""; newAreaSafrinhaSorgo = ""
+                        val c1 = newCultura1.trim()
+                        val c2 = newCultura2.trim()
+                        onAdd(
+                            newName.trim(), area, newAreaSafrinha.toDoubleOrNull(),
+                            if (c1.isNotEmpty()) c1 else null, if (c1.isNotEmpty()) newCultura1Ha.toDoubleOrNull() else null,
+                            if (c2.isNotEmpty()) c2 else null, if (c2.isNotEmpty()) newCultura2Ha.toDoubleOrNull() else null,
+                        )
+                        newName = ""; newArea = ""; newAreaSafrinha = ""
+                        newCultura1 = ""; newCultura1Ha = ""; newCultura2 = ""; newCultura2Ha = ""
                     }
                 },
                 enabled = !busy,

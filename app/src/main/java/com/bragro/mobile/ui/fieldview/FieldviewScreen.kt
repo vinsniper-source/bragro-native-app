@@ -231,7 +231,21 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
-private val IGNORED_KEYS = setOf("id", "orgId", "criadoEm", "editadoEm", "updatedAt")
+// "fazendaId" adicionado -- bug real reportado pelo usuário (screenshot):
+// mostrava o cuid cru da fazenda ("cmrphel3k000njx04ml1uqa7j") junto com
+// "local" (que já é o NOME amigável da mesma fazenda, ex.: "FAZ. SÃO
+// PEDRO") -- puro ruído redundante, nenhum ganho em mostrar os dois.
+private val IGNORED_KEYS = setOf("id", "orgId", "criadoEm", "editadoEm", "updatedAt", "fazendaId")
+
+// Datas cruas (Safra/Frota) chegam como ISO completo com fuso
+// ("2026-08-05T00:00:00.000Z") -- outro bug real reportado ("está com fuso
+// horário"): esta tela não tem um ColumnConfig por trás pra saber QUAL
+// campo é data (diferente do formulário genérico), então detecta pelo
+// FORMATO do valor em vez do nome da chave -- qualquer valor que comece com
+// "AAAA-MM-DDT" é tratado como data e formatado em DD/MM/AAAA (mesmo
+// displayValueFor colType="date" já usado no resto do app), sem o "T...Z"
+// cru vazando pra tela.
+private val ISO_DATETIME_PREFIX = Regex("^\\d{4}-\\d{2}-\\d{2}T")
 
 /** Mostra os campos primitivos de um registro cru (Safra/Frota), exceto
  * campos técnicos -- mesmo critério de "mostrar tudo que veio preenchido"
@@ -243,8 +257,10 @@ private fun RawRecordFields(obj: JsonObject) {
         obj.entries
             .filter { (k, v) -> k !in IGNORED_KEYS && v.jsonPrimitive.contentOrNull?.isNotBlank() == true }
             .forEach { (k, v) ->
+                val raw = v.jsonPrimitive.contentOrNull ?: ""
+                val colType = if (ISO_DATETIME_PREFIX.containsMatchIn(raw)) "date" else "text"
                 Text(
-                    "$k: ${displayValueFor(k, v.jsonPrimitive.contentOrNull ?: "", "text")}",
+                    "$k: ${displayValueFor(k, raw, colType)}",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -323,7 +339,8 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, view
             // no mobile (a credencial já era 100% funcional no site).
             ProviderIntegrationCard(
                 providers = listOf("Climate FieldView", "John Deere Operations Center", "Outro", "Trimble Ag Software"),
-                descricao = "Hoje os limites de talhão são importados manualmente por KML/KMZ. A credencial abaixo já fica salva com segurança; a sincronização automática ainda depende de aprovação de parceiro junto ao fabricante.",
+                // Aviso resumido -- pedido do usuário ("resuma os avisos").
+                descricao = "Hoje os limites de talhão são importados manualmente por KML/KMZ. Credencial salva com segurança abaixo.",
                 integration = integration,
                 busy = integrationBusy,
                 syncMessage = integrationMessage,

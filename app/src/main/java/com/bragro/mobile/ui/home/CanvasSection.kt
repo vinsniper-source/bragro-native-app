@@ -298,7 +298,11 @@ fun CanvasCirclesRow(
                         )
                         if (!f.safraAtual.isNullOrBlank()) {
                             Text(
-                                "Safra ${f.safraAtual}",
+                                // Sem prefixo "Safra" -- pedido do usuário
+                                // ("não precisa repetir a palavra safra"):
+                                // o valor já é autoexplicativo (ex.: "24/25"
+                                // ou "Safrinha 24").
+                                f.safraAtual ?: "",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
                             )
@@ -387,6 +391,13 @@ fun CanvasCirclesRow(
                 // cadastrada (Base de Dados, 6ª exceção de schema); sem
                 // isso cai de volta pro preenchimento de cor de sempre.
                 val temMapa = unica && f.latitude != null && f.longitude != null
+                // Texto (fazenda, área, safra, cultura) saiu de DENTRO do
+                // círculo pra BAIXO dele -- pedido do usuário ("retire as
+                // informações dentro do círculo e coloque abaixo de cada
+                // um, fazenda, area, safra e cultura"), mesmo redesign já
+                // aplicado no site (canvas-view.tsx). Sem filtro ativo
+                // mostra culturaAtual/safraAtual (sem prefixo "Safra").
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(contentAlignment = Alignment.TopEnd) {
                     Box(
                         modifier = Modifier
@@ -434,30 +445,6 @@ fun CanvasCirclesRow(
                             // imagem, precisa de contraste garantido).
                             Box(modifier = Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.38f)))
                         }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                f.nome,
-                                style = if (unica) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (temMapa) Color.White else statusColor(f.status),
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 6.dp),
-                            )
-                            Text(
-                                "${NumberFormat.getNumberInstance(Locale("pt", "BR")).format(areaExibida)} ha",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (temMapa) Color.White.copy(alpha = 0.9f) else statusColor(f.status).copy(alpha = 0.8f),
-                            )
-                            if (filtroAtivo) {
-                                Text(
-                                    filtroLabel,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                                    color = if (temMapa) Color.White.copy(alpha = 0.75f) else statusColor(f.status).copy(alpha = 0.6f),
-                                )
-                            }
-                        }
                     }
                     if (seta != null) {
                         Box(
@@ -478,6 +465,39 @@ fun CanvasCirclesRow(
                             )
                         }
                     }
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        f.nome,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = statusColor(f.status),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 6.dp),
+                    )
+                    Text(
+                        "${NumberFormat.getNumberInstance(Locale("pt", "BR")).format(areaExibida)} ha",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = statusColor(f.status).copy(alpha = 0.8f),
+                    )
+                    if (filtroAtivo) {
+                        Text(
+                            filtroLabel,
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                            color = statusColor(f.status).copy(alpha = 0.6f),
+                        )
+                    } else {
+                        Text(
+                            (f.culturaAtual ?: "Sem cultura") + (f.safraAtual?.let { " · $it" } ?: ""),
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                            color = statusColor(f.status).copy(alpha = 0.6f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
                 }
             }
         }
