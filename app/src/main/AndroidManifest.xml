@@ -18,9 +18,9 @@
          (MediaStore.ACTION_IMAGE_CAPTURE) em alguns aparelhos/ROMs,
          derrubando o app com ActivityNotFoundException ao tocar em "Tirar
          foto" (bug relatado pelo usuario no Romaneio Rapido, mesmo apos
-         reinstalar a versao mais atual -- essa e a causa mais provavel
-         numa instalacao limpa, ja que o restante do fluxo -- FileProvider,
-         file_paths.xml -- ja estava correto). -->
+         reinstalar a versao mais atual; essa e a causa mais provavel
+         numa instalacao limpa, ja que o restante do fluxo, FileProvider e
+         file_paths.xml, ja estava correto). -->
     <queries>
         <intent>
             <action android:name="android.media.action.IMAGE_CAPTURE" />
