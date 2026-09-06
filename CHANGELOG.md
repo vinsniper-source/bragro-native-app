@@ -18,6 +18,27 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.47] -- 2026-09-06
+
+- **DRE: selo "Orçamento estourado"/"Dentro do orçamento" ausente na árvore
+  de custos**: pedido do usuário ("analise se os módulos análises e dre da
+  plataforma e do app estão alinhados, me parece que não são as mesmas
+  informações"). Auditoria de paridade site x app encontrou um gap real:
+  `getDreArvoresPorFazendas` (site) já manda o campo `status` ("ACIMA" ou
+  não) em cada nó da árvore de custos por talhão, o modelo Kotlin
+  `DreRamoItemData.status` já existia pra receber esse dado, mas
+  `DreTreeNode` (DreScreen.kt) nunca lia esse campo -- o selo colorido que
+  aparece no site (RamoNode, dre-client.tsx) simplesmente não existia no
+  app. Corrigido: `DreTreeNode` agora mostra o mesmo selo (vermelho
+  "Orçamento estourado" / verde "Dentro do orçamento") abaixo do nome do
+  item, só quando `status` vem preenchido -- mesmo critério do site. Análises
+  foi auditado no mesmo pedido e está OK: `/api/mobile/analises` é
+  passthrough puro de `getAnalisesCruzadas` (mesma função do site, sem
+  recálculo em Kotlin) e o renderizador genérico (`AnalisesScreen.kt`)
+  percorre as 15 seções e todos os campos sem pular nenhum -- a única
+  diferença é de apresentação (gráficos custom no site x cards genéricos no
+  app), não de dado faltando.
+
 ## [1.2.46] -- 2026-09-06
 
 - **Análises: 3ª varredura de cedilha/acento (persistia)**: screenshot do

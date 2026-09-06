@@ -62,6 +62,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -245,13 +246,38 @@ private fun FilterDropdown(label: String, value: String?, options: List<String>,
 // web (mais simples de navegar com o dedo numa tela pequena).
 @Composable
 private fun DreTreeNode(item: DreRamoItemData, depth: Int) {
-    Row(modifier = Modifier.padding(start = (depth * 16).dp, top = 2.dp, bottom = 2.dp)) {
-        Text(
-            item.label,
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = if (depth == 0) FontWeight.Bold else FontWeight.Normal,
-            modifier = Modifier.weight(1f),
-        )
+    Row(
+        modifier = Modifier.padding(start = (depth * 16).dp, top = 2.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                item.label,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = if (depth == 0) FontWeight.Bold else FontWeight.Normal,
+            )
+            // Selo "Orçamento estourado"/"Dentro do orçamento" -- espelho do
+            // Badge em RamoNode (dre-client.tsx, site): item.status já vinha
+            // do backend (mesmo DreRamoItem de dre.ts, DreRamoItemData.status
+            // já existia no modelo Kotlin) mas nunca era lido aqui -- gap real
+            // encontrado numa auditoria de paridade site x app (usuário:
+            // "analise se os módulos análises e dre... estão alinhados").
+            item.status?.let { status ->
+                val estourado = status == "ACIMA"
+                val bg = if (estourado) MaterialTheme.colorScheme.error.copy(alpha = 0.15f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                val fg = if (estourado) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                Text(
+                    if (estourado) "Orçamento estourado" else "Dentro do orçamento",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = fg,
+                    modifier = Modifier
+                        .padding(top = 2.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(bg)
+                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                )
+            }
+        }
         Text(formatMoneyBrl(item.valor), style = MaterialTheme.typography.bodySmall)
     }
     item.filhos?.forEach { filho -> DreTreeNode(filho, depth + 1) }
