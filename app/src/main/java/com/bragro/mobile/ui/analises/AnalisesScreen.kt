@@ -158,10 +158,33 @@ class AnalisesViewModel(app: Application) : AndroidViewModel(app) {
 // "corrija toda a ortografia"). Comparação por palavra INTEIRA (não
 // "contains"), já quebrada pelo regex abaixo, pra não bagunçar palavras que
 // só COMEÇAM parecido (ex.: não trocar "Vspoderia" se existisse).
+// Segunda varredura (pedido do usuário: "ainda há erros de ortografia ç,
+// ainda falta moeda e porcentagem, ainda há palavras em inglês" -- os
+// problemas PERSISTIAM mesmo após a 1ª rodada de TOKEN_FIXES, ver comentário
+// original abaixo): mapeamento ampliado depois de conferir TODO campo
+// retornado por getAnalisesCruzadas (lib/services/analises.ts) um por um.
+// Achados novos: "farmName"/"noContrato" (campos em inglês/abreviação
+// ambígua), "funcao"/"lancamentos*"/"talhao"/"ultimo"/"atras"/"eficiencia"/
+// "maquina" (sem cedilha/acento -- a chave original em camelCase nunca teve
+// esses caracteres, então a quebra automática sozinha nunca ia acertar),
+// "chuvaTotalMm"/"volumeTransportadoTon" (unidades em maiúscula, mesmo
+// padrão já corrigido pra "Ha"->"ha"/"Km"->"km"), e "diasPVenc"/
+// "diasPVencer"/"valorR" (abreviações cruas tipo "P" e "R" que sobram da
+// quebra de camelCase sem virar palavra nenhuma).
 private val TOKEN_FIXES = mapOf(
     "Vs" to "x", "Ha" to "ha", "Area" to "Área", "Rh" to "RH", "Nf" to "NF",
     "Os" to "O.S.", "Pct" to "%", "Km" to "km", "Cnpj" to "CNPJ", "Cpf" to "CPF",
     "Cif" to "CIF", "Fob" to "FOB", "Kg" to "kg", "Ph" to "pH",
+    "Farm" to "Fazenda", "Name" to "Nome", "Mm" to "mm", "Ton" to "ton",
+    "Talhao" to "Talhão", "Funcao" to "Função", "Lancamentos" to "Lançamentos",
+    "Ultimo" to "Último", "Atras" to "Atrás", "No" to "Nº",
+    "PVenc" to "para vencer", "PVencer" to "para vencer",
+    "Eficiencia" to "Eficiência", "Maquina" to "Máquina",
+    // "R" sozinho (de "valorR", que a quebra de camelCase isola como
+    // palavra própria já que não tem letra minúscula depois pra continuar
+    // juntando) não vira palavra nenhuma em português -- descartado (ver
+    // filtro de vazios em tituloSecao() abaixo) em vez de aparecer cru.
+    "R" to "",
 )
 
 /** Rotulo de secao/campo mais legivel: "planejadoVsRealizado" -> "Planejado
@@ -176,7 +199,10 @@ private fun tituloSecao(chave: String): String {
         val capitalizada = palavra.replaceFirstChar { it.uppercase() }
         TOKEN_FIXES[capitalizada] ?: capitalizada
     }
-    return palavras.joinToString(" ")
+    // Filtra tokens que viraram vazio (ex.: "R" de "valorR", ver TOKEN_FIXES)
+    // -- sem isso sobrava espaço duplo ("Valor  Contrato") ou espaço solto
+    // no fim/começo do título.
+    return palavras.filter { it.isNotBlank() }.joinToString(" ")
 }
 
 // Campos monetários conhecidos do backend (getAnalisesCruzadas, ver
@@ -195,6 +221,16 @@ private val CAMPOS_MOEDA = setOf(
     "valor", "custo", "gasto", "receita", "despesa", "bruto", "liquido",
     "preco", "pago", "orcado", "rateado", "saldo", "folhamensal", "base",
     "margem", "conciliado",
+    // Custo por hectare de CustoHaFonteItem (bloco "Custo Ha Por Fonte") --
+    // pedido do usuário ("ainda falta moeda"): esses 5 campos SÃO valores em
+    // R$/ha, mas o nome não carrega nenhuma das palavras-chave acima
+    // ("financeiroDiretoHa", não "custoFinanceiroHa"), então continuavam
+    // imprimindo o número cru. Nome completo em minúsculo (não só
+    // "financeiro"/"frota" soltos) pra não capturar por engano campos de
+    // CONTAGEM que também têm essas palavras (ex.: "lancamentosFrota",
+    // "lancamentosSafra" -- esses são quantidade de lançamentos, não R$).
+    "financeirodiretoha", "financeiroindiretoha", "frotaha", "safraha",
+    "arrendamentoha",
 )
 
 private fun formatarMoedaBr(numero: Double): String =

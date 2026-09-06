@@ -148,6 +148,10 @@ fun ModuleProviderIntegrationCard(domainId: String) {
             onDisconnect = { vm.disconnect() },
             onSync = { vm.sync() },
             initiallyOpen = true,
+            // Já está dentro do AlertDialog de DomainListScreen.kt, que tem
+            // seu próprio botão "Fechar" -- sem isto, apareciam 2 (pedido
+            // do usuário, "tem dois botões fechar").
+            showCloseButton = false,
         )
     } else if (domainId == "romaneios") {
         val vm: RomaneioIntegrationViewModel = viewModel()
@@ -165,6 +169,10 @@ fun ModuleProviderIntegrationCard(domainId: String) {
             onDisconnect = { vm.disconnect() },
             onSync = { vm.sync() },
             initiallyOpen = true,
+            // Já está dentro do AlertDialog de DomainListScreen.kt, que tem
+            // seu próprio botão "Fechar" -- sem isto, apareciam 2 (pedido
+            // do usuário, "tem dois botões fechar").
+            showCloseButton = false,
         )
     }
 }

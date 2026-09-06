@@ -266,10 +266,17 @@ fun FinanceiroScreen(
                 // Calculadoras, Recalcular Vencimentos) aparece numa 2ª
                 // linha, menor, só enquanto ele estiver aberto.
                 title = {
-                    // "Financeiro" só aparece com Todos selecionado; ao
-                    // clicar em outro ícone da Gestão Financeira, o nome da
-                    // visão substitui a palavra "Financeiro" por completo
-                    // (não mais "Financeiro — X") -- pedido do usuário.
+                    // "Lançamentos" (era "Financeiro") só aparece com Todos
+                    // selecionado; ao clicar em outro ícone da Gestão
+                    // Financeira, o nome da visão substitui a palavra por
+                    // completo (não mais "Financeiro — X") -- pedido do
+                    // usuário. Renomeado de "Financeiro" pra "Lançamentos"
+                    // -- pedido do usuário ("altere o nome do título do
+                    // topo de financeiro para lançamentos"): agora que
+                    // "Gestão Financeira" é uma entrada própria na lista
+                    // suspensa (ver `startInGestao`), esta tela só é aberta
+                    // pela entrada "Lançamentos", então o título devia
+                    // dizer isso, não mais o nome genérico do setor.
                     // Título desce uma linha de fato -- mesmo padrão do
                     // Início: 1ª linha em branco, texto na linha de baixo.
                     // Setinha de recolher/expandir removida daqui -- pedido do
@@ -280,7 +287,7 @@ fun FinanceiroScreen(
                         // maxLines/ellipsis defensivo -- pedido do usuário
                         // ("adapte ao tamanho da fonte sem cortes e dentro
                         // do limite da tela").
-                        Text(if (isQuickView) view.label else "Financeiro", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.primary, modifier = Modifier.basicMarquee())
+                        Text(if (isQuickView) view.label else "Lançamentos", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.primary, modifier = Modifier.basicMarquee())
                     }
                 },
                 // A seta de voltar ganha o mesmo espaçador de cima do título
@@ -388,35 +395,20 @@ fun FinanceiroScreen(
             // e vice-versa -- cada entrada da lista suspensa mostra só o
             // controle que faz sentido pra ela, em vez dos dois lado a lado
             // sempre.
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                if (!startInGestao) {
-                    SingleChoiceSegmentedButtonRow(modifier = Modifier.weight(1f)) {
-                        SegmentedButton(
-                            selected = view == FinanceiroView.TODOS,
-                            onClick = { view = FinanceiroView.TODOS },
-                            shape = androidx.compose.ui.graphics.RectangleShape,
-                            colors = SegmentedButtonDefaults.colors(
-                                activeContainerColor = com.bragro.mobile.ui.theme.BrGreen,
-                                activeContentColor = Color.White,
-                                inactiveContainerColor = MaterialTheme.colorScheme.surface,
-                                inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-                            ),
-                            icon = { Icon(financeiroViewIcon(FinanceiroView.TODOS), contentDescription = null, modifier = Modifier.size(18.dp)) },
-                            label = {
-                                Text(
-                                    FinanceiroView.TODOS.label,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Clip,
-                                    modifier = Modifier.basicMarquee(),
-                                )
-                            },
-                        )
-                    }
-                } else {
+            // Bloco "Lançamentos" (SingleChoiceSegmentedButtonRow com um
+            // único botão sempre selecionado, sem função nenhuma além de
+            // repetir a palavra) removido -- pedido do usuário ("exclua o
+            // bloco com a palavra lançamentos"): o título do topo já diz
+            // "Lançamentos" agora (ver TopAppBar acima), então esse botão
+            // era só um texto duplicado ocupando uma linha inteira. Na
+            // entrada "Gestão Financeira" (`startInGestao`) o dropdown
+            // continua normalmente, só que agora sozinho na linha (sem
+            // dividir espaço com o botão morto ao lado).
+            if (startInGestao) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
                     FinanceiroGestaoDropdownButton(view = view, onSelect = { view = it }, modifier = Modifier.weight(1f))
                 }
             }
@@ -744,7 +736,7 @@ fun FinanceiroScreen(
         val viewedRecord = filtered.firstOrNull { it["id"] == recordBeingViewed }
         AlertDialog(
             onDismissRequest = { recordBeingViewed = null },
-            title = { Text(if (isQuickView) view.label else "Financeiro") },
+            title = { Text(if (isQuickView) view.label else "Lançamentos") },
             text = {
                 if (viewedRecord == null) {
                     Text("Lançamento não encontrado.")

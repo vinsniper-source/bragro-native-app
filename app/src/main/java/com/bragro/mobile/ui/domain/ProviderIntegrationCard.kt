@@ -82,6 +82,14 @@ fun ProviderIntegrationCard(
     // parâmetro (continuam fechados por padrão, mesmo comportamento de
     // sempre).
     initiallyOpen: Boolean = false,
+    // false quando quem chama já envolve o card num container (ex.: o
+    // AlertDialog de Bomba/Balança, ver ModuleProviderIntegrationCard.kt)
+    // que tem seu próprio botão "Fechar" -- pedido do usuário ("tem dois
+    // botões fechar"): antes o card SEMPRE desenhava seu "Fechar" interno
+    // quando aberto, então dentro daquele AlertDialog apareciam dois
+    // (o interno + o do AlertDialog). FieldView/Drone (embutidos direto na
+    // tela, sem diálogo próprio) continuam com o padrão `true`.
+    showCloseButton: Boolean = true,
 ) {
     var open by remember { mutableStateOf(initiallyOpen) }
     var expanded by remember { mutableStateOf(false) }
@@ -98,14 +106,18 @@ fun ProviderIntegrationCard(
             // estreitas -- mesmo bug de weight(1f) espremido já corrigido
             // antes (task #338), agora resolvido de raiz em vez de só
             // mitigado.
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Bolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
+            Row(verticalAlignment = Alignment.Top) {
+                Icon(Icons.Filled.Bolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp, top = 2.dp))
+                // Sem letreiro e sem limite de linha aqui -- pedido do
+                // usuário ("todas as frases estão incompletas, não use
+                // letreiro, pode usar mais de uma linha mas complete toda a
+                // linha"). basicMarquee()+maxLines=1 cortava a frase em telas
+                // estreitas; agora ela simplesmente quebra em 2 linhas
+                // normais quando não cabe numa só, sem perder texto.
                 Text(
                     "Acesso automático via prestadora de serviço",
                     style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.weight(1f).basicMarquee(),
-                    maxLines = 1,
-                    overflow = TextOverflow.Clip,
+                    modifier = Modifier.weight(1f),
                 )
             }
             // Linha 2: status ("Não conectado"/"Conectado") ao lado da
@@ -142,7 +154,9 @@ fun ProviderIntegrationCard(
                 // resuma as informações"): descrição de UMA linha só,
                 // repassada por cada tela (FieldView/Drone/Frota/
                 // Romaneios), já encurtada desde a varredura da task #398.
-                Text(descricao, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                // Sem maxLines/ellipsis aqui também -- mesmo pedido acima,
+                // o resumo estava sendo cortado no meio da frase.
+                Text(descricao, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
                 // Provedor, API Key, Salvar e Fechar agora EMPILHADOS (cada
                 // um em sua própria linha, não mais lado a lado) -- pedido
@@ -243,9 +257,16 @@ fun ProviderIntegrationCard(
                 // fechar"): último elemento do card aberto, faz a mesma
                 // coisa que tocar na setinha/linha de status (recolhe o
                 // card), só que como ação explícita no fim do fluxo em vez
-                // de só a setinha lá em cima.
-                OutlinedButton(onClick = { open = false }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Fechar")
+                // de só a setinha lá em cima. Só aparece quando
+                // `showCloseButton` é true -- quando o card já está dentro
+                // de um AlertDialog com seu próprio "Fechar" (Bomba/
+                // Balança, ver ModuleProviderIntegrationCard.kt), esse
+                // botão interno duplicava o do diálogo ("tem dois botões
+                // fechar", pedido do usuário).
+                if (showCloseButton) {
+                    OutlinedButton(onClick = { open = false }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Fechar")
+                    }
                 }
             }
         }

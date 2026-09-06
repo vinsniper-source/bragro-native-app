@@ -18,6 +18,31 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.41] -- 2026-09-05
+
+Correções em cima do lote anterior (itens que persistiam ou tinham detalhe
+faltando):
+
+- **ProviderIntegrationCard** (Bomba/Drone/Balança/FieldView): removido o
+  botão "Fechar" duplicado dentro do diálogo de Bomba/Balança (agora só o
+  do diálogo aparece); frase do topo e resumo de informações não usam mais
+  letreiro/corte em 1 linha -- quebram em quantas linhas precisarem pra
+  mostrar o texto completo.
+- **Financeiro**: removido o bloco "Lançamentos" que ficava duplicado
+  abaixo do título (o título do topo já virou "Lançamentos"); a lista
+  suspensa "Gestão Financeira" agora ocupa a linha sozinha.
+- **Análises**: 2ª varredura de ortografia -- "Farm"/"Name" (inglês),
+  "talhao"/"funcao"/"lancamentos"/"ultimo"/"atras"/"eficiencia"/"maquina"
+  (sem acento/cedilha), "Mm"/"Ton" (unidade maiúscula) e abreviações soltas
+  tipo "P"/"R" corrigidas; 5 campos de custo por hectare que ainda
+  mostravam número cru agora formatam em R$.
+- **Pedidos/Cotações (Novo Lançamento, site)**: campos dos itens agora em
+  blocos individuais (fundo próprio), não só grade recortada.
+- **Base de Dados (site)**: cadastro de fazenda (nova e edição)
+  redesenhado -- 2 linhas de grade exatas (Cultura/Total ha/Cultura 1/ha 1
+  e Cultura 2/ha 2/Lat,Lon), campos com largura flexível em vez de pixel
+  fixo, margens reduzidas -- nada corta mais.
+
 ## [1.2.40] -- 2026-09-05
 
 Segundo lote do mesmo pedido (itens finais do mega-lote de plataforma):
