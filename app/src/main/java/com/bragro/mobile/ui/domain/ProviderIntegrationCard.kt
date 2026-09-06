@@ -282,15 +282,21 @@ private fun IconButtonToggle(open: Boolean, onClick: () -> Unit) {
 
 /** Bloco individual pra separar campos dentro do card de integração --
  * pedido do usuário ("crie blocos individuais separando dentro do bloco
- * inteiro"). Usa um tom (surfaceVariant) diferente do container do Card
- * (colorScheme.surface, ver appFieldColors/Card em AppCard.kt) em vez de
- * borda, respeitando a regra do app de não ter bordas em lugar nenhum
- * (tasks anteriores "tire todas as bordas de todo app"). */
+ * inteiro"). Usa um tom (onSurface em scrim, não mais surfaceVariant) em
+ * vez de borda, respeitando a regra do app de não ter bordas em lugar
+ * nenhum (tasks anteriores "tire todas as bordas de todo app").
+ * surfaceVariant -> onSurface.copy(alpha=0.12f): usuário reportou que o
+ * bloco de Provedor/API Key (Drone/FieldView) continuava sem nenhuma
+ * separação visível mesmo após reinstalar o app do zero -- surfaceVariant
+ * calhava de ser igual/muito próximo do container do Card por trás,
+ * exatamente o mesmo bug de raiz já corrigido em CotacaoMultiItemScreen.kt/
+ * PedidoMultiItemScreen.kt/FinanceiroItensInline.kt (scrim sempre cria
+ * contraste, não importa o fundo). */
 @Composable
 private fun FieldBlock(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Surface(
         modifier = modifier,
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
         shape = MaterialTheme.shapes.small,
     ) {
         Box(modifier = Modifier.padding(6.dp)) {

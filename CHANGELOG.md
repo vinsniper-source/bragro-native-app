@@ -18,6 +18,25 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.49] -- 2026-09-06
+
+- **3 telas com o mesmo bug de bloco individual invisível (surfaceVariant
+  coincidindo com o fundo)**: usuário reenviou as fotos anotadas de
+  Base de Dados/Drone/FieldView/Livro Caixa apontando que precisavam de
+  correção de verdade (Cobranças ficou de fora -- já estava OK). Achado
+  real em cada uma:
+  - `ProviderIntegrationCard.kt` (Drone e FieldView, componente
+    compartilhado): `FieldBlock` usava `surfaceVariant`, o MESMO bug de
+    raiz já corrigido em Cotações há algumas versões -- corrigido pra
+    scrim `onSurface.copy(alpha=0.12f)`.
+  - `BaseDeDadosScreen.kt`: o card de cada fazenda (Santa Clara/Santa
+    Fé/São João) também usava `surfaceVariant` pra se separar do card pai
+    "Fazendas (N)" -- mesma correção.
+  - `LivroCaixaScreen.kt` (card Produtor Rural/IRPF): esses campos (CNPJ,
+    CPF, Inscrição Estadual, Certificado digital, Conta padrão) nunca
+    tiveram bloco individual nenhum -- adicionado o mesmo padrão
+    `ItemFieldBlock` (scrim) usado no resto do app.
+
 ## [1.2.48] -- 2026-09-06
 
 - **Blocos individuais de campo (Cotações/Pedidos/Itens da nota) invisíveis

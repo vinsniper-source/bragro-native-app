@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -46,6 +47,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -410,6 +412,29 @@ private fun LancamentoRow(l: LivroCaixaLancamentoData) {
     HorizontalDivider()
 }
 
+// Bloco individual por campo -- pedido do usuário (screenshot circulando o
+// card inteiro Produtor Rural/IRPF, "são esses que preciso que modifique"):
+// os campos (CNPJ, CPF, Inscrição Estadual, Emissor, Validade, Conta
+// padrão) viviam soltos dentro do Card branco, sem nenhuma separação
+// visual entre um e outro -- mesmo padrão de blocos individuais já usado
+// em CotacaoMultiItemScreen.kt/PedidoMultiItemScreen.kt/
+// FinanceiroItensInline.kt/ProviderIntegrationCard.kt/BaseDeDadosScreen.kt
+// (scrim onSurface em vez de borda, respeitando a regra "sem bordas" do
+// app; alpha 0.12f porque 0.05f já se mostrou imperceptível num display
+// real nos outros arquivos).
+@Composable
+private fun ItemFieldBlock(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+        shape = MaterialTheme.shapes.small,
+    ) {
+        Box(modifier = Modifier.padding(6.dp)) {
+            content()
+        }
+    }
+}
+
 // Card Produtor Rural / IRPF -- pedido do usuário ("implemente tudo que
 // falta ainda para o app native da plataforma"): 0% presente no app antes
 // (nem rota, nem tela); já existia no site (produtor-rural-card.tsx),
@@ -444,19 +469,31 @@ private fun ProdutorRuralCard(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            OutlinedTextField(value = cnpj, onValueChange = { cnpj = it }, label = { Text("CNPJ") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
-            OutlinedTextField(value = cpf, onValueChange = { cpf = it }, label = { Text("CPF do produtor") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
-            OutlinedTextField(value = ie, onValueChange = { ie = it }, label = { Text("Inscrição Estadual") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+            ItemFieldBlock(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(value = cnpj, onValueChange = { cnpj = it }, label = { Text("CNPJ") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+            }
+            ItemFieldBlock(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(value = cpf, onValueChange = { cpf = it }, label = { Text("CPF do produtor") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+            }
+            ItemFieldBlock(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(value = ie, onValueChange = { ie = it }, label = { Text("Inscrição Estadual") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+            }
             Text("Certificado digital (e-CAC / LCDPR)", style = MaterialTheme.typography.labelLarge)
-            CertificadoTipoDropdown(tipo = certTipo, onSelect = { certTipo = it })
-            OutlinedTextField(value = certEmissor, onValueChange = { certEmissor = it }, label = { Text("Emissor (AC)") }, placeholder = { Text("Ex.: Serasa, Certisign") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
-            OutlinedTextField(value = certValidade, onValueChange = { certValidade = it }, label = { Text("Validade (AAAA-MM-DD)") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+            ItemFieldBlock(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CertificadoTipoDropdown(tipo = certTipo, onSelect = { certTipo = it })
+                    OutlinedTextField(value = certEmissor, onValueChange = { certEmissor = it }, label = { Text("Emissor (AC)") }, placeholder = { Text("Ex.: Serasa, Certisign") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+                    OutlinedTextField(value = certValidade, onValueChange = { certValidade = it }, label = { Text("Validade (AAAA-MM-DD)") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+                }
+            }
             Text(
                 "Só metadado p/ controle de vencimento -- o arquivo .pfx/.p12 nunca é enviado aqui.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            OutlinedTextField(value = contaIrpf, onValueChange = { contaIrpf = it }, label = { Text("Conta padrão para IRPF") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+            ItemFieldBlock(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(value = contaIrpf, onValueChange = { contaIrpf = it }, label = { Text("Conta padrão para IRPF") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+            }
             Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
                 androidx.compose.material3.Button(
                     enabled = !loading,

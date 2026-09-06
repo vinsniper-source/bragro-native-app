@@ -485,15 +485,20 @@ private fun FarmsCard(
             // "Fazendas (N)" (sem nenhuma separação visual entre uma e
             // outra), e os campos quebravam em quantas linhas o FlowRow
             // decidisse. Agora cada fazenda vive dentro do seu próprio
-            // Surface (tom surfaceVariant, mesmo critério do FieldBlock em
+            // Surface (scrim onSurface, mesmo critério do FieldBlock em
             // ProviderIntegrationCard.kt -- sem borda, só diferença de tom,
             // respeitando a regra "sem bordas" do app) e os 6 campos +
             // ícone salvar ficam distribuídos em EXATAMENTE 2 linhas fixas
             // (não FlowRow), com fonte reduzida (dense = true / bodySmall)
             // pra cada campo caber sem cortar ou quebrar palavra.
+            // surfaceVariant -> onSurface.copy(alpha=0.12f): usuário
+            // reportou os cards de fazenda ainda sem separação visível
+            // nenhuma mesmo após reinstalar o app do zero -- mesmo bug de
+            // raiz (surfaceVariant coincidindo com o fundo por trás) já
+            // corrigido nos outros arquivos com blocos individuais.
             Surface(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
                 shape = MaterialTheme.shapes.small,
             ) {
                 Column(modifier = Modifier.fillMaxWidth().padding(6.dp)) {
