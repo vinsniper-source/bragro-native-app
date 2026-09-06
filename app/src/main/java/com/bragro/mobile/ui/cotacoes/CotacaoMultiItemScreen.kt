@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -38,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -396,67 +398,113 @@ private fun StringDropdown(
 private fun CotacaoLinhaCard(linha: CotacaoLinha, categoriasOptions: List<LookupEntity>, itensOptions: List<LookupEntity>, unidadesOptions: List<LookupEntity>, showRemove: Boolean, onRemove: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            StringDropdown(
-                label = "Categoria *",
-                value = categoriasOptions.firstOrNull { it.value == linha.categoria }?.label ?: linha.categoria.ifBlank { null },
-                options = categoriasOptions.map { it.label },
-                placeholder = "Categoria",
-                onSelect = { picked -> linha.categoria = categoriasOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
-            )
-            StringDropdown(
-                label = "Item *",
-                value = itensOptions.firstOrNull { it.value == linha.item }?.label ?: linha.item.ifBlank { null },
-                options = itensOptions.map { it.label },
-                placeholder = "Selecione o item",
-                onSelect = { picked -> linha.item = itensOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
-            )
+            // Cada campo agora dentro do seu próprio ItemFieldBlock (fundo
+            // surfaceVariant) -- pedido do usuário (screenshot circulando o
+            // bloco de proposta inteiro): antes os campos ficavam soltos
+            // dentro do Card, então o card inteiro parecia UM bloco só, sem
+            // nenhuma separação visual entre Categoria/Item/Unidade/etc,
+            // mesmo já organizados em linhas (ver comentário abaixo). Mesmo
+            // padrão já usado no ProviderIntegrationCard.kt (FieldBlock).
+            ItemFieldBlock {
+                StringDropdown(
+                    label = "Categoria *",
+                    value = categoriasOptions.firstOrNull { it.value == linha.categoria }?.label ?: linha.categoria.ifBlank { null },
+                    options = categoriasOptions.map { it.label },
+                    placeholder = "Categoria",
+                    onSelect = { picked -> linha.categoria = categoriasOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                )
+            }
+            ItemFieldBlock {
+                StringDropdown(
+                    label = "Item *",
+                    value = itensOptions.firstOrNull { it.value == linha.item }?.label ?: linha.item.ifBlank { null },
+                    options = itensOptions.map { it.label },
+                    placeholder = "Selecione o item",
+                    onSelect = { picked -> linha.item = itensOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                )
+            }
             // Blocos individuais em pares (pedido do usuário: "crie blocos
             // individuais, se der pra colocar dois blocos na mesma linha sem
             // cortar palavras coloque") -- Categoria/Item ficam sozinhos
             // (rótulos de lista suspensa podem ser longos), Unidade+
             // Quantidade e Preço+Prazo são curtos e cabem 2 por linha.
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                StringDropdown(
-                    label = "Unidade",
-                    value = unidadesOptions.firstOrNull { it.value == linha.unidade }?.label ?: linha.unidade.ifBlank { null },
-                    options = unidadesOptions.map { it.label },
-                    placeholder = "Opcional",
-                    allowEmpty = true,
-                    onSelect = { picked -> linha.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
-                    modifier = Modifier.weight(1f),
-                )
-                OutlinedTextField(
-                    value = linha.quantidade,
-                    onValueChange = { linha.quantidade = it },
-                    label = { Text("Quantidade") },
-                    placeholder = { Text("0") },
-                    modifier = Modifier.weight(1f),
-                    colors = appFieldColors(),
-                )
+                ItemFieldBlock(modifier = Modifier.weight(1f)) {
+                    StringDropdown(
+                        label = "Unidade",
+                        value = unidadesOptions.firstOrNull { it.value == linha.unidade }?.label ?: linha.unidade.ifBlank { null },
+                        options = unidadesOptions.map { it.label },
+                        placeholder = "Opcional",
+                        allowEmpty = true,
+                        onSelect = { picked -> linha.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                    )
+                }
+                ItemFieldBlock(modifier = Modifier.weight(1f)) {
+                    OutlinedTextField(
+                        value = linha.quantidade,
+                        onValueChange = { linha.quantidade = it },
+                        label = { Text("Quantidade") },
+                        placeholder = { Text("0") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = appFieldColors(),
+                    )
+                }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                OutlinedTextField(
-                    value = linha.precoUnitario,
-                    onValueChange = { linha.precoUnitario = it },
-                    label = { Text("Preço unit. (R$) *") },
-                    placeholder = { Text("0,00") },
-                    modifier = Modifier.weight(1f),
-                    colors = appFieldColors(),
-                )
-                OutlinedTextField(
-                    value = linha.prazoEntregaDias,
-                    onValueChange = { linha.prazoEntregaDias = it },
-                    label = { Text("Prazo (dias)") },
-                    placeholder = { Text("Opcional") },
-                    modifier = Modifier.weight(1f),
-                    colors = appFieldColors(),
-                )
+                ItemFieldBlock(modifier = Modifier.weight(1f)) {
+                    OutlinedTextField(
+                        value = linha.precoUnitario,
+                        onValueChange = { linha.precoUnitario = it },
+                        label = { Text("Preço unit. (R$) *") },
+                        placeholder = { Text("0,00") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = appFieldColors(),
+                    )
+                }
+                ItemFieldBlock(modifier = Modifier.weight(1f)) {
+                    OutlinedTextField(
+                        value = linha.prazoEntregaDias,
+                        onValueChange = { linha.prazoEntregaDias = it },
+                        label = { Text("Prazo (dias)") },
+                        placeholder = { Text("Opcional") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = appFieldColors(),
+                    )
+                }
             }
             if (showRemove) {
                 IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
                     Icon(Icons.Filled.Delete, contentDescription = "Remover item", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                 }
             }
+        }
+    }
+}
+
+/** Bloco individual (fundo surfaceVariant, sem borda -- regra do app de não
+ * ter bordas em lugar nenhum) separando cada campo dentro de um card de
+ * item/proposta -- pedido do usuário (screenshot circulando o card de
+ * proposta inteiro em "Comparar fornecedores", pergunta "entendeu?"): sem
+ * isso, vários campos soltos dentro do mesmo Card pai pareciam UM bloco só.
+ * Mesmo padrão do FieldBlock já usado em ProviderIntegrationCard.kt. */
+@Composable
+private fun ItemFieldBlock(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    // Cor em "scrim" (onSurface com alpha baixo) em vez de um papel de cor
+    // fixo (surfaceVariant) -- pedido do usuário (screenshot mostrando os
+    // campos de "Propostas dos fornecedores" sem nenhum bloco visível):
+    // surfaceVariant calhava de ser IGUAL ao branco do Card pai onde esses
+    // campos ficam (PropostaCard/CotacaoLinhaCard são Cards brancos), então
+    // o bloco existia na estrutura mas ficava invisível na tela. Um scrim
+    // semi-transparente sobre onSurface sempre cria contraste com QUALQUER
+    // fundo por trás (branco, verde claro, etc.), então não tem como
+    // coincidir e sumir de novo.
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+        shape = MaterialTheme.shapes.small,
+    ) {
+        Box(modifier = Modifier.padding(6.dp)) {
+            content()
         }
     }
 }
@@ -471,54 +519,67 @@ private fun PropostaCard(proposta: PropostaLinha, entidadesOptions: List<LookupE
             // Fornecedor agora é dropdown de Base de Dados (pedido do
             // usuário: "em cotações campo fornecedores crie lista suspensa,
             // tem que cadastrar primeiro para acessar o campo") -- antes era
-            // texto livre.
-            StringDropdown(
-                label = "Fornecedor *",
-                value = entidadesOptions.firstOrNull { it.value == proposta.fornecedor }?.label ?: proposta.fornecedor.ifBlank { null },
-                options = entidadesOptions.map { it.label },
-                placeholder = "Selecione o fornecedor",
-                onSelect = { picked -> proposta.fornecedor = entidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
-            )
+            // texto livre. Dentro de um ItemFieldBlock (fundo próprio) --
+            // pedido do usuário (screenshot circulando este card inteiro,
+            // "entendeu?"): antes o campo ficava solto dentro do Card pai,
+            // então o card inteiro parecia UM bloco só sem separação visual
+            // nenhuma entre Fornecedor/Preço/Prazo/Condição/Validade.
+            ItemFieldBlock {
+                StringDropdown(
+                    label = "Fornecedor *",
+                    value = entidadesOptions.firstOrNull { it.value == proposta.fornecedor }?.label ?: proposta.fornecedor.ifBlank { null },
+                    options = entidadesOptions.map { it.label },
+                    placeholder = "Selecione o fornecedor",
+                    onSelect = { picked -> proposta.fornecedor = entidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                )
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                OutlinedTextField(
-                    value = proposta.precoUnitario,
-                    onValueChange = { proposta.precoUnitario = it },
-                    label = { Text("Preço unit. (R$) *") },
-                    placeholder = { Text("0,00") },
-                    modifier = Modifier.weight(1f),
-                    colors = appFieldColors(),
-                )
-                OutlinedTextField(
-                    value = proposta.prazoEntregaDias,
-                    onValueChange = { proposta.prazoEntregaDias = it },
-                    label = { Text("Prazo (dias)") },
-                    placeholder = { Text("Opcional") },
-                    modifier = Modifier.weight(1f),
-                    colors = appFieldColors(),
-                )
+                ItemFieldBlock(modifier = Modifier.weight(1f)) {
+                    OutlinedTextField(
+                        value = proposta.precoUnitario,
+                        onValueChange = { proposta.precoUnitario = it },
+                        label = { Text("Preço unit. (R$) *") },
+                        placeholder = { Text("0,00") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = appFieldColors(),
+                    )
+                }
+                ItemFieldBlock(modifier = Modifier.weight(1f)) {
+                    OutlinedTextField(
+                        value = proposta.prazoEntregaDias,
+                        onValueChange = { proposta.prazoEntregaDias = it },
+                        label = { Text("Prazo (dias)") },
+                        placeholder = { Text("Opcional") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = appFieldColors(),
+                    )
+                }
             }
             // Blocos individuais em pares (pedido do usuário: "crie blocos
             // individuais, se der pra colocar dois blocos na mesma linha sem
             // cortar palavras coloque") -- Condição de pagamento + Validade
             // são valores curtos, cabem lado a lado igual Preço+Prazo acima.
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                StringDropdown(
-                    label = "Condição pgto.",
-                    value = formasPgtoOptions.firstOrNull { it.value == proposta.condicaoPagamento }?.label ?: proposta.condicaoPagamento,
-                    options = formasPgtoOptions.map { it.label },
-                    placeholder = "Opcional",
-                    allowEmpty = true,
-                    onSelect = { picked -> proposta.condicaoPagamento = formasPgtoOptions.firstOrNull { it.label == picked }?.value ?: picked },
-                    modifier = Modifier.weight(1f),
-                )
-                OutlinedTextField(
-                    value = proposta.validadeProposta,
-                    onValueChange = { proposta.validadeProposta = it },
-                    label = { Text("Validade") },
-                    placeholder = { Text("DD/MM/AAAA") },
-                    modifier = Modifier.weight(1f),
-                    colors = appFieldColors(),
-                )
+                ItemFieldBlock(modifier = Modifier.weight(1f)) {
+                    StringDropdown(
+                        label = "Condição pgto.",
+                        value = formasPgtoOptions.firstOrNull { it.value == proposta.condicaoPagamento }?.label ?: proposta.condicaoPagamento,
+                        options = formasPgtoOptions.map { it.label },
+                        placeholder = "Opcional",
+                        allowEmpty = true,
+                        onSelect = { picked -> proposta.condicaoPagamento = formasPgtoOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                    )
+                }
+                ItemFieldBlock(modifier = Modifier.weight(1f)) {
+                    OutlinedTextField(
+                        value = proposta.validadeProposta,
+                        onValueChange = { proposta.validadeProposta = it },
+                        label = { Text("Validade") },
+                        placeholder = { Text("DD/MM/AAAA") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = appFieldColors(),
+                    )
+                }
             }
             if (showRemove) {
                 IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {

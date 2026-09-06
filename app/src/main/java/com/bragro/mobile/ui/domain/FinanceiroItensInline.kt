@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +24,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -208,6 +210,25 @@ private fun ItemStringDropdown(
     }
 }
 
+// Bloco individual por campo -- pedido do usuário ("crie blocos
+// individuais" nos itens; screenshot mostrando "Itens da nota" com campos
+// soltos sem nenhum bloco visível, mesmo tendo o contorno externo da linha
+// inteira). Scrim (onSurface alpha baixo) em vez de um papel de cor fixo:
+// cria contraste com QUALQUER fundo por trás, mesmo critério já usado em
+// CotacaoMultiItemScreen.kt/PedidoMultiItemScreen.kt.
+@Composable
+private fun ItemFieldBlock(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+        shape = MaterialTheme.shapes.small,
+    ) {
+        Box(modifier = Modifier.padding(6.dp)) {
+            content()
+        }
+    }
+}
+
 @Composable
 private fun ItemNotaLinhaRow(
     linha: ItemNotaLinha,
@@ -229,15 +250,17 @@ private fun ItemNotaLinhaRow(
         // de largura pra mostrar nomes longos); Unidade + Quantidade dividem
         // a linha de baixo -- pedido do usuário ("divida os campos"), em vez
         // de cada campo numa linha própria.
-        ItemStringDropdown(
-            label = "Item *",
-            value = itensOptions.firstOrNull { it.value == linha.descricao }?.label ?: linha.descricao.ifBlank { null },
-            options = itensOptions.map { it.label },
-            placeholder = "Selecione o item",
-            onSelect = { picked -> linha.descricao = itensOptions.firstOrNull { it.label == picked }?.value ?: picked },
-        )
+        ItemFieldBlock {
+            ItemStringDropdown(
+                label = "Item *",
+                value = itensOptions.firstOrNull { it.value == linha.descricao }?.label ?: linha.descricao.ifBlank { null },
+                options = itensOptions.map { it.label },
+                placeholder = "Selecione o item",
+                onSelect = { picked -> linha.descricao = itensOptions.firstOrNull { it.label == picked }?.value ?: picked },
+            )
+        }
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Column(modifier = Modifier.weight(1f)) {
+            ItemFieldBlock(modifier = Modifier.weight(1f)) {
                 ItemStringDropdown(
                     label = "Unidade",
                     value = unidadesOptions.firstOrNull { it.value == linha.unidade }?.label ?: linha.unidade.ifBlank { null },
@@ -246,14 +269,16 @@ private fun ItemNotaLinhaRow(
                     onSelect = { picked -> linha.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked },
                 )
             }
-            OutlinedTextField(
-                value = linha.quantidade,
-                onValueChange = { linha.quantidade = it },
-                label = { Text("Quantidade *") },
-                placeholder = { Text("0") },
-                modifier = Modifier.weight(1f),
-                colors = appFieldColors(),
-            )
+            ItemFieldBlock(modifier = Modifier.weight(1f)) {
+                OutlinedTextField(
+                    value = linha.quantidade,
+                    onValueChange = { linha.quantidade = it },
+                    label = { Text("Quantidade *") },
+                    placeholder = { Text("0") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
+                )
+            }
             if (showRemove) {
                 IconButton(onClick = onRemove, modifier = Modifier.size(30.dp)) {
                     Icon(Icons.Filled.Delete, contentDescription = "Remover item", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))

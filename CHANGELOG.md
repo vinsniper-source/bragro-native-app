@@ -18,6 +18,84 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.46] -- 2026-09-06
+
+- **Análises: 3ª varredura de cedilha/acento (persistia)**: screenshot do
+  usuário ("corrigir Ç") mostrou "Orcado" em Planejado x Realizado. Auditoria
+  campo a campo de novo contra `getAnalisesCruzadas` (site) achou mais 3
+  chaves com o mesmo problema (camelCase nunca teve o acento, a quebra
+  automática sozinha não tinha como acertar): `orcado`->"Orçado",
+  `descricao`->"Descrição", `ocorrenciasPraga`->"Ocorrências Praga" e a
+  seção `conciliacaoCaixaVsFinanceiro`->"Conciliação Caixa x Financeiro".
+
+## [1.2.45] -- 2026-09-06
+
+- **Base de Dados: editar o nome da fazenda**: pedido do usuário ("coloque
+  para editar também o nome da fazenda") -- antes só área/cultura/
+  safrinha/localização podiam ser corrigidas depois do cadastro; um erro de
+  digitação no nome exigia excluir e recadastrar a fazenda do zero,
+  perdendo o histórico. Agora o nome é editável (site: campo próprio no
+  modo de edição da fazenda; app: campo de texto no bloco da fazenda, igual
+  aos demais). Nova ação `updateFarmNameAction` (site) e suporte a `name`
+  no `update_farm` (app, via `/api/mobile/base-de-dados`) validam o nome
+  (mesma regra do cadastro: maiúsculas, 2-80 caracteres, não pode ser
+  "TOTAL FAZENDAS"), impedem duplicar o nome de outra fazenda da mesma
+  organização, e renomeiam a entrada equivalente na lista suspensa
+  "Local" (usada em Safra/Financeiro/Frota etc.) para não deixar duas
+  entradas (nome antigo + novo) nem quebrar o dropdown.
+  **Limitação conhecida**: lançamentos JÁ SALVOS em outros módulos guardam
+  o nome da fazenda como texto, não uma referência -- renomear não
+  atualiza esses lançamentos antigos (o rateio deles deixa de bater com a
+  fazenda renomeada). Renomear logo após cadastrar, antes de lançar em
+  outros módulos, evita esse problema.
+
+## [1.2.44] -- 2026-09-06
+
+- **Base de Dados (app) > Fazendas: layout quebrado (bug real)**: screenshot
+  anotado do usuário mostrou o label "Cultura 1"/"Cultura" quebrando letra
+  por letra na vertical (quando o campo estava vazio) e valores cortados
+  sem reticências (ex.: "SOJA" aparecendo como "SOJ", "SORGO" como "S(").
+  Causa raiz: `FarmsCard` colocava 4 campos (2 dropdowns de cultura + 2
+  inputs de área) na MESMA linha (`Row` com `weight(1f)` cada), sobrando
+  menos de 1/4 da largura da tela por campo -- estreito demais até pra um
+  valor de 4 letras, e o Material3 renderiza o label no tamanho GRANDE
+  (não a versão pequena flutuante) quando o campo está vazio e sem foco,
+  o que sem `maxLines`/`overflow` definidos quebrava caractere a
+  caractere. Corrigido reestruturando de "2 linhas de 4 campos" pra "4
+  linhas de 2 campos" (bloco de edição por fazenda E formulário "Nova
+  fazenda"), dobrando a largura disponível por campo -- mesmo critério já
+  usado no SITE (`grid-cols-2` no mobile). Também adicionado
+  `maxLines = 1, overflow = Ellipsis` em todos os labels como rede de
+  segurança contra esse efeito de quebra letra-a-letra em qualquer tela
+  estreita futura.
+
+## [1.2.43] -- 2026-09-06
+
+- **Blocos individuais ainda invisíveis em 3 telas (app)**: mesmo depois do
+  fix da 1.2.42, "Propostas dos fornecedores" (Cotações), "Itens da nota"
+  (Financeiro, tela real é `FinanceiroItensInlineSection` -- a
+  `NotaMultiItemScreen.kt` antiga é código morto, sem rota) e "Itens do
+  pedido" (Pedidos, `PedidoLinhaCard`) continuavam mostrando os campos
+  soltos, sem bloco visual. Causa raiz: o bloco usava
+  `colorScheme.surfaceVariant` como fundo, cor que no tema verde deste app
+  calha de ficar praticamente igual ao fundo do Card/seção pai (branco),
+  então o bloco existia na estrutura mas ficava invisível na tela --
+  "Itens cotados" só parecia certo por coincidência de contraste, não por
+  diferença real de implementação. Trocado em TODOS os blocos individuais
+  (Cotações, Financeiro, Pedidos) por um scrim `onSurface` com alpha 0.05,
+  que sempre contrasta com qualquer fundo por trás. `PedidoLinhaCard`
+  (Categoria, Item, Unidade, Qtd. pedida/entregue) e a seção inline de
+  Financeiro (Item, Unidade, Quantidade) nunca tinham tido blocos
+  individuais antes -- adicionados agora pela primeira vez.
+
+## [1.2.42] -- 2026-09-06
+
+- **Cotações (app) > Comparar fornecedores**: campos de "Propostas dos
+  fornecedores" (Fornecedor, Preço unit., Prazo, Condição de pagamento,
+  Validade) agora em blocos individuais (fundo próprio), não mais soltos
+  dentro de um único card sem separação visual -- mesmo ajuste aplicado
+  também em "Vários itens" (CotacaoLinhaCard).
+
 ## [1.2.41] -- 2026-09-05
 
 Correções em cima do lote anterior (itens que persistiam ou tinham detalhe

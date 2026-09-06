@@ -131,8 +131,15 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
     // longitude sempre viajam juntas (as duas null limpa, as duas
     // preenchidas define; validação de "uma sem a outra" já é feita no
     // backend, ver update_farm em api/mobile/base-de-dados/route.ts).
-    fun updateFarm(id: String, areaHa: Double, cultura: String? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null) =
-        act("update_farm", id = id, areaHa = areaHa, cultura = cultura, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaCultura1 = areaSafrinhaCultura1, areaSafrinhaCultura1Ha = areaSafrinhaCultura1Ha, areaSafrinhaCultura2 = areaSafrinhaCultura2, areaSafrinhaCultura2Ha = areaSafrinhaCultura2Ha, latitude = latitude, longitude = longitude)
+    // name -- pedido do usuário ("coloque para editar também o nome da
+    // fazenda"): opcional (null = não mexe no nome, mesmo padrão
+    // partial-update dos demais campos), validado/normalizado no servidor
+    // (ver case "update_farm" em api/mobile/base-de-dados/route.ts, que
+    // também renomeia a entrada equivalente em "locais"). Colocado por
+    // ÚLTIMO na lista (não logo após "id") pra não quebrar nenhuma chamada
+    // existente que ainda passe "areaHa" posicionalmente como 2º argumento.
+    fun updateFarm(id: String, areaHa: Double, cultura: String? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null, name: String? = null) =
+        act("update_farm", id = id, name = name, areaHa = areaHa, cultura = cultura, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaCultura1 = areaSafrinhaCultura1, areaSafrinhaCultura1Ha = areaSafrinhaCultura1Ha, areaSafrinhaCultura2 = areaSafrinhaCultura2, areaSafrinhaCultura2Ha = areaSafrinhaCultura2Ha, latitude = latitude, longitude = longitude)
     fun deleteFarm(id: String) = act("delete_farm", id = id)
     fun syncLocais() = act("sync_locais")
 }
@@ -246,8 +253,8 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
                     onAdd = { name, area, cultura, areaSafrinha, cultura1, cultura1Ha, cultura2, cultura2Ha, latitude, longitude ->
                         viewModel.addFarm(name, area, cultura = cultura, areaSafrinhaHa = areaSafrinha, areaSafrinhaCultura1 = cultura1, areaSafrinhaCultura1Ha = cultura1Ha, areaSafrinhaCultura2 = cultura2, areaSafrinhaCultura2Ha = cultura2Ha, latitude = latitude, longitude = longitude)
                     },
-                    onUpdate = { id, area, cultura, areaSafrinha, cultura1, cultura1Ha, cultura2, cultura2Ha, latitude, longitude ->
-                        viewModel.updateFarm(id, area, cultura = cultura, areaSafrinhaHa = areaSafrinha, areaSafrinhaCultura1 = cultura1, areaSafrinhaCultura1Ha = cultura1Ha, areaSafrinhaCultura2 = cultura2, areaSafrinhaCultura2Ha = cultura2Ha, latitude = latitude, longitude = longitude)
+                    onUpdate = { id, name, area, cultura, areaSafrinha, cultura1, cultura1Ha, cultura2, cultura2Ha, latitude, longitude ->
+                        viewModel.updateFarm(id, area, cultura = cultura, areaSafrinhaHa = areaSafrinha, areaSafrinhaCultura1 = cultura1, areaSafrinhaCultura1Ha = cultura1Ha, areaSafrinhaCultura2 = cultura2, areaSafrinhaCultura2Ha = cultura2Ha, latitude = latitude, longitude = longitude, name = name)
                     },
                     onDelete = { id -> viewModel.deleteFarm(id) },
                     onSync = { viewModel.syncLocais() },
@@ -373,7 +380,17 @@ private fun CulturaDropdownField(
             value = value,
             onValueChange = {},
             readOnly = true,
-            label = { Text(label, style = if (dense) MaterialTheme.typography.labelSmall else LocalTextStyle.current) },
+            // maxLines = 1 + Ellipsis no LABEL -- rede de segurança contra o
+            // bug encontrado pelo usuário (screenshot com "Cultura 1"
+            // quebrado letra por letra na vertical): quando o campo está
+            // vazio e sem foco, o Material3 mostra o label no tamanho
+            // "grande" (não a versão pequena flutuante), e sem maxLines/
+            // overflow ele quebra palavra a cada caractere quando a coluna é
+            // estreita demais -- isso by itself não bastava (ver Row com
+            // apenas 2 campos por linha logo abaixo, a causa raiz real),
+            // mas garante que NUNCA MAIS apareça esse efeito quebrado, só
+            // reticências na pior hipótese.
+            label = { Text(label, style = if (dense) MaterialTheme.typography.labelSmall else LocalTextStyle.current, maxLines = 1, overflow = TextOverflow.Ellipsis) },
             textStyle = if (dense) MaterialTheme.typography.bodySmall else LocalTextStyle.current,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             singleLine = true,
@@ -400,9 +417,11 @@ private fun FarmsCard(
     // exceção de schema) -- pedido do usuário: "coloque o campo latitude
     // longitude depois da área 2".
     onAdd: (String, Double, String?, Double?, String?, Double?, String?, Double?, Double?, Double?) -> Unit,
-    // 2 últimos parâmetros = latitude/longitude (6ª exceção de schema, ver
-    // MEMORY.md) -- null/null limpa, ambos preenchidos define.
-    onUpdate: (String, Double, String?, Double?, String?, Double?, String?, Double?, Double?, Double?) -> Unit,
+    // 2º parâmetro = nome novo (null = não mexe -- pedido do usuário
+    // "coloque para editar também o nome da fazenda"); 2 últimos parâmetros
+    // = latitude/longitude (6ª exceção de schema, ver MEMORY.md) -- null/
+    // null limpa, ambos preenchidos define.
+    onUpdate: (String, String?, Double, String?, Double?, String?, Double?, String?, Double?, Double?, Double?) -> Unit,
     onDelete: (String) -> Unit,
     onSync: () -> Unit,
 ) {
@@ -436,6 +455,13 @@ private fun FarmsCard(
             val f = el.jsonObject
             val id = f["id"]?.jsonPrimitive?.contentOrNull ?: return@forEach
             val name = f["name"]?.jsonPrimitive?.contentOrNull ?: ""
+            // Nome editável -- pedido do usuário ("coloque para editar
+            // também o nome da fazenda"): antes só existia como Text
+            // estático (com marquee pra nomes longos); agora é um campo de
+            // texto igual aos demais, editado direto no bloco da fazenda
+            // (esta tela não tem um modo "editar"/"visualizar" separado
+            // como o site -- todo campo já fica sempre editável aqui).
+            var nameText by remember(id) { mutableStateOf(name) }
             var areaText by remember(id) { mutableStateOf((f["areaHa"]?.jsonPrimitive?.doubleOrNull ?: 0.0).toString()) }
             var culturaTotal by remember(id) { mutableStateOf(f["cultura"]?.jsonPrimitive?.contentOrNull ?: "") }
             var areaSafrinhaText by remember(id) { mutableStateOf(f["areaSafrinhaHa"]?.jsonPrimitive?.doubleOrNull?.toString() ?: "") }
@@ -472,18 +498,35 @@ private fun FarmsCard(
             ) {
                 Column(modifier = Modifier.fillMaxWidth().padding(6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            name,
-                            modifier = Modifier.weight(1f).basicMarquee(),
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Clip,
+                        // Nome editável (era Text estático com marquee) --
+                        // pedido do usuário ("coloque para editar também o
+                        // nome da fazenda").
+                        OutlinedTextField(
+                            value = nameText,
+                            onValueChange = { nameText = it },
+                            textStyle = MaterialTheme.typography.bodyMedium,
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            colors = appFieldColors(),
                         )
                         IconButton(onClick = { onDelete(id) }, enabled = !busy) {
                             Icon(Icons.Filled.Delete, contentDescription = "Excluir fazenda")
                         }
                     }
-                    // Linha 1 de campos: Cultura + TOTAL(ha) + Cultura 1 + ha.
+                    // 4 linhas de 2 campos cada (em vez de 2 linhas de 4) --
+                    // achado pela análise do screenshot do usuário
+                    // ("entendeu?", Cultura 1/Cultura quebrando letra por
+                    // letra na vertical, e até "SOJA" saindo cortado como
+                    // "SOJ"): com 4 campos dividindo a largura da tela em
+                    // Row, cada coluna ficava tão estreita (~1/4 da tela)
+                    // que nem um valor de 4 letras cabia, e o label "Cultura
+                    // 1" (quando o campo está vazio, o Material3 mostra o
+                    // label no tamanho GRANDE, não a versão pequena
+                    // flutuante) não tinha largura nem pra uma letra por
+                    // linha. 2 campos por linha dobra a largura disponível
+                    // pra cada um -- mesmo critério que já funciona no SITE
+                    // (grid-cols-2 no mobile, só grid-cols-4 a partir de
+                    // telas maiores, ver base-de-dados-client.tsx).
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -500,21 +543,25 @@ private fun FarmsCard(
                         OutlinedTextField(
                             value = areaText,
                             onValueChange = { areaText = it },
-                            label = { Text("TOTAL (ha)", style = MaterialTheme.typography.labelSmall) },
+                            label = { Text("TOTAL (ha)", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             textStyle = MaterialTheme.typography.bodySmall,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             singleLine = true,
                             modifier = Modifier.weight(1f),
                             colors = appFieldColors(),
                         )
-                        // Campo genérico "safrinha" REMOVIDO da UI -- pedido
-                        // do usuário (X na screenshot): só os 2 slots por
-                        // cultura ficam visíveis agora. areaSafrinhaText
-                        // continua existindo e sendo reenviado sem alteração
-                        // em onUpdate (pré-populado do JSON acima),
-                        // preservando o valor antigo no backend/fallback do
-                        // Canvas pra fazendas que já tinham esse campo
-                        // preenchido.
+                    }
+                    // Campo genérico "safrinha" REMOVIDO da UI -- pedido do
+                    // usuário (X na screenshot): só os 2 slots por cultura
+                    // ficam visíveis agora. areaSafrinhaText continua
+                    // existindo e sendo reenviado sem alteração em onUpdate
+                    // (pré-populado do JSON acima), preservando o valor
+                    // antigo no backend/fallback do Canvas pra fazendas que
+                    // já tinham esse campo preenchido.
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    ) {
                         CulturaDropdownField(
                             value = cultura1,
                             onValueChange = { cultura1 = it },
@@ -525,7 +572,7 @@ private fun FarmsCard(
                         OutlinedTextField(
                             value = cultura1HaText,
                             onValueChange = { cultura1HaText = it },
-                            label = { Text("ha", style = MaterialTheme.typography.labelSmall) },
+                            label = { Text("ha", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             textStyle = MaterialTheme.typography.bodySmall,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             singleLine = true,
@@ -533,10 +580,8 @@ private fun FarmsCard(
                             colors = appFieldColors(),
                         )
                     }
-                    // Linha 2 de campos: Cultura 2 + ha + lat/lon + salvar.
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                     ) {
                         CulturaDropdownField(
@@ -549,24 +594,28 @@ private fun FarmsCard(
                         OutlinedTextField(
                             value = cultura2HaText,
                             onValueChange = { cultura2HaText = it },
-                            label = { Text("ha", style = MaterialTheme.typography.labelSmall) },
+                            label = { Text("ha", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             textStyle = MaterialTheme.typography.bodySmall,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             singleLine = true,
                             modifier = Modifier.weight(1f),
                             colors = appFieldColors(),
                         )
+                    }
+                    // lat/lon sozinho na própria linha (texto mais longo,
+                    // dois números com vírgula) + botão salvar ao lado.
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    ) {
                         OutlinedTextField(
                             value = locationText,
                             onValueChange = { locationText = it },
-                            label = { Text("lat, lon", style = MaterialTheme.typography.labelSmall) },
+                            label = { Text("lat, lon", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             textStyle = MaterialTheme.typography.bodySmall,
                             singleLine = true,
-                            // weight(2f) -- "lat, lon" carrega dois números
-                            // com vírgula, texto mais longo que os demais
-                            // campos da linha; pedido do usuário ("sem
-                            // cortar os números também").
-                            modifier = Modifier.weight(2f),
+                            modifier = Modifier.weight(1f),
                             colors = appFieldColors(),
                         )
                         IconButton(
@@ -598,8 +647,15 @@ private fun FarmsCard(
                                     val c2 = cultura2.trim()
                                     val c2ha = cultura2HaText.toDoubleOrNull()
                                     val culturaTotalTrim = culturaTotal.trim()
+                                    // Nome -- só manda se realmente mudou
+                                    // (senão fica null = "não mexe", mesmo
+                                    // padrão partial-update dos demais
+                                    // campos aqui) e nunca em branco (nome é
+                                    // obrigatório, ver validação no servidor).
+                                    val nomeTrim = nameText.trim()
+                                    val novoNome = if (nomeTrim.isNotEmpty() && nomeTrim != name) nomeTrim else null
                                     onUpdate(
-                                        id, area, if (culturaTotalTrim.isNotEmpty()) culturaTotalTrim else null,
+                                        id, novoNome, area, if (culturaTotalTrim.isNotEmpty()) culturaTotalTrim else null,
                                         areaSafrinhaText.toDoubleOrNull(),
                                         if (c1.isNotEmpty()) c1 else null, if (c1.isNotEmpty()) c1ha else null,
                                         if (c2.isNotEmpty()) c2 else null, if (c2.isNotEmpty()) c2ha else null,
@@ -629,7 +685,11 @@ private fun FarmsCard(
                 value = newName, onValueChange = { newName = it }, label = { Text("Nova fazenda") },
                 modifier = Modifier.fillMaxWidth(), singleLine = true, colors = appFieldColors(),
             )
-            // Linha 1: Cultura + TOTAL (ha) + Cultura 1 + ha.
+            // 4 linhas de 2 campos (em vez de 2 linhas de 4) -- mesma causa
+            // raiz e mesmo critério do bloco de edição acima (ver comentário
+            // lá): 4 campos por linha deixava cada coluna estreita demais
+            // pro label/valor caberem (ex.: "SOJA" saindo cortado "SOJ",
+            // "Cultura 1" quebrando letra por letra quando vazio).
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
                 // Cultura (safra principal/verão) que ocupa a Área Total --
                 // 8ª exceção de schema (ver MEMORY.md). Pedido do usuário:
@@ -641,30 +701,30 @@ private fun FarmsCard(
                 )
                 OutlinedTextField(
                     value = newArea, onValueChange = { newArea = it },
-                    label = { Text("TOTAL (ha)", style = MaterialTheme.typography.labelSmall) },
+                    label = { Text("TOTAL (ha)", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     textStyle = MaterialTheme.typography.bodySmall,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.weight(1f),
                     colors = appFieldColors(),
                 )
-                // Campo genérico "safrinha" REMOVIDO da UI pra fazendas
-                // novas -- pedido do usuário (X na screenshot): só os 2
-                // slots por cultura abaixo. newAreaSafrinha continua "" e
-                // nunca populado (onAdd recebe null pra esse parâmetro), o
-                // que é o comportamento correto pra cadastros novos daqui em
-                // diante.
+            }
+            // Campo genérico "safrinha" REMOVIDO da UI pra fazendas novas --
+            // pedido do usuário (X na screenshot): só os 2 slots por cultura
+            // abaixo. newAreaSafrinha continua "" e nunca populado (onAdd
+            // recebe null pra esse parâmetro), o que é o comportamento
+            // correto pra cadastros novos daqui em diante.
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
                 CulturaDropdownField(
                     value = newCultura1, onValueChange = { newCultura1 = it }, label = "Cultura 1",
                     modifier = Modifier.weight(1f), dense = true,
                 )
                 OutlinedTextField(
                     value = newCultura1Ha, onValueChange = { newCultura1Ha = it },
-                    label = { Text("ha", style = MaterialTheme.typography.labelSmall) },
+                    label = { Text("ha", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     textStyle = MaterialTheme.typography.bodySmall,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.weight(1f),
                     colors = appFieldColors(),
                 )
             }
-            // Linha 2: Cultura 2 + ha + lat/lon.
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
                 CulturaDropdownField(
                     value = newCultura2, onValueChange = { newCultura2 = it }, label = "Cultura 2",
@@ -672,22 +732,22 @@ private fun FarmsCard(
                 )
                 OutlinedTextField(
                     value = newCultura2Ha, onValueChange = { newCultura2Ha = it },
-                    label = { Text("ha", style = MaterialTheme.typography.labelSmall) },
+                    label = { Text("ha", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     textStyle = MaterialTheme.typography.bodySmall,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.weight(1f),
                     colors = appFieldColors(),
                 )
-                // Localização (lat, lon) -- 6ª exceção de schema (ver
-                // MEMORY.md). Pedido do usuário: "coloque o campo latitude
-                // longitude depois da área 2" -- por isso vem logo após o
-                // slot 2 acima. weight(2f) -- "lat, lon" é um texto mais
-                // longo que os demais (dois números com vírgula), pedido do
-                // usuário ("sem cortar os números também").
+            }
+            // Localização (lat, lon) sozinha na própria linha -- 6ª exceção
+            // de schema (ver MEMORY.md). Texto mais longo (dois números com
+            // vírgula) que os demais campos, agora com a linha inteira só
+            // pra ele em vez de dividir espaço.
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
                 OutlinedTextField(
                     value = newLocation, onValueChange = { newLocation = it },
-                    label = { Text("lat, lon", style = MaterialTheme.typography.labelSmall) },
+                    label = { Text("lat, lon", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     textStyle = MaterialTheme.typography.bodySmall,
-                    singleLine = true, modifier = Modifier.weight(2f),
+                    singleLine = true, modifier = Modifier.fillMaxWidth(),
                     colors = appFieldColors(),
                 )
             }

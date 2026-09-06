@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -38,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -285,50 +287,79 @@ private fun StringDropdown(
     }
 }
 
+// Bloco individual por campo dentro de cada item -- pedido do usuário
+// ("crie blocos individuais" nos itens do pedido). Scrim (onSurface com
+// alpha baixo) em vez de um papel de cor fixo: cria contraste com QUALQUER
+// fundo por trás (o Card pai aqui é branco/surface), então nunca "some"
+// igual aconteceu com surfaceVariant em Cotações (ver mesmo comentário em
+// CotacaoMultiItemScreen.kt).
+@Composable
+private fun ItemFieldBlock(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+        shape = MaterialTheme.shapes.small,
+    ) {
+        Box(modifier = Modifier.padding(6.dp)) {
+            content()
+        }
+    }
+}
+
 @Composable
 private fun PedidoLinhaCard(linha: PedidoLinha, categoriasOptions: List<LookupEntity>, itensOptions: List<LookupEntity>, unidadesOptions: List<LookupEntity>, showRemove: Boolean, onRemove: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            StringDropdown(
-                label = "Categoria",
-                value = categoriasOptions.firstOrNull { it.value == linha.categoria }?.label ?: linha.categoria.ifBlank { null },
-                options = categoriasOptions.map { it.label },
-                placeholder = "Opcional",
-                allowEmpty = true,
-                onSelect = { picked -> linha.categoria = categoriasOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
-            )
-            StringDropdown(
-                label = "Item *",
-                value = itensOptions.firstOrNull { it.value == linha.item }?.label ?: linha.item.ifBlank { null },
-                options = itensOptions.map { it.label },
-                placeholder = "Selecione o item",
-                onSelect = { picked -> linha.item = itensOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
-            )
-            StringDropdown(
-                label = "Unidade",
-                value = unidadesOptions.firstOrNull { it.value == linha.unidade }?.label ?: linha.unidade.ifBlank { null },
-                options = unidadesOptions.map { it.label },
-                placeholder = "Opcional",
-                allowEmpty = true,
-                onSelect = { picked -> linha.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
-            )
+            ItemFieldBlock {
+                StringDropdown(
+                    label = "Categoria",
+                    value = categoriasOptions.firstOrNull { it.value == linha.categoria }?.label ?: linha.categoria.ifBlank { null },
+                    options = categoriasOptions.map { it.label },
+                    placeholder = "Opcional",
+                    allowEmpty = true,
+                    onSelect = { picked -> linha.categoria = categoriasOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                )
+            }
+            ItemFieldBlock {
+                StringDropdown(
+                    label = "Item *",
+                    value = itensOptions.firstOrNull { it.value == linha.item }?.label ?: linha.item.ifBlank { null },
+                    options = itensOptions.map { it.label },
+                    placeholder = "Selecione o item",
+                    onSelect = { picked -> linha.item = itensOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                )
+            }
+            ItemFieldBlock {
+                StringDropdown(
+                    label = "Unidade",
+                    value = unidadesOptions.firstOrNull { it.value == linha.unidade }?.label ?: linha.unidade.ifBlank { null },
+                    options = unidadesOptions.map { it.label },
+                    placeholder = "Opcional",
+                    allowEmpty = true,
+                    onSelect = { picked -> linha.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                )
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                OutlinedTextField(
-                    value = linha.qtdPedida,
-                    onValueChange = { linha.qtdPedida = it },
-                    label = { Text("Qtd. pedida *") },
-                    placeholder = { Text("0") },
-                    modifier = Modifier.weight(1f),
-                    colors = appFieldColors(),
-                )
-                OutlinedTextField(
-                    value = linha.qtdEntregue,
-                    onValueChange = { linha.qtdEntregue = it },
-                    label = { Text("Qtd. entregue") },
-                    placeholder = { Text("0") },
-                    modifier = Modifier.weight(1f),
-                    colors = appFieldColors(),
-                )
+                ItemFieldBlock(modifier = Modifier.weight(1f)) {
+                    OutlinedTextField(
+                        value = linha.qtdPedida,
+                        onValueChange = { linha.qtdPedida = it },
+                        label = { Text("Qtd. pedida *") },
+                        placeholder = { Text("0") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = appFieldColors(),
+                    )
+                }
+                ItemFieldBlock(modifier = Modifier.weight(1f)) {
+                    OutlinedTextField(
+                        value = linha.qtdEntregue,
+                        onValueChange = { linha.qtdEntregue = it },
+                        label = { Text("Qtd. entregue") },
+                        placeholder = { Text("0") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = appFieldColors(),
+                    )
+                }
             }
             if (showRemove) {
                 IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {

@@ -180,6 +180,15 @@ private val TOKEN_FIXES = mapOf(
     "Ultimo" to "Último", "Atras" to "Atrás", "No" to "Nº",
     "PVenc" to "para vencer", "PVencer" to "para vencer",
     "Eficiencia" to "Eficiência", "Maquina" to "Máquina",
+    // Terceira varredura (pedido do usuário: "corrigir Ç", screenshot com
+    // "Orcado" em Planejado x Realizado) -- mesma causa das rodadas
+    // anteriores: a chave em camelCase (orcado, descricao, ocorrenciasPraga,
+    // conciliacaoCaixaVsFinanceiro) nunca teve cedilha/til pra começo, então
+    // a quebra automática sozinha não tinha como acertar. Conferido campo a
+    // campo de novo contra getAnalisesCruzadas (lib/services/analises.ts)
+    // pra não sobrar nenhum.
+    "Orcado" to "Orçado", "Descricao" to "Descrição",
+    "Ocorrencias" to "Ocorrências", "Conciliacao" to "Conciliação",
     // "R" sozinho (de "valorR", que a quebra de camelCase isola como
     // palavra própria já que não tem letra minúscula depois pra continuar
     // juntando) não vira palavra nenhuma em português -- descartado (ver
