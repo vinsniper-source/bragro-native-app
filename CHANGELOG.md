@@ -18,6 +18,21 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.48] -- 2026-09-06
+
+- **Blocos individuais de campo (Cotações/Pedidos/Itens da nota) invisíveis
+  demais na prática**: usuário desinstalou o app, instalou o 1.2.47 do zero
+  e mesmo assim reportou "continua a mesma coisa" em Comparar fornecedores.
+  Código já estava certo (só um `CotacaoMultiItemScreen` registrado na
+  navegação, sem tela duplicada) -- o problema era o valor escolhido pro
+  scrim: `onSurface.copy(alpha = 0.05f)` é ~5% de preto sobre branco
+  (RGB~242,242,242), praticamente idêntico ao branco do Card por trás num
+  display real, mesmo tendo ficado visível no preview HTML usado pra
+  confirmar o entendimento. Subido pra `alpha = 0.12f` nos 3 arquivos que
+  usam esse padrão (`CotacaoMultiItemScreen.kt`, `PedidoMultiItemScreen.kt`,
+  `FinanceiroItensInline.kt`) -- contraste bem mais perceptível, sem
+  precisar de borda (regra do app de não ter bordas em lugar nenhum).
+
 ## [1.2.47] -- 2026-09-06
 
 - **DRE: selo "Orçamento estourado"/"Dentro do orçamento" ausente na árvore

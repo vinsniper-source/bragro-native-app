@@ -293,11 +293,14 @@ private fun StringDropdown(
 // fundo por trás (o Card pai aqui é branco/surface), então nunca "some"
 // igual aconteceu com surfaceVariant em Cotações (ver mesmo comentário em
 // CotacaoMultiItemScreen.kt).
+// alpha 0.05f -> 0.12f: 5% era imperceptível num display real (usuário
+// reinstalou o 1.2.47 do zero e ainda não enxergou o bloco) -- mesmo ajuste
+// aplicado em CotacaoMultiItemScreen.kt/FinanceiroItensInline.kt.
 @Composable
 private fun ItemFieldBlock(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Surface(
         modifier = modifier,
-        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
         shape = MaterialTheme.shapes.small,
     ) {
         Box(modifier = Modifier.padding(6.dp)) {

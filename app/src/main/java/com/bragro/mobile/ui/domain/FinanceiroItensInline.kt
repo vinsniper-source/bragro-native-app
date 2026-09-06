@@ -216,11 +216,14 @@ private fun ItemStringDropdown(
 // inteira). Scrim (onSurface alpha baixo) em vez de um papel de cor fixo:
 // cria contraste com QUALQUER fundo por trás, mesmo critério já usado em
 // CotacaoMultiItemScreen.kt/PedidoMultiItemScreen.kt.
+// alpha 0.05f -> 0.12f: 5% era imperceptível num display real (usuário
+// reinstalou o 1.2.47 do zero e ainda não enxergou o bloco) -- mesmo ajuste
+// aplicado nos outros dois arquivos.
 @Composable
 private fun ItemFieldBlock(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Surface(
         modifier = modifier,
-        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
         shape = MaterialTheme.shapes.small,
     ) {
         Box(modifier = Modifier.padding(6.dp)) {

@@ -498,9 +498,16 @@ private fun ItemFieldBlock(modifier: Modifier = Modifier, content: @Composable (
     // semi-transparente sobre onSurface sempre cria contraste com QUALQUER
     // fundo por trás (branco, verde claro, etc.), então não tem como
     // coincidir e sumir de novo.
+    // alpha 0.05f -> 0.12f (usuário reinstalou o 1.2.47 do zero e reportou
+    // "continua a mesma coisa"): 5% de preto sobre branco é praticamente
+    // imperceptível num display real (RGB ~242,242,242, quase idêntico ao
+    // branco do Card por trás) -- a estrutura/código já estava certa, só o
+    // contraste era baixo demais pra notar a olho nu. 12% já fica claramente
+    // visível como um bloco cinza-claro, sem precisar de borda (regra do
+    // app de não ter bordas em lugar nenhum).
     Surface(
         modifier = modifier,
-        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
         shape = MaterialTheme.shapes.small,
     ) {
         Box(modifier = Modifier.padding(6.dp)) {
