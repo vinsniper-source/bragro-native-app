@@ -82,6 +82,10 @@ private val DOMAIN_ICON: Map<String, ImageVector> = mapOf(
     // do módulo lançamentos"); esse ícone era igual ao da própria aba
     // "Financeiro" e ao de DRE/Análises no dropdown, confundia.
     "financeiro" to Icons.Filled.Receipt,
+    // Entrada própria "Gestão Financeira" na lista suspensa do Financeiro
+    // (ver BottomNavBar.kt) -- ícone diferente do "Lançamentos" (Receipt)
+    // pra não confundir os dois na lista.
+    "gestaofinanceira" to Icons.Filled.AccountBalanceWallet,
     "pedidos" to Icons.Filled.ShoppingCart,
     // Balanca (comparacao de propostas) -- mesmo espirito do icone "Scale"
     // do site (lucide-react) pro modulo novo de Cotacoes de Fornecedores.

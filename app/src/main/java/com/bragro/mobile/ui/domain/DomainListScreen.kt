@@ -652,11 +652,16 @@ fun DomainListScreen(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
                         ) {
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceEvenly,
-                                verticalArrangement = Arrangement.spacedBy(6.dp),
-                            ) {
+                            // Borda vertical dividindo em partes iguais +
+                            // ícones centralizados dentro de cada bloco --
+                            // pedido do usuário ("coloque uma borda vertical
+                            // no bloco faturamento dividindo em partes
+                            // iguais e distribuindo os icones dentro dos
+                            // blocos centralizados"). Reaproveita o MESMO
+                            // Layout já usado em Dados/Operações/Arquivos
+                            // (EqualWidthBlockRow, ver ModuleIconRow.kt) em
+                            // vez de duplicar a lógica de bordas/centralização.
+                            EqualWidthBlockRow(modifier = Modifier.padding(vertical = 8.dp), drawBackground = false) {
                                 linkedDomains.forEach { (id, label) ->
                                     val active = id == domainId
                                     ModuleIconButton(

@@ -2,6 +2,7 @@ package com.bragro.mobile.ui.domain
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -89,93 +90,97 @@ fun ProviderIntegrationCard(
     val conectado = integration?.status == "CONECTADO"
 
     Card(modifier = modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(Icons.Filled.Bolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
-            // Título em UMA linha com letreiro (marquee) em vez de deixar
-            // quebrar livre -- pedido do usuário ("coloque a frase em
-            // linhas, não em coluna, não divida as palavras"): esse título
-            // divide espaço com o Icon + badge de status (provedor
-            // conectado / "Não conectado") + botão de expandir, todos de
-            // largura fixa; em telas estreitas o weight(1f) sobrava pouco
-            // espaço e o texto quebrava letra por letra numa coluna vertical
-            // enorme (mesmo bug já corrigido em Base de Dados, task #338).
-            // Card compartilhado por FieldView/Drone/Frota(Bomba)/
-            // Romaneios(Balança) -- corrige nos 4 de uma vez.
-            Text(
-                "Acesso automático via prestadora de serviço",
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.weight(1f).basicMarquee(),
-                maxLines = 1,
-                overflow = TextOverflow.Clip,
-            )
-            if (conectado) {
-                Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = MaterialTheme.shapes.small,
-                ) {
-                    Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.height(14.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(integration?.provedor ?: "", style = MaterialTheme.typography.labelSmall)
-                    }
-                }
-            } else {
-                Text("Não conectado", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            // Linha 1: só o título -- pedido do usuário ("a frase acesso
+            // automático via prestadora de serviços" isolada). Agora tem a
+            // largura TODA do card pra si (nada mais dividindo espaço),
+            // então o basicMarquee() só entra em ação em telas realmente
+            // estreitas -- mesmo bug de weight(1f) espremido já corrigido
+            // antes (task #338), agora resolvido de raiz em vez de só
+            // mitigado.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Bolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
+                Text(
+                    "Acesso automático via prestadora de serviço",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.weight(1f).basicMarquee(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Clip,
+                )
             }
-            IconButtonToggle(open) { open = !open }
+            // Linha 2: status ("Não conectado"/"Conectado") ao lado da
+            // setinha de recolher -- pedido do usuário. É esta linha
+            // inteira que abre/fecha o card (clicável), não só a setinha.
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { open = !open },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (conectado) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = MaterialTheme.shapes.small,
+                    ) {
+                        Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.height(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(integration?.provedor ?: "", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                } else {
+                    Text("Não conectado", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Spacer(Modifier.weight(1f))
+                IconButtonToggle(open) { open = !open }
+            }
         }
         if (open) {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).padding(bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(descricao, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                // Resumo das informações -- pedido do usuário ("abaixo
+                // resuma as informações"): descrição de UMA linha só,
+                // repassada por cada tela (FieldView/Drone/Frota/
+                // Romaneios), já encurtada desde a varredura da task #398.
+                Text(descricao, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
 
-                // Provedor + API Key em blocos individuais lado a lado --
-                // pedido do usuário ("crie blocos individuais separando
-                // dentro do bloco inteiro"): antes os dois campos só
-                // dividiam a largura via Row/weight, sem nenhum limite
-                // visível entre eles (ficavam "flutuando" dentro do card
-                // maior, sem separação clara). Agora cada campo vive dentro
-                // do seu próprio FieldBlock (Surface com tom levemente
-                // diferente do card externo) -- mesma ideia de "bloco dentro
-                // do bloco" já usada em Base de Dados/Cotações.
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    FieldBlock(modifier = Modifier.weight(1f)) {
-                        ExposedDropdownMenuBox(
-                            expanded = expanded,
-                            onExpandedChange = { expanded = it },
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            OutlinedTextField(
-                                value = provedor, onValueChange = {}, readOnly = true,
-                                label = { Text("Provedor") },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                                modifier = Modifier.fillMaxWidth().menuAnchor(),
-                                colors = appFieldColors(),
-                            )
-                            ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                                providers.forEach { p -> DropdownMenuItem(text = { Text(p) }, onClick = { provedor = p; expanded = false }) }
-                            }
-                        }
-                    }
-
-                    FieldBlock(modifier = Modifier.weight(1f)) {
+                // Provedor, API Key, Salvar e Fechar agora EMPILHADOS (cada
+                // um em sua própria linha, não mais lado a lado) -- pedido
+                // do usuário ("abaixo coloque provedor... abaixo coloque
+                // api key... abaixo coloque salvar... mais abaixo coloque
+                // fechar"). Cada campo continua no seu FieldBlock individual
+                // (task #438), só que agora ocupando a largura toda.
+                FieldBlock(modifier = Modifier.fillMaxWidth()) {
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = it },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
                         OutlinedTextField(
-                            value = apiKey, onValueChange = { apiKey = it },
-                            label = { Text("API Key / Token") },
-                            placeholder = { Text(if (integration?.apiKeyConfigurado == true) "•••• (salvo)" else "Cole a credencial") },
-                            leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
-                            visualTransformation = PasswordVisualTransformation(),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
+                            value = provedor, onValueChange = {}, readOnly = true,
+                            label = { Text("Provedor") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor(),
                             colors = appFieldColors(),
                         )
+                        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                            providers.forEach { p -> DropdownMenuItem(text = { Text(p) }, onClick = { provedor = p; expanded = false }) }
+                        }
                     }
+                }
+
+                FieldBlock(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = apiKey, onValueChange = { apiKey = it },
+                        label = { Text("API Key / Token") },
+                        placeholder = { Text(if (integration?.apiKeyConfigurado == true) "•••• (salvo)" else "Cole a credencial") },
+                        leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = appFieldColors(),
+                    )
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -232,6 +237,15 @@ fun ProviderIntegrationCard(
 
                 syncMessage?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+
+                // Botão Fechar -- pedido do usuário ("mais abaixo coloque
+                // fechar"): último elemento do card aberto, faz a mesma
+                // coisa que tocar na setinha/linha de status (recolhe o
+                // card), só que como ação explícita no fim do fluxo em vez
+                // de só a setinha lá em cima.
+                OutlinedButton(onClick = { open = false }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Fechar")
                 }
             }
         }

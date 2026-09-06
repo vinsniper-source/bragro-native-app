@@ -254,7 +254,7 @@ fun ModuleIconRow(items: List<ModuleIconItem>, onClick: (String) -> Unit) {
  * realmente vieram e divide a largura igualmente entre eles.
  */
 @Composable
-fun EqualWidthBlockRow(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun EqualWidthBlockRow(modifier: Modifier = Modifier, drawBackground: Boolean = true, content: @Composable () -> Unit) {
     // Retângulo reto (SEM cantos arredondados) com fundo preenchido -- pedido
     // do usuário (achado de auditoria: "retire as bordas redondas e torne um
     // retângulo com borda bem leve na tonalidade do retângulo inteiro").
@@ -265,6 +265,11 @@ fun EqualWidthBlockRow(modifier: Modifier = Modifier, content: @Composable () ->
     // visível de bloco. Borda = outlineVariant (já era o tom mais leve
     // disponível no Material3 -- "na tonalidade do retângulo inteiro" quer
     // dizer sutil/próxima do fundo, não um contraste forte).
+    // "drawBackground=false" -- caso do bloco Faturamento (Cobranças), que já
+    // vive dentro de um Card com fundo verde translúcido próprio (pedido
+    // anterior do usuário): sem essa opção, o fundo opaco "surface" daqui
+    // cobriria o verde do Card pai. Continua desenhando borda/divisórias
+    // normalmente, só pula o preenchimento de fundo.
     val blockBg = MaterialTheme.colorScheme.surface
     val dividerColor = darkerBorderColor(blockBg)
     // Contagem de células só é conhecida durante a medição (measurables.size
@@ -276,7 +281,7 @@ fun EqualWidthBlockRow(modifier: Modifier = Modifier, content: @Composable () ->
         content = content,
         modifier = modifier
             .fillMaxWidth()
-            .background(blockBg)
+            .then(if (drawBackground) Modifier.background(blockBg) else Modifier)
             .border(1.dp, dividerColor)
             .drawBehind {
                 val n = itemCount.intValue

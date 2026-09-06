@@ -132,6 +132,17 @@ private val BOTTOM_TABS = listOf(
             // Renomeado -- pedido do usuário ("renomeie o nome financeiro
             // (lançamentos) apenas para lançamentos").
             SectorTarget.Domain("financeiro", "Lançamentos"),
+            // Entrada PRÓPRIA -- pedido do usuário ("na barra inferior do
+            // botão financeiro insira, na lista suspensa, um módulo chamado
+            // gestão financeira... agora o módulo lançamento será só ele").
+            // Antes "Gestão Financeira" só existia como um dropdown DENTRO
+            // da tela de Lançamentos (ver FinanceiroGestaoDropdownButton em
+            // FinanceiroScreen.kt); agora também é uma entrada direta aqui,
+            // que abre a mesma tela já na visão "Contas a Pagar" (ver
+            // domainId == "gestaofinanceira" em BRAgroNavHost.kt +
+            // startInGestao em FinanceiroScreen.kt). "financeiro" não é um
+            // domínio de verdade separado -- roteado pra tela do Financeiro.
+            SectorTarget.Domain("gestaofinanceira", "Gestão Financeira"),
             SectorTarget.Special("dre", "DRE"),
             SectorTarget.Special("analises", "Análises cruzadas"),
             // Livro Caixa do Produtor Rural (Task #58) -- ja existia no site

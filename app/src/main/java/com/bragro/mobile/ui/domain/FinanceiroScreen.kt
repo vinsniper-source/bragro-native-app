@@ -148,6 +148,15 @@ fun FinanceiroScreen(
     // dentro do formulário "Novo Lançamento" (ver DomainFormScreen.kt/
     // onOpenNotaMultiItem), pedido do usuário ("em novo lançamento coloque
     // nota com itens e exclua de arquivos").
+    // "Gestão Financeira" virou uma ENTRADA PRÓPRIA na lista suspensa do
+    // botão Financeiro (BottomNavBar.kt), separada de "Lançamentos" -- pedido
+    // do usuário ("na barra inferior do botão financeiro insira, na lista
+    // suspensa, um módulo chamado gestão financeira... agora o módulo
+    // lançamento será só ele"). Continua sendo a MESMA tela/ViewModel
+    // (mesmos registros de Financeiro, mesmo bloco Dados/Operações/Arquivos)
+    // -- só muda qual seletor de visão aparece e em qual visão a tela abre,
+    // ver `view`/Row do seletor abaixo.
+    startInGestao: Boolean = false,
     viewModel: DomainListViewModel = viewModel(),
     filtersViewModel: FinanceiroFiltersViewModel = viewModel(),
 ) {
@@ -170,7 +179,11 @@ fun FinanceiroScreen(
     val recordIdsForAudit = remember(allRecords) { allRecords.mapNotNull { it["id"] } }
     LaunchedEffect(recordIdsForAudit) { viewModel.loadAuditInfo("financeiro", recordIdsForAudit) }
 
-    var view by remember { mutableStateOf(FinanceiroView.TODOS) }
+    // Abre já na 1ª visão de Gestão Financeira (Contas a Pagar) quando vem
+    // da entrada "Gestão Financeira" da lista suspensa; abre em Lançamentos
+    // (TODOS) quando vem da entrada "Lançamentos" normal -- ver comentário
+    // de `startInGestao` acima.
+    var view by remember { mutableStateOf(if (startInGestao) FinanceiroView.PAGAR else FinanceiroView.TODOS) }
     val isQuickView = view != FinanceiroView.TODOS
 
     // Período (8 categorias, ver PeriodoFilters.kt) + Intervalo manual +
@@ -367,34 +380,45 @@ fun FinanceiroScreen(
             // inteiro separados por bordas na vertical, com as mesmas
             // medidas... terão que ficar em duas linhas"). O nome "Gestão
             // Financeira" migrou desse título pro botão-dropdown atual.
+            // Seletor de visão agora depende de QUAL ENTRADA da lista
+            // suspensa abriu esta tela (ver `startInGestao` acima) -- pedido
+            // do usuário ("agora o módulo lançamento será só ele"): o módulo
+            // "Lançamentos" não mostra mais o dropdown "Gestão Financeira"
+            // ao lado (ele virou exclusivo da entrada "Gestão Financeira"),
+            // e vice-versa -- cada entrada da lista suspensa mostra só o
+            // controle que faz sentido pra ela, em vez dos dois lado a lado
+            // sempre.
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.weight(1f)) {
-                    SegmentedButton(
-                        selected = view == FinanceiroView.TODOS,
-                        onClick = { view = FinanceiroView.TODOS },
-                        shape = androidx.compose.ui.graphics.RectangleShape,
-                        colors = SegmentedButtonDefaults.colors(
-                            activeContainerColor = com.bragro.mobile.ui.theme.BrGreen,
-                            activeContentColor = Color.White,
-                            inactiveContainerColor = MaterialTheme.colorScheme.surface,
-                            inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-                        ),
-                        icon = { Icon(financeiroViewIcon(FinanceiroView.TODOS), contentDescription = null, modifier = Modifier.size(18.dp)) },
-                        label = {
-                            Text(
-                                FinanceiroView.TODOS.label,
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Clip,
-                                modifier = Modifier.basicMarquee(),
-                            )
-                        },
-                    )
+                if (!startInGestao) {
+                    SingleChoiceSegmentedButtonRow(modifier = Modifier.weight(1f)) {
+                        SegmentedButton(
+                            selected = view == FinanceiroView.TODOS,
+                            onClick = { view = FinanceiroView.TODOS },
+                            shape = androidx.compose.ui.graphics.RectangleShape,
+                            colors = SegmentedButtonDefaults.colors(
+                                activeContainerColor = com.bragro.mobile.ui.theme.BrGreen,
+                                activeContentColor = Color.White,
+                                inactiveContainerColor = MaterialTheme.colorScheme.surface,
+                                inactiveContentColor = MaterialTheme.colorScheme.onSurface,
+                            ),
+                            icon = { Icon(financeiroViewIcon(FinanceiroView.TODOS), contentDescription = null, modifier = Modifier.size(18.dp)) },
+                            label = {
+                                Text(
+                                    FinanceiroView.TODOS.label,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Clip,
+                                    modifier = Modifier.basicMarquee(),
+                                )
+                            },
+                        )
+                    }
+                } else {
+                    FinanceiroGestaoDropdownButton(view = view, onSelect = { view = it }, modifier = Modifier.weight(1f))
                 }
-                FinanceiroGestaoDropdownButton(view = view, onSelect = { view = it }, modifier = Modifier.weight(1f))
             }
 
             Spacer(modifier = Modifier.size(8.dp))

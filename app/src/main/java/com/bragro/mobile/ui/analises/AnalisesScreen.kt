@@ -149,12 +149,34 @@ class AnalisesViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
-/** Rotulo de secao mais legivel: "planejadoVsRealizado" -> "Planejado Vs
- * Realizado". So cosmetico -- nao muda a chave usada para nada alem de
- * exibicao. */
+// Palavras que a quebra automática de camelCase (tituloSecao/tituloCampo
+// abaixo) não consegue acertar sozinha -- ou porque a chave original em
+// inglês/abreviação vira uma palavra errada em português ("Vs" == "versus",
+// nunca deveria aparecer na tela -- pedido do usuário: "ainda há palavras
+// em inglês"), ou porque o nome do campo em camelCase não carrega acento
+// nenhum ("areaHa" não tem como virar "Área" sozinho -- pedido do usuário:
+// "corrija toda a ortografia"). Comparação por palavra INTEIRA (não
+// "contains"), já quebrada pelo regex abaixo, pra não bagunçar palavras que
+// só COMEÇAM parecido (ex.: não trocar "Vspoderia" se existisse).
+private val TOKEN_FIXES = mapOf(
+    "Vs" to "x", "Ha" to "ha", "Area" to "Área", "Rh" to "RH", "Nf" to "NF",
+    "Os" to "O.S.", "Pct" to "%", "Km" to "km", "Cnpj" to "CNPJ", "Cpf" to "CPF",
+    "Cif" to "CIF", "Fob" to "FOB", "Kg" to "kg", "Ph" to "pH",
+)
+
+/** Rotulo de secao/campo mais legivel: "planejadoVsRealizado" -> "Planejado
+ * x Realizado" (nao mais "Planejado Vs Realizado" -- "Vs" e a abreviacao em
+ * INGLES de "versus", corrigido pra "x" via TOKEN_FIXES acima, mesmo
+ * criterio usado pelas legendas do grafico no site, ver analises-client.tsx
+ * "Planejado x Realizado"). So cosmetico -- nao muda a chave usada para nada
+ * alem de exibicao. */
 private fun tituloSecao(chave: String): String {
     val comEspacos = chave.replace(Regex("([a-z0-9])([A-Z])"), "$1 $2")
-    return comEspacos.replaceFirstChar { it.uppercase() }
+    val palavras = comEspacos.split(" ").map { palavra ->
+        val capitalizada = palavra.replaceFirstChar { it.uppercase() }
+        TOKEN_FIXES[capitalizada] ?: capitalizada
+    }
+    return palavras.joinToString(" ")
 }
 
 // Campos monetários conhecidos do backend (getAnalisesCruzadas, ver
@@ -164,9 +186,15 @@ private fun tituloSecao(chave: String): String {
 // a moeda"): o renderizador genérico (ObjetoCard) só imprimia o número cru,
 // sem "R$", diferente do site que já formata esses mesmos campos como
 // moeda (ver analises-client.tsx).
+// "margem" (margemPorSaca) e "conciliado" (conciliadoFinanceiro,
+// saldoCaixaInterno já cai em "saldo") entraram na varredura -- pedido do
+// usuário ("ainda falta moeda"): eram os 2 campos monetários de
+// getAnalisesCruzadas (lib/services/analises.ts) que nenhuma palavra-chave
+// da lista cobria, então continuavam imprimindo o número cru sem "R$".
 private val CAMPOS_MOEDA = setOf(
     "valor", "custo", "gasto", "receita", "despesa", "bruto", "liquido",
     "preco", "pago", "orcado", "rateado", "saldo", "folhamensal", "base",
+    "margem", "conciliado",
 )
 
 private fun formatarMoedaBr(numero: Double): String =

@@ -18,6 +18,41 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.40] -- 2026-09-05
+
+Segundo lote do mesmo pedido (itens finais do mega-lote de plataforma):
+
+- **ProviderIntegrationCard** (Bomba/Drone/Balança/FieldView): layout
+  reordenado -- frase "Acesso automático via prestadora de serviço" no
+  topo; abaixo, status ("Não conectado" ou provedor conectado + ✔) com
+  seta de recolher; ao expandir, resumo das informações, campo Provedor
+  (bloco cheio) com seta, campo API Key/Token (bloco cheio), botão
+  Salvar e, mais abaixo, botão Fechar.
+- **Financeiro**: nova entrada "Gestão Financeira" na lista suspensa do
+  botão Financeiro (barra inferior), separada de "Lançamentos". Abre a
+  mesma tela já com o dropdown Gestão Financeira ativo (Contas a
+  Pagar/Receber, Conciliado, Fluxo de Caixa, Rateio Direto/Indireto) e
+  sem o botão de Lançamentos; barra Dados/Operações/Arquivos continua
+  igual nos dois modos. Ícone próprio (carteira) na lista pra não
+  confundir com "Lançamentos".
+- **Novo Lançamento > Lançar itens NF, Pedidos > Itens do pedido,
+  Cotações > Itens cotados/Proposta fornecedores**: grades de campos
+  recortadas pra bater exatamente com a quantidade de campos reais por
+  linha (sem coluna fantasma nem campo órfão sozinho numa linha quase
+  vazia).
+- **Análises**: nova varredura -- palavras com "Vs" (comparações tipo
+  "planejadoVsRealizado") agora viram "x" ("Planejado x Realizado");
+  outras abreviações camelCase corrigidas (Ha→ha, Área, RH, NF, O.S.,
+  %, km, CNPJ, CPF, CIF, FOB, kg, pH). Campos de margem por saca e
+  conciliação financeira agora mostram moeda (R$).
+- **Cobranças > bloco Faturamento**: ícones agora em blocos de largura
+  igual com borda vertical dividindo cada um, centralizados (mesmo
+  padrão já usado em Dados/Operações/Arquivos).
+- **Base de Dados > cadastro de fazenda**: formulário de nova fazenda
+  reorganizado em 2 linhas (Cultura/Total ha/Cultura 2/ha na primeira,
+  Cultura 3/ha/Lat,Lon na segunda), margens reduzidas pra caber tudo
+  sem cortar palavra nem usar letreiro nesses campos.
+
 ## [1.2.39] -- 2026-09-05
 
 Mega-lote de correções (mensagem com pedidos de plataforma + Romaneio

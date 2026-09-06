@@ -245,13 +245,25 @@ fun BRAgroNavHost() {
             // tratamento especial que só esse domínio recebe em
             // src/app/(app)/m/[domain]/page.tsx no site. Os outros ~17
             // módulos continuam na tela genérica.
-            if (domainId == "financeiro") {
+            // "gestaofinanceira" -- entrada PRÓPRIA na lista suspensa do
+            // botão Financeiro (ver BottomNavBar.kt), pedido do usuário
+            // ("na barra inferior do botão financeiro insira, na lista
+            // suspensa, um módulo chamado gestão financeira"). Não é um
+            // domínio de verdade (não existe FinanceiroRecord filtrado por
+            // "gestaofinanceira" no servidor) -- é a MESMA tela/dados de
+            // "financeiro", só abrindo direto na visão "Contas a Pagar" com
+            // o dropdown "Gestão Financeira" no lugar do botão "Lançamentos"
+            // (ver startInGestao em FinanceiroScreen.kt). "Novo Lançamento"
+            // (onNewRecord/onEditRecord) continua indo pro domínio real
+            // "financeiro" -- essas 6 visões são só leitura (isQuickView).
+            if (domainId == "financeiro" || domainId == "gestaofinanceira") {
                 FinanceiroScreen(
                     onBack = { navController.popBackStack() },
-                    onNewRecord = { navController.navigate(Routes.domainFormNew(domainId)) },
-                    onEditRecord = { recordId -> navController.navigate(Routes.domainFormEdit(domainId, recordId)) },
+                    onNewRecord = { navController.navigate(Routes.domainFormNew("financeiro")) },
+                    onEditRecord = { recordId -> navController.navigate(Routes.domainFormEdit("financeiro", recordId)) },
                     onOpenBankImport = { navController.navigate(Routes.BANK_IMPORT) },
                     onOpenNfeImport = { navController.navigate(Routes.NFE_IMPORT) },
+                    startInGestao = domainId == "gestaofinanceira",
                 )
             } else {
                 DomainListScreen(
