@@ -664,8 +664,10 @@ private fun FarmsCard(
                             colors = appFieldColors(),
                         )
                     }
-                    // lat/lon sozinho na própria linha (texto mais longo,
-                    // dois números com vírgula) + botão salvar ao lado.
+                    // lat/lon + Situação da terra (9ª exceção de schema, ver
+                    // MEMORY.md) NA MESMA LINHA -- pedido do usuário:
+                    // "coloque o campo situação da terra ao lado de
+                    // lat.lon". Botão salvar continua ao final da linha.
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -679,6 +681,12 @@ private fun FarmsCard(
                             singleLine = true,
                             modifier = Modifier.weight(1f),
                             colors = appFieldColors(),
+                        )
+                        SituacaoTerraDropdownField(
+                            value = situacaoTerraText,
+                            onValueChange = { situacaoTerraText = it },
+                            modifier = Modifier.weight(1f),
+                            dense = true,
                         )
                         IconButton(
                             onClick = {
@@ -731,24 +739,6 @@ private fun FarmsCard(
                         ) {
                             Icon(Icons.Filled.Check, contentDescription = "Salvar área")
                         }
-                    }
-                    // Situação da terra / regime de posse (9ª exceção de
-                    // schema, ver MEMORY.md) -- pedido do usuário: "logo
-                    // após lat/lon o campo com lista suspensa". Fica na
-                    // linha seguinte à de lat/lon (que já leva o botão
-                    // salvar) pelo mesmo motivo de espaço das demais
-                    // (rótulo/valor não cabem todos numa Row só de 2
-                    // colunas nesta largura de tela).
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                    ) {
-                        SituacaoTerraDropdownField(
-                            value = situacaoTerraText,
-                            onValueChange = { situacaoTerraText = it },
-                            modifier = Modifier.weight(1f),
-                            dense = true,
-                        )
                     }
                 }
             }
@@ -824,22 +814,20 @@ private fun FarmsCard(
             // de schema (ver MEMORY.md). Texto mais longo (dois números com
             // vírgula) que os demais campos, agora com a linha inteira só
             // pra ele em vez de dividir espaço.
+            // Situação da terra (9ª exceção de schema, ver MEMORY.md) NA
+            // MESMA LINHA e ao lado de lat/lon -- pedido do usuário: "coloque
+            // o campo situação da terra ao lado de lat.lon".
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
                 OutlinedTextField(
                     value = newLocation, onValueChange = { newLocation = it },
                     label = { Text("lat, lon", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     textStyle = MaterialTheme.typography.bodySmall,
-                    singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    singleLine = true, modifier = Modifier.weight(1f),
                     colors = appFieldColors(),
                 )
-            }
-            // Situação da terra / regime de posse (9ª exceção de schema, ver
-            // MEMORY.md) -- pedido do usuário: "logo após lat/lon o campo
-            // com lista suspensa (parceria, comodato, própria, arrendo)".
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
                 SituacaoTerraDropdownField(
                     value = newSituacaoTerra, onValueChange = { newSituacaoTerra = it },
-                    modifier = Modifier.fillMaxWidth(), dense = true,
+                    modifier = Modifier.weight(1f), dense = true,
                 )
             }
         }

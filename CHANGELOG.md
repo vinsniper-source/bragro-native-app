@@ -18,6 +18,23 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.54] -- 2026-09-07
+
+- **Situação da terra: agora ao lado de lat/lon**: no cadastro/edição de
+  fazenda (site + app nativo), o dropdown "Situação da terra" saiu de uma
+  linha própria embaixo e passou pra MESMA linha do campo de coordenadas
+  (lat, lon), lado a lado -- pedido do usuário.
+- **Sombra verde em TODOS os módulos (app nativo)**: a troca da sombra
+  cinza padrão do Material por uma sombra verde (cor primária do app),
+  feita antes só em Cotações Fornecedores (v1.2.52), agora vale pro app
+  inteiro. A mudança foi feita num único lugar -- o `Card` compartilhado
+  (`ui/theme/AppCard.kt`), usado por praticamente toda tela do app (Base de
+  Dados, Livro Caixa, Pedidos, DRE, Análises, Financeiro, Romaneio,
+  FieldView, Início/Canvas, Drone, NF-e, Operações, Controle de Insumos,
+  Configurações, Calculadoras, Estoque, Frota etc.) -- sem precisar editar
+  card por card. O `greenCardShadow()` que existia só em
+  CotacaoMultiItemScreen.kt foi removido (virou redundante).
+
 ## [1.2.53] -- 2026-09-07
 
 - **Base de Dados > Fazenda/Área: campo "Situação da terra"**: novo campo

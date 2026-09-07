@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.appFieldColors
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -54,7 +53,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -355,18 +353,11 @@ private fun StringDropdown(
     }
 }
 
-/** Sombra verde (cor primária do app) em vez da sombra cinza padrão do
- * Material -- pedido do usuário ("troque a sombra do bloco pelo verde da
- * imagem"): a sombra cinza padrão do Card destoava do resto da tela (fundo
- * e ícones verdes). Escopo só desta tela (GrupoCard/PropostaCard) -- Card.kt
- * é compartilhado por TODO o app, então não mexe lá pra não afetar módulos
- * que já estão certos. O Card em si fica com elevation=0 (ver uso abaixo)
- * pra não desenhar as DUAS sombras (cinza padrão + verde) empilhadas. */
-@Composable
-private fun Modifier.greenCardShadow(): Modifier {
-    val green = MaterialTheme.colorScheme.primary
-    return this.shadow(elevation = 6.dp, shape = MaterialTheme.shapes.medium, ambientColor = green, spotColor = green)
-}
+// Sombra verde: a partir de agora vem de graça pelo Card compartilhado
+// (com.bragro.mobile.ui.theme.Card, ver AppCard.kt) -- pedido do usuário
+// ("aplique o verde de fundo nas sombras dos campos não só nesse módulo mas
+// em todos que esteja na mesma situação") estendeu o que antes era só desta
+// tela (greenCardShadow(), removido daqui) pra TODO o app de uma vez.
 
 /** Bloco individual (scrim onSurface, sem borda -- regra do app de não ter
  * bordas em lugar nenhum) separando cada campo dentro de um card de item/
@@ -410,7 +401,7 @@ private fun PropostaCard(
     showRemove: Boolean,
     onRemove: () -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth().greenCardShadow(), elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             ItemFieldBlock {
                 StringDropdown(
@@ -517,7 +508,7 @@ private fun GrupoCard(
     // fornecedores agora vem ANTES de Categoria/Item/Unidade/Quantidade,
     // com "Adicionar fornecedor" logo abaixo da lista. Nenhuma mudança de
     // dado/validação, só a ordem visual dos dois blocos dentro do card.
-    Card(modifier = Modifier.fillMaxWidth().greenCardShadow(), elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Propostas dos fornecedores *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             // Preço médio histórico (task #472) -- movido pro topo, junto do

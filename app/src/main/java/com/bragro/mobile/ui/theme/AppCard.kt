@@ -10,6 +10,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.luminance
@@ -38,6 +39,25 @@ private fun cardBorderColor(): androidx.compose.ui.graphics.Color {
     return if (isDark) primary.copy(alpha = 0.35f) else primary
 }
 
+/** Sombra verde (cor primária do app) em vez da sombra cinza padrão do
+ * Material -- pedido do usuário ("aplique o verde de fundo nas sombras dos
+ * campos não só nesse módulo mas em todos que esteja na mesma situação").
+ * Nasceu como `greenCardShadow()` isolado em CotacaoMultiItemScreen.kt
+ * (pedido anterior, só naquela tela: "troque a sombra do bloco pelo verde
+ * da imagem"), mas como ESTE arquivo já é o Card compartilhado por TODO o
+ * app (todo call site importa `com.bragro.mobile.ui.theme.Card` em vez do
+ * Material3 puro -- ver comentário histórico abaixo), aplicar aqui uma vez
+ * resolve pra todos os módulos de uma vez só, sem precisar caçar Card por
+ * Card. A elevation real do Material3 Card fica sempre 0.dp (elevation do
+ * parâmetro é ignorada de propósito) pra não desenhar duas sombras
+ * empilhadas (cinza padrão + verde), mesma razão documentada no local de
+ * origem. */
+@Composable
+private fun greenShadow(shape: Shape): Modifier {
+    val green = MaterialTheme.colorScheme.primary
+    return Modifier.shadow(elevation = 6.dp, shape = shape, ambientColor = green, spotColor = green)
+}
+
 @Composable
 fun Card(
     modifier: Modifier = Modifier,
@@ -48,10 +68,10 @@ fun Card(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     androidx.compose.material3.Card(
-        modifier = modifier,
+        modifier = greenShadow(shape).then(modifier),
         shape = shape,
         colors = colors,
-        elevation = elevation,
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = border,
         content = content,
     )
@@ -70,11 +90,11 @@ fun Card(
 ) {
     androidx.compose.material3.Card(
         onClick = onClick,
-        modifier = modifier,
+        modifier = greenShadow(shape).then(modifier),
         enabled = enabled,
         shape = shape,
         colors = colors,
-        elevation = elevation,
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = border,
         content = content,
     )
