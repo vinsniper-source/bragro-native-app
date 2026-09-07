@@ -55,6 +55,8 @@ import com.bragro.mobile.data.model.CotacaoMultiItemRequest
 import com.bragro.mobile.data.model.CotacaoMultiItemResponse
 import com.bragro.mobile.data.model.CotacaoComparacaoRequest
 import com.bragro.mobile.data.model.CotacaoComparacaoResponse
+import com.bragro.mobile.data.model.CotacaoPrecoMedioRequest
+import com.bragro.mobile.data.model.CotacaoPrecoMedioResponse
 import com.bragro.mobile.data.model.OperacoesRequest
 import com.bragro.mobile.data.model.OperacoesResponse
 import com.bragro.mobile.data.model.NotificationsRequest

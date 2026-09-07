@@ -50,7 +50,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -174,7 +173,10 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
     // (ok=false, ex. sem conexão) é tratado como "sem histórico disponível
     // agora", não como erro bloqueante do formulário.
     val historico = mutableStateMapOf<String, CotacaoPrecoMedioResponse?>()
-    private val historicoLoading = mutableStateSetOf<String>()
+    // Set comum (nao precisa ser observavel pelo Compose -- so evita
+    // disparar 2 chamadas de rede pro mesmo item, nunca eh lido por
+    // nenhum @Composable).
+    private val historicoLoading = mutableSetOf<String>()
 
     fun buscarHistoricoSeNecessario(categoria: String, item: String) {
         val cat = categoria.trim()
