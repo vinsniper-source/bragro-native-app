@@ -1,6 +1,7 @@
 package com.bragro.mobile.ui.nav
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -63,15 +65,21 @@ private val BottomNavColors: androidx.compose.material3.NavigationBarItemColors
 // de DomainVisuals.kt/modules.ts), inclusive as que antes só apareciam nos
 // atalhos da extinta tela "Dashboard" (DRE/Análises/NF-e/Romaneio Rápido,
 // ver SectorTarget.Special abaixo) -- o ícone de Dashboard não existe mais.
+// "category" agrupa os itens DENTRO do dropdown de um setor -- pedido do
+// usuário ("distribua esses módulos por categoria", sobre o dropdown de 11
+// itens da aba Safra, que até então era uma lista só, sem nenhuma divisão).
+// null (padrão) = sem cabeçalho, mesmo comportamento de antes -- só a aba
+// Safra recebe categoria por enquanto (as demais abas com dropdown,
+// Financeiro/RH, continuam de fora até um pedido explícito de estendê-las).
 private sealed class SectorTarget {
-    data class Domain(val domainId: String, val label: String) : SectorTarget()
+    data class Domain(val domainId: String, val label: String, val category: String? = null) : SectorTarget()
 
     /** Telas que não são um domínio genérico (DRE/Análises/NF-e/Romaneio
      * Rápido) -- viviam na extinta tela "Dashboard" (atalhos), redistribuídas
      * aqui pro setor a que pertencem (mesmo critério de agrupamento de
      * lib/modules.ts no site: DRE/Análises/NF-e são "financeiro"; Romaneio
      * Rápido é "campo", junto de Romaneios). */
-    data class Special(val routeKey: String, val label: String) : SectorTarget()
+    data class Special(val routeKey: String, val label: String, val category: String? = null) : SectorTarget()
 }
 
 // "directDomainId" != null => aba de acesso direto (toque único já navega
@@ -90,23 +98,30 @@ private val BOTTOM_TABS = listOf(
     BottomTab(
         "safra", "Safra", Icons.Filled.Eco,
         items = listOf(
-            SectorTarget.Domain("safra", "Safra"),
-            SectorTarget.Domain("planejamentosafra", "Planejamento de Safra"),
-            SectorTarget.Domain("colheita", "Colheita"),
+            // "Produção": o ciclo principal safra -> planejamento -> colheita
+            // -> transporte.
+            SectorTarget.Domain("safra", "Safra", category = "Produção"),
+            SectorTarget.Domain("planejamentosafra", "Planejamento de Safra", category = "Produção"),
+            SectorTarget.Domain("colheita", "Colheita", category = "Produção"),
             // "Romaneio rápido" saiu daqui -- virou um 2º FAB dentro do
             // próprio módulo Romaneios (ver DomainListScreen.kt), pedido do
             // usuário ("coloque romaneio rápido como um botão dentro de
             // romaneio, unifique").
-            SectorTarget.Domain("romaneios", "Romaneios"),
-            SectorTarget.Domain("pragas", "Pragas"),
-            SectorTarget.Domain("receituarios", "Receituários"),
-            SectorTarget.Domain("clima", "Clima"),
+            SectorTarget.Domain("romaneios", "Romaneios", category = "Produção"),
+            // "Sanidade": pragas/doenças e o receituário que as trata.
+            SectorTarget.Domain("pragas", "Pragas", category = "Sanidade"),
+            SectorTarget.Domain("receituarios", "Receituários", category = "Sanidade"),
+            // "Monitoramento": dados de campo captados por fonte externa
+            // (clima, imagens de drone, mapa/talhões).
+            SectorTarget.Domain("clima", "Clima", category = "Monitoramento"),
             // Réplica completa do site (Task #106/#107) -- ficam aqui no
             // setor Safra por serem dados de campo/talhão, mesmo critério
             // de agrupamento de Pragas/Clima acima. Igual DRE/Análises,
             // não são um domínio genérico (DomainConfig) -- rotas próprias.
-            SectorTarget.Special("drone", "Drone"),
-            SectorTarget.Special("fieldview", "FieldView"),
+            SectorTarget.Special("drone", "Drone", category = "Monitoramento"),
+            SectorTarget.Special("fieldview", "FieldView", category = "Monitoramento"),
+            // "Painéis": visões cruzadas/agregadas, não um lançamento
+            // específico.
             // Painel "Controle de Insumos" (gap encontrado na auditoria
             // módulo-a-módulo contra o site, pedido do usuário "implemente
             // tudo que falta ainda para o app native da plataforma") -- no
@@ -116,11 +131,11 @@ private val BOTTOM_TABS = listOf(
             // aqui em Safra por ser um painel cruzando consumo de
             // Safra/Frota/ADM, ao lado de outros painéis "especiais"
             // (Drone/FieldView).
-            SectorTarget.Special("controleinsumos", "Controle de Insumos"),
+            SectorTarget.Special("controleinsumos", "Controle de Insumos", category = "Painéis"),
             // Visão "Operação" agrupada (mesmo gap/critério de agrupamento
             // do item acima) -- no site é "campo"/permissão "safra"
             // (lib/modules.ts), então entra aqui também.
-            SectorTarget.Special("operacoes", "Operações"),
+            SectorTarget.Special("operacoes", "Operações", category = "Painéis"),
         ),
     ),
     // Acesso direto -- pedido do usuário ("botão frota acesso direto, retire
@@ -208,9 +223,40 @@ private val SISTEMA_LINKS = listOf(
     SistemaLink("seguranca", "Acessos", Icons.Filled.Security),
 )
 
+// Delegação de acesso por funcionário (pedido do usuário: "delegar funções
+// pra funcionários, o que eles terão acesso ou não") -- o servidor já
+// calcula e manda pro app, no bootstrap, a lista de módulos liberados pro
+// usuário logado (SessionEntity.allowedModulesCsv, ver ConfigRepository.kt
+// e allowedModuleIds() em lib/permissions.ts no site). "*" = OWNER/ADMIN,
+// vê tudo. Essa função só TRADUZ o id usado aqui no app pro id de permissão
+// equivalente no site -- a maioria é 1:1 (mesmo texto), só estes 4 casos
+// divergem (o app nomeia a tela de um jeito, o site controla a permissão
+// por outro id, ou a tela nem existe separada no site e usa a permissão de
+// outra):
+// - "controleinsumos" (rota do app) -> "controledeinsumos" (id no site)
+// - "cobrancas" -> "pagamentos" (Cobranças e NFS-e são uma permissão só)
+// - "gestaofinanceira" -> "financeiro" (mesma tela do Financeiro, view diferente)
+// - "operacoes" -> "safra" (Operações usa a mesma permissão de Safra, sem dado próprio)
+private fun permissionIdFor(nativeId: String): String = when (nativeId) {
+    "controleinsumos" -> "controledeinsumos"
+    "cobrancas" -> "pagamentos"
+    "gestaofinanceira" -> "financeiro"
+    "operacoes" -> "safra"
+    "base-de-dados" -> "basededados"
+    else -> nativeId
+}
+
+private fun isAllowed(allowedModules: Set<String>, nativeId: String): Boolean =
+    allowedModules.contains("*") || allowedModules.contains(permissionIdFor(nativeId))
+
 @Composable
 fun BRAgroBottomBar(
     currentDomainId: String?,
+    // Módulos liberados pro usuário logado -- ver comentário de
+    // permissionIdFor() acima. Vazio = nenhum módulo liberado (não deveria
+    // acontecer em uso normal -- todo papel tem pelo menos "dashboard"),
+    // mostra só a Início e mais nada.
+    allowedModules: Set<String>,
     onNavigateDomain: (String) -> Unit,
     onOpenDre: () -> Unit,
     onOpenAnalises: () -> Unit,
@@ -224,6 +270,29 @@ fun BRAgroBottomBar(
     onOpenSeguranca: () -> Unit,
 ) {
     var openTabId by remember { mutableStateOf<String?>(null) }
+    // Cada aba só mostra os itens que o usuário tem acesso -- some a aba
+    // inteira se sobrar zero itens (ou se o domínio de acesso direto,
+    // Frota/Estoque, não estiver liberado). Recalculado a cada mudança de
+    // allowedModules (ex.: dono reconfigurou o acesso e o app resincronizou).
+    val visibleTabs = remember(allowedModules) {
+        BOTTOM_TABS.mapNotNull { tab ->
+            if (tab.directDomainId != null) {
+                if (isAllowed(allowedModules, tab.directDomainId)) tab else null
+            } else {
+                val visibleItems = tab.items.filter { item ->
+                    val id = when (item) {
+                        is SectorTarget.Domain -> item.domainId
+                        is SectorTarget.Special -> item.routeKey
+                    }
+                    isAllowed(allowedModules, id)
+                }
+                if (visibleItems.isEmpty()) null else tab.copy(items = visibleItems)
+            }
+        }
+    }
+    val visibleSistemaLinks = remember(allowedModules) {
+        SISTEMA_LINKS.filter { isAllowed(allowedModules, it.path) }
+    }
 
     fun openSector(target: SectorTarget) {
         openTabId = null
@@ -251,7 +320,7 @@ fun BRAgroBottomBar(
     // verdade (o mesmo da tela toda) -- tonalElevation em 0.dp continua
     // zerado, sem somar nenhuma camada extra por cima.
     NavigationBar(containerColor = MaterialTheme.colorScheme.background, tonalElevation = 0.dp) {
-        BOTTOM_TABS.forEach { tab ->
+        visibleTabs.forEach { tab ->
             val selected = tab.directDomainId == currentDomainId ||
                 tab.items.any { it is SectorTarget.Domain && it.domainId == currentDomainId }
             // NavigationBarItem só existe como extensão de RowScope (o
@@ -294,7 +363,33 @@ fun BRAgroBottomBar(
                     // sempre no Material3, sem risco de incompatibilidade.
                     MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(surface = MaterialTheme.colorScheme.background)) {
                     DropdownMenu(expanded = openTabId == tab.id, onDismissRequest = { openTabId = null }) {
+                        // Cabeçalho de categoria -- pedido do usuário
+                        // ("distribua esses módulos por categoria", sobre o
+                        // dropdown de 11 itens da aba Safra que era uma lista
+                        // só). "category" null (demais abas, Financeiro/RH)
+                        // continua sem cabeçalho nenhum, comportamento
+                        // idêntico a antes.
+                        var lastCategory: String? = null
                         tab.items.forEach { item ->
+                            val category = when (item) {
+                                is SectorTarget.Domain -> item.category
+                                is SectorTarget.Special -> item.category
+                            }
+                            if (category != null && category != lastCategory) {
+                                if (lastCategory != null) {
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(vertical = 4.dp),
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                                    )
+                                }
+                                Text(
+                                    category.uppercase(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
+                                    modifier = Modifier.padding(horizontal = 16.dp, top = 6.dp, bottom = 2.dp),
+                                )
+                            }
+                            lastCategory = category
                             val label = when (item) {
                                 is SectorTarget.Domain -> item.label
                                 is SectorTarget.Special -> item.label
@@ -344,6 +439,14 @@ fun BRAgroBottomBar(
                 }
             }
         }
+        // Aba "Módulos" (Configurações/Base de Dados/Acessos) some por
+        // completo se o funcionário não tem acesso a nenhuma das 3 -- mesmo
+        // critério de filtragem das demais abas acima. Na prática hoje só
+        // OWNER/ADMIN (allowedModules = "*") veem isso, já que nenhum papel
+        // padrão (AGRONOMO/FINANCEIRO/RH/OPERADOR) inclui essas 3 permissões
+        // por padrão (ver ROLE_MODULES em lib/permissions.ts) -- um CUSTOM
+        // pode ganhar acesso explícito lá na tela de Acessos.
+        if (visibleSistemaLinks.isNotEmpty()) {
         Box(modifier = Modifier.weight(1f)) {
             this@NavigationBar.NavigationBarItem(
                 selected = false,
@@ -358,7 +461,7 @@ fun BRAgroBottomBar(
             // agora é o tom mais claro dos Cards (ver Theme.kt).
             MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(surface = MaterialTheme.colorScheme.background)) {
             DropdownMenu(expanded = openTabId == "sistema", onDismissRequest = { openTabId = null }) {
-                SISTEMA_LINKS.forEach { link ->
+                visibleSistemaLinks.forEach { link ->
                     DropdownMenuItem(
                         text = {
                             Text(
@@ -381,6 +484,7 @@ fun BRAgroBottomBar(
                 }
             }
             }
+        }
         }
     }
 }

@@ -18,6 +18,34 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.56] -- 2026-09-07
+
+- **Barra inferior agora respeita os acessos de cada funcionário**: até
+  aqui a barra mostrava todas as abas e todos os itens dos dropdowns pra
+  qualquer usuário logado, mesmo quem não tinha permissão pra usar aquele
+  módulo (só descobria ao tentar abrir, com erro do servidor). Agora ela lê
+  a lista de módulos liberados que o servidor já calcula no login/bootstrap
+  (papel do usuário + permissões finas configuradas em Acessos) e esconde:
+  abas inteiras sem nenhum item liberado, itens individuais dentro de um
+  dropdown parcialmente liberado, a aba "Frota"/"Estoque" (acesso direto)
+  se o módulo não estiver liberado, e a aba "Módulos"
+  (Configurações/Base de Dados/Acessos) inteira quando nenhuma das 3 está
+  liberada. OWNER/ADMIN continuam vendo tudo, sem mudança nenhuma pra eles.
+  Não é uma mudança de segurança (o servidor já bloqueava por trás) -- é só
+  a barra parar de mostrar o que o funcionário não pode usar.
+
+## [1.2.55] -- 2026-09-07
+
+- **Dropdown da aba Safra dividido por categoria**: os 11 itens que
+  apareciam numa lista só (Safra, Planejamento de Safra, Colheita,
+  Romaneios, Pragas, Receituários, Clima, Drone, FieldView, Controle de
+  Insumos, Operações) agora vêm com cabeçalhos: **Produção** (Safra,
+  Planejamento de Safra, Colheita, Romaneios), **Sanidade** (Pragas,
+  Receituários), **Monitoramento** (Clima, Drone, FieldView) e **Painéis**
+  (Controle de Insumos, Operações) -- pedido do usuário. Estrutura genérica
+  (campo `category` em `SectorTarget`), mas por ora só a aba Safra usa --
+  Financeiro/RH continuam como lista simples até um pedido de estendê-las.
+
 ## [1.2.54] -- 2026-09-07
 
 - **Situação da terra: agora ao lado de lat/lon**: no cadastro/edição de

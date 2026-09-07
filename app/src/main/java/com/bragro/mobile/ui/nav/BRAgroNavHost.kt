@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -18,6 +19,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
+import com.bragro.mobile.data.local.AppDatabase
 import com.bragro.mobile.data.repo.AuthRepository
 import com.bragro.mobile.ui.analises.AnalisesScreen
 import com.bragro.mobile.ui.basededados.BaseDeDadosScreen
@@ -95,6 +97,24 @@ fun BRAgroNavHost() {
     val currentRoute = navBackStackEntry?.destination?.route
     val currentDomainId = if (currentRoute == Routes.DOMAIN_LIST) navBackStackEntry?.arguments?.getString("domainId") else null
 
+    // Delegação de acesso por funcionário (pedido do usuário: "delegar
+    // funções pra funcionários, o que eles terão acesso ou não") -- lê a
+    // sessão do Room de forma reativa (mesmo padrão de HomeScreen.kt) pra
+    // saber quais módulos o usuário logado pode ver, e repassa pra
+    // BRAgroBottomBar filtrar a barra inferior (ver isAllowed() em
+    // BottomNavBar.kt). "*" = OWNER/ADMIN, vê tudo -- ver allowedModuleIds()
+    // em lib/permissions.ts no site, que já calcula essa lista no bootstrap.
+    val db = remember { AppDatabase.get(context) }
+    val session by db.sessionDao().observe().collectAsState(initial = null)
+    val allowedModules = remember(session?.allowedModulesCsv) {
+        session?.allowedModulesCsv
+            ?.split(",")
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            ?.toSet()
+            ?: emptySet()
+    }
+
     Scaffold(
         // Cada tela (Início, lista de módulo etc.) já tem seu próprio
         // Scaffold com TopAppBar, que já reserva o espaço da barra de
@@ -109,6 +129,7 @@ fun BRAgroNavHost() {
             if (showsBottomBar(currentRoute)) {
                 BRAgroBottomBar(
                     currentDomainId = currentDomainId,
+                    allowedModules = allowedModules,
                     onNavigateDomain = { domainId ->
                         navController.navigate(Routes.domainList(domainId)) {
                             popUpTo(Routes.HOME)
