@@ -45,9 +45,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -59,7 +62,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bragro.mobile.data.local.LookupEntity
 import com.bragro.mobile.data.model.CotacaoComparacaoPropostaData
-import com.bragro.mobile.data.model.CotacaoMultiItemItemData
+import com.bragro.mobile.data.model.CotacaoPrecoMedioResponse
 import com.bragro.mobile.data.repo.ConfigRepository
 import com.bragro.mobile.data.repo.CotacaoMultiItemRepository
 import com.bragro.mobile.data.repo.RecordRepository
@@ -68,44 +71,47 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// "Novo modelo" de Cotações de Fornecedores (vários itens do MESMO
-// fornecedor numa única submissão) -- pedido do usuário ("insira o novo
-// modelo dos modulos cotaçoes e pedidos no app native"): réplica da tela web
-// (cotacao-multi-item-button.tsx, task #234), que já substituiu o
-// formulário "1 item só" no site. Esta tela vira o ÚNICO caminho pra CRIAR
-// uma Cotação no app (editar continua na tela genérica de 1 item,
-// DomainFormScreen.kt -- ver BRAgroNavHost.kt). Chama
-// /api/mobile/cotacao-multi-item, que chama DIRETO
-// createCotacaoMultiItemAction() no servidor. Mesmo padrão de tela/
-// ViewModel já usado em NotaMultiItemScreen.kt/PedidoMultiItemScreen.kt.
+// Cotações de Fornecedores -- réplica da tela web (cotacao-multi-item-button.tsx).
+// Esta tela vira o ÚNICO caminho pra CRIAR uma Cotação no app (editar
+// continua na tela genérica de 1 item, DomainFormScreen.kt -- ver
+// BRAgroNavHost.kt).
 //
-// "Copiar último lançamento" (varredura de auditoria, pedido do usuário
-// "implemente tudo" -- corrige a nota antiga deste comentário, que dizia
-// "não existe endpoint mobile equivalente ainda": na verdade
-// RecordRepository.mostRecent(domainId) já lê do cache local (Room) sem
-// precisar de endpoint nenhum, mesmo mecanismo genérico do resto do app;
-// só faltava esta tela própria -- fora do motor genérico de domínio --
-// ligar ela mesma, igual replicado agora em PedidoMultiItemScreen.kt).
+// Task #472 (pedido do usuário: "unifique fornecedores e itens em uma só
+// página e exclua os botões, adicionar campo de comparação de lógica de
+// média de preços"): os dois modos que existiam antes ("Vários itens" = 1
+// fornecedor + N itens, e "Comparar fornecedores" = 1 item + N fornecedores,
+// task #404) viraram UM só formulário -- "múltiplos itens, cada um com
+// múltiplos fornecedores" é um superconjunto dos dois (1 fornecedor + N
+// itens = N grupos de 1 proposta cada; 1 item + N fornecedores = 1 grupo de
+// N propostas), então o alternador de modo saiu, sem perder nenhum caso de
+// uso. Cada grupo agora também mostra o PREÇO MÉDIO HISTÓRICO daquele item
+// (média de todas as cotações já lançadas antes desta submissão, ver
+// /api/mobile/cotacao-preco-medio) com um indicador de quanto cada proposta
+// está acima/abaixo dessa média. Continua chamando DIRETO
+// createCotacaoComparacaoAction() no servidor via /api/mobile/cotacao-
+// comparacao (1 chamada por grupo) -- nenhuma lógica de negócio duplicada em
+// Kotlin (Índice de Vantagem/Avaliação recalculados só no servidor).
 
-class CotacaoLinha {
-    var categoria by mutableStateOf("")
-    var item by mutableStateOf("")
-    var unidade by mutableStateOf("")
-    var quantidade by mutableStateOf("")
-    var precoUnitario by mutableStateOf("")
-    var prazoEntregaDias by mutableStateOf("")
-}
-
-// Linha do modo "Comparar fornecedores" (task #404) -- inverso de
-// CotacaoLinha acima: aqui é 1 item comum (categoria/item/data/quantidade/
-// unidade ficam no cabeçalho, fora da linha) e cada linha é UMA proposta de
-// fornecedor pra esse mesmo item.
+// Uma proposta de fornecedor dentro de um grupo (item).
 class PropostaLinha {
     var fornecedor by mutableStateOf("")
     var precoUnitario by mutableStateOf("")
     var prazoEntregaDias by mutableStateOf("")
     var condicaoPagamento by mutableStateOf<String?>(null)
     var validadeProposta by mutableStateOf("")
+}
+
+// Um "grupo" = 1 item (categoria+item+quantidade+unidade) com sua própria
+// lista de propostas de fornecedor -- mesmo raciocínio do site (ver
+// cotacao-multi-item-button.tsx). Cobre os dois casos de uso antigos: 1
+// fornecedor cotando vários itens (cada item = 1 grupo com 1 proposta) e
+// vários fornecedores cotando o MESMO item (1 grupo com N propostas).
+class GrupoLinha {
+    var categoria by mutableStateOf("")
+    var item by mutableStateOf("")
+    var quantidade by mutableStateOf("")
+    var unidade by mutableStateOf("")
+    val propostas = mutableStateListOf(PropostaLinha())
 }
 
 private fun hojeIso(): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
@@ -134,6 +140,14 @@ private fun brDateToMillisOrNull(br: String): Long? {
     return cal.timeInMillis
 }
 
+/** Chave do cache de preço médio histórico -- mesma convenção do site. */
+private fun historicoKey(categoria: String, item: String) = "${categoria.trim()}||${item.trim()}"
+
+private fun isoParaBr(iso: String): String {
+    val partes = iso.take(10).split("-")
+    return if (partes.size == 3) "${partes[2]}/${partes[1]}/${partes[0]}" else iso
+}
+
 class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
     private val repository = CotacaoMultiItemRepository(app)
     private val configRepository = ConfigRepository(app)
@@ -150,29 +164,30 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
     var entidadesOptions = mutableStateOf<List<LookupEntity>>(emptyList())
         private set
 
-    // Fornecedor agora é dropdown de Base de Dados (pedido do usuário: "em
-    // cotações campo fornecedores crie lista suspensa, tem que cadastrar
-    // primeiro para acessar o campo") -- mesma categoria já usada em Pedido
-    // ("entidades_financeiro"), replicando o site (cotacao-multi-item-
-    // button.tsx). Antes era texto livre.
-    var fornecedor by mutableStateOf("")
     var data by mutableStateOf(hojeBr())
-    var condicaoPagamento by mutableStateOf<String?>(null)
-    var validadeProposta by mutableStateOf("")
     var observacoes by mutableStateOf("")
+    val grupos = mutableStateListOf(GrupoLinha())
 
-    val linhas = mutableStateListOf(CotacaoLinha())
+    // Preço médio histórico por item (task #472), cacheado por
+    // "categoria||item" pra não repetir a mesma chamada de rede enquanto o
+    // usuário edita outros campos do mesmo grupo. Valor null na resposta
+    // (ok=false, ex. sem conexão) é tratado como "sem histórico disponível
+    // agora", não como erro bloqueante do formulário.
+    val historico = mutableStateMapOf<String, CotacaoPrecoMedioResponse?>()
+    private val historicoLoading = mutableStateSetOf<String>()
 
-    // Estado do modo "Comparar fornecedores" (task #404) -- ver mesmo
-    // raciocínio no site (cotacao-multi-item-button.tsx).
-    var modo by mutableStateOf("itens")
-    var categoriaComp by mutableStateOf("")
-    var itemComp by mutableStateOf("")
-    var dataComp by mutableStateOf(hojeBr())
-    var quantidadeComp by mutableStateOf("")
-    var unidadeComp by mutableStateOf("")
-    var observacoesComp by mutableStateOf("")
-    val propostas = mutableStateListOf(PropostaLinha(), PropostaLinha())
+    fun buscarHistoricoSeNecessario(categoria: String, item: String) {
+        val cat = categoria.trim()
+        val it = item.trim()
+        if (cat.isEmpty() || it.isEmpty()) return
+        val key = historicoKey(cat, it)
+        if (historico.containsKey(key) || historicoLoading.contains(key)) return
+        historicoLoading.add(key)
+        viewModelScope.launch {
+            historico[key] = repository.precoMedioHistorico(cat, it)
+            historicoLoading.remove(key)
+        }
+    }
 
     var pending = mutableStateOf(false)
         private set
@@ -183,49 +198,30 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
     var copiando = mutableStateOf(false)
         private set
 
-    fun addProposta() {
-        propostas.add(PropostaLinha())
+    fun addGrupo() {
+        grupos.add(GrupoLinha())
     }
 
-    fun removeProposta(i: Int) {
-        if (propostas.size > 1) propostas.removeAt(i)
+    fun removeGrupo(gi: Int) {
+        if (grupos.size > 1) grupos.removeAt(gi)
     }
 
-    private fun propostasValidas() = propostas.filter { it.fornecedor.isNotBlank() && it.precoUnitario.isNotBlank() }
-
-    fun podeSalvarComp(): Boolean = categoriaComp.isNotBlank() && itemComp.isNotBlank() && dataComp.isNotBlank() && propostasValidas().isNotEmpty()
-
-    fun submitComparacao() {
-        if (!podeSalvarComp()) return
-        val validas = propostasValidas()
-        pending.value = true
-        errorMessage.value = null
-        viewModelScope.launch {
-            val resultado = repository.criarComparacao(
-                data = com.bragro.mobile.ui.domain.brDateToIso(dataComp),
-                categoria = categoriaComp,
-                item = itemComp,
-                quantidade = quantidadeComp.takeIf { it.isNotBlank() }?.let { parseDecimal(it) },
-                unidade = unidadeComp.ifBlank { null },
-                observacoes = observacoesComp.trim().ifBlank { null },
-                propostas = validas.map {
-                    CotacaoComparacaoPropostaData(
-                        fornecedor = it.fornecedor.trim(),
-                        precoUnitario = parseDecimal(it.precoUnitario),
-                        prazoEntregaDias = it.prazoEntregaDias.takeIf { v -> v.isNotBlank() }?.let { v -> parseDecimal(v) },
-                        condicaoPagamento = it.condicaoPagamento,
-                        validadeProposta = it.validadeProposta.takeIf { v -> v.isNotBlank() }?.let { v -> com.bragro.mobile.ui.domain.brDateToIso(v) },
-                    )
-                },
-            )
-            pending.value = false
-            if (resultado == null || !resultado.ok) {
-                errorMessage.value = resultado?.error ?: "Erro ao lançar as propostas."
-                return@launch
-            }
-            successMessage.value = "${resultado.count ?: validas.size} proposta(s) lançada(s) para comparação."
-        }
+    fun addProposta(gi: Int) {
+        grupos[gi].propostas.add(PropostaLinha())
     }
+
+    fun removeProposta(gi: Int, pi: Int) {
+        val propostas = grupos[gi].propostas
+        if (propostas.size > 1) propostas.removeAt(pi)
+    }
+
+    private fun GrupoLinha.propostasValidas() = propostas.filter { it.fornecedor.isNotBlank() && it.precoUnitario.isNotBlank() }
+
+    private fun gruposValidos() = grupos.filter { it.categoria.isNotBlank() && it.item.isNotBlank() && it.propostasValidas().isNotEmpty() }
+
+    fun totalPropostasValidas(): Int = gruposValidos().sumOf { it.propostasValidas().size }
+
+    fun podeSalvar(): Boolean = data.isNotBlank() && gruposValidos().isNotEmpty()
 
     init {
         viewModelScope.launch {
@@ -237,68 +233,20 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun addLinha() {
-        linhas.add(CotacaoLinha())
-    }
-
-    fun removeLinha(i: Int) {
-        if (linhas.size > 1) linhas.removeAt(i)
-    }
-
-    private fun linhasValidas() = linhas.filter { it.categoria.isNotBlank() && it.item.isNotBlank() && it.precoUnitario.isNotBlank() }
-
-    fun podeSalvar(): Boolean = fornecedor.isNotBlank() && data.isNotBlank() && linhasValidas().isNotEmpty()
-
     fun reset() {
-        fornecedor = ""
         data = hojeBr()
-        condicaoPagamento = null
-        validadeProposta = ""
         observacoes = ""
-        linhas.clear(); linhas.add(CotacaoLinha())
-        categoriaComp = ""
-        itemComp = ""
-        dataComp = hojeBr()
-        quantidadeComp = ""
-        unidadeComp = ""
-        observacoesComp = ""
-        propostas.clear(); propostas.add(PropostaLinha()); propostas.add(PropostaLinha())
+        grupos.clear(); grupos.add(GrupoLinha())
+        historico.clear()
         successMessage.value = null
         errorMessage.value = null
     }
 
-    /** Mesma ideia de preencherComUltimo() abaixo, mas pro modo "Comparar
-     * fornecedores" (task #404): preenche só o cabeçalho comum (categoria/
-     * item/data/quantidade/unidade/observações), já que a lista de
-     * propostas em si é nova a cada comparação -- pedido do usuário
-     * ("coloque um ícone copiar do lado superior direito" também na aba
-     * Comparar fornecedores, mesmo ícone único do topo da tela). Site não
-     * tem equivalente pra este modo (cotacao-multi-item-button.tsx só copia
-     * no modo "itens") -- funcionalidade nova, exclusiva do app. */
-    fun preencherComparacaoComUltimo() {
-        viewModelScope.launch {
-            copiando.value = true
-            val last = recordRepository.mostRecent("cotacoesfornecedores")
-            copiando.value = false
-            if (last == null) {
-                errorMessage.value = "Nenhuma cotação lançada ainda para copiar."
-                return@launch
-            }
-            last["categoria"]?.let { categoriaComp = it }
-            last["item"]?.let { itemComp = it }
-            last["data"]?.let { dataComp = com.bragro.mobile.ui.domain.isoDateToBr(it) }
-            last["quantidade"]?.let { quantidadeComp = it }
-            last["unidade"]?.let { unidadeComp = it }
-            last["observacoes"]?.let { observacoesComp = it }
-            successMessage.value = null
-            errorMessage.value = null
-        }
-    }
-
     /** "Copiar último lançamento" -- busca a última proposta de cotação
-     * lançada (qualquer fornecedor/item) no cache local e preenche o
-     * cabeçalho + a primeira linha de item, mesmo padrão de
-     * preencherComUltimo() em cotacao-multi-item-button.tsx (site). */
+     * lançada (qualquer fornecedor/item) no cache local e preenche a Data
+     * comum + o primeiro grupo (categoria/item/quantidade/unidade + 1
+     * proposta), mesmo padrão de preencherComUltimo() em
+     * cotacao-multi-item-button.tsx (site). */
     fun preencherComUltimo() {
         viewModelScope.launch {
             copiando.value = true
@@ -308,20 +256,20 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
                 errorMessage.value = "Nenhuma cotação lançada ainda para copiar."
                 return@launch
             }
-            last["fornecedor"]?.let { fornecedor = it }
             last["data"]?.let { data = com.bragro.mobile.ui.domain.isoDateToBr(it) }
-            last["condicaoPagamento"]?.let { condicaoPagamento = it }
-            last["validadeProposta"]?.let { validadeProposta = com.bragro.mobile.ui.domain.isoDateToBr(it) }
-            last["observacoes"]?.let { observacoes = it }
-            val linha = CotacaoLinha()
-            last["categoria"]?.let { linha.categoria = it }
-            last["item"]?.let { linha.item = it }
-            last["unidade"]?.let { linha.unidade = it }
-            last["quantidade"]?.let { linha.quantidade = it }
-            last["precoUnitario"]?.let { linha.precoUnitario = it }
-            last["prazoEntregaDias"]?.let { linha.prazoEntregaDias = it }
-            linhas.clear()
-            linhas.add(linha)
+            val grupo = GrupoLinha()
+            last["categoria"]?.let { grupo.categoria = it }
+            last["item"]?.let { grupo.item = it }
+            last["quantidade"]?.let { grupo.quantidade = it }
+            last["unidade"]?.let { grupo.unidade = it }
+            val proposta = grupo.propostas[0]
+            last["fornecedor"]?.let { proposta.fornecedor = it }
+            last["precoUnitario"]?.let { proposta.precoUnitario = it }
+            last["prazoEntregaDias"]?.let { proposta.prazoEntregaDias = it }
+            last["condicaoPagamento"]?.let { proposta.condicaoPagamento = it }
+            last["validadeProposta"]?.let { proposta.validadeProposta = com.bragro.mobile.ui.domain.isoDateToBr(it) }
+            grupos.clear()
+            grupos.add(grupo)
             successMessage.value = null
             errorMessage.value = null
         }
@@ -329,33 +277,42 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
 
     fun submit() {
         if (!podeSalvar()) return
-        val validas = linhasValidas()
+        val validos = gruposValidos()
         pending.value = true
         errorMessage.value = null
         viewModelScope.launch {
-            val resultado = repository.criar(
-                data = com.bragro.mobile.ui.domain.brDateToIso(data),
-                fornecedor = fornecedor.trim(),
-                condicaoPagamento = condicaoPagamento,
-                validadeProposta = validadeProposta.takeIf { it.isNotBlank() }?.let { com.bragro.mobile.ui.domain.brDateToIso(it) },
-                observacoes = observacoes.trim().ifBlank { null },
-                itens = validas.map {
-                    CotacaoMultiItemItemData(
-                        categoria = it.categoria,
-                        item = it.item,
-                        quantidade = it.quantidade.takeIf { v -> v.isNotBlank() }?.let { v -> parseDecimal(v) },
-                        unidade = it.unidade.ifBlank { null },
-                        precoUnitario = parseDecimal(it.precoUnitario),
-                        prazoEntregaDias = it.prazoEntregaDias.takeIf { v -> v.isNotBlank() }?.let { v -> parseDecimal(v) },
-                    )
-                },
-            )
+            var total = 0
+            var erro: String? = null
+            for (g in validos) {
+                val resultado = repository.criarComparacao(
+                    data = com.bragro.mobile.ui.domain.brDateToIso(data),
+                    categoria = g.categoria,
+                    item = g.item,
+                    quantidade = g.quantidade.takeIf { it.isNotBlank() }?.let { parseDecimal(it) },
+                    unidade = g.unidade.ifBlank { null },
+                    observacoes = observacoes.trim().ifBlank { null },
+                    propostas = g.propostasValidas().map {
+                        CotacaoComparacaoPropostaData(
+                            fornecedor = it.fornecedor.trim(),
+                            precoUnitario = parseDecimal(it.precoUnitario),
+                            prazoEntregaDias = it.prazoEntregaDias.takeIf { v -> v.isNotBlank() }?.let { v -> parseDecimal(v) },
+                            condicaoPagamento = it.condicaoPagamento,
+                            validadeProposta = it.validadeProposta.takeIf { v -> v.isNotBlank() }?.let { v -> com.bragro.mobile.ui.domain.brDateToIso(v) },
+                        )
+                    },
+                )
+                if (resultado == null || !resultado.ok) {
+                    erro = resultado?.error ?: "Erro ao lançar a cotação."
+                    break
+                }
+                total += resultado.count ?: g.propostasValidas().size
+            }
             pending.value = false
-            if (resultado == null || !resultado.ok) {
-                errorMessage.value = resultado?.error ?: "Erro ao lançar a cotação."
+            if (erro != null) {
+                errorMessage.value = erro
                 return@launch
             }
-            successMessage.value = "${resultado.count ?: validas.size} item(ns) lançado(s) para ${fornecedor.trim()}."
+            successMessage.value = if (validos.size > 1) "$total proposta(s) lançada(s) em ${validos.size} itens." else "$total proposta(s) lançada(s)."
         }
     }
 }
@@ -394,117 +351,12 @@ private fun StringDropdown(
     }
 }
 
-@Composable
-private fun CotacaoLinhaCard(linha: CotacaoLinha, categoriasOptions: List<LookupEntity>, itensOptions: List<LookupEntity>, unidadesOptions: List<LookupEntity>, showRemove: Boolean, onRemove: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            // Cada campo agora dentro do seu próprio ItemFieldBlock (fundo
-            // surfaceVariant) -- pedido do usuário (screenshot circulando o
-            // bloco de proposta inteiro): antes os campos ficavam soltos
-            // dentro do Card, então o card inteiro parecia UM bloco só, sem
-            // nenhuma separação visual entre Categoria/Item/Unidade/etc,
-            // mesmo já organizados em linhas (ver comentário abaixo). Mesmo
-            // padrão já usado no ProviderIntegrationCard.kt (FieldBlock).
-            ItemFieldBlock {
-                StringDropdown(
-                    label = "Categoria *",
-                    value = categoriasOptions.firstOrNull { it.value == linha.categoria }?.label ?: linha.categoria.ifBlank { null },
-                    options = categoriasOptions.map { it.label },
-                    placeholder = "Categoria",
-                    onSelect = { picked -> linha.categoria = categoriasOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
-                )
-            }
-            ItemFieldBlock {
-                StringDropdown(
-                    label = "Item *",
-                    value = itensOptions.firstOrNull { it.value == linha.item }?.label ?: linha.item.ifBlank { null },
-                    options = itensOptions.map { it.label },
-                    placeholder = "Selecione o item",
-                    onSelect = { picked -> linha.item = itensOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
-                )
-            }
-            // Blocos individuais em pares (pedido do usuário: "crie blocos
-            // individuais, se der pra colocar dois blocos na mesma linha sem
-            // cortar palavras coloque") -- Categoria/Item ficam sozinhos
-            // (rótulos de lista suspensa podem ser longos), Unidade+
-            // Quantidade e Preço+Prazo são curtos e cabem 2 por linha.
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                ItemFieldBlock(modifier = Modifier.weight(1f)) {
-                    StringDropdown(
-                        label = "Unidade",
-                        value = unidadesOptions.firstOrNull { it.value == linha.unidade }?.label ?: linha.unidade.ifBlank { null },
-                        options = unidadesOptions.map { it.label },
-                        placeholder = "Opcional",
-                        allowEmpty = true,
-                        onSelect = { picked -> linha.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
-                    )
-                }
-                ItemFieldBlock(modifier = Modifier.weight(1f)) {
-                    OutlinedTextField(
-                        value = linha.quantidade,
-                        onValueChange = { linha.quantidade = it },
-                        label = { Text("Quantidade") },
-                        placeholder = { Text("0") },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = appFieldColors(),
-                    )
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                ItemFieldBlock(modifier = Modifier.weight(1f)) {
-                    OutlinedTextField(
-                        value = linha.precoUnitario,
-                        onValueChange = { linha.precoUnitario = it },
-                        label = { Text("Preço unit. (R$) *") },
-                        placeholder = { Text("0,00") },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = appFieldColors(),
-                    )
-                }
-                ItemFieldBlock(modifier = Modifier.weight(1f)) {
-                    OutlinedTextField(
-                        value = linha.prazoEntregaDias,
-                        onValueChange = { linha.prazoEntregaDias = it },
-                        label = { Text("Prazo (dias)") },
-                        placeholder = { Text("Opcional") },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = appFieldColors(),
-                    )
-                }
-            }
-            if (showRemove) {
-                IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Remover item", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
-                }
-            }
-        }
-    }
-}
-
-/** Bloco individual (fundo surfaceVariant, sem borda -- regra do app de não
- * ter bordas em lugar nenhum) separando cada campo dentro de um card de
- * item/proposta -- pedido do usuário (screenshot circulando o card de
- * proposta inteiro em "Comparar fornecedores", pergunta "entendeu?"): sem
- * isso, vários campos soltos dentro do mesmo Card pai pareciam UM bloco só.
- * Mesmo padrão do FieldBlock já usado em ProviderIntegrationCard.kt. */
+/** Bloco individual (scrim onSurface, sem borda -- regra do app de não ter
+ * bordas em lugar nenhum) separando cada campo dentro de um card de item/
+ * proposta. alpha 0.12f -- ver histórico do valor em CHANGELOG.md (0.05f
+ * era imperceptível em display real). */
 @Composable
 private fun ItemFieldBlock(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    // Cor em "scrim" (onSurface com alpha baixo) em vez de um papel de cor
-    // fixo (surfaceVariant) -- pedido do usuário (screenshot mostrando os
-    // campos de "Propostas dos fornecedores" sem nenhum bloco visível):
-    // surfaceVariant calhava de ser IGUAL ao branco do Card pai onde esses
-    // campos ficam (PropostaCard/CotacaoLinhaCard são Cards brancos), então
-    // o bloco existia na estrutura mas ficava invisível na tela. Um scrim
-    // semi-transparente sobre onSurface sempre cria contraste com QUALQUER
-    // fundo por trás (branco, verde claro, etc.), então não tem como
-    // coincidir e sumir de novo.
-    // alpha 0.05f -> 0.12f (usuário reinstalou o 1.2.47 do zero e reportou
-    // "continua a mesma coisa"): 5% de preto sobre branco é praticamente
-    // imperceptível num display real (RGB ~242,242,242, quase idêntico ao
-    // branco do Card por trás) -- a estrutura/código já estava certa, só o
-    // contraste era baixo demais pra notar a olho nu. 12% já fica claramente
-    // visível como um bloco cinza-claro, sem precisar de borda (regra do
-    // app de não ter bordas em lugar nenhum).
     Surface(
         modifier = modifier,
         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
@@ -516,21 +368,33 @@ private fun ItemFieldBlock(modifier: Modifier = Modifier, content: @Composable (
     }
 }
 
-// Card de UMA proposta de fornecedor no modo "Comparar fornecedores" (task
-// #404) -- inverso de CotacaoLinhaCard acima: aqui não tem categoria/item
-// (ficam no cabeçalho comum), só fornecedor + condições da proposta.
+/** Texto do preço médio histórico do item (task #472) -- mesmo texto do
+ * site, adaptado. hist == null pode significar "ainda carregando" OU "a
+ * chamada falhou" (repository.precoMedioHistorico devolve null em qualquer
+ * falha de rede); nos dois casos mostramos "Calculando..." em vez de tentar
+ * distinguir, já que uma nova tentativa acontece sozinha na próxima
+ * recomposição com a mesma chave (ela não fica marcada como já buscada). */
+private fun historicoTexto(hist: CotacaoPrecoMedioResponse?): String {
+    if (hist == null) return "Calculando preço médio histórico..."
+    if (!hist.ok || hist.amostras == null || hist.amostras == 0) return "Sem cotações anteriores deste item para comparar ainda."
+    val media = hist.mediaPreco ?: return "Sem cotações anteriores deste item para comparar ainda."
+    val plural = hist.amostras > 1
+    val dataTxt = hist.ultimaData?.let { ", última em ${isoParaBr(it)}" } ?: ""
+    return "Preço médio histórico: R$ ${"%.2f".format(media)} (${hist.amostras} cotação${if (plural) "ões" else ""} anterior${if (plural) "es" else ""}$dataTxt)"
+}
+
+// Card de UMA proposta de fornecedor dentro de um grupo (item).
 @Composable
-private fun PropostaCard(proposta: PropostaLinha, entidadesOptions: List<LookupEntity>, formasPgtoOptions: List<LookupEntity>, showRemove: Boolean, onRemove: () -> Unit) {
+private fun PropostaCard(
+    proposta: PropostaLinha,
+    entidadesOptions: List<LookupEntity>,
+    formasPgtoOptions: List<LookupEntity>,
+    mediaHistorica: Double?,
+    showRemove: Boolean,
+    onRemove: () -> Unit,
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            // Fornecedor agora é dropdown de Base de Dados (pedido do
-            // usuário: "em cotações campo fornecedores crie lista suspensa,
-            // tem que cadastrar primeiro para acessar o campo") -- antes era
-            // texto livre. Dentro de um ItemFieldBlock (fundo próprio) --
-            // pedido do usuário (screenshot circulando este card inteiro,
-            // "entendeu?"): antes o campo ficava solto dentro do Card pai,
-            // então o card inteiro parecia UM bloco só sem separação visual
-            // nenhuma entre Fornecedor/Preço/Prazo/Condição/Validade.
             ItemFieldBlock {
                 StringDropdown(
                     label = "Fornecedor *",
@@ -542,14 +406,28 @@ private fun PropostaCard(proposta: PropostaLinha, entidadesOptions: List<LookupE
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 ItemFieldBlock(modifier = Modifier.weight(1f)) {
-                    OutlinedTextField(
-                        value = proposta.precoUnitario,
-                        onValueChange = { proposta.precoUnitario = it },
-                        label = { Text("Preço unit. (R$) *") },
-                        placeholder = { Text("0,00") },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = appFieldColors(),
-                    )
+                    Column {
+                        OutlinedTextField(
+                            value = proposta.precoUnitario,
+                            onValueChange = { proposta.precoUnitario = it },
+                            label = { Text("Preço unit. (R$) *") },
+                            placeholder = { Text("0,00") },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = appFieldColors(),
+                        )
+                        // Indicador vs. média histórica (task #472) -- mesmo
+                        // cálculo do site: preço abaixo/igual à média em
+                        // verde (▼), acima em vermelho (▲).
+                        val preco = proposta.precoUnitario.let { if (it.isBlank()) null else parseDecimal(it) }
+                        if (mediaHistorica != null && mediaHistorica > 0 && preco != null && preco > 0) {
+                            val diffPct = ((preco - mediaHistorica) / mediaHistorica) * 100
+                            Text(
+                                (if (diffPct <= 0) "▼ " else "▲ ") + "${"%.0f".format(kotlin.math.abs(diffPct))}% vs. média histórica",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (diffPct <= 0) androidx.compose.ui.graphics.Color(0xFF059669) else MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
                 }
                 ItemFieldBlock(modifier = Modifier.weight(1f)) {
                     OutlinedTextField(
@@ -562,10 +440,6 @@ private fun PropostaCard(proposta: PropostaLinha, entidadesOptions: List<LookupE
                     )
                 }
             }
-            // Blocos individuais em pares (pedido do usuário: "crie blocos
-            // individuais, se der pra colocar dois blocos na mesma linha sem
-            // cortar palavras coloque") -- Condição de pagamento + Validade
-            // são valores curtos, cabem lado a lado igual Preço+Prazo acima.
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 ItemFieldBlock(modifier = Modifier.weight(1f)) {
                     StringDropdown(
@@ -591,6 +465,107 @@ private fun PropostaCard(proposta: PropostaLinha, entidadesOptions: List<LookupE
             if (showRemove) {
                 IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
                     Icon(Icons.Filled.Delete, contentDescription = "Remover proposta", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                }
+            }
+        }
+    }
+}
+
+// Card de UM grupo (item cotado + suas propostas de fornecedor) -- task #472.
+@Composable
+private fun GrupoCard(
+    grupo: GrupoLinha,
+    categoriasOptions: List<LookupEntity>,
+    itensOptions: List<LookupEntity>,
+    unidadesOptions: List<LookupEntity>,
+    entidadesOptions: List<LookupEntity>,
+    formasPgtoOptions: List<LookupEntity>,
+    historico: Map<String, CotacaoPrecoMedioResponse?>,
+    onBuscarHistorico: (String, String) -> Unit,
+    showRemoveGrupo: Boolean,
+    onRemoveGrupo: () -> Unit,
+    onAddProposta: () -> Unit,
+    onRemoveProposta: (Int) -> Unit,
+) {
+    LaunchedEffect(grupo.categoria, grupo.item) {
+        onBuscarHistorico(grupo.categoria, grupo.item)
+    }
+    val temItem = grupo.categoria.isNotBlank() && grupo.item.isNotBlank()
+    val hist = if (temItem) historico[historicoKey(grupo.categoria, grupo.item)] else null
+    val mediaHistorica = if (hist?.ok == true) hist.mediaPreco else null
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            ItemFieldBlock {
+                StringDropdown(
+                    label = "Categoria *",
+                    value = categoriasOptions.firstOrNull { it.value == grupo.categoria }?.label ?: grupo.categoria.ifBlank { null },
+                    options = categoriasOptions.map { it.label },
+                    placeholder = "Categoria",
+                    onSelect = { picked -> grupo.categoria = categoriasOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                )
+            }
+            ItemFieldBlock {
+                StringDropdown(
+                    label = "Item *",
+                    value = itensOptions.firstOrNull { it.value == grupo.item }?.label ?: grupo.item.ifBlank { null },
+                    options = itensOptions.map { it.label },
+                    placeholder = "Selecione o item",
+                    onSelect = { picked -> grupo.item = itensOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                ItemFieldBlock(modifier = Modifier.weight(1f)) {
+                    StringDropdown(
+                        label = "Unidade",
+                        value = unidadesOptions.firstOrNull { it.value == grupo.unidade }?.label ?: grupo.unidade.ifBlank { null },
+                        options = unidadesOptions.map { it.label },
+                        placeholder = "Opcional",
+                        allowEmpty = true,
+                        onSelect = { picked -> grupo.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                    )
+                }
+                ItemFieldBlock(modifier = Modifier.weight(1f)) {
+                    OutlinedTextField(
+                        value = grupo.quantidade,
+                        onValueChange = { grupo.quantidade = it },
+                        label = { Text("Quantidade") },
+                        placeholder = { Text("Opcional") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = appFieldColors(),
+                    )
+                }
+            }
+            // Preço médio histórico do item (task #472) -- só aparece depois
+            // de Categoria+Item preenchidos. Compara contra TODAS as
+            // cotações já lançadas antes desta submissão pra este item,
+            // independente de fornecedor.
+            if (temItem) {
+                Text(
+                    historicoTexto(hist),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            HorizontalDivider()
+            Text("Propostas dos fornecedores *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            grupo.propostas.forEachIndexed { pi, proposta ->
+                PropostaCard(
+                    proposta = proposta,
+                    entidadesOptions = entidadesOptions,
+                    formasPgtoOptions = formasPgtoOptions,
+                    mediaHistorica = mediaHistorica,
+                    showRemove = grupo.propostas.size > 1,
+                    onRemove = { onRemoveProposta(pi) },
+                )
+            }
+            OutlinedButton(onClick = onAddProposta, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
+                Text("Adicionar fornecedor")
+            }
+            if (showRemoveGrupo) {
+                IconButton(onClick = onRemoveGrupo, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Filled.Delete, contentDescription = "Remover item", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -627,18 +602,11 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                         }
                     }
                 },
-                // Ícone de copiar no topo direito -- pedido do usuário ("coloque
-                // um ícone copiar do lado superior direito" nas duas abas, aqui
-                // e em Comparar fornecedores), mesmo padrão já usado em
-                // PedidoMultiItemScreen.kt: substitui o botão largo "Copiar
-                // última cotação" que só existia no modo "itens" (ver comentário
-                // no botão removido abaixo) -- um ícone só, sempre visível,
-                // que dispara a função certa pro modo ativo no momento.
                 actions = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         IconButton(
-                            onClick = { if (viewModel.modo == "itens") viewModel.preencherComUltimo() else viewModel.preencherComparacaoComUltimo() },
+                            onClick = { viewModel.preencherComUltimo() },
                             enabled = !copiando,
                         ) {
                             if (copiando) {
@@ -672,51 +640,14 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
             contentPadding = PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // Alternador de modo (task #404, pedido do usuário: "múltiplos
-            // fornecedores por operação") -- mesmo padrão do site
-            // (cotacao-multi-item-button.tsx). "Vários itens" é o modo
-            // original (1 fornecedor, N itens); "Comparar fornecedores" é o
-            // novo (1 item, N fornecedores lado a lado).
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                    OutlinedButton(
-                        onClick = { viewModel.modo = "itens" },
-                        modifier = Modifier.weight(1f),
-                        colors = if (viewModel.modo == "itens") androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) else androidx.compose.material3.ButtonDefaults.outlinedButtonColors(),
-                    ) {
-                        Text("Vários itens", style = MaterialTheme.typography.bodySmall)
-                    }
-                    OutlinedButton(
-                        onClick = { viewModel.modo = "fornecedores" },
-                        modifier = Modifier.weight(1f),
-                        colors = if (viewModel.modo == "fornecedores") androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) else androidx.compose.material3.ButtonDefaults.outlinedButtonColors(),
-                    ) {
-                        Text("Comparar fornecedores", style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            }
-            if (errorMessage != null) {
-                item { Text(errorMessage ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
-            }
-            if (viewModel.modo == "itens") {
             item {
                 Text(
-                    "Cada linha é UMA proposta de UM fornecedor. Lance 2+ propostas com a MESMA Categoria + Item pra comparar automaticamente -- Índice de Vantagem e Avaliação recalculam sozinhos.",
+                    "Descreva cada item que está cotando uma vez e lance o preço de cada fornecedor que cotou ele -- dá pra comparar quantos fornecedores quiser por item, e adicionar mais de um item na mesma submissão.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
-            item {
-                // Fornecedor agora é dropdown de Base de Dados (pedido do
-                // usuário: "em cotações campo fornecedores crie lista
-                // suspensa, tem que cadastrar primeiro para acessar o
-                // campo") -- antes era texto livre.
-                StringDropdown(
-                    label = "Fornecedor *",
-                    value = entidadesOptions.firstOrNull { it.value == viewModel.fornecedor }?.label ?: viewModel.fornecedor.ifBlank { null },
-                    options = entidadesOptions.map { it.label },
-                    placeholder = "Selecione o fornecedor",
-                    onSelect = { picked -> viewModel.fornecedor = entidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
-                )
+            if (errorMessage != null) {
+                item { Text(errorMessage ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
             }
             item {
                 var showPicker by remember { mutableStateOf(false) }
@@ -752,64 +683,26 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                     }
                 }
             }
-            item {
-                StringDropdown(
-                    label = "Condição de pagamento",
-                    value = formasPgtoOptions.firstOrNull { it.value == viewModel.condicaoPagamento }?.label ?: viewModel.condicaoPagamento,
-                    options = formasPgtoOptions.map { it.label },
-                    placeholder = "Opcional",
-                    allowEmpty = true,
-                    onSelect = { picked -> viewModel.condicaoPagamento = formasPgtoOptions.firstOrNull { it.label == picked }?.value ?: picked },
-                )
-            }
-            item {
-                var showPicker by remember { mutableStateOf(false) }
-                OutlinedTextField(
-                    value = viewModel.validadeProposta,
-                    onValueChange = { viewModel.validadeProposta = it },
-                    label = { Text("Validade da proposta") },
-                    placeholder = { Text("DD/MM/AAAA") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = appFieldColors(),
-                    trailingIcon = {
-                        IconButton(onClick = { showPicker = true }) {
-                            Icon(Icons.Filled.CalendarMonth, contentDescription = "Escolher data", tint = MaterialTheme.colorScheme.primary)
-                        }
-                    },
-                )
-                if (showPicker) {
-                    val pickerState = rememberDatePickerState(
-                        initialSelectedDateMillis = brDateToMillisOrNull(viewModel.validadeProposta) ?: System.currentTimeMillis(),
-                    )
-                    DatePickerDialog(
-                        onDismissRequest = { showPicker = false },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                pickerState.selectedDateMillis?.let { viewModel.validadeProposta = millisToBrDate(it) }
-                                showPicker = false
-                            }) { Text("OK") }
-                        },
-                        dismissButton = { TextButton(onClick = { showPicker = false }) { Text("Cancelar") } },
-                    ) {
-                        DatePicker(state = pickerState)
-                    }
-                }
-            }
             item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
-            item { Text("Itens cotados *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold) }
-            items(viewModel.linhas.size) { i ->
-                CotacaoLinhaCard(
-                    linha = viewModel.linhas[i],
+            item { Text("Itens cotados (cada um com suas propostas) *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold) }
+            items(viewModel.grupos.size) { gi ->
+                GrupoCard(
+                    grupo = viewModel.grupos[gi],
                     categoriasOptions = categoriasOptions,
                     itensOptions = itensOptions,
                     unidadesOptions = unidadesOptions,
-                    showRemove = viewModel.linhas.size > 1,
-                    onRemove = { viewModel.removeLinha(i) },
+                    entidadesOptions = entidadesOptions,
+                    formasPgtoOptions = formasPgtoOptions,
+                    historico = viewModel.historico,
+                    onBuscarHistorico = { cat, it -> viewModel.buscarHistoricoSeNecessario(cat, it) },
+                    showRemoveGrupo = viewModel.grupos.size > 1,
+                    onRemoveGrupo = { viewModel.removeGrupo(gi) },
+                    onAddProposta = { viewModel.addProposta(gi) },
+                    onRemoveProposta = { pi -> viewModel.removeProposta(gi, pi) },
                 )
             }
             item {
-                OutlinedButton(onClick = { viewModel.addLinha() }, modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = { viewModel.addGrupo() }, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
                     Text("Adicionar item")
                 }
@@ -818,7 +711,7 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                 OutlinedTextField(
                     value = viewModel.observacoes,
                     onValueChange = { viewModel.observacoes = it },
-                    label = { Text("Observações (opcional, vale para todos os itens)") },
+                    label = { Text("Observações (opcional, vale para todos os itens/propostas)") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2,
                     colors = appFieldColors(),
@@ -831,132 +724,8 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     if (pending) CircularProgressIndicator(modifier = Modifier.padding(4.dp))
-                    else Text("Lançar cotação")
+                    else Text("Lançar ${viewModel.totalPropostasValidas().let { if (it > 0) it else "" }} proposta(s)")
                 }
-            }
-            } else {
-            // Modo "Comparar fornecedores" (task #404) -- 1 item comum
-            // (categoria/item/data/quantidade/unidade), N propostas de
-            // fornecedores diferentes lado a lado.
-            item {
-                // Instrução resumida -- pedido do usuário ("resuma as
-                // instruções").
-                Text(
-                    "Descreva o item uma vez e lance o preço de cada fornecedor -- entram no mesmo grupo de comparação.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            item {
-                StringDropdown(
-                    label = "Categoria *",
-                    value = categoriasOptions.firstOrNull { it.value == viewModel.categoriaComp }?.label ?: viewModel.categoriaComp.ifBlank { null },
-                    options = categoriasOptions.map { it.label },
-                    placeholder = "Categoria",
-                    onSelect = { picked -> viewModel.categoriaComp = categoriasOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
-                )
-            }
-            item {
-                StringDropdown(
-                    label = "Item *",
-                    value = itensOptions.firstOrNull { it.value == viewModel.itemComp }?.label ?: viewModel.itemComp.ifBlank { null },
-                    options = itensOptions.map { it.label },
-                    placeholder = "Selecione o item",
-                    onSelect = { picked -> viewModel.itemComp = itensOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
-                )
-            }
-            item {
-                var showPicker by remember { mutableStateOf(false) }
-                OutlinedTextField(
-                    value = viewModel.dataComp,
-                    onValueChange = { viewModel.dataComp = it },
-                    label = { Text("Data *") },
-                    placeholder = { Text("DD/MM/AAAA") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = appFieldColors(),
-                    trailingIcon = {
-                        IconButton(onClick = { showPicker = true }) {
-                            Icon(Icons.Filled.CalendarMonth, contentDescription = "Escolher data", tint = MaterialTheme.colorScheme.primary)
-                        }
-                    },
-                )
-                if (showPicker) {
-                    val pickerState = rememberDatePickerState(
-                        initialSelectedDateMillis = brDateToMillisOrNull(viewModel.dataComp) ?: System.currentTimeMillis(),
-                    )
-                    DatePickerDialog(
-                        onDismissRequest = { showPicker = false },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                pickerState.selectedDateMillis?.let { viewModel.dataComp = millisToBrDate(it) }
-                                showPicker = false
-                            }) { Text("OK") }
-                        },
-                        dismissButton = { TextButton(onClick = { showPicker = false }) { Text("Cancelar") } },
-                    ) {
-                        DatePicker(state = pickerState)
-                    }
-                }
-            }
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    OutlinedTextField(
-                        value = viewModel.quantidadeComp,
-                        onValueChange = { viewModel.quantidadeComp = it },
-                        label = { Text("Quantidade") },
-                        placeholder = { Text("Opcional") },
-                        modifier = Modifier.weight(1f),
-                        colors = appFieldColors(),
-                    )
-                }
-            }
-            item {
-                StringDropdown(
-                    label = "Unidade",
-                    value = unidadesOptions.firstOrNull { it.value == viewModel.unidadeComp }?.label ?: viewModel.unidadeComp.ifBlank { null },
-                    options = unidadesOptions.map { it.label },
-                    placeholder = "Opcional",
-                    allowEmpty = true,
-                    onSelect = { picked -> viewModel.unidadeComp = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
-                )
-            }
-            item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
-            item { Text("Propostas dos fornecedores *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold) }
-            items(viewModel.propostas.size) { i ->
-                PropostaCard(
-                    proposta = viewModel.propostas[i],
-                    entidadesOptions = entidadesOptions,
-                    formasPgtoOptions = formasPgtoOptions,
-                    showRemove = viewModel.propostas.size > 1,
-                    onRemove = { viewModel.removeProposta(i) },
-                )
-            }
-            item {
-                OutlinedButton(onClick = { viewModel.addProposta() }, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
-                    Text("Adicionar fornecedor")
-                }
-            }
-            item {
-                OutlinedTextField(
-                    value = viewModel.observacoesComp,
-                    onValueChange = { viewModel.observacoesComp = it },
-                    label = { Text("Observações (opcional, vale para todas as propostas)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 2,
-                    colors = appFieldColors(),
-                )
-            }
-            item {
-                Button(
-                    onClick = { viewModel.submitComparacao() },
-                    enabled = !pending && viewModel.podeSalvarComp(),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    if (pending) CircularProgressIndicator(modifier = Modifier.padding(4.dp))
-                    else Text("Lançar propostas")
-                }
-            }
             }
         }
     }

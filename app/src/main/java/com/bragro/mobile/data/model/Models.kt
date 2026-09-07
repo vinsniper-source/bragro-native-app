@@ -871,6 +871,28 @@ data class CotacaoComparacaoResponse(
     val error: String? = null,
 )
 
+// Preço médio histórico de um item (task #472, pedido do usuário: "unifique
+// fornecedores e itens em uma só página... adicionar campo de comparação de
+// lógica de média de preços") -- chama /api/mobile/cotacao-preco-medio, que
+// chama DIRETO getPrecoMedioHistoricoAction() no servidor (mesma média que o
+// site calcula, sobre CotacaoFornecedor.precoUnitario já lançados).
+@Serializable
+data class CotacaoPrecoMedioRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val categoria: String,
+    val item: String,
+)
+
+@Serializable
+data class CotacaoPrecoMedioResponse(
+    val ok: Boolean,
+    val mediaPreco: Double? = null,
+    val amostras: Int? = null,
+    val ultimaData: String? = null,
+    val error: String? = null,
+)
+
 // Painel "Controle de Insumos" (gap encontrado na auditoria módulo-a-módulo
 // contra o site, pedido do usuário "implemente tudo que falta ainda para o
 // app native da plataforma") -- painel SOMENTE-LEITURA, ver

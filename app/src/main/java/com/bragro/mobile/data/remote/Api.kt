@@ -181,6 +181,11 @@ interface MobileApi {
     @POST("api/mobile/cotacao-comparacao")
     suspend fun cotacaoComparacao(@Body body: CotacaoComparacaoRequest): Response<CotacaoComparacaoResponse>
 
+    // Preço médio histórico de um item (task #472) -- ver comentário completo
+    // em Models.kt (CotacaoPrecoMedioRequest/Response).
+    @POST("api/mobile/cotacao-preco-medio")
+    suspend fun cotacaoPrecoMedio(@Body body: CotacaoPrecoMedioRequest): Response<CotacaoPrecoMedioResponse>
+
     // Visão "Operação" agrupada (gap encontrado na auditoria módulo-a-módulo,
     // pedido do usuario "implemente tudo que falta ainda para o app native
     // da plataforma").

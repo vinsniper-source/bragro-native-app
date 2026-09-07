@@ -9,6 +9,8 @@ import com.bragro.mobile.data.model.CotacaoComparacaoResponse
 import com.bragro.mobile.data.model.CotacaoMultiItemItemData
 import com.bragro.mobile.data.model.CotacaoMultiItemRequest
 import com.bragro.mobile.data.model.CotacaoMultiItemResponse
+import com.bragro.mobile.data.model.CotacaoPrecoMedioRequest
+import com.bragro.mobile.data.model.CotacaoPrecoMedioResponse
 import com.bragro.mobile.data.remote.NetworkModule
 
 /** Cotações de Fornecedores: "novo modelo" de vários itens do MESMO
@@ -107,6 +109,37 @@ class CotacaoMultiItemRepository(context: Context) {
         } catch (e: Exception) {
             AppLog.e("CotacaoMultiItemRepository", "Falha ao lançar propostas de comparação", e)
             CotacaoComparacaoResponse(ok = false, error = "Sem conexão. Tente novamente.")
+        }
+    }
+
+    /** Preço médio histórico de um item (task #472) -- ver comentário
+     * completo em Models.kt (CotacaoPrecoMedioRequest/Response) e no site
+     * (cotacao-multi-item-button.tsx). Retorna null em caso de falha de rede
+     * (o chamador trata isso como "sem histórico disponível agora", não
+     * como erro bloqueante -- o formulário continua funcionando sem essa
+     * informação). */
+    suspend fun precoMedioHistorico(categoria: String, item: String): CotacaoPrecoMedioResponse? {
+        val tokens = tokenStore.current() ?: return null
+        var (accessToken, refreshToken) = tokens
+        return try {
+            fun buildRequest() = CotacaoPrecoMedioRequest(
+                accessToken = accessToken,
+                refreshToken = refreshToken,
+                categoria = categoria,
+                item = item,
+            )
+            var response = NetworkModule.mobileApi.cotacaoPrecoMedio(buildRequest())
+            if (response.code() == 401) {
+                val newAccess = TokenRefresher.refreshAccessToken(tokenStore, refreshToken)
+                if (newAccess != null) {
+                    accessToken = newAccess
+                    response = NetworkModule.mobileApi.cotacaoPrecoMedio(buildRequest())
+                }
+            }
+            response.body()
+        } catch (e: Exception) {
+            AppLog.e("CotacaoMultiItemRepository", "Falha ao buscar preco medio historico", e)
+            null
         }
     }
 }

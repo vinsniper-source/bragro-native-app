@@ -18,6 +18,29 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.51] -- 2026-09-06
+
+- **Cotações Fornecedores: unificação "Vários itens" + "Comparar
+  fornecedores" numa única página (task #472)**: os dois modos e o
+  alternador de botões saíram. Agora é sempre "múltiplos itens, cada um com
+  múltiplos fornecedores" -- superconjunto dos dois fluxos antigos (1
+  fornecedor + N itens = N grupos de 1 proposta; 1 item + N fornecedores = 1
+  grupo de N propostas). Cada grupo (item) tem seu próprio bloco de
+  Categoria/Item/Quantidade/Unidade + lista de propostas de fornecedor
+  aninhada, com "Adicionar fornecedor"/"Adicionar item" em vez dos antigos
+  botões de alternar modo. "Copiar última cotação" preenche o primeiro grupo.
+  Site (`cotacao-multi-item-button.tsx`) e app (`CotacaoMultiItemScreen.kt`)
+  atualizados em paralelo -- mesma chamada de servidor de sempre
+  (`createCotacaoComparacaoAction`, 1 por grupo), nenhuma mudança de schema.
+- **Novo: preço médio histórico por item**: cada grupo mostra a média de
+  todas as cotações já lançadas antes desta submissão para aquele item
+  (`getPrecoMedioHistoricoAction`, nova consulta só de leitura sobre
+  `CotacaoFornecedor.precoUnitario` -- sem campo novo no schema), com data
+  da última cotação. Cada proposta mostra um indicador (▼/▲ + %) de quanto
+  seu preço está abaixo/acima dessa média. Novo endpoint mobile
+  `/api/mobile/cotacao-preco-medio` espelha exatamente a mesma Server
+  Action que o site usa.
+
 ## [1.2.50] -- 2026-09-06
 
 - **"(calculado automaticamente)" -> "(automático)"** nos campos calculados
