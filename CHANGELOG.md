@@ -18,6 +18,30 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.52] -- 2026-09-07
+
+- **Cotações Fornecedores: reordenar bloco do item + sombra verde**: dentro
+  de cada card de item (grupo), "Propostas dos fornecedores" (com o botão
+  "Adicionar fornecedor") agora aparece PRIMEIRO, antes dos campos
+  Categoria/Item/Unidade/Quantidade -- antes era o inverso. O botão de
+  remover item ficou no rodapé do card. A sombra cinza padrão do Material
+  nos cards de item e de proposta foi trocada por uma sombra verde (cor
+  primária do app), sem duplicar com a elevação nativa do Card (elevação
+  zerada, sombra só via `Modifier.shadow`).
+- **Preço médio histórico: movido pro topo do card**: o texto resumo
+  ("Preço médio histórico: R$ X, N cotação(ões), última em DD/MM") saiu de
+  baixo (depois de Categoria/Item/Quantidade) e foi pro topo, logo abaixo
+  do título "Propostas dos fornecedores", junto de onde os preços são
+  digitados -- antes ficava "descolado" da ação, longe do que o usuário
+  está preenchendo. O texto continua reativo (atualiza sozinho assim que
+  Categoria+Item forem escolhidos mais abaixo no mesmo card); o indicador
+  ▼/▲ % por proposta continua no mesmo lugar, junto do campo Preço.
+- **Fix de build 1.2.51**: a versão anterior nunca chegou a compilar --
+  faltavam os imports de `CotacaoPrecoMedioRequest`/`Response` em `Api.kt` e
+  o app usava `mutableStateSetOf` (indisponível nesta versão do Compose
+  runtime, `compose-bom:2024.06.00`). Trocado por um `mutableSetOf` comum,
+  já que esse conjunto nunca é lido dentro de uma função `@Composable`.
+
 ## [1.2.51] -- 2026-09-06
 
 - **Cotações Fornecedores: unificação "Vários itens" + "Comparar

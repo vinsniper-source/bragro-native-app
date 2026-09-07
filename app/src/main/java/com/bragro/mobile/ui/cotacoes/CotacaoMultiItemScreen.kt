@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.appFieldColors
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -53,6 +54,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -353,6 +355,19 @@ private fun StringDropdown(
     }
 }
 
+/** Sombra verde (cor primária do app) em vez da sombra cinza padrão do
+ * Material -- pedido do usuário ("troque a sombra do bloco pelo verde da
+ * imagem"): a sombra cinza padrão do Card destoava do resto da tela (fundo
+ * e ícones verdes). Escopo só desta tela (GrupoCard/PropostaCard) -- Card.kt
+ * é compartilhado por TODO o app, então não mexe lá pra não afetar módulos
+ * que já estão certos. O Card em si fica com elevation=0 (ver uso abaixo)
+ * pra não desenhar as DUAS sombras (cinza padrão + verde) empilhadas. */
+@Composable
+private fun Modifier.greenCardShadow(): Modifier {
+    val green = MaterialTheme.colorScheme.primary
+    return this.shadow(elevation = 6.dp, shape = MaterialTheme.shapes.medium, ambientColor = green, spotColor = green)
+}
+
 /** Bloco individual (scrim onSurface, sem borda -- regra do app de não ter
  * bordas em lugar nenhum) separando cada campo dentro de um card de item/
  * proposta. alpha 0.12f -- ver histórico do valor em CHANGELOG.md (0.05f
@@ -395,7 +410,7 @@ private fun PropostaCard(
     showRemove: Boolean,
     onRemove: () -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth().greenCardShadow(), elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             ItemFieldBlock {
                 StringDropdown(
@@ -496,8 +511,43 @@ private fun GrupoCard(
     val hist = if (temItem) historico[historicoKey(grupo.categoria, grupo.item)] else null
     val mediaHistorica = if (hist?.ok == true) hist.mediaPreco else null
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    // Ordem invertida (pedido do usuário, com uma imagem anotada mostrando
+    // "fornecedores primeiro, abaixo o botão de adicionar fornecedor,
+    // abaixo itens, abaixo o botão de adicionar"): Propostas dos
+    // fornecedores agora vem ANTES de Categoria/Item/Unidade/Quantidade,
+    // com "Adicionar fornecedor" logo abaixo da lista. Nenhuma mudança de
+    // dado/validação, só a ordem visual dos dois blocos dentro do card.
+    Card(modifier = Modifier.fillMaxWidth().greenCardShadow(), elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("Propostas dos fornecedores *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            // Preço médio histórico (task #472) -- movido pro topo, junto do
+            // bloco de propostas, pra não ficar "descolado" da ação de
+            // digitar o preço (antes ficava só depois de Categoria/Item/
+            // Quantidade, longe de onde o usuário está olhando). O texto
+            // é reativo: atualiza sozinho assim que Categoria+Item forem
+            // preenchidos mais abaixo no mesmo card.
+            if (temItem) {
+                Text(
+                    historicoTexto(hist),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            grupo.propostas.forEachIndexed { pi, proposta ->
+                PropostaCard(
+                    proposta = proposta,
+                    entidadesOptions = entidadesOptions,
+                    formasPgtoOptions = formasPgtoOptions,
+                    mediaHistorica = mediaHistorica,
+                    showRemove = grupo.propostas.size > 1,
+                    onRemove = { onRemoveProposta(pi) },
+                )
+            }
+            OutlinedButton(onClick = onAddProposta, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
+                Text("Adicionar fornecedor")
+            }
+            HorizontalDivider()
             ItemFieldBlock {
                 StringDropdown(
                     label = "Categoria *",
@@ -537,33 +587,6 @@ private fun GrupoCard(
                         colors = appFieldColors(),
                     )
                 }
-            }
-            // Preço médio histórico do item (task #472) -- só aparece depois
-            // de Categoria+Item preenchidos. Compara contra TODAS as
-            // cotações já lançadas antes desta submissão pra este item,
-            // independente de fornecedor.
-            if (temItem) {
-                Text(
-                    historicoTexto(hist),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            HorizontalDivider()
-            Text("Propostas dos fornecedores *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            grupo.propostas.forEachIndexed { pi, proposta ->
-                PropostaCard(
-                    proposta = proposta,
-                    entidadesOptions = entidadesOptions,
-                    formasPgtoOptions = formasPgtoOptions,
-                    mediaHistorica = mediaHistorica,
-                    showRemove = grupo.propostas.size > 1,
-                    onRemove = { onRemoveProposta(pi) },
-                )
-            }
-            OutlinedButton(onClick = onAddProposta, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
-                Text("Adicionar fornecedor")
             }
             if (showRemoveGrupo) {
                 IconButton(onClick = onRemoveGrupo, modifier = Modifier.size(28.dp)) {
