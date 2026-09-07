@@ -270,6 +270,7 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
                         label = label,
                         categories = categories,
                         busy = busy,
+                        farmNames = farms?.mapNotNull { it.jsonObject["name"]?.jsonPrimitive?.contentOrNull } ?: emptyList(),
                         onAddValue = { category, value -> viewModel.addLookup(category, value) },
                         onToggle = { id, ativo -> viewModel.toggleLookup(id, ativo) },
                         onDelete = { id -> viewModel.deleteLookup(id) },
@@ -803,11 +804,20 @@ private fun FarmsCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SectorCard(
     label: String,
     categories: kotlinx.serialization.json.JsonArray?,
     busy: Boolean,
+    // Nomes de fazenda cadastradas (Farm) -- só usado pra categoria "locais"
+    // (campo "Local" de Safra/Financeiro/Frota etc.). Pedido do usuário:
+    // "lista suspensa direcionada na categoria locais, dentro dela coloque
+    // apenas as opções de fazendas" -- mesma correspondência exigida pelo
+    // botão "Sincronizar locais" (nome digitado precisa bater com Farm.name
+    // pra Área Total não zerar), só que evitando o problema na origem em vez
+    // de corrigir depois.
+    farmNames: List<String> = emptyList(),
     onAddValue: (String, String) -> Unit,
     onToggle: (String, Boolean) -> Unit,
     onDelete: (String) -> Unit,
@@ -831,10 +841,39 @@ private fun SectorCard(
                     IconButton(onClick = { onDelete(id) }, enabled = !busy) { Icon(Icons.Filled.Delete, contentDescription = "Excluir") }
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)) {
-                OutlinedTextField(value = newValue, onValueChange = { newValue = it }, label = { Text("Novo valor") }, modifier = Modifier.weight(1f), singleLine = true, colors = appFieldColors())
-                Spacer(Modifier.width(8.dp))
-                Button(onClick = { if (newValue.isNotBlank()) { onAddValue(category, newValue.trim()); newValue = "" } }, enabled = !busy) { Text("+") }
+            if (category == "locais") {
+                val jaListados = remember(values) {
+                    values?.mapNotNull { it.jsonObject["label"]?.jsonPrimitive?.contentOrNull?.trim()?.uppercase() }?.toSet() ?: emptySet()
+                }
+                val disponiveis = farmNames.filter { it.trim().uppercase() !in jaListados }
+                var expanded by remember { mutableStateOf(false) }
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)) {
+                    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = Modifier.weight(1f)) {
+                        OutlinedTextField(
+                            value = newValue,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text(if (disponiveis.isEmpty()) "Todas as fazendas já estão na lista" else "Selecione a fazenda") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth().menuAnchor(),
+                            colors = appFieldColors(),
+                        )
+                        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                            disponiveis.forEach { f ->
+                                DropdownMenuItem(text = { Text(f) }, onClick = { newValue = f; expanded = false })
+                            }
+                        }
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Button(onClick = { if (newValue.isNotBlank()) { onAddValue(category, newValue.trim()); newValue = "" } }, enabled = !busy && newValue.isNotBlank()) { Text("+") }
+                }
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)) {
+                    OutlinedTextField(value = newValue, onValueChange = { newValue = it }, label = { Text("Novo valor") }, modifier = Modifier.weight(1f), singleLine = true, colors = appFieldColors())
+                    Spacer(Modifier.width(8.dp))
+                    Button(onClick = { if (newValue.isNotBlank()) { onAddValue(category, newValue.trim()); newValue = "" } }, enabled = !busy) { Text("+") }
+                }
             }
         }
     }

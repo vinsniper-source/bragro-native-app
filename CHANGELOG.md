@@ -18,6 +18,39 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.50] -- 2026-09-06
+
+- **"(calculado automaticamente)" -> "(automático)"** nos campos calculados
+  (site: `record-form.tsx`; app: `DomainFormScreen.kt`).
+- **Livro Caixa, Produtor Rural > Validade do certificado**: estava em
+  ISO (AAAA-MM-DD) tanto pra exibir quanto editar; agora mostra e edita em
+  DD/MM/AAAA (`LivroCaixaScreen.kt`, usando os utilitários já existentes
+  `isoDateToBr`/`brDateToIso`). Site não precisou de fix -- `<input
+  type="date">` já auto-localiza pro navegador.
+- **Base de Dados, categoria "Local"**: o campo de incluir novo valor virou
+  um dropdown com só os nomes de fazenda já cadastrados (Farm), em vez de
+  texto livre -- evita o mesmo problema que o botão "Sincronizar" corrige
+  (nome digitado sem bater com `Farm.name` = Área Total zerada em
+  Safra/Frota/Financeiro). Valores não-fazenda já existentes na lista
+  (armazém, silo, porto etc.) continuam intactos. Feito no site
+  (`base-de-dados-client.tsx`, `CategoryCard`) e no app
+  (`BaseDeDadosScreen.kt`, `SectorCard`).
+- **Base de Dados fora de ordem alfabética**: a tela de gestão (site e app)
+  ordenava os valores de cada categoria por ordem de INSERÇÃO (`order`)
+  antes do nome (`label`) -- valores adicionados manualmente sempre caíam
+  no fim da lista em vez de alfabético. Os dropdowns reais dos formulários
+  (Financeiro, Safra, Frota etc.) já eram alfabéticos, não precisaram de
+  mudança. Corrigido em `base-de-dados/actions.ts` e
+  `api/mobile/base-de-dados/route.ts` (orderBy agora é
+  `[category asc, label asc]`).
+- **Pill "Fazenda" da Início pequeno demais**: aumentado (largura máx.
+  160dp->200dp, padding e fonte maiores, ícone 14dp->18dp) --
+  `FarmSelectorButton.kt`. Pills de Safra/Cultura ao lado não foram
+  alterados (pedido era só o de Fazenda).
+- **Cobranças > Faturamento, botões Cobranças/NFS-e**: reduzida a folga
+  vertical do wrapper (`vertical=8dp` -> `2dp`) pra encostar na borda
+  externa do bloco (`DomainListScreen.kt`).
+
 ## [1.2.49] -- 2026-09-06
 
 - **3 telas com o mesmo bug de bloco individual invisível (surfaceVariant

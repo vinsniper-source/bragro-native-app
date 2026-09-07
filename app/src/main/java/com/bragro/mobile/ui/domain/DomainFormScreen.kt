@@ -653,7 +653,9 @@ private fun computedDisplayValue(col: ColumnConfig, raw: String, optionLabels: M
 private fun ComputedFieldDisplay(col: ColumnConfig, raw: String, optionLabels: Map<String, String>) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-            "${col.label} (calculado automaticamente)",
+            // "(calculado automaticamente)" -> "(automático)" -- pedido do
+            // usuário ("substitua esta palavra... por automático").
+            "${col.label} (automático)",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

@@ -89,8 +89,12 @@ fun FarmSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onCh
                 // deixe nenhum caractere passar do limite da tela"): sem
                 // limite, um nome de fazenda longo media a Text no tamanho
                 // intrínseco (1 linha) e empurrava a pill inteira pra fora
-                // da tela em vez de truncar com "...".
-                .widthIn(max = 160.dp)
+                // da tela em vez de truncar com "...". Aumentado de 160dp
+                // pra 200dp e padding/fonte maiores -- pedido do usuário
+                // ("acrescente tamanho do campo fazenda da lista suspensa da
+                // página principal do app"): só este pill (Início), não o
+                // de Safra/Cultura (GlobalFieldSelectorButton.kt).
+                .widthIn(max = 200.dp)
                 .clip(RoundedCornerShape(999.dp))
                 // Preenchimento em vez de borda -- pedido do usuário ("tire
                 // todas as bordas de todo app"); sem fundo a pill ficaria sem
@@ -98,17 +102,17 @@ fun FarmSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onCh
                 // Cards, ver AppCard.kt).
                 .background(MaterialTheme.colorScheme.surface)
                 .clickable { menuOpen = true }
-                .padding(horizontal = 10.dp, vertical = 5.dp),
+                .padding(horizontal = 14.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 selected ?: "Todas as fazendas",
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Clip,
                 modifier = Modifier.weight(1f, fill = false).basicMarquee(),
             )
-            Icon(Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.size(14.dp).padding(start = 2.dp))
+            Icon(Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.size(18.dp).padding(start = 3.dp))
         }
     } else if (showLabel) {
         Column(

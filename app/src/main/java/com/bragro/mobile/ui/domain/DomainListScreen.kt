@@ -661,7 +661,17 @@ fun DomainListScreen(
                             // Layout já usado em Dados/Operações/Arquivos
                             // (EqualWidthBlockRow, ver ModuleIconRow.kt) em
                             // vez de duplicar a lógica de bordas/centralização.
-                            EqualWidthBlockRow(modifier = Modifier.padding(vertical = 8.dp), drawBackground = false) {
+                            // Altura reduzida até quase encostar na borda
+                            // externa do Card -- pedido do usuário ("dois
+                            // botões diminua a altura até chega no limite
+                            // das bordas externas"): era padding(vertical =
+                            // 8.dp) aqui EM CIMA do padding(vertical = 8.dp)
+                            // já embutido no próprio ModuleIconButton (usado
+                            // em todos os outros módulos, não mexido pra não
+                            // afetar o resto do app) -- 16dp de sobra total
+                            // entre o ícone e a borda do Card. Reduzido pra
+                            // 2dp aqui (só neste bloco Faturamento).
+                            EqualWidthBlockRow(modifier = Modifier.padding(vertical = 2.dp), drawBackground = false) {
                                 linkedDomains.forEach { (id, label) ->
                                     val active = id == domainId
                                     ModuleIconButton(

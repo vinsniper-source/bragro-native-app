@@ -76,7 +76,9 @@ import com.bragro.mobile.ui.domain.FarmSelectorButton
 import com.bragro.mobile.ui.domain.LabeledIconButton
 import com.bragro.mobile.ui.domain.RecordTableHeader
 import com.bragro.mobile.ui.domain.RecordTableRow
+import com.bragro.mobile.ui.domain.brDateToIso
 import com.bragro.mobile.ui.domain.exportXlsx
+import com.bragro.mobile.ui.domain.isoDateToBr
 import com.bragro.mobile.ui.print.HtmlPrinter
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -458,7 +460,12 @@ private fun ProdutorRuralCard(
     // vencimento (mesmo padrão dos outros campos "AAAA-MM-DD" do app).
     var certTipo by remember(config) { mutableStateOf(config?.certificadoDigitalTipo ?: "") }
     var certEmissor by remember(config) { mutableStateOf(config?.certificadoDigitalEmissor ?: "") }
-    var certValidade by remember(config) { mutableStateOf(config?.certificadoDigitalValidade ?: "") }
+    // Editado/exibido em DD/MM/AAAA (padrão BR do resto do app) -- pedido do
+    // usuário ("campo validade incorreto o correto é dd/mm/aaaa"): o servidor
+    // continua guardando/recebendo AAAA-MM-DD (ver ProdutorRuralConfigData/
+    // route.ts), só a tela mudou -- mesma conversão isoDateToBr/brDateToIso
+    // (StatusStyle.kt) já usada nos outros campos de data do app.
+    var certValidade by remember(config) { mutableStateOf(isoDateToBr(config?.certificadoDigitalValidade ?: "")) }
     var contaIrpf by remember(config) { mutableStateOf(config?.contaIrpfPadrao ?: "") }
 
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -483,7 +490,7 @@ private fun ProdutorRuralCard(
                 Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     CertificadoTipoDropdown(tipo = certTipo, onSelect = { certTipo = it })
                     OutlinedTextField(value = certEmissor, onValueChange = { certEmissor = it }, label = { Text("Emissor (AC)") }, placeholder = { Text("Ex.: Serasa, Certisign") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
-                    OutlinedTextField(value = certValidade, onValueChange = { certValidade = it }, label = { Text("Validade (AAAA-MM-DD)") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+                    OutlinedTextField(value = certValidade, onValueChange = { certValidade = it }, label = { Text("Validade (DD/MM/AAAA)") }, placeholder = { Text("DD/MM/AAAA") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
                 }
             }
             Text(
@@ -505,7 +512,10 @@ private fun ProdutorRuralCard(
                                 inscricaoEstadualProdutor = ie,
                                 certificadoDigitalTipo = certTipo,
                                 certificadoDigitalEmissor = certEmissor,
-                                certificadoDigitalValidade = certValidade,
+                                // Volta pra AAAA-MM-DD antes de enviar -- o
+                                // servidor guarda/espera ISO, só a tela edita
+                                // em DD/MM/AAAA.
+                                certificadoDigitalValidade = brDateToIso(certValidade),
                                 contaIrpfPadrao = contaIrpf,
                             ),
                         )
