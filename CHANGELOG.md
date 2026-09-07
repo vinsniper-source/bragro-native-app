@@ -18,6 +18,20 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.53] -- 2026-09-07
+
+- **Base de Dados > Fazenda/Área: campo "Situação da terra"**: novo campo
+  de lista suspensa (Arrendo / Comodato / Ocupação / Parceria / Própria --
+  ordem alfabética; acrescentei "Ocupação" à lista pedida pelo usuário
+  [Parceria/Comodato/Própria/Arrendo], por ser a 5ª classificação padrão de
+  regime de posse de terra rural do Censo Agropecuário do IBGE), logo após
+  o campo de latitude/longitude, no cadastro de nova fazenda e na edição de
+  fazendas já existentes (site + app nativo). O valor aparece no bloco
+  principal de cada fazenda (badge, ao lado da Cultura, no site; campo
+  próprio no bloco individual do app). 9ª exceção de schema autorizada
+  (`Farm.situacaoTerra`, opcional, sem impacto em nenhum cálculo existente
+  -- é só cadastro/exibição, igual ao campo Cultura).
+
 ## [1.2.52] -- 2026-09-07
 
 - **Cotações Fornecedores: reordenar bloco do item + sombra verde**: dentro

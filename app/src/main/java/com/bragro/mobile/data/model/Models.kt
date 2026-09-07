@@ -488,6 +488,9 @@ data class BaseDeDadosRequest(
     // fallback fixo de clima (Tupaciguara/MG) pela localização real.
     val latitude: Double? = null,
     val longitude: Double? = null,
+    // Situação da terra / regime de posse (9ª exceção de schema, ver
+    // MEMORY.md) -- mesmo padrão partial-update: omitido = não mexe.
+    val situacaoTerra: String? = null,
 )
 
 @Serializable

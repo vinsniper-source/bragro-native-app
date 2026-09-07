@@ -87,10 +87,13 @@ class BaseDeDadosRepository(context: Context) {
         areaSafrinhaCultura2Ha: Double? = null,
         latitude: Double? = null,
         longitude: Double? = null,
+        // Situação da terra / regime de posse (9ª exceção de schema, ver
+        // MEMORY.md) -- mesmo padrão partial-update das demais.
+        situacaoTerra: String? = null,
     ): Result<JsonElement?> {
         val tokens = tokenStore.current() ?: return Result.failure(IllegalStateException("Sessão expirada. Entre novamente."))
         var (accessToken, refreshToken) = tokens
-        fun body() = BaseDeDadosRequest(accessToken, refreshToken, action, category, value, id, ativo, name, areaHa, cultura, areaSafrinhaHa, areaSafrinhaCultura1, areaSafrinhaCultura1Ha, areaSafrinhaCultura2, areaSafrinhaCultura2Ha, latitude, longitude)
+        fun body() = BaseDeDadosRequest(accessToken, refreshToken, action, category, value, id, ativo, name, areaHa, cultura, areaSafrinhaHa, areaSafrinhaCultura1, areaSafrinhaCultura1Ha, areaSafrinhaCultura2, areaSafrinhaCultura2Ha, latitude, longitude, situacaoTerra)
         return try {
             var response = NetworkModule.mobileApi.baseDeDados(body())
             if (response.code() == 401) {

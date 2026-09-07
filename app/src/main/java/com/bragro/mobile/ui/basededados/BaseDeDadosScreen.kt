@@ -93,10 +93,10 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun act(action: String, category: String? = null, value: String? = null, id: String? = null, ativo: Boolean? = null, name: String? = null, areaHa: Double? = null, cultura: String? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null, onDone: (Boolean) -> Unit = {}) {
+    private fun act(action: String, category: String? = null, value: String? = null, id: String? = null, ativo: Boolean? = null, name: String? = null, areaHa: Double? = null, cultura: String? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null, situacaoTerra: String? = null, onDone: (Boolean) -> Unit = {}) {
         busy.value = true
         viewModelScope.launch {
-            val result = repo.run(action, category, value, id, ativo, name, areaHa, cultura, areaSafrinhaHa, areaSafrinhaCultura1, areaSafrinhaCultura1Ha, areaSafrinhaCultura2, areaSafrinhaCultura2Ha, latitude, longitude)
+            val result = repo.run(action, category, value, id, ativo, name, areaHa, cultura, areaSafrinhaHa, areaSafrinhaCultura1, areaSafrinhaCultura1Ha, areaSafrinhaCultura2, areaSafrinhaCultura2Ha, latitude, longitude, situacaoTerra)
             busy.value = false
             result.onSuccess { load(); onDone(true) }.onFailure { errorMessage.value = it.message; onDone(false) }
         }
@@ -125,8 +125,11 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
     // Localização (6ª exceção de schema, ver MEMORY.md) -- agora também no
     // cadastro (antes só existia em updateFarm/edição). Pedido do usuário:
     // "coloque o campo latitude longitude depois da área 2".
-    fun addFarm(name: String, areaHa: Double, cultura: String? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null) =
-        act("add_farm", name = name, areaHa = areaHa, cultura = cultura, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaCultura1 = areaSafrinhaCultura1, areaSafrinhaCultura1Ha = areaSafrinhaCultura1Ha, areaSafrinhaCultura2 = areaSafrinhaCultura2, areaSafrinhaCultura2Ha = areaSafrinhaCultura2Ha, latitude = latitude, longitude = longitude)
+    // Situação da terra / regime de posse (9ª exceção de schema, ver
+    // MEMORY.md) -- opcional, colocado por ÚLTIMO (mesmo critério de "name"
+    // em updateFarm abaixo) pra não quebrar nenhuma chamada existente.
+    fun addFarm(name: String, areaHa: Double, cultura: String? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null, situacaoTerra: String? = null) =
+        act("add_farm", name = name, areaHa = areaHa, cultura = cultura, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaCultura1 = areaSafrinhaCultura1, areaSafrinhaCultura1Ha = areaSafrinhaCultura1Ha, areaSafrinhaCultura2 = areaSafrinhaCultura2, areaSafrinhaCultura2Ha = areaSafrinhaCultura2Ha, latitude = latitude, longitude = longitude, situacaoTerra = situacaoTerra)
     // Localização (6ª exceção de schema, ver MEMORY.md) -- latitude/
     // longitude sempre viajam juntas (as duas null limpa, as duas
     // preenchidas define; validação de "uma sem a outra" já é feita no
@@ -138,8 +141,11 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
     // também renomeia a entrada equivalente em "locais"). Colocado por
     // ÚLTIMO na lista (não logo após "id") pra não quebrar nenhuma chamada
     // existente que ainda passe "areaHa" posicionalmente como 2º argumento.
-    fun updateFarm(id: String, areaHa: Double, cultura: String? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null, name: String? = null) =
-        act("update_farm", id = id, name = name, areaHa = areaHa, cultura = cultura, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaCultura1 = areaSafrinhaCultura1, areaSafrinhaCultura1Ha = areaSafrinhaCultura1Ha, areaSafrinhaCultura2 = areaSafrinhaCultura2, areaSafrinhaCultura2Ha = areaSafrinhaCultura2Ha, latitude = latitude, longitude = longitude)
+    // Situação da terra / regime de posse (9ª exceção de schema, ver
+    // MEMORY.md) -- opcional, colocado por ÚLTIMO (mesmo critério de "name"
+    // acima) pra não quebrar nenhuma chamada existente.
+    fun updateFarm(id: String, areaHa: Double, cultura: String? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null, name: String? = null, situacaoTerra: String? = null) =
+        act("update_farm", id = id, name = name, areaHa = areaHa, cultura = cultura, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaCultura1 = areaSafrinhaCultura1, areaSafrinhaCultura1Ha = areaSafrinhaCultura1Ha, areaSafrinhaCultura2 = areaSafrinhaCultura2, areaSafrinhaCultura2Ha = areaSafrinhaCultura2Ha, latitude = latitude, longitude = longitude, situacaoTerra = situacaoTerra)
     fun deleteFarm(id: String) = act("delete_farm", id = id)
     fun syncLocais() = act("sync_locais")
 }
@@ -250,11 +256,11 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
                 FarmsCard(
                     farms = farms,
                     busy = busy,
-                    onAdd = { name, area, cultura, areaSafrinha, cultura1, cultura1Ha, cultura2, cultura2Ha, latitude, longitude ->
-                        viewModel.addFarm(name, area, cultura = cultura, areaSafrinhaHa = areaSafrinha, areaSafrinhaCultura1 = cultura1, areaSafrinhaCultura1Ha = cultura1Ha, areaSafrinhaCultura2 = cultura2, areaSafrinhaCultura2Ha = cultura2Ha, latitude = latitude, longitude = longitude)
+                    onAdd = { name, area, cultura, areaSafrinha, cultura1, cultura1Ha, cultura2, cultura2Ha, latitude, longitude, situacaoTerra ->
+                        viewModel.addFarm(name, area, cultura = cultura, areaSafrinhaHa = areaSafrinha, areaSafrinhaCultura1 = cultura1, areaSafrinhaCultura1Ha = cultura1Ha, areaSafrinhaCultura2 = cultura2, areaSafrinhaCultura2Ha = cultura2Ha, latitude = latitude, longitude = longitude, situacaoTerra = situacaoTerra)
                     },
-                    onUpdate = { id, name, area, cultura, areaSafrinha, cultura1, cultura1Ha, cultura2, cultura2Ha, latitude, longitude ->
-                        viewModel.updateFarm(id, area, cultura = cultura, areaSafrinhaHa = areaSafrinha, areaSafrinhaCultura1 = cultura1, areaSafrinhaCultura1Ha = cultura1Ha, areaSafrinhaCultura2 = cultura2, areaSafrinhaCultura2Ha = cultura2Ha, latitude = latitude, longitude = longitude, name = name)
+                    onUpdate = { id, name, area, cultura, areaSafrinha, cultura1, cultura1Ha, cultura2, cultura2Ha, latitude, longitude, situacaoTerra ->
+                        viewModel.updateFarm(id, area, cultura = cultura, areaSafrinhaHa = areaSafrinha, areaSafrinhaCultura1 = cultura1, areaSafrinhaCultura1Ha = cultura1Ha, areaSafrinhaCultura2 = cultura2, areaSafrinhaCultura2Ha = cultura2Ha, latitude = latitude, longitude = longitude, name = name, situacaoTerra = situacaoTerra)
                     },
                     onDelete = { id -> viewModel.deleteFarm(id) },
                     onSync = { viewModel.syncLocais() },
@@ -407,6 +413,45 @@ private fun CulturaDropdownField(
     }
 }
 
+// Situação da terra / regime de posse da fazenda (9ª exceção de schema, ver
+// MEMORY.md) -- mesma lista fixa (ordem alfabética) do site
+// (SITUACOES_TERRA em default-lookups.ts). Duplicada aqui pelo mesmo motivo
+// de CULTURAS_SAFRINHA acima: precisa bater exatamente com o valor salvo
+// pelo site (trim+uppercase), não é lookup dinâmico de Base de Dados.
+private val SITUACOES_TERRA = listOf("ARRENDO", "COMODATO", "OCUPAÇÃO", "PARCERIA", "PRÓPRIA")
+
+// Dropdown de Situação da terra -- mesmo padrão ExposedDropdownMenuBox de
+// CulturaDropdownField acima, lista diferente.
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SituacaoTerraDropdownField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    dense: Boolean = false,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = modifier) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Situação da terra", style = if (dense) MaterialTheme.typography.labelSmall else LocalTextStyle.current, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            textStyle = if (dense) MaterialTheme.typography.bodySmall else LocalTextStyle.current,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().menuAnchor(),
+            colors = appFieldColors(),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(text = { Text("(nenhuma)") }, onClick = { onValueChange(""); expanded = false })
+            SITUACOES_TERRA.forEach { s ->
+                DropdownMenuItem(text = { Text(s) }, onClick = { onValueChange(s); expanded = false })
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun FarmsCard(
@@ -417,12 +462,15 @@ private fun FarmsCard(
     // safrinha, 5ª exceção de schema), 8º/9º = latitude/longitude (6ª
     // exceção de schema) -- pedido do usuário: "coloque o campo latitude
     // longitude depois da área 2".
-    onAdd: (String, Double, String?, Double?, String?, Double?, String?, Double?, Double?, Double?) -> Unit,
+    // Último parâmetro = situação da terra (9ª exceção de schema, ver
+    // MEMORY.md) -- null = não informado.
+    onAdd: (String, Double, String?, Double?, String?, Double?, String?, Double?, Double?, Double?, String?) -> Unit,
     // 2º parâmetro = nome novo (null = não mexe -- pedido do usuário
-    // "coloque para editar também o nome da fazenda"); 2 últimos parâmetros
-    // = latitude/longitude (6ª exceção de schema, ver MEMORY.md) -- null/
-    // null limpa, ambos preenchidos define.
-    onUpdate: (String, String?, Double, String?, Double?, String?, Double?, String?, Double?, Double?, Double?) -> Unit,
+    // "coloque para editar também o nome da fazenda"); 9º/10º parâmetros =
+    // latitude/longitude (6ª exceção de schema, ver MEMORY.md) -- null/null
+    // limpa, ambos preenchidos define. Último parâmetro = situação da terra
+    // (9ª exceção de schema).
+    onUpdate: (String, String?, Double, String?, Double?, String?, Double?, String?, Double?, Double?, Double?, String?) -> Unit,
     onDelete: (String) -> Unit,
     onSync: () -> Unit,
 ) {
@@ -450,6 +498,10 @@ private fun FarmsCard(
     // Pedido do usuário: "coloque o campo latitude longitude depois da área
     // 2" -- por isso vem depois de newCultura2Ha abaixo.
     var newLocation by remember { mutableStateOf("") }
+    // Situação da terra / regime de posse (9ª exceção de schema, ver
+    // MEMORY.md) -- pedido do usuário: "logo após lat/lon o campo com
+    // lista suspensa (parceria, comodato, própria, arrendo)".
+    var newSituacaoTerra by remember { mutableStateOf("") }
 
     CollapsibleCard("Fazendas (${farms?.size ?: 0})", initiallyOpen = true) {
         farms?.forEach { el ->
@@ -479,6 +531,10 @@ private fun FarmsCard(
             val fLat = f["latitude"]?.jsonPrimitive?.doubleOrNull
             val fLon = f["longitude"]?.jsonPrimitive?.doubleOrNull
             var locationText by remember(id) { mutableStateOf(if (fLat != null && fLon != null) "$fLat, $fLon" else "") }
+            // Situação da terra / regime de posse (9ª exceção de schema,
+            // ver MEMORY.md) -- pedido do usuário: "que apareça no bloco
+            // principal esta informação".
+            var situacaoTerraText by remember(id) { mutableStateOf(f["situacaoTerra"]?.jsonPrimitive?.contentOrNull ?: "") }
             // Bloco individual por fazenda -- pedido do usuário ("divida
             // cada fazenda em um bloco e dentro do bloco individual separe
             // os campos, coloque todos os campos em apenas duas linhas"):
@@ -660,12 +716,14 @@ private fun FarmsCard(
                                     // obrigatório, ver validação no servidor).
                                     val nomeTrim = nameText.trim()
                                     val novoNome = if (nomeTrim.isNotEmpty() && nomeTrim != name) nomeTrim else null
+                                    val situacaoTerraTrim = situacaoTerraText.trim()
                                     onUpdate(
                                         id, novoNome, area, if (culturaTotalTrim.isNotEmpty()) culturaTotalTrim else null,
                                         areaSafrinhaText.toDoubleOrNull(),
                                         if (c1.isNotEmpty()) c1 else null, if (c1.isNotEmpty()) c1ha else null,
                                         if (c2.isNotEmpty()) c2 else null, if (c2.isNotEmpty()) c2ha else null,
                                         lat, lon,
+                                        if (situacaoTerraTrim.isNotEmpty()) situacaoTerraTrim else null,
                                     )
                                 }
                             },
@@ -673,6 +731,24 @@ private fun FarmsCard(
                         ) {
                             Icon(Icons.Filled.Check, contentDescription = "Salvar área")
                         }
+                    }
+                    // Situação da terra / regime de posse (9ª exceção de
+                    // schema, ver MEMORY.md) -- pedido do usuário: "logo
+                    // após lat/lon o campo com lista suspensa". Fica na
+                    // linha seguinte à de lat/lon (que já leva o botão
+                    // salvar) pelo mesmo motivo de espaço das demais
+                    // (rótulo/valor não cabem todos numa Row só de 2
+                    // colunas nesta largura de tela).
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    ) {
+                        SituacaoTerraDropdownField(
+                            value = situacaoTerraText,
+                            onValueChange = { situacaoTerraText = it },
+                            modifier = Modifier.weight(1f),
+                            dense = true,
+                        )
                     }
                 }
             }
@@ -757,6 +833,15 @@ private fun FarmsCard(
                     colors = appFieldColors(),
                 )
             }
+            // Situação da terra / regime de posse (9ª exceção de schema, ver
+            // MEMORY.md) -- pedido do usuário: "logo após lat/lon o campo
+            // com lista suspensa (parceria, comodato, própria, arrendo)".
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                SituacaoTerraDropdownField(
+                    value = newSituacaoTerra, onValueChange = { newSituacaoTerra = it },
+                    modifier = Modifier.fillMaxWidth(), dense = true,
+                )
+            }
         }
         Row(modifier = Modifier.padding(top = 8.dp)) {
             Button(
@@ -782,16 +867,18 @@ private fun FarmsCard(
                             if (partes.size != 2 || lat == null || lon == null) locationOk = false
                         }
                         if (locationOk) {
+                            val situacaoTerraTrim = newSituacaoTerra.trim()
                             onAdd(
                                 newName.trim(), area, if (culturaTrim.isNotEmpty()) culturaTrim else null,
                                 newAreaSafrinha.toDoubleOrNull(),
                                 if (c1.isNotEmpty()) c1 else null, if (c1.isNotEmpty()) newCultura1Ha.toDoubleOrNull() else null,
                                 if (c2.isNotEmpty()) c2 else null, if (c2.isNotEmpty()) newCultura2Ha.toDoubleOrNull() else null,
                                 lat, lon,
+                                if (situacaoTerraTrim.isNotEmpty()) situacaoTerraTrim else null,
                             )
                             newName = ""; newArea = ""; newCultura = ""; newAreaSafrinha = ""
                             newCultura1 = ""; newCultura1Ha = ""; newCultura2 = ""; newCultura2Ha = ""
-                            newLocation = ""
+                            newLocation = ""; newSituacaoTerra = ""
                         }
                     }
                 },
