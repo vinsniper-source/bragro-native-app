@@ -37,6 +37,10 @@ usuário: "replique o que ainda falta da plataforma no native").
   nunca outro id).
 - Checklist de módulos "Início" em Acessos ganhou os 5 novos ids de
   indicador, pra administradores poderem liberar/restringir por membro.
+- **Fix de compilação**: `CategoryBreakdownCard.kt` usava `.dp` (várias
+  vezes) sem importar `androidx.compose.ui.unit.dp` -- `gradlew
+  assembleRelease` acusou "Unresolved reference: dp" em 9 linhas. Import
+  adicionado.
 
 ## [1.2.57] -- 2026-09-08
 
