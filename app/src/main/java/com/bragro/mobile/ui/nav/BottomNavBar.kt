@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Agriculture
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Assessment
@@ -24,7 +23,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FlightTakeoff
@@ -111,128 +109,142 @@ private data class BottomTab(
     val directDomainId: String? = null,
 )
 
+// Antigas abas "Safra"/"Financeiro"/"RH" (cada uma com dropdown agrupado por
+// "category") foram ACHATADAS em abas de nível superior -- pedido do
+// usuário, mockup por mockup: "não são 5 botões, são 4: lançamentos,
+// relatórios, compras, faturamento" / "são 4 botões produção, sanidade,
+// monitoramento e painéis" / "são 2 botões RH e Controle Interno". Cada
+// antiga CATEGORIA (ou item solto, no caso de RH) virou sua própria
+// BottomTab -- por isso nenhum SectorTarget abaixo usa mais "category"
+// (fica null/default): o dropdown de cada aba agora é sempre uma lista
+// plana (ver renderTabs/RenderTab mais abaixo, que decide entre dropdown e
+// acesso direto com base em quantos itens sobram após o filtro de
+// permissão).
 private val BOTTOM_TABS = listOf(
+    // Ex-categoria "Produção" (dentro da antiga aba Safra).
     BottomTab(
-        "safra", "Safra", Icons.Filled.Eco,
+        "producao", "Produção", Icons.Filled.Agriculture,
         items = listOf(
-            // "Produção": o ciclo principal safra -> planejamento -> colheita
-            // -> transporte.
-            SectorTarget.Domain("safra", "Safra", category = "Produção"),
-            SectorTarget.Domain("planejamentosafra", "Planejamento de Safra", category = "Produção"),
-            SectorTarget.Domain("colheita", "Colheita", category = "Produção"),
-            // "Romaneio rápido" saiu daqui -- virou um 2º FAB dentro do
-            // próprio módulo Romaneios (ver DomainListScreen.kt), pedido do
-            // usuário ("coloque romaneio rápido como um botão dentro de
-            // romaneio, unifique").
-            SectorTarget.Domain("romaneios", "Romaneios", category = "Produção"),
-            // "Sanidade": pragas/doenças e o receituário que as trata.
-            SectorTarget.Domain("pragas", "Pragas", category = "Sanidade"),
-            SectorTarget.Domain("receituarios", "Receituários", category = "Sanidade"),
-            // "Monitoramento": dados de campo captados por fonte externa
-            // (clima, imagens de drone, mapa/talhões).
-            SectorTarget.Domain("clima", "Clima", category = "Monitoramento"),
-            // Réplica completa do site (Task #106/#107) -- ficam aqui no
-            // setor Safra por serem dados de campo/talhão, mesmo critério
-            // de agrupamento de Pragas/Clima acima. Igual DRE/Análises,
-            // não são um domínio genérico (DomainConfig) -- rotas próprias.
-            SectorTarget.Special("drone", "Drone", category = "Monitoramento"),
-            SectorTarget.Special("fieldview", "FieldView", category = "Monitoramento"),
-            // "Painéis": visões cruzadas/agregadas, não um lançamento
-            // específico.
-            // Painel "Controle de Insumos" (gap encontrado na auditoria
-            // módulo-a-módulo contra o site, pedido do usuário "implemente
-            // tudo que falta ainda para o app native da plataforma") -- no
-            // site fica na seção "estoque" (lib/modules.ts), mas o app não
-            // tem dropdown na aba Estoque (é acesso direto, pedido explícito
-            // do usuário: "botão estoque retire a lista suspensa"). Entra
-            // aqui em Safra por ser um painel cruzando consumo de
-            // Safra/Frota/ADM, ao lado de outros painéis "especiais"
-            // (Drone/FieldView).
-            SectorTarget.Special("controleinsumos", "Controle de Insumos", category = "Painéis"),
-            // Visão "Operação" agrupada (mesmo gap/critério de agrupamento
-            // do item acima) -- no site é "campo"/permissão "safra"
+            SectorTarget.Domain("safra", "Safra"),
+            SectorTarget.Domain("planejamentosafra", "Planejamento de Safra"),
+            SectorTarget.Domain("colheita", "Colheita"),
+            // "Romaneio rápido" virou um 2º FAB dentro do próprio módulo
+            // Romaneios (ver DomainListScreen.kt), pedido do usuário
+            // ("coloque romaneio rápido como um botão dentro de romaneio,
+            // unifique").
+            SectorTarget.Domain("romaneios", "Romaneios"),
+        ),
+    ),
+    // Ex-categoria "Sanidade": pragas/doenças e o receituário que as trata.
+    BottomTab(
+        "sanidade", "Sanidade", Icons.Filled.BugReport,
+        items = listOf(
+            SectorTarget.Domain("pragas", "Pragas"),
+            SectorTarget.Domain("receituarios", "Receituários"),
+        ),
+    ),
+    // Ex-categoria "Monitoramento": dados de campo captados por fonte
+    // externa (clima, imagens de drone, mapa/talhões).
+    BottomTab(
+        "monitoramento", "Monitoramento", Icons.Filled.WbSunny,
+        items = listOf(
+            SectorTarget.Domain("clima", "Clima"),
+            // Réplica completa do site (Task #106/#107) -- não são domínio
+            // genérico (DomainConfig), rotas próprias.
+            SectorTarget.Special("drone", "Drone"),
+            SectorTarget.Special("fieldview", "FieldView"),
+        ),
+    ),
+    // Ex-categoria "Painéis": visões cruzadas/agregadas, não um lançamento
+    // específico. Quando só um dos dois itens abaixo estiver liberado pra
+    // conta (ex.: só "controledeinsumos", sem "safra"), esta aba vira
+    // acesso direto com o ícone/rótulo do próprio item -- ver
+    // RenderTab.Direct mais abaixo (pedido do usuário: mockup do setor
+    // Estoque mostrando "Estoque" + "Controle de Insumos" lado a lado, sem
+    // um botão "Painéis" no meio).
+    BottomTab(
+        "paineis", "Painéis", Icons.Filled.Assignment,
+        items = listOf(
+            // Gap encontrado na auditoria módulo-a-módulo contra o site --
+            // no site fica na seção "estoque" (lib/modules.ts), mas aqui
+            // entra em Painéis por ser uma visão cruzada (Safra/Frota/ADM),
+            // ao lado de Operações.
+            SectorTarget.Special("controleinsumos", "Controle de Insumos"),
+            // Visão "Operação" agrupada -- no site é permissão "safra"
             // (lib/modules.ts), então entra aqui também.
-            SectorTarget.Special("operacoes", "Operações", category = "Painéis"),
+            SectorTarget.Special("operacoes", "Operações"),
         ),
     ),
     // Acesso direto -- pedido do usuário ("botão frota acesso direto, retire
     // as listas suspensas").
     BottomTab("frota", "Frota", Icons.Filled.DirectionsCar, directDomainId = "frota"),
+    // Ex-categoria "Lançamentos" (dentro da antiga aba Financeiro):
+    // operações financeiras do dia a dia.
     BottomTab(
-        "financeiro", "Financeiro", Icons.Filled.AccountBalanceWallet,
+        "lancamentos", "Lançamentos", Icons.Filled.Receipt,
         items = listOf(
-            // Categorias adicionadas -- pedido do usuário ("na imagem 2 faça
-            // a mesma coisa criando as categorias com botões"): antes essa
-            // lista de 10 itens não tinha nenhuma divisão (só a aba Safra
-            // tinha "category", ver comentário no topo do arquivo). Critério
-            // de agrupamento abaixo é novo (não existe um equivalente 1:1 no
-            // site, que não agrupa esses itens na navegação) -- espelha a
-            // natureza funcional de cada um.
-            //
-            // "Lançamentos": operações financeiras do dia a dia.
-            SectorTarget.Domain("financeiro", "Lançamentos", category = "Lançamentos"),
+            SectorTarget.Domain("financeiro", "Lançamentos"),
             // Entrada PRÓPRIA -- pedido do usuário ("na barra inferior do
             // botão financeiro insira, na lista suspensa, um módulo chamado
-            // gestão financeira... agora o módulo lançamento será só ele").
-            // Antes "Gestão Financeira" só existia como um dropdown DENTRO
-            // da tela de Lançamentos (ver FinanceiroGestaoDropdownButton em
-            // FinanceiroScreen.kt); agora também é uma entrada direta aqui,
-            // que abre a mesma tela já na visão "Contas a Pagar" (ver
-            // domainId == "gestaofinanceira" em BRAgroNavHost.kt +
-            // startInGestao em FinanceiroScreen.kt). "financeiro" não é um
-            // domínio de verdade separado -- roteado pra tela do Financeiro.
-            SectorTarget.Domain("gestaofinanceira", "Gestão Financeira", category = "Lançamentos"),
-            // "Relatórios": visões consolidadas/analíticas, não lançamento.
-            SectorTarget.Special("dre", "DRE", category = "Relatórios"),
-            SectorTarget.Special("analises", "Análises cruzadas", category = "Relatórios"),
-            // Livro Caixa do Produtor Rural (Task #58) -- ja existia no site
-            // (Task #49), faltava no app. Mesmo criterio de agrupamento
-            // (relatorio financeiro, mesmo setor de DRE/Analises).
-            SectorTarget.Special("livrocaixa", "Livro Caixa", category = "Relatórios"),
-            // "Compras": aquisição de insumos/serviços de terceiros.
-            // "Importar NF-e" saiu daqui -- virou o botão "Importar XML"
-            // dentro do próprio Financeiro (ver FinanceiroScreen.kt), pedido
-            // do usuário ("crie um botão importar xml e unifique esses dois
-            // módulos").
-            SectorTarget.Domain("pedidos", "Pedidos", category = "Compras"),
-            // Existia como domínio (colunas, cálculo automático de Índice de
-            // Vantagem, listas suspensas próprias já cadastradas no banco --
-            // categorias_cotacao/itens_estoque/entidades_financeiro/
-            // unidades/formas_pgto, todas conferidas), mas nunca tinha
-            // entrado nessa lista suspensa -- só aparecia na tela "Módulos"
-            // (grade completa, ModulosScreen.kt), não no atalho principal do
-            // dia a dia. Pra quem só usa a aba Financeiro, o módulo parecia
-            // não existir -- pedido do usuário ("ainda não foi implementado
-            // o módulo cotações fornecedores"). Corrigido aqui.
-            SectorTarget.Domain("cotacoesfornecedores", "Cotações de Fornecedores", category = "Compras"),
-            SectorTarget.Domain("contratos", "Contratos", category = "Compras"),
-            // "Faturamento": movimento de caixa/cobrança -- mesmo termo já
-            // usado no site pro bloco externo de Cobranças (Task #218).
-            SectorTarget.Domain("caixainterno", "Caixa Interno", category = "Faturamento"),
+            // gestão financeira"). Abre a mesma tela do Financeiro já na
+            // visão "Contas a Pagar" (ver domainId == "gestaofinanceira" em
+            // BRAgroNavHost.kt + startInGestao em FinanceiroScreen.kt).
+            // "gestaofinanceira" não é um domínio de verdade separado.
+            SectorTarget.Domain("gestaofinanceira", "Gestão Financeira"),
+        ),
+    ),
+    // Ex-categoria "Relatórios": visões consolidadas/analíticas, não
+    // lançamento.
+    BottomTab(
+        "relatorios", "Relatórios", Icons.Filled.BarChart,
+        items = listOf(
+            SectorTarget.Special("dre", "DRE"),
+            SectorTarget.Special("analises", "Análises cruzadas"),
+            // Livro Caixa do Produtor Rural (Task #58).
+            SectorTarget.Special("livrocaixa", "Livro Caixa"),
+        ),
+    ),
+    // Ex-categoria "Compras": aquisição de insumos/serviços de terceiros.
+    BottomTab(
+        "compras", "Compras", Icons.Filled.ShoppingCart,
+        items = listOf(
+            SectorTarget.Domain("pedidos", "Pedidos"),
+            // Existia como domínio completo (colunas, cálculo automático de
+            // Índice de Vantagem etc.) mas nunca tinha entrado numa lista
+            // suspensa da barra inferior -- pedido do usuário ("ainda não
+            // foi implementado o módulo cotações fornecedores").
+            SectorTarget.Domain("cotacoesfornecedores", "Cotações de Fornecedores"),
+            SectorTarget.Domain("contratos", "Contratos"),
+        ),
+    ),
+    // Ex-categoria "Faturamento": movimento de caixa/cobrança -- mesmo
+    // termo já usado no site pro bloco externo de Cobranças (Task #218).
+    BottomTab(
+        "faturamento", "Faturamento", Icons.Filled.Payments,
+        items = listOf(
+            SectorTarget.Domain("caixainterno", "Caixa Interno"),
             // Cobranças e NFS-e unificados numa única entrada -- pedido do
             // usuário ("no módulo cobranças e nfse unifique e me um só
-            // módulo"). Abre em Cobranças, com um alternador pra NFS-e
-            // dentro da própria tela (ver DomainListScreen.kt).
-            SectorTarget.Domain("cobrancas", "Cobranças / NFS-e", category = "Faturamento"),
-            // "Patrimônio": ativos cadastrados, não movimento de caixa.
-            // Migrou aqui de Frota/Estoque (que perderam a lista suspensa) --
-            // pedido do usuário ("botão financeiro acrescente na lista
-            // suspensa inventário").
-            SectorTarget.Domain("inventario", "Inventário", category = "Patrimônio"),
+            // módulo").
+            SectorTarget.Domain("cobrancas", "Cobranças / NFS-e"),
+            // Inventário (ex-categoria "Patrimônio") -- pedido do usuário
+            // foi só 4 botões em Financeiro ("lançamentos, relatóros,
+            // compras, faturamento", sem "patrimônio"). Sem uma nova
+            // categoria própria, Inventário entra aqui por afinidade
+            // (ativo/patrimonial, mesmo espírito de Caixa Interno) -- ainda
+            // não confirmado explicitamente com o usuário; fácil de mover
+            // se ele pedir outro lugar.
+            SectorTarget.Domain("inventario", "Inventário"),
         ),
     ),
     // Acesso direto -- pedido do usuário ("botão estoque retire a lista
     // suspensa e deixe botão direto estoque").
     BottomTab("estoque", "Estoque", Icons.Filled.Inventory2, directDomainId = "estoque"),
-    BottomTab(
-        "rh", "RH", Icons.Filled.People,
-        items = listOf(
-            SectorTarget.Domain("rh", "RH"),
-            // Migrou aqui de Frota/Estoque -- pedido do usuário ("botão rh
-            // acrescente na lista suspensa controle interno").
-            SectorTarget.Domain("controleinterno", "Controle Interno"),
-        ),
-    ),
+    // Ex-aba "RH" (2 itens soltos, sem category) -- virou 2 abas de acesso
+    // direto de nível superior, pedido do usuário ("são 2 botões RH e
+    // Controle Interno").
+    BottomTab("rh", "RH", Icons.Filled.People, directDomainId = "rh"),
+    BottomTab("controleinterno", "Controle Interno", Icons.Filled.Security, directDomainId = "controleinterno"),
 )
 
 /** As 3 telas administrativas (Configurações/Base de Dados/Acessos) agora são
@@ -300,6 +312,21 @@ private fun permissionIdFor(nativeId: String): String = when (nativeId) {
 
 private fun isAllowed(allowedModules: Set<String>, nativeId: String): Boolean =
     allowedModules.contains("*") || allowedModules.contains(permissionIdFor(nativeId))
+
+// Resolução de cada aba pra renderização -- pedido do usuário (mockup do
+// setor Estoque): quando uma aba-grupo (Produção/Sanidade/Monitoramento/
+// Painéis/Lançamentos/Relatórios/Compras/Faturamento) sobra com um único
+// item visível depois do filtro de permissão (ex.: conta só com
+// "controledeinsumos", sem "safra" -- a aba Painéis teria só "Controle de
+// Insumos"), ela vira acesso direto com o ÍCONE/RÓTULO DO PRÓPRIO ITEM (não
+// da categoria) -- sem dropdown de 1 linha só. Com 2+ itens, continua
+// dropdown normal (ícone/rótulo da aba). "domainId" só é preenchido quando o
+// item é um SectorTarget.Domain (usado pra destacar a aba selecionada);
+// Special (DRE, Drone etc.) fica null, mesmo critério de antes.
+private sealed class RenderTab {
+    data class Direct(val id: String, val label: String, val icon: ImageVector, val domainId: String?, val onClick: () -> Unit) : RenderTab()
+    data class Group(val tab: BottomTab) : RenderTab()
+}
 
 @Composable
 fun BRAgroBottomBar(
@@ -388,6 +415,30 @@ fun BRAgroBottomBar(
         }
     }
 
+    // Ver comentário completo em RenderTab (topo do arquivo). Resolve cada
+    // BottomTab visível em Direct (toque único navega) ou Group (dropdown).
+    val renderTabs = remember(visibleTabs) {
+        visibleTabs.map { tab ->
+            when {
+                tab.directDomainId != null ->
+                    RenderTab.Direct(tab.id, tab.label, tab.icon, tab.directDomainId) { onNavigateDomain(tab.directDomainId) }
+                tab.items.size == 1 -> {
+                    val item = tab.items[0]
+                    val domainId = (item as? SectorTarget.Domain)?.domainId
+                    RenderTab.Direct(tab.id, sectorItemLabel(item), sectorItemIcon(item, tab.icon), domainId) { openSector(item) }
+                }
+                else -> RenderTab.Group(tab)
+            }
+        }
+    }
+    // Com 1-2 botões sobrando (setor bem enxuto -- ex.: só Frota, ou só RH +
+    // Controle Interno), ícone e rótulo ficam lado a lado (HorizontalNavChip)
+    // em vez de empilhados -- pedido do usuário em 3 mockups seguidos ("como
+    // tem mais espaço coloque ícone e rótulo na mesma linha"). Com 3+ (o
+    // padrão de antes), continua ícone-em-cima-do-rótulo via NavigationBarItem
+    // normal -- layout compacto de sempre, sem essa mudança.
+    val totalButtons = renderTabs.size
+
     // containerColor = "background" (não mais "surface") -- pedido do
     // usuário ("a cor da barra inferior seja verde também"). "surface"
     // passou a ser a cor dos Cards (ver Theme.kt, comentário no
@@ -398,123 +449,158 @@ fun BRAgroBottomBar(
     // verdade (o mesmo da tela toda) -- tonalElevation em 0.dp continua
     // zerado, sem somar nenhuma camada extra por cima.
     NavigationBar(containerColor = MaterialTheme.colorScheme.background, tonalElevation = 0.dp) {
-        visibleTabs.forEach { tab ->
-            val selected = tab.directDomainId == currentDomainId ||
-                tab.items.any { it is SectorTarget.Domain && it.domainId == currentDomainId }
-            // NavigationBarItem só existe como extensão de RowScope (o
-            // escopo que NavigationBar { } dá pro seu conteúdo) -- o Box
-            // aqui dentro (âncora do DropdownMenu) cria um escopo novo
-            // (BoxScope) que esconde esse receiver implícito, por isso o
-            // "this@NavigationBar." explícito abaixo. E o próprio
-            // NavigationBarItem aplica ".weight(1f)" NELE MESMO, internamente
-            // -- como agora ele é neto do Row (não filho direto, por causa
-            // do Box no meio), esse weight interno é ignorado e a aba fica
-            // "encolhida" (só a 1ª aba parecia sobrar espaço pra aparecer
-            // inteira). Corrige pondo o weight(1f) direto no Box, que
-            // continua sendo filho direto do Row.
-            Box(modifier = Modifier.weight(1f)) {
-                this@NavigationBar.NavigationBarItem(
-                    selected = selected,
-                    onClick = {
-                        if (tab.directDomainId != null) onNavigateDomain(tab.directDomainId)
-                        else {
-                            // Fecha se já estava aberto (toque de novo no
-                            // mesmo botão), senão abre este e reseta o
-                            // acordeão de categoria (ver comentário acima).
-                            openTabId = if (openTabId == tab.id) null else tab.id
-                            expandedCategory = null
-                        }
-                    },
-                    icon = { Icon(tab.icon, contentDescription = tab.label, modifier = Modifier.size(22.dp)) },
-                    // maxLines/softWrap + labelSmall: rótulos como
-                    // "Financeiro" quebravam em 2 linhas ou saíam cortados
-                    // com o tamanho padrão -- pedido do usuário ("realoque
-                    // os espaços pra escrever a palavra Financeiro completa
-                    // em uma linha").
-                    label = { Text(tab.label, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) },
-                    colors = BottomNavColors,
-                )
-                if (tab.directDomainId == null) {
-                    // Fundo do menu suspenso = MESMO verde forte da barra
-                    // inferior/fundo do app -- pedido do usuário ("coloque
-                    // nas listas suspensas... o mesmo verde do app"). O
-                    // DropdownMenu do Material3 1.2.1 não expõe um parâmetro
-                    // de cor direto (arriscado assumir uma API não conferida
-                    // -- ver lição do bug ExposedDropdownMenu), então em vez
-                    // disso sobrescrevemos "colorScheme.surface" (a cor que
-                    // ele lê por dentro) só dentro deste escopo, via
-                    // MaterialTheme(colorScheme = ...) -- API estável desde
-                    // sempre no Material3, sem risco de incompatibilidade.
-                    MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(surface = MaterialTheme.colorScheme.background)) {
-                    DropdownMenu(expanded = openTabId == tab.id, onDismissRequest = { openTabId = null }) {
-                        // Categorias como botões (acordeão) -- pedido do
-                        // usuário: "coloque os títulos como botões e dentro
-                        // dos botões as listas suspensas correspondente a
-                        // cada categoria de títulos" (antes era um texto de
-                        // cabeçalho fixo com tudo já expandido embaixo, ver
-                        // git history). Agrupa os itens em blocos contíguos
-                        // por "category" (já vêm agrupados na declaração de
-                        // BOTTOM_TABS acima) -- "category" null (nenhuma aba
-                        // usa isso hoje, mas o modo continua suportado)
-                        // renderiza os itens direto, sem botão nenhum.
-                        val groups = mutableListOf<Pair<String?, MutableList<SectorTarget>>>()
-                        tab.items.forEach { item ->
-                            val category = when (item) {
-                                is SectorTarget.Domain -> item.category
-                                is SectorTarget.Special -> item.category
+        renderTabs.forEach { rt ->
+            when (rt) {
+                // Acesso direto (aba directDomainId de sempre -- Frota/
+                // Estoque/RH/Controle Interno -- OU aba-grupo colapsada por
+                // sobrar 1 item só, ver RenderTab acima).
+                is RenderTab.Direct -> {
+                    val selected = rt.domainId != null && rt.domainId == currentDomainId
+                    if (totalButtons <= 2) {
+                        // Ícone + rótulo na mesma linha, pedido do usuário em
+                        // 3 mockups seguidos ("como tem mais espaço coloque
+                        // ícone e rótulo na mesma linha"). 1 botão só (ex.:
+                        // Frota sozinha) fica CENTRALIZADO em vez de esticado
+                        // full-width feito o NavigationBarItem padrão faria;
+                        // com 2 (ex.: RH + Controle Interno, ou Estoque +
+                        // Controle de Insumos), cada um ocupa metade via
+                        // weight(1f), igual às demais abas.
+                        if (totalButtons == 1) {
+                            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                HorizontalNavChip(icon = rt.icon, label = rt.label, selected = selected, onClick = rt.onClick)
                             }
-                            val lastGroup = groups.lastOrNull()
-                            if (lastGroup != null && lastGroup.first == category) lastGroup.second.add(item)
-                            else groups.add(category to mutableListOf(item))
-                        }
-                        groups.forEachIndexed { index, (category, items) ->
-                            if (category == null) {
-                                items.forEach { item -> SectorMenuItem(item, tab.icon, onClick = { openSector(item) }) }
-                            } else {
-                                if (index > 0) {
-                                    HorizontalDivider(
-                                        modifier = Modifier.padding(vertical = 4.dp),
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                                    )
-                                }
-                                val expanded = expandedCategory == category
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { expandedCategory = if (expanded) null else category }
-                                        .background(
-                                            MaterialTheme.colorScheme.onSurface.copy(alpha = if (expanded) 0.10f else 0.05f),
-                                            RoundedCornerShape(8.dp),
-                                        )
-                                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                                ) {
-                                    Icon(
-                                        CATEGORY_ICONS[category] ?: tab.icon,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp).padding(end = 8.dp),
-                                        tint = MaterialTheme.colorScheme.onSurface,
-                                    )
-                                    Text(
-                                        category.uppercase(),
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                    Icon(
-                                        if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                                    )
-                                }
-                                if (expanded) {
-                                    items.forEach { item -> SectorMenuItem(item, tab.icon, onClick = { openSector(item) }) }
-                                }
+                        } else {
+                            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                HorizontalNavChip(icon = rt.icon, label = rt.label, selected = selected, onClick = rt.onClick)
                             }
+                        }
+                    } else {
+                        // 3+ botões: layout compacto de sempre (ícone em
+                        // cima do rótulo), sem essa mudança.
+                        Box(modifier = Modifier.weight(1f)) {
+                            this@NavigationBar.NavigationBarItem(
+                                selected = selected,
+                                onClick = rt.onClick,
+                                icon = { Icon(rt.icon, contentDescription = rt.label, modifier = Modifier.size(22.dp)) },
+                                label = { Text(rt.label, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) },
+                                colors = BottomNavColors,
+                            )
                         }
                     }
+                }
+                // Aba-grupo com 2+ itens visíveis -- dropdown normal.
+                is RenderTab.Group -> {
+                    val tab = rt.tab
+                    val selected = tab.items.any { it is SectorTarget.Domain && it.domainId == currentDomainId }
+                    // NavigationBarItem só existe como extensão de RowScope (o
+                    // escopo que NavigationBar { } dá pro seu conteúdo) -- o Box
+                    // aqui dentro (âncora do DropdownMenu) cria um escopo novo
+                    // (BoxScope) que esconde esse receiver implícito, por isso o
+                    // "this@NavigationBar." explícito abaixo. E o próprio
+                    // NavigationBarItem aplica ".weight(1f)" NELE MESMO, internamente
+                    // -- como agora ele é neto do Row (não filho direto, por causa
+                    // do Box no meio), esse weight interno é ignorado e a aba fica
+                    // "encolhida" (só a 1ª aba parecia sobrar espaço pra aparecer
+                    // inteira). Corrige pondo o weight(1f) direto no Box, que
+                    // continua sendo filho direto do Row.
+                    Box(modifier = Modifier.weight(1f)) {
+                        this@NavigationBar.NavigationBarItem(
+                            selected = selected,
+                            onClick = {
+                                // Fecha se já estava aberto (toque de novo no
+                                // mesmo botão), senão abre este e reseta o
+                                // acordeão de categoria (ver comentário acima).
+                                openTabId = if (openTabId == tab.id) null else tab.id
+                                expandedCategory = null
+                            },
+                            icon = { Icon(tab.icon, contentDescription = tab.label, modifier = Modifier.size(22.dp)) },
+                            // maxLines/softWrap + labelSmall: rótulos como
+                            // "Financeiro" quebravam em 2 linhas ou saíam cortados
+                            // com o tamanho padrão -- pedido do usuário ("realoque
+                            // os espaços pra escrever a palavra Financeiro completa
+                            // em uma linha").
+                            label = { Text(tab.label, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) },
+                            colors = BottomNavColors,
+                        )
+                        // Fundo do menu suspenso = MESMO verde forte da barra
+                        // inferior/fundo do app -- pedido do usuário ("coloque
+                        // nas listas suspensas... o mesmo verde do app"). O
+                        // DropdownMenu do Material3 1.2.1 não expõe um parâmetro
+                        // de cor direto (arriscado assumir uma API não conferida
+                        // -- ver lição do bug ExposedDropdownMenu), então em vez
+                        // disso sobrescrevemos "colorScheme.surface" (a cor que
+                        // ele lê por dentro) só dentro deste escopo, via
+                        // MaterialTheme(colorScheme = ...) -- API estável desde
+                        // sempre no Material3, sem risco de incompatibilidade.
+                        MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(surface = MaterialTheme.colorScheme.background)) {
+                        DropdownMenu(expanded = openTabId == tab.id, onDismissRequest = { openTabId = null }) {
+                            // Cada aba-grupo agora É a antiga categoria (ver
+                            // comentário no topo de BOTTOM_TABS) -- os itens não
+                            // carregam mais "category" nenhuma, então "groups"
+                            // abaixo sempre produz um único grupo (category ==
+                            // null) e cai direto na lista plana. O agrupamento
+                            // por "category"/acordeão continua existindo pra não
+                            // arriscar mexer no que já funciona, só que inerte
+                            // por enquanto (nenhuma aba usa "category" hoje).
+                            val groups = mutableListOf<Pair<String?, MutableList<SectorTarget>>>()
+                            tab.items.forEach { item ->
+                                val category = when (item) {
+                                    is SectorTarget.Domain -> item.category
+                                    is SectorTarget.Special -> item.category
+                                }
+                                val lastGroup = groups.lastOrNull()
+                                if (lastGroup != null && lastGroup.first == category) lastGroup.second.add(item)
+                                else groups.add(category to mutableListOf(item))
+                            }
+                            groups.forEachIndexed { index, (category, items) ->
+                                if (category == null) {
+                                    items.forEach { item -> SectorMenuItem(item, tab.icon, onClick = { openSector(item) }) }
+                                } else {
+                                    if (index > 0) {
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(vertical = 4.dp),
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                                        )
+                                    }
+                                    val expanded = expandedCategory == category
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable { expandedCategory = if (expanded) null else category }
+                                            .background(
+                                                MaterialTheme.colorScheme.onSurface.copy(alpha = if (expanded) 0.10f else 0.05f),
+                                                RoundedCornerShape(8.dp),
+                                            )
+                                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                                    ) {
+                                        Icon(
+                                            CATEGORY_ICONS[category] ?: tab.icon,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp).padding(end = 8.dp),
+                                            tint = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                        Text(
+                                            category.uppercase(),
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                        Icon(
+                                            if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                        )
+                                    }
+                                    if (expanded) {
+                                        items.forEach { item -> SectorMenuItem(item, tab.icon, onClick = { openSector(item) }) }
+                                    }
+                                }
+                            }
+                        }
+                        }
                     }
                 }
             }
@@ -565,6 +651,60 @@ fun BRAgroBottomBar(
     }
 }
 
+// Botão de acesso direto com ícone e rótulo NA MESMA LINHA -- pedido do
+// usuário em 3 mockups seguidos, sobre setores com pouca coisa na barra
+// ("como tem mais espaço coloque ícone e rótulo na mesma linha"): usado só
+// quando sobram 1-2 botões no total (ver totalButtons/RenderTab.Direct
+// acima), nunca no caso normal de 3+ abas (que continua NavigationBarItem
+// padrão, ícone em cima do rótulo). Reaproveita o mesmo esquema de cor
+// preto/branco (onSurface) + pílula de fundo translúcida quando selecionado
+// já usado no botão de categoria do dropdown (Row com .background(...,
+// RoundedCornerShape) alguns parágrafos abaixo).
+@Composable
+private fun HorizontalNavChip(icon: ImageVector, label: String, selected: Boolean, onClick: () -> Unit) {
+    val color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .background(
+                MaterialTheme.colorScheme.onSurface.copy(alpha = if (selected) 0.12f else 0f),
+                RoundedCornerShape(10.dp),
+            )
+            .padding(horizontal = 18.dp, vertical = 10.dp),
+    ) {
+        Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(20.dp).padding(end = 8.dp))
+        Text(label, color = color, style = MaterialTheme.typography.labelLarge, maxLines = 1, softWrap = false)
+    }
+}
+
+// Rótulo/ícone de um item de setor -- extraído pra ser reaproveitado tanto
+// pelo SectorMenuItem (dentro de um dropdown) quanto pela resolução de
+// RenderTab.Direct (quando uma aba-grupo sobra com um único item visível
+// após o filtro de permissão, ver comentário em RenderTab mais abaixo).
+private fun sectorItemLabel(item: SectorTarget): String = when (item) {
+    is SectorTarget.Domain -> item.label
+    is SectorTarget.Special -> item.label
+}
+
+private fun sectorItemIcon(item: SectorTarget, fallback: ImageVector): ImageVector = when (item) {
+    is SectorTarget.Domain -> domainIcon(item.domainId)
+    // Antes cada "Special" caía no ícone da aba pai (fallback) -- DRE e
+    // Análises cruzadas ficavam iguais entre si e iguais ao item
+    // "Financeiro"/"Lançamentos" -- pedido do usuário ("troque icone dre
+    // e icone analises cruzadas").
+    is SectorTarget.Special -> when (item.routeKey) {
+        "dre" -> Icons.Filled.Assessment
+        "analises" -> Icons.Filled.Analytics
+        "livrocaixa" -> Icons.AutoMirrored.Filled.MenuBook
+        "drone" -> Icons.Filled.FlightTakeoff
+        "fieldview" -> Icons.Filled.Map
+        "controleinsumos" -> Icons.Filled.AccountTree
+        "operacoes" -> Icons.Filled.Timeline
+        else -> fallback
+    }
+}
+
 // Item de um dropdown de setor (rótulo + ícone) -- extraído do corpo de
 // BRAgroBottomBar pra ser reaproveitado tanto por itens SEM categoria quanto
 // pelos itens DENTRO de uma categoria expandida (ver comentário no botão de
@@ -572,27 +712,8 @@ fun BRAgroBottomBar(
 // antes da reestruturação em acordeão.
 @Composable
 private fun SectorMenuItem(item: SectorTarget, tabIcon: ImageVector, onClick: () -> Unit) {
-    val label = when (item) {
-        is SectorTarget.Domain -> item.label
-        is SectorTarget.Special -> item.label
-    }
-    val icon = when (item) {
-        is SectorTarget.Domain -> domainIcon(item.domainId)
-        // Antes cada "Special" caía no ícone da aba pai (tabIcon) -- DRE e
-        // Análises cruzadas ficavam iguais entre si e iguais ao item
-        // "Financeiro"/"Lançamentos" -- pedido do usuário ("troque icone dre
-        // e icone analises cruzadas").
-        is SectorTarget.Special -> when (item.routeKey) {
-            "dre" -> Icons.Filled.Assessment
-            "analises" -> Icons.Filled.Analytics
-            "livrocaixa" -> Icons.AutoMirrored.Filled.MenuBook
-            "drone" -> Icons.Filled.FlightTakeoff
-            "fieldview" -> Icons.Filled.Map
-            "controleinsumos" -> Icons.Filled.AccountTree
-            "operacoes" -> Icons.Filled.Timeline
-            else -> tabIcon
-        }
-    }
+    val label = sectorItemLabel(item)
+    val icon = sectorItemIcon(item, tabIcon)
     // Preto/branco (onSurface) em vez de verde -- pedido do usuário ("na
     // barra inferior dos botões, lista suspensa fontes módulos
     // preto/branco"), mesmo critério já aplicado aos blocos individuais

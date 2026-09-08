@@ -18,6 +18,37 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.61] -- 2026-09-08
+
+Reestruturação da barra inferior a partir de 5 mockups aprovados pelo
+usuário (um por setor: Safra, Financeiro, RH, Frota, Estoque), todos
+seguindo o mesmo princípio: "achatar" as antigas categorias em abas de
+nível superior, em vez de dropdown-dentro-de-dropdown.
+
+- **Abas achatadas**: as antigas abas "Safra" (dropdown com 4 categorias:
+  Produção/Sanidade/Monitoramento/Painéis) e "Financeiro" (dropdown com 5
+  categorias: Lançamentos/Relatórios/Compras/Faturamento/Patrimônio) foram
+  eliminadas -- cada categoria virou sua própria aba de nível superior na
+  barra inferior. A antiga aba "RH" (2 itens soltos: RH + Controle Interno)
+  também virou 2 abas de acesso direto separadas. Patrimônio deixou de
+  existir como categoria própria; seu único item (Inventário) entrou na
+  aba Faturamento (ajuste não confirmado explicitamente com o usuário --
+  fácil de mover se pedir outro lugar).
+- **Colapso dinâmico pra acesso direto**: uma aba-grupo (ex.: Painéis, com
+  Controle de Insumos + Operações) que sobra com um único item visível
+  após o filtro de permissão da conta vira um botão de acesso direto
+  usando o ÍCONE/RÓTULO DO PRÓPRIO ITEM, em vez de aparecer como dropdown
+  de 1 linha só sob o ícone genérico da categoria (ex.: conta só com
+  Controle de Insumos, sem Safra, mostra direto "Controle de Insumos").
+- **Layout ícone+rótulo lado a lado**: quando sobram só 1 ou 2 botões no
+  total na barra (setor bem enxuto -- ex.: só Frota; ou RH + Controle
+  Interno; ou Estoque + Controle de Insumos), cada botão passa a mostrar
+  ícone e rótulo na MESMA linha (chip com pílula de fundo quando
+  selecionado), em vez do ícone empilhado sobre o rótulo. Com 1 botão só,
+  fica centralizado; com 2, cada um ocupa metade da largura. Com 3+ botões
+  (caso normal), o layout compacto de sempre (ícone em cima) é mantido sem
+  mudança.
+
 ## [1.2.60] -- 2026-09-08
 
 Ajuste do cabeçalho/barra inferior a partir do mockup aprovado pelo usuário
