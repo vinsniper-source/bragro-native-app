@@ -959,6 +959,11 @@ fun HomeScreen(
                         }
                     }
                     } // fecha Row de rolagem horizontal do cluster de ícones
+                } // fecha Row externa (logo + cluster de ícones) -- faltava
+                // este fechamento desde a v1.2.60 (bug real, nunca pego por
+                // build nenhum até agora): só a Row interna de rolagem
+                // horizontal estava sendo fechada, deixando a Row externa
+                // (logo + Spacer + cluster) aberta até o fim do topBar.
                 // Fazenda/Safra/Cultura saíram daqui -- pedido do usuário
                 // ("transfira para baixo do slogan os ícones fazenda, safra
                 // cultura"): agora ficam dentro do item "greeting" da
