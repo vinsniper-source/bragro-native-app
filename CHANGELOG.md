@@ -20,20 +20,18 @@ o que mudou (o CI não faz isso sozinho).
 
 ## [1.2.57] -- 2026-09-08
 
-- **Novo build da filtragem de barra inferior por acesso (1.2.56)**: o
-  usuário reportou que o filtro não pegou depois do primeiro push. Revisão
-  do código (BottomNavBar.kt/BRAgroNavHost.kt/ConfigRepository.kt) não
-  encontrou nenhum bug -- a lógica de `isAllowed()`/`permissionIdFor()`
-  confere corretamente com os ids de módulo do site (lib/modules.ts). A
-  causa mais provável é uma das duas: (1) o app só relê os módulos
-  liberados no login ou em "Sincronizar agora" -- se a permissão do
-  funcionário foi alterada em Acessos DEPOIS dele já estar logado no
-  aparelho, a barra continua com a lista antiga até o próximo login/sync;
-  (2) o build 1.2.56 pode não ter chegado a ser instalado de fato no
-  aparelho de teste. Só o bump de versão neste release, sem mudança de
-  código -- serve pra confirmar com certeza que o aparelho pegou o binário
-  novo (se após instalar a versão em Configurações > Sobre ainda mostrar
-  1.2.56 ou anterior, a instalação não pegou o APK certo).
+- **Causa real encontrada: 1.2.56 nunca chegou a compilar**. O usuário
+  reportou que o filtro de barra inferior por acesso "não deu certo" --
+  rodar `gradlew assembleRelease` revelou um erro de compilação em
+  BottomNavBar.kt (linha do cabeçalho de categoria do dropdown de Safra):
+  `Modifier.padding(horizontal = 16.dp, top = 6.dp, bottom = 2.dp)` mistura
+  parâmetros de duas sobrecargas diferentes de `padding()`
+  (`padding(horizontal, vertical)` e `padding(start, top, end, bottom)`),
+  combinação que não existe e nunca compilou. Corrigido para
+  `padding(start = 16.dp, top = 6.dp, end = 16.dp, bottom = 2.dp)`. Ou
+  seja: a lógica de filtragem em si (isAllowed/permissionIdFor) sempre
+  esteve correta -- o problema é que NENHUM apk com essa mudança chegou a
+  existir até agora, então "não deu certo" porque nunca rodou de verdade.
 
 ## [1.2.56] -- 2026-09-07
 

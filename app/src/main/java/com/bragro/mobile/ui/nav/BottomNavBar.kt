@@ -386,7 +386,7 @@ fun BRAgroBottomBar(
                                     category.uppercase(),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
-                                    modifier = Modifier.padding(horizontal = 16.dp, top = 6.dp, bottom = 2.dp),
+                                    modifier = Modifier.padding(start = 16.dp, top = 6.dp, end = 16.dp, bottom = 2.dp),
                                 )
                             }
                             lastCategory = category
