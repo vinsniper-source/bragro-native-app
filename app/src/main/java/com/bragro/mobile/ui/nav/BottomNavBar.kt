@@ -415,19 +415,42 @@ fun BRAgroBottomBar(
         }
     }
 
+    // Dono/OWNER: barra fixa de 6 botões (Safra, Financeiro, Frota, Estoque,
+    // RH, Módulos) -- pedido do usuário (mockup da imagem 2: "coloque os
+    // seguintes botões: safra, financeiro, frota, estoque, rh e módulos").
+    // Sem isso, o dono (allowedModules = "*") acabaria vendo as 12 abas
+    // achatadas de BOTTOM_TABS inteiras (achatamento pensado pra contas de
+    // setor limitado, não pra quem enxerga tudo) -- ficaria apertado demais.
+    // Cada botão navega DIRETO pro domínio do setor (não abre dropdown de
+    // categorias); "Módulos" continua sendo o bloco renderizado à parte,
+    // logo abaixo deste NavigationBar, com Configurações/Base de Dados/
+    // Acessos (ver menuSistemaLinks acima).
+    val ownerRenderTabs = remember {
+        listOf(
+            RenderTab.Direct("safra", "Safra", Icons.Filled.Agriculture, "safra") { onNavigateDomain("safra") },
+            RenderTab.Direct("financeiro", "Financeiro", Icons.Filled.Receipt, "financeiro") { onNavigateDomain("financeiro") },
+            RenderTab.Direct("frota", "Frota", Icons.Filled.DirectionsCar, "frota") { onNavigateDomain("frota") },
+            RenderTab.Direct("estoque", "Estoque", Icons.Filled.Inventory2, "estoque") { onNavigateDomain("estoque") },
+            RenderTab.Direct("rh", "RH", Icons.Filled.People, "rh") { onNavigateDomain("rh") },
+        )
+    }
     // Ver comentário completo em RenderTab (topo do arquivo). Resolve cada
     // BottomTab visível em Direct (toque único navega) ou Group (dropdown).
-    val renderTabs = remember(visibleTabs) {
-        visibleTabs.map { tab ->
-            when {
-                tab.directDomainId != null ->
-                    RenderTab.Direct(tab.id, tab.label, tab.icon, tab.directDomainId) { onNavigateDomain(tab.directDomainId) }
-                tab.items.size == 1 -> {
-                    val item = tab.items[0]
-                    val domainId = (item as? SectorTarget.Domain)?.domainId
-                    RenderTab.Direct(tab.id, sectorItemLabel(item), sectorItemIcon(item, tab.icon), domainId) { openSector(item) }
+    val renderTabs = remember(visibleTabs, isOwner) {
+        if (isOwner) {
+            ownerRenderTabs
+        } else {
+            visibleTabs.map { tab ->
+                when {
+                    tab.directDomainId != null ->
+                        RenderTab.Direct(tab.id, tab.label, tab.icon, tab.directDomainId) { onNavigateDomain(tab.directDomainId) }
+                    tab.items.size == 1 -> {
+                        val item = tab.items[0]
+                        val domainId = (item as? SectorTarget.Domain)?.domainId
+                        RenderTab.Direct(tab.id, sectorItemLabel(item), sectorItemIcon(item, tab.icon), domainId) { openSector(item) }
+                    }
+                    else -> RenderTab.Group(tab)
                 }
-                else -> RenderTab.Group(tab)
             }
         }
     }

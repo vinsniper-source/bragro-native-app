@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
@@ -82,6 +83,7 @@ import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -761,11 +763,13 @@ fun HomeScreen(
                                     text = { Text("Instalar no iPhone/iPad") },
                                     onClick = { configMenuOpen = false; iosStepsOpen = true },
                                 )
-                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                                DropdownMenuItem(
-                                    text = { Text("Mais opções", color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                                    onClick = { configMenuOpen = false; onOpenSettings() },
-                                )
+                                // "Mais opções" removido -- pedido do usuário
+                                // (mockup 3: "em configurações exclua o
+                                // módulo da lista suspensa mais opções").
+                                // Dropdown fica só com as 2 opções de
+                                // instalação; a tela completa de
+                                // Configurações continua acessível pelo dono
+                                // via "Módulos" na barra inferior.
                             }
                         }
                         if (iosStepsOpen) {
@@ -917,32 +921,48 @@ fun HomeScreen(
                                 )
                             }
                         }
-                    } else if (canManage) {
-                        // Sem círculo/borda -- pedido do usuário ("retire o
-                        // círculo em volta do ícone da logo do cliente").
-                        // Sem tint próprio -- pedido do usuário ("logo
-                        // cliente acompanhar as cores dos outros ícones do
-                        // cabeçalho"): antes usava BrYellow pra se destacar,
-                        // agora usa a mesma cor padrão (LocalContentColor)
-                        // dos demais ícones do TopAppBar (Backup,
-                        // notificações, tema, conta).
-                        IconButton(
-                            enabled = !uploadingLogo,
-                            onClick = { logoPickerLauncher.launch("image/*") },
-                            modifier = Modifier.padding(end = 8.dp).size(32.dp),
+                    } else {
+                        // Placeholder SEMPRE visível -- pedido do usuário
+                        // ("o local para colocar a logo do cliente não
+                        // aparece, force e reposicione para aparecer"):
+                        // antes, quem não podia gerenciar (canManage=false)
+                        // e não tinha logo cadastrada caía num Box vazio
+                        // (sem ícone, sem borda), ficando literalmente
+                        // invisível no cabeçalho -- exatamente o bug
+                        // relatado. Agora todo mundo vê um círculo com
+                        // borda (mesma cor dos outros ícones do TopAppBar)
+                        // marcando o lugar reservado da logo; só quem pode
+                        // gerenciar (canManage) consegue tocar pra
+                        // cadastrar uma.
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 8.dp)
+                                .size(32.dp)
+                                .then(
+                                    if (canManage) {
+                                        Modifier.clickable(enabled = !uploadingLogo) { logoPickerLauncher.launch("image/*") }
+                                    } else {
+                                        Modifier
+                                    },
+                                ),
+                            contentAlignment = Alignment.Center,
                         ) {
                             if (uploadingLogo) {
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             } else {
-                                Icon(
-                                    Icons.Filled.AddPhotoAlternate,
-                                    contentDescription = "Adicionar logo da empresa",
-                                    modifier = Modifier.size(20.dp),
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .border(1.dp, LocalContentColor.current.copy(alpha = 0.5f), CircleShape),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        Icons.Filled.AddPhotoAlternate,
+                                        contentDescription = "Adicionar logo da empresa",
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                }
                             }
-                        }
-                        } else {
-                            Box(modifier = Modifier.padding(end = 8.dp).size(32.dp))
                         }
                     }
                     } // fecha Row de rolagem horizontal do cluster de ícones

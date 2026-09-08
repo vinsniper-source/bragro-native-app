@@ -18,6 +18,30 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.62] -- 2026-09-08
+
+3 correções a partir de mockups aprovados pelo usuário (3 imagens: cabeçalho
+claro, barra inferior do dono, dropdown de Configurações).
+
+- **Logo do cliente sempre visível no cabeçalho**: corrigido bug real --
+  quem não podia gerenciar a organização (`canManage=false`) e ainda não
+  tinha logo cadastrada via um `Box` totalmente vazio (sem ícone, sem
+  borda) no lugar reservado da logo, ficando literalmente invisível no
+  cabeçalho. Agora esse lugar sempre mostra um círculo com borda (mesma
+  cor dos outros ícones do TopAppBar); só quem pode gerenciar continua
+  conseguindo tocar pra cadastrar uma logo.
+- **Barra inferior do dono/OWNER fixa em 6 botões**: Safra, Financeiro,
+  Frota, Estoque, RH e Módulos, cada um com acesso direto ao domínio
+  (sem dropdown). Antes, o achatamento das categorias em abas de nível
+  superior (v1.2.61) valia pra todo mundo, inclusive o dono -- que via as
+  12 abas inteiras na barra, apertado demais. Contas de setor limitado
+  continuam com o comportamento de v1.2.61 (achatado + colapso dinâmico +
+  layout horizontal).
+- **Removido "Mais opções" do dropdown de Configurações no cabeçalho**:
+  fica só com "Baixar para Android" e "Instalar no iPhone/iPad". A tela
+  completa de Configurações continua acessível pelo dono via "Módulos"
+  na barra inferior.
+
 ## [1.2.61] -- 2026-09-08
 
 Reestruturação da barra inferior a partir de 5 mockups aprovados pelo
