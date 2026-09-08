@@ -262,6 +262,32 @@ data class HomeData(
     // "admin restringiu e não sobrou nenhum bloco" -- null = mostra tudo
     // (mesmo critério do backend), lista vazia de verdade = esconde tudo.
     val allowedWidgets: List<String>? = null,
+    // Indicador "barra segmentada por categoria" por setor -- pedido do
+    // usuário ("replique o que ainda falta da plataforma no native"),
+    // mesmo formato do getDashboardBreakdowns() do backend (ver
+    // dashboard-breakdown.ts). null quando o backend antigo ainda não manda
+    // esse campo (cache offline); cada chave dentro pode ser null quando o
+    // setor não teve lançamento nenhum na janela.
+    val breakdowns: HomeBreakdownsData? = null,
+)
+
+@Serializable
+data class HomeBreakdownItemData(val categoria: String, val valor: Double)
+
+@Serializable
+data class HomeBreakdownData(
+    val valorLabel: String,
+    val valor: Double? = null,
+    val items: List<HomeBreakdownItemData> = emptyList(),
+)
+
+@Serializable
+data class HomeBreakdownsData(
+    val financeiro: HomeBreakdownData? = null,
+    val estoque: HomeBreakdownData? = null,
+    val rh: HomeBreakdownData? = null,
+    val safra: HomeBreakdownData? = null,
+    val frota: HomeBreakdownData? = null,
 )
 
 @Serializable
@@ -506,6 +532,10 @@ data class SecurityRequest(
     val modulosPermitidos: List<String>? = null,
     val membershipId: String? = null,
     val ativo: Boolean? = null,
+    // "update_my_inicio_widgets" -- self-service, lista de ids "inicio.*" que
+    // o próprio usuário logado quer ver na Início (ver comentário no case
+    // correspondente em api/mobile/security/route.ts).
+    val inicioWidgets: List<String>? = null,
 )
 
 @Serializable

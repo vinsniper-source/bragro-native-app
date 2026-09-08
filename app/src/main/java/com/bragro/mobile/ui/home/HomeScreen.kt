@@ -1037,6 +1037,37 @@ fun HomeScreen(
             if (data.hasWidget("inicio.kpis")) {
             item(key = "kpis") { KpiGrid(data) }
             }
+            // Indicador "barra segmentada por categoria" por setor -- réplica do
+            // dashboard web (dashboard-breakdown.ts/category-breakdown-card.tsx),
+            // pedido do usuário ("replique o que ainda falta da plataforma no
+            // native"). Cada card só aparece quando o widget está liberado E o
+            // backend retornou dados pro setor (não null -- setor sem nenhum
+            // lançamento na janela de 30 dias).
+            data.breakdowns?.financeiro?.let { b ->
+                if (data.hasWidget("inicio.breakdown.financeiro")) {
+                    item(key = "breakdown-financeiro") { CategoryBreakdownCard(titulo = "Financeiro", data = b) }
+                }
+            }
+            data.breakdowns?.estoque?.let { b ->
+                if (data.hasWidget("inicio.breakdown.estoque")) {
+                    item(key = "breakdown-estoque") { CategoryBreakdownCard(titulo = "Estoque", data = b) }
+                }
+            }
+            data.breakdowns?.rh?.let { b ->
+                if (data.hasWidget("inicio.breakdown.rh")) {
+                    item(key = "breakdown-rh") { CategoryBreakdownCard(titulo = "RH", data = b) }
+                }
+            }
+            data.breakdowns?.safra?.let { b ->
+                if (data.hasWidget("inicio.breakdown.safra")) {
+                    item(key = "breakdown-safra") { CategoryBreakdownCard(titulo = "Safra", data = b) }
+                }
+            }
+            data.breakdowns?.frota?.let { b ->
+                if (data.hasWidget("inicio.breakdown.frota")) {
+                    item(key = "breakdown-frota") { CategoryBreakdownCard(titulo = "Frota", data = b) }
+                }
+            }
             // Clima ao lado de Câmbio, Cotações ao lado de Destaques -- cada
             // par em blocos separados (Card) lado a lado, pedido do usuário
             // ("coloque câmbio ao lado de clima separados por blocos"). Cada

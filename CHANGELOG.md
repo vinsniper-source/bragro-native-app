@@ -18,6 +18,26 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.58] -- 2026-09-08
+
+Réplica no app nativo de duas features que já existiam só no site (pedido do
+usuário: "replique o que ainda falta da plataforma no native").
+
+- **Indicador "barra segmentada por categoria" por setor na Início**
+  (Financeiro/Estoque/RH/Safra/Frota) -- mesmo indicador que já existia só
+  no bloco Custo médio/ha do Canvas, agora replicado pra cada setor que tem
+  KPI na Início. Novo endpoint retorna os dados (`getDashboardBreakdowns`),
+  novo card `CategoryBreakdownCard.kt`, gated pelos widgets
+  `inicio.breakdown.<setor>` (Acessos).
+- **"Personalizar Início" self-service pro próprio OWNER em Acessos** -- a
+  própria linha do OWNER na Equipe agora tem um ícone dedicado (engrenagem)
+  que abre um diálogo só com os blocos "inicio.*", sem o form genérico de
+  papel/módulos (que nunca deveria alterar o próprio papel de OWNER).
+  Mesma lógica self-service do site (edita sempre o PRÓPRIO membership,
+  nunca outro id).
+- Checklist de módulos "Início" em Acessos ganhou os 5 novos ids de
+  indicador, pra administradores poderem liberar/restringir por membro.
+
 ## [1.2.57] -- 2026-09-08
 
 - **Causa real encontrada: 1.2.56 nunca chegou a compilar**. O usuário

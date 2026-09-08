@@ -20,9 +20,12 @@ import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Settings
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.appFieldColors
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -96,6 +99,14 @@ private val INICIO_WIDGETS = listOf(
     "inicio.cambio" to "Câmbio (Dólar/Euro)",
     "inicio.cotacoes" to "Cotações agrícolas (Grão Direto)",
     "inicio.destaques" to "Destaques",
+    // Indicador "barra segmentada por categoria" por setor -- adicionados no
+    // site em lib/permissions.ts (Task #516/#519, "replique o que ainda
+    // falta da plataforma no native"). Mesmos ids/rótulos.
+    "inicio.breakdown.financeiro" to "Indicador: Gastos por categoria (Financeiro)",
+    "inicio.breakdown.estoque" to "Indicador: Gastos por categoria (Estoque)",
+    "inicio.breakdown.rh" to "Indicador: Gastos por categoria (RH)",
+    "inicio.breakdown.safra" to "Indicador: Gastos por categoria (Safra)",
+    "inicio.breakdown.frota" to "Indicador: Gastos por categoria (Frota)",
 )
 
 class SegurancaViewModel(app: Application) : AndroidViewModel(app) {
@@ -145,6 +156,20 @@ class SegurancaViewModel(app: Application) : AndroidViewModel(app) {
             result.onSuccess { load() }.onFailure { errorMessage.value = it.message }
         }
     }
+
+    // Réplica mobile do "Personalizar Início" self-service (site: ícone na
+    // própria linha do OWNER em seguranca-client.tsx, ver comentário em
+    // update_my_inicio_widgets no api/mobile/security/route.ts). Self-
+    // service de verdade: SEMPRE edita o próprio membership do usuário
+    // logado (o backend usa getAuthContext(), não o membershipId enviado).
+    fun updateMyInicioWidgets(widgets: List<String>, onDone: (Boolean, String?) -> Unit) {
+        busy.value = true
+        viewModelScope.launch {
+            val result = repo.run("update_my_inicio_widgets", inicioWidgets = widgets)
+            busy.value = false
+            result.onSuccess { load(); onDone(true, null) }.onFailure { onDone(false, it.message) }
+        }
+    }
 }
 
 // Réplica 100% nativa de Acessos/Segurança (src/app/(app)/seguranca/) --
@@ -188,6 +213,11 @@ fun SegurancaScreen(onBack: () -> Unit, viewModel: SegurancaViewModel = viewMode
         val logs = data?.get("logs")?.jsonArray
         val devices = data?.get("devices")?.jsonArray
         val auditLogs = data?.get("auditLogs")?.jsonArray
+        // Self-service "Personalizar Início" do próprio OWNER -- ver
+        // comentário em cima de updateMyInicioWidgets() e no
+        // api/mobile/security/route.ts (case "get").
+        val currentUserId = data?.get("currentUserId")?.jsonPrimitive?.contentOrNull
+        val currentInicioWidgets = data?.get("currentInicioWidgets")?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
 
         LazyColumn(
             contentPadding = PaddingValues(12.dp, padding.calculateTopPadding() + 4.dp, 12.dp, 24.dp),
@@ -200,9 +230,12 @@ fun SegurancaScreen(onBack: () -> Unit, viewModel: SegurancaViewModel = viewMode
                 EquipeCard(
                     memberships = memberships,
                     busy = busy,
+                    currentUserId = currentUserId,
+                    currentInicioWidgets = currentInicioWidgets,
                     onInvite = { email, role, modulos, onDone -> viewModel.invite(email, role, modulos, onDone) },
                     onToggle = { id, ativo -> viewModel.toggleMembership(id, ativo) },
                     onUpdateModules = { id, role, modulos -> viewModel.updateModules(id, role, modulos) },
+                    onUpdateMyInicioWidgets = { widgets, onDone -> viewModel.updateMyInicioWidgets(widgets, onDone) },
                 )
             }
             item(key = "acessos") { AccessLogsCard(logs) }
@@ -272,6 +305,43 @@ private fun ModulesChecklist(selected: List<String>, onChange: (List<String>) ->
     }
 }
 
+// Réplica mobile do PersonalizarInicioMenu.tsx (site) -- diálogo self-service
+// pro próprio OWNER escolher quais blocos da Início ele vê, reaproveitando a
+// mesma lista INICIO_WIDGETS já usada no checklist de módulos de outros
+// membros (mesmos ids/rótulos, mesma granularidade por bloco).
+@Composable
+private fun PersonalizarInicioDialog(
+    initialWidgets: List<String>,
+    busy: Boolean,
+    onDismiss: () -> Unit,
+    onSave: (List<String>) -> Unit,
+) {
+    var selected by remember { mutableStateOf(initialWidgets) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Personalizar Início") },
+        text = {
+            Column {
+                Text(
+                    "Escolha quais blocos aparecem na sua tela Início.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+                INICIO_WIDGETS.forEach { (id, label) ->
+                    ModuleToggleRow(id, label, selected) { selected = it }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onSave(selected) }, enabled = !busy) { Text("Salvar") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancelar") }
+        },
+    )
+}
+
 @Composable
 private fun ModuleToggleRow(id: String, label: String, selected: List<String>, onChange: (List<String>) -> Unit) {
     val checked = selected.contains(id)
@@ -290,15 +360,30 @@ private fun ModuleToggleRow(id: String, label: String, selected: List<String>, o
 private fun EquipeCard(
     memberships: kotlinx.serialization.json.JsonArray?,
     busy: Boolean,
+    currentUserId: String?,
+    currentInicioWidgets: List<String>,
     onInvite: (String, String, List<String>, (Boolean, String?) -> Unit) -> Unit,
     onToggle: (String, Boolean) -> Unit,
     onUpdateModules: (String, String, List<String>) -> Unit,
+    onUpdateMyInicioWidgets: (List<String>, (Boolean, String?) -> Unit) -> Unit,
 ) {
     var inviteEmail by remember { mutableStateOf("") }
     var inviteRole by remember { mutableStateOf("OPERADOR") }
     var inviteModules by remember { mutableStateOf(listOf<String>()) }
     var inviteError by remember { mutableStateOf<String?>(null) }
     var showInviteForm by remember { mutableStateOf(false) }
+    var showPersonalizarInicio by remember { mutableStateOf(false) }
+
+    if (showPersonalizarInicio) {
+        PersonalizarInicioDialog(
+            initialWidgets = currentInicioWidgets,
+            busy = busy,
+            onDismiss = { showPersonalizarInicio = false },
+            onSave = { widgets ->
+                onUpdateMyInicioWidgets(widgets) { ok, _ -> if (ok) showPersonalizarInicio = false }
+            },
+        )
+    }
 
     CollapsibleCard("Equipe (${memberships?.size ?: 0})", initiallyOpen = true) {
         memberships?.forEach { el ->
@@ -310,12 +395,23 @@ private fun EquipeCard(
             val role = m["role"]?.jsonPrimitive?.contentOrNull ?: "OPERADOR"
             val ativo = m["ativo"]?.jsonPrimitive?.booleanOrNull ?: true
             val modulos = m["modulosPermitidos"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
+            val membershipUserId = m["userId"]?.jsonPrimitive?.contentOrNull
+            // Paridade com o site (seguranca-client.tsx: `m.role !== "OWNER"`
+            // guarda o EditMemberDialog genérico): a própria linha do OWNER
+            // não usa o form genérico de papel/módulos (não faz sentido
+            // trocar o próprio papel de OWNER), só o ícone "Personalizar
+            // Início" self-service abaixo -- ver comentário completo em
+            // update_my_inicio_widgets (api/mobile/security/route.ts).
+            val isOwnOwnerRow = role == "OWNER" && membershipUserId != null && membershipUserId == currentUserId
             var expanded by remember(id) { mutableStateOf(false) }
             var editRole by remember(id) { mutableStateOf(role) }
             var editModules by remember(id) { mutableStateOf(modulos) }
 
             Column(modifier = Modifier.padding(vertical = 6.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { expanded = !expanded }) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = if (isOwnOwnerRow) Modifier else Modifier.clickable { expanded = !expanded },
+                ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(fullName ?: email, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                         Text("$email · $role", style = MaterialTheme.typography.labelSmall)
@@ -358,9 +454,21 @@ private fun EquipeCard(
                             disabledUncheckedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
                         ),
                     )
-                    Icon(if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null)
+                    if (isOwnOwnerRow) {
+                        // Réplica do ícone "Personalizar Início" que no site
+                        // fica na própria linha do OWNER em Segurança (ver
+                        // PersonalizarInicioMenu em seguranca-client.tsx) --
+                        // self-service, edita só os widgets "inicio.*" do
+                        // próprio usuário, sem passar pelo form genérico de
+                        // papel/módulos (que nem se aplica ao próprio OWNER).
+                        IconButton(onClick = { showPersonalizarInicio = true }) {
+                            Icon(Icons.Filled.Settings, contentDescription = "Personalizar Início", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    } else {
+                        Icon(if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null)
+                    }
                 }
-                if (expanded) {
+                if (expanded && !isOwnOwnerRow) {
                     Column(modifier = Modifier.padding(top = 8.dp)) {
                         RoleDropdown(selected = editRole) { editRole = it }
                         Text("Módulos liberados", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 8.dp))
