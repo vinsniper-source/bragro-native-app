@@ -18,6 +18,35 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.60] -- 2026-09-08
+
+Ajuste do cabeçalho/barra inferior a partir do mockup aprovado pelo usuário
+("no cabeçalho... sempre no cabeçalho" + "categorias com botões... com
+ícones").
+
+- **Ícone "Configurações" no cabeçalho da Início**: réplica do
+  `ConfiguracoesMenu` do site -- dropdown enxuto com só "Baixar para
+  Android" (usa o mesmo `enqueueApkDownload`) e "Instalar no iPhone/iPad"
+  (passo a passo em diálogo), mais um link "Mais opções" pra tela completa.
+  Aparece sempre que liberado (não só em setor de poucos módulos), exceto
+  pro dono -- que continua acessando a tela completa pelo menu "Módulos" da
+  barra inferior, evitando duplicar o ponto de acesso.
+- **Ícone "Base de Dados" no cabeçalho**: réplica do `BaseDeDadosMenu` --
+  dropdown com as categorias já cadastradas, agrupadas por setor e
+  filtradas pelos módulos que a conta enxerga (mesmo filtro do site, Task
+  #514). Cada item abre a tela de Base de Dados (sem rolagem até a
+  categoria, diferente do site).
+- **Revertida a promoção pra abas da barra inferior** (v1.2.59): Configura-
+  ções/Base de Dados saíram da barra inferior de setores de poucos módulos
+  -- ficam só no cabeçalho agora, pra quem não é dono.
+- **Ícone por categoria nos dropdowns de Safra/Financeiro**: cada botão de
+  categoria (Produção/Sanidade/Monitoramento/Painéis/Lançamentos/
+  Relatórios/Compras/Faturamento/Patrimônio) ganhou um ícone próprio ao
+  lado do rótulo, além do chevron de abrir/fechar.
+- Backend: `/api/mobile/home` passa a mandar `showConfiguracoesIcon`,
+  `showBaseDeDadosIcon`, `apkUrl`, `apkVersao` e `baseDeDadosCategorias`
+  (mesmos dados que já alimentavam o Topbar do site).
+
 ## [1.2.59] -- 2026-09-08
 
 Mega-lote de paridade nativo vs plataforma (pedido do usuário, com 2

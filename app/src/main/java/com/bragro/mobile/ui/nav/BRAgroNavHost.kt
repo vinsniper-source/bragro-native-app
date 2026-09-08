@@ -130,6 +130,7 @@ fun BRAgroNavHost() {
                 BRAgroBottomBar(
                     currentDomainId = currentDomainId,
                     allowedModules = allowedModules,
+                    isOwner = session?.role == "OWNER",
                     onNavigateDomain = { domainId ->
                         navController.navigate(Routes.domainList(domainId)) {
                             popUpTo(Routes.HOME)
@@ -170,6 +171,12 @@ fun BRAgroNavHost() {
                 // genérico), mesma rota que o botão "FieldView" da barra
                 // inferior já usa (onOpenFieldview acima).
                 onOpenFieldview = { navController.navigate(Routes.FIELDVIEW) },
+                // Ícones Configurações/Base de Dados do cabeçalho (ver
+                // showConfiguracoesIcon/showBaseDeDadosIcon em HomeScreen.kt)
+                // -- mesmas rotas já usadas pelo menu "Módulos" da barra
+                // inferior logo abaixo (onOpenSettings/onOpenBaseDeDados).
+                onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                onOpenBaseDeDados = { navController.navigate(Routes.BASE_DE_DADOS) },
             )
         }
         composable(Routes.DRE) {

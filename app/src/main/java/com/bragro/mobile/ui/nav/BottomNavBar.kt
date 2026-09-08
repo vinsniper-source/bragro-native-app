@@ -10,11 +10,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Agriculture
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Eco
@@ -27,6 +34,8 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.Timeline
+import androidx.compose.material.icons.filled.Warehouse
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -235,6 +244,29 @@ private val BOTTOM_TABS = listOf(
  * Cada item com seu próprio ícone (antes os 3 usavam o mesmo ícone de
  * engrenagem) -- pedido do usuário ("altere os ícones... coloque os ícones
  * correspondentes a cada setor"). */
+// Ícone por categoria dentro do dropdown de setor -- pedido do usuário
+// ("coloque as categorias com botões... com rótulos e ícones"): antes só
+// tinha o chevron de expandir/recolher, sem nenhum ícone próprio por
+// categoria. Reaproveita ícones JÁ usados em outro lugar do app (nunca um
+// nome novo/não testado) -- mesmo critério de DomainVisuals.kt, pra não
+// arriscar um "Unresolved reference" num nome de ícone que não existe na
+// versão do material-icons-extended instalada (bug real já visto no
+// projeto, ver CategoryBreakdownCard.kt). Categoria sem entrada aqui cai no
+// ícone da própria aba (tabIcon), sem quebrar nada.
+private val CATEGORY_ICONS: Map<String, ImageVector> = mapOf(
+    // Safra
+    "Produção" to Icons.Filled.Agriculture,
+    "Sanidade" to Icons.Filled.BugReport,
+    "Monitoramento" to Icons.Filled.WbSunny,
+    "Painéis" to Icons.Filled.Assignment,
+    // Financeiro
+    "Lançamentos" to Icons.Filled.Receipt,
+    "Relatórios" to Icons.Filled.BarChart,
+    "Compras" to Icons.Filled.ShoppingCart,
+    "Faturamento" to Icons.Filled.Payments,
+    "Patrimônio" to Icons.Filled.Warehouse,
+)
+
 private data class SistemaLink(val path: String, val label: String, val icon: ImageVector)
 
 private val SISTEMA_LINKS = listOf(
@@ -277,6 +309,14 @@ fun BRAgroBottomBar(
     // acontecer em uso normal -- todo papel tem pelo menos "dashboard"),
     // mostra só a Início e mais nada.
     allowedModules: Set<String>,
+    // Dono da organização -- mesma checagem do site (ver layout.tsx:
+    // "isOwner = ctx.role === OWNER"). Configurações/Base de Dados viraram
+    // ícone no CABEÇALHO da Início pra quem NÃO é dono (ver
+    // showConfiguracoesIcon/showBaseDeDadosIcon em HomeScreen.kt, réplica do
+    // ConfiguracoesMenu/BaseDeDadosMenu do site) -- pedido do usuário ("no
+    // cabeçalho... sempre no cabeçalho"). O dono continua acessando essas 2
+    // telas por aqui, no menu "Módulos", pra não duplicar o ponto de acesso.
+    isOwner: Boolean,
     onNavigateDomain: (String) -> Unit,
     onOpenDre: () -> Unit,
     onOpenAnalises: () -> Unit,
@@ -323,30 +363,14 @@ fun BRAgroBottomBar(
     val visibleSistemaLinks = remember(allowedModules) {
         SISTEMA_LINKS.filter { isAllowed(allowedModules, it.path) }
     }
-    // Setor com poucos módulos (equivalente nativo do "isFewModulesSector"
-    // do site, ver layout.tsx: workModules.length<=2) -- pedido do usuário
-    // ("transforme configurações e base de dados em ícones conforme a
-    // plataforma"). O site conta entradas do catálogo MODULES (granularidade
-    // por permissão, não por setor); o app não tem esse catálogo em Kotlin,
-    // então a unidade equivalente aqui é a própria ABA de setor (Safra/
-    // Frota/Financeiro/Estoque/RH) -- ter só 1-2 abas visíveis É o
-    // equivalente funcional de "poucos módulos" na navegação do app.
-    // "*" (OWNER/ADMIN, vê tudo) nunca conta como poucos módulos, mesmo
-    // critério do site (isFewModulesSector também nunca se aplica a quem tem
-    // acesso total).
-    val fewModulesSector = !allowedModules.contains("*") && visibleTabs.isNotEmpty() && visibleTabs.size <= 2
-    // Configurações/Base de Dados saem do menu "Módulos" (2 níveis de toque)
-    // e viram ícone de acesso direto na própria barra -- mesmo espírito do
-    // site (showConfiguracoesIcon/showBaseDeDadosIcon no Topbar, fora de
-    // qualquer menu). "Acessos" (seguranca) não tem equivalente de ícone no
-    // site (fica só na sidebar do dono) -- continua dentro do menu "Módulos"
-    // aqui também, promovido ou não.
-    val promotedSistemaLinks = if (fewModulesSector) {
-        visibleSistemaLinks.filter { it.path == "configuracoes" || it.path == "base-de-dados" }
-    } else {
-        emptyList()
+    // Configurações/Base de Dados saem do menu "Módulos" pra quem NÃO é
+    // dono -- essas contas já acessam as duas pelo ícone do CABEÇALHO da
+    // Início (ver comentário no parâmetro isOwner acima). "Acessos"
+    // (seguranca) não tem ícone equivalente -- continua aqui pra todo mundo
+    // que tiver a permissão, dono ou não.
+    val menuSistemaLinks = remember(visibleSistemaLinks, isOwner) {
+        if (isOwner) visibleSistemaLinks else visibleSistemaLinks.filter { it.path == "seguranca" }
     }
-    val menuSistemaLinks = visibleSistemaLinks - promotedSistemaLinks.toSet()
 
     fun openSector(target: SectorTarget) {
         openTabId = null
@@ -465,6 +489,12 @@ fun BRAgroBottomBar(
                                         )
                                         .padding(horizontal = 16.dp, vertical = 10.dp),
                                 ) {
+                                    Icon(
+                                        CATEGORY_ICONS[category] ?: tab.icon,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp).padding(end = 8.dp),
+                                        tint = MaterialTheme.colorScheme.onSurface,
+                                    )
                                     Text(
                                         category.uppercase(),
                                         style = MaterialTheme.typography.labelMedium,
@@ -489,34 +519,9 @@ fun BRAgroBottomBar(
                 }
             }
         }
-        // Configurações/Base de Dados promovidos a ícone de acesso direto --
-        // ver comentário completo em "promotedSistemaLinks" acima. Mesmo
-        // visual/comportamento das abas de acesso direto (Frota/Estoque):
-        // toque único já navega, sem dropdown.
-        promotedSistemaLinks.forEach { link ->
-            Box(modifier = Modifier.weight(1f)) {
-                this@NavigationBar.NavigationBarItem(
-                    selected = false,
-                    onClick = {
-                        when (link.path) {
-                            "configuracoes" -> onOpenSettings()
-                            "base-de-dados" -> onOpenBaseDeDados()
-                        }
-                    },
-                    icon = { Icon(link.icon, contentDescription = link.label, modifier = Modifier.size(22.dp)) },
-                    label = { Text(link.label, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) },
-                    colors = BottomNavColors,
-                )
-            }
-        }
-        // Aba "Módulos" (Acessos, e Configurações/Base de Dados quando NÃO
-        // promovidos acima) some por completo se sobrar zero itens -- mesmo
-        // critério de filtragem das demais abas. Na prática hoje só
-        // OWNER/ADMIN (allowedModules = "*") veem isso quando não é setor de
-        // poucos módulos, já que nenhum papel padrão (AGRONOMO/FINANCEIRO/
-        // RH/OPERADOR) inclui essas permissões por padrão (ver ROLE_MODULES
-        // em lib/permissions.ts) -- um CUSTOM pode ganhar acesso explícito lá
-        // na tela de Acessos.
+        // Aba "Módulos" (Acessos pra todo mundo; Configurações/Base de Dados
+        // só pro dono, ver menuSistemaLinks acima) some por completo se
+        // sobrar zero itens -- mesmo critério de filtragem das demais abas.
         if (menuSistemaLinks.isNotEmpty()) {
         Box(modifier = Modifier.weight(1f)) {
             this@NavigationBar.NavigationBarItem(

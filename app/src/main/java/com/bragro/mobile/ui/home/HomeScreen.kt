@@ -50,6 +50,7 @@ import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -66,7 +67,9 @@ import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.TrendingUp
@@ -544,6 +547,14 @@ fun HomeScreen(
     // "Importar KML desta fazenda" -- FieldView tem tela própria (fora do
     // mecanismo genérico onOpenDomain/domainList), ver BRAgroNavHost.kt.
     onOpenFieldview: () -> Unit = {},
+    // Ícones "Configurações"/"Base de Dados" do cabeçalho (ver bloco
+    // showConfiguracoesIcon/showBaseDeDadosIcon mais abaixo) -- réplica do
+    // Topbar do site: pedido do usuário ("no cabeçalho... sempre no
+    // cabeçalho"). "Mais opções"/itens do dropdown navegam pras mesmas telas
+    // nativas já usadas pelo menu "Módulos" da barra inferior (ver
+    // BRAgroNavHost.kt).
+    onOpenSettings: () -> Unit = {},
+    onOpenBaseDeDados: () -> Unit = {},
     viewModel: HomeViewModel = viewModel(),
 ) {
     val home by viewModel.home
@@ -711,6 +722,125 @@ fun HomeScreen(
                             }
                         }) {
                             Icon(Icons.Filled.Backup, contentDescription = "Backup completo")
+                        }
+                    }
+                    // Ícone "Configurações" -- réplica do ConfiguracoesMenu do
+                    // site (ver topbar.tsx/configuracoes-menu.tsx): dropdown
+                    // enxuto com só "Baixar para Android"/"Instalar no
+                    // iPhone/iPad" + link "Mais opções" pra tela completa.
+                    // Pedido do usuário ("no cabeçalho ao clicar em
+                    // configurações aparecer apenas as opções baixar pelo
+                    // android e ios... sempre no cabeçalho"): mostrado sempre
+                    // que o backend libera (showConfiguracoesIcon já exclui o
+                    // OWNER, que continua acessando a tela completa via
+                    // "Módulos" na barra inferior, ver BottomNavBar.kt).
+                    if (home?.showConfiguracoesIcon == true) {
+                        var configMenuOpen by remember { mutableStateOf(false) }
+                        var iosStepsOpen by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { configMenuOpen = true }) {
+                                Icon(Icons.Filled.Settings, contentDescription = "Configurações")
+                            }
+                            DropdownMenu(expanded = configMenuOpen, onDismissRequest = { configMenuOpen = false }) {
+                                val apkUrl = home?.apkUrl
+                                val apkVersao = home?.apkVersao
+                                if (!apkUrl.isNullOrBlank()) {
+                                    DropdownMenuItem(
+                                        text = { Text("Baixar para Android" + (apkVersao?.let { " (v$it)" } ?: "")) },
+                                        leadingIcon = { Icon(Icons.Filled.Download, contentDescription = null) },
+                                        onClick = {
+                                            configMenuOpen = false
+                                            com.bragro.mobile.ui.util.enqueueApkDownload(logoScreenContext, apkUrl, apkVersao ?: "?")
+                                            android.widget.Toast.makeText(logoScreenContext, "Download iniciado -- você recebe uma notificação quando terminar.", android.widget.Toast.LENGTH_SHORT).show()
+                                        },
+                                    )
+                                } else {
+                                    DropdownMenuItem(text = { Text("Nenhuma versão Android publicada") }, onClick = {}, enabled = false)
+                                }
+                                DropdownMenuItem(
+                                    text = { Text("Instalar no iPhone/iPad") },
+                                    onClick = { configMenuOpen = false; iosStepsOpen = true },
+                                )
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                                DropdownMenuItem(
+                                    text = { Text("Mais opções", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                                    onClick = { configMenuOpen = false; onOpenSettings() },
+                                )
+                            }
+                        }
+                        if (iosStepsOpen) {
+                            AlertDialog(
+                                onDismissRequest = { iosStepsOpen = false },
+                                title = { Text("Instalar no iPhone/iPad") },
+                                text = {
+                                    // Mesmo texto/passo a passo do card equivalente em
+                                    // SettingsScreen.kt (AppMobileIosCard) e do site
+                                    // (configuracoes-menu.tsx) -- iOS não permite
+                                    // instalar um .apk, só via PWA pelo Safari.
+                                    Column {
+                                        Text(
+                                            "O iOS não permite instalar um arquivo baixado como app — a Apple só libera isso pela App Store. O caminho que funciona sem custo, direto pelo Safari:",
+                                            style = MaterialTheme.typography.bodySmall,
+                                        )
+                                        listOf(
+                                            "Abra o sistema no Safari (precisa ser o Safari).",
+                                            "Toque no ícone de Compartilhar, na barra inferior.",
+                                            "Role a lista e toque em \"Adicionar à Tela de Início\".",
+                                            "Toque em Adicionar.",
+                                        ).forEachIndexed { i, step ->
+                                            Row(modifier = Modifier.padding(top = 6.dp)) {
+                                                Text("${i + 1}.", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.padding(end = 6.dp))
+                                                Text(step, style = MaterialTheme.typography.bodySmall)
+                                            }
+                                        }
+                                    }
+                                },
+                                confirmButton = { TextButton(onClick = { iosStepsOpen = false }) { Text("Entendi") } },
+                            )
+                        }
+                    }
+                    // Ícone "Base de Dados" -- réplica do BaseDeDadosMenu do
+                    // site (base-de-dados-menu.tsx): dropdown com as
+                    // categorias já cadastradas, agrupadas por setor e
+                    // filtradas pelos módulos que esta conta enxerga (Task
+                    // #514, ver baseDeDadosCategorias em api/mobile/home).
+                    // Pedido do usuário ("na base de dados aparecer somente o
+                    // que usar [no setor]"). Sem âncora/rolagem até a
+                    // categoria (diferente do site, que rola até #cat-X) --
+                    // simplificação: cada item só abre a tela de Base de
+                    // Dados, que já mostra tudo liberado pra essa conta.
+                    if (home?.showBaseDeDadosIcon == true) {
+                        var dbMenuOpen by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { dbMenuOpen = true }) {
+                                Icon(Icons.Filled.Storage, contentDescription = "Base de Dados")
+                            }
+                            DropdownMenu(expanded = dbMenuOpen, onDismissRequest = { dbMenuOpen = false }) {
+                                val grupos = home?.baseDeDadosCategorias.orEmpty()
+                                if (grupos.isEmpty()) {
+                                    DropdownMenuItem(text = { Text("Nenhuma categoria cadastrada ainda") }, onClick = {}, enabled = false)
+                                } else {
+                                    grupos.forEach { grupo ->
+                                        Text(
+                                            grupo.label.uppercase(),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                                        )
+                                        grupo.categories.forEach { cat ->
+                                            DropdownMenuItem(
+                                                text = { Text(cat.lowercase().replaceFirstChar { c -> c.uppercase() }) },
+                                                onClick = { dbMenuOpen = false; onOpenBaseDeDados() },
+                                            )
+                                        }
+                                    }
+                                }
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                                DropdownMenuItem(
+                                    text = { Text("Ver tudo", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                                    onClick = { dbMenuOpen = false; onOpenBaseDeDados() },
+                                )
+                            }
                         }
                     }
                     IconButton(onClick = { notificationsOpen = true; viewModel.loadNotifications() }) {

@@ -288,6 +288,28 @@ data class HomeData(
     val rhAdmissoesMes: Int = 0,
     val safraLancamentosMes: Int = 0,
     val safraColheitasMes: Int = 0,
+    // Icones "Configurações"/"Base de Dados" do cabeçalho -- réplica do
+    // Topbar do site (ConfiguracoesMenu/BaseDeDadosMenu, ver topbar.tsx):
+    // pedido do usuário ("no cabeçalho ao clicar em configurações aparecer
+    // apenas as opções baixar pelo android e ios e na base de dados aparecer
+    // somente o que usar [no setor]... sempre no cabeçalho"). Default false/
+    // vazio não quebra o cache offline salvo antes desses campos existirem.
+    val showConfiguracoesIcon: Boolean = false,
+    val showBaseDeDadosIcon: Boolean = false,
+    val apkUrl: String? = null,
+    val apkVersao: String? = null,
+    val baseDeDadosCategorias: List<HomeBaseDeDadosSectorGroup> = emptyList(),
+)
+
+// Grupo de categorias de Base de Dados por setor -- alimenta o dropdown do
+// ícone "Base de Dados" no cabeçalho (mesmo shape de BaseDeDadosSectorGroup
+// no site, ver base-de-dados-menu.tsx), já filtrado pelo backend pros
+// setores que esta conta enxerga (Task #514).
+@Serializable
+data class HomeBaseDeDadosSectorGroup(
+    val sector: String,
+    val label: String,
+    val categories: List<String> = emptyList(),
 )
 
 @Serializable
