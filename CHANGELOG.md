@@ -18,6 +18,23 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.57] -- 2026-09-08
+
+- **Novo build da filtragem de barra inferior por acesso (1.2.56)**: o
+  usuário reportou que o filtro não pegou depois do primeiro push. Revisão
+  do código (BottomNavBar.kt/BRAgroNavHost.kt/ConfigRepository.kt) não
+  encontrou nenhum bug -- a lógica de `isAllowed()`/`permissionIdFor()`
+  confere corretamente com os ids de módulo do site (lib/modules.ts). A
+  causa mais provável é uma das duas: (1) o app só relê os módulos
+  liberados no login ou em "Sincronizar agora" -- se a permissão do
+  funcionário foi alterada em Acessos DEPOIS dele já estar logado no
+  aparelho, a barra continua com a lista antiga até o próximo login/sync;
+  (2) o build 1.2.56 pode não ter chegado a ser instalado de fato no
+  aparelho de teste. Só o bump de versão neste release, sem mudança de
+  código -- serve pra confirmar com certeza que o aparelho pegou o binário
+  novo (se após instalar a versão em Configurações > Sobre ainda mostrar
+  1.2.56 ou anterior, a instalação não pegou o APK certo).
+
 ## [1.2.56] -- 2026-09-07
 
 - **Barra inferior agora respeita os acessos de cada funcionário**: até
