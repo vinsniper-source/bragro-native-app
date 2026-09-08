@@ -18,6 +18,29 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.59] -- 2026-09-08
+
+Mega-lote de paridade nativo vs plataforma (pedido do usuário, com 2
+imagens): "compare plataforma com app" + reestruturação dos dropdowns de
+setor.
+
+- **Dropdown de Safra**: categorias (Produção/Sanidade/Monitoramento/
+  Painéis) viraram BOTÕES clicáveis (acordeão) -- cada um abre só a lista
+  daquela categoria, em vez de mostrar tudo já expandido com um texto de
+  cabeçalho fixo.
+- **Dropdown de Financeiro**: ganhou categorias pela primeira vez
+  (Lançamentos/Relatórios/Compras/Faturamento/Patrimônio) com o mesmo botão-
+  acordeão acima (antes era uma lista única sem nenhuma divisão).
+- **16 KPIs individuais na Início** (antes só 4, atrás de 1 único toggle
+  "inicio.kpis"): Financeiro/Estoque/RH/Safra ganharam o 2º/3º KPI que já
+  existiam no site (Task #499-#502) e nunca tinham sido replicados no app;
+  Frota, que não tinha NENHUM KPI na Início, ganhou os 4 dela. Cada um com
+  seu próprio toggle em Acessos (`inicio.kpi.*`), igual ao site.
+- **Setor com poucos módulos (1-2 abas visíveis)**: Configurações e Base de
+  Dados saem do menu "Módulos" (2 toques) e viram ícone de acesso direto na
+  própria barra inferior -- mesmo espírito do site (ícones no cabeçalho em
+  vez de menu, ver showConfiguracoesIcon/showBaseDeDadosIcon).
+
 ## [1.2.58] -- 2026-09-08
 
 Réplica no app nativo de duas features que já existiam só no site (pedido do

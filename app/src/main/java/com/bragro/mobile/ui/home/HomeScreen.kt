@@ -39,25 +39,35 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Agriculture
+import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.CurrencyExchange
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.NotificationsNone
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.PlaylistAddCheck
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.WarningAmber
@@ -1582,19 +1592,19 @@ private data class Kpi(
 // na mesma posição em todo card.
 @Composable
 private fun KpiGrid(data: HomeData) {
-    val kpis = listOf(
-        // Estes 4 (Financeiro/Estoque/Safra/RH) formam o grid 2x2 abaixo --
-        // o 5º KPI ("Fazendas cadastradas") foi separado da lista (ver
-        // `kpiFazendas` mais abaixo) e passou a ocupar a linha cheia, fora
-        // deste grid -- pedido do usuário ("expandir o card fazendas
-        // cadastradas pra ocupar a linha toda"): antes ele entrava junto
-        // nesta mesma lista de 5 e o `chunked(2)` deixava ele sozinho numa
-        // 3ª fileira de 2 colunas, com a metade da linha vazia (Spacer).
+    // Réplica do dashboard web (dashboard/page.tsx, array `stats`) -- pedido
+    // do usuário ("replique o que ainda falta da plataforma no native...
+    // compare plataforma com app"): o site já tinha evoluído de 4 pra 16
+    // KPIs individuais (2º/3º/4º KPI por setor, Task #499-#502), cada um com
+    // seu próprio id "inicio.kpi.*" -- este grid só mostrava os 4 originais,
+    // sempre juntos, atrás de um único id "inicio.kpis" (ver hasWidget no
+    // item() que chama este composable). Agora cada KPI checa o PRÓPRIO id
+    // (`hasWidget`), igual ao `visibleStats` do site -- Frota, que nem
+    // aparecia aqui, ganha os 4 dela também.
+    val allKpis = listOf(
         // Cores dos ícones Safra/Financeiro invertidas -- pedido do usuário
         // ("inverta as cores dos ícones dos kpis safra e financeiro").
-        // Descrição mais explícita -- pedido do usuário ("no bloco kpi
-        // financeiro tem que aparecer a descrição").
-        Kpi(
+        "inicio.kpi.financeiro" to Kpi(
             "Financeiro",
             formatMoneyBrl(data.saldoFinanceiroAberto),
             Icons.Filled.AccountBalanceWallet,
@@ -1606,10 +1616,23 @@ private fun KpiGrid(data: HomeData) {
             KpiKind.VALOR,
             description = "Saldo em aberto (a receber − a pagar)",
         ),
-        // Descrições adicionadas -- pedido do usuário ("melhore as
-        // informações dentro do kpi"), mesmo padrão que o Financeiro já
-        // tinha (nome + legenda curta explicando o número).
-        Kpi(
+        "inicio.kpi.financeiro.vencendo" to Kpi(
+            "Contas vencendo",
+            data.financeiroVencendoCount.toString(),
+            Icons.Filled.Schedule,
+            MaterialTheme.colorScheme.tertiary,
+            KpiKind.QUANTIDADE,
+            description = "Vencimento nos próximos 7 dias",
+        ),
+        "inicio.kpi.financeiro.lancamentos" to Kpi(
+            "Lançamentos (mês)",
+            data.financeiroLancamentosMes.toString(),
+            Icons.Filled.Receipt,
+            MaterialTheme.colorScheme.tertiary,
+            KpiKind.QUANTIDADE,
+            description = "Lançamentos financeiros no mês corrente",
+        ),
+        "inicio.kpi.estoque" to Kpi(
             "Itens no estoque",
             data.itensEstoque.toString(),
             Icons.Filled.Inventory2,
@@ -1617,15 +1640,23 @@ private fun KpiGrid(data: HomeData) {
             KpiKind.QUANTIDADE,
             description = "Total de itens cadastrados no estoque",
         ),
-        Kpi(
-            "Operações de safra",
-            data.safrasAtivas.toString(),
-            Icons.Filled.Eco,
-            MaterialTheme.colorScheme.primary,
+        "inicio.kpi.estoque.critico" to Kpi(
+            "Abaixo do mínimo",
+            data.estoqueCriticoCount.toString(),
+            Icons.Filled.WarningAmber,
+            BrYellow,
             KpiKind.QUANTIDADE,
-            description = "Lançamentos de safra em andamento",
+            description = "Itens com saldo abaixo do mínimo",
         ),
-        Kpi(
+        "inicio.kpi.estoque.movimentacoes" to Kpi(
+            "Movimentações (mês)",
+            data.estoqueMovimentacoesMes.toString(),
+            Icons.Filled.SwapHoriz,
+            BrYellow,
+            KpiKind.QUANTIDADE,
+            description = "Movimentações de estoque no mês corrente",
+        ),
+        "inicio.kpi.rh" to Kpi(
             "Colaboradores ativos",
             data.colaboradoresAtivos.toString(),
             Icons.Filled.Groups,
@@ -1633,7 +1664,80 @@ private fun KpiGrid(data: HomeData) {
             KpiKind.QUANTIDADE,
             description = "Total cadastrado no módulo RH",
         ),
+        "inicio.kpi.rh.pendencias" to Kpi(
+            "Pendências de RH",
+            data.rhPendenciasCount.toString(),
+            Icons.Filled.Assignment,
+            MaterialTheme.colorScheme.primary,
+            KpiKind.QUANTIDADE,
+            description = "ASO, CNH ou férias pendentes",
+        ),
+        "inicio.kpi.rh.admissoes" to Kpi(
+            "Admissões (mês)",
+            data.rhAdmissoesMes.toString(),
+            Icons.Filled.PersonAdd,
+            MaterialTheme.colorScheme.primary,
+            KpiKind.QUANTIDADE,
+            description = "Colaboradores admitidos no mês corrente",
+        ),
+        "inicio.kpi.frota" to Kpi(
+            "Veículos em manutenção",
+            data.frotaEmManutencao.toString(),
+            Icons.Filled.DirectionsCar,
+            BrOrange,
+            KpiKind.QUANTIDADE,
+            description = "Veículos/máquinas em manutenção",
+        ),
+        "inicio.kpi.frota.custo" to Kpi(
+            "Custo da frota (mês)",
+            formatMoneyBrl(data.frotaCustoMes),
+            Icons.Filled.AttachMoney,
+            BrOrange,
+            KpiKind.VALOR,
+            description = "Custo total lançado no mês corrente",
+        ),
+        "inicio.kpi.frota.veiculos" to Kpi(
+            "Veículos cadastrados",
+            data.frotaVeiculosDistintos.toString(),
+            Icons.Filled.Inventory,
+            BrOrange,
+            KpiKind.QUANTIDADE,
+            description = "Veículos/máquinas distintos já lançados",
+        ),
+        "inicio.kpi.frota.os" to Kpi(
+            "O.S. abertas (mês)",
+            data.frotaOsMes.toString(),
+            Icons.Filled.Build,
+            BrOrange,
+            KpiKind.QUANTIDADE,
+            description = "Ordens de serviço abertas no mês corrente",
+        ),
+        "inicio.kpi.safra" to Kpi(
+            "Operações de safra",
+            data.safrasAtivas.toString(),
+            Icons.Filled.Eco,
+            MaterialTheme.colorScheme.primary,
+            KpiKind.QUANTIDADE,
+            description = "Lançamentos de safra em andamento",
+        ),
+        "inicio.kpi.safra.lancamentos" to Kpi(
+            "Lançamentos de safra (mês)",
+            data.safraLancamentosMes.toString(),
+            Icons.Filled.PlaylistAddCheck,
+            MaterialTheme.colorScheme.primary,
+            KpiKind.QUANTIDADE,
+            description = "Lançamentos de safra no mês corrente",
+        ),
+        "inicio.kpi.safra.colheitas" to Kpi(
+            "Colheitas (mês)",
+            data.safraColheitasMes.toString(),
+            Icons.Filled.Agriculture,
+            MaterialTheme.colorScheme.primary,
+            KpiKind.QUANTIDADE,
+            description = "Colheitas iniciadas no mês corrente",
+        ),
     )
+    val kpis = allKpis.filter { (id, _) -> data.hasWidget(id) }.map { (_, kpi) -> kpi }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         kpis.chunked(2).forEach { row ->
             // IntrinsicSize.Min + fillMaxHeight -- pedido do usuário

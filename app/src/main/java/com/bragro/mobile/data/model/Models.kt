@@ -269,6 +269,25 @@ data class HomeData(
     // esse campo (cache offline); cada chave dentro pode ser null quando o
     // setor não teve lançamento nenhum na janela.
     val breakdowns: HomeBreakdownsData? = null,
+    // 2º/3º/4º KPI por setor -- ja existiam no dashboard web (Task
+    // #499-#502) mas nunca tinham sido replicados no app nativo (pedido do
+    // usuario: "replique o que ainda falta da plataforma no native...
+    // compare plataforma com app"). Mesmos campos que getDashboardStats() ja
+    // calculava e /api/mobile/home so nao repassava. Default 0 evita quebrar
+    // a leitura do cache offline salvo antes desses campos existirem (mesmo
+    // criterio de numeroFazendas acima).
+    val frotaEmManutencao: Int = 0,
+    val frotaCustoMes: Double = 0.0,
+    val frotaVeiculosDistintos: Int = 0,
+    val frotaOsMes: Int = 0,
+    val financeiroVencendoCount: Int = 0,
+    val financeiroLancamentosMes: Int = 0,
+    val estoqueCriticoCount: Int = 0,
+    val estoqueMovimentacoesMes: Int = 0,
+    val rhPendenciasCount: Int = 0,
+    val rhAdmissoesMes: Int = 0,
+    val safraLancamentosMes: Int = 0,
+    val safraColheitasMes: Int = 0,
 )
 
 @Serializable

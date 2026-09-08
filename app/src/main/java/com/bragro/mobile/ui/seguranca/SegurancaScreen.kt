@@ -94,7 +94,29 @@ private val INICIO_WIDGETS = listOf(
     "inicio.alertas" to "Central de Alertas",
     "inicio.monitor" to "Monitor em tempo real",
     "inicio.insights" to "Insights proativos",
-    "inicio.kpis" to "KPIs (Financeiro/Estoque/Colaboradores)",
+    // Antes 1 toggle só ("inicio.kpis"); site evoluiu pra 16 KPIs
+    // individuais (2º/3º/4º por setor, Task #499-#502) -- pedido do usuário
+    // ("replique o que ainda falta da plataforma no native... compare
+    // plataforma com app"). "inicio.kpis" virou um id derivado
+    // automaticamente no backend (so pra retrocompatibilidade), nao aparece
+    // mais aqui -- mesmo criterio do checklist do site (ver comentario em
+    // lib/permissions.ts, INICIO_WIDGETS).
+    "inicio.kpi.financeiro" to "KPI: Em aberto (Financeiro)",
+    "inicio.kpi.financeiro.vencendo" to "KPI: Contas vencendo em 7 dias",
+    "inicio.kpi.financeiro.lancamentos" to "KPI: Lançamentos financeiros no mês",
+    "inicio.kpi.estoque" to "KPI: Itens no estoque",
+    "inicio.kpi.estoque.critico" to "KPI: Itens abaixo do mínimo",
+    "inicio.kpi.estoque.movimentacoes" to "KPI: Movimentações de estoque no mês",
+    "inicio.kpi.rh" to "KPI: Colaboradores ativos",
+    "inicio.kpi.rh.pendencias" to "KPI: Pendências de RH",
+    "inicio.kpi.rh.admissoes" to "KPI: Admissões no mês",
+    "inicio.kpi.frota" to "KPI: Veículos em manutenção (Frota)",
+    "inicio.kpi.frota.custo" to "KPI: Custo da frota no mês",
+    "inicio.kpi.frota.veiculos" to "KPI: Veículos/máquinas cadastrados",
+    "inicio.kpi.frota.os" to "KPI: O.S. abertas no mês",
+    "inicio.kpi.safra" to "KPI: Safras ativas",
+    "inicio.kpi.safra.lancamentos" to "KPI: Lançamentos de safra no mês",
+    "inicio.kpi.safra.colheitas" to "KPI: Colheitas no mês",
     "inicio.clima" to "Clima",
     "inicio.cambio" to "Câmbio (Dólar/Euro)",
     "inicio.cotacoes" to "Cotações agrícolas (Grão Direto)",
