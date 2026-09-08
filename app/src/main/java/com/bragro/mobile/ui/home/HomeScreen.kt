@@ -903,12 +903,18 @@ fun HomeScreen(
                     // logo já cadastrada, tocar nela também permite trocar
                     // (só pra quem pode gerenciar).
                     val orgLogoUrl = session?.orgLogoUrl
+                    // Modifier de clique extraído (era duplicado nos 2 ramos
+                    // abaixo, com ou sem logo cadastrada) -- só quem pode
+                    // gerenciar a organização consegue tocar pra trocar/
+                    // cadastrar a logo.
+                    val logoClickModifier = if (canManage) {
+                        Modifier.clickable(enabled = !uploadingLogo) { logoPickerLauncher.launch("image/*") }
+                    } else {
+                        Modifier
+                    }
                     if (!orgLogoUrl.isNullOrBlank()) {
                         Box(
-                            modifier = Modifier
-                                .padding(end = 8.dp)
-                                .size(32.dp)
-                                .then(if (canManage) Modifier.clickable(enabled = !uploadingLogo) { logoPickerLauncher.launch("image/*") } else Modifier),
+                            modifier = Modifier.padding(end = 8.dp).size(32.dp).then(logoClickModifier),
                             contentAlignment = Alignment.Center,
                         ) {
                             if (uploadingLogo) {
@@ -935,33 +941,20 @@ fun HomeScreen(
                         // gerenciar (canManage) consegue tocar pra
                         // cadastrar uma.
                         Box(
-                            modifier = Modifier
-                                .padding(end = 8.dp)
-                                .size(32.dp)
-                                .then(
-                                    if (canManage) {
-                                        Modifier.clickable(enabled = !uploadingLogo) { logoPickerLauncher.launch("image/*") }
-                                    } else {
-                                        Modifier
-                                    },
-                                ),
+                            modifier = Modifier.padding(end = 8.dp).size(32.dp).then(logoClickModifier),
                             contentAlignment = Alignment.Center,
                         ) {
                             if (uploadingLogo) {
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             } else {
-                                Box(
+                                Icon(
+                                    Icons.Filled.AddPhotoAlternate,
+                                    contentDescription = "Adicionar logo da empresa",
                                     modifier = Modifier
                                         .size(28.dp)
-                                        .border(1.dp, LocalContentColor.current.copy(alpha = 0.5f), CircleShape),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(
-                                        Icons.Filled.AddPhotoAlternate,
-                                        contentDescription = "Adicionar logo da empresa",
-                                        modifier = Modifier.size(16.dp),
-                                    )
-                                }
+                                        .border(1.dp, LocalContentColor.current.copy(alpha = 0.5f), CircleShape)
+                                        .padding(6.dp),
+                                )
                             }
                         }
                     }
