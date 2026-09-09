@@ -18,6 +18,25 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.63] -- 2026-09-08
+
+Barra inferior do dono/OWNER volta a ter dropdown em Safra/Financeiro/
+Estoque/RH -- pedido do usuário a partir de mockup ("vc retirou as listas
+suspensas dos botões... crie um mockup mostrando as listas suspensas
+abertas").
+
+- **OWNER_BOTTOM_TABS** (nova lista, só pro dono): Safra e Financeiro
+  voltam a ser um botão só com dropdown agrupado por categoria (Produção/
+  Sanidade/Monitoramento/Painéis em Safra; Lançamentos/Relatórios/Compras/
+  Faturamento em Financeiro) -- reaproveita o sistema de categoria/
+  acordeão que já existia no código (CATEGORY_ICONS, expandedCategory),
+  ficava inerte desde o achatamento da v1.2.61. Estoque e RH viram
+  dropdown simples de 2 itens (Estoque + Controle de Insumos; RH +
+  Controle Interno), sem cabeçalho de categoria. Frota continua acesso
+  direto. "Módulos" (Configurações/Base de Dados/Acessos) inalterado.
+- Contas de setor limitado continuam com BOTTOM_TABS achatado (v1.2.61) --
+  essa mudança é exclusiva do dono.
+
 ## [1.2.62] -- 2026-09-08
 
 3 correções a partir de mockups aprovados pelo usuário (3 imagens: cabeçalho

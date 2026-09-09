@@ -247,6 +247,70 @@ private val BOTTOM_TABS = listOf(
     BottomTab("controleinterno", "Controle Interno", Icons.Filled.Security, directDomainId = "controleinterno"),
 )
 
+// Barra do DONO/OWNER: 6 botões fixos (Safra, Financeiro, Frota, Estoque, RH,
+// Módulos) -- pedido do usuário (mockup: "coloque os seguintes botões..." +
+// depois "vc retirou as listas suspensas dos botões... crie um mockup
+// mostrando as listas suspensas abertas"). Ao contrário de BOTTOM_TABS (que
+// ACHATA cada categoria em aba própria, pensado pra contas de setor
+// limitado), aqui Safra e Financeiro voltam a ser UM botão só com dropdown
+// agrupado por categoria (mesma UI de categoria/acordeão de CATEGORY_ICONS,
+// reaproveitada -- ela ficava "morta" desde o achatamento). Estoque e RH
+// viram dropdown de 2 itens sem categoria (Estoque+Controle de Insumos /
+// RH+Controle Interno) -- igual ao mockup, sem cabeçalho de categoria por
+// terem só 2 itens. Frota continua acesso direto (não fazia parte do pedido
+// de reverter as listas suspensas). "Controle de Insumos" aparece tanto aqui
+// (dentro de Estoque) quanto dentro de Safra > Painéis -- é o mesmo item,
+// dois pontos de entrada de propósito (pedido explícito do mockup).
+private val OWNER_BOTTOM_TABS = listOf(
+    BottomTab(
+        "safra", "Safra", Icons.Filled.Agriculture,
+        items = listOf(
+            SectorTarget.Domain("safra", "Safra", category = "Produção"),
+            SectorTarget.Domain("planejamentosafra", "Planejamento de Safra", category = "Produção"),
+            SectorTarget.Domain("colheita", "Colheita", category = "Produção"),
+            SectorTarget.Domain("romaneios", "Romaneios", category = "Produção"),
+            SectorTarget.Domain("pragas", "Pragas", category = "Sanidade"),
+            SectorTarget.Domain("receituarios", "Receituários", category = "Sanidade"),
+            SectorTarget.Domain("clima", "Clima", category = "Monitoramento"),
+            SectorTarget.Special("drone", "Drone", category = "Monitoramento"),
+            SectorTarget.Special("fieldview", "FieldView", category = "Monitoramento"),
+            SectorTarget.Special("controleinsumos", "Controle de Insumos", category = "Painéis"),
+            SectorTarget.Special("operacoes", "Operações", category = "Painéis"),
+        ),
+    ),
+    BottomTab(
+        "financeiro", "Financeiro", Icons.Filled.Receipt,
+        items = listOf(
+            SectorTarget.Domain("financeiro", "Lançamentos", category = "Lançamentos"),
+            SectorTarget.Domain("gestaofinanceira", "Gestão Financeira", category = "Lançamentos"),
+            SectorTarget.Special("dre", "DRE", category = "Relatórios"),
+            SectorTarget.Special("analises", "Análises cruzadas", category = "Relatórios"),
+            SectorTarget.Special("livrocaixa", "Livro Caixa", category = "Relatórios"),
+            SectorTarget.Domain("pedidos", "Pedidos", category = "Compras"),
+            SectorTarget.Domain("cotacoesfornecedores", "Cotações de Fornecedores", category = "Compras"),
+            SectorTarget.Domain("contratos", "Contratos", category = "Compras"),
+            SectorTarget.Domain("caixainterno", "Caixa Interno", category = "Faturamento"),
+            SectorTarget.Domain("cobrancas", "Cobranças / NFS-e", category = "Faturamento"),
+            SectorTarget.Domain("inventario", "Inventário", category = "Faturamento"),
+        ),
+    ),
+    BottomTab("frota", "Frota", Icons.Filled.DirectionsCar, directDomainId = "frota"),
+    BottomTab(
+        "estoque", "Estoque", Icons.Filled.Inventory2,
+        items = listOf(
+            SectorTarget.Domain("estoque", "Estoque"),
+            SectorTarget.Special("controleinsumos", "Controle de Insumos"),
+        ),
+    ),
+    BottomTab(
+        "rh", "RH", Icons.Filled.People,
+        items = listOf(
+            SectorTarget.Domain("rh", "RH"),
+            SectorTarget.Domain("controleinterno", "Controle Interno"),
+        ),
+    ),
+)
+
 /** As 3 telas administrativas (Configurações/Base de Dados/Acessos) agora são
  * 100% nativas (Task #148) -- pedido explícito e repetido do usuário ("não
  * use nada para redirecionar, quero ele fixo nesse app"). Antes abriam via
@@ -371,8 +435,12 @@ fun BRAgroBottomBar(
     // inteira se sobrar zero itens (ou se o domínio de acesso direto,
     // Frota/Estoque, não estiver liberado). Recalculado a cada mudança de
     // allowedModules (ex.: dono reconfigurou o acesso e o app resincronizou).
-    val visibleTabs = remember(allowedModules) {
-        BOTTOM_TABS.mapNotNull { tab ->
+    // Fonte da barra: dono usa OWNER_BOTTOM_TABS (6 botões fixos, Safra/
+    // Financeiro com dropdown agrupado por categoria) -- demais contas
+    // continuam com BOTTOM_TABS achatado (pensado pra setor limitado).
+    val sourceTabs = if (isOwner) OWNER_BOTTOM_TABS else BOTTOM_TABS
+    val visibleTabs = remember(allowedModules, isOwner) {
+        sourceTabs.mapNotNull { tab ->
             if (tab.directDomainId != null) {
                 if (isAllowed(allowedModules, tab.directDomainId)) tab else null
             } else {
@@ -415,42 +483,24 @@ fun BRAgroBottomBar(
         }
     }
 
-    // Dono/OWNER: barra fixa de 6 botões (Safra, Financeiro, Frota, Estoque,
-    // RH, Módulos) -- pedido do usuário (mockup da imagem 2: "coloque os
-    // seguintes botões: safra, financeiro, frota, estoque, rh e módulos").
-    // Sem isso, o dono (allowedModules = "*") acabaria vendo as 12 abas
-    // achatadas de BOTTOM_TABS inteiras (achatamento pensado pra contas de
-    // setor limitado, não pra quem enxerga tudo) -- ficaria apertado demais.
-    // Cada botão navega DIRETO pro domínio do setor (não abre dropdown de
-    // categorias); "Módulos" continua sendo o bloco renderizado à parte,
-    // logo abaixo deste NavigationBar, com Configurações/Base de Dados/
-    // Acessos (ver menuSistemaLinks acima).
-    val ownerRenderTabs = remember {
-        listOf(
-            RenderTab.Direct("safra", "Safra", Icons.Filled.Agriculture, "safra") { onNavigateDomain("safra") },
-            RenderTab.Direct("financeiro", "Financeiro", Icons.Filled.Receipt, "financeiro") { onNavigateDomain("financeiro") },
-            RenderTab.Direct("frota", "Frota", Icons.Filled.DirectionsCar, "frota") { onNavigateDomain("frota") },
-            RenderTab.Direct("estoque", "Estoque", Icons.Filled.Inventory2, "estoque") { onNavigateDomain("estoque") },
-            RenderTab.Direct("rh", "RH", Icons.Filled.People, "rh") { onNavigateDomain("rh") },
-        )
-    }
     // Ver comentário completo em RenderTab (topo do arquivo). Resolve cada
     // BottomTab visível em Direct (toque único navega) ou Group (dropdown).
-    val renderTabs = remember(visibleTabs, isOwner) {
-        if (isOwner) {
-            ownerRenderTabs
-        } else {
-            visibleTabs.map { tab ->
-                when {
-                    tab.directDomainId != null ->
-                        RenderTab.Direct(tab.id, tab.label, tab.icon, tab.directDomainId) { onNavigateDomain(tab.directDomainId) }
-                    tab.items.size == 1 -> {
-                        val item = tab.items[0]
-                        val domainId = (item as? SectorTarget.Domain)?.domainId
-                        RenderTab.Direct(tab.id, sectorItemLabel(item), sectorItemIcon(item, tab.icon), domainId) { openSector(item) }
-                    }
-                    else -> RenderTab.Group(tab)
+    // Pra dono, os itens de Safra/Financeiro/Estoque/RH em OWNER_BOTTOM_TABS
+    // nunca sobram com 1 item só (dono sempre tem "*"), então caem sempre em
+    // Group (dropdown) -- exatamente o pedido do usuário de trazer de volta
+    // as listas suspensas nesses 4 botões, sem precisar de nenhum caminho
+    // especial aqui.
+    val renderTabs = remember(visibleTabs) {
+        visibleTabs.map { tab ->
+            when {
+                tab.directDomainId != null ->
+                    RenderTab.Direct(tab.id, tab.label, tab.icon, tab.directDomainId) { onNavigateDomain(tab.directDomainId) }
+                tab.items.size == 1 -> {
+                    val item = tab.items[0]
+                    val domainId = (item as? SectorTarget.Domain)?.domainId
+                    RenderTab.Direct(tab.id, sectorItemLabel(item), sectorItemIcon(item, tab.icon), domainId) { openSector(item) }
                 }
+                else -> RenderTab.Group(tab)
             }
         }
     }
