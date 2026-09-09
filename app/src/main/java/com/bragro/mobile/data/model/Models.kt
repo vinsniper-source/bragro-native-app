@@ -894,6 +894,7 @@ data class OrcamentoItemData(
     val quantidade: Double = 0.0,
     val valorUnitario: Double = 0.0,
     val fazendaId: String? = null,
+    val fazendaNome: String? = null,
     val equipamentoTalhao: String? = null,
     val statusEntrega: String? = null,
 )
@@ -941,6 +942,7 @@ data class OrcamentoCreateRequest(
     val data: String,
     val compradorId: String? = null,
     val fornecedorId: String? = null,
+    val fornecedorNome: String? = null,
     val numeroOrcamento: String? = null,
     val requisicao: String? = null,
     val autorizadoPorId: String? = null,

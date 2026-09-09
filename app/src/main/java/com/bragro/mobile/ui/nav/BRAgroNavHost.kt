@@ -39,6 +39,7 @@ import com.bragro.mobile.ui.pedidos.PedidoMultiItemScreen
 import com.bragro.mobile.ui.cotacoes.CotacaoMultiItemScreen
 import com.bragro.mobile.ui.operacoes.OperacoesScreen
 import com.bragro.mobile.ui.romaneio.RomaneioQuickScreen
+import com.bragro.mobile.ui.orcamento.OrcamentoScreen
 import com.bragro.mobile.ui.seguranca.SegurancaScreen
 import com.bragro.mobile.ui.settings.SettingsScreen
 
@@ -54,6 +55,7 @@ private object Routes {
     const val CONTROLE_INSUMOS = "controle_insumos"
     const val OPERACOES = "operacoes"
     const val ROMANEIO_QUICK = "romaneio_quick"
+    const val ORCAMENTO_NOVO = "orcamento_novo"
     const val BANK_IMPORT = "bank_import"
     const val SETTINGS = "settings"
     const val BASE_DE_DADOS = "base_de_dados"
@@ -144,6 +146,7 @@ fun BRAgroNavHost() {
                     onOpenFieldview = { navController.navigate(Routes.FIELDVIEW) },
                     onOpenControleInsumos = { navController.navigate(Routes.CONTROLE_INSUMOS) },
                     onOpenOperacoes = { navController.navigate(Routes.OPERACOES) },
+                    onOpenOrcamento = { navController.navigate(Routes.ORCAMENTO_NOVO) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                     onOpenBaseDeDados = { navController.navigate(Routes.BASE_DE_DADOS) },
                     onOpenSeguranca = { navController.navigate(Routes.SEGURANCA) },
@@ -250,6 +253,9 @@ fun BRAgroNavHost() {
         }
         composable(Routes.ROMANEIO_QUICK) {
             RomaneioQuickScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.ORCAMENTO_NOVO) {
+            OrcamentoScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.BANK_IMPORT) {
             BankImportScreen(onBack = { navController.popBackStack() })

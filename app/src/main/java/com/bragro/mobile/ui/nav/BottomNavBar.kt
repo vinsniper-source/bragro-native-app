@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Receipt
@@ -215,6 +216,11 @@ private val BOTTOM_TABS = listOf(
             // foi implementado o módulo cotações fornecedores").
             SectorTarget.Domain("cotacoesfornecedores", "Cotações de Fornecedores"),
             SectorTarget.Domain("contratos", "Contratos"),
+            // Módulo de Orçamento (OCR + conciliação com nota mãe) -- ver
+            // handoff-ocr-orcamento.md. Tela própria (não é um domínio
+            // genérico, tabela nova Orcamento/OrcamentoItem), mesmo critério
+            // de Romaneio Rápido/DRE/Análises (SectorTarget.Special).
+            SectorTarget.Special("orcamentos", "Orçamentos"),
         ),
     ),
     // Ex-categoria "Faturamento": movimento de caixa/cobrança -- mesmo
@@ -289,6 +295,8 @@ private val OWNER_BOTTOM_TABS = listOf(
             SectorTarget.Domain("pedidos", "Pedidos", category = "Compras"),
             SectorTarget.Domain("cotacoesfornecedores", "Cotações de Fornecedores", category = "Compras"),
             SectorTarget.Domain("contratos", "Contratos", category = "Compras"),
+            // Ver comentário completo em BOTTOM_TABS acima.
+            SectorTarget.Special("orcamentos", "Orçamentos", category = "Compras"),
             SectorTarget.Domain("caixainterno", "Caixa Interno", category = "Faturamento"),
             SectorTarget.Domain("cobrancas", "Cobranças / NFS-e", category = "Faturamento"),
             SectorTarget.Domain("inventario", "Inventário", category = "Faturamento"),
@@ -371,6 +379,10 @@ private fun permissionIdFor(nativeId: String): String = when (nativeId) {
     "gestaofinanceira" -> "financeiro"
     "operacoes" -> "safra"
     "base-de-dados" -> "basededados"
+    // Módulo de Orçamento usa a permissão de Financeiro (PERMISSION_ALIAS no
+    // site) -- não ganhou toggle próprio em Acessos, ver
+    // handoff-ocr-orcamento.md/actions.ts requireModule("orcamentos").
+    "orcamentos" -> "financeiro"
     else -> nativeId
 }
 
@@ -416,6 +428,7 @@ fun BRAgroBottomBar(
     onOpenFieldview: () -> Unit,
     onOpenControleInsumos: () -> Unit,
     onOpenOperacoes: () -> Unit,
+    onOpenOrcamento: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenBaseDeDados: () -> Unit,
     onOpenSeguranca: () -> Unit,
@@ -479,6 +492,7 @@ fun BRAgroBottomBar(
                 "fieldview" -> onOpenFieldview()
                 "controleinsumos" -> onOpenControleInsumos()
                 "operacoes" -> onOpenOperacoes()
+                "orcamentos" -> onOpenOrcamento()
             }
         }
     }
@@ -774,6 +788,9 @@ private fun sectorItemIcon(item: SectorTarget, fallback: ImageVector): ImageVect
         "fieldview" -> Icons.Filled.Map
         "controleinsumos" -> Icons.Filled.AccountTree
         "operacoes" -> Icons.Filled.Timeline
+        // Câmera -- reforça a leitura automática (OCR) que abre a tela, ver
+        // handoff-ocr-orcamento.md.
+        "orcamentos" -> Icons.Filled.CameraAlt
         else -> fallback
     }
 }

@@ -18,6 +18,34 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.64] -- 2026-09-09
+
+Módulo de Orçamento (OCR + conciliação com nota mãe) -- ver
+handoff-ocr-orcamento.md. Tela "Novo Orçamento" com leitura automática por
+câmera, backend com tabelas próprias (não reaproveita Pedidos/Invoice).
+
+- **Backend (site)**: tabelas novas `orcamentos`/`orcamento_itens` (10ª
+  exceção de schema autorizada pelo usuário, primeira que é uma tabela
+  inteira, não um campo) + RLS por organização + bucket de Storage
+  `orcamentos`. Dois endpoints de OCR SEPARADOS de propósito
+  (`/api/mobile/orcamento` ação `ocr_requisicao` só lê cabeçalho, `ocr_itens`
+  só lê a lista de itens) -- evita duplicar item na leitura automática.
+  `createOrcamentoAction`/`listOrcamentosAction`/`conciliarOrcamentosAction`
+  em `actions.ts`, permissão via alias `orcamentos` -> `financeiro` (sem
+  toggle próprio em Acessos).
+- **Native**: tela `OrcamentoScreen.kt` com 3 blocos -- cabeçalho (Data,
+  Requisição, Autorizado por, foto com OCR automático, Fornecedor, Nº do
+  orçamento, 2ª foto com OCR automático dos itens), itens repetíveis em
+  blocos individuais (Item, Unidade, Quantidade, Valor unitário, Fazenda,
+  Equipamento/Talhão, Status de entrega) e Observações. Ícone "Copiar
+  último lançamento" no topo. Entrada nova na barra inferior (categoria
+  Compras, ícone de câmera) tanto no menu achatado quanto no dropdown do
+  dono.
+- Endpoint `/api/mobile/romaneio-ocr` novo -- disponibiliza a leitura por
+  IA (Claude vision, já ativa no site desde a Task #155) pro app nativo
+  também, sem mexer no parser local (ML Kit, `RomaneioOcrParser.kt`) que já
+  funcionava offline e sem custo de servidor.
+
 ## [1.2.63] -- 2026-09-08
 
 Barra inferior do dono/OWNER volta a ter dropdown em Safra/Financeiro/
