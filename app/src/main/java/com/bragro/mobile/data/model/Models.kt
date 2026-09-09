@@ -881,6 +881,167 @@ data class PedidoMultiItemResponse(
     val error: String? = null,
 )
 
+// Módulo de Orçamento (OCR + conciliação com nota mãe) -- ver
+// handoff-ocr-orcamento.md. Todas as ações passam por UMA rota só
+// (/api/mobile/orcamento) com "action" no corpo, mesmo padrão de
+// GetModuleIntegrationRequest/etc. em Api.kt -- chama DIRETO
+// createOrcamentoAction()/extrairRequisicaoOcrAction()/etc. no servidor,
+// nenhuma lógica de negócio duplicada em Kotlin.
+@Serializable
+data class OrcamentoItemData(
+    val item: String = "",
+    val unidade: String? = null,
+    val quantidade: Double = 0.0,
+    val valorUnitario: Double = 0.0,
+    val fazendaId: String? = null,
+    val equipamentoTalhao: String? = null,
+    val statusEntrega: String? = null,
+)
+
+@Serializable
+data class OrcamentoData(
+    val id: String,
+    val data: String,
+    val compradorId: String? = null,
+    val fornecedorId: String? = null,
+    val numeroOrcamento: String? = null,
+    val requisicao: String? = null,
+    val autorizadoPorId: String? = null,
+    val autorizadoPorNome: String? = null,
+    val fotoRequisicaoUrl: String? = null,
+    val fotoComprovanteUrl: String? = null,
+    val status: String = "PENDENTE_NF",
+    val invoiceId: String? = null,
+    val ajuste: Double? = null,
+    val observacoes: String? = null,
+    val origem: String = "MANUAL",
+    val itens: List<OrcamentoItemData> = emptyList(),
+)
+
+@Serializable
+data class OrcamentoListRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String = "list",
+    val status: String? = null,
+)
+
+@Serializable
+data class OrcamentoListResponse(
+    val ok: Boolean,
+    val orcamentos: List<OrcamentoData>? = null,
+    val error: String? = null,
+)
+
+@Serializable
+data class OrcamentoCreateRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String = "create",
+    val data: String,
+    val compradorId: String? = null,
+    val fornecedorId: String? = null,
+    val numeroOrcamento: String? = null,
+    val requisicao: String? = null,
+    val autorizadoPorId: String? = null,
+    val autorizadoPorNome: String? = null,
+    val fotoRequisicaoUrl: String? = null,
+    val fotoComprovanteUrl: String? = null,
+    val observacoes: String? = null,
+    val origem: String = "OCR_APP",
+    val origemId: String? = null,
+    val itens: List<OrcamentoItemData>,
+)
+
+@Serializable
+data class OrcamentoCreateResponse(
+    val ok: Boolean,
+    val id: String? = null,
+    val duplicado: Boolean? = null,
+    val itens: Int? = null,
+    val error: String? = null,
+)
+
+@Serializable
+data class OrcamentoOcrRequisicaoRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String = "ocr_requisicao",
+    val fotoUrl: String,
+)
+
+@Serializable
+data class OrcamentoOcrRequisicaoCampos(
+    val requisicao: String? = null,
+    val autorizadoPorNomeLido: String? = null,
+    val autorizadoPorId: String? = null,
+)
+
+@Serializable
+data class OrcamentoOcrRequisicaoResponse(
+    val ok: Boolean,
+    val status: String? = null,
+    val mensagem: String? = null,
+    val campos: OrcamentoOcrRequisicaoCampos? = null,
+    val error: String? = null,
+)
+
+@Serializable
+data class OrcamentoOcrItensRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String = "ocr_itens",
+    val fotoUrl: String,
+)
+
+@Serializable
+data class OrcamentoOcrItemLido(
+    val item: String = "",
+    val unidade: String? = null,
+    val quantidade: Double? = null,
+    val valorUnitario: Double? = null,
+    val fazendaIdSugerido: String? = null,
+    val fazendaNomeLido: String? = null,
+)
+
+@Serializable
+data class OrcamentoOcrItensResponse(
+    val ok: Boolean,
+    val status: String? = null,
+    val mensagem: String? = null,
+    val itens: List<OrcamentoOcrItemLido>? = null,
+    val error: String? = null,
+)
+
+// Leitura automática (OCR) do Romaneio Rápido via servidor (Claude vision,
+// mesmo motor do site desde a Task #155) -- ver handoff-ocr-orcamento.md,
+// item 1.4. Complementa o RomaneioOcrParser.kt local (ML Kit, no aparelho,
+// sem custo de servidor) -- este endpoint fica disponível como leitura
+// mais robusta, chamado à parte (não substitui o parser local por padrão).
+@Serializable
+data class RomaneioOcrCampos(
+    val pesoBrutoKg: Double? = null,
+    val taraKg: Double? = null,
+    val umidade: Double? = null,
+    val impureza: Double? = null,
+)
+
+@Serializable
+data class RomaneioOcrRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val fotoUrl: String,
+)
+
+@Serializable
+data class RomaneioOcrResponse(
+    val ok: Boolean,
+    val status: String? = null,
+    val mensagem: String? = null,
+    val campos: RomaneioOcrCampos? = null,
+    val error: String? = null,
+)
+
 @Serializable
 data class CotacaoMultiItemItemData(
     val categoria: String = "",

@@ -57,6 +57,16 @@ import com.bragro.mobile.data.model.CotacaoComparacaoRequest
 import com.bragro.mobile.data.model.CotacaoComparacaoResponse
 import com.bragro.mobile.data.model.CotacaoPrecoMedioRequest
 import com.bragro.mobile.data.model.CotacaoPrecoMedioResponse
+import com.bragro.mobile.data.model.OrcamentoListRequest
+import com.bragro.mobile.data.model.OrcamentoListResponse
+import com.bragro.mobile.data.model.OrcamentoCreateRequest
+import com.bragro.mobile.data.model.OrcamentoCreateResponse
+import com.bragro.mobile.data.model.OrcamentoOcrRequisicaoRequest
+import com.bragro.mobile.data.model.OrcamentoOcrRequisicaoResponse
+import com.bragro.mobile.data.model.OrcamentoOcrItensRequest
+import com.bragro.mobile.data.model.OrcamentoOcrItensResponse
+import com.bragro.mobile.data.model.RomaneioOcrRequest
+import com.bragro.mobile.data.model.RomaneioOcrResponse
 import com.bragro.mobile.data.model.OperacoesRequest
 import com.bragro.mobile.data.model.OperacoesResponse
 import com.bragro.mobile.data.model.NotificationsRequest
@@ -176,6 +186,26 @@ interface MobileApi {
 
     @POST("api/mobile/cotacao-multi-item")
     suspend fun cotacaoMultiItem(@Body body: CotacaoMultiItemRequest): Response<CotacaoMultiItemResponse>
+
+    // Módulo de Orçamento (OCR + conciliação) -- ver handoff-ocr-orcamento.md.
+    // UMA rota só (/api/mobile/orcamento), "action" no corpo decide o que
+    // roda no servidor -- mesmo padrão de module-integration acima.
+    @POST("api/mobile/orcamento")
+    suspend fun orcamentoList(@Body body: OrcamentoListRequest): Response<OrcamentoListResponse>
+
+    @POST("api/mobile/orcamento")
+    suspend fun orcamentoCreate(@Body body: OrcamentoCreateRequest): Response<OrcamentoCreateResponse>
+
+    @POST("api/mobile/orcamento")
+    suspend fun orcamentoOcrRequisicao(@Body body: OrcamentoOcrRequisicaoRequest): Response<OrcamentoOcrRequisicaoResponse>
+
+    @POST("api/mobile/orcamento")
+    suspend fun orcamentoOcrItens(@Body body: OrcamentoOcrItensRequest): Response<OrcamentoOcrItensResponse>
+
+    // Leitura automática (OCR) do Romaneio Rápido via servidor -- ver
+    // comentário em RomaneioOcrRequest/Response (Models.kt).
+    @POST("api/mobile/romaneio-ocr")
+    suspend fun romaneioOcr(@Body body: RomaneioOcrRequest): Response<RomaneioOcrResponse>
 
     // Inverso do multi-item acima -- pedido do usuario ("Cotações
     // Fornecedores: múltiplos fornecedores por operação", task #404): 1
