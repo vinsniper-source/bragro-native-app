@@ -1928,11 +1928,12 @@ private fun KpiGrid(data: HomeData) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 row.forEach { kpi -> KpiCard(kpi, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true) }
-                // Fileira ímpar (última sobra 1 KPI): Spacer no lugar do 2º
-                // card mantém a largura igual à fileira de cima, sem
-                // "padronizar" a largura de propósito -- só evita o card
-                // sozinho esticar até o fim.
-                if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
+                // Fileira ímpar (última sobra 1 KPI): antes um Spacer no
+                // lugar do 2º card deixava esse último KPI preso na metade
+                // da largura, com um vão vazio do lado -- pedido do usuário
+                // ("distribua os kpis colapsados"): removido o Spacer, o
+                // card sozinho (já com weight(1f), único filho da Row) passa
+                // a ocupar a largura inteira, sem vão sobrando.
             }
         }
         // "Fazendas cadastradas" saiu daqui -- pedido do usuário ("desabilite

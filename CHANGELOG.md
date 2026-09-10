@@ -18,6 +18,14 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.67] -- 2026-09-10
+
+- **Início (KpiGrid)**: quando a última fileira de KPIs sobra ímpar (ex.:
+  "Colheitas (mês)" sozinho), esse card agora ocupa a largura inteira da
+  linha em vez de ficar preso na metade com um vão vazio do lado (era um
+  `Spacer` de propósito -- pedido do usuário: "distribua os kpis
+  colapsados").
+
 ## [1.2.66] -- 2026-09-10
 
 Ajuste de escala da logo BRAgro (login e cabeçalho da Início) após ficar
