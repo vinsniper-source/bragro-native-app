@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -105,7 +106,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
@@ -672,36 +675,36 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth().padding(start = 0.dp, end = 8.dp, top = 4.dp, bottom = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // ATENÇÃO -- height(150.dp) REMOVIDO de propósito (não é
-                    // redução de tamanho, ver comentário no Row acima): o
-                    // tamanho VISÍVEL da logo não muda nem um pixel, porque
-                    // ele sempre foi determinado pelo widthIn(max=190dp), não
-                    // pela altura -- só a caixa de layout invisível ao redor
-                    // dela encolhe pra bater com o tamanho real renderizado.
-                    // Histórico de tentativas de aumentar a logo (96dp ->
-                    // 120dp -> 100dp -> 112dp -> 128dp -> 150dp) documentado
-                    // aqui pra registro -- na prática, qualquer valor de
-                    // altura acima do que os 190dp de largura permitem nunca
-                    // teve efeito visual nenhum (era só caixa vazia).
-                    Image(
-                        painter = painterResource(R.drawable.logo_bragro),
-                        contentDescription = "BRAgro",
-                        // widthIn(max) evita que a logo, sozinha, já tome
-                        // metade da tela em telas estreitas -- bug real
-                        // encontrado ("logo do cliente não aparece"): com
-                        // muitos ícones no cabeçalho, a soma das larguras
-                        // passava da tela e o ÚLTIMO item (logo do cliente /
-                        // botão "+") ficava cortado fora da área visível,
-                        // sem nenhum aviso. O cluster de ícones ainda rola
-                        // horizontalmente (Row.horizontalScroll abaixo) como
-                        // rede de segurança, mesmo com mais espaço agora.
-                        // Sem .height(150.dp) -- pedido do usuário ("ícones
-                        // ao lado da logo, não é pra mexer no tamanho da
-                        // logo"): removido, mas o tamanho VISÍVEL não muda
-                        // (ver comentário longo no Row acima) -- só a caixa
-                        // de layout invisível ao redor da logo encolhe.
-                        modifier = Modifier.widthIn(max = 190.dp),
-                    )
+                    // Logo com crop -- logo_bragro.png tem margem
+                    // transparente bem maior a esquerda/embaixo do que em
+                    // cima/direita (mesmo arquivo/problema do login, ver
+                    // LoginScreen.kt), entao o antigo widthIn(max=190dp) +
+                    // Fit deixava o desenho puxado pra direita/cima dentro
+                    // da caixa. Box com clipToBounds + Image maior que a
+                    // caixa (deslocada via offset) recorta a margem
+                    // excedente, usando os MESMOS percentuais medidos no
+                    // arquivo do site (conteudo visivel: 24,23%-98,77% da
+                    // largura, 3,11%-60,45% da altura, aspect ratio do
+                    // recorte 3,57635:1). Altura 40dp -- pedido do usuario
+                    // ("diminua, nao fique tao chamativa nem tao escondida")
+                    // apos a logo do login ter ficado grande demais; mesma
+                    // escala usada no login (LoginScreen.kt).
+                    Box(
+                        modifier = Modifier
+                            .height(40.dp)
+                            .width(143.dp)
+                            .clipToBounds(),
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.logo_bragro),
+                            contentDescription = "BRAgro",
+                            contentScale = ContentScale.FillBounds,
+                            modifier = Modifier
+                                .width(192.dp)
+                                .height(70.dp)
+                                .offset(x = (-47).dp, y = (-2).dp),
+                        )
+                    }
                     // Cluster de ícones OPCIONAIS (Backup/Configurações/Base de
                     // Dados/Notificações/Tema) -- rolagem horizontal, mas
                     // agora dentro de weight(1f, fill=false): ocupa só o

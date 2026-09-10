@@ -18,6 +18,21 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.66] -- 2026-09-10
+
+Ajuste de escala da logo BRAgro (login e cabeçalho da Início) após ficar
+grande/puxada pra um lado demais na rodada anterior.
+
+- **Login e cabeçalho (Início)**: `logo_bragro.png` tem margem transparente
+  bem maior à esquerda/embaixo do que em cima/direita -- com `ContentScale.Fit`
+  simples, o desenho ficava puxado pra direita/cima dentro da caixa. Agora um
+  recorte (Box + Image deslocada) corta essa margem excedente, mesmos
+  percentuais usados na correção equivalente do site.
+- **Tamanho**: reduzido de 200dp (login) e ~57dp efetivos (cabeçalho, apesar
+  do `widthIn(max=190dp)`) para uma escala única e consistente entre os dois
+  (64dp no login, 40dp no cabeçalho) -- pedido do usuário após a primeira
+  correção deixar a marca chamativa/grande demais.
+
 ## [1.2.65] -- 2026-09-10
 
 Rodada de correções da Início reportadas com prints (logo do cliente sumindo,
