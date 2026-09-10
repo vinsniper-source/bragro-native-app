@@ -702,15 +702,31 @@ fun HomeScreen(
                         // de layout invisível ao redor da logo encolhe.
                         modifier = Modifier.widthIn(max = 190.dp),
                     )
-                    Spacer(modifier = Modifier.weight(1f))
-                    // Cluster de ícones do cabeçalho com rolagem horizontal --
-                    // mesma correção do bug acima: mesmo que a soma das
-                    // larguras dos ícones não caiba na tela (aparelhos mais
-                    // estreitos, ou fontes/densidade maiores), nada fica
-                    // permanentemente inacessível -- o usuário arrasta pra ver
-                    // o restante, mas o botão de logo do cliente nunca some.
+                    // Cluster de ícones OPCIONAIS (Backup/Configurações/Base de
+                    // Dados/Notificações/Tema) -- rolagem horizontal, mas
+                    // agora dentro de weight(1f, fill=false): ocupa só o
+                    // espaço que sobra entre a logo e o bloco FIXO (Conta +
+                    // logo do cliente) à direita, que saiu de dentro desta Row
+                    // (ver mais abaixo) -- BUG REAL reportado pelo usuário com
+                    // print ("o local pra logo do cliente não aparece, force
+                    // e reposicione pra aparecer em todos os setores"): antes
+                    // a logo/placeholder do cliente vivia como ÚLTIMO item
+                    // AQUI DENTRO da mesma Row rolável; em setores com vários
+                    // ícones habilitados (Backup + Configurações + Base de
+                    // Dados + Notificações + Tema) a soma das larguras já
+                    // passava da tela sem ela, empurrando a logo do cliente
+                    // pra fora da área visível -- sem nenhum indício de que
+                    // dava pra rolar até lá, ela nunca aparecia de verdade
+                    // (exatamente o "não aparece" relatado). Retirando Conta +
+                    // logo do cliente de dentro do bloco rolável (agora fixos,
+                    // ver abaixo), os dois ficam SEMPRE visíveis, e só os
+                    // ícones opcionais rolam quando não cabem. Arrangement.End
+                    // mantém o mesmo respiro visual de antes (que vinha do
+                    // Spacer(weight(1f)) removido daqui) entre a logo BRAgro e
+                    // o cluster.
                     Row(
-                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        modifier = Modifier.weight(1f, fill = false).horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                     // Ícone "Início" removido -- pedido do usuário ("retire a
@@ -856,6 +872,9 @@ fun HomeScreen(
                         }
                     }
                     ThemeToggle()
+                    } // fecha Row de rolagem horizontal do cluster de ícones OPCIONAIS
+                    // Conta -- SEMPRE visível, fora da área rolável (ver
+                    // comentário no Row rolável acima).
                     Box {
                         IconButton(onClick = { userMenuOpen = true }, enabled = !uploadingAvatar) {
                             val avatarUrl = session?.avatarUrl
@@ -893,8 +912,9 @@ fun HomeScreen(
                         }
                     }
                     // Lugar reservado pra logo da organização (canto superior
-                    // direito) -- pedido do usuário. Cada organização pode ter
-                    // uma (orgLogoUrl). Sem logo cadastrada, quem é
+                    // direito) -- SEMPRE visível agora, fora da área rolável
+                    // (ver comentário no Row rolável acima). Cada organização
+                    // pode ter uma (orgLogoUrl). Sem logo cadastrada, quem é
                     // OWNER/ADMIN (isAdmin, ver topbar.tsx) vê um botão "+"
                     // convidando a cadastrar uma -- upload é feito DIRETO
                     // aqui pelo app agora (pedido do usuário: "quando clicar
@@ -958,7 +978,6 @@ fun HomeScreen(
                             }
                         }
                     }
-                    } // fecha Row de rolagem horizontal do cluster de ícones
                 } // fecha Row externa (logo + cluster de ícones) -- faltava
                 // este fechamento desde a v1.2.60 (bug real, nunca pego por
                 // build nenhum até agora): só a Row interna de rolagem
@@ -1216,51 +1235,59 @@ fun HomeScreen(
                     item(key = "breakdown-rh") { CategoryBreakdownCard(titulo = "RH", data = b) }
                 }
             }
-            data.breakdowns?.safra?.let { b ->
-                if (data.hasWidget("inicio.breakdown.safra")) {
-                    item(key = "breakdown-safra") { CategoryBreakdownCard(titulo = "Safra", data = b) }
-                }
-            }
+            // "breakdown-safra" REMOVIDO -- bug real reportado pelo usuário com
+            // print (setor Safra, Início): esse card (Custo médio/ha por
+            // CULTURA) duplicava informação já mostrada pelo CanvasDetailCard
+            // logo acima (Custo médio/ha da fazenda selecionada, com barra por
+            // CATEGORIA -- Custeio/Insumos/Defensivos), e quando só existe 1
+            // cultura na janela filtrada (caso comum, ver print) o card de
+            // Safra virava uma barra única sem nenhuma quebra útil -- menos
+            // informação que o Canvas, que sempre mostra a quebra completa
+            // por categoria. Único setor com essa sobreposição (Financeiro/
+            // Estoque/RH/Frota não têm equivalente no Canvas), então só este
+            // card saiu -- os outros 4 continuam normalmente.
             data.breakdowns?.frota?.let { b ->
                 if (data.hasWidget("inicio.breakdown.frota")) {
                     item(key = "breakdown-frota") { CategoryBreakdownCard(titulo = "Frota", data = b) }
                 }
             }
-            // Clima ao lado de Câmbio, Cotações ao lado de Destaques -- cada
-            // par em blocos separados (Card) lado a lado, pedido do usuário
-            // ("coloque câmbio ao lado de clima separados por blocos"). Cada
-            // um agora também liga/desliga independente.
+            // Clima, Câmbio e Destaques dividem a mesma linha -- pedido do
+            // usuário com print ("recolha o kpi de câmbio pela metade, suba
+            // o kpi destaques para o lado do kpi câmbio"): antes Destaques
+            // ficava numa linha própria ao lado de "Fazendas cadastradas", e
+            // Câmbio sozinho ocupava a linha inteira quando Clima não
+            // aparecia (setor sem "inicio.clima", ex. Financeiro) -- exatamente
+            // o print mostrado. weight(1f) em cada um reparte a linha em
+            // partes iguais entre só os que aparecerem (2 ou 3), sem sobrar
+            // vão vazio quando algum não está habilitado nesse setor (mesmo
+            // critério já usado no site, dashboard/page.tsx com auto-fit).
             val clima = weather?.weather
             val fx = weather?.fx
             val showClima = data.hasWidget("inicio.clima") && clima != null
             val showCambio = data.hasWidget("inicio.cambio") && fx != null
-            if (showClima || showCambio) {
-                item(key = "clima-cambio") {
+            val showDestaques = data.hasWidget("inicio.destaques")
+            if (showClima || showCambio || showDestaques) {
+                item(key = "clima-cambio-destaques") {
                     Row(
                         modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         if (showClima) ClimaCard(clima!!, onRefresh = { viewModel.refresh() }, modifier = Modifier.weight(1f).fillMaxHeight())
                         if (showCambio) CambioCard(fx!!, onRefresh = { viewModel.refresh() }, modifier = Modifier.weight(1f).fillMaxHeight())
+                        if (showDestaques) DestaquesCard(data, viewModel.lastUpdatedAt.value, modifier = Modifier.weight(1f).fillMaxHeight())
                     }
                 }
             }
-            // Fazendas cadastradas ao lado de Destaques, dividindo o bloco --
-            // pedido do usuário ("realoque o kpi destaques, para o lado de
-            // fazendas cadastradas, dividindo os blocos"). Fazendas
-            // cadastradas saiu do grid 2x2 de KpiGrid (ver `fazendasKpi`
-            // acima) pra poder formar essa dupla aqui. Sem toggle próprio no
-            // site (o dashboard web não tem mais esse KPI) -- amarrado ao
-            // MESMO toggle "inicio.destaques" por simplicidade.
-            if (data.hasWidget("inicio.destaques")) {
-            item(key = "fazendas-destaques") {
-                Row(
-                    modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    KpiCard(fazendasKpi(data), modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true)
-                    DestaquesCard(data, viewModel.lastUpdatedAt.value, modifier = Modifier.weight(1f).fillMaxHeight())
-                }
+            // Fazendas cadastradas -- pedido do usuário ("desabilite o kpi
+            // total fazendas, deixe habilitado apenas no setor safra"): não
+            // tem toggle próprio em Acessos (nunca teve, ver comentário
+            // antigo removido daqui), então usamos "inicio.kpi.safra" -- só
+            // fica no set de widgets liberados pra quem tem safra/colheita/
+            // planejamentosafra (ver MODULE_TO_INICIO_KPI, lib/permissions.
+            // ts) -- como proxy do setor Safra, sem precisar de um id novo.
+            if (data.hasWidget("inicio.kpi.safra")) {
+            item(key = "fazendas") {
+                KpiCard(fazendasKpi(data), modifier = Modifier.fillMaxWidth())
             }
             }
             // Cotações Grãos agora ocupa a linha inteira, até o limite da
@@ -1905,11 +1932,11 @@ private fun KpiGrid(data: HomeData) {
                 if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
             }
         }
-        // "Fazendas cadastradas" saiu daqui -- pedido do usuário ("realoque
-        // o kpi destaques para o lado de fazendas cadastradas, dividindo os
-        // blocos"): agora mora no item "fazendas-destaques" (ver HomeScreen
-        // abaixo), lado a lado com Destaques, em vez de sozinho numa linha
-        // cheia aqui dentro do grid.
+        // "Fazendas cadastradas" saiu daqui -- pedido do usuário ("desabilite
+        // o kpi total fazendas, deixe habilitado apenas no setor safra"):
+        // agora mora no item "fazendas" (ver HomeScreen abaixo), linha cheia
+        // própria, só renderizada quando "inicio.kpi.safra" está liberado
+        // (proxy do setor Safra), em vez de sempre dentro deste grid.
     }
 }
 
@@ -1919,8 +1946,8 @@ private fun KpiGrid(data: HomeData) {
 // (ícone com borda colorida, quantidade em destaque, legenda menor abaixo do
 // nome) -- aqui a legenda mostra a área total em vez de um texto fixo, já
 // que é a métrica-irmã da contagem de fazendas. Extraído de dentro de
-// KpiGrid pra poder ser renderizado ao lado de Destaques (ver comentário no
-// item "fazendas-destaques" em HomeScreen), em vez de dentro do grid.
+// KpiGrid pra ser renderizado só no setor Safra (ver item "fazendas" em
+// HomeScreen), em vez de sempre dentro do grid.
 private fun fazendasKpi(data: HomeData): Kpi = Kpi(
     "Fazendas cadastradas",
     data.numeroFazendas.toString(),
@@ -2082,6 +2109,35 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+            // Previsão da semana -- pedido do usuário ("coloque o kpi clima
+            // da semana"): o backend já mandava clima.forecast (mesmo dado
+            // que o site usa em dashboard/page.tsx, "weather.forecast.slice
+            // (0, 5)"), só não era desenhado aqui no app. Faixa compacta
+            // (dia da semana + ícone + máx/mín), mesmo padrão visual do
+            // site, encaixada abaixo do "agora" e acima do rodapé de fonte.
+            if (clima.forecast.isNotEmpty()) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    clima.forecast.take(5).forEach { d ->
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            val dia = runCatching {
+                                val parsed = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(d.date)
+                                SimpleDateFormat("EEE", Locale("pt", "BR")).format(parsed!!).replace(".", "")
+                            }.getOrDefault("—")
+                            Text(dia, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(d.icon, style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                "${d.maxC.toInt()}°/${d.minC.toInt()}°",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+                    }
+                }
             }
             // Periodicidade + fonte -- pedido do usuário ("coloque a
             // periodicidade que é atualizado e a fonte"). Valor real do
@@ -2322,23 +2378,21 @@ private fun DestaquesCard(data: HomeData, updatedAtMillis: Long?, modifier: Modi
     Card(modifier = modifier, border = BorderStroke(0.dp, Color.Transparent)) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MiniCardHeader("Destaques", Icons.Filled.Star, BrYellow, MaterialTheme.typography.titleMedium)
-            Row {
-                Text("Cultura líder: ")
-                Text(data.culturaLider ?: "—", fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
+            // Destaques por SETOR -- réplica de destaqueCandidates (site,
+            // dashboard/page.tsx) -- bug real reportado pelo usuário com
+            // print (setor Financeiro): este card mostrava sempre "Cultura
+            // líder"/"Pedidos em atraso" fixos, mesmo pra quem só tem
+            // Frota/RH/Financeiro liberado, sem nenhuma relação com o
+            // próprio trabalho ("insira algo relacionado ao setor não só no
+            // financeiro mas nos outros também, pegue os exemplos da
+            // plataforma"). destaquesVisiveis() abaixo nunca retorna lista
+            // vazia (pedido do usuário: "nunca deixe um espaço em branco").
+            destaquesVisiveis(data).forEach { (label, valor) ->
+                Row {
+                    Text("$label: ")
+                    Text(valor, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
+                }
             }
-            Row {
-                Text("Pedidos em atraso: ")
-                Text(data.pedidosAtrasados.toString(), fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
-            }
-            // Sem info extra aqui -- pedido do usuário ("retire no kpi os
-            // destaques que você colocou, não faz sentido, são informações
-            // dos kpis que já tem na página inicial"): tanto o resumo de
-            // módulos quanto Alertas/Avisos duplicavam cards que já existem
-            // na tela (KPIs Financeiro/Estoque/Safra/RH e Central de
-            // Alertas/Mural de Avisos) -- Destaques volta a mostrar só o
-            // que é exclusivo dele. A altura já casa com o bloco ao lado
-            // (Cotações) via IntrinsicSize.Min + fillMaxHeight no Row que
-            // envolve os dois (ver item "cotacoes-destaques").
             // Data/hora da última busca ao vivo -- pedido do usuário
             // ("implemente também em destaques atualização: data e hora").
             if (updatedAtMillis != null) {
@@ -2351,6 +2405,46 @@ private fun DestaquesCard(data: HomeData, updatedAtMillis: Long?, modifier: Modi
             }
         }
     }
+}
+
+private data class DestaqueCandidate(val id: String, val label: String, val value: String, val moduleIds: List<String>)
+
+/** Réplica exata do critério de destaqueCandidates/destaquesVisiveis em
+ * dashboard/page.tsx (site): OWNER/ADMIN ("*" em allowedModules) sempre vê
+ * o par original (Cultura líder + Pedidos em atraso -- visão geral da
+ * organização inteira faz sentido pra quem administra tudo); os demais
+ * papéis veem até 2 destaques que correspondem de verdade aos módulos que
+ * tem acesso. Sem esse critério aqui no app (só existia no site até agora),
+ * quem só trabalha com Frota/RH/Financeiro via destaques de Safra/Pedidos
+ * sem nenhuma relação com o próprio setor. */
+private fun destaquesVisiveis(data: HomeData): List<Pair<String, String>> {
+    val candidates = listOf(
+        DestaqueCandidate("cultura", "Cultura líder", data.culturaLider ?: "—", listOf("safra", "colheita", "planejamentosafra")),
+        DestaqueCandidate("pedidos", "Pedidos em atraso", data.pedidosAtrasados.toString(), listOf("pedidos")),
+        DestaqueCandidate(
+            "frota", "Próxima revisão",
+            data.frotaProximaRevisao?.let { "${it.frota} — ${it.dias ?: "?"} dia(s)" } ?: "—",
+            listOf("frota"),
+        ),
+        DestaqueCandidate(
+            "financeiro", "Maior conta em aberto",
+            data.financeiroMaiorConta?.let { "${it.categoria} — ${formatMoneyBrl(it.bruto)}" } ?: "—",
+            listOf("financeiro", "dre", "pagamentos"),
+        ),
+        DestaqueCandidate("rh", "Aniversariante do mês", data.rhAniversarianteDoMes ?: "—", listOf("rh")),
+    )
+    val allowed = data.allowedModules
+    val parPadrao = candidates.filter { it.id == "cultura" || it.id == "pedidos" }
+    val visiveis = if (allowed.contains("*")) {
+        parPadrao
+    } else {
+        candidates.filter { c -> c.moduleIds.any { allowed.contains(it) } }.take(2)
+    }
+    // "nunca deixar espaço em branco" -- pedido do usuário: se por acaso
+    // nenhum candidato bater com os módulos liberados (papel muito
+    // restrito, allowedModules ainda não chegou do backend, etc.), cai pro
+    // mesmo par padrão em vez de mostrar o card sem nenhuma linha.
+    return (visiveis.ifEmpty { parPadrao }).map { it.label to it.value }
 }
 
 private fun formatUpdatedAt(millis: Long): String =

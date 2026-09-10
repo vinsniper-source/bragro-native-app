@@ -299,7 +299,27 @@ data class HomeData(
     val apkUrl: String? = null,
     val apkVersao: String? = null,
     val baseDeDadosCategorias: List<HomeBaseDeDadosSectorGroup> = emptyList(),
+    // Módulos liberados pra esta conta (["*"] pra OWNER/ADMIN) -- pedido do
+    // usuário (destaques por setor, ver DestaquesCard/HomeScreen.kt e
+    // comentário em HomeFinanceiroMaiorContaData abaixo): precisa do MESMO
+    // dado que o site usa (ctx.allowedModules) pra escolher os mesmos
+    // destaques, sem duplicar essa regra com resultado divergente.
+    val allowedModules: List<String> = emptyList(),
+    // Destaques por SETOR (Task #497, réplica do site -- ver
+    // destaqueCandidates em dashboard/page.tsx) -- bug real reportado pelo
+    // usuário com print (DestaquesCard mostrava sempre "Cultura líder"/
+    // "Pedidos em atraso" fixos, mesmo pra quem só tem Frota/RH/Financeiro
+    // liberado). Cada campo é null quando não há dado pro setor.
+    val frotaProximaRevisao: HomeFrotaProximaRevisaoData? = null,
+    val financeiroMaiorConta: HomeFinanceiroMaiorContaData? = null,
+    val rhAniversarianteDoMes: String? = null,
 )
+
+@Serializable
+data class HomeFrotaProximaRevisaoData(val frota: String, val dias: Int? = null)
+
+@Serializable
+data class HomeFinanceiroMaiorContaData(val categoria: String, val bruto: Double)
 
 // Grupo de categorias de Base de Dados por setor -- alimenta o dropdown do
 // ícone "Base de Dados" no cabeçalho (mesmo shape de BaseDeDadosSectorGroup

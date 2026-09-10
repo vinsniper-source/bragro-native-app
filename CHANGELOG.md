@@ -18,6 +18,35 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.65] -- 2026-09-10
+
+Rodada de correções da Início reportadas com prints (logo do cliente sumindo,
+cards duplicados, câmbio/destaques/fazendas mal distribuídos).
+
+- **Cabeçalho**: logo do cliente (e o botão de conta) saíram de dentro da
+  faixa de ícones com rolagem horizontal -- em setores com vários ícones
+  habilitados, a soma das larguras empurrava a logo do cliente pra fora da
+  tela sem nenhuma pista de que dava pra rolar até ela. Agora ficam FIXOS,
+  sempre visíveis, e só os ícones opcionais (Backup/Configurações/Base de
+  Dados/Notificações/Tema) rolam quando não cabem.
+- **Início (Safra)**: removido o card "Safra -- Custo médio/ha" que duplicava
+  a mesma informação já mostrada, com mais detalhe, pelo card da fazenda
+  selecionada no Canvas.
+- **Clima**: novo bloco de previsão da semana (dia + ícone + máx/mín),
+  mesmo dado que o site já mostrava, só faltava desenhar no app.
+- **Câmbio/Destaques**: Câmbio, Clima e Destaques agora dividem a mesma
+  linha em partes iguais entre só os que estiverem habilitados nesse setor
+  (antes Câmbio sozinho esticava a linha inteira quando Clima não aparecia).
+- **Destaques**: agora é por SETOR (réplica do que já existia no site) --
+  Frota vê "Próxima revisão", Financeiro vê "Maior conta em aberto", RH vê
+  "Aniversariante do mês", em vez de sempre "Cultura líder"/"Pedidos em
+  atraso" fixos pra todo mundo.
+- **Fazendas cadastradas**: esse KPI agora só aparece pra quem tem o setor
+  Safra liberado (antes aparecia em qualquer setor, inclusive Financeiro).
+- **Backend (site)**: `/api/mobile/home` passou a mandar `allowedModules`,
+  `frotaProximaRevisao`, `financeiroMaiorConta` e `rhAniversarianteDoMes`
+  (já existiam pro site, faltava expor pro app).
+
 ## [1.2.64] -- 2026-09-09
 
 Módulo de Orçamento (OCR + conciliação com nota mãe) -- ver
