@@ -2,18 +2,13 @@ package com.bragro.mobile.ui.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -87,35 +82,24 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
         // text-center").
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Logo com crop -- logo_bragro.png tem margem transparente bem maior
-        // a esquerda/embaixo do que em cima/direita (mesmo arquivo/problema
-        // do site, ver logo em login/page.tsx), entao so aumentar a altura
-        // (96dp -> 140dp -> 168dp -> 200dp, historico de pedidos anteriores)
-        // deixava o desenho puxado pra direita/cima dentro da caixa, alem de
-        // ter ficado grande demais ("diminua, nao fique tao chamativa nem
-        // tao escondida"). Box com clipToBounds + Image maior que a caixa
-        // (deslocada via offset) recorta a margem excedente, usando os
-        // MESMOS percentuais medidos no arquivo do site (conteudo visivel:
-        // 24,23%-98,77% da largura, 3,11%-60,45% da altura, aspect ratio do
-        // recorte 3,57635:1). Altura 64dp -- mesma escala usada no
-        // cabecalho (HomeScreen.kt), pra manter as duas logos da marca
-        // consistentes.
-        Box(
-            modifier = Modifier
-                .height(64.dp)
-                .width(229.dp)
-                .clipToBounds(),
-        ) {
-            Image(
-                painter = painterResource(R.drawable.logo_bragro),
-                contentDescription = "BRAgro",
-                contentScale = ContentScale.FillBounds,
-                modifier = Modifier
-                    .width(307.dp)
-                    .height(112.dp)
-                    .offset(x = (-74).dp, y = (-3).dp),
-            )
-        }
+        // Revertido o recorte (Box+offset+FillBounds) -- os percentuais
+        // usados foram medidos no PNG do SITE (logo-oficial.png), não no
+        // drawable logo_bragro.png do app: mesmo os dois parecendo o mesmo
+        // arquivo visualmente, os percentuais aplicados aqui CORTARAM parte
+        // de verdade das letras (bug real reportado pelo usuário com print:
+        // "a logo do login colapsou também", desenho visivelmente truncado
+        // no topo). Sem acesso pra medir o bounding box real deste drawable
+        // (sem ferramenta de imagem no ambiente), a opção seguramente correta
+        // é ContentScale.Fit simples (nunca corta conteúdo, só sobra
+        // respiro transparente nas bordas) -- não fica pixel-perfeito
+        // centralizado, mas não quebra a marca. Altura 48dp -- meio-termo
+        // pedido pelo usuário ("não fique muito chamativa e nem retraída
+        // demais") depois do histórico de 96->140->168->200->64dp.
+        Image(
+            painter = painterResource(R.drawable.logo_bragro),
+            contentDescription = "BRAgro",
+            modifier = Modifier.height(48.dp),
+        )
         // Slogan abaixo da logo -- pedido do usuário ("coloque o slogan
         // abaixo da logo"), mesmo texto/estilo do login do site (itálico,
         // negrito, cor primária).

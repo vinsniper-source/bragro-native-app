@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -106,9 +105,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
@@ -675,36 +672,24 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth().padding(start = 0.dp, end = 8.dp, top = 4.dp, bottom = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Logo com crop -- logo_bragro.png tem margem
-                    // transparente bem maior a esquerda/embaixo do que em
-                    // cima/direita (mesmo arquivo/problema do login, ver
-                    // LoginScreen.kt), entao o antigo widthIn(max=190dp) +
-                    // Fit deixava o desenho puxado pra direita/cima dentro
-                    // da caixa. Box com clipToBounds + Image maior que a
-                    // caixa (deslocada via offset) recorta a margem
-                    // excedente, usando os MESMOS percentuais medidos no
-                    // arquivo do site (conteudo visivel: 24,23%-98,77% da
-                    // largura, 3,11%-60,45% da altura, aspect ratio do
-                    // recorte 3,57635:1). Altura 40dp -- pedido do usuario
-                    // ("diminua, nao fique tao chamativa nem tao escondida")
-                    // apos a logo do login ter ficado grande demais; mesma
-                    // escala usada no login (LoginScreen.kt).
-                    Box(
-                        modifier = Modifier
-                            .height(40.dp)
-                            .width(143.dp)
-                            .clipToBounds(),
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.logo_bragro),
-                            contentDescription = "BRAgro",
-                            contentScale = ContentScale.FillBounds,
-                            modifier = Modifier
-                                .width(192.dp)
-                                .height(70.dp)
-                                .offset(x = (-47).dp, y = (-2).dp),
-                        )
-                    }
+                    // Revertido o recorte (Box+offset+FillBounds) -- os
+                    // percentuais usados foram medidos no PNG do SITE
+                    // (logo-oficial.png), não neste drawable
+                    // (logo_bragro.png): mesmo os dois parecendo o mesmo
+                    // arquivo visualmente, os percentuais aplicados aqui
+                    // CORTARAM parte de verdade das letras/cabeçalho (bug
+                    // real reportado pelo usuário com print: "a logo e o
+                    // cabeçalho entraram em colapso"). Sem ferramenta de
+                    // imagem no ambiente pra medir o bounding box real deste
+                    // drawable, ContentScale.Fit simples (nunca corta
+                    // conteúdo) é a opção segura -- não fica pixel-perfeito
+                    // centralizado, mas não quebra a marca. Altura 40dp,
+                    // mesma escala do login (LoginScreen.kt).
+                    Image(
+                        painter = painterResource(R.drawable.logo_bragro),
+                        contentDescription = "BRAgro",
+                        modifier = Modifier.height(40.dp),
+                    )
                     // Cluster de ícones OPCIONAIS (Backup/Configurações/Base de
                     // Dados/Notificações/Tema) -- rolagem horizontal, mas
                     // agora dentro de weight(1f, fill=false): ocupa só o
@@ -1757,6 +1742,40 @@ private data class Kpi(
     val description: String? = null,
 )
 
+// Decide 1 ou 2 KPIs por linha, conforme o tamanho do RÓTULO -- pedido do
+// usuário ("um ou dois kpis por linha... quando tiver muita informação um
+// kpi por linha, pouca informação dois kpis por linha"). O rótulo (não a
+// descrição) é o que corta visualmente: é `maxLines = 1` + `basicMarquee()`
+// dentro de uma coluna de metade da largura do card (ver KpiCard) -- a
+// descrição já quebra em várias linhas livremente, então nunca corta.
+// LONG_LABEL_THRESHOLD (18 caracteres) foi calibrado pelos rótulos reais
+// que apareciam cortados no print do usuário ("Colaboradores ativos" = 20,
+// "Veículos em manutenção" = 22, "Lançamentos de safra (mês)" = 26) vs. os
+// que cabiam de boa numa coluna de meia largura ("Financeiro" = 10,
+// "Abaixo do mínimo" = 16, "Lançamentos (mês)" = 18).
+private const val LONG_LABEL_THRESHOLD = 18
+
+private fun groupKpisAdaptively(kpis: List<Kpi>): List<List<Kpi>> {
+    val rows = mutableListOf<List<Kpi>>()
+    var pending: Kpi? = null
+    for (kpi in kpis) {
+        if (kpi.label.length > LONG_LABEL_THRESHOLD) {
+            // Rótulo longo: fecha qualquer par pendente sozinho numa linha
+            // própria, depois este KPI também sozinho, em largura cheia.
+            pending?.let { rows.add(listOf(it)) }
+            pending = null
+            rows.add(listOf(kpi))
+        } else if (pending == null) {
+            pending = kpi
+        } else {
+            rows.add(listOf(pending, kpi))
+            pending = null
+        }
+    }
+    pending?.let { rows.add(listOf(it)) }
+    return rows
+}
+
 // Redesenho pedido pelo usuário ("melhore o visual dos kpis, não precisa
 // ser padronizado a largura apenas altura, deixe mais homogêneo... deixe o
 // visual mais limpo... esquerda texto, centro quantidades e direita
@@ -1917,7 +1936,16 @@ private fun KpiGrid(data: HomeData) {
     )
     val kpis = allKpis.filter { (id, _) -> data.hasWidget(id) }.map { (_, kpi) -> kpi }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        kpis.chunked(2).forEach { row ->
+        // Agrupamento adaptativo (1 ou 2 por linha) -- pedido do usuário
+        // ("no app tem que existir um ou dois kpis por linha... quando tiver
+        // muita informação um kpi por linha, pouca informação dois kpis por
+        // linha"): antes SEMPRE agrupava de 2 em 2 (`chunked(2)`), então um
+        // rótulo comprido (ex.: "Colaboradores ativos", "Veículos em
+        // manutenção", "Lançamentos de safra (mês)") saía cortado na metade
+        // da largura do card. `groupKpisAdaptively` reserva a linha INTEIRA
+        // só pro KPI de rótulo longo, e continua parear os de rótulo curto
+        // 2 a 2 -- ver função abaixo.
+        groupKpisAdaptively(kpis).forEach { row ->
             // IntrinsicSize.Min + fillMaxHeight -- pedido do usuário
             // ("alinhe qualquer bloco... que não tiver a mesma altura ao
             // bloco do lado"): sem isso, se um KPI tivesse descrição maior
@@ -1928,12 +1956,11 @@ private fun KpiGrid(data: HomeData) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 row.forEach { kpi -> KpiCard(kpi, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true) }
-                // Fileira ímpar (última sobra 1 KPI): antes um Spacer no
-                // lugar do 2º card deixava esse último KPI preso na metade
-                // da largura, com um vão vazio do lado -- pedido do usuário
-                // ("distribua os kpis colapsados"): removido o Spacer, o
-                // card sozinho (já com weight(1f), único filho da Row) passa
-                // a ocupar a largura inteira, sem vão sobrando.
+                // Linha com 1 KPI só (rótulo longo, ou último da lista sem
+                // par): o card sozinho (já com weight(1f), único filho da
+                // Row) ocupa a largura inteira, sem vão vazio do lado
+                // (pedido anterior do usuário: "distribua os kpis
+                // colapsados").
             }
         }
         // "Fazendas cadastradas" saiu daqui -- pedido do usuário ("desabilite

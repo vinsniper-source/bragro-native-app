@@ -18,6 +18,27 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.68] -- 2026-09-10
+
+Reversão de bug real introduzido na rodada anterior + ajuste de layout dos KPIs.
+
+- **Login e cabeçalho (Início, todos os setores e admin)**: o recorte
+  (Box+offset) da v1.2.66/1.2.67 usava percentuais medidos no PNG do SITE,
+  não no drawable `logo_bragro.png` do app -- mesmo os dois parecendo o
+  mesmo arquivo visualmente, os percentuais cortaram parte de verdade das
+  letras (bug real reportado com print: "a logo do login colapsou", "a
+  logo e o cabeçalho entraram em colapso"). Revertido para
+  `ContentScale.Fit` simples (nunca corta conteúdo), altura 48dp no login e
+  40dp no cabeçalho -- não fica pixel-perfeito centralizado, mas não quebra
+  a marca. Como o código é compartilhado, cobre automaticamente todos os
+  setores e o admin.
+- **Início (KpiGrid)**: agora agrupa 1 ou 2 KPIs por linha conforme o
+  tamanho do RÓTULO, não sempre 2 -- pedido do usuário ("quando tiver
+  muita informação um kpi por linha, pouca informação dois kpis por
+  linha"). Rótulos longos (ex.: "Colaboradores ativos", "Veículos em
+  manutenção", "Lançamentos de safra (mês)") agora ocupam a linha inteira
+  em vez de cortar na metade da largura.
+
 ## [1.2.67] -- 2026-09-10
 
 - **Início (KpiGrid)**: quando a última fileira de KPIs sobra ímpar (ex.:
