@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -105,6 +106,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -672,24 +675,35 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth().padding(start = 0.dp, end = 8.dp, top = 4.dp, bottom = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Revertido o recorte (Box+offset+FillBounds) -- os
-                    // percentuais usados foram medidos no PNG do SITE
-                    // (logo-oficial.png), não neste drawable
-                    // (logo_bragro.png): mesmo os dois parecendo o mesmo
-                    // arquivo visualmente, os percentuais aplicados aqui
-                    // CORTARAM parte de verdade das letras/cabeçalho (bug
-                    // real reportado pelo usuário com print: "a logo e o
-                    // cabeçalho entraram em colapso"). Sem ferramenta de
-                    // imagem no ambiente pra medir o bounding box real deste
-                    // drawable, ContentScale.Fit simples (nunca corta
-                    // conteúdo) é a opção segura -- não fica pixel-perfeito
-                    // centralizado, mas não quebra a marca. Altura 40dp,
-                    // mesma escala do login (LoginScreen.kt).
-                    Image(
-                        painter = painterResource(R.drawable.logo_bragro),
-                        contentDescription = "BRAgro",
-                        modifier = Modifier.height(40.dp),
-                    )
+                    // Recorte v2 (Box+offset+FillBounds) -- mesma técnica e
+                    // mesmas frações do login (ver comentário completo em
+                    // LoginScreen.kt), desta vez medidas direto no drawable
+                    // real deste app (logo_bragro.png), com folga de
+                    // segurança generosa pra não repetir o bug real da
+                    // v1.2.66/67 (letras cortadas). O ContentScale.Fit puro
+                    // da v1.2.68 tecnicamente não cortava nada, mas o PNG tem
+                    // tanto espaço transparente ao redor da arte que a logo
+                    // ficava minúscula/ilegível dentro da caixa de 40dp --
+                    // exatamente o que o usuário continuou chamando de
+                    // "colapso" mesmo já rodando a versão certa (confirmado
+                    // via BuildConfig.VERSION_NAME em Configurações).
+                    // Container 40dp de altura -- mesma escala do login.
+                    Box(
+                        modifier = Modifier
+                            .height(40.dp)
+                            .width(111.dp)
+                            .clipToBounds(),
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.logo_bragro),
+                            contentDescription = "BRAgro",
+                            contentScale = ContentScale.FillBounds,
+                            modifier = Modifier
+                                .width(144.dp)
+                                .height(77.dp)
+                                .offset(x = (-29).dp, y = (-22).dp),
+                        )
+                    }
                     // Cluster de ícones OPCIONAIS (Backup/Configurações/Base de
                     // Dados/Notificações/Tema) -- rolagem horizontal, mas
                     // agora dentro de weight(1f, fill=false): ocupa só o

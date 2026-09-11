@@ -2,12 +2,17 @@ package com.bragro.mobile.ui.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -82,24 +87,45 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
         // text-center").
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Revertido o recorte (Box+offset+FillBounds) -- os percentuais
-        // usados foram medidos no PNG do SITE (logo-oficial.png), não no
-        // drawable logo_bragro.png do app: mesmo os dois parecendo o mesmo
-        // arquivo visualmente, os percentuais aplicados aqui CORTARAM parte
-        // de verdade das letras (bug real reportado pelo usuário com print:
-        // "a logo do login colapsou também", desenho visivelmente truncado
-        // no topo). Sem acesso pra medir o bounding box real deste drawable
-        // (sem ferramenta de imagem no ambiente), a opção seguramente correta
-        // é ContentScale.Fit simples (nunca corta conteúdo, só sobra
-        // respiro transparente nas bordas) -- não fica pixel-perfeito
-        // centralizado, mas não quebra a marca. Altura 48dp -- meio-termo
-        // pedido pelo usuário ("não fique muito chamativa e nem retraída
-        // demais") depois do histórico de 96->140->168->200->64dp.
-        Image(
-            painter = painterResource(R.drawable.logo_bragro),
-            contentDescription = "BRAgro",
-            modifier = Modifier.height(48.dp),
-        )
+        // Recorte v2 (Box+offset+FillBounds), desta vez medido DIRETO no
+        // drawable real deste app (logo_bragro.png, visto por leitura direta
+        // do arquivo -- não mais o PNG do site, erro que causou o bug real
+        // da v1.2.66/67: letras cortadas de verdade). Motivo do recorte
+        // existir: o canvas do PNG tem MUITO espaço transparente ao redor da
+        // arte (letras+diamante ocupam só ~36% da altura e ~73% da largura
+        // do canvas) -- com ContentScale.Fit simples (v1.2.68), a caixa toda
+        // (Modifier.height) inclui esse espaço vazio, então a arte visível
+        // de verdade fica minúscula/ilegível dentro dela (usuário reportou
+        // "logo colapsada" de novo mesmo com Fit -- não era mais corte, era
+        // ilegibilidade por excesso de moldura transparente).
+        // Frações do recorte (relativas ao PNG inteiro): x 0.20-0.97,
+        // y 0.28-0.80 -- medidas visualmente no drawable com folga de
+        // segurança generosa (a caixa real da arte é ~0.22-0.95 x 0.30-0.71;
+        // usei uma margem extra de ~2-5% em cada lado de propósito) pra NÃO
+        // repetir o erro anterior: se a medição visual tiver um pequeno
+        // desvio, sobra moldura extra em vez de cortar letra de verdade.
+        // Matemática do Box+offset (equivalente ao background-size/position
+        // do CSS usado no site): com container 48dp de altura x ~133dp de
+        // largura (aspect da região recortada, derivado do aspect do PNG
+        // inteiro ~1.875 x proporção da região 0.77/0.52), a Image
+        // "superdimensionada" fica 173x92dp e desloca (-35dp, -26dp) pra
+        // alinhar o canto da região recortada com o canto do Box.
+        Box(
+            modifier = Modifier
+                .height(48.dp)
+                .width(133.dp)
+                .clipToBounds(),
+        ) {
+            Image(
+                painter = painterResource(R.drawable.logo_bragro),
+                contentDescription = "BRAgro",
+                contentScale = ContentScale.FillBounds,
+                modifier = Modifier
+                    .width(173.dp)
+                    .height(92.dp)
+                    .offset(x = (-35).dp, y = (-26).dp),
+            )
+        }
         // Slogan abaixo da logo -- pedido do usuário ("coloque o slogan
         // abaixo da logo"), mesmo texto/estilo do login do site (itálico,
         // negrito, cor primária).

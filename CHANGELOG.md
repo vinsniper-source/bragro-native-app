@@ -18,6 +18,39 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.70] -- 2026-09-10
+
+Causa raiz real do "colapso" da logo (confirmada com prints ao vivo do
+usuário, versão 1.2.69 já validada rodando via BuildConfig): não era mais
+corte de conteúdo (v1.2.68/69 usavam `ContentScale.Fit`, que nunca corta),
+era **ilegibilidade por excesso de moldura transparente**. O PNG
+`logo_bragro.png` tem tanto espaço vazio ao redor da arte (letras+diamante
+ocupam só ~36% da altura e ~73% da largura do canvas) que, dentro de uma
+caixa de 40-48dp de altura, a arte visível de verdade renderiza a uma
+fração minúscula disso -- ilegível, especialmente comprimida de novo pelo
+WhatsApp ao compartilhar print.
+
+- **Login e cabeçalho (Início, todos os setores e admin)**: recorte
+  (`Box` + `clipToBounds` + `Image` superdimensionada com
+  `ContentScale.FillBounds` + `offset` negativo) desta vez com as frações
+  medidas DIRETO no drawable real deste app (`logo_bragro.png`, visto por
+  leitura direta do arquivo -- não mais o PNG do site, erro que causou o
+  bug real da v1.2.66/67). Frações usadas: x 0.20-0.97, y 0.28-0.80 --
+  com folga de segurança generosa acima da caixa real estimada da arte
+  (~0.22-0.95 x ~0.30-0.71), de propósito, pra não repetir o erro anterior:
+  se a medição visual tiver um pequeno desvio, sobra moldura extra em vez
+  de cortar letra de verdade.
+- Login: container 48dp altura x 133dp largura, imagem 173x92dp deslocada
+  (-35dp, -26dp).
+- Cabeçalho (Início/setores/admin): container 40dp altura x 111dp largura,
+  imagem 144x77dp deslocada (-29dp, -22dp) -- mesma escala do login.
+- **Recomendação de fix definitivo**: o jeito mais seguro e permanente de
+  resolver isso de vez é substituir `logo_bragro.png` por uma versão já
+  aparada (trim) da própria arte, sem a moldura transparente extra --
+  qualquer editor de imagem (Photoshop/GIMP/até um "trim" online de PNG)
+  resolve isso num passo só, e elimina a necessidade de qualquer cálculo
+  de recorte em código daqui pra frente.
+
 ## [1.2.69] -- 2026-09-10
 
 Diagnóstico do "colapso" de logo que o usuário reportou persistir mesmo
