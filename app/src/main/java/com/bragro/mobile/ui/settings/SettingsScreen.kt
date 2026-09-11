@@ -355,6 +355,38 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
         }
     }
     CollapsibleCard("Aplicativo mobile (Android)", icon = { Icon(Icons.Filled.Smartphone, contentDescription = null) }) {
+        // Versão REALMENTE instalada neste aparelho (BuildConfig.VERSION_NAME,
+        // gravada em tempo de compilação) -- bug de confusão real do usuário:
+        // ele reportou "a versão está 1.2.68" (conferido aqui nesta tela) e um
+        // bug de logo continuava aparecendo mesmo depois do fix já estar no
+        // código-fonte. O texto "Versão X" mais abaixo sempre foi o registro
+        // do SERVIDOR (appRelease.versao -- a versão mais recente DISPONÍVEL
+        // PRA BAIXAR/instalar), nunca leu o app de fato instalado no
+        // aparelho; como não existia NENHUM uso de BuildConfig.VERSION_NAME
+        // em lugar nenhum do app até agora, não tinha como o usuário
+        // confirmar de verdade qual build estava rodando -- ele só via esse
+        // card e achava (razoavelmente) que era prova do app instalado.
+        // Provável causa raiz de "continua na mesma" mesmo em "1.2.68": o
+        // usuário instalou um APK antigo por engano (cache do Downloads,
+        // build errado etc.) enquanto o servidor já mostrava a versão nova.
+        // Esta linha é a única fonte confiável, e o aviso abaixo compara com
+        // appRelease.versao pra deixar óbvio quando estão diferentes.
+        val instalada = com.bragro.mobile.BuildConfig.VERSION_NAME
+        val versaoServidor = appRelease?.get("versao")?.jsonPrimitive?.contentOrNull
+        Text(
+            "Versão instalada neste aparelho: $instalada",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+        )
+        if (!versaoServidor.isNullOrBlank() && versaoServidor != instalada) {
+            Text(
+                "Desatualizado -- a versão mais recente publicada é $versaoServidor. Baixe e instale abaixo, e desinstale o app antigo antes.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+        androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         if (appRelease == null) {
             Text("Nenhuma versão publicada ainda.", style = MaterialTheme.typography.bodySmall)
         } else {

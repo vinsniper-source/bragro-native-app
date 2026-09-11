@@ -18,6 +18,41 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.69] -- 2026-09-10
+
+Diagnóstico do "colapso" de logo que o usuário reportou persistir mesmo
+depois do fix da v1.2.68 (que já reverteu o recorte -- código confirmado
+correto por leitura direta do arquivo-fonte). Causa raiz real encontrada:
+**confusão de qual "versão" o app mostra em Configurações.**
+
+- O card "Aplicativo mobile (Android)" em Configurações sempre mostrou
+  "Versão X" lendo `appRelease.versao` -- um registro do **servidor**
+  descrevendo a versão mais recente **disponível pra baixar/publicar**,
+  nunca a versão do app **de fato instalado** no aparelho. Não existia
+  NENHUM uso de `BuildConfig.VERSION_NAME` (a versão real, gravada em
+  tempo de compilação) em lugar nenhum do app. Quando o usuário relatou
+  "a versão está 1.2.68, corrija esses colapsos", ele estava conferindo
+  esse número do servidor -- não uma prova de que o APK rodando no
+  aparelho era realmente o build 1.2.68. Os prints enviados mostram
+  exatamente o padrão do bug real da v1.2.66/67 (letras cortadas,
+  recorte assimétrico), o que é consistente com o aparelho ainda estar
+  rodando um APK antigo (ex.: arquivo velho reaproveitado do Downloads,
+  instalação que falhou silenciosamente etc.), não com o código atual
+  (que usa só `ContentScale.Fit`, que não recorta nada).
+- **Fix**: `SettingsScreen.kt` (`AppMobileAndroidCard`) agora mostra
+  "Versão instalada neste aparelho: X" lendo `BuildConfig.VERSION_NAME`
+  de verdade, ANTES do card de download do servidor -- e um aviso em
+  vermelho "Desatualizado" aparece automaticamente se essa versão for
+  diferente da versão publicada no servidor. Essa é a única forma
+  confiável de confirmar qual build está rodando de fato.
+- **Ação pro usuário**: depois de instalar este build (1.2.69), abra
+  Configurações e confira especificamente a nova linha "Versão instalada
+  neste aparelho" (não a linha de baixo, que continua sendo a do
+  servidor). Se ela não disser 1.2.69, o APK novo não foi instalado de
+  verdade -- desinstale o app antigo primeiro e confirme que está abrindo
+  o arquivo `app-release.apk` recém-gerado (não um `.apk` antigo salvo em
+  Downloads).
+
 ## [1.2.68] -- 2026-09-10
 
 Reversão de bug real introduzido na rodada anterior + ajuste de layout dos KPIs.
