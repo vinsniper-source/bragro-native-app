@@ -12,6 +12,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -635,62 +636,40 @@ fun HomeScreen(
             // do Material3 TopAppBar vazio.
             Column(modifier = Modifier.statusBarsPadding()) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                Row(
-                    // Padding assimétrico -- pedido do usuário ("mova a logo
-                    // bem no limite para o lado esquerdo para abrir espaço
-                    // para a logo do cliente aparecer no lado direito"):
-                    // start zerado (era 4dp, antes disso 16dp) deixa a logo
-                    // BRAgro colada na borda esquerda de vez -- com mais um
-                    // ícone no cabeçalho agora (filtro de fazenda), o espaço
-                    // à direita ficou mais disputado, então cada dp que sai
-                    // daqui ajuda o cluster de ícones + logo do cliente a
-                    // não cortar. end tambem reduzido (16dp -> 8dp) pelo
-                    // mesmo motivo, do outro lado.
-                    // bottom reduzido de 4dp pra 2dp -- pedido do usuário
-                    // ("diminua distância da logo para os ícones fazendas,
-                    // safra e cultura"): a linha nova abaixo (Farm/Safra/
-                    // Cultura) sobe mais perto da logo.
-                    // CenterVertically (era Bottom) -- pedido do usuário
-                    // ("coloque os ícones ao lado da logo, não é pra mexer
-                    // no tamanho da logo"). Causa raiz encontrada (bug real,
-                    // confirmado por captura de tela do usuário): o
-                    // Modifier.height(150.dp) da logo abaixo forçava uma
-                    // CAIXA de layout de 150dp de altura, mas a imagem
-                    // visível dentro dela sempre foi limitada pela LARGURA
-                    // (widthIn(max=190dp) -- o logo tem proporção larga/
-                    // baixa, então o Fit escala pela largura primeiro),
-                    // renderizando de verdade só uns 50-57dp -- o resto
-                    // (quase 100dp) era espaço vazio invisível dentro da
-                    // própria caixa da logo. Como o cluster de ícones se
-                    // alinhava pela BASE dessa caixa de 150dp, ele ficava
-                    // ~90dp abaixo da logo visível, mesmo os dois estando na
-                    // mesma Row -- exatamente o "ícones abaixo da logo" que
-                    // a captura mostrou. Com o height(150dp) removido (ver
-                    // comentário na Image abaixo), a caixa da logo agora
-                    // encolhe pro tamanho real renderizado, e os dois ficam
-                    // genuinamente lado a lado com CenterVertically.
-                    modifier = Modifier.fillMaxWidth().padding(start = 0.dp, end = 8.dp, top = 4.dp, bottom = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    // Voltamos pro tamanho de ANTES de toda a saga de recorte
-                    // (v1.2.66 a v1.2.70) -- usuário confirmou com print ao
-                    // vivo que a versão v1.2.64 (150dp de altura, widthIn
-                    // max=190dp, ContentScale.Fit puro, sem nenhum recorte)
-                    // já renderizava a logo grande e legível no cabeçalho.
-                    // Todas as tentativas de recorte subsequentes resolviam
-                    // um problema que só existia numa caixa pequena (40dp);
-                    // nesse tamanho maior o Fit puro já ficava bom (a largura
-                    // é quem limita o tamanho renderizado de verdade, ~57dp
-                    // efetivos, dado o aspect largo do PNG). Alinhada à
-                    // esquerda por design (pedido antigo do usuário -- "logo
-                    // no limite esquerdo"), sem offset de centralização.
-                    Image(
-                        painter = painterResource(R.drawable.logo_bragro),
-                        contentDescription = "BRAgro",
-                        modifier = Modifier
-                            .height(150.dp)
-                            .widthIn(max = 190.dp),
-                    )
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    // Item (c) do usuário ("suba uma linha se colapsar a logo e
+                    // os ícones do cabeçalho"): setores/papéis com mais ícones
+                    // no cabeçalho (dono: Backup+Notificações+Tema+Conta+logo
+                    // do cliente) podiam ficar espremidos numa única linha
+                    // apertada contra a logo em telas estreitas -- só o
+                    // horizontalScroll do cluster (ver headerTrailingContent
+                    // abaixo) não bastava porque não dá nenhum indício visual
+                    // de que dá pra rolar, parecendo "colapsado". Agora
+                    // medimos a largura disponível (BoxWithConstraints) e, se
+                    // a estimativa de logo+ícones não cabe inteira numa linha
+                    // só, os ícones saltam pra uma 2ª linha própria (ainda
+                    // alinhados à direita), com a logo sozinha na 1ª -- pedido
+                    // anterior do usuário era sempre manter os dois na mesma
+                    // linha quando cabem, então isso fica condicional em vez
+                    // de forçado sempre.
+                    val optionalIconCount = (if (canManage) 1 else 0) +
+                        (if (home?.showConfiguracoesIcon == true) 1 else 0) +
+                        (if (home?.showBaseDeDadosIcon == true) 1 else 0) +
+                        2 // notificações + tema, sempre presentes
+                    val estimatedIconsWidth = (optionalIconCount * 48).dp + 44.dp + 40.dp + 8.dp
+                    val estimatedLogoWidth = 64.dp
+                    val headerFits = estimatedLogoWidth + estimatedIconsWidth <= maxWidth
+
+                    // Ícones opcionais + Conta + logo do cliente extraídos
+                    // numa lambda só pra poder ser posicionados OU do lado da
+                    // logo (cabe numa linha) OU numa 2ª linha própria (não
+                    // cabe), sem duplicar nenhum ícone/estado/dropdown.
+                    val headerTrailingContent: @Composable () -> Unit = {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
                     // Cluster de ícones OPCIONAIS (Backup/Configurações/Base de
                     // Dados/Notificações/Tema) -- rolagem horizontal, mas
                     // agora dentro de weight(1f, fill=false): ocupa só o
@@ -967,11 +946,71 @@ fun HomeScreen(
                             }
                         }
                     }
-                } // fecha Row externa (logo + cluster de ícones) -- faltava
-                // este fechamento desde a v1.2.60 (bug real, nunca pego por
-                // build nenhum até agora): só a Row interna de rolagem
-                // horizontal estava sendo fechada, deixando a Row externa
-                // (logo + Spacer + cluster) aberta até o fim do topBar.
+                        } // fecha Row (End) interna do headerTrailingContent
+                    } // fecha lambda headerTrailingContent
+
+                    if (headerFits) {
+                        // Cabe numa linha só -- mesmo layout de sempre: logo à
+                        // esquerda, ícones/Conta/logo do cliente ocupando o
+                        // resto da largura à direita, na MESMA linha. Causa
+                        // raiz encontrada num bug anterior (confirmado por
+                        // captura de tela do usuário): o Modifier.height(150.dp)
+                        // da logo forçava uma CAIXA de layout de 150dp de
+                        // altura, mas a imagem visível dentro dela sempre foi
+                        // limitada pela LARGURA (widthIn(max=190dp) -- logo tem
+                        // proporção larga/baixa, então o Fit escala pela
+                        // largura primeiro), renderizando de verdade só uns
+                        // 50-57dp -- por isso CenterVertically já basta pra
+                        // alinhar visualmente com os ícones.
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(start = 0.dp, end = 8.dp, top = 4.dp, bottom = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            // Voltamos pro tamanho de ANTES de toda a saga de
+                            // recorte (v1.2.66 a v1.2.70) -- usuário confirmou
+                            // com print ao vivo que a versão v1.2.64 (150dp de
+                            // altura, widthIn max=190dp, ContentScale.Fit puro,
+                            // sem nenhum recorte) já renderizava a logo grande
+                            // e legível no cabeçalho. Alinhada à esquerda por
+                            // design (pedido antigo do usuário -- "logo no
+                            // limite esquerdo"), sem offset de centralização.
+                            Image(
+                                painter = painterResource(R.drawable.logo_bragro),
+                                contentDescription = "BRAgro",
+                                modifier = Modifier
+                                    .height(150.dp)
+                                    .widthIn(max = 190.dp),
+                            )
+                            Box(modifier = Modifier.weight(1f)) { headerTrailingContent() }
+                        }
+                    } else {
+                        // Não cabe numa linha só -- logo sozinha em cima,
+                        // ícones/Conta/logo do cliente saltam pra uma 2ª linha
+                        // própria, ainda alinhados à direita (pedido do
+                        // usuário: "suba uma linha se colapsar a logo e os
+                        // ícones do cabeçalho").
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(start = 0.dp, top = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Image(
+                                    painter = painterResource(R.drawable.logo_bragro),
+                                    contentDescription = "BRAgro",
+                                    modifier = Modifier
+                                        .height(150.dp)
+                                        .widthIn(max = 190.dp),
+                                )
+                            }
+                            Spacer(Modifier.height(2.dp))
+                            Box(modifier = Modifier.fillMaxWidth().padding(end = 8.dp, bottom = 2.dp)) { headerTrailingContent() }
+                        }
+                    }
+                } // fecha BoxWithConstraints. Nota histórica: este fechamento
+                // (que antes fechava a "Row externa" logo + cluster num único
+                // Row) ficou faltando desde a v1.2.60 (bug real, nunca pego
+                // por build nenhum até agora) -- só a Row interna de rolagem
+                // horizontal estava sendo fechada.
                 // Fazenda/Safra/Cultura saíram daqui -- pedido do usuário
                 // ("transfira para baixo do slogan os ícones fazenda, safra
                 // cultura"): agora ficam dentro do item "greeting" da
@@ -1759,39 +1798,23 @@ private data class Kpi(
     val description: String? = null,
 )
 
-// Decide 1 ou 2 KPIs por linha, conforme o tamanho do RÓTULO -- pedido do
-// usuário ("um ou dois kpis por linha... quando tiver muita informação um
-// kpi por linha, pouca informação dois kpis por linha"). O rótulo (não a
-// descrição) é o que corta visualmente: é `maxLines = 1` + `basicMarquee()`
-// dentro de uma coluna de metade da largura do card (ver KpiCard) -- a
-// descrição já quebra em várias linhas livremente, então nunca corta.
-// LONG_LABEL_THRESHOLD (18 caracteres) foi calibrado pelos rótulos reais
-// que apareciam cortados no print do usuário ("Colaboradores ativos" = 20,
-// "Veículos em manutenção" = 22, "Lançamentos de safra (mês)" = 26) vs. os
-// que cabiam de boa numa coluna de meia largura ("Financeiro" = 10,
-// "Abaixo do mínimo" = 16, "Lançamentos (mês)" = 18).
-private const val LONG_LABEL_THRESHOLD = 18
-
-private fun groupKpisAdaptively(kpis: List<Kpi>): List<List<Kpi>> {
-    val rows = mutableListOf<List<Kpi>>()
-    var pending: Kpi? = null
-    for (kpi in kpis) {
-        if (kpi.label.length > LONG_LABEL_THRESHOLD) {
-            // Rótulo longo: fecha qualquer par pendente sozinho numa linha
-            // própria, depois este KPI também sozinho, em largura cheia.
-            pending?.let { rows.add(listOf(it)) }
-            pending = null
-            rows.add(listOf(kpi))
-        } else if (pending == null) {
-            pending = kpi
-        } else {
-            rows.add(listOf(pending, kpi))
-            pending = null
-        }
-    }
-    pending?.let { rows.add(listOf(it)) }
-    return rows
-}
+// Sempre 2 KPIs por linha, nunca 3 -- pedido do usuário ("kpis pequenos
+// dividem a mesma linha em 2, nunca em 3... nos kpis com poucas informações
+// coloque dois na mesma linha, qualquer coisa coloque como letreiro").
+// Versão anterior forçava um KPI sozinho numa linha cheia sempre que o
+// RÓTULO passava de 18 caracteres (LONG_LABEL_THRESHOLD) -- isso fazia os 3
+// KPIs de Frota ("Veículos em manutenção", "Custo da frota (mês)",
+// "Veículos cadastrados", todos >18 chars) ficarem cada um sozinho numa
+// linha inteira mesmo tendo VALORES curtos ("3", "R$ 0,00", "3"), o oposto
+// do que o usuário queria. Essa proteção por comprimento do rótulo ficou
+// redundante desde que o rótulo (e o valor) do KpiCard passaram a usar
+// `basicMarquee()` (Task #351/#361): um rótulo comprido demais pra coluna
+// de meia largura já rola sozinho como letreiro, nunca corta nem estoura a
+// altura do card -- não há mais motivo pra reservar a linha inteira por
+// causa do tamanho do texto. `chunked(2)` deixa o último KPI ímpar sozinho
+// (weight(1f) único filho da Row ocupa a largura toda), que é o único caso
+// em que "3 por linha" nunca acontece nem sobra vão vazio.
+private fun groupKpisAdaptively(kpis: List<Kpi>): List<List<Kpi>> = kpis.chunked(2)
 
 // Redesenho pedido pelo usuário ("melhore o visual dos kpis, não precisa
 // ser padronizado a largura apenas altura, deixe mais homogêneo... deixe o

@@ -18,6 +18,40 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.73] -- 2026-09-11
+
+Usuário mandou 7 prints novos (Frota/RH/Estoque/Safra/visão dono) apontando
+3 problemas novos, não relacionados à logo (que já estava correta desde a
+v1.2.71/72 nesses prints):
+
+- **KPIs pequenos forçados sozinhos numa linha**: os 3 KPIs de Frota
+  ("Veículos em manutenção", "Custo da frota (mês)", "Veículos
+  cadastrados") ficavam cada um sozinho numa linha inteira, apesar de
+  terem valores curtos ("3", "R$ 0,00", "3"). Causa: `groupKpisAdaptively`
+  forçava linha própria pra qualquer rótulo >18 caracteres
+  (`LONG_LABEL_THRESHOLD`), mas essa proteção ficou redundante desde que o
+  rótulo (e o valor) do `KpiCard` passaram a usar `basicMarquee()` -- um
+  texto comprido demais já rola sozinho como letreiro, nunca corta nem
+  estoura a altura do card. Removida a checagem por tamanho do rótulo:
+  agora é sempre 2 KPIs por linha (nunca 3), com o letreiro cuidando de
+  qualquer rótulo comprido.
+- **Central de Alertas/Monitor mostrando dados de outros setores**: bug
+  real confirmado -- `api/mobile/home/route.ts` nunca aplicava o mesmo
+  filtro por setor que o site já usa em `dashboard/page.tsx`
+  (`alertsVisiveis`/`recentActivityVisivel`, via `hasModuleAccess`), então
+  um funcionário só de Frota via alertas/atividade de
+  Financeiro/Estoque/RH/Safra também. Agora a rota mobile filtra
+  `alerts`/`recentActivity` por `ctx.allowedModules` antes de responder,
+  igual ao site (OWNER/ADMIN continuam vendo tudo).
+- **Cabeçalho não quebrava linha quando ficava cheio**: setores/papéis com
+  mais ícones no cabeçalho (dono: Backup+Notificações+Tema+Conta+logo do
+  cliente) ficavam espremidos numa linha só contra a logo em telas
+  estreitas, só com scroll horizontal sem nenhum indício visual disso.
+  Agora medimos a largura disponível (`BoxWithConstraints`) e, se a
+  estimativa de logo+ícones não cabe numa linha só, os ícones saltam pra
+  uma 2ª linha própria (ainda à direita), com a logo sozinha em cima --
+  quando cabe, continua tudo na mesma linha como antes.
+
 ## [1.2.72] -- 2026-09-11
 
 Usuário perguntou "a previsão de clima semanal fica apenas um kpi inteiro
