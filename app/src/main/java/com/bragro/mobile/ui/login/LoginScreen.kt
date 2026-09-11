@@ -2,7 +2,6 @@ package com.bragro.mobile.ui.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,9 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -87,45 +83,31 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
         // text-center").
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Recorte v2 (Box+offset+FillBounds), desta vez medido DIRETO no
-        // drawable real deste app (logo_bragro.png, visto por leitura direta
-        // do arquivo -- não mais o PNG do site, erro que causou o bug real
-        // da v1.2.66/67: letras cortadas de verdade). Motivo do recorte
-        // existir: o canvas do PNG tem MUITO espaço transparente ao redor da
-        // arte (letras+diamante ocupam só ~36% da altura e ~73% da largura
-        // do canvas) -- com ContentScale.Fit simples (v1.2.68), a caixa toda
-        // (Modifier.height) inclui esse espaço vazio, então a arte visível
-        // de verdade fica minúscula/ilegível dentro dela (usuário reportou
-        // "logo colapsada" de novo mesmo com Fit -- não era mais corte, era
-        // ilegibilidade por excesso de moldura transparente).
-        // Frações do recorte (relativas ao PNG inteiro): x 0.20-0.97,
-        // y 0.28-0.80 -- medidas visualmente no drawable com folga de
-        // segurança generosa (a caixa real da arte é ~0.22-0.95 x 0.30-0.71;
-        // usei uma margem extra de ~2-5% em cada lado de propósito) pra NÃO
-        // repetir o erro anterior: se a medição visual tiver um pequeno
-        // desvio, sobra moldura extra em vez de cortar letra de verdade.
-        // Matemática do Box+offset (equivalente ao background-size/position
-        // do CSS usado no site): com container 48dp de altura x ~133dp de
-        // largura (aspect da região recortada, derivado do aspect do PNG
-        // inteiro ~1.875 x proporção da região 0.77/0.52), a Image
-        // "superdimensionada" fica 173x92dp e desloca (-35dp, -26dp) pra
-        // alinhar o canto da região recortada com o canto do Box.
-        Box(
+        // Voltamos pro tamanho de ANTES de toda a saga de recorte (v1.2.66 a
+        // v1.2.70): usuário confirmou com print ao vivo que a versão v1.2.64
+        // (200dp, ContentScale.Fit puro, sem nenhum recorte) já renderizava a
+        // logo grande e legível -- todas as tentativas de recorte
+        // subsequentes (medir % no PNG do site, depois no drawable com
+        // margem de segurança) foram tentativas de resolver um problema que
+        // na real não existia neste tamanho maior; só apareciam quando a
+        // caixa era pequena (40-48dp) e a moldura transparente do PNG virava
+        // proporcionalmente grande demais. Único ajuste pedido agora:
+        // CENTRALIZAR sem mexer no tamanho -- a arte visível (letras+
+        // diamante) não fica simetricamente centrada dentro do canvas do PNG
+        // (sobra ~22% de moldura à esquerda contra ~5% à direita), então
+        // centralizar a CAIXA da imagem (Column já faz isso via
+        // CenterHorizontally) deixa a arte visualmente puxada pra direita.
+        // offset(x = -32dp) desloca só os pixels renderizados (não afeta o
+        // cálculo de centralização da Column) pra compensar esse desbalanço
+        // e centralizar a arte de verdade -- sem cortar nem redimensionar
+        // nada, só reposicionar.
+        Image(
+            painter = painterResource(R.drawable.logo_bragro),
+            contentDescription = "BRAgro",
             modifier = Modifier
-                .height(48.dp)
-                .width(133.dp)
-                .clipToBounds(),
-        ) {
-            Image(
-                painter = painterResource(R.drawable.logo_bragro),
-                contentDescription = "BRAgro",
-                contentScale = ContentScale.FillBounds,
-                modifier = Modifier
-                    .width(173.dp)
-                    .height(92.dp)
-                    .offset(x = (-35).dp, y = (-26).dp),
-            )
-        }
+                .height(200.dp)
+                .offset(x = (-32).dp),
+        )
         // Slogan abaixo da logo -- pedido do usuário ("coloque o slogan
         // abaixo da logo"), mesmo texto/estilo do login do site (itálico,
         // negrito, cor primária).

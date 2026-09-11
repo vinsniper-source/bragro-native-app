@@ -18,6 +18,46 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.72] -- 2026-09-11
+
+Usuário perguntou "a previsão de clima semanal fica apenas um kpi inteiro
+na linha?" -- resposta era não, e isso era um bug real: Clima dividia a
+linha 1/3 (ou 1/2) com Câmbio/Destaques desde antes da previsão de 5 dias
+existir. Depois que a previsão da semana foi adicionada ao ClimaCard (5
+colunas de dia+ícone+máx/mín), espremer isso num terço da largura da tela
+deixava o texto quebrado/ilegível.
+
+- **Clima**: agora ocupa uma linha PRÓPRIA, largura cheia. Câmbio e
+  Destaques continuam dividindo uma linha entre si (mesma lógica de
+  antes, só sem o Clima competindo por espaço).
+
+## [1.2.71] -- 2026-09-11
+
+Usuário confirmou com print AO VIVO (não mais captura via WhatsApp) que a
+versão v1.2.64 -- de ANTES de toda a saga de recorte da logo (v1.2.66 a
+v1.2.70) -- já renderizava a logo grande e legível, tanto no login quanto
+no cabeçalho. Ou seja: todas as tentativas de recorte % (medido no PNG do
+site, depois no drawable com folga de segurança) resolviam um problema
+que só existia numa caixa pequena (40-48dp); no tamanho maior de antes, o
+`ContentScale.Fit` puro já funcionava bem.
+
+- **Login**: revertido pro tamanho de v1.2.64 (`height(200.dp)`, sem
+  nenhum recorte/Box). Único ajuste pedido: a arte (letras+diamante) não
+  fica simetricamente centrada dentro do canvas do PNG (mais moldura à
+  esquerda que à direita) -- `offset(x = -32.dp)` desloca só os pixels
+  renderizados pra compensar, sem mudar tamanho nem cortar nada.
+- **Cabeçalho (Início/setores/admin)**: revertido pro tamanho de v1.2.64
+  (`height(150.dp).widthIn(max = 190.dp)`, sem Box/recorte) -- alinhado à
+  esquerda por design, sem offset de centralização.
+- **Atenção**: instalar o v1.2.64 antigo pra fugir do bug da logo também
+  voltou 3 fixes que já estavam prontos desde a v1.2.65 e continuam
+  presentes neste repositório: o card "Safra -- Custo médio/ha" duplicado
+  (removido na v1.2.65), a previsão do clima da semana (adicionada na
+  v1.2.65) e a logo do cliente sempre visível no canto superior direito do
+  cabeçalho (fixo desde v1.2.62/1.2.65). Instalando ESTA versão (1.2.71,
+  não a 1.2.64), esses 3 já voltam a aparecer -- não precisou de nenhum
+  código novo pra eles, só não estavam no build antigo reinstalado.
+
 ## [1.2.70] -- 2026-09-10
 
 Causa raiz real do "colapso" da logo (confirmada com prints ao vivo do

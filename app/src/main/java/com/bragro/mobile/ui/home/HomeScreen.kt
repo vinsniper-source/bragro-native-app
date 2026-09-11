@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -106,8 +105,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -675,35 +672,25 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth().padding(start = 0.dp, end = 8.dp, top = 4.dp, bottom = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Recorte v2 (Box+offset+FillBounds) -- mesma técnica e
-                    // mesmas frações do login (ver comentário completo em
-                    // LoginScreen.kt), desta vez medidas direto no drawable
-                    // real deste app (logo_bragro.png), com folga de
-                    // segurança generosa pra não repetir o bug real da
-                    // v1.2.66/67 (letras cortadas). O ContentScale.Fit puro
-                    // da v1.2.68 tecnicamente não cortava nada, mas o PNG tem
-                    // tanto espaço transparente ao redor da arte que a logo
-                    // ficava minúscula/ilegível dentro da caixa de 40dp --
-                    // exatamente o que o usuário continuou chamando de
-                    // "colapso" mesmo já rodando a versão certa (confirmado
-                    // via BuildConfig.VERSION_NAME em Configurações).
-                    // Container 40dp de altura -- mesma escala do login.
-                    Box(
+                    // Voltamos pro tamanho de ANTES de toda a saga de recorte
+                    // (v1.2.66 a v1.2.70) -- usuário confirmou com print ao
+                    // vivo que a versão v1.2.64 (150dp de altura, widthIn
+                    // max=190dp, ContentScale.Fit puro, sem nenhum recorte)
+                    // já renderizava a logo grande e legível no cabeçalho.
+                    // Todas as tentativas de recorte subsequentes resolviam
+                    // um problema que só existia numa caixa pequena (40dp);
+                    // nesse tamanho maior o Fit puro já ficava bom (a largura
+                    // é quem limita o tamanho renderizado de verdade, ~57dp
+                    // efetivos, dado o aspect largo do PNG). Alinhada à
+                    // esquerda por design (pedido antigo do usuário -- "logo
+                    // no limite esquerdo"), sem offset de centralização.
+                    Image(
+                        painter = painterResource(R.drawable.logo_bragro),
+                        contentDescription = "BRAgro",
                         modifier = Modifier
-                            .height(40.dp)
-                            .width(111.dp)
-                            .clipToBounds(),
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.logo_bragro),
-                            contentDescription = "BRAgro",
-                            contentScale = ContentScale.FillBounds,
-                            modifier = Modifier
-                                .width(144.dp)
-                                .height(77.dp)
-                                .offset(x = (-29).dp, y = (-22).dp),
-                        )
-                    }
+                            .height(150.dp)
+                            .widthIn(max = 190.dp),
+                    )
                     // Cluster de ícones OPCIONAIS (Backup/Configurações/Base de
                     // Dados/Notificações/Tema) -- rolagem horizontal, mas
                     // agora dentro de weight(1f, fill=false): ocupa só o
@@ -1253,28 +1240,44 @@ fun HomeScreen(
                     item(key = "breakdown-frota") { CategoryBreakdownCard(titulo = "Frota", data = b) }
                 }
             }
-            // Clima, Câmbio e Destaques dividem a mesma linha -- pedido do
-            // usuário com print ("recolha o kpi de câmbio pela metade, suba
-            // o kpi destaques para o lado do kpi câmbio"): antes Destaques
-            // ficava numa linha própria ao lado de "Fazendas cadastradas", e
-            // Câmbio sozinho ocupava a linha inteira quando Clima não
-            // aparecia (setor sem "inicio.clima", ex. Financeiro) -- exatamente
-            // o print mostrado. weight(1f) em cada um reparte a linha em
-            // partes iguais entre só os que aparecerem (2 ou 3), sem sobrar
-            // vão vazio quando algum não está habilitado nesse setor (mesmo
-            // critério já usado no site, dashboard/page.tsx com auto-fit).
+            // Clima virou linha PRÓPRIA, sozinho -- bug real reportado pelo
+            // usuário ("a previsão de clima semanal fica apenas um kpi
+            // inteiro na linha?"): antes Clima dividia a linha 1/3 (ou 1/2)
+            // com Câmbio/Destaques (ver histórico abaixo), o que fazia
+            // sentido quando ClimaCard só mostrava "agora" (ícone+°C+máx/mín,
+            // cabe fácil num terço da tela) -- mas depois a previsão de 5
+            // dias foi adicionada (dia+ícone+máx/mín por coluna, ver
+            // ClimaCard abaixo) e 5 colunas espremidas num terço da largura
+            // da tela viravam texto quebrado/ilegível (exatamente o
+            // "32°/18°33/22°" grudado que apareceu num print anterior).
+            // Câmbio e Destaques continuam dividindo uma linha entre si
+            // (mesma lógica de antes, só sem o Clima no meio).
+            //
+            // Comentário antigo (contexto histórico, mesma linha 3-way):
+            // pedido do usuário com print ("recolha o kpi de câmbio pela
+            // metade, suba o kpi destaques para o lado do kpi câmbio"):
+            // antes Destaques ficava numa linha própria ao lado de
+            // "Fazendas cadastradas", e Câmbio sozinho ocupava a linha
+            // inteira quando Clima não aparecia (setor sem "inicio.clima",
+            // ex. Financeiro). weight(1f) em cada um reparte a linha em
+            // partes iguais entre só os que aparecerem, sem sobrar vão
+            // vazio (mesmo critério do site, dashboard/page.tsx auto-fit).
             val clima = weather?.weather
             val fx = weather?.fx
             val showClima = data.hasWidget("inicio.clima") && clima != null
             val showCambio = data.hasWidget("inicio.cambio") && fx != null
             val showDestaques = data.hasWidget("inicio.destaques")
-            if (showClima || showCambio || showDestaques) {
-                item(key = "clima-cambio-destaques") {
+            if (showClima) {
+                item(key = "clima") {
+                    ClimaCard(clima!!, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth())
+                }
+            }
+            if (showCambio || showDestaques) {
+                item(key = "cambio-destaques") {
                     Row(
                         modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        if (showClima) ClimaCard(clima!!, onRefresh = { viewModel.refresh() }, modifier = Modifier.weight(1f).fillMaxHeight())
                         if (showCambio) CambioCard(fx!!, onRefresh = { viewModel.refresh() }, modifier = Modifier.weight(1f).fillMaxHeight())
                         if (showDestaques) DestaquesCard(data, viewModel.lastUpdatedAt.value, modifier = Modifier.weight(1f).fillMaxHeight())
                     }
