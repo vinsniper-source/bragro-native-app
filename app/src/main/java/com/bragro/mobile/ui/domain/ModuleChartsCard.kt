@@ -194,14 +194,24 @@ private fun ChartPrintActions(onPrint: () -> Unit, onPdf: () -> Unit) {
 
 /** Converte UM gráfico (genérico ou extra) pra tabela simples de
  * título+linhas, usada pelos ícones Imprimir/PDF de cada bloco -- os dados
- * são os mesmos exibidos na tela, só sem a barra/gráfico visual. Antes
- * (chartsToPrintData) combinava todos os gráficos numa lista só pra um
- * ícone compartilhado; agora cada bloco exporta só o seu próprio gráfico. */
+ * são os mesmos exibidos na tela. Além da tabela, gráficos do tipo "bar"
+ * também preenchem barCategories/barSeries -- bug real reportado pelo
+ * usuário ("gráficos não aparecem na pré-visualização da impressora, apenas
+ * tabela, e também não aparecem em PDF"): antes SÓ existia a tabela aqui,
+ * nunca a barra/gráfico visual em si (diferente do site, que imprime o
+ * próprio DOM do gráfico via window.print() -- ver printable-chart-card.tsx).
+ * HtmlPrinter usa esses dois campos pra desenhar a mesma barra que aparece
+ * na tela (SimpleBarChart) tanto no HTML de impressão quanto no PDF direto.
+ * ChartSpec.Table fica de fora (barCategories vazio) -- não é um gráfico de
+ * barras na tela também, TableChartBlock já é só uma lista de campos. */
 private fun genericToPrintData(generic: GenericChartData): HtmlPrinter.ChartPrintData =
     HtmlPrinter.ChartPrintData(
         title = generic.title,
         headers = listOf("Item", "Valor"),
         rows = generic.data.map { listOf(it.name, if (generic.isMoney) formatChartValue(it.value, true) else it.value.toString()) },
+        barCategories = generic.data.map { it.name },
+        barSeries = listOf("Valor" to generic.data.map { it.value }),
+        isMoney = generic.isMoney,
     )
 
 private fun specToPrintData(spec: ChartSpec): HtmlPrinter.ChartPrintData = when (spec) {
@@ -211,6 +221,9 @@ private fun specToPrintData(spec: ChartSpec): HtmlPrinter.ChartPrintData = when 
         rows = spec.categories.mapIndexed { i, cat ->
             listOf(cat) + spec.series.map { (_, _, values) -> if (spec.money) formatChartValue(values.getOrElse(i) { 0.0 }, true) else values.getOrElse(i) { 0.0 }.toString() }
         },
+        barCategories = spec.categories,
+        barSeries = spec.series.map { (_, label, values) -> label to values },
+        isMoney = spec.money,
     )
     is ChartSpec.Table -> HtmlPrinter.ChartPrintData(
         title = spec.title,

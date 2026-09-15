@@ -18,6 +18,28 @@ Em `app/build.gradle.kts`, dentro de `defaultConfig`:
 Depois de mudar a versão, adicione uma seção nova aqui em cima descrevendo
 o que mudou (o CI não faz isso sozinho).
 
+## [1.2.74] -- 2026-09-15
+
+Lote de 3 pedidos novos do usuário:
+
+- **Mural de Avisos: geral + do meu setor no mesmo bloco**: o mural agora
+  tem duas seções -- "Geral" (visível pra toda a organização, igual antes)
+  e "Do meu setor" (só quem tem acesso àquele módulo vê). Ao publicar um
+  aviso, um novo campo "Setor" deixa escolher "Geral" ou um módulo
+  específico (mesma lista de módulos de trabalho do site). Site e app
+  nativo ficaram em paridade (schema: `Notice.moduloId`, 11ª exceção de
+  schema autorizada).
+- **Gráficos ausentes no print/PDF + orientação paisagem**: os gráficos de
+  barra agora aparecem de verdade na pré-visualização de impressão e no
+  PDF exportado (antes só a tabela de dados aparecia). As duas rotas
+  (impressão via diálogo do Android e exportação direta de PDF) agora
+  forçam paisagem, igual já acontecia no site.
+- **Ícones Ver/Editar/Excluir reorganizados na vista Bloco**: na vista em
+  blocos (cards), o ícone "Ver" foi removido -- clicar no próprio bloco já
+  abre a visualização. "Editar" e "Excluir" ficaram empilhados abaixo da
+  seta de encolher/expandir. A vista Tabela continua com Ver/Editar/Excluir
+  lado a lado, sem mudança.
+
 ## [1.2.73] -- 2026-09-11
 
 Usuário mandou 7 prints novos (Frota/RH/Estoque/Safra/visão dono) apontando

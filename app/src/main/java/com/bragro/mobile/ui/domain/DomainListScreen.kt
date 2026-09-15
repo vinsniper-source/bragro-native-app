@@ -1323,9 +1323,16 @@ fun DomainListScreen(
                                         }
                                     }
                                 }
-                                IconButton(onClick = { recordBeingViewed = recordId }, modifier = Modifier.size(28.dp)) {
-                                    Icon(Icons.Filled.Visibility, contentDescription = "Ver lançamento completo", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                                }
+                                // "Ver" removido da vista de BLOCO (aqui) --
+                                // pedido do usuário ("pode retirar a opção do
+                                // ícone ver quando está como bloco, na
+                                // tabela permanece o ícone ver, em app e
+                                // plataforma"): na vista Tabela (onView, ver
+                                // RecordTable.kt) o ícone Ver continua igual,
+                                // sem essa vista de resumo os dados não
+                                // aparecem sozinhos. Editar fica logo abaixo
+                                // da seta de recolher/expandir acima, e
+                                // Excluir logo abaixo de Editar.
                                 IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
                                     Icon(Icons.Filled.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                                 }

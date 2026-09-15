@@ -88,6 +88,8 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -374,9 +376,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun addNotice(titulo: String, mensagem: String, expiraEm: String?, fixado: Boolean, onDone: (Boolean) -> Unit) {
+    fun addNotice(titulo: String, mensagem: String, expiraEm: String?, fixado: Boolean, moduloId: String?, onDone: (Boolean) -> Unit) {
         viewModelScope.launch {
-            val ok = noticesRepository.create(titulo, mensagem, expiraEm, fixado)
+            val ok = noticesRepository.create(titulo, mensagem, expiraEm, fixado, moduloId)
             if (ok) refresh()
             onDone(ok)
         }
@@ -1500,8 +1502,8 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, vie
     if (showAddDialog) {
         AddNoticeDialog(
             onDismiss = { showAddDialog = false },
-            onSave = { titulo, mensagem, expiraEm, fixado ->
-                viewModel.addNotice(titulo, mensagem, expiraEm, fixado) { showAddDialog = false }
+            onSave = { titulo, mensagem, expiraEm, fixado, moduloId ->
+                viewModel.addNotice(titulo, mensagem, expiraEm, fixado, moduloId) { showAddDialog = false }
             },
         )
     }
@@ -1537,25 +1539,22 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, vie
                 if (notices.isEmpty()) {
                     Text("Nenhum aviso publicado.", style = MaterialTheme.typography.bodySmall)
                 } else {
+                    // Pedido do usuario ("havera o mural geral de divulgacao e o
+                    // individual para anotacoes do setor, todos no mesmo bloco")
+                    // -- mesma divisao "Geral"/"Do meu setor" do site
+                    // (bulletin-board-client.tsx), usando o campo "geral" que a
+                    // API mobile ja calcula (true = moduloId nulo).
+                    val geral = notices.filter { it.geral }
+                    val doSetor = notices.filter { !it.geral }
                     val tones = noticeTones()
-                    notices.forEachIndexed { i, n ->
-                        val tone = tones[i % tones.size]
-                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.Top) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    if (n.fixado) {
-                                        Icon(Icons.Filled.PushPin, contentDescription = null, tint = BrYellow, modifier = Modifier.padding(end = 4.dp))
-                                    }
-                                    Text(n.titulo, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = tone)
-                                }
-                                Text(n.mensagem, style = MaterialTheme.typography.bodySmall)
-                            }
-                            if (canManage) {
-                                IconButton(onClick = { viewModel.deleteNotice(n.id) }, modifier = Modifier.size(28.dp)) {
-                                    Icon(Icons.Filled.Close, contentDescription = "Excluir aviso", modifier = Modifier.size(16.dp))
-                                }
-                            }
-                        }
+                    if (geral.isNotEmpty()) {
+                        Text("Geral", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        geral.forEachIndexed { i, n -> NoticeRowItem(n, tones[i % tones.size], canManage) { viewModel.deleteNotice(n.id) } }
+                    }
+                    if (doSetor.isNotEmpty()) {
+                        if (geral.isNotEmpty()) Spacer(Modifier.height(4.dp))
+                        Text("Do meu setor", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        doSetor.forEachIndexed { i, n -> NoticeRowItem(n, tones[i % tones.size], canManage) { viewModel.deleteNotice(n.id) } }
                     }
                 }
             }
@@ -1563,12 +1562,75 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, vie
     }
 }
 
+// 1 linha de aviso -- extraida do corpo do card pra ser reaproveitada nas
+// duas secoes (Geral / Do meu setor) sem duplicar o Row/Column, mesmo
+// criterio do NoticeRow do site (bulletin-board-client.tsx).
 @Composable
-private fun AddNoticeDialog(onDismiss: () -> Unit, onSave: (String, String, String?, Boolean) -> Unit) {
+private fun NoticeRowItem(n: NoticeData, tone: Color, canManage: Boolean, onDelete: () -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.Top) {
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (n.fixado) {
+                    Icon(Icons.Filled.PushPin, contentDescription = null, tint = BrYellow, modifier = Modifier.padding(end = 4.dp))
+                }
+                Text(n.titulo, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = tone)
+            }
+            Text(n.mensagem, style = MaterialTheme.typography.bodySmall)
+        }
+        if (canManage) {
+            IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
+                Icon(Icons.Filled.Close, contentDescription = "Excluir aviso", modifier = Modifier.size(16.dp))
+            }
+        }
+    }
+}
+
+// Catalogo pra popular o dropdown "Setor" do dialogo de novo aviso -- mesmos
+// ids/rotulos de MODULES em lib/modules.ts (site), filtrados igual
+// getVisibleWorkModules(["*"]) (exclui section "sistema", navHidden e
+// parentId): os ids PRECISAM bater com o site pra hasModuleAccess()
+// funcionar igual dos dois lados (ver bulletin-board.tsx/route.ts). Sem
+// "Geral" aqui -- essa opção é a entrada fixa no topo do menu (moduloId
+// null), adicionada separadamente em AddNoticeDialog.
+private val NOTICE_SETOR_OPTIONS = listOf(
+    "dre" to "DRE / Custo por ha e sc",
+    "livrocaixa" to "Livro Caixa Produtor Rural",
+    "analises" to "Análises",
+    "pedidos" to "Pedidos",
+    "cotacoesfornecedores" to "Cotações de Fornecedores",
+    "orcamentos" to "Orçamentos",
+    "contratos" to "Contratos",
+    "caixainterno" to "Caixa Interno",
+    "nfe" to "NF-e",
+    "pagamentos" to "Cobranças e NFS-e",
+    "safra" to "Safra",
+    "operacoes" to "Operações",
+    "planejamentosafra" to "Planejamento de Safra",
+    "colheita" to "Colheita",
+    "romaneios" to "Romaneios",
+    "pragas" to "Pragas",
+    "receituarios" to "Receituários",
+    "clima" to "Clima",
+    "fieldview" to "FieldView",
+    "drone" to "Drone",
+    "estoque" to "Estoque",
+    "controledeinsumos" to "Controle de Insumos",
+    "frota" to "Frota",
+    "controleinterno" to "Controle Interno",
+    "inventario" to "Inventário (Ativos)",
+    "rh" to "RH",
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AddNoticeDialog(onDismiss: () -> Unit, onSave: (String, String, String?, Boolean, String?) -> Unit) {
     var titulo by remember { mutableStateOf("") }
     var mensagem by remember { mutableStateOf("") }
     var expiraEm by remember { mutableStateOf("") }
     var fixado by remember { mutableStateOf(false) }
+    var moduloId by remember { mutableStateOf<String?>(null) }
+    var setorMenuOpen by remember { mutableStateOf(false) }
+    val moduloLabel = NOTICE_SETOR_OPTIONS.firstOrNull { it.first == moduloId }?.second ?: "Geral (todos os setores)"
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1577,6 +1639,30 @@ private fun AddNoticeDialog(onDismiss: () -> Unit, onSave: (String, String, Stri
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(value = titulo, onValueChange = { titulo = it }, label = { Text("Título") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
                 OutlinedTextField(value = mensagem, onValueChange = { mensagem = it }, label = { Text("Mensagem") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+                // Setor -- pedido do usuario ("o mural geral de divulgacao e o
+                // individual para anotacoes do setor"): "Geral" (moduloId
+                // null, padrao) ou um setor especifico, que so aparece pra
+                // quem tem acesso aquele modulo (ver NoticeRowItem/geral acima
+                // e hasModuleAccess no site). Mesmo padrao ExposedDropdownMenuBox
+                // ja usado em varias telas do app (SegurancaScreen, RomaneioQuickScreen
+                // etc.) pra campo tipo-select somente leitura.
+                ExposedDropdownMenuBox(expanded = setorMenuOpen, onExpandedChange = { setorMenuOpen = it }) {
+                    OutlinedTextField(
+                        value = moduloLabel,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Setor") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = setorMenuOpen) },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        colors = appFieldColors(),
+                    )
+                    ExposedDropdownMenu(expanded = setorMenuOpen, onDismissRequest = { setorMenuOpen = false }) {
+                        DropdownMenuItem(text = { Text("Geral (todos os setores)") }, onClick = { moduloId = null; setorMenuOpen = false })
+                        NOTICE_SETOR_OPTIONS.forEach { (id, label) ->
+                            DropdownMenuItem(text = { Text(label) }, onClick = { moduloId = id; setorMenuOpen = false })
+                        }
+                    }
+                }
                 OutlinedTextField(
                     value = expiraEm,
                     onValueChange = { expiraEm = it },
@@ -1595,7 +1681,7 @@ private fun AddNoticeDialog(onDismiss: () -> Unit, onSave: (String, String, Stri
         confirmButton = {
             TextButton(
                 enabled = titulo.isNotBlank() && mensagem.isNotBlank(),
-                onClick = { onSave(titulo.trim(), mensagem.trim(), expiraEm.trim().ifBlank { null }, fixado) },
+                onClick = { onSave(titulo.trim(), mensagem.trim(), expiraEm.trim().ifBlank { null }, fixado, moduloId) },
             ) { Text("Salvar") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },

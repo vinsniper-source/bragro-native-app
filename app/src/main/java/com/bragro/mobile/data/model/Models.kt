@@ -202,6 +202,13 @@ data class NoticeData(
     val mensagem: String,
     val fixado: Boolean,
     val expiraEm: String? = null,
+    // Pedido do usuario ("no mural de avisos havera o mural geral de
+    // divulgacao e o individual para anotacoes do setor, todos no mesmo
+    // bloco"): default true (nao false) pra nao quebrar cache offline salvo
+    // antes deste campo existir -- linhas antigas cacheadas eram todas
+    // avisos "geral" mesmo (unico tipo que existia), entao o default certo
+    // aqui e true, mesmo criterio dos outros defaults desta classe.
+    val geral: Boolean = true,
 )
 
 @Serializable
@@ -505,6 +512,9 @@ data class NoticesRequest(
     val mensagem: String? = null,
     val expiraEm: String? = null,
     val fixado: Boolean? = null,
+    // "" ou null = Geral; id de modulo (ver ModuleDef.id no site) restringe
+    // o aviso a quem tem acesso aquele setor.
+    val moduloId: String? = null,
 )
 
 @Serializable
