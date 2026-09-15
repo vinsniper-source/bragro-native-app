@@ -420,6 +420,15 @@ fun BRAgroBottomBar(
     // cabeçalho... sempre no cabeçalho"). O dono continua acessando essas 2
     // telas por aqui, no menu "Módulos", pra não duplicar o ponto de acesso.
     isOwner: Boolean,
+    // Fonte da barra (OWNER_BOTTOM_TABS agrupado vs BOTTOM_TABS achatado) --
+    // pedido do usuario ("replique a barra inferior [do dono] pra conta
+    // admin"): ADMIN tambem recebe "*" em allowedModules igual OWNER (ver
+    // allowedModuleIds() no site), entao precisa do MESMO tratamento
+    // agrupado, senao os ~20+ modulos liberados viram uma fileira de abas
+    // cortadas. Parametro separado de isOwner (que continua controlando so
+    // onde Configuracoes/Base de Dados aparecem) -- default = isOwner pra
+    // nao quebrar nenhuma outra chamada existente que ainda nao passe isso.
+    useGroupedTabs: Boolean = isOwner,
     onNavigateDomain: (String) -> Unit,
     onOpenDre: () -> Unit,
     onOpenAnalises: () -> Unit,
@@ -448,11 +457,11 @@ fun BRAgroBottomBar(
     // inteira se sobrar zero itens (ou se o domínio de acesso direto,
     // Frota/Estoque, não estiver liberado). Recalculado a cada mudança de
     // allowedModules (ex.: dono reconfigurou o acesso e o app resincronizou).
-    // Fonte da barra: dono usa OWNER_BOTTOM_TABS (6 botões fixos, Safra/
-    // Financeiro com dropdown agrupado por categoria) -- demais contas
+    // Fonte da barra: dono e admin usam OWNER_BOTTOM_TABS (6 botões fixos,
+    // Safra/Financeiro com dropdown agrupado por categoria) -- demais contas
     // continuam com BOTTOM_TABS achatado (pensado pra setor limitado).
-    val sourceTabs = if (isOwner) OWNER_BOTTOM_TABS else BOTTOM_TABS
-    val visibleTabs = remember(allowedModules, isOwner) {
+    val sourceTabs = if (useGroupedTabs) OWNER_BOTTOM_TABS else BOTTOM_TABS
+    val visibleTabs = remember(allowedModules, useGroupedTabs) {
         sourceTabs.mapNotNull { tab ->
             if (tab.directDomainId != null) {
                 if (isAllowed(allowedModules, tab.directDomainId)) tab else null
@@ -499,11 +508,11 @@ fun BRAgroBottomBar(
 
     // Ver comentário completo em RenderTab (topo do arquivo). Resolve cada
     // BottomTab visível em Direct (toque único navega) ou Group (dropdown).
-    // Pra dono, os itens de Safra/Financeiro/Estoque/RH em OWNER_BOTTOM_TABS
-    // nunca sobram com 1 item só (dono sempre tem "*"), então caem sempre em
-    // Group (dropdown) -- exatamente o pedido do usuário de trazer de volta
-    // as listas suspensas nesses 4 botões, sem precisar de nenhum caminho
-    // especial aqui.
+    // Pra dono/admin, os itens de Safra/Financeiro/Estoque/RH em
+    // OWNER_BOTTOM_TABS nunca sobram com 1 item só (dono/admin sempre tem
+    // "*"), então caem sempre em Group (dropdown) -- exatamente o pedido do
+    // usuário de trazer de volta as listas suspensas nesses 4 botões, sem
+    // precisar de nenhum caminho especial aqui.
     val renderTabs = remember(visibleTabs) {
         visibleTabs.map { tab ->
             when {

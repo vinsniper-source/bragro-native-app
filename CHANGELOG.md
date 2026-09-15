@@ -3,6 +3,15 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.77] -- 2026-09-15
+
+- Corrigido bug real: conta ADMIN (inclusive a de teste) via a barra
+  inferior achatada com TODOS os módulos liberados como abas individuais
+  (fileira ilegível, cortada). Causa: a barra agrupada em 6 botões com
+  dropdown (Safra/Financeiro/Estoque/RH) só verificava `role == "OWNER"`,
+  excluindo ADMIN mesmo ele recebendo os mesmos módulos "*" que o dono.
+  Agora ADMIN usa a mesma barra agrupada e limpa do dono.
+
 ## [1.2.76] -- 2026-09-15
 
 - Correção de modelo: agora QUALQUER usuário pode criar um Lembrete pessoal

@@ -133,6 +133,15 @@ fun BRAgroNavHost() {
                     currentDomainId = currentDomainId,
                     allowedModules = allowedModules,
                     isOwner = session?.role == "OWNER",
+                    // ADMIN tambem recebe "*" em allowedModules (mesmo criterio
+                    // do site, allowedModuleIds() em lib/permissions.ts) --
+                    // pedido do usuario ("replique a barra inferior [do dono]
+                    // para a conta admin"): sem isso, ADMIN caia no BOTTOM_TABS
+                    // achatado (pensado pra setor limitado) com TODOS os ~20+
+                    // modulos liberados, virando uma fileira de abas cortadas/
+                    // ilegiveis. Continua diferente de isOwner acima, que so
+                    // controla onde Configuracoes/Base de Dados aparecem.
+                    useGroupedTabs = session?.role == "OWNER" || session?.role == "ADMIN",
                     onNavigateDomain = { domainId ->
                         navController.navigate(Routes.domainList(domainId)) {
                             popUpTo(Routes.HOME)
