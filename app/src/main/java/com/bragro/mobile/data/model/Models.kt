@@ -209,6 +209,17 @@ data class NoticeData(
     // avisos "geral" mesmo (unico tipo que existia), entao o default certo
     // aqui e true, mesmo criterio dos outros defaults desta classe.
     val geral: Boolean = true,
+    // Pedido do usuario ("o mural de avisos vai servir para cada setor como
+    // tambem lembretes"): "aviso" (default, cache antigo sem este campo cai
+    // aqui) ou "lembrete" -- ver 3a secao "Lembretes" em HomeScreen.kt.
+    val tipo: String = "aviso",
+    // Calculado no servidor (nao manda email/criadoPor cru pro app) --
+    // pedido do usuario ("o usuario podera criar lembretes... tambem
+    // publicar no mural de avisos para os usuarios dentro do setor"): cada
+    // um so apaga o que e seu, quem administra apaga qualquer coisa. Default
+    // false (nao true) pra cache antigo sem este campo NAO mostrar o botao
+    // excluir em item de outra pessoa antes do primeiro refresh.
+    val podeExcluir: Boolean = false,
 )
 
 @Serializable
@@ -515,6 +526,8 @@ data class NoticesRequest(
     // "" ou null = Geral; id de modulo (ver ModuleDef.id no site) restringe
     // o aviso a quem tem acesso aquele setor.
     val moduloId: String? = null,
+    // "aviso" (default no servidor se null/vazio) ou "lembrete".
+    val tipo: String? = null,
 )
 
 @Serializable

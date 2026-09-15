@@ -3,6 +3,29 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.76] -- 2026-09-15
+
+- Correção de modelo: agora QUALQUER usuário pode criar um Lembrete pessoal
+  (privado, só quem publicou vê) ou um Aviso do próprio setor no Mural de
+  Avisos -- antes só quem administra (OWNER/ADMIN) podia publicar qualquer
+  coisa. Aviso geral (toda a empresa) continua exclusivo de quem administra.
+  Cada um só apaga o que publicou; quem administra apaga qualquer coisa.
+- Dropdown único "Tipo e alcance" no diálogo de novo aviso (Lembrete / Aviso
+  do meu setor / Aviso geral), substituindo os dois seletores separados.
+- shrinkResources ativado no build de release (ganho de tamanho do APK).
+
+## [1.2.75] -- 2026-09-15
+
+- Mural de Avisos agora também publica **Lembretes**, além dos avisos
+  Geral/Do meu setor -- mesmo bloco, campo "Tipo" no diálogo de novo
+  aviso (Aviso/Lembrete). Quem já podia publicar aviso pode publicar
+  lembrete, sem checagem extra de permissão. Lembrete aparece numa
+  seção própria no topo do mural, com ícone de sino.
+- Login de teste (Supabase) atualizado: `teste.admin@bragro.app` /
+  `Teste@123`.
+- Conta de teste (30 dias) liberada para todos os módulos, não só os
+  6 setores iniciais.
+
 ## Como versionar um novo release
 
 Em `app/build.gradle.kts`, dentro de `defaultConfig`:

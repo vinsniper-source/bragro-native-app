@@ -376,9 +376,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun addNotice(titulo: String, mensagem: String, expiraEm: String?, fixado: Boolean, moduloId: String?, onDone: (Boolean) -> Unit) {
+    fun addNotice(titulo: String, mensagem: String, expiraEm: String?, fixado: Boolean, moduloId: String?, tipo: String?, onDone: (Boolean) -> Unit) {
         viewModelScope.launch {
-            val ok = noticesRepository.create(titulo, mensagem, expiraEm, fixado, moduloId)
+            val ok = noticesRepository.create(titulo, mensagem, expiraEm, fixado, moduloId, tipo)
             if (ok) refresh()
             onDone(ok)
         }
@@ -1227,7 +1227,7 @@ fun HomeScreen(
             // se ninguem mais chamar.
 
             if (data.hasWidget("inicio.mural")) {
-            item(key = "mural") { BulletinBoardCard(data.notices, canManage, viewModel) }
+            item(key = "mural") { BulletinBoardCard(data.notices, canManage, data.allowedModules, viewModel) }
             }
             if (data.hasWidget("inicio.alertas")) {
             item(key = "alertas") { AlertsCard(data.alerts, onOpenDomain) }
@@ -1493,7 +1493,7 @@ private fun PendingSyncDialog(items: List<PendingSyncEntity>, onDismiss: () -> U
 }
 
 @Composable
-private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, viewModel: HomeViewModel) {
+private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, allowedModules: List<String>, viewModel: HomeViewModel) {
     var showAddDialog by remember { mutableStateOf(false) }
     // Fechado por padrão -- pedido do usuário ("os blocos mural, alertas e
     // monitor tem que aparecer fechados"), expande só ao tocar na setinha.
@@ -1501,9 +1501,11 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, vie
 
     if (showAddDialog) {
         AddNoticeDialog(
+            canManage = canManage,
+            allowedModules = allowedModules,
             onDismiss = { showAddDialog = false },
-            onSave = { titulo, mensagem, expiraEm, fixado, moduloId ->
-                viewModel.addNotice(titulo, mensagem, expiraEm, fixado, moduloId) { showAddDialog = false }
+            onSave = { titulo, mensagem, expiraEm, fixado, moduloId, tipo ->
+                viewModel.addNotice(titulo, mensagem, expiraEm, fixado, moduloId, tipo) { showAddDialog = false }
             },
         )
     }
@@ -1519,20 +1521,20 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, vie
                 Box(modifier = Modifier.weight(1f)) {
                     CollapsibleHeader("Mural de Avisos (${notices.size})", expanded) { expanded = !expanded }
                 }
-                // Botão de adicionar aviso -- o app antes não tinha NENHUM
-                // jeito de publicar um aviso (só o site tinha), pedido
-                // explícito do usuário. Só OWNER/ADMIN vê, mesma regra do site.
-                // Tamanho fixo em 28.dp (mesmo do botão excluir aviso, linha
-                // ~890) -- pedido do usuário ("altura do bloco mural igual ao
-                // bloco central de alertas"): sem isso, o IconButton padrão
-                // (48.dp de área de toque) deixava o cabeçalho do Mural mais
-                // alto que o de Alertas (que não tem esse botão extra),
-                // fazendo os dois cards ficarem com altura diferente quando
-                // recolhidos.
-                if (canManage) {
-                    IconButton(onClick = { showAddDialog = true }, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.Add, contentDescription = "Adicionar aviso", tint = MaterialTheme.colorScheme.primary)
-                    }
+                // Botão de adicionar aviso/lembrete -- o app antes não tinha
+                // NENHUM jeito de publicar (só o site tinha), pedido
+                // explícito do usuário. Antes só OWNER/ADMIN via este botão;
+                // pedido do usuário ("o usuario podera criar lembretes...
+                // tambem publicar no mural de avisos para os usuarios dentro
+                // do setor"): agora qualquer usuário abre o diálogo, só muda
+                // o que aparece dentro dele (ver AddNoticeDialog). Tamanho
+                // fixo em 28.dp (mesmo do botão excluir aviso) -- pedido do
+                // usuário ("altura do bloco mural igual ao bloco central de
+                // alertas"): sem isso, o IconButton padrão (48.dp de área de
+                // toque) deixava o cabeçalho do Mural mais alto que o de
+                // Alertas (que não tem esse botão extra).
+                IconButton(onClick = { showAddDialog = true }, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Filled.Add, contentDescription = "Adicionar aviso ou lembrete", tint = MaterialTheme.colorScheme.primary)
                 }
             }
             if (expanded) {
@@ -1543,18 +1545,28 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, vie
                     // individual para anotacoes do setor, todos no mesmo bloco")
                     // -- mesma divisao "Geral"/"Do meu setor" do site
                     // (bulletin-board-client.tsx), usando o campo "geral" que a
-                    // API mobile ja calcula (true = moduloId nulo).
-                    val geral = notices.filter { it.geral }
-                    val doSetor = notices.filter { !it.geral }
+                    // API mobile ja calcula (true = moduloId nulo). "Lembretes"
+                    // (tipo="lembrete") vira uma 3a secao a parte -- pedido
+                    // seguinte do usuario ("o mural vai servir para cada setor
+                    // como tambem lembretes"), independente de geral/setor.
+                    val avisos = notices.filter { it.tipo != "lembrete" }
+                    val lembretes = notices.filter { it.tipo == "lembrete" }
+                    val geral = avisos.filter { it.geral }
+                    val doSetor = avisos.filter { !it.geral }
                     val tones = noticeTones()
+                    if (lembretes.isNotEmpty()) {
+                        Text("Lembretes (só você vê)", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        lembretes.forEachIndexed { i, n -> NoticeRowItem(n, tones[i % tones.size]) { viewModel.deleteNotice(n.id) } }
+                    }
                     if (geral.isNotEmpty()) {
+                        if (lembretes.isNotEmpty()) Spacer(Modifier.height(4.dp))
                         Text("Geral", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        geral.forEachIndexed { i, n -> NoticeRowItem(n, tones[i % tones.size], canManage) { viewModel.deleteNotice(n.id) } }
+                        geral.forEachIndexed { i, n -> NoticeRowItem(n, tones[i % tones.size]) { viewModel.deleteNotice(n.id) } }
                     }
                     if (doSetor.isNotEmpty()) {
-                        if (geral.isNotEmpty()) Spacer(Modifier.height(4.dp))
+                        if (lembretes.isNotEmpty() || geral.isNotEmpty()) Spacer(Modifier.height(4.dp))
                         Text("Do meu setor", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        doSetor.forEachIndexed { i, n -> NoticeRowItem(n, tones[i % tones.size], canManage) { viewModel.deleteNotice(n.id) } }
+                        doSetor.forEachIndexed { i, n -> NoticeRowItem(n, tones[i % tones.size]) { viewModel.deleteNotice(n.id) } }
                     }
                 }
             }
@@ -1566,10 +1578,13 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, vie
 // duas secoes (Geral / Do meu setor) sem duplicar o Row/Column, mesmo
 // criterio do NoticeRow do site (bulletin-board-client.tsx).
 @Composable
-private fun NoticeRowItem(n: NoticeData, tone: Color, canManage: Boolean, onDelete: () -> Unit) {
+private fun NoticeRowItem(n: NoticeData, tone: Color, onDelete: () -> Unit) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.Top) {
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                if (n.tipo == "lembrete") {
+                    Icon(Icons.Filled.NotificationsActive, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.padding(end = 4.dp).size(16.dp))
+                }
                 if (n.fixado) {
                     Icon(Icons.Filled.PushPin, contentDescription = null, tint = BrYellow, modifier = Modifier.padding(end = 4.dp))
                 }
@@ -1577,7 +1592,10 @@ private fun NoticeRowItem(n: NoticeData, tone: Color, canManage: Boolean, onDele
             }
             Text(n.mensagem, style = MaterialTheme.typography.bodySmall)
         }
-        if (canManage) {
+        // Antes era canManage (só OWNER/ADMIN); agora vem pronto do servidor
+        // (n.podeExcluir = dono do registro OU quem administra) -- pedido do
+        // usuario: cada um so apaga o que publicou.
+        if (n.podeExcluir) {
             IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
                 Icon(Icons.Filled.Close, contentDescription = "Excluir aviso", modifier = Modifier.size(16.dp))
             }
@@ -1621,45 +1639,68 @@ private val NOTICE_SETOR_OPTIONS = listOf(
     "rh" to "RH",
 )
 
+// "" ou "*" em allowedModules libera tudo (OWNER/ADMIN); qualquer outro
+// papel so ve os proprios modulos -- mesmo criterio de hasModuleAccess() no
+// site (lib/permissions.ts), replicado aqui pq o app nao tem esse helper
+// compartilhado ainda.
+private fun hasModuleAccessLocal(allowed: List<String>, moduleId: String): Boolean =
+    allowed.contains("*") || allowed.contains(moduleId)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AddNoticeDialog(onDismiss: () -> Unit, onSave: (String, String, String?, Boolean, String?) -> Unit) {
+private fun AddNoticeDialog(
+    canManage: Boolean,
+    allowedModules: List<String>,
+    onDismiss: () -> Unit,
+    onSave: (String, String, String?, Boolean, String?, String?) -> Unit,
+) {
     var titulo by remember { mutableStateOf("") }
     var mensagem by remember { mutableStateOf("") }
     var expiraEm by remember { mutableStateOf("") }
     var fixado by remember { mutableStateOf(false) }
-    var moduloId by remember { mutableStateOf<String?>(null) }
-    var setorMenuOpen by remember { mutableStateOf(false) }
-    val moduloLabel = NOTICE_SETOR_OPTIONS.firstOrNull { it.first == moduloId }?.second ?: "Geral (todos os setores)"
+    // Dropdown unico "Tipo e alcance" -- pedido do usuario ("o usuario
+    // podera criar lembretes no mural como postiches... tambem publicar no
+    // mural de avisos para os usuarios dentro do setor... crie campo com
+    // lista suspensa para escolher se e lembrete, aviso, local, geral"):
+    // "lembrete" (individual/privado, qualquer usuario), "setor:<id>" (aviso
+    // do proprio setor, qualquer usuario QUE TENHA ACESSO aquele modulo) ou
+    // "geral" (aviso pra empresa toda, exclusivo de quem administra).
+    // Mesma ideia do <select> unico do site (bulletin-board-client.tsx).
+    val setorOptions = remember(allowedModules) { NOTICE_SETOR_OPTIONS.filter { (id, _) -> hasModuleAccessLocal(allowedModules, id) } }
+    var escopo by remember { mutableStateOf(if (canManage) "geral" else "lembrete") }
+    var escopoMenuOpen by remember { mutableStateOf(false) }
+    val tipo = if (escopo == "lembrete") "lembrete" else "aviso"
+    val moduloId = if (escopo.startsWith("setor:")) escopo.removePrefix("setor:") else null
+    val escopoLabel = when {
+        escopo == "lembrete" -> "Lembrete (só eu vejo)"
+        escopo == "geral" -> "Aviso geral (toda a empresa)"
+        else -> "Aviso — " + (setorOptions.firstOrNull { "setor:${it.first}" == escopo }?.second ?: "")
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Novo aviso") },
+        title = { Text(if (tipo == "lembrete") "Novo lembrete" else "Novo aviso") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(value = titulo, onValueChange = { titulo = it }, label = { Text("Título") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
                 OutlinedTextField(value = mensagem, onValueChange = { mensagem = it }, label = { Text("Mensagem") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
-                // Setor -- pedido do usuario ("o mural geral de divulgacao e o
-                // individual para anotacoes do setor"): "Geral" (moduloId
-                // null, padrao) ou um setor especifico, que so aparece pra
-                // quem tem acesso aquele modulo (ver NoticeRowItem/geral acima
-                // e hasModuleAccess no site). Mesmo padrao ExposedDropdownMenuBox
-                // ja usado em varias telas do app (SegurancaScreen, RomaneioQuickScreen
-                // etc.) pra campo tipo-select somente leitura.
-                ExposedDropdownMenuBox(expanded = setorMenuOpen, onExpandedChange = { setorMenuOpen = it }) {
+                ExposedDropdownMenuBox(expanded = escopoMenuOpen, onExpandedChange = { escopoMenuOpen = it }) {
                     OutlinedTextField(
-                        value = moduloLabel,
+                        value = escopoLabel,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Setor") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = setorMenuOpen) },
+                        label = { Text("Tipo e alcance") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = escopoMenuOpen) },
                         modifier = Modifier.fillMaxWidth().menuAnchor(),
                         colors = appFieldColors(),
                     )
-                    ExposedDropdownMenu(expanded = setorMenuOpen, onDismissRequest = { setorMenuOpen = false }) {
-                        DropdownMenuItem(text = { Text("Geral (todos os setores)") }, onClick = { moduloId = null; setorMenuOpen = false })
-                        NOTICE_SETOR_OPTIONS.forEach { (id, label) ->
-                            DropdownMenuItem(text = { Text(label) }, onClick = { moduloId = id; setorMenuOpen = false })
+                    ExposedDropdownMenu(expanded = escopoMenuOpen, onDismissRequest = { escopoMenuOpen = false }) {
+                        DropdownMenuItem(text = { Text("Lembrete (só eu vejo)") }, onClick = { escopo = "lembrete"; escopoMenuOpen = false })
+                        setorOptions.forEach { (id, label) ->
+                            DropdownMenuItem(text = { Text("Aviso — $label") }, onClick = { escopo = "setor:$id"; escopoMenuOpen = false })
+                        }
+                        if (canManage) {
+                            DropdownMenuItem(text = { Text("Aviso geral (toda a empresa)") }, onClick = { escopo = "geral"; escopoMenuOpen = false })
                         }
                     }
                 }
@@ -1681,7 +1722,7 @@ private fun AddNoticeDialog(onDismiss: () -> Unit, onSave: (String, String, Stri
         confirmButton = {
             TextButton(
                 enabled = titulo.isNotBlank() && mensagem.isNotBlank(),
-                onClick = { onSave(titulo.trim(), mensagem.trim(), expiraEm.trim().ifBlank { null }, fixado, moduloId) },
+                onClick = { onSave(titulo.trim(), mensagem.trim(), expiraEm.trim().ifBlank { null }, fixado, moduloId, tipo) },
             ) { Text("Salvar") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },

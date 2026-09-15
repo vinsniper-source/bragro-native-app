@@ -41,8 +41,8 @@ android {
         // a instalaçao pegou o apk certo (se apos instalar ainda aparecer
         // 1.1.6, a instalaçao nao pegou o apk novo -- se aparecer 1.1.7,
         // pegou, e as cores tem que estar corrigidas tambem).
-        versionCode = 84
-        versionName = "1.2.74"
+        versionCode = 86
+        versionName = "1.2.76"
 
         // URLs do backend (o MESMO backend do site publicado -- ver
         // native-app/README.md). Trocaveis por variante/ambiente sem
@@ -98,14 +98,18 @@ android {
             // keep faltando -- a solucao mais rapida enquanto investiga e
             // voltar isMinifyEnabled pra false.
             isMinifyEnabled = true
-            // shrinkResources fica de fora por enquanto: nao foi possivel
-            // confirmar, so por leitura de codigo (sem compilador/build real
-            // disponivel neste ambiente), que nenhum recurso e referenciado
-            // dinamicamente por nome/string em runtime (ex.: Resources.
-            // getIdentifier, comum em apps com icone dinamico por
-            // categoria/status) -- risco desnecessario de ligar as cegas
-            // junto com o minify. Ativar isso pode ser um proximo passo,
-            // depois que a build com minify sozinho for validada no aparelho.
+            // shrinkResources ligado (pedido do usuario, so pelo ganho de
+            // tamanho -- nao e medida de seguranca de verdade, quem protege o
+            // codigo e o R8/ProGuard acima). Verificado por grep em todo
+            // app/src/main/java: nenhum uso de Resources.getIdentifier() ou
+            // equivalente (lookup de recurso por nome em runtime), que e o
+            // unico jeito comum desse recurso remover algo em uso e quebrar o
+            // app silenciosamente -- risco antes levantado aqui, agora
+            // descartado. Continua valendo o mesmo aviso de isMinifyEnabled:
+            // testar manualmente login, listar/criar lancamento em 2+ modulos,
+            // upload de foto/arquivo e o mapa (FieldView/KML) na PRIMEIRA
+            // build de release depois desta mudanca.
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             if (hasKeystoreConfig) {
                 signingConfig = signingConfigs.getByName("release")

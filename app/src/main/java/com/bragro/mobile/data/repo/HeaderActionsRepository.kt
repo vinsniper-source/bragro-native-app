@@ -96,8 +96,8 @@ class NoticesRepository(context: Context) {
 
     suspend fun list(): JsonElement? = run(NoticesRequest("", "", "list"))
 
-    suspend fun create(titulo: String, mensagem: String, expiraEm: String?, fixado: Boolean, moduloId: String? = null): Boolean =
-        run(NoticesRequest("", "", "create", titulo = titulo, mensagem = mensagem, expiraEm = expiraEm, fixado = fixado, moduloId = moduloId)) != null
+    suspend fun create(titulo: String, mensagem: String, expiraEm: String?, fixado: Boolean, moduloId: String? = null, tipo: String? = null): Boolean =
+        run(NoticesRequest("", "", "create", titulo = titulo, mensagem = mensagem, expiraEm = expiraEm, fixado = fixado, moduloId = moduloId, tipo = tipo)) != null
 
     suspend fun delete(id: String): Boolean =
         run(NoticesRequest("", "", "delete", id = id)) != null
