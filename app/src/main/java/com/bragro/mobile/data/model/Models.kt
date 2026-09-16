@@ -1657,6 +1657,123 @@ data class PrescricaoResponse(
     val error: String? = null,
 )
 
+// Dossiê Bancário (Task #599/#615) -- espelho de DossieData
+// (lib/services/dossie.ts). Rota de LEITURA pura (só "ano" como input) --
+// ver /api/mobile/dossie/route.ts, que só chama getDossieData(orgId, ano) e
+// devolve os campos no nível raiz do JSON. Modelos aqui são um SUBCONJUNTO
+// enxuto dos campos de DreResultado/LivroCaixaResult (só o que
+// dossie-client.tsx de fato exibe) -- ignoreUnknownKeys (Json global do
+// app) descarta o resto sem erro.
+@Serializable
+data class DossieRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val ano: Int? = null,
+)
+
+@Serializable
+data class DossieDreFazendaData(
+    val farmId: String,
+    val farmName: String,
+    val areaHa: Double,
+    val custoTotal: Double,
+    val receitaTotal: Double,
+    val margem: Double,
+)
+
+@Serializable
+data class DossieDreTotaisData(
+    val areaHa: Double,
+    val receitaTotal: Double,
+    val custoTotal: Double,
+    val margem: Double,
+    val custoPorHa: Double,
+)
+
+@Serializable
+data class DossieDreData(
+    val totais: DossieDreTotaisData,
+    val porFazenda: List<DossieDreFazendaData> = emptyList(),
+)
+
+@Serializable
+data class DossieLivroCaixaData(
+    val totalEntradas: Double,
+    val totalSaidas: Double,
+    val saldoFinal: Double,
+)
+
+@Serializable
+data class DossieContratoData(
+    val id: String,
+    val descricao: String,
+    val categoria: String? = null,
+    val tipo: String? = null,
+    val contraparte: String? = null,
+    val valorR: Double,
+    val vencimento: String? = null,
+    val status: String? = null,
+)
+
+@Serializable
+data class DossiePatrimonioItemData(
+    val id: String,
+    val descricao: String,
+    val categoria: String? = null,
+    val valorContabil: Double,
+)
+
+@Serializable
+data class DossiePatrimonioResumoData(
+    val totalItens: Int,
+    val valorAquisicaoTotal: Double,
+    val valorContabilTotal: Double,
+    val deprecAcumTotal: Double,
+    val principais: List<DossiePatrimonioItemData> = emptyList(),
+)
+
+@Serializable
+data class DossieResponse(
+    val ok: Boolean,
+    val ano: Int? = null,
+    val geradoEm: String? = null,
+    val dre: DossieDreData? = null,
+    val livroCaixa: DossieLivroCaixaData? = null,
+    val contratosAtivos: List<DossieContratoData> = emptyList(),
+    val contratosValorTotal: Double = 0.0,
+    val patrimonio: DossiePatrimonioResumoData? = null,
+    val error: String? = null,
+)
+
+// Simulador de Cenários "E se?" (Task #600/#616) -- espelho de
+// SimuladorBase (lib/services/simulador.ts). A rota só devolve os números
+// BASE uma vez -- todo o recálculo "e se" (produtividadeProjetada,
+// precoProjetado, receitaProjetada, custoProjetado, margens) acontece 100%
+// no cliente (Kotlin), replicando a fórmula EXATA de
+// simulador-client.tsx (useMemo), sem round-trip nenhum por slider/input
+// alterado -- mesmo critério que o site já usa.
+@Serializable
+data class SimuladorRequest(val accessToken: String, val refreshToken: String)
+
+@Serializable
+data class SimuladorBaseData(
+    val areaHa: Double,
+    val custoBaseTotal: Double,
+    val receitaBaseTotal: Double,
+    val totalSacasBase: Double? = null,
+    val produtividadeBaseScHa: Double? = null,
+    val precoBaseRs: Double? = null,
+    val precoBaseCultura: String? = null,
+    val cambioBaseUsdBrl: Double? = null,
+)
+
+@Serializable
+data class SimuladorResponse(
+    val ok: Boolean,
+    val base: SimuladorBaseData? = null,
+    val error: String? = null,
+)
+
 @Serializable
 data class FieldviewRequest(val accessToken: String, val refreshToken: String)
 

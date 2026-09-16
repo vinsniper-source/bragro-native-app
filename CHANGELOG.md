@@ -3,6 +3,34 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.81] -- 2026-09-16
+
+- **Paridade nativa: Dossiê Bancário (Task #599/#615)**. O módulo existia
+  só no site desde a rodada anterior -- pedido do usuário ("os novos
+  módulos criados em plataforma não foram implementados no app native").
+  Relatório de LEITURA pura (Resumo Executivo, DRE por fazenda, Livro
+  Caixa do ano, Contratos Ativos, Patrimônio) com seletor de ano, pra
+  anexar num pedido de crédito rural ou apresentar a um investidor. Nova
+  rota `/api/mobile/dossie` reaproveita 100% `getDossieData()` do site
+  (nenhum cálculo duplicado em Kotlin); `DossieRepository` sem cache no
+  Room de propósito (é um retrato ponto-no-tempo); `DossieScreen.kt` nova.
+  Acesso: dropdown Financeiro > Relatórios (mesmo lugar de DRE/Análises/
+  Livro Caixa), permissão `financeiro` (mesmo alias do site).
+- **Paridade nativa: Simulador de Cenários "E se?" (Task #600/#616)**.
+  Mesma motivação acima. Calculadora "e se" pra frente -- base real (área/
+  custo/receita do DRE, câmbio, preço de referência) vem uma única vez do
+  servidor (`/api/mobile/simulador` -> `getSimuladorBase()`); todo o
+  recálculo (produtividade/preço/receita/custo/margem projetados) roda
+  100% em Kotlin no `SimuladorScreen.kt`, replicando fórmula por fórmula
+  o `useMemo` de `simulador-client.tsx` -- sem round-trip nenhum por
+  slider/input alterado, igual o site já faz. Nada aqui é salvo em lugar
+  nenhum. `SimuladorRepository` também sem cache (base desatualizada
+  geraria projeção errada sem o usuário perceber). Mesmo local de acesso
+  do Dossiê (Financeiro > Relatórios).
+- Ainda pendente (2ª metade do pedido do usuário, em investigação):
+  possíveis gaps de implementação DENTRO de módulos já existentes no app
+  nativo (não apenas módulos inteiros ausentes).
+
 ## [1.2.80] -- 2026-09-16
 
 - Fix real de build: `0x8C000000` (opacidade de preenchimento das zonas no

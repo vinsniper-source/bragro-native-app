@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Agriculture
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Assessment
@@ -33,6 +34,7 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.Timeline
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Warehouse
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.DropdownMenu
@@ -203,6 +205,10 @@ private val BOTTOM_TABS = listOf(
             SectorTarget.Special("analises", "Análises cruzadas"),
             // Livro Caixa do Produtor Rural (Task #58).
             SectorTarget.Special("livrocaixa", "Livro Caixa"),
+            // Dossiê Bancário e Simulador "E se?" (Task #599/#600, paridade
+            // nativa #615/#616) -- mesmo critério dos itens acima.
+            SectorTarget.Special("dossie", "Dossiê Bancário"),
+            SectorTarget.Special("simulador", "Simulador \"E se?\""),
         ),
     ),
     // Ex-categoria "Compras": aquisição de insumos/serviços de terceiros.
@@ -292,6 +298,8 @@ private val OWNER_BOTTOM_TABS = listOf(
             SectorTarget.Special("dre", "DRE", category = "Relatórios"),
             SectorTarget.Special("analises", "Análises cruzadas", category = "Relatórios"),
             SectorTarget.Special("livrocaixa", "Livro Caixa", category = "Relatórios"),
+            SectorTarget.Special("dossie", "Dossiê Bancário", category = "Relatórios"),
+            SectorTarget.Special("simulador", "Simulador \"E se?\"", category = "Relatórios"),
             SectorTarget.Domain("pedidos", "Pedidos", category = "Compras"),
             SectorTarget.Domain("cotacoesfornecedores", "Cotações de Fornecedores", category = "Compras"),
             SectorTarget.Domain("contratos", "Contratos", category = "Compras"),
@@ -383,6 +391,11 @@ private fun permissionIdFor(nativeId: String): String = when (nativeId) {
     // site) -- não ganhou toggle próprio em Acessos, ver
     // handoff-ocr-orcamento.md/actions.ts requireModule("orcamentos").
     "orcamentos" -> "financeiro"
+    // Dossiê Bancário e Simulador "E se?" -- mesmo critério de "orcamentos"
+    // acima: PERMISSION_ALIAS pra "financeiro" no site (lib/permissions.ts),
+    // sem toggle próprio em Acessos.
+    "dossie" -> "financeiro"
+    "simulador" -> "financeiro"
     else -> nativeId
 }
 
@@ -441,6 +454,10 @@ fun BRAgroBottomBar(
     onOpenControleInsumos: () -> Unit,
     onOpenOperacoes: () -> Unit,
     onOpenOrcamento: () -> Unit,
+    // Dossiê Bancário e Simulador "E se?" (Task #599/#600, paridade nativa
+    // #615/#616) -- mesmo critério de onOpenDre/onOpenAnalises acima.
+    onOpenDossie: () -> Unit,
+    onOpenSimulador: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenBaseDeDados: () -> Unit,
     onOpenSeguranca: () -> Unit,
@@ -505,6 +522,8 @@ fun BRAgroBottomBar(
                 "controleinsumos" -> onOpenControleInsumos()
                 "operacoes" -> onOpenOperacoes()
                 "orcamentos" -> onOpenOrcamento()
+                "dossie" -> onOpenDossie()
+                "simulador" -> onOpenSimulador()
             }
         }
     }
@@ -803,6 +822,9 @@ private fun sectorItemIcon(item: SectorTarget, fallback: ImageVector): ImageVect
         // Câmera -- reforça a leitura automática (OCR) que abre a tela, ver
         // handoff-ocr-orcamento.md.
         "orcamentos" -> Icons.Filled.CameraAlt
+        // Dossiê Bancário / Simulador "E se?" (Task #599/#600/#615/#616).
+        "dossie" -> Icons.Filled.AccountBalance
+        "simulador" -> Icons.Filled.Tune
         else -> fallback
     }
 }

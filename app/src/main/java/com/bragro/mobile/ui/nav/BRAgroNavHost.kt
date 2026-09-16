@@ -43,6 +43,8 @@ import com.bragro.mobile.ui.pragas.PragaFotoScreen
 import com.bragro.mobile.ui.domain.FrotaQrScreen
 import com.bragro.mobile.ui.estoque.ReconciliacaoEstoqueScreen
 import com.bragro.mobile.ui.fieldview.PrescricaoScreen
+import com.bragro.mobile.ui.dossie.DossieScreen
+import com.bragro.mobile.ui.simulador.SimuladorScreen
 import com.bragro.mobile.ui.orcamento.OrcamentoScreen
 import com.bragro.mobile.ui.seguranca.SegurancaScreen
 import com.bragro.mobile.ui.settings.SettingsScreen
@@ -63,6 +65,8 @@ private object Routes {
     const val FROTA_QR = "frota_qr"
     const val RECONCILIACAO_ESTOQUE = "reconciliacao_estoque"
     const val PRESCRICAO = "prescricao"
+    const val DOSSIE = "dossie"
+    const val SIMULADOR = "simulador"
     const val ORCAMENTO_NOVO = "orcamento_novo"
     const val BANK_IMPORT = "bank_import"
     const val SETTINGS = "settings"
@@ -169,6 +173,11 @@ fun BRAgroNavHost() {
                     onOpenControleInsumos = { navController.navigate(Routes.CONTROLE_INSUMOS) },
                     onOpenOperacoes = { navController.navigate(Routes.OPERACOES) },
                     onOpenOrcamento = { navController.navigate(Routes.ORCAMENTO_NOVO) },
+                    // Dossiê Bancário e Simulador "E se?" (Task #599/#600,
+                    // paridade nativa #615/#616) -- mesmo critério de
+                    // SectorTarget.Special dos outros itens acima.
+                    onOpenDossie = { navController.navigate(Routes.DOSSIE) },
+                    onOpenSimulador = { navController.navigate(Routes.SIMULADOR) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                     onOpenBaseDeDados = { navController.navigate(Routes.BASE_DE_DADOS) },
                     onOpenSeguranca = { navController.navigate(Routes.SEGURANCA) },
@@ -291,6 +300,12 @@ fun BRAgroNavHost() {
         }
         composable(Routes.ORCAMENTO_NOVO) {
             OrcamentoScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.DOSSIE) {
+            DossieScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.SIMULADOR) {
+            SimuladorScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.BANK_IMPORT) {
             BankImportScreen(onBack = { navController.popBackStack() })

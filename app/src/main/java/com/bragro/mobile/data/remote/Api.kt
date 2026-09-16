@@ -175,6 +175,17 @@ interface MobileApi {
     @POST("api/mobile/prescricao")
     suspend fun prescricao(@Body body: PrescricaoRequest): Response<PrescricaoResponse>
 
+    // Dossiê Bancário (Task #599/#615) -- relatório consolidado (DRE +
+    // Livro Caixa + Contratos + Patrimônio), leitura pura, só recebe "ano".
+    @POST("api/mobile/dossie")
+    suspend fun dossie(@Body body: DossieRequest): Response<DossieResponse>
+
+    // Simulador de Cenários "E se?" (Task #600/#616) -- devolve só a base
+    // real UMA vez; todo o recálculo "e se" acontece no cliente (Kotlin),
+    // igual o site já faz (useMemo em simulador-client.tsx).
+    @POST("api/mobile/simulador")
+    suspend fun simulador(@Body body: SimuladorRequest): Response<SimuladorResponse>
+
     // Painel "Controle de Insumos" (gap encontrado na auditoria módulo-a-
     // módulo, pedido do usuario "implemente tudo que falta ainda para o app
     // native da plataforma").
