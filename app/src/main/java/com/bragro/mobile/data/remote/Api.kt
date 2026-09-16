@@ -37,6 +37,10 @@ import com.bragro.mobile.data.model.LivroCaixaRequest
 import com.bragro.mobile.data.model.LivroCaixaResponse
 import com.bragro.mobile.data.model.ProdutorRuralRequest
 import com.bragro.mobile.data.model.ProdutorRuralResponse
+import com.bragro.mobile.data.model.ReconciliacaoEstoqueRequest
+import com.bragro.mobile.data.model.ReconciliacaoEstoqueResponse
+import com.bragro.mobile.data.model.PrescricaoRequest
+import com.bragro.mobile.data.model.PrescricaoResponse
 import com.bragro.mobile.data.model.ModuleActionRequest
 import com.bragro.mobile.data.model.ModuleActionResponse
 import com.bragro.mobile.data.model.ModuleChartsRequest
@@ -67,6 +71,8 @@ import com.bragro.mobile.data.model.OrcamentoOcrItensRequest
 import com.bragro.mobile.data.model.OrcamentoOcrItensResponse
 import com.bragro.mobile.data.model.RomaneioOcrRequest
 import com.bragro.mobile.data.model.RomaneioOcrResponse
+import com.bragro.mobile.data.model.PragaIaRequest
+import com.bragro.mobile.data.model.PragaIaResponse
 import com.bragro.mobile.data.model.OperacoesRequest
 import com.bragro.mobile.data.model.OperacoesResponse
 import com.bragro.mobile.data.model.NotificationsRequest
@@ -159,6 +165,16 @@ interface MobileApi {
     @POST("api/mobile/dre")
     suspend fun dre(@Body body: DreRequest): Response<DreResponse>
 
+    // Reconciliação Físico x Fiscal de Estoque (Task #603/#607) -- leitura
+    // pura, sem input do usuário.
+    @POST("api/mobile/reconciliacao-estoque")
+    suspend fun reconciliacaoEstoque(@Body body: ReconciliacaoEstoqueRequest): Response<ReconciliacaoEstoqueResponse>
+
+    // Prescrição / Taxa Variável (Task #604/#608) -- visualizador simples,
+    // leitura pura (sem input do usuário, sem geração de SHP/ISO-XML).
+    @POST("api/mobile/prescricao")
+    suspend fun prescricao(@Body body: PrescricaoRequest): Response<PrescricaoResponse>
+
     // Painel "Controle de Insumos" (gap encontrado na auditoria módulo-a-
     // módulo, pedido do usuario "implemente tudo que falta ainda para o app
     // native da plataforma").
@@ -206,6 +222,11 @@ interface MobileApi {
     // comentário em RomaneioOcrRequest/Response (Models.kt).
     @POST("api/mobile/romaneio-ocr")
     suspend fun romaneioOcr(@Body body: RomaneioOcrRequest): Response<RomaneioOcrResponse>
+
+    // IA de diagnóstico de pragas por foto -- ver comentário em
+    // PragaIaRequest/Response (Models.kt).
+    @POST("api/mobile/pragas-ia")
+    suspend fun pragaIa(@Body body: PragaIaRequest): Response<PragaIaResponse>
 
     // Inverso do multi-item acima -- pedido do usuario ("Cotações
     // Fornecedores: múltiplos fornecedores por operação", task #404): 1

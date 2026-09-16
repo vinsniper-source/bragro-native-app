@@ -3,13 +3,16 @@ package com.bragro.mobile.ui.print
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
 import android.print.PrintAttributes
 import android.print.PrintManager
+import android.util.Base64
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.core.content.FileProvider
+import java.io.ByteArrayOutputStream
 import com.bragro.mobile.data.model.ColumnConfig
 import com.bragro.mobile.data.model.DomainConfig
 import com.bragro.mobile.ui.domain.displayValueFor
@@ -47,7 +50,7 @@ object HtmlPrinter {
         print(context, jobName = domain.label, html = html)
     }
 
-    private fun print(context: Context, jobName: String, html: String) {
+    private fun print(context: Context, jobName: String, html: String, landscape: Boolean = true) {
         val webView = WebView(context)
         activeWebView = webView
         webView.webViewClient = object : WebViewClient() {
@@ -62,9 +65,13 @@ object HtmlPrinter {
                     // (o atributo do job de impressão manda mais que o CSS em
                     // vários apps/drivers). O site já força paisagem global
                     // (globals.css "@page { size: landscape }"), esta é a
-                    // mesma decisão espelhada no app.
+                    // mesma decisão espelhada no app -- exceto pros QR Codes
+                    // de Frota (printQrCodes), que pedem retrato explícito
+                    // (landscape = false) por ter uma grade normal, não uma
+                    // tabela larga.
+                    val mediaSize = if (landscape) PrintAttributes.MediaSize.ISO_A4.asLandscape() else PrintAttributes.MediaSize.ISO_A4.asPortrait()
                     val attrs = PrintAttributes.Builder()
-                        .setMediaSize(PrintAttributes.MediaSize.ISO_A4.asLandscape())
+                        .setMediaSize(mediaSize)
                         .build()
                     printManager.print(jobName, adapter, attrs)
                 }
@@ -185,6 +192,45 @@ object HtmlPrinter {
         val barSeries: List<Pair<String, List<Double>>> = emptyList(),
         val isMoney: Boolean = false,
     )
+
+    // QR Codes de Frota (Task #602, paridade com frota-qr-codes-button.tsx
+    // do site) -- reaproveita o MESMO mecanismo de impressão via WebView
+    // acima (HTML com <img> em base64 por QR), só que em retrato (o layout
+    // do site usa uma grade normal, não uma tabela larga).
+    fun printQrCodes(context: Context, title: String, items: List<Pair<String, Bitmap>>) {
+        val html = buildQrCodesHtml(title, items)
+        print(context, jobName = title, html = html, landscape = false)
+    }
+
+    private fun buildQrCodesHtml(title: String, items: List<Pair<String, Bitmap>>): String {
+        val cards = items.joinToString("") { (label, bitmap) ->
+            val out = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+            val base64 = Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
+            """
+              <div class="qr-card">
+                <img src="data:image/png;base64,$base64" />
+                <p>${escapeHtml(label)}</p>
+              </div>
+            """.trimIndent()
+        }
+        return """
+            <!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
+            <style>
+              @page { size: portrait; margin: 12mm; }
+              body { font-family: Arial, Helvetica, sans-serif; padding: 12px; color: #111; }
+              h1 { font-size: 16px; margin-bottom: 12px; }
+              .grid { display: flex; flex-wrap: wrap; gap: 16px; }
+              .qr-card { width: 160px; text-align: center; border: 1px solid #ccc; padding: 8px; page-break-inside: avoid; }
+              .qr-card img { width: 140px; height: 140px; }
+              .qr-card p { font-size: 12px; margin: 6px 0 0; word-break: break-word; }
+            </style></head>
+            <body>
+              <h1>${escapeHtml(title)}</h1>
+              <div class="grid">$cards</div>
+            </body></html>
+        """.trimIndent()
+    }
 
     fun printCharts(context: Context, title: String, charts: List<ChartPrintData>) {
         val html = buildChartsHtml(title, charts)

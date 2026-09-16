@@ -3,6 +3,32 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.78] -- 2026-09-16
+
+- Paridade nativa das 4 features novas do site (Tasks #601-#604), 3 delas
+  completas e uma como visualizador simples:
+  - **IA de diagnóstico de pragas por foto**: nova tela "Diagnóstico por
+    Foto" no módulo Pragas (FAB próprio) -- tira foto, sobe pro Storage e
+    chama a mesma IA de visão (Claude) do site via
+    `/api/mobile/pragas-ia`, sem duplicar lógica de IA no app.
+  - **QR Code no abastecimento de Frota**: FAB "QR Codes das máquinas" no
+    módulo Frota gera um QR por máquina cadastrada (ZXing) com opção de
+    imprimir todos; no Abastecimento rápido, um novo botão lê o QR (foto +
+    ML Kit Barcode Scanning) e preenche o campo Máquina/Frota sozinho.
+  - **Reconciliação Físico x Fiscal de Estoque**: novo relatório (FAB no
+    módulo Estoque) mostrando saldo fiscal (notas importadas) x saldo
+    físico (todos os lançamentos) por item, com toggle "só divergências" --
+    mesmo cálculo do site, sem duplicar lógica.
+  - **Prescrição / Taxa Variável**: visualizador simples (ícone no
+    cabeçalho do FieldView) das zonas de taxa variável já salvas pelo
+    site -- mapa nativo (osmdroid) com um polígono colorido por taxa
+    (mesmo gradiente verde→vermelho do site) por zona. Gerar SHP/ISO-XML
+    continua exclusivo do site (decisão consciente: parsing de shapefile é
+    bem mais pesado em Kotlin do que no navegador).
+  - Todas as 4 features novas usam rotas `/api/mobile/*` dedicadas que só
+    chamam a MESMA lógica de servidor que o site já usa -- nenhum cálculo
+    de negócio duplicado em Kotlin.
+
 ## [1.2.77] -- 2026-09-15
 
 - Corrigido bug real: conta ADMIN (inclusive a de teste) via a barra

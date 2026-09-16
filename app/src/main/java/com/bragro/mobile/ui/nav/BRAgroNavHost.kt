@@ -39,6 +39,10 @@ import com.bragro.mobile.ui.pedidos.PedidoMultiItemScreen
 import com.bragro.mobile.ui.cotacoes.CotacaoMultiItemScreen
 import com.bragro.mobile.ui.operacoes.OperacoesScreen
 import com.bragro.mobile.ui.romaneio.RomaneioQuickScreen
+import com.bragro.mobile.ui.pragas.PragaFotoScreen
+import com.bragro.mobile.ui.domain.FrotaQrScreen
+import com.bragro.mobile.ui.estoque.ReconciliacaoEstoqueScreen
+import com.bragro.mobile.ui.fieldview.PrescricaoScreen
 import com.bragro.mobile.ui.orcamento.OrcamentoScreen
 import com.bragro.mobile.ui.seguranca.SegurancaScreen
 import com.bragro.mobile.ui.settings.SettingsScreen
@@ -55,6 +59,10 @@ private object Routes {
     const val CONTROLE_INSUMOS = "controle_insumos"
     const val OPERACOES = "operacoes"
     const val ROMANEIO_QUICK = "romaneio_quick"
+    const val PRAGA_FOTO = "praga_foto"
+    const val FROTA_QR = "frota_qr"
+    const val RECONCILIACAO_ESTOQUE = "reconciliacao_estoque"
+    const val PRESCRICAO = "prescricao"
     const val ORCAMENTO_NOVO = "orcamento_novo"
     const val BANK_IMPORT = "bank_import"
     const val SETTINGS = "settings"
@@ -211,7 +219,11 @@ fun BRAgroNavHost() {
                 // dentro do FieldView (que só mostra um RESUMO automático
                 // dela), leva direto pro lançamento novo de Frota.
                 onNavigateToFrota = { navController.navigate(Routes.domainFormNew("frota")) },
+                onOpenPrescricao = { navController.navigate(Routes.PRESCRICAO) },
             )
+        }
+        composable(Routes.PRESCRICAO) {
+            PrescricaoScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.NFE_IMPORT) {
             NfeImportScreen(onBack = { navController.popBackStack() })
@@ -262,6 +274,15 @@ fun BRAgroNavHost() {
         }
         composable(Routes.ROMANEIO_QUICK) {
             RomaneioQuickScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.PRAGA_FOTO) {
+            PragaFotoScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.FROTA_QR) {
+            FrotaQrScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.RECONCILIACAO_ESTOQUE) {
+            ReconciliacaoEstoqueScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.ORCAMENTO_NOVO) {
             OrcamentoScreen(onBack = { navController.popBackStack() })
@@ -316,6 +337,15 @@ fun BRAgroNavHost() {
                     onEditRecord = { recordId -> navController.navigate(Routes.domainFormEdit(domainId, recordId)) },
                     onOpenRomaneioQuick = if (domainId == "romaneios") {
                         { navController.navigate(Routes.ROMANEIO_QUICK) }
+                    } else null,
+                    onOpenPragaFoto = if (domainId == "pragas") {
+                        { navController.navigate(Routes.PRAGA_FOTO) }
+                    } else null,
+                    onOpenFrotaQr = if (domainId == "frota") {
+                        { navController.navigate(Routes.FROTA_QR) }
+                    } else null,
+                    onOpenReconciliacaoEstoque = if (domainId == "estoque") {
+                        { navController.navigate(Routes.RECONCILIACAO_ESTOQUE) }
                     } else null,
                     // Cobranças e NFS-e unificados numa única entrada do
                     // menu (ver BottomNavBar.kt) -- pedido do usuário

@@ -269,7 +269,7 @@ private fun RawRecordFields(obj: JsonObject) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, viewModel: FieldviewViewModel = viewModel()) {
+fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOpenPrescricao: () -> Unit = {}, viewModel: FieldviewViewModel = viewModel()) {
     val context = LocalContext.current
     LaunchedEffect(Unit) { viewModel.load() }
     // osmdroid exige um user agent nao-vazio (senao os servidores de tile
@@ -321,6 +321,18 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, view
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary) }
+                    }
+                },
+                actions = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        // Prescrição / Taxa Variável (Task #604/#608) --
+                        // visualizador simples das zonas já salvas pelo site,
+                        // acessível daqui porque "prescricao" é alias de
+                        // permissão de "fieldview" (ver PERMISSION_ALIAS).
+                        IconButton(onClick = onOpenPrescricao) {
+                            Icon(Icons.Filled.Map, contentDescription = "Prescrição / Taxa Variável", tint = MaterialTheme.colorScheme.primary)
+                        }
                     }
                 },
             )

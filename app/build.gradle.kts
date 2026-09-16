@@ -41,8 +41,8 @@ android {
         // a instalaçao pegou o apk certo (se apos instalar ainda aparecer
         // 1.1.6, a instalaçao nao pegou o apk novo -- se aparecer 1.1.7,
         // pegou, e as cores tem que estar corrigidas tambem).
-        versionCode = 87
-        versionName = "1.2.77"
+        versionCode = 88
+        versionName = "1.2.78"
 
         // URLs do backend (o MESMO backend do site publicado -- ver
         // native-app/README.md). Trocaveis por variante/ambiente sem
@@ -242,6 +242,14 @@ dependencies {
     // confere/edita antes de lancar) -- nao e regra de negocio, entao nao
     // fere o principio de "nao duplicar logica do backend em Kotlin".
     implementation("com.google.mlkit:text-recognition:16.0.1")
+    // QR Code no abastecimento (paridade com o site, quick-abastecimento-button.tsx
+    // + frota-qr-codes-button.tsx, Task #602): ML Kit Barcode Scanning pra LER
+    // o QR de uma foto tirada (mesmo padrao "foto, nao camera ao vivo" do OCR
+    // acima) -- mesma familia do text-recognition, ja no projeto. ZXing core
+    // (so o encoder, sem a parte "android embedded") pra GERAR o QR de cada
+    // frota como Bitmap/impressao -- nao tem gerador no ML Kit, so leitura.
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+    implementation("com.google.zxing:core:3.5.3")
     // Ponte suspend/await para as Task<> do Google Play Services (ML Kit
     // devolve Task<Text>, nao uma suspend fun) -- sem isso, `.await()" nao
     // compila.

@@ -706,6 +706,41 @@ data class DreResponse(
     val error: String? = null,
 )
 
+// Reconciliação Físico x Fiscal de Estoque (Task #603/#607) -- espelho de
+// ReconciliacaoEstoqueItem/ReconciliacaoEstoqueResult
+// (lib/services/reconciliacao-estoque.ts). Rota de LEITURA pura (sem
+// input do usuário) -- ver /api/mobile/reconciliacao-estoque/route.ts, que
+// só chama getReconciliacaoEstoque(orgId) e devolve os campos no nível raiz
+// do JSON (não aninhado numa chave "dados").
+@Serializable
+data class ReconciliacaoEstoqueRequest(
+    val accessToken: String,
+    val refreshToken: String,
+)
+
+@Serializable
+data class ReconciliacaoOrigemData(val origem: String, val liquido: Double)
+
+@Serializable
+data class ReconciliacaoEstoqueItemData(
+    val item: String,
+    val categoria: String? = null,
+    val unidade: String? = null,
+    val saldoFiscal: Double,
+    val saldoFisico: Double,
+    val diferenca: Double,
+    val origensNaoFiscais: List<ReconciliacaoOrigemData> = emptyList(),
+)
+
+@Serializable
+data class ReconciliacaoEstoqueResponse(
+    val ok: Boolean,
+    val geradoEm: String? = null,
+    val itens: List<ReconciliacaoEstoqueItemData> = emptyList(),
+    val totalItensComDivergencia: Int = 0,
+    val error: String? = null,
+)
+
 // Livro Caixa do Produtor Rural (Task #58) -- ver POST /api/mobile/livro-caixa
 // no site (src/app/api/mobile/livro-caixa/route.ts), que so serializa o
 // retorno de getLivroCaixaData() (lib/services/livro-caixa.ts) -- MESMO
@@ -1084,6 +1119,27 @@ data class RomaneioOcrResponse(
     val status: String? = null,
     val mensagem: String? = null,
     val campos: RomaneioOcrCampos? = null,
+    val error: String? = null,
+)
+
+// IA de diagnóstico de pragas por foto -- paridade com o site (Task #601,
+// ver lib/services/pragas-ia.ts e quick-praga-foto-button.tsx). Mesmo
+// espírito do RomaneioOcrRequest/Response acima: aqui não tem "campos"
+// estruturados pra pré-preencher, só um texto curto de diagnóstico pro
+// usuário conferir antes de escolher o "Alvo (praga/doença)" de verdade.
+@Serializable
+data class PragaIaRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val fotoUrl: String,
+)
+
+@Serializable
+data class PragaIaResponse(
+    val ok: Boolean,
+    val status: String? = null,
+    val mensagem: String? = null,
+    val diagnostico: String? = null,
     val error: String? = null,
 )
 
@@ -1564,6 +1620,41 @@ data class FieldBoundaryDto(
     // paridade, Task #226: o site já casa FieldBoundary.farmId com Farm.id
     // pra centralizar o mapa no talhão certo de cada fazenda).
     val farmId: String? = null,
+)
+
+// Prescrição / Taxa Variável -- VISUALIZADOR simples (Task #604/#608):
+// decisão do usuário foi o app nativo só EXIBIR as zonas já calculadas e
+// salvas pelo site (savePrescricaoAction em prescricao/actions.ts resolve
+// taxaMedia/Min/Max e grava o geojson), sem gerar SHP/ISO-XML no aparelho
+// (parsing de shapefile é bem mais pesado em Kotlin do que a lib shpjs do
+// navegador). "geojson" é um FeatureCollection cru (mesmo critério de
+// FieldBoundaryDto.geojson acima) -- cada Feature.properties tem "taxa"
+// (Double), usado pra colorir o polígono no mapa (ver PrescricaoScreen.kt).
+@Serializable
+data class PrescricaoRequest(val accessToken: String, val refreshToken: String)
+
+@Serializable
+data class PrescricaoData(
+    val id: String,
+    val nome: String,
+    val produto: String? = null,
+    val unidadeTaxa: String? = null,
+    val safra: String? = null,
+    val cultura: String? = null,
+    val talhao: String? = null,
+    val taxaMedia: Double? = null,
+    val taxaMin: Double? = null,
+    val taxaMax: Double? = null,
+    val geojson: JsonElement? = null,
+    val origemTipo: String? = null,
+    val criadoEm: String? = null,
+)
+
+@Serializable
+data class PrescricaoResponse(
+    val ok: Boolean,
+    val prescricoes: List<PrescricaoData> = emptyList(),
+    val error: String? = null,
 )
 
 @Serializable

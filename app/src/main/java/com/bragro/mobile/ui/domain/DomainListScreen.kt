@@ -43,8 +43,11 @@ import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.MonitorWeight
+import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Balance
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Receipt
@@ -242,6 +245,15 @@ fun DomainListScreen(
     // padrão do "Abastecimento rápido" da Frota logo abaixo. Nulo em
     // qualquer outro domínio.
     onOpenRomaneioQuick: (() -> Unit)? = null,
+    // Mesmo padrão acima, pro "Diagnóstico por Foto" de Pragas (Task #601,
+    // paridade com quick-praga-foto-button.tsx do site) -- 2º FAB só no
+    // módulo Pragas. Nulo em qualquer outro domínio.
+    onOpenPragaFoto: (() -> Unit)? = null,
+    // Mesmo padrão acima, pra "Gerar QR Codes" de Frota (Task #602, paridade
+    // com frota-qr-codes-button.tsx do site) -- 3º FAB só no módulo Frota.
+    // Nulo em qualquer outro domínio.
+    onOpenFrotaQr: (() -> Unit)? = null,
+    onOpenReconciliacaoEstoque: (() -> Unit)? = null,
     // Cobranças/NFS-e unificados (ver BottomNavBar.kt/BRAgroNavHost.kt):
     // quando não-nulo, mostra um alternador no topo da lista pra trocar de
     // domínio sem passar pelo menu -- pedido do usuário ("no módulo
@@ -517,6 +529,14 @@ fun DomainListScreen(
                     ) {
                         Icon(Icons.Filled.Bolt, contentDescription = "Acesso automático (bomba de combustível)")
                     }
+                    if (onOpenFrotaQr != null) {
+                        FloatingActionButton(
+                            onClick = onOpenFrotaQr,
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        ) {
+                            Icon(Icons.Filled.QrCode, contentDescription = "Gerar QR Codes das máquinas")
+                        }
+                    }
                     FloatingActionButton(
                     onClick = onNewRecord,
                     // Cores invertidas -- pedido do usuário ("inverta também
@@ -564,6 +584,41 @@ fun DomainListScreen(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
+                }
+            } else if (domainId == "pragas" && onOpenPragaFoto != null) {
+                // Diagnóstico por Foto (Task #601) unificado como 2º FAB --
+                // mesmo padrão de "Romaneio rápido"/"Abastecimento rápido"
+                // acima.
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    FloatingActionButton(
+                        onClick = onOpenPragaFoto,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    ) {
+                        Icon(Icons.Filled.BugReport, contentDescription = "Diagnóstico por foto")
+                    }
+                    FloatingActionButton(
+                        onClick = onNewRecord,
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
+                }
+            } else if (domainId == "estoque" && onOpenReconciliacaoEstoque != null) {
+                // Reconciliação Físico x Fiscal (Task #603) unificada como 2º
+                // FAB -- mesmo padrão de "Diagnóstico por foto"/"Romaneio
+                // rápido" acima. É só um RELATÓRIO (sem formulário), então o
+                // FAB principal continua indo pro "Novo lançamento" normal.
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    FloatingActionButton(
+                        onClick = onOpenReconciliacaoEstoque,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    ) {
+                        Icon(Icons.Filled.Balance, contentDescription = "Reconciliação Físico x Fiscal")
+                    }
+                    FloatingActionButton(
+                        onClick = onNewRecord,
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
                 }
             } else {
                 FloatingActionButton(
