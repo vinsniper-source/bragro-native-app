@@ -3,6 +3,27 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.80] -- 2026-09-16
+
+- Fix real de build: `0x8C000000` (opacidade de preenchimento das zonas no
+  mapa de Prescrição) excede `Int.MAX_VALUE` como literal hex em Kotlin
+  (vira `Long`) -- `.toInt()` reinterpreta os mesmos 32 bits como `Int`
+  com sinal, igual o Java faria implicitamente. Corrigia
+  `The integer literal does not conform to the expected type Int`.
+- **ADMIN ganha o mesmo cabeçalho do OWNER (site + app nativo)**: pedido do
+  usuário ("implemente o cabeçalho do owner em admin, e volte os módulos
+  completos Dados e Configurações para seus locais de origem"). Antes só o
+  OWNER via Configurações/Base de Dados como itens completos na barra
+  lateral (site) / menu "Módulos" (app) -- o ADMIN ainda caía no
+  tratamento de "conta comum", com os dois como ícone no cabeçalho. Agora
+  ADMIN é tratado igual OWNER nesse ponto específico:
+  - Site: `layout.tsx`, `sidebar-nav.tsx` e `bottom-tab-bar.tsx` (`role ===
+    OWNER` -> `role === OWNER || role === ADMIN`).
+  - Rota mobile `/api/mobile/home` (fonte dos ícones do app nativo):
+    mesmo critério.
+  - App nativo: `BRAgroNavHost.kt` (`isOwner` passado pro `BRAgroBottomBar`)
+    agora inclui ADMIN.
+
 ## [1.2.79] -- 2026-09-16
 
 - Fix real de build (Vercel): `shpwrite.zip()` (exportação SHP em

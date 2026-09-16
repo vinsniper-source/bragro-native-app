@@ -412,13 +412,16 @@ fun BRAgroBottomBar(
     // acontecer em uso normal -- todo papel tem pelo menos "dashboard"),
     // mostra só a Início e mais nada.
     allowedModules: Set<String>,
-    // Dono da organização -- mesma checagem do site (ver layout.tsx:
-    // "isOwner = ctx.role === OWNER"). Configurações/Base de Dados viraram
-    // ícone no CABEÇALHO da Início pra quem NÃO é dono (ver
+    // Dono OU admin da organização -- mesma checagem do site (ver
+    // layout.tsx: "isOwnerOrAdmin = role === OWNER || role === ADMIN",
+    // estendida de "só OWNER" pra incluir ADMIN a pedido do usuário:
+    // "implemente o cabeçalho do owner em admin... volte os módulos
+    // completos... pra seus locais de origem"). Configurações/Base de Dados
+    // viraram ícone no CABEÇALHO da Início pra quem NÃO é dono/admin (ver
     // showConfiguracoesIcon/showBaseDeDadosIcon em HomeScreen.kt, réplica do
-    // ConfiguracoesMenu/BaseDeDadosMenu do site) -- pedido do usuário ("no
-    // cabeçalho... sempre no cabeçalho"). O dono continua acessando essas 2
-    // telas por aqui, no menu "Módulos", pra não duplicar o ponto de acesso.
+    // ConfiguracoesMenu/BaseDeDadosMenu do site). Dono e admin continuam
+    // acessando essas 2 telas por aqui, no menu "Módulos", pra não duplicar
+    // o ponto de acesso.
     isOwner: Boolean,
     // Fonte da barra (OWNER_BOTTOM_TABS agrupado vs BOTTOM_TABS achatado) --
     // pedido do usuario ("replique a barra inferior [do dono] pra conta
