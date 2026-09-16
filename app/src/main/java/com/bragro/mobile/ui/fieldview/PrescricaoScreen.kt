@@ -278,7 +278,10 @@ private fun PrescricaoMap(p: PrescricaoData) {
                 polygon.setStrokeColor(android.graphics.Color.parseColor("#1e293b"))
                 polygon.setStrokeWidth(2f)
                 // fillOpacity 0.55 do site -- 0.55*255 ~= 140 (0x8C).
-                polygon.setFillColor((cor and 0x00FFFFFF) or 0x8C000000)
+                // 0x8C000000 excede Int.MAX_VALUE como literal (Kotlin o
+                // trata como Long) -- .toInt() reinterpreta os mesmos 32
+                // bits como Int (com sinal), igual Java faria implicitamente.
+                polygon.setFillColor((cor and 0x00FFFFFF) or 0x8C000000.toInt())
                 mv.overlays.add(polygon)
                 allPoints.addAll(points)
             }
