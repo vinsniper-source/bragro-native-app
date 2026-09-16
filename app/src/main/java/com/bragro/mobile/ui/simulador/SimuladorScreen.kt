@@ -141,6 +141,7 @@ private fun calcularResultado(
 private fun formatMoneyBrl(value: Double): String =
     NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(value)
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewModel()) {
     val carregando by viewModel.carregando

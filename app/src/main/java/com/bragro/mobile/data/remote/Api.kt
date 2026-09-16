@@ -21,6 +21,8 @@ import com.bragro.mobile.data.model.ControleInsumosRequest
 import com.bragro.mobile.data.model.ControleInsumosResponse
 import com.bragro.mobile.data.model.DashboardRequest
 import com.bragro.mobile.data.model.DashboardResponse
+import com.bragro.mobile.data.model.DossieRequest
+import com.bragro.mobile.data.model.DossieResponse
 import com.bragro.mobile.data.model.DreRequest
 import com.bragro.mobile.data.model.DreResponse
 import com.bragro.mobile.data.model.DroneCreateRequest
@@ -41,6 +43,8 @@ import com.bragro.mobile.data.model.ReconciliacaoEstoqueRequest
 import com.bragro.mobile.data.model.ReconciliacaoEstoqueResponse
 import com.bragro.mobile.data.model.PrescricaoRequest
 import com.bragro.mobile.data.model.PrescricaoResponse
+import com.bragro.mobile.data.model.SimuladorRequest
+import com.bragro.mobile.data.model.SimuladorResponse
 import com.bragro.mobile.data.model.ModuleActionRequest
 import com.bragro.mobile.data.model.ModuleActionResponse
 import com.bragro.mobile.data.model.ModuleChartsRequest
