@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.appFieldColors
@@ -113,6 +114,8 @@ class PragaFotoViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var savedOk = mutableStateOf(false)
         private set
+    var copiando = mutableStateOf(false)
+        private set
 
     init {
         viewModelScope.launch {
@@ -128,6 +131,27 @@ class PragaFotoViewModel(app: Application) : AndroidViewModel(app) {
     fun setAlvo(v: String) { alvo.value = v }
     fun setResponsavel(v: String) { responsavel.value = v }
     fun setObservacoes(v: String) { observacoes.value = v }
+
+    /** Ícone "Copiar" no topo (gap encontrado em auditoria de paridade,
+     * pedido do usuário) -- mesmo padrão de RomaneioQuickScreen.kt: só copia
+     * Alvo/Fazenda/Safra/Responsável do último monitoramento, já que essas
+     * costumam se repetir. Foto e diagnóstico da IA nunca são copiados --
+     * cada ocorrência precisa da própria foto tirada na hora. */
+    fun preencherComUltimo() {
+        viewModelScope.launch {
+            copiando.value = true
+            val last = recordRepository.mostRecent("pragas")
+            copiando.value = false
+            if (last == null) {
+                mensagemFoto.value = "Nenhum monitoramento lançado ainda para copiar."
+                return@launch
+            }
+            last["alvo"]?.let { alvo.value = it }
+            last["fazenda"]?.let { fazenda.value = it }
+            last["safra"]?.let { safra.value = it }
+            last["responsavel"]?.let { responsavel.value = it }
+        }
+    }
 
     fun onPhotoCancelled() {
         mensagemFoto.value = "Nenhuma foto capturada -- tire a foto pra rodar o diagnóstico automático, ou lance manualmente escolhendo o Alvo."
@@ -313,6 +337,7 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
     val saving by viewModel.saving
     val resultMessage by viewModel.resultMessage
     val savedOk by viewModel.savedOk
+    val copiando by viewModel.copiando
 
     var pendingPhotoUri by remember { mutableStateOf<Uri?>(null) }
     val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
@@ -354,6 +379,17 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
                         Spacer(modifier = Modifier.height(16.dp))
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                },
+                // Ícone Copiar no canto superior direito -- gap encontrado em
+                // auditoria de paridade, mesmo padrão de RomaneioQuickScreen.kt.
+                actions = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        IconButton(onClick = { viewModel.preencherComUltimo() }, enabled = !copiando) {
+                            if (copiando) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            else Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último lançamento", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 },

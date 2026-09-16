@@ -396,8 +396,20 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
             val apkUrl = appRelease["apkUrl"]?.jsonPrimitive?.contentOrNull
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.weight(1f)) {
+                    // Pedido do usuario ("alem da data que foi publicado o
+                    // apk tambem a hora") -- publicadoEm chega como ISO
+                    // (ex.: "2026-09-16T17:37:33.055Z"), mesmo campo
+                    // DateTime completo do site (schema.prisma). "HH:mm"
+                    // fica nos caracteres 11-16 da string ISO -- mesmo
+                    // criterio de string-slice ja usado aqui pra data
+                    // (sem SimpleDateFormat), sem conversao de fuso (igual
+                    // o comportamento anterior so-data).
                     Text(
-                        "Versão $versao" + (publicadoEm?.let { " — publicada em ${it.take(10).split("-").reversed().joinToString("/")}" } ?: ""),
+                        "Versão $versao" + (publicadoEm?.let {
+                            val data = it.take(10).split("-").reversed().joinToString("/")
+                            val hora = if (it.length >= 16) it.substring(11, 16) else null
+                            " — publicada em $data" + (hora?.let { h -> " às $h" } ?: "")
+                        } ?: ""),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     if (!notas.isNullOrBlank()) {

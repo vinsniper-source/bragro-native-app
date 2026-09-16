@@ -3,6 +3,31 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.82] -- 2026-09-16
+
+- **Configurações: hora de publicação do APK.** Pedido do usuário ("alem
+  da data que foi publicado o apk tambem a hora") -- `publicadoEm` já era
+  um `DateTime` completo no banco (`AppRelease`, `schema.prisma`), só
+  faltava exibir a hora na tela (site `configuracoes-client.tsx` e native
+  `SettingsScreen.kt`). Sem mudança de schema, só de exibição.
+- **Ícone "Copiar último lançamento" em módulos recém-criados.** Segunda
+  parte do mesmo pedido -- rollout pros módulos novos onde fazia sentido:
+  - **Prescrição / Taxa Variável** (site, `prescricao-client.tsx`): copia
+    só metadados (produto/unidade/safra/cultura/talhão/fazenda) do último
+    lançamento -- nome e o arquivo SHP/ISO-XML (geometria) sempre
+    precisam ser próprios/reimportados, nunca são copiados. Não aplicado
+    no app nativo: a tela nativa de Prescrição é um VISUALIZADOR
+    read-only por decisão de arquitetura anterior (Task #608) -- criar
+    prescrição continua exclusivo do site, então não há formulário nativo
+    pra ganhar o ícone.
+  - **Diagnóstico por Foto (Pragas)** (site `quick-praga-foto-button.tsx`
+    + native `PragaFotoScreen.kt`): copia Alvo/Fazenda/Safra/Responsável
+    do último monitoramento -- a foto e o diagnóstico da IA nunca são
+    copiados, cada ocorrência exige a própria foto tirada na hora.
+  - Dossiê Bancário e Simulador "E se?" ficaram de fora de propósito: são
+    relatórios/calculadoras somente-leitura, sem formulário de novo
+    lançamento onde o ícone faria sentido.
+
 ## [1.2.81] -- 2026-09-16
 
 - **Paridade nativa: Dossiê Bancário (Task #599/#615)**. O módulo existia
