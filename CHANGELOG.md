@@ -3,6 +3,22 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.79] -- 2026-09-16
+
+- Fix real de build (Vercel): `shpwrite.zip()` (exportação SHP em
+  /prescricao, Task #604) tem assinatura de tipos ampla mesmo com
+  `outputType: "blob"` -- cast explícito `as Blob` resolve o erro de tsc
+  que travava o deploy.
+- **"Preencher com o clima de hoje" no app nativo (Task #304)**: o botão
+  já existia completo no site (Open-Meteo, sem custo/sem chave) -- faltava
+  a paridade nativa. Novo ícone (gota) no formulário do módulo Clima
+  ("Novo lançamento") que busca chuva/temp/vento/umidade/condição de hoje
+  via `/api/mobile/module-actions` (action `clima-hoje` ->
+  `getClimaHojeAction()`, mesma Server Action do site, nenhuma lógica de
+  clima duplicada no app) e preenche os campos -- o usuário ainda ajusta
+  fazenda/talhão e confere antes de salvar, igual ao "Copiar último
+  lançamento".
+
 ## [1.2.78] -- 2026-09-16
 
 - Paridade nativa das 4 features novas do site (Tasks #601-#604), 3 delas

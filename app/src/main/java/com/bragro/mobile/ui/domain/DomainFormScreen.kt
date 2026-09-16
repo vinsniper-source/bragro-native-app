@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -289,6 +290,41 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    var climaHojeBusy = mutableStateOf(false)
+        private set
+
+    /** "Preencher com o clima de hoje" (só domínio "clima") -- paridade
+     * nativa do botão do site (onPreencherClimaHoje, data-table.tsx).
+     * Busca chuva/temperatura/vento/umidade de hoje via Open-Meteo (mesmo
+     * endpoint genérico /api/mobile/module-actions, action "clima-hoje" ->
+     * getClimaHojeAction() no servidor -- nenhuma lógica de clima duplicada
+     * aqui) e preenche os campos do formulário; o usuário ainda ajusta
+     * fazenda/talhão e confere antes de salvar, igual ao "Copiar último
+     * lançamento" acima -- nada é gravado sozinho. */
+    fun preencherClimaHoje() {
+        climaHojeBusy.value = true
+        errorMessage.value = null
+        viewModelScope.launch {
+            val result = ModuleActionsRepository(getApplication()).run("clima-hoje")
+            climaHojeBusy.value = false
+            if (result == null) {
+                errorMessage.value = "Não foi possível buscar o clima de hoje agora. Tente novamente."
+                return@launch
+            }
+            fun str(key: String): String? = (result[key] as? JsonPrimitive)?.contentOrNull
+            str("data")?.let { fields["data"] = isoDateToBr(isoDateOnly(it)) }
+            str("chuvaMm")?.let { fields["chuvaMm"] = it }
+            str("tempMinC")?.let { fields["tempMinC"] = it }
+            str("tempMaxC")?.let { fields["tempMaxC"] = it }
+            str("umidade")?.let { fields["umidade"] = it }
+            str("ventoKmH")?.let { fields["ventoKmH"] = it }
+            str("dirVento")?.let { fields["dirVento"] = it }
+            str("insolacaoH")?.let { fields["insolacaoH"] = it }
+            str("condicao")?.let { fields["condicao"] = it }
+            str("observacoes")?.let { fields["observacoes"] = it }
+        }
+    }
+
     // Campos com o rótulo faltando -- exibido junto do campo em vermelho
     // depois de uma tentativa de salvar sem preenchê-lo (pedido do usuário:
     // "coloque uma condição para salvar o lançamento, todos os campos
@@ -428,6 +464,27 @@ fun DomainFormScreen(
                     // aparece sempre, só fica acinzentado/inerte quando não
                     // há nada pra copiar (copyFromLastRecord() já retorna
                     // sem fazer nada nesse caso, com segurança).
+                    // "Preencher com o clima de hoje" -- só no domínio
+                    // "clima", réplica nativa do botão do site (paridade
+                    // Task #304). Fica antes do ícone Copiar, mesma ordem
+                    // do site (data-table.tsx).
+                    if (recordId == null && domainId == "clima") {
+                        Column {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            val climaHojeBusy by viewModel.climaHojeBusy
+                            IconButton(onClick = { viewModel.preencherClimaHoje() }, enabled = !climaHojeBusy) {
+                                if (climaHojeBusy) {
+                                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.primary)
+                                } else {
+                                    Icon(
+                                        Icons.Filled.WaterDrop,
+                                        contentDescription = "Preencher com clima de hoje",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                            }
+                        }
+                    }
                     if (recordId == null) {
                         Column {
                             Spacer(modifier = Modifier.height(16.dp))
