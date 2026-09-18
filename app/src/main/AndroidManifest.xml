@@ -12,10 +12,10 @@
          Ver ApkInstaller.kt. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
-    <!-- GPS na captura de pragas -- pedido do usuario (gap analysis, eixo
+    <!-- GPS na captura de pragas: pedido do usuario (gap analysis, eixo
          Campo/Precisao). Best-effort: se o usuario negar, o app segue
          funcionando normalmente sem coordenada (Praga.latitude/longitude
-         sao opcionais) -- ver PragaFotoScreen.kt. Sem play-services-location
+         sao opcionais); ver PragaFotoScreen.kt. Sem play-services-location
          de proposito (nao adiciona dependencia nova): usa LocationManager
          nativo do Android (getLastKnownLocation), suficiente pra um registro
          de campo pontual. -->

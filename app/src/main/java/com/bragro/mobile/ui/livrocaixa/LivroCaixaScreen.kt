@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.GridOn
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
@@ -69,6 +70,7 @@ import com.bragro.mobile.data.model.DomainConfig
 import com.bragro.mobile.data.model.LivroCaixaData
 import com.bragro.mobile.data.model.LivroCaixaLancamentoData
 import com.bragro.mobile.data.model.ProdutorRuralConfigData
+import com.bragro.mobile.data.local.AppDatabase
 import com.bragro.mobile.data.repo.LivroCaixaRepository
 import com.bragro.mobile.data.repo.ProdutorRuralRepository
 import com.bragro.mobile.ui.domain.EqualWidthBlockRow
@@ -80,6 +82,7 @@ import com.bragro.mobile.ui.domain.brDateToIso
 import com.bragro.mobile.ui.domain.exportXlsx
 import com.bragro.mobile.ui.domain.isoDateToBr
 import com.bragro.mobile.ui.print.HtmlPrinter
+import com.bragro.mobile.ui.util.shareTextFile
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -179,6 +182,45 @@ class LivroCaixaViewModel(app: Application) : AndroidViewModel(app) {
             if (result != null) produtorRural.value = result
             produtorRuralLoading.value = false
             onDone(result != null)
+        }
+    }
+
+    // Exportação do .txt do LCDPR (pedido do usuário: "botão Exportar LCDPR
+    // (.txt) adicionado na toolbar de Livro Caixa, ao lado de
+    // Imprimir/Excel", réplica do site, Task #645). Mesma validação do
+    // botão onExportarLcdpr() em livro-caixa-client.tsx: exige CPF ou CNPJ
+    // do produtor rural preenchido antes de gerar o arquivo. Carrega a
+    // config sob demanda se o card "Produtor Rural" ainda não tiver sido
+    // aberto -- diferente do site (que já tem tudo carregado na página),
+    // aqui o botão precisa funcionar mesmo que o usuário nunca tenha
+    // aberto aquele card.
+    fun exportarLcdpr(context: android.content.Context, onError: (String) -> Unit) {
+        val data = resultado.value
+        if (data == null || data.lancamentos.isEmpty()) {
+            onError("Sem lançamentos no período pra exportar.")
+            return
+        }
+        viewModelScope.launch {
+            var pr = produtorRural.value
+            if (pr == null) {
+                produtorRuralLoading.value = true
+                pr = produtorRuralRepository.fetch()
+                produtorRural.value = pr
+                produtorRuralLoading.value = false
+            }
+            if (pr == null || (pr.cpfProdutorRural.isBlank() && pr.cnpj.isBlank())) {
+                onError("Preencha o CPF do produtor rural no card \"Produtor Rural\" antes de exportar o LCDPR.")
+                return@launch
+            }
+            val orgName = AppDatabase.get(getApplication()).sessionDao().get()?.orgName ?: "BRAgro"
+            val declarante = LcdprDeclarante(
+                nome = orgName,
+                cpf = pr.cpfProdutorRural,
+                cnpj = pr.cnpj,
+                inscricaoEstadual = pr.inscricaoEstadualProdutor,
+            )
+            val conteudo = gerarLcdprTxt(declarante, data)
+            shareTextFile(context, "LCDPR-${data.ano}.txt", "text/plain", conteudo)
         }
     }
 }
@@ -697,6 +739,19 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                     if (temRegistros) {
                         LabeledIconButton(icon = Icons.Filled.GridOn, label = "Excel", onClick = { exportXlsx(context, "Livro Caixa", LIVRO_CAIXA_EXPORT_COLUMNS, livroCaixaExportRecords(data!!.lancamentos)) })
                         LabeledIconButton(icon = Icons.Filled.PictureAsPdf, label = "PDF", onClick = { HtmlPrinter.exportPdfDirect(context, livroCaixaExportConfig(), livroCaixaExportRecords(data!!.lancamentos)) })
+                        // Exportação LCDPR (.txt) -- pedido do usuário
+                        // ("botão adicionado na toolbar de Livro Caixa, ao
+                        // lado de Imprimir/Excel"), réplica do site (Task
+                        // #645/lcdpr-txt.ts).
+                        LabeledIconButton(
+                            icon = Icons.Filled.Description,
+                            label = "LCDPR",
+                            onClick = {
+                                viewModel.exportarLcdpr(context) { erro ->
+                                    android.widget.Toast.makeText(context, erro, android.widget.Toast.LENGTH_LONG).show()
+                                }
+                            },
+                        )
                     }
                 }
                 LivroCaixaCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth())

@@ -1120,11 +1120,20 @@ data class InvoiceData(
     val itensCount: Int = 0,
 )
 
+// "action" SEM valor padrão de propósito nas 5 requests abaixo (mesmo
+// critério de PrescricaoFarmsRequest, ver comentário lá): o Json global do
+// app usa encodeDefaults=false (padrão do próprio kotlinx.serialization,
+// ver NetworkModule.kt), que OMITE do corpo da requisição qualquer campo
+// cujo valor bata com o default declarado na classe -- um "action" com
+// default nunca chegaria no servidor (o dispatcher de /api/mobile/nfe
+// sempre veria "action" ausente e devolveria 400 "Campos obrigatórios
+// ausentes"). Bug real corrigido nesta rodada (Task #655) -- cada call site
+// em NfeRepository.kt agora passa "action" explicitamente.
 @Serializable
 data class NfeListRequest(
     val accessToken: String,
     val refreshToken: String,
-    val action: String = "list",
+    val action: String,
 )
 
 @Serializable
@@ -1138,7 +1147,7 @@ data class NfeListResponse(
 data class NfeCreateRequest(
     val accessToken: String,
     val refreshToken: String,
-    val action: String = "create",
+    val action: String,
     val numero: String,
     val serie: String? = null,
     val tipo: String = "ENTRADA",
@@ -1157,7 +1166,7 @@ data class NfeCreateResponse(
 data class NfeDeleteRequest(
     val accessToken: String,
     val refreshToken: String,
-    val action: String = "delete",
+    val action: String,
     val invoiceId: String,
 )
 
@@ -1171,7 +1180,7 @@ data class NfeDeleteResponse(
 data class NfeEmitirRequest(
     val accessToken: String,
     val refreshToken: String,
-    val action: String = "emitir",
+    val action: String,
     val invoiceId: String,
 )
 
@@ -1182,6 +1191,30 @@ data class NfeEmitirResponse(
     val protocolo: String? = null,
     val danfeUrl: String? = null,
     val mensagem: String? = null,
+    val error: String? = null,
+)
+
+// "Repositório de XML" -- baixar em lote (recebidas e enviadas) o XML de
+// cada NF-e num .zip só (Task #655/#644, réplica mobile do botão "Baixar
+// XMLs (lote)" de nfe-client.tsx, já usado pelo papel CONTADOR no site).
+// [inicio]/[fim] em "yyyy-MM-dd", ambos opcionais (sem filtro = todas as
+// notas com XML). [base64] é o .zip inteiro codificado -- decodificado em
+// ByteArray e compartilhado via shareBinaryFile (ver ui/util/FileShare.kt),
+// mesmo padrão do .xlsx de ColumnsAndExport.kt.
+@Serializable
+data class NfeDownloadLoteRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String,
+    val inicio: String? = null,
+    val fim: String? = null,
+)
+
+@Serializable
+data class NfeDownloadLoteResponse(
+    val ok: Boolean,
+    val base64: String? = null,
+    val count: Int? = null,
     val error: String? = null,
 )
 

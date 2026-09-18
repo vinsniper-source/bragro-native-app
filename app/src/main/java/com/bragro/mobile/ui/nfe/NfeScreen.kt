@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FolderZip
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -44,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
@@ -53,6 +55,7 @@ import com.bragro.mobile.data.model.InvoiceData
 import com.bragro.mobile.data.repo.NfeRepository
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.appFieldColors
+import com.bragro.mobile.ui.util.shareBinaryFile
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
@@ -142,6 +145,30 @@ class NfeViewModel(app: Application) : AndroidViewModel(app) {
             }
             onDone(resultado.mensagem ?: resultado.error, resultado.ok)
             carregar()
+        }
+    }
+
+    // "Repositório de XML" (Task #655/#644) -- baixa o .zip com o XML de
+    // cada NF-e (recebidas e enviadas) do período informado e devolve os
+    // bytes já decodificados pra quem chamou compartilhar/salvar
+    // (shareBinaryFile, ver NfeScreen abaixo). Mesmo critério de
+    // pendingAction dos outros métodos, com uma chave fixa própria ("
+    // downloadLote") já que não é por nota.
+    fun baixarXmlLote(inicio: String?, fim: String?, onDone: (ByteArray?, String?) -> Unit) {
+        pendingAction.value = "downloadLote"
+        viewModelScope.launch {
+            val resultado = repository.baixarLote(inicio, fim)
+            pendingAction.value = null
+            if (resultado == null || !resultado.ok || resultado.base64.isNullOrBlank()) {
+                onDone(null, resultado?.error ?: "Sem conexão -- não foi possível baixar os XMLs agora.")
+                return@launch
+            }
+            try {
+                val bytes = android.util.Base64.decode(resultado.base64, android.util.Base64.DEFAULT)
+                onDone(bytes, null)
+            } catch (e: Exception) {
+                onDone(null, "Falha ao processar o arquivo recebido.")
+            }
         }
     }
 }
@@ -271,6 +298,38 @@ private fun NovaNotaDialog(pending: Boolean, onDismiss: () -> Unit, onConfirm: (
     )
 }
 
+// "Repositório de XML" (Task #655/#644) -- diálogo de filtro por período
+// (De/Até, ambos opcionais) antes de baixar o .zip com todos os XMLs no
+// intervalo -- mesmo par de campos do site (nfe-client.tsx, "Baixar XMLs
+// (lote)"), formato AAAA-MM-DD (mesmo critério de dataEmissao acima).
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BaixarXmlLoteDialog(pending: Boolean, onDismiss: () -> Unit, onConfirm: (String?, String?) -> Unit) {
+    var inicio by remember { mutableStateOf("") }
+    var fim by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Baixar XMLs (lote)") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Baixa um .zip com o XML de cada nota fiscal recebida e enviada (autorizada ou importada) no período. Deixe em branco pra baixar todas.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                OutlinedTextField(value = inicio, onValueChange = { inicio = it }, label = { Text("De") }, placeholder = { Text("AAAA-MM-DD, opcional") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+                OutlinedTextField(value = fim, onValueChange = { fim = it }, label = { Text("Até") }, placeholder = { Text("AAAA-MM-DD, opcional") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(inicio.ifBlank { null }, fim.ifBlank { null }) }, enabled = !pending) {
+                if (pending) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                else Text("Baixar")
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !pending) { Text("Cancelar") } },
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
@@ -283,6 +342,12 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
     var dialogErro by remember { mutableStateOf<String?>(null) }
     var confirmarExclusao by remember { mutableStateOf<InvoiceData?>(null) }
     var mensagemEmissao by remember { mutableStateOf<String?>(null) }
+    // "Repositório de XML" (Task #655/#644) -- estado do diálogo De/Até e
+    // mensagem de erro própria (sucesso não precisa de mensagem: o próprio
+    // menu "Compartilhar" já confirma visualmente que o .zip foi gerado).
+    var showXmlLote by remember { mutableStateOf(false) }
+    var erroXmlLote by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -291,6 +356,14 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
+                    }
+                },
+                actions = {
+                    // Repositório de XML -- download em lote (recebidas e
+                    // enviadas), mesmo botão "Baixar XMLs (lote)" do site,
+                    // já usado pelo papel CONTADOR.
+                    IconButton(onClick = { showXmlLote = true }) {
+                        Icon(Icons.Filled.FolderZip, contentDescription = "Baixar XMLs (lote)", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
             )
@@ -361,6 +434,32 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
             title = { Text("Não foi possível lançar") },
             text = { Text(dialogErro ?: "") },
             confirmButton = { TextButton(onClick = { dialogErro = null }) { Text("Ok") } },
+        )
+    }
+
+    if (showXmlLote) {
+        BaixarXmlLoteDialog(
+            pending = pendingAction == "downloadLote",
+            onDismiss = { if (pendingAction != "downloadLote") showXmlLote = false },
+            onConfirm = { inicio, fim ->
+                viewModel.baixarXmlLote(inicio, fim) { bytes, erro ->
+                    if (bytes != null) {
+                        showXmlLote = false
+                        shareBinaryFile(context, bytes, "NFe-XMLs-lote.zip", "application/zip")
+                    } else {
+                        erroXmlLote = erro
+                    }
+                }
+            },
+        )
+    }
+
+    if (erroXmlLote != null) {
+        AlertDialog(
+            onDismissRequest = { erroXmlLote = null },
+            title = { Text("Não foi possível baixar") },
+            text = { Text(erroXmlLote ?: "") },
+            confirmButton = { TextButton(onClick = { erroXmlLote = null }) { Text("Ok") } },
         )
     }
 

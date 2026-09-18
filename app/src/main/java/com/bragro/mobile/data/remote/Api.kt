@@ -84,6 +84,8 @@ import com.bragro.mobile.data.model.NfeDeleteRequest
 import com.bragro.mobile.data.model.NfeDeleteResponse
 import com.bragro.mobile.data.model.NfeEmitirRequest
 import com.bragro.mobile.data.model.NfeEmitirResponse
+import com.bragro.mobile.data.model.NfeDownloadLoteRequest
+import com.bragro.mobile.data.model.NfeDownloadLoteResponse
 import com.bragro.mobile.data.model.OrcamentoOcrItensResponse
 import com.bragro.mobile.data.model.RomaneioOcrRequest
 import com.bragro.mobile.data.model.RomaneioOcrResponse
@@ -268,6 +270,12 @@ interface MobileApi {
 
     @POST("api/mobile/nfe")
     suspend fun nfeEmitir(@Body body: NfeEmitirRequest): Response<NfeEmitirResponse>
+
+    // "Repositório de XML" (Task #655/#644) -- baixar em lote o XML das
+    // notas recebidas/enviadas (mesma rota /api/mobile/nfe, action
+    // "downloadLote", ver downloadXmlLoteAction no site).
+    @POST("api/mobile/nfe")
+    suspend fun nfeDownloadLote(@Body body: NfeDownloadLoteRequest): Response<NfeDownloadLoteResponse>
 
     // Leitura automática (OCR) do Romaneio Rápido via servidor -- ver
     // comentário em RomaneioOcrRequest/Response (Models.kt).

@@ -3,6 +3,41 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.86] -- 2026-09-18
+
+- **Corrigido bug real que travava o `gradlew assembleRelease`**: o
+  `AndroidManifest.xml` tinha um comentário XML (bloco "GPS na captura de
+  pragas") com "--" no meio do texto, o que é proibido pela especificação
+  XML (comentários não podem conter hífen duplo, só no fechamento "-->") --
+  o parser do Android (`ManifestMerger2`) rejeitava o arquivo inteiro com
+  "Error parsing AndroidManifest.xml". Corrigido substituindo os "--" por
+  ":"/";" no texto do comentário.
+
+- **Exportação LCDPR (.txt) no app** (pedido do usuário -- "botão Exportar
+  LCDPR (.txt) adicionado na toolbar de Livro Caixa, ao lado de
+  Imprimir/Excel"). Já existia só no site (Task #645); portada fielmente pra
+  Kotlin (`LcdprTxt.kt`, mesmo leiaute de registros 0000/0010/0035/0040/
+  Q100/Q200/9900/9999 de `lcdpr-txt.ts`, sem chamada de rede extra -- usa os
+  dados já carregados na tela). Mesma validação do site: exige CPF ou CNPJ
+  do produtor rural preenchido antes de gerar o arquivo (carrega a config
+  automaticamente se o card "Produtor Rural" ainda não tiver sido aberto).
+- **"Repositório de XML" no app -- baixar em lote as NF-e recebidas e
+  enviadas** (pedido do usuário). Já existia só no site como o botão "Baixar
+  XMLs (lote)" do papel CONTADOR (Task #644); nova ação `downloadLote` na
+  rota `/api/mobile/nfe` chama o MESMO `downloadXmlLoteAction` do site (zip
+  em memória com o XML de cada nota, filtro opcional De/Até) -- o app
+  decodifica o .zip recebido e abre o menu "Compartilhar/Salvar".
+- **Corrigido bug real no módulo NF-e nativo**: os DTOs `NfeListRequest`/
+  `NfeCreateRequest`/`NfeDeleteRequest`/`NfeEmitirRequest` tinham o campo
+  discriminador `action` com valor padrão -- como o `Json` global do app usa
+  `encodeDefaults=false` (padrão do próprio kotlinx.serialization), esse
+  campo NUNCA era enviado ao servidor, e a rota `/api/mobile/nfe` sempre
+  devolvia 400 "Campos obrigatórios ausentes" pra listar/lançar/excluir/
+  emitir notas fiscais pelo app. `action` virou obrigatório (sem default)
+  nos 5 DTOs desse módulo (incluindo o novo `downloadLote`), com o valor
+  passado explicitamente em cada chamada (`NfeRepository.kt`) -- mesmo
+  critério já usado em `PrescricaoFarmsRequest`.
+
 ## [1.2.85] -- 2026-09-18
 
 - **Prescrição/Taxa Variável: criação direto no app** (Task #651, pedido do

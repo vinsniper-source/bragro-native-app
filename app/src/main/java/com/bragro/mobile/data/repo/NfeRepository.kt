@@ -11,6 +11,8 @@ import com.bragro.mobile.data.model.NfeEmitirRequest
 import com.bragro.mobile.data.model.NfeEmitirResponse
 import com.bragro.mobile.data.model.NfeListRequest
 import com.bragro.mobile.data.model.NfeListResponse
+import com.bragro.mobile.data.model.NfeDownloadLoteRequest
+import com.bragro.mobile.data.model.NfeDownloadLoteResponse
 import com.bragro.mobile.data.remote.NetworkModule
 
 /** Módulo NF-e (Task #628, ausente por completo no app até aqui). Chama
@@ -27,7 +29,11 @@ class NfeRepository(context: Context) {
         val tokens = tokenStore.current() ?: return null
         var (accessToken, refreshToken) = tokens
         return try {
-            fun buildRequest() = NfeListRequest(accessToken = accessToken, refreshToken = refreshToken)
+            // "action" explícito (Task #655 -- bug real corrigido, ver
+            // comentário em NfeListRequest/Models.kt): o Json global do app
+            // omite campos cujo valor bata com o default declarado, então
+            // "action" NUNCA pode ter default nestes DTOs.
+            fun buildRequest() = NfeListRequest(accessToken = accessToken, refreshToken = refreshToken, action = "list")
             var response = NetworkModule.mobileApi.nfeList(buildRequest())
             if (response.code() == 401) {
                 val newAccess = TokenRefresher.refreshAccessToken(tokenStore, refreshToken)
@@ -57,6 +63,7 @@ class NfeRepository(context: Context) {
             fun buildRequest() = NfeCreateRequest(
                 accessToken = accessToken,
                 refreshToken = refreshToken,
+                action = "create",
                 numero = numero,
                 serie = serie,
                 tipo = tipo,
@@ -83,7 +90,7 @@ class NfeRepository(context: Context) {
         val tokens = tokenStore.current() ?: return null
         var (accessToken, refreshToken) = tokens
         return try {
-            fun buildRequest() = NfeDeleteRequest(accessToken = accessToken, refreshToken = refreshToken, invoiceId = invoiceId)
+            fun buildRequest() = NfeDeleteRequest(accessToken = accessToken, refreshToken = refreshToken, action = "delete", invoiceId = invoiceId)
             var response = NetworkModule.mobileApi.nfeDelete(buildRequest())
             if (response.code() == 401) {
                 val newAccess = TokenRefresher.refreshAccessToken(tokenStore, refreshToken)
@@ -103,7 +110,7 @@ class NfeRepository(context: Context) {
         val tokens = tokenStore.current() ?: return null
         var (accessToken, refreshToken) = tokens
         return try {
-            fun buildRequest() = NfeEmitirRequest(accessToken = accessToken, refreshToken = refreshToken, invoiceId = invoiceId)
+            fun buildRequest() = NfeEmitirRequest(accessToken = accessToken, refreshToken = refreshToken, action = "emitir", invoiceId = invoiceId)
             var response = NetworkModule.mobileApi.nfeEmitir(buildRequest())
             if (response.code() == 401) {
                 val newAccess = TokenRefresher.refreshAccessToken(tokenStore, refreshToken)
@@ -116,6 +123,32 @@ class NfeRepository(context: Context) {
         } catch (e: Exception) {
             AppLog.e("NfeRepository", "Falha ao emitir nota fiscal", e)
             NfeEmitirResponse(ok = false, error = "Sem conexão. Tente novamente.")
+        }
+    }
+
+    /** "Repositório de XML" (Task #655/#644) -- baixa o .zip com o XML de
+     * cada NF-e (recebidas e enviadas, autorizada ou só importada) do
+     * período informado, igual ao botão "Baixar XMLs (lote)" do site. [zip]
+     * base64 já vem pronto do servidor (JSZip em memória) -- decodificação e
+     * gravação/compartilhamento ficam a cargo de quem chamar (ver
+     * NfeScreen.kt, shareBinaryFile). */
+    suspend fun baixarLote(inicio: String?, fim: String?): NfeDownloadLoteResponse? {
+        val tokens = tokenStore.current() ?: return null
+        var (accessToken, refreshToken) = tokens
+        return try {
+            fun buildRequest() = NfeDownloadLoteRequest(accessToken = accessToken, refreshToken = refreshToken, action = "downloadLote", inicio = inicio, fim = fim)
+            var response = NetworkModule.mobileApi.nfeDownloadLote(buildRequest())
+            if (response.code() == 401) {
+                val newAccess = TokenRefresher.refreshAccessToken(tokenStore, refreshToken)
+                if (newAccess != null) {
+                    accessToken = newAccess
+                    response = NetworkModule.mobileApi.nfeDownloadLote(buildRequest())
+                }
+            }
+            response.body() ?: NfeDownloadLoteResponse(ok = false, error = "Falha ao baixar os XMLs.")
+        } catch (e: Exception) {
+            AppLog.e("NfeRepository", "Falha ao baixar XMLs em lote", e)
+            NfeDownloadLoteResponse(ok = false, error = "Sem conexão. Tente novamente.")
         }
     }
 }
