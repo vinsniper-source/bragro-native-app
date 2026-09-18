@@ -14,9 +14,11 @@ import androidx.compose.material.icons.filled.Agriculture
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.Balance
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Receipt
@@ -156,6 +158,10 @@ private val BOTTOM_TABS = listOf(
             // genérico (DomainConfig), rotas próprias.
             SectorTarget.Special("drone", "Drone"),
             SectorTarget.Special("fieldview", "FieldView"),
+            // Prescrição/Taxa Variável -- ganha entrada própria (pedido do
+            // usuário), antes só um ícone dentro de FieldView. Mesma tela/
+            // rota (Routes.PRESCRICAO), sem lógica duplicada.
+            SectorTarget.Special("prescricao", "Prescrição / Taxa Variável"),
         ),
     ),
     // Ex-categoria "Painéis": visões cruzadas/agregadas, não um lançamento
@@ -239,6 +245,12 @@ private val BOTTOM_TABS = listOf(
             // usuário ("no módulo cobranças e nfse unifique e me um só
             // módulo").
             SectorTarget.Domain("cobrancas", "Cobranças / NFS-e"),
+            // NF-e -- módulo ausente por completo no app até aqui (pedido do
+            // usuário, Task #628). No site é categoria "financeiro"
+            // (lib/modules.ts), mesmo grupo de DRE/Análises; aqui entra em
+            // Faturamento, ao lado de Cobranças/NFS-e (mesmo espírito de
+            // emissão de documento fiscal).
+            SectorTarget.Special("nfe", "NF-e"),
             // Inventário (ex-categoria "Patrimônio") -- pedido do usuário
             // foi só 4 botões em Financeiro ("lançamentos, relatóros,
             // compras, faturamento", sem "patrimônio"). Sem uma nova
@@ -249,9 +261,19 @@ private val BOTTOM_TABS = listOf(
             SectorTarget.Domain("inventario", "Inventário"),
         ),
     ),
-    // Acesso direto -- pedido do usuário ("botão estoque retire a lista
-    // suspensa e deixe botão direto estoque").
-    BottomTab("estoque", "Estoque", Icons.Filled.Inventory2, directDomainId = "estoque"),
+    // Deixava de ser acesso direto -- pedido do usuário ("botão estoque
+    // retire a lista suspensa") original ainda vale como PADRÃO (1 item só
+    // continua Direct via RenderTab, ver comentário logo abaixo), mas agora
+    // Reconciliação Físico x Fiscal ganha entrada própria aqui (pedido do
+    // usuário), então a aba passa a ter 2 itens quando ambos liberados --
+    // mesmo critério de "Painéis" (RenderTab.Direct quando sobra 1 só).
+    BottomTab(
+        "estoque", "Estoque", Icons.Filled.Inventory2,
+        items = listOf(
+            SectorTarget.Domain("estoque", "Estoque"),
+            SectorTarget.Special("reconciliacaoestoque", "Reconciliação Físico x Fiscal"),
+        ),
+    ),
     // Ex-aba "RH" (2 itens soltos, sem category) -- virou 2 abas de acesso
     // direto de nível superior, pedido do usuário ("são 2 botões RH e
     // Controle Interno").
@@ -286,6 +308,7 @@ private val OWNER_BOTTOM_TABS = listOf(
             SectorTarget.Domain("clima", "Clima", category = "Monitoramento"),
             SectorTarget.Special("drone", "Drone", category = "Monitoramento"),
             SectorTarget.Special("fieldview", "FieldView", category = "Monitoramento"),
+            SectorTarget.Special("prescricao", "Prescrição / Taxa Variável", category = "Monitoramento"),
             SectorTarget.Special("controleinsumos", "Controle de Insumos", category = "Painéis"),
             SectorTarget.Special("operacoes", "Operações", category = "Painéis"),
         ),
@@ -307,6 +330,7 @@ private val OWNER_BOTTOM_TABS = listOf(
             SectorTarget.Special("orcamentos", "Orçamentos", category = "Compras"),
             SectorTarget.Domain("caixainterno", "Caixa Interno", category = "Faturamento"),
             SectorTarget.Domain("cobrancas", "Cobranças / NFS-e", category = "Faturamento"),
+            SectorTarget.Special("nfe", "NF-e", category = "Faturamento"),
             SectorTarget.Domain("inventario", "Inventário", category = "Faturamento"),
         ),
     ),
@@ -316,6 +340,7 @@ private val OWNER_BOTTOM_TABS = listOf(
         items = listOf(
             SectorTarget.Domain("estoque", "Estoque"),
             SectorTarget.Special("controleinsumos", "Controle de Insumos"),
+            SectorTarget.Special("reconciliacaoestoque", "Reconciliação Físico x Fiscal"),
         ),
     ),
     BottomTab(
@@ -396,6 +421,18 @@ private fun permissionIdFor(nativeId: String): String = when (nativeId) {
     // sem toggle próprio em Acessos.
     "dossie" -> "financeiro"
     "simulador" -> "financeiro"
+    // Reconciliação Físico x Fiscal e Prescrição/Taxa Variável -- pedido do
+    // usuário pra virarem entradas próprias na barra (antes só um FAB/ícone
+    // dentro de Estoque/FieldView). PERMISSION_ALIAS no site (lib/
+    // permissions.ts) já resolve "reconciliacaoestoque"->"estoque" e
+    // "prescricao"->"fieldview" -- sem este mapeamento aqui, o item ficaria
+    // escondido pra QUALQUER conta não-dono (isAllowed() nunca bateria com
+    // um id que o servidor nunca manda).
+    "reconciliacaoestoque" -> "estoque"
+    "prescricao" -> "fieldview"
+    // "nfe" já é uma permissão própria de verdade no site (lib/
+    // permissions.ts, não está no PERMISSION_ALIAS) -- nativeId bate com o
+    // id do servidor sem precisar de mapeamento, cai no else abaixo.
     else -> nativeId
 }
 
@@ -458,6 +495,13 @@ fun BRAgroBottomBar(
     // #615/#616) -- mesmo critério de onOpenDre/onOpenAnalises acima.
     onOpenDossie: () -> Unit,
     onOpenSimulador: () -> Unit,
+    // Prescrição/Taxa Variável e Reconciliação Físico x Fiscal ganham
+    // entrada própria na barra (pedido do usuário) -- mesma tela/rota que
+    // já existia como ícone/FAB dentro de FieldView/Estoque, sem duplicar
+    // lógica; NF-e é módulo novo (Task #628, ausente por completo antes).
+    onOpenPrescricao: () -> Unit,
+    onOpenReconciliacaoEstoque: () -> Unit,
+    onOpenNfe: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenBaseDeDados: () -> Unit,
     onOpenSeguranca: () -> Unit,
@@ -524,6 +568,9 @@ fun BRAgroBottomBar(
                 "orcamentos" -> onOpenOrcamento()
                 "dossie" -> onOpenDossie()
                 "simulador" -> onOpenSimulador()
+                "prescricao" -> onOpenPrescricao()
+                "reconciliacaoestoque" -> onOpenReconciliacaoEstoque()
+                "nfe" -> onOpenNfe()
             }
         }
     }
@@ -825,6 +872,12 @@ private fun sectorItemIcon(item: SectorTarget, fallback: ImageVector): ImageVect
         // Dossiê Bancário / Simulador "E se?" (Task #599/#600/#615/#616).
         "dossie" -> Icons.Filled.AccountBalance
         "simulador" -> Icons.Filled.Tune
+        // Prescrição/Reconciliação (antes só ícone/FAB dentro de FieldView/
+        // Estoque) e NF-e (módulo novo) -- mesmo critério de ícone próprio
+        // já usado pelos itens acima.
+        "prescricao" -> Icons.Filled.Map
+        "reconciliacaoestoque" -> Icons.Filled.Balance
+        "nfe" -> Icons.Filled.ReceiptLong
         else -> fallback
     }
 }

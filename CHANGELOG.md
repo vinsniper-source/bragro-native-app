@@ -3,6 +3,32 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.84] -- 2026-09-18
+
+- **Novo módulo NF-e no app** (Task #628, estava ausente por completo --
+  achado da varredura de paridade site vs native). Escopo v1: listar notas
+  fiscais, lançar manualmente (número/série/tipo/emitente/valor/data de
+  emissão), emitir junto à SEFAZ (notas de SAÍDA) e excluir -- mesmo motor
+  do site (`lib/services/sefaz.ts`/`nfe/actions.ts`), nenhuma lógica de
+  emissão duplicada em Kotlin. Nova rota `/api/mobile/nfe` no site
+  (dispatcher por "action", mesmo padrão de `/api/mobile/orcamento`) já
+  nasce corrigindo de propósito o mesmo bug de serialização de `Decimal`
+  encontrado em Orçamentos (ver item abaixo). Importação de XML e edição de
+  nota continuam só no site por enquanto (mesmo critério de "visualizador
+  simplificado" já usado em Prescrição/Dossiê).
+- **Prescrição/Taxa Variável e Reconciliação Físico x Fiscal ganham entrada
+  própria na barra inferior** (pedido do usuário) -- antes só apareciam
+  como um ícone/FAB escondido dentro de FieldView/Estoque. Mesma tela/rota
+  de antes, só um novo ponto de entrada; sem duplicar lógica nem tela.
+- **Corrigido no site: Orçamentos nunca listava no app** (achado da
+  varredura profunda desta rodada) -- `Orcamento.ajuste` e
+  `OrcamentoItem.valorUnitario`/`valorTotal` são `Decimal` no schema, cujo
+  `toJSON()` devolve string, não number; o parser Kotlin (sem
+  `isLenient`) falhava silenciosamente. Corrigido em
+  `/api/mobile/orcamento` convertendo com `num()` antes de devolver --
+  mesmo padrão já usado em `dre.ts`/`dossie.ts`/`livro-caixa.ts`, e já
+  aplicado preventivamente na nova rota de NF-e acima.
+
 ## [1.2.83] -- 2026-09-18
 
 - **Corrigido: lentidão extrema do `assembleRelease`** (pedido do usuário --

@@ -1093,6 +1093,98 @@ data class OrcamentoOcrItensResponse(
     val error: String? = null,
 )
 
+// Módulo NF-e (Task #628, ausente por completo no app até aqui) -- mesmo
+// padrão de Orçamento acima: UMA rota só (/api/mobile/nfe) com "action" no
+// corpo, chamando DIRETO listInvoices()/createManualInvoiceAction()/
+// deleteInvoiceAction()/emitirNotaFiscalAction() no servidor. Escopo v1 do
+// app (pedido do usuário): listar, lançar manual, emitir e excluir --
+// importação de XML e edição continuam site-only (mesmo critério usado em
+// Prescrição/Dossiê, "visualizador simplificado" no app).
+@Serializable
+data class InvoiceData(
+    val id: String,
+    val numero: String,
+    val serie: String? = null,
+    val tipo: String? = null,
+    val emitenteNome: String? = null,
+    val destinatarioNome: String? = null,
+    val valorTotal: Double = 0.0,
+    val status: String = "REGISTRADA",
+    val origin: String = "MANUAL",
+    val statusSefaz: String? = null,
+    val protocoloAutorizacao: String? = null,
+    val danfeUrl: String? = null,
+    val erroSefaz: String? = null,
+    val dataEmissao: String? = null,
+    val criadoEm: String? = null,
+    val itensCount: Int = 0,
+)
+
+@Serializable
+data class NfeListRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String = "list",
+)
+
+@Serializable
+data class NfeListResponse(
+    val ok: Boolean,
+    val invoices: List<InvoiceData>? = null,
+    val error: String? = null,
+)
+
+@Serializable
+data class NfeCreateRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String = "create",
+    val numero: String,
+    val serie: String? = null,
+    val tipo: String = "ENTRADA",
+    val emitenteNome: String,
+    val valorTotal: Double,
+    val dataEmissao: String? = null,
+)
+
+@Serializable
+data class NfeCreateResponse(
+    val ok: Boolean,
+    val error: String? = null,
+)
+
+@Serializable
+data class NfeDeleteRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String = "delete",
+    val invoiceId: String,
+)
+
+@Serializable
+data class NfeDeleteResponse(
+    val ok: Boolean,
+    val error: String? = null,
+)
+
+@Serializable
+data class NfeEmitirRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String = "emitir",
+    val invoiceId: String,
+)
+
+@Serializable
+data class NfeEmitirResponse(
+    val ok: Boolean,
+    val status: String? = null,
+    val protocolo: String? = null,
+    val danfeUrl: String? = null,
+    val mensagem: String? = null,
+    val error: String? = null,
+)
+
 // Leitura automática (OCR) do Romaneio Rápido via servidor (Claude vision,
 // mesmo motor do site desde a Task #155) -- ver handoff-ocr-orcamento.md,
 // item 1.4. Complementa o RomaneioOcrParser.kt local (ML Kit, no aparelho,

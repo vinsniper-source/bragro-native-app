@@ -46,6 +46,7 @@ import com.bragro.mobile.ui.fieldview.PrescricaoScreen
 import com.bragro.mobile.ui.dossie.DossieScreen
 import com.bragro.mobile.ui.simulador.SimuladorScreen
 import com.bragro.mobile.ui.orcamento.OrcamentoScreen
+import com.bragro.mobile.ui.nfe.NfeScreen
 import com.bragro.mobile.ui.seguranca.SegurancaScreen
 import com.bragro.mobile.ui.settings.SettingsScreen
 
@@ -67,6 +68,10 @@ private object Routes {
     const val PRESCRICAO = "prescricao"
     const val DOSSIE = "dossie"
     const val SIMULADOR = "simulador"
+    // NF-e -- módulo novo (Task #628, ausente por completo no app até aqui).
+    // Não confundir com NFE_IMPORT acima (import de XML dentro de
+    // Financeiro, feature diferente e pré-existente).
+    const val NFE = "nfe"
     const val ORCAMENTO_NOVO = "orcamento_novo"
     const val BANK_IMPORT = "bank_import"
     const val SETTINGS = "settings"
@@ -178,6 +183,14 @@ fun BRAgroNavHost() {
                     // SectorTarget.Special dos outros itens acima.
                     onOpenDossie = { navController.navigate(Routes.DOSSIE) },
                     onOpenSimulador = { navController.navigate(Routes.SIMULADOR) },
+                    // Prescrição e Reconciliação já tinham rota/tela prontas
+                    // (usadas antes só por um FAB/ícone dentro de FieldView/
+                    // Estoque) -- entrada própria na barra agora reaproveita
+                    // a MESMA rota, sem tela nova. NF-e é rota nova (Task
+                    // #628).
+                    onOpenPrescricao = { navController.navigate(Routes.PRESCRICAO) },
+                    onOpenReconciliacaoEstoque = { navController.navigate(Routes.RECONCILIACAO_ESTOQUE) },
+                    onOpenNfe = { navController.navigate(Routes.NFE) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                     onOpenBaseDeDados = { navController.navigate(Routes.BASE_DE_DADOS) },
                     onOpenSeguranca = { navController.navigate(Routes.SEGURANCA) },
@@ -306,6 +319,9 @@ fun BRAgroNavHost() {
         }
         composable(Routes.SIMULADOR) {
             SimuladorScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.NFE) {
+            NfeScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.BANK_IMPORT) {
             BankImportScreen(onBack = { navController.popBackStack() })

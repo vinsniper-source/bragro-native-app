@@ -72,6 +72,14 @@ import com.bragro.mobile.data.model.OrcamentoCreateResponse
 import com.bragro.mobile.data.model.OrcamentoOcrRequisicaoRequest
 import com.bragro.mobile.data.model.OrcamentoOcrRequisicaoResponse
 import com.bragro.mobile.data.model.OrcamentoOcrItensRequest
+import com.bragro.mobile.data.model.NfeListRequest
+import com.bragro.mobile.data.model.NfeListResponse
+import com.bragro.mobile.data.model.NfeCreateRequest
+import com.bragro.mobile.data.model.NfeCreateResponse
+import com.bragro.mobile.data.model.NfeDeleteRequest
+import com.bragro.mobile.data.model.NfeDeleteResponse
+import com.bragro.mobile.data.model.NfeEmitirRequest
+import com.bragro.mobile.data.model.NfeEmitirResponse
 import com.bragro.mobile.data.model.OrcamentoOcrItensResponse
 import com.bragro.mobile.data.model.RomaneioOcrRequest
 import com.bragro.mobile.data.model.RomaneioOcrResponse
@@ -232,6 +240,21 @@ interface MobileApi {
 
     @POST("api/mobile/orcamento")
     suspend fun orcamentoOcrItens(@Body body: OrcamentoOcrItensRequest): Response<OrcamentoOcrItensResponse>
+
+    // Módulo NF-e (Task #628, ausente por completo no app até aqui) -- mesmo
+    // padrão de módulo de Orçamento acima: UMA rota só (/api/mobile/nfe),
+    // "action" no corpo decide o que roda no servidor.
+    @POST("api/mobile/nfe")
+    suspend fun nfeList(@Body body: NfeListRequest): Response<NfeListResponse>
+
+    @POST("api/mobile/nfe")
+    suspend fun nfeCreate(@Body body: NfeCreateRequest): Response<NfeCreateResponse>
+
+    @POST("api/mobile/nfe")
+    suspend fun nfeDelete(@Body body: NfeDeleteRequest): Response<NfeDeleteResponse>
+
+    @POST("api/mobile/nfe")
+    suspend fun nfeEmitir(@Body body: NfeEmitirRequest): Response<NfeEmitirResponse>
 
     // Leitura automática (OCR) do Romaneio Rápido via servidor -- ver
     // comentário em RomaneioOcrRequest/Response (Models.kt).
