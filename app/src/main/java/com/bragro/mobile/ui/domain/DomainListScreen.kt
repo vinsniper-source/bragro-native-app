@@ -5,6 +5,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.heightIn
@@ -59,6 +60,9 @@ import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.Air
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
@@ -115,6 +119,8 @@ import com.bragro.mobile.ui.print.HtmlPrinter
 import com.bragro.mobile.ui.theme.BrYellow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.booleanOrNull
 
 class DomainListViewModel(app: Application) : AndroidViewModel(app) {
     private val configRepository = ConfigRepository(app)
@@ -146,6 +152,15 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
     // busca quando o domínio aberto é "clima", mesma rota pública
     // /api/mobile/weather do WeatherRepository do Início.
     var weather = mutableStateOf<WeatherResponse?>(null)
+        private set
+
+    // Alerta de janela de pulverização -- pedido do usuário (gap analysis).
+    // Reaproveita moduleActionsRepository (action "spray-alert" ->
+    // getAlertaPulverizacaoAction() no servidor, mesma coordenada
+    // resolveFarmCoords do site) -- JsonObject bruto, parseado direto no
+    // Composable do card (SprayAlertCard) igual ao padrão de "clima-hoje"
+    // em DomainFormScreen.kt.
+    var sprayAlert = mutableStateOf<kotlinx.serialization.json.JsonObject?>(null)
         private set
 
     // "Editado por" + data/hora dentro do card (pedido do usuário, ver
@@ -181,6 +196,7 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
         }
         if (domainId == "clima") {
             viewModelScope.launch { weather.value = weatherRepository.fetch() }
+            viewModelScope.launch { sprayAlert.value = moduleActionsRepository.run("spray-alert") }
         }
         refresh(domainId)
     }
@@ -269,6 +285,7 @@ fun DomainListScreen(
     val refreshing by viewModel.refreshing
     val offline by viewModel.offline
     val weather by viewModel.weather
+    val sprayAlert by viewModel.sprayAlert
     val auditInfo by viewModel.auditInfo
     val nfseBusyId by viewModel.nfseBusyId
     val nfseResult by viewModel.nfseResult
@@ -907,6 +924,12 @@ fun DomainListScreen(
                             ModuleIconButton(
                                 ModuleIconItem("clima-weather", Icons.Filled.WbSunny, "Previsão", active = expandedBlocks["clima-weather"] == true),
                             ) { expandedBlocks["clima-weather"] = expandedBlocks["clima-weather"] != true }
+                            // Alerta de janela de pulverização -- pedido do
+                            // usuário (gap analysis). Mesmo padrão de bloco
+                            // colapsável do "Previsão" acima.
+                            ModuleIconButton(
+                                ModuleIconItem("clima-spray", Icons.Filled.Air, "Pulverização", active = expandedBlocks["clima-spray"] == true),
+                            ) { expandedBlocks["clima-spray"] = expandedBlocks["clima-spray"] != true }
                         }
                         // Bomba de combustível saiu daqui e virou um FAB
                         // próprio (acima do botão +) -- pedido do usuário
@@ -1074,6 +1097,9 @@ fun DomainListScreen(
                         ModuleIconButton(
                             ModuleIconItem("clima-weather", Icons.Filled.WbSunny, "Previsão", active = expandedBlocks["clima-weather"] == true),
                         ) { expandedBlocks["clima-weather"] = expandedBlocks["clima-weather"] != true }
+                        ModuleIconButton(
+                            ModuleIconItem("clima-spray", Icons.Filled.Air, "Pulverização", active = expandedBlocks["clima-spray"] == true),
+                        ) { expandedBlocks["clima-spray"] = expandedBlocks["clima-spray"] != true }
                     }
                     if (showEstoqueFazenda) {
                         ModuleIconButton(
@@ -1171,6 +1197,9 @@ fun DomainListScreen(
             }
             if (showClima && expandedBlocks["clima-weather"] == true) {
                 item(key = "clima-weather") { ClimaForecastCard(weather, showHeader = false) }
+            }
+            if (showClima && expandedBlocks["clima-spray"] == true) {
+                item(key = "clima-spray") { SprayAlertCard(sprayAlert, showHeader = false) }
             }
             if (showEstoqueFazenda && expandedBlocks["estoque-fazenda"] == true) {
                 item(key = "estoque-fazenda") { TransferenciasFazendaCard(showHeader = false) }
@@ -1786,6 +1815,99 @@ private fun ClimaForecastCard(weather: WeatherResponse?, showHeader: Boolean = t
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+/** Card "Janela de Pulverização" -- pedido do usuário (gap analysis, eixo
+ * Campo/Precisão), réplica de src/app/(app)/clima/spray-alert-card.tsx.
+ * `alerta` é o JsonObject bruto devolvido por getAlertaPulverizacaoAction()
+ * (action "spray-alert" via ModuleActionsRepository) -- parseado aqui
+ * direto, sem um data class dedicado (mesmo critério usado nos outros
+ * consumidores de ModuleActionsRepository.run() neste arquivo). */
+@Composable
+private fun SprayAlertCard(alerta: kotlinx.serialization.json.JsonObject?, showHeader: Boolean = true) {
+    var open by remember { mutableStateOf(!showHeader) }
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            if (showHeader) {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Air, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                    Text("Janela de Pulverização", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    IconButton(onClick = { open = !open }) {
+                        Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
+                    }
+                }
+            }
+            if (open) {
+                if (alerta == null) {
+                    Text(
+                        "Não foi possível carregar o alerta agora.",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                } else {
+                    fun str(key: String) = (alerta[key] as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull
+                    fun bool(key: String) = (alerta[key] as? kotlinx.serialization.json.JsonPrimitive)?.booleanOrNull
+                    val favoravelAgora = bool("favoravelAgora") == true
+                    val motivoAgora = str("motivoAgora")
+                    val proximaJanela = alerta["proximaJanela"] as? kotlinx.serialization.json.JsonObject
+                    val horas = (alerta["horas"] as? kotlinx.serialization.json.JsonArray).orEmpty()
+
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 10.dp)) {
+                        Icon(
+                            if (favoravelAgora) Icons.Filled.CheckCircle else Icons.Filled.Warning,
+                            contentDescription = null,
+                            tint = if (favoravelAgora) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(end = 6.dp),
+                        )
+                        Text(
+                            if (favoravelAgora) "Favorável agora" else "Desfavorável agora",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    if (!favoravelAgora && motivoAgora != null) {
+                        Text("Motivo: $motivoAgora", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 6.dp))
+                    }
+                    if (!favoravelAgora) {
+                        val inicio = proximaJanela?.get("inicio")?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull }
+                        val fim = proximaJanela?.get("fim")?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull }
+                        Text(
+                            if (inicio != null && fim != null) "Próxima janela favorável: $inicio às $fim" else "Nenhuma janela favorável prevista nas próximas 24h.",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
+                    if (horas.isNotEmpty()) {
+                        Row(modifier = Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            horas.take(12).forEach { h ->
+                                val obj = h as? kotlinx.serialization.json.JsonObject
+                                val hFavoravel = (obj?.get("favoravel") as? kotlinx.serialization.json.JsonPrimitive)?.booleanOrNull == true
+                                val hora = (obj?.get("hora") as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull ?: ""
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .background(
+                                            if (hFavoravel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                                            shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
+                                        )
+                                        .padding(vertical = 4.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(hora.take(2), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary)
+                                }
+                            }
+                        }
+                    }
+                    Text(
+                        "Regra geral (vento 3–10 km/h, umidade ≥55%, temperatura ≤30°C, sem chuva) — não substitui a bula do produto.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 10.dp),
+                    )
                 }
             }
         }

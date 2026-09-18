@@ -43,6 +43,10 @@ import com.bragro.mobile.data.model.ReconciliacaoEstoqueRequest
 import com.bragro.mobile.data.model.ReconciliacaoEstoqueResponse
 import com.bragro.mobile.data.model.PrescricaoRequest
 import com.bragro.mobile.data.model.PrescricaoResponse
+import com.bragro.mobile.data.model.PrescricaoFarmsRequest
+import com.bragro.mobile.data.model.PrescricaoFarmsResponse
+import com.bragro.mobile.data.model.PrescricaoSalvarRequest
+import com.bragro.mobile.data.model.PrescricaoSalvarResponse
 import com.bragro.mobile.data.model.SimuladorRequest
 import com.bragro.mobile.data.model.SimuladorResponse
 import com.bragro.mobile.data.model.ModuleActionRequest
@@ -182,10 +186,19 @@ interface MobileApi {
     @POST("api/mobile/reconciliacao-estoque")
     suspend fun reconciliacaoEstoque(@Body body: ReconciliacaoEstoqueRequest): Response<ReconciliacaoEstoqueResponse>
 
-    // Prescrição / Taxa Variável (Task #604/#608) -- visualizador simples,
-    // leitura pura (sem input do usuário, sem geração de SHP/ISO-XML).
+    // Prescrição / Taxa Variável (Task #604/#608) -- leitura das prescrições
+    // salvas. A partir da v1.2.85 (pedido do usuário, "crie no native como
+    // foi criado na plataforma") a rota também aceita "action":"farms" e
+    // "action":"salvar" (ver PrescricaoScreen.kt/PrescricaoNovoScreen.kt) --
+    // continua o mesmo endpoint (dispatcher por "action" no servidor).
     @POST("api/mobile/prescricao")
     suspend fun prescricao(@Body body: PrescricaoRequest): Response<PrescricaoResponse>
+
+    @POST("api/mobile/prescricao")
+    suspend fun prescricaoFarms(@Body body: PrescricaoFarmsRequest): Response<PrescricaoFarmsResponse>
+
+    @POST("api/mobile/prescricao")
+    suspend fun prescricaoSalvar(@Body body: PrescricaoSalvarRequest): Response<PrescricaoSalvarResponse>
 
     // Dossiê Bancário (Task #599/#615) -- relatório consolidado (DRE +
     // Livro Caixa + Contratos + Patrimônio), leitura pura, só recebe "ano".

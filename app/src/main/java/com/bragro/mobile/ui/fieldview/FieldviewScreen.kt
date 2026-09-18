@@ -111,6 +111,11 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
     // Card "Acesso automático via prestadora de serviço" (Task #341/#54) --
     // ver ProviderIntegrationRepository.kt/ProviderIntegrationCard.kt.
     private val integrationRepository = ProviderIntegrationRepository(app, IntegrationModule.FIELDVIEW)
+    // NDVI via satélite (Task #653, gap analysis eixo BI) -- mesmo card,
+    // segundo provedor (imagens de satélite em vez de prestadora de
+    // FieldView), ver fieldview-client.tsx no site (segundo
+    // ProviderIntegrationCard da tela).
+    private val ndviIntegrationRepository = ProviderIntegrationRepository(app, IntegrationModule.SATELITE_NDVI)
 
     var data = mutableStateOf<FieldviewResponse?>(null)
         private set
@@ -131,6 +136,12 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var integrationMessage = mutableStateOf<String?>(null)
         private set
+    var ndviIntegration = mutableStateOf<ProviderIntegrationDto?>(null)
+        private set
+    var ndviIntegrationBusy = mutableStateOf<IntegrationBusy?>(null)
+        private set
+    var ndviIntegrationMessage = mutableStateOf<String?>(null)
+        private set
 
     fun load() {
         loading.value = true
@@ -140,6 +151,7 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
         }
         viewModelScope.launch { farms.value = configRepository.farms() }
         viewModelScope.launch { integration.value = integrationRepository.get() }
+        viewModelScope.launch { ndviIntegration.value = ndviIntegrationRepository.get() }
     }
 
     fun saveIntegration(provedor: String, apiKey: String) {
@@ -176,6 +188,43 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
             integrationMessage.value = result.mensagem
             integration.value = integrationRepository.get()
             integrationBusy.value = null
+        }
+    }
+
+    fun saveNdviIntegration(provedor: String, apiKey: String) {
+        ndviIntegrationBusy.value = IntegrationBusy.SALVANDO
+        ndviIntegrationMessage.value = null
+        viewModelScope.launch {
+            val ok = ndviIntegrationRepository.save(provedor, apiKey)
+            ndviIntegrationMessage.value = if (ok) "Credencial salva." else "Falha ao salvar credencial -- confira a conexão e tente de novo."
+            if (ok) ndviIntegration.value = ndviIntegrationRepository.get()
+            ndviIntegrationBusy.value = null
+        }
+    }
+
+    fun disconnectNdviIntegration() {
+        ndviIntegrationBusy.value = IntegrationBusy.DESCONECTANDO
+        ndviIntegrationMessage.value = null
+        viewModelScope.launch {
+            val ok = ndviIntegrationRepository.disconnect()
+            if (ok) {
+                ndviIntegration.value = ndviIntegrationRepository.get()
+                ndviIntegrationMessage.value = "Integração desconectada."
+            } else {
+                ndviIntegrationMessage.value = "Falha ao desconectar -- confira a conexão e tente de novo."
+            }
+            ndviIntegrationBusy.value = null
+        }
+    }
+
+    fun syncNdviIntegration() {
+        ndviIntegrationBusy.value = IntegrationBusy.SINCRONIZANDO
+        ndviIntegrationMessage.value = null
+        viewModelScope.launch {
+            val result = ndviIntegrationRepository.sync()
+            ndviIntegrationMessage.value = result.mensagem
+            ndviIntegration.value = ndviIntegrationRepository.get()
+            ndviIntegrationBusy.value = null
         }
     }
 
@@ -290,6 +339,9 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
     val integration by viewModel.integration
     val integrationBusy by viewModel.integrationBusy
     val integrationMessage by viewModel.integrationMessage
+    val ndviIntegration by viewModel.ndviIntegration
+    val ndviIntegrationBusy by viewModel.ndviIntegrationBusy
+    val ndviIntegrationMessage by viewModel.ndviIntegrationMessage
     var tab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Talhões", "Máquinas", "Fazendas/KML")
     var pendingPolygons by remember { mutableStateOf<List<ParsedPolygon>>(emptyList()) }
@@ -360,6 +412,21 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                 onDisconnect = { viewModel.disconnectIntegration() },
                 onSync = { viewModel.syncIntegration() },
                 modifier = Modifier.padding(horizontal = 16.dp),
+            )
+            // NDVI via satélite (Task #653, gap analysis eixo BI) -- mesmo
+            // card, segundo provedor (imagens de satélite em vez de
+            // prestadora de FieldView), ver segundo ProviderIntegrationCard
+            // em fieldview-client.tsx no site.
+            ProviderIntegrationCard(
+                providers = listOf("Sentinel Hub", "Planet", "EOS Data Analytics", "Outro"),
+                descricao = "NDVI por talhão ainda não está disponível -- depende de assinatura com um provedor de imagens de satélite. Credencial salva com segurança abaixo.",
+                integration = ndviIntegration,
+                busy = ndviIntegrationBusy,
+                syncMessage = ndviIntegrationMessage,
+                onSave = { provedor, apiKey -> viewModel.saveNdviIntegration(provedor, apiKey) },
+                onDisconnect = { viewModel.disconnectNdviIntegration() },
+                onSync = { viewModel.syncNdviIntegration() },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
             // Espaço maior entre o card "Acesso automático" e as abas
             // Talhões/Máquinas/Fazendas -- pedido do usuário ("dê um espaço

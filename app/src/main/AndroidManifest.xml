@@ -12,6 +12,16 @@
          Ver ApkInstaller.kt. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
+    <!-- GPS na captura de pragas -- pedido do usuario (gap analysis, eixo
+         Campo/Precisao). Best-effort: se o usuario negar, o app segue
+         funcionando normalmente sem coordenada (Praga.latitude/longitude
+         sao opcionais) -- ver PragaFotoScreen.kt. Sem play-services-location
+         de proposito (nao adiciona dependencia nova): usa LocationManager
+         nativo do Android (getLastKnownLocation), suficiente pra um registro
+         de campo pontual. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <!-- Necessario a partir do Android 11 (targetSdk 30+, aqui targetSdk 34):
          sem declarar a intent de camera aqui, o sistema pode nao conseguir
          RESOLVER o app de camera pra abrir via Intent implicito

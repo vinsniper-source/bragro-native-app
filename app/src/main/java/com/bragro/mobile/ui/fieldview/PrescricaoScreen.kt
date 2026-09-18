@@ -5,16 +5,22 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -24,6 +30,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,14 +39,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bragro.mobile.data.NetworkStatus
 import com.bragro.mobile.data.model.PrescricaoData
 import com.bragro.mobile.data.repo.PrescricaoRepository
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.print.HtmlPrinter
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.doubleOrNull
@@ -55,16 +65,18 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-/** "Prescrição / Taxa Variável" (Task #604/#608) -- VISUALIZADOR simples no
- * app nativo, decisão do usuário: em vez de gerar SHP/ISO-XML no aparelho
- * (o site faz isso no navegador com shpjs, bem mais pesado de replicar em
- * Kotlin), o app só busca em /api/mobile/prescricao os registros já
- * salvos pelo site (savePrescricaoAction já resolveu taxaMedia/Min/Max e
- * gravou o geojson) e desenha as zonas coloridas por taxa -- criar/excluir
- * prescrição continua exclusivo do site. Mapa via osmdroid (mesmo padrão de
- * BoundariesMap em FieldviewScreen.kt), sem WebView/Leaflet -- só que aqui
- * cada FEATURE do FeatureCollection vira um polígono colorido pela taxa
- * (fórmula HSL idêntica a corPorTaxa() do site, ver prescricao-map-view.tsx).
+/** "Prescrição / Taxa Variável" (Task #604/#608) -- busca em
+ * /api/mobile/prescricao os registros salvos (savePrescricaoAction já
+ * resolveu taxaMedia/Min/Max e gravou o geojson) e desenha as zonas
+ * coloridas por taxa. Mapa via osmdroid (mesmo padrão de BoundariesMap em
+ * FieldviewScreen.kt), sem WebView/Leaflet -- cada FEATURE do
+ * FeatureCollection vira um polígono colorido pela taxa (fórmula HSL
+ * idêntica a corPorTaxa() do site, ver prescricao-map-view.tsx).
+ *
+ * A partir da v1.2.85 (Task #651, pedido do usuário "crie no native como
+ * foi criado na plataforma") o FAB "+" abre PrescricaoNovoScreen, que
+ * também cria prescrições -- só a partir de ISO-XML importado no aparelho
+ * (ver IsoXmlVraParser.kt); SHP continua exclusivo do site.
  */
 class PrescricaoViewModel(app: Application) : AndroidViewModel(app) {
     private val repository = PrescricaoRepository(app)
@@ -75,15 +87,30 @@ class PrescricaoViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var prescricoes = mutableStateOf<List<PrescricaoData>>(emptyList())
         private set
+    // Ícone Nuvem no cabeçalho (mesmo padrão de DomainListScreen/offline) --
+    // true quando o último fetch falhou, pra avisar que a lista pode estar
+    // desatualizada/vazia por falta de conexão, não por não ter dado cadastrado.
+    var offline = mutableStateOf(false)
+        private set
 
     init {
+        carregar()
+    }
+
+    /** Reaproveitada tanto no carregamento inicial quanto ao voltar da tela
+     * "Nova Prescrição" (Task #651) -- sem cache no Room aqui, então sem
+     * isso a prescrição recém-criada só apareceria depois de fechar e
+     * reabrir o módulo. */
+    fun carregar() {
         viewModelScope.launch {
             val resultado = repository.fetch()
             carregando.value = false
+            offline.value = resultado == null
             if (resultado == null) {
                 erro.value = "Sem conexão -- não foi possível carregar as prescrições agora."
                 return@launch
             }
+            erro.value = null
             prescricoes.value = resultado.prescricoes
         }
     }
@@ -150,7 +177,7 @@ private fun parseFeatures(geojson: JsonElement?): List<Pair<List<GeoPoint>, Doub
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PrescricaoScreen(onBack: () -> Unit, viewModel: PrescricaoViewModel = viewModel()) {
+fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: PrescricaoViewModel = viewModel()) {
     val context = LocalContext.current
     LaunchedEffect(Unit) {
         Configuration.getInstance().apply {
@@ -158,21 +185,88 @@ fun PrescricaoScreen(onBack: () -> Unit, viewModel: PrescricaoViewModel = viewMo
             osmdroidBasePath = context.cacheDir
         }
     }
+    // Recarrega ao voltar da tela "Nova Prescrição" (Task #651) -- o
+    // ViewModel sobrevive na pilha de navegação, então sem isso a
+    // prescrição recém-criada só apareceria depois de fechar/reabrir o
+    // módulo (sem cache no Room aqui pra atualizar sozinho).
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) viewModel.carregar()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     val carregando by viewModel.carregando
     val erro by viewModel.erro
     val prescricoes by viewModel.prescricoes
+    val offline by viewModel.offline
     var expandidoId by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Prescrição / Taxa Variável", color = MaterialTheme.colorScheme.primary) },
+                // Título desce uma linha, mesmo ajuste já aplicado nos
+                // demais módulos (DomainListScreen/FinanceiroScreen) --
+                // pedido do usuário ("abaixe o título do módulo e deixe na
+                // mesma altura dos modulos mais antigos").
+                title = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Prescrição / Taxa Variável", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.primary, modifier = Modifier.basicMarquee())
+                    }
+                },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                },
+                // Ícones Imprimir + Nuvem na mesma altura do título -- pedido
+                // do usuário ("inclua o icone e nuvem e impressoora na mesma
+                // altura do título nesses módulos"), mesmo padrão dos demais
+                // módulos (ver DomainListScreen.kt).
+                actions = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row {
+                            IconButton(onClick = {
+                                val headers = listOf("Nome", "Produto", "Safra", "Cultura", "Talhão", "Taxa mín.", "Taxa média", "Taxa máx.")
+                                val rows = prescricoes.map {
+                                    listOf(
+                                        it.nome, it.produto ?: "", it.safra ?: "", it.cultura ?: "", it.talhao ?: "",
+                                        it.taxaMin?.let { v -> "%.2f".format(v) } ?: "",
+                                        it.taxaMedia?.let { v -> "%.2f".format(v) } ?: "",
+                                        it.taxaMax?.let { v -> "%.2f".format(v) } ?: "",
+                                    )
+                                }
+                                HtmlPrinter.printSimpleTable(context, "Prescrição / Taxa Variável", headers, rows)
+                            }) {
+                                Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
+                            }
+                            IconButton(onClick = {
+                                val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
+                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                            }) {
+                                Icon(
+                                    if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
+                                    contentDescription = "Nuvem",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                        }
                     }
                 },
             )
+        },
+        // FAB "Nova Prescrição" (Task #651) -- pedido do usuário ("crie no
+        // native como foi criado na plataforma"): antes só o site criava.
+        floatingActionButton = {
+            androidx.compose.material3.FloatingActionButton(onClick = onNovo) {
+                Icon(Icons.Filled.Add, contentDescription = "Nova prescrição")
+            }
         },
     ) { padding ->
         if (carregando) {
@@ -189,7 +283,7 @@ fun PrescricaoScreen(onBack: () -> Unit, viewModel: PrescricaoViewModel = viewMo
         }
         if (prescricoes.isEmpty()) {
             Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Nenhuma prescrição de taxa variável salva ainda -- crie uma pelo site (importação SHP/ISO-XML).", style = MaterialTheme.typography.bodyMedium)
+                Text("Nenhuma prescrição de taxa variável salva ainda -- toque em + pra importar um ISO-XML, ou crie pelo site (SHP/ISO-XML).", style = MaterialTheme.typography.bodyMedium)
             }
             return@Scaffold
         }

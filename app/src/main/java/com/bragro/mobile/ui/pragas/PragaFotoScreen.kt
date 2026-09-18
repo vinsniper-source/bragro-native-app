@@ -118,6 +118,33 @@ class PragaFotoViewModel(app: Application) : AndroidViewModel(app) {
     var copiando = mutableStateOf(false)
         private set
 
+    // GPS na captura de pragas -- pedido do usuário (gap analysis, eixo
+    // Campo/Precisão), 10ª exceção de schema (Praga.latitude/longitude).
+    // Capturado best-effort (LocationManager nativo, getLastKnownLocation)
+    // no mesmo instante da foto -- se a permissão for negada ou não houver
+    // fix recente, segue sem coordenada, sem bloquear o lançamento.
+    var latitude = mutableStateOf<Double?>(null)
+        private set
+    var longitude = mutableStateOf<Double?>(null)
+        private set
+
+    fun capturarLocalizacao(context: Context) {
+        try {
+            val lm = context.getSystemService(Context.LOCATION_SERVICE) as? android.location.LocationManager ?: return
+            for (provider in listOf(android.location.LocationManager.GPS_PROVIDER, android.location.LocationManager.NETWORK_PROVIDER)) {
+                if (!lm.isProviderEnabled(provider)) continue
+                val loc = lm.getLastKnownLocation(provider) ?: continue
+                latitude.value = loc.latitude
+                longitude.value = loc.longitude
+                return
+            }
+        } catch (e: SecurityException) {
+            // Permissão negada -- segue sem coordenada, comportamento normal.
+        } catch (e: Exception) {
+            AppLog.e("PragaFotoScreen", "Falha ao capturar localização da ocorrência", e)
+        }
+    }
+
     init {
         viewModelScope.launch {
             fazendas.value = configRepository.lookupsByCategory("locais")
@@ -171,6 +198,7 @@ class PragaFotoViewModel(app: Application) : AndroidViewModel(app) {
         mensagemFoto.value = null
         diagnosticoTexto.value = null
         diagnosticoStatus.value = null
+        capturarLocalizacao(context)
         viewModelScope.launch {
             val bytes = compressPhoto(context, uri)
             if (bytes == null) {
@@ -262,6 +290,8 @@ class PragaFotoViewModel(app: Application) : AndroidViewModel(app) {
             fotoUrl.value?.let { fields["fotoUrl"] = it }
             diagnosticoTexto.value?.let { fields["diagnosticoIa"] = it }
             diagnosticoStatus.value?.let { fields["diagnosticoStatus"] = it }
+            latitude.value?.let { fields["latitude"] = it.toString() }
+            longitude.value?.let { fields["longitude"] = it.toString() }
 
             when (val result = recordRepository.createRecord("pragas", fields)) {
                 is SaveResult.SavedOnline -> {
@@ -292,6 +322,8 @@ class PragaFotoViewModel(app: Application) : AndroidViewModel(app) {
         mensagemFoto.value = null
         resultMessage.value = null
         savedOk.value = false
+        latitude.value = null
+        longitude.value = null
     }
 }
 
@@ -339,6 +371,17 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
     val resultMessage by viewModel.resultMessage
     val savedOk by viewModel.savedOk
     val copiando by viewModel.copiando
+    val latitude by viewModel.latitude
+    val longitude by viewModel.longitude
+
+    // Pede a permissão de localização assim que a tela abre (best-effort --
+    // se o usuário negar, capturarLocalizacao() no ViewModel simplesmente
+    // não preenche nada, sem bloquear o fluxo). Pedido do usuário (gap
+    // analysis: "GPS na captura de pragas").
+    val locationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        locationPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
+    }
 
     var pendingPhotoUri by remember { mutableStateOf<Uri?>(null) }
     val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
@@ -421,6 +464,12 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
                     }
                     if (mensagemFoto != null) {
                         Text(mensagemFoto ?: "", style = MaterialTheme.typography.labelSmall)
+                    }
+                    if (latitude != null && longitude != null) {
+                        Text(
+                            "📍 Localização capturada (${"%.5f".format(latitude)}, ${"%.5f".format(longitude)})",
+                            style = MaterialTheme.typography.labelSmall,
+                        )
                     }
                 }
             }

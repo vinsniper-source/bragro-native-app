@@ -1,18 +1,24 @@
 package com.bragro.mobile.ui.estoque
 
 import android.app.Application
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,12 +36,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bragro.mobile.data.NetworkStatus
 import com.bragro.mobile.data.model.ReconciliacaoEstoqueItemData
 import com.bragro.mobile.data.repo.ReconciliacaoEstoqueRepository
+import com.bragro.mobile.ui.print.HtmlPrinter
 import com.bragro.mobile.ui.theme.Card
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -61,6 +71,10 @@ class ReconciliacaoEstoqueViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var totalItensComDivergencia = mutableStateOf(0)
         private set
+    // Ícone Nuvem no cabeçalho (mesmo padrão de DomainListScreen/Prescrição)
+    // -- true quando o último fetch falhou.
+    var offline = mutableStateOf(false)
+        private set
 
     init { carregar() }
 
@@ -70,6 +84,7 @@ class ReconciliacaoEstoqueViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val resultado = repository.fetch()
             carregando.value = false
+            offline.value = resultado == null
             if (resultado == null) {
                 erro.value = "Sem conexão -- não foi possível carregar a reconciliação agora."
                 return@launch
@@ -95,19 +110,65 @@ private fun formatoNumero(valor: Double): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoqueViewModel = viewModel()) {
+    val context = LocalContext.current
     val carregando by viewModel.carregando
     val erro by viewModel.erro
     val itens by viewModel.itens
     val totalItensComDivergencia by viewModel.totalItensComDivergencia
+    val offline by viewModel.offline
     var soDivergencia by remember { mutableStateOf(true) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Reconciliação Físico x Fiscal", color = MaterialTheme.colorScheme.primary) },
+                // Título desce uma linha, mesmo ajuste já aplicado nos
+                // demais módulos -- pedido do usuário ("abaixe o título do
+                // módulo e deixe na mesma altura dos modulos mais antigos").
+                title = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Reconciliação Físico x Fiscal", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.primary, modifier = Modifier.basicMarquee())
+                    }
+                },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                },
+                // Ícones Imprimir + Nuvem na mesma altura do título -- pedido
+                // do usuário, mesmo padrão dos demais módulos.
+                actions = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row {
+                            IconButton(onClick = {
+                                val headers = listOf("Item", "Categoria", "Saldo Fiscal", "Saldo Real", "Diferença")
+                                val rows = itens.map {
+                                    listOf(
+                                        it.item, it.categoria ?: "",
+                                        "${formatoNumero(it.saldoFiscal)}${it.unidade?.let { u -> " $u" } ?: ""}",
+                                        "${formatoNumero(it.saldoFisico)}${it.unidade?.let { u -> " $u" } ?: ""}",
+                                        "${formatoNumero(it.diferenca)}${it.unidade?.let { u -> " $u" } ?: ""}",
+                                    )
+                                }
+                                HtmlPrinter.printSimpleTable(context, "Reconciliação Físico x Fiscal", headers, rows)
+                            }) {
+                                Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
+                            }
+                            IconButton(onClick = {
+                                val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
+                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                            }) {
+                                Icon(
+                                    if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
+                                    contentDescription = "Nuvem",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                        }
                     }
                 },
             )

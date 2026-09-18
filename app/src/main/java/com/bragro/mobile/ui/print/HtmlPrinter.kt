@@ -50,6 +50,36 @@ object HtmlPrinter {
         print(context, jobName = domain.label, html = html)
     }
 
+    // Ícone Imprimir de telas que NÃO usam DomainConfig (Prescrição /
+    // Reconciliação Físico x Fiscal -- dados vêm de repositórios próprios,
+    // não do sistema genérico de módulo/coluna). Reaproveita o mesmo HTML de
+    // tabela simples (título + data + linhas) e o mesmo diálogo nativo de
+    // impressão (print() abaixo), só que a partir de headers/linhas já
+    // formatados como texto pelo chamador, em vez de ColumnConfig/records.
+    fun printSimpleTable(context: Context, title: String, headers: List<String>, rows: List<List<String>>) {
+        val header = headers.joinToString("") { "<th>${escapeHtml(it)}</th>" }
+        val (font, padding) = printSizing(headers.size)
+        val body = rows.joinToString("") { row -> "<tr>${row.joinToString("") { "<td>${escapeHtml(it)}</td>" }}</tr>" }
+        val geradoEm = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale("pt", "BR")).format(java.util.Date())
+        val html = """
+            <!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
+            <style>
+              @page { size: landscape; margin: 12mm; }
+              body { font-family: Arial, Helvetica, sans-serif; padding: 24px; color: #111; }
+              h1 { font-size: 18px; margin-bottom: 2px; }
+              p { font-size: 11px; color: #666; margin-top: 0; margin-bottom: 16px; }
+              table { border-collapse: collapse; width: 100%; font-size: ${font}px; }
+              th, td { border: 1px solid #ccc; padding: $padding; text-align: left; }
+            </style></head>
+            <body>
+              <h1>${escapeHtml(title)}</h1>
+              <p>Gerado em $geradoEm -- ${rows.size} registro(s)</p>
+              <table><thead><tr>$header</tr></thead><tbody>$body</tbody></table>
+            </body></html>
+        """.trimIndent()
+        print(context, jobName = title, html = html)
+    }
+
     private fun print(context: Context, jobName: String, html: String, landscape: Boolean = true) {
         val webView = WebView(context)
         activeWebView = webView

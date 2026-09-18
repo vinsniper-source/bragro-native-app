@@ -43,6 +43,7 @@ import com.bragro.mobile.ui.pragas.PragaFotoScreen
 import com.bragro.mobile.ui.domain.FrotaQrScreen
 import com.bragro.mobile.ui.estoque.ReconciliacaoEstoqueScreen
 import com.bragro.mobile.ui.fieldview.PrescricaoScreen
+import com.bragro.mobile.ui.fieldview.PrescricaoNovoScreen
 import com.bragro.mobile.ui.dossie.DossieScreen
 import com.bragro.mobile.ui.simulador.SimuladorScreen
 import com.bragro.mobile.ui.orcamento.OrcamentoScreen
@@ -66,6 +67,7 @@ private object Routes {
     const val FROTA_QR = "frota_qr"
     const val RECONCILIACAO_ESTOQUE = "reconciliacao_estoque"
     const val PRESCRICAO = "prescricao"
+    const val PRESCRICAO_NOVO = "prescricao_novo"
     const val DOSSIE = "dossie"
     const val SIMULADOR = "simulador"
     // NF-e -- módulo novo (Task #628, ausente por completo no app até aqui).
@@ -250,7 +252,15 @@ fun BRAgroNavHost() {
             )
         }
         composable(Routes.PRESCRICAO) {
-            PrescricaoScreen(onBack = { navController.popBackStack() })
+            PrescricaoScreen(
+                onBack = { navController.popBackStack() },
+                onNovo = { navController.navigate(Routes.PRESCRICAO_NOVO) },
+            )
+        }
+        // Nova Prescrição (Task #651) -- pedido do usuário ("crie no native
+        // como foi criado na plataforma"): antes só o site criava.
+        composable(Routes.PRESCRICAO_NOVO) {
+            PrescricaoNovoScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.NFE_IMPORT) {
             NfeImportScreen(onBack = { navController.popBackStack() })

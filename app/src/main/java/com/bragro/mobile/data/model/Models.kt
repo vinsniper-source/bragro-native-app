@@ -1749,6 +1749,63 @@ data class PrescricaoResponse(
     val error: String? = null,
 )
 
+// Criação de Prescrição no app nativo (a partir da v1.2.85, pedido do
+// usuário "crie no native como foi criado na plataforma") -- mesmo
+// endpoint /api/mobile/prescricao, agora um dispatcher por "action" (ver
+// route.ts): "farms" lista as fazendas pro dropdown opcional de vínculo,
+// "salvar" cria a prescrição chamando savePrescricaoAction no servidor
+// (mesmo cálculo de taxaMedia/Min/Max do site, nenhuma duplicação em
+// Kotlin). Import de arquivo só ISO-XML aqui (ver IsoXmlVraParser.kt) --
+// SHP continua exclusivo do site (ver comentário em route.ts).
+// IMPORTANTE: "action"/"type"/"origemTipo" abaixo NÃO têm valor padrão de
+// propósito (mesmo quando o app sempre manda o mesmo valor) -- o Json global
+// do app usa encodeDefaults=false (ver NetworkModule.kt), que OMITE do JSON
+// qualquer campo cujo valor bata com o default declarado na classe. Um
+// default aqui faria esses campos discriminadores nunca chegarem no
+// servidor (a rota cairia sempre no branch "list", ou o zod do site
+// rejeitaria "type" ausente) -- por isso viram parâmetros obrigatórios, e
+// cada call site (PrescricaoRepository.kt/PrescricaoNovoScreen.kt) passa o
+// valor explicitamente.
+@Serializable
+data class PrescricaoFarmsRequest(val accessToken: String, val refreshToken: String, val action: String)
+
+@Serializable
+data class PrescricaoFarmDto(val id: String, val name: String)
+
+@Serializable
+data class PrescricaoFarmsResponse(
+    val ok: Boolean,
+    val farms: List<PrescricaoFarmDto> = emptyList(),
+    val error: String? = null,
+)
+
+@Serializable
+data class PrescricaoFeatureInput(
+    val type: String,
+    val geometry: JsonElement,
+    val properties: JsonElement? = null,
+)
+
+@Serializable
+data class PrescricaoSalvarRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String,
+    val nome: String,
+    val produto: String? = null,
+    val unidadeTaxa: String? = null,
+    val safra: String? = null,
+    val cultura: String? = null,
+    val talhao: String? = null,
+    val farmId: String? = null,
+    val origemTipo: String,
+    val origemArquivo: String? = null,
+    val features: List<PrescricaoFeatureInput>,
+)
+
+@Serializable
+data class PrescricaoSalvarResponse(val ok: Boolean, val id: String? = null, val error: String? = null)
+
 // Dossiê Bancário (Task #599/#615) -- espelho de DossieData
 // (lib/services/dossie.ts). Rota de LEITURA pura (só "ano" como input) --
 // ver /api/mobile/dossie/route.ts, que só chama getDossieData(orgId, ano) e

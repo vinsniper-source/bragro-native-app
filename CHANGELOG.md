@@ -3,6 +3,46 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.85] -- 2026-09-18
+
+- **Prescrição/Taxa Variável: criação direto no app** (Task #651, pedido do
+  usuário -- "crie no native como foi criado na plataforma"). Até aqui o app
+  só EXIBIA prescrições já salvas pelo site; agora dá pra importar um
+  TASKDATA.XML (ISO-XML por zonas de tratamento) direto do aparelho -- novo
+  parser Kotlin (`IsoXmlVraParser.kt`, réplica 1:1 do `parseIsoXmlZonas()` do
+  site) lê zonas/taxas do arquivo, e a nova tela "Nova Prescrição" (FAB "+")
+  preenche os metadados (nome/produto/unidade/safra/cultura/talhão/fazenda)
+  e salva chamando o MESMO `savePrescricaoAction` do site (via
+  `/api/mobile/prescricao`, agora um dispatcher por "action" -- "list"
+  continua igual, sem quebrar APKs antigos). Import de .SHP continua
+  exclusivo do site (decodificação de shapefile binário sem lib equivalente
+  em Kotlin). Corrigido no meio do caminho um risco real de bug:
+  `encodeDefaults=false` no `Json` global do app (`NetworkModule.kt`) omite
+  do JSON qualquer campo cujo valor bata com o default declarado na classe
+  Kotlin -- por isso "action"/"type"/"origemTipo" viraram parâmetros
+  obrigatórios (sem default) nos novos DTOs, evitando que o servidor
+  recebesse a requisição sem o discriminador certo.
+- **Arrendamento vinculado à cotação** (Task #652, gap analysis eixo
+  CCT/Grãos). O model `Contrato` já tinha os campos `commodityReferencia`/
+  `quantidadeCommodity`/`recalculoAutomatico` desenhados numa rodada
+  anterior; esta rodada aplicou as 3 colunas no banco (Supabase), ligou os 3
+  campos na tela de Contratos (site e app, já que o app renderiza o
+  formulário genérico a partir do MESMO `registry.ts` servido por
+  `/api/mobile/config` -- zero código Kotlin novo) e implementou o cálculo
+  em si: quando "Recalcular automaticamente" está marcado, o servidor
+  recalcula "Valor (R$)" a cada salvamento multiplicando "Quantidade da
+  Commodity" pela cotação vigente de soja/milho/sorgo (mesma fonte já usada
+  no KPI de Cotações Grãos -- Grão Direto). Sem o checkbox marcado, o
+  contrato continua 100% manual, exatamente como sempre foi.
+- **NDVI via satélite (scaffolding)** (Task #653, gap analysis eixo BI).
+  Novo card "Acesso automático via prestadora de serviço" dentro de
+  FieldView (site e app), pro dia em que a organização fechar com um
+  provedor de imagens de satélite (Sentinel Hub, Planet, EOS Data
+  Analytics etc.) -- mesmo critério de scaffolding já usado em FieldView/
+  Drone/Bomba de combustível/Balança: credencial persistida com segurança
+  por organização, sincronização automática ainda é stub (sem parceria
+  comercial hoje, nenhum dado de NDVI é inventado/mockado na tela).
+
 ## [1.2.84] -- 2026-09-18
 
 - **Novo módulo NF-e no app** (Task #628, estava ausente por completo --
