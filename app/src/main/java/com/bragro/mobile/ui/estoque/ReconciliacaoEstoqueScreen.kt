@@ -107,7 +107,7 @@ private fun formatoNumero(valor: Double): String {
     return nf.format(valor)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoqueViewModel = viewModel()) {
     val context = LocalContext.current

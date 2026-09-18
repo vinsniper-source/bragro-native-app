@@ -175,7 +175,7 @@ private fun parseFeatures(geojson: JsonElement?): List<Pair<List<GeoPoint>, Doub
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: PrescricaoViewModel = viewModel()) {
     val context = LocalContext.current
