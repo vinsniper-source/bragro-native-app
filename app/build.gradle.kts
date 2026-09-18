@@ -41,8 +41,8 @@ android {
         // a instalaçao pegou o apk certo (se apos instalar ainda aparecer
         // 1.1.6, a instalaçao nao pegou o apk novo -- se aparecer 1.1.7,
         // pegou, e as cores tem que estar corrigidas tambem).
-        versionCode = 92
-        versionName = "1.2.82"
+        versionCode = 93
+        versionName = "1.2.83"
 
         // URLs do backend (o MESMO backend do site publicado -- ver
         // native-app/README.md). Trocaveis por variante/ambiente sem
@@ -110,7 +110,23 @@ android {
             // upload de foto/arquivo e o mapa (FieldView/KML) na PRIMEIRA
             // build de release depois desta mudanca.
             isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Pedido do usuario ("corrija a lentidao do assemble release") --
+            // trocado de "proguard-android-optimize.txt" pra
+            // "proguard-android.txt" (arquivo padrao do proprio Android SDK,
+            // nao e algo inventado aqui). A diferenca entre os dois e so uma
+            // linha, "-dontoptimize": o "-optimize" ativa as passadas de
+            // OTIMIZACAO de bytecode do R8 (inline de metodos, remocao de
+            // codigo morto avancada, simplificacao de expressao etc.), que sao
+            // de longe a parte mais pesada de CPU/memoria do R8 -- shrink
+            // (remover classe nao usada) e obfuscacao (renomear) continuam
+            // ligados normalmente, so a otimizacao fica desligada. Na maquina
+            // de build com so 4GB de RAM (ver gradle.properties) essa passada
+            // de otimizacao e o motivo mais provavel do ":app:minifyReleaseWithR8"
+            // ficar horas travado em vez de minutos. Efeito colateral aceito:
+            // o .apk final fica um pouco maior e o bytecode um pouco menos
+            // otimizado (nao afeta corretude, so performance/tamanho) -- troca
+            // razoavel considerando que o build nem estava terminando antes.
+            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
             if (hasKeystoreConfig) {
                 signingConfig = signingConfigs.getByName("release")
             }

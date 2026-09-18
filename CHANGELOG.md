@@ -3,6 +3,24 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.83] -- 2026-09-18
+
+- **Corrigido: lentidão extrema do `assembleRelease`** (pedido do usuário --
+  build ficou 1h29min travado em 66%, na task `:app:minifyReleaseWithR8`).
+  Causa: `proguard-android-optimize.txt` liga as passadas de OTIMIZAÇÃO de
+  bytecode do R8 (inline de métodos, remoção avançada de código morto
+  etc.), de longe a parte mais pesada de CPU/memória do R8 -- na máquina
+  de build com só 4GB de RAM (ver `gradle.properties`), essa passada é o
+  motivo mais provável do build não terminar em tempo razoável. Trocado
+  pro arquivo padrão `proguard-android.txt` (também do próprio Android
+  SDK, não é algo customizado) -- a única diferença é a linha
+  `-dontoptimize`: desliga só a OTIMIZAÇÃO, mantendo shrink (remover
+  classe não usada) e obfuscação normalmente. Efeito colateral aceito:
+  `.apk` final um pouco maior/bytecode um pouco menos otimizado -- não
+  afeta corretude, e essa troca é inclusive mais SEGURA (menos
+  transformação de código = menor risco de regra de "keep" faltando
+  quebrar algo só no release).
+
 ## [1.2.82] -- 2026-09-16
 
 - **Configurações: hora de publicação do APK.** Pedido do usuário ("alem
