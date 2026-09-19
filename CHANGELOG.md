@@ -3,6 +3,61 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.89] -- 2026-09-19
+
+- **Correção de bug real: campos de Pecuária "desaparecendo" (site + app)**:
+  o Dinamismo por Operação da v1.2.88 escondia TODOS os campos condicionais
+  (Manejo Sanitário, Reprodução, Movimentação, Vacina, etc.) sempre que
+  "Operação" ainda não tinha sido escolhida, em vez de só filtrar DEPOIS de
+  uma Operação já selecionada -- pedido do usuário reportando o problema
+  ("a maioria dos campos implementados em pecuária desapareceram na
+  plataforma"). Corrigido em `isFieldVisible` (site, `record-form.tsx`) e
+  `isVisible()` (app, `DomainFormViewModel`/`DomainFormScreen.kt`): sem
+  "Operação" escolhida, TODOS os campos voltam a aparecer (comportamento de
+  antes); a filtragem por Operação (ex.: Pesagem esconde Vacina/Cobertura)
+  só entra em ação depois que o usuário efetivamente escolhe um valor.
+- **Pecuária/Pastagem: mesmo padrão de toolbar dos outros módulos (app)**:
+  a tela de lista desses dois módulos caía no layout antigo (fileira única
+  com 9 ícones, cortando os rótulos -- "Gráfic", "Períoc", "Atuali") em vez
+  do bloco Dados/Operações/Arquivos (barra oval) usado por Romaneios,
+  Pragas, Pedidos, Contratos, etc. -- pedido do usuário ("coloque o mesmo
+  padrão dos outros módulos na app native"). Adicionados a
+  `CATEGORIZED_BLOCK_DOMAINS` (`DomainListScreen.kt`).
+- **Novo módulo "Pastagem" (Suplementação e Pastagem, site + app)**: novo
+  domínio genérico pra controlar lotes de gado em pastejo -- pedido do
+  usuário (gap analysis: "taxa de lotação por hectare (UA/ha) e histórico de
+  rotação de piquetes; controle de estoque de insumos e ração vinculado às
+  saídas de manejo"). Campos: Piquete/Pasto, Categoria, Quantidade de
+  cabeças, Peso Médio por Cabeça, Área do Piquete, Data de Entrada/Saída no
+  Piquete, Insumo/Ração Fornecido + Quantidade Consumida, Responsável,
+  Observações. Calculados automaticamente: Unidades Animais (UA = cabeças ×
+  peso médio ÷ 450 kg, padrão zootécnico de 1 UA = 450 kg de peso vivo),
+  Taxa de Lotação (UA/ha = UA ÷ Área do Piquete), Dias de Pastejo e Status
+  (Em Pastejo / Rotacionado). Insumo/Ração + Quantidade Consumida já
+  descontam do Estoque geral sozinhos, mesmo comportamento de Frota/Safra/
+  Controle Interno (sem repetir o lançamento lá). Entra na seção "Campo" ao
+  lado de Pecuária, com o mesmo critério de permissões (Agrônomo e
+  Operador) e resolução automática de fazenda pelo campo "Local".
+
+## [1.2.88] -- 2026-09-19
+
+- **Dinamismo de campos por Operação em Pecuária (site + app)**: os campos
+  do formulário agora aparecem/somem automaticamente conforme a "Operação"
+  escolhida (Nascimento, Pesagem, Manejo Sanitário, Reprodução,
+  Movimentação) -- pedido do usuário ("esconder/exibir campos dinamicamente
+  dependendo da escolha em Operação: ao selecionar Pesagem, ocultar dados de
+  Vacina e Cobertura; ao selecionar Manejo Sanitário, exigir Carência e Lote
+  do Medicamento"). Nova capacidade genérica no motor de domínios
+  (`visibleWhenField`/`visibleWhenValues` em `ColumnConfig`, tanto no site
+  quanto no app), mapeada nos 31 campos condicionais de Pecuária: Pesagem
+  mostra só peso/GMD; Manejo Sanitário mostra vacina/dose/carência/lote/
+  validade/suplementação; Reprodução mostra cobertura/pai/matriz/
+  inseminador/touro/ECC/DG; Movimentação mostra origem/entidade/quantidade/
+  valores/causa de descarte; campos de identificação (raça, categoria,
+  brinco, etc.) continuam sempre visíveis. Campo escondido não é mais
+  enviado ao salvar (nem no site nem no app), evitando reenviar valor
+  antigo de uma Operação diferente da atual.
+
 ## [1.2.87] -- 2026-09-19
 
 - **Botão "Módulos" consolidado no cabeçalho (owner/admin)**: os três

@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.Grass
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Payments
@@ -71,6 +72,9 @@ private val DOMAIN_SECTION_ID: Map<String, String> = mapOf(
     // Pecuária (Task #685-692, gap analysis) -- mesma seção "campo" do site
     // (lib/modules.ts: section: "campo").
     "pecuaria" to "campo",
+    // Pastagem (Módulo de Suplementação e Pastagem, gap analysis do usuário)
+    // -- mesma seção "campo" do site (lib/modules.ts).
+    "pastagem" to "campo",
     "estoque" to "estoque",
     "inventario" to "estoque",
     "frota" to "estoque",
@@ -109,6 +113,7 @@ private val DOMAIN_ICON: Map<String, ImageVector> = mapOf(
     // base; mesmo critério de "espírito visual" usado nos demais ícones
     // deste mapa (ver comentário no topo do arquivo).
     "pecuaria" to Icons.Filled.Pets,
+    "pastagem" to Icons.Filled.Grass,
     "estoque" to Icons.Filled.Inventory2,
     // Trocado de Inventory (caixa única) -- pedido do usuário ("trocar
     // ícone inventário"); parecia demais com o ícone de "Estoque"

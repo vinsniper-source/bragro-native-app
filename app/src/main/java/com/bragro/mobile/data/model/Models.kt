@@ -38,6 +38,14 @@ data class ColumnConfig(
     // isso o app não tinha como saber e sempre nascia desmarcado (ver
     // DomainFormScreen.kt).
     val defaultChecked: Boolean = false,
+    // Espelha visibleWhenField/visibleWhenValues de types.ts -- esconde este
+    // campo do formulario a menos que o campo irmao `visibleWhenField`
+    // (ex.: "operacao" em Pecuária) tenha um dos valores de
+    // `visibleWhenValues` no momento (ver DomainFormViewModel.isVisible()
+    // em DomainFormScreen.kt). Sem essas duas props o campo aparece sempre
+    // (comportamento de sempre, preservado).
+    val visibleWhenField: String? = null,
+    val visibleWhenValues: List<String>? = null,
 )
 
 @Serializable

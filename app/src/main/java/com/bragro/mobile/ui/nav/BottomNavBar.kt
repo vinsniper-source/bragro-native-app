@@ -145,6 +145,10 @@ private val BOTTOM_TABS = listOf(
             // de campo do dia a dia (mesmo critério do site, section
             // "campo").
             SectorTarget.Domain("pecuaria", "Pecuária"),
+            // Pastagem (Módulo de Suplementação e Pastagem, gap analysis do
+            // usuário) -- mesmo critério de Pecuária acima: domínio genérico
+            // de campo, entra em Produção.
+            SectorTarget.Domain("pastagem", "Pastagem"),
         ),
     ),
     // Ex-categoria "Sanidade": pragas/doenças e o receituário que as trata.
@@ -315,6 +319,12 @@ private val OWNER_BOTTOM_TABS = listOf(
             SectorTarget.Domain("planejamentosafra", "Planejamento de Safra", category = "Produção"),
             SectorTarget.Domain("colheita", "Colheita", category = "Produção"),
             SectorTarget.Domain("romaneios", "Romaneios", category = "Produção"),
+            // Pastagem (Módulo de Suplementação e Pastagem, gap analysis do
+            // usuário) -- dono não tem vaga própria na barra (as 6 já estão
+            // ocupadas, ver comentário de OWNER_BOTTOM_TABS acima), entra
+            // dentro do dropdown Safra > Produção junto dos demais módulos
+            // de campo.
+            SectorTarget.Domain("pastagem", "Pastagem", category = "Produção"),
             SectorTarget.Domain("pragas", "Pragas", category = "Sanidade"),
             SectorTarget.Domain("receituarios", "Receituários", category = "Sanidade"),
             SectorTarget.Domain("clima", "Clima", category = "Monitoramento"),

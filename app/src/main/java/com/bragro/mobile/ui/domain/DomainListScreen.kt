@@ -1559,6 +1559,13 @@ private val CATEGORIZED_BLOCK_DOMAINS = setOf(
     // de CATEGORIZED_BLOCK_DOMAINS/PER_MODULE_BLOCK_DOMAINS), agora usa o
     // mesmo bloco Dados/Operações/Arquivos de Pedidos.
     "cotacoesfornecedores",
+    // Pecuária/Pastagem caíam no layout padrão (fora de
+    // CATEGORIZED_BLOCK_DOMAINS/PER_MODULE_BLOCK_DOMAINS) -- fileira única
+    // com 9 ícones truncando o rótulo (ex.: "Gráfic", "Períoc", "Atuali").
+    // Pedido do usuário ("coloque o mesmo padrão dos outros módulos na app
+    // native") -- mesmo bloco Dados/Operações/Arquivos genérico de
+    // Romaneios/Pragas/etc. acima.
+    "pecuaria", "pastagem",
 )
 
 // Safra/Clima/Planejamento Safra/Colheita/Frota: mesmo layout em blocos

@@ -264,6 +264,24 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
         return col.lookupCategory
     }
 
+    /** Esconde/exibe campo conforme o valor atual de outro campo (ex.:
+     * "Operação" em Pecuária) -- ver visibleWhenField/visibleWhenValues em
+     * ColumnConfig (Models.kt) e isFieldVisible equivalente em
+     * record-form.tsx (site). Sem essas duas props no campo, sempre visível
+     * (comportamento de sempre, preservado). */
+    fun isVisible(col: ColumnConfig): Boolean {
+        val triggerField = col.visibleWhenField ?: return true
+        val allowed = col.visibleWhenValues ?: return true
+        val current = fields[triggerField]
+        // Sem o campo-gatilho ainda escolhido (ex.: "Operação" em branco),
+        // mostra TODOS os campos -- mesmo fix do site (record-form.tsx):
+        // esconder tudo até escolher a Operação fazia a maioria dos campos
+        // de Pecuária "desaparecer" (pedido do usuário reportando o bug).
+        // Filtra só depois que o gatilho já tem um valor definido.
+        if (current.isNullOrBlank()) return true
+        return allowed.contains(current)
+    }
+
     /** Opções pro campo "select" -- caso especial pro campo "fazenda"
      * (Pragas/Clima): usa a lista real de fazendas ATIVAS (farms, ver acima)
      * em vez do lookupCategory "locais" (texto livre, nunca sincronizado com
@@ -341,7 +359,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
      * Retorna a lista de rótulos faltando (vazia = pode salvar). */
     private fun validateRequired(): List<String> {
         val cfg = config.value ?: return emptyList()
-        val missing = cfg.columns.filter { !it.computed && it.required && fields[it.key].isNullOrBlank() }
+        val missing = cfg.columns.filter { !it.computed && it.required && isVisible(it) && fields[it.key].isNullOrBlank() }
         missingFields.value = missing.map { it.key }.toSet()
         return missing.map { it.label }
     }
@@ -360,7 +378,17 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             // usuário) mas o servidor espera AAAA-MM-DD -- converte só aqui,
             // na hora de montar o corpo, sem afetar o que está na tela.
             val dateKeys = config.value?.columns?.filter { it.type == "date" }?.map { it.key }?.toSet().orEmpty()
-            val snapshot = fields.mapValues { (key, value) -> if (key in dateKeys) brDateToIso(value) else value }
+            // Campo escondido no momento (visibleWhenField/visibleWhenValues,
+            // ver isVisible() acima) não é enviado -- mesmo comportamento do
+            // site (o input nem existe no FormData quando o campo está
+            // oculto). Evita reenviar valor antigo/irrelevante de quando o
+            // usuário tinha escolhido outra Operação antes de trocar.
+            val hiddenKeys = config.value?.columns
+                ?.filter { it.visibleWhenField != null && !isVisible(it) }
+                ?.map { it.key }?.toSet().orEmpty()
+            val snapshot = fields
+                .filterKeys { it !in hiddenKeys }
+                .mapValues { (key, value) -> if (key in dateKeys) brDateToIso(value) else value }
             val result = if (recordId == null) recordRepository.createRecord(domainId, snapshot) else recordRepository.updateRecord(domainId, recordId, snapshot)
             saving.value = false
             when (result) {
@@ -541,6 +569,11 @@ fun DomainFormScreen(
             // operação em todos os módulos"). Os computed viram uma caixa
             // somente-leitura em vez de um campo editável.
             for (col in cfg.columns) {
+                // Esconde campo conforme a Operação escolhida (ou outro
+                // campo gatilho) -- ver isVisible() no ViewModel acima e
+                // visibleWhenField/visibleWhenValues em ColumnConfig
+                // (Models.kt). Mesmo comportamento do site (record-form.tsx).
+                if (!viewModel.isVisible(col)) continue
                 if (col.computed) {
                     val optionLabels = col.lookupCategory?.let { cat -> lookups[cat]?.associate { it.value to it.label } } ?: emptyMap()
                     ComputedFieldDisplay(col = col, raw = computedValues[col.key] ?: "", optionLabels = optionLabels)
