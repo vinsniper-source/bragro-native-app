@@ -631,6 +631,38 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                         }
                     }
                 }
+                // Painel de Indicadores Zootécnicos (Pecuária/Pastagem) --
+                // pedido do usuário ("Painel de Indicadores e DRE Agro":
+                // Custo por Arroba, GMD, Taxa de Prenhez, Produtividade
+                // @/ha/ano). Espelha o mesmo bloco do site (dre-client.tsx,
+                // IndicadoresPecuariaBlock) -- só aparece quando a org tem
+                // algum lançamento de Pecuária/Pastagem/Custo no período
+                // (indicadoresPecuaria null quando não tem, ver dre.ts).
+                data.indicadoresPecuaria?.let { ip ->
+                    item {
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text("Indicadores Zootécnicos (Pecuária)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Row {
+                                    Text("Taxa de Prenhez: ")
+                                    Text(ip.taxaPrenhezPct?.let { "${"%.1f".format(it)}%" } ?: "—", fontWeight = FontWeight.Bold)
+                                }
+                                Row {
+                                    Text("GMD Médio: ")
+                                    Text(ip.gmdMedioKgDia?.let { "${"%.2f".format(it)} kg/dia" } ?: "—", fontWeight = FontWeight.Bold)
+                                }
+                                Row {
+                                    Text("Produtividade: ")
+                                    Text(ip.produtividadeArrobaHaAno?.let { "${"%.2f".format(it)} @/ha/ano" } ?: "—", fontWeight = FontWeight.Bold)
+                                }
+                                Row {
+                                    Text("Custo por Arroba: ")
+                                    Text(ip.custoPorArroba?.let { "${formatMoneyBrl(it)}/@" } ?: "—", fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
                 if (data.composicaoPorCategoria.isNotEmpty()) {
                     item {
                         Card(modifier = Modifier.fillMaxWidth()) {

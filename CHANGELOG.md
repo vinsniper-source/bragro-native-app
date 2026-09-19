@@ -3,6 +3,26 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.90] -- 2026-09-19
+
+- **Painel de Indicadores Zootécnicos em DRE (Custo por Arroba, GMD, Taxa de
+  Prenhez, Produtividade @/ha/ano) -- site + app**: novo bloco em DRE (site:
+  colapsável "Indicadores Zootécnicos (Pecuária)"; app: card na visão em
+  blocos) com 4 KPIs calculados automaticamente a partir dos dados já
+  lançados em Pecuária/Pastagem/Financeiro -- pedido do usuário ("Painel de
+  Indicadores e DRE Agro"). Taxa de Prenhez: % de PRENHE sobre os exames de
+  DG (Operação Reprodução) do período. GMD Médio: média do ganho de peso
+  por dia das Pesagens (Peso Atual − Peso Anterior). Produtividade
+  (@/ha/ano): arrobas ganhas (kg ganho ÷ 15) por hectare de pastagem
+  lançado, anualizado. Custo por Arroba: soma do Financeiro com Setor
+  Pecuária/Pecuária Corte/Pecuária Leite (excluindo receitas), dividido
+  pelas arrobas ganhas. Sempre usa os últimos 365 dias (rebanho não tem
+  Safra de cultura); só aparece quando a org tem algum lançamento real no
+  período. Nova função `getIndicadoresPecuaria()`
+  (`services/pecuaria.ts`), novo campo `indicadoresPecuaria` em
+  `DreResultado`/`DreData` (site e Kotlin), servido pela mesma rota
+  `/api/mobile/dre` (sem endpoint novo).
+
 ## [1.2.89] -- 2026-09-19
 
 - **Correção de bug real: campos de Pecuária "desaparecendo" (site + app)**:

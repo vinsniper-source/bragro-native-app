@@ -693,6 +693,24 @@ data class DreRamoItemData(
 @Serializable
 data class DreCategoriaData(val categoria: String, val valor: Double)
 
+// Espelho de IndicadoresPecuaria (services/pecuaria.ts) -- Painel de
+// Indicadores Zootecnicos (Custo por Arroba, GMD, Taxa de Prenhez,
+// Produtividade @/ha/ano) pedido do usuario ("Painel de Indicadores e DRE
+// Agro"). null quando a org nao tem lancamento de Pecuaria/Pastagem/Custo
+// no periodo (ver getDreConsolidado, dre.ts).
+@Serializable
+data class DreIndicadoresPecuariaData(
+    val periodoDias: Int,
+    val taxaPrenhezPct: Double? = null,
+    val totalExamesDg: Int = 0,
+    val gmdMedioKgDia: Double? = null,
+    val totalArrobasGanhas: Double? = null,
+    val areaPastagemHa: Double? = null,
+    val produtividadeArrobaHaAno: Double? = null,
+    val custoTotalPecuariaR: Double = 0.0,
+    val custoPorArroba: Double? = null,
+)
+
 @Serializable
 data class DreData(
     val safrasDisponiveis: List<String> = emptyList(),
@@ -705,6 +723,7 @@ data class DreData(
      * de cada fazenda, exibida ao expandir o card dela na tela. */
     val arvores: Map<String, List<DreRamoItemData>> = emptyMap(),
     val composicaoPorCategoria: List<DreCategoriaData> = emptyList(),
+    val indicadoresPecuaria: DreIndicadoresPecuariaData? = null,
 )
 
 @Serializable
