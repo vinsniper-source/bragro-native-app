@@ -226,6 +226,10 @@ fun BRAgroNavHost() {
                 // inferior logo abaixo (onOpenSettings/onOpenBaseDeDados).
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                 onOpenBaseDeDados = { navController.navigate(Routes.BASE_DE_DADOS) },
+                // Ícone "Módulos" do cabeçalho (OWNER/ADMIN) -- mesma rota já
+                // usada pelo antigo menu "Módulos" da barra inferior logo
+                // abaixo (onOpenSeguranca).
+                onOpenSeguranca = { navController.navigate(Routes.SEGURANCA) },
             )
         }
         composable(Routes.DRE) {

@@ -56,6 +56,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.Inventory2
@@ -69,6 +70,7 @@ import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Storage
@@ -560,6 +562,10 @@ fun HomeScreen(
     // BRAgroNavHost.kt).
     onOpenSettings: () -> Unit = {},
     onOpenBaseDeDados: () -> Unit = {},
+    // "Acessos" (Segurança e Acessos) -- alimenta o novo ícone "Módulos" do
+    // cabeçalho (ver bloco mais abaixo, exclusivo de OWNER/ADMIN). Mesma rota
+    // já usada pelo antigo menu "Módulos" da barra inferior (BottomNavBar.kt).
+    onOpenSeguranca: () -> Unit = {},
     viewModel: HomeViewModel = viewModel(),
 ) {
     val home by viewModel.home
@@ -654,7 +660,10 @@ fun HomeScreen(
                     // anterior do usuário era sempre manter os dois na mesma
                     // linha quando cabem, então isso fica condicional em vez
                     // de forçado sempre.
-                    val optionalIconCount = (if (canManage) 1 else 0) +
+                    // canManage agora conta 2 (Backup + o novo ícone "Módulos"
+                    // abaixo), não mais 1 -- ver bloco "Ícone 'Módulos'" logo
+                    // adiante.
+                    val optionalIconCount = (if (canManage) 2 else 0) +
                         (if (home?.showConfiguracoesIcon == true) 1 else 0) +
                         (if (home?.showBaseDeDadosIcon == true) 1 else 0) +
                         2 // notificações + tema, sempre presentes
@@ -712,6 +721,43 @@ fun HomeScreen(
                             Icon(Icons.Filled.Backup, contentDescription = "Backup completo")
                         }
                     }
+                    // Ícone "Módulos" -- consolida Configurações + Base de
+                    // Dados + Acessos num só ícone no cabeçalho, exclusivo de
+                    // OWNER/ADMIN (pedido do usuário: "coloque o botão inteiro
+                    // módulos em cabeçalho e dentro dele leve os módulos
+                    // configurações, dados e acessos... aplique isso em owner
+                    // e admin"). Antes essas 3 telas só eram alcançadas pelo
+                    // menu "Módulos" no FIM da barra inferior (ver
+                    // BottomNavBar.kt) -- esse ícone assume esse papel aqui,
+                    // e o botão "Módulos" da barra inferior deixa de aparecer
+                    // pra dono/admin (menuSistemaLinks em BottomNavBar.kt),
+                    // abrindo a última vaga da barra pra "Pecuária" no lugar
+                    // dele.
+                    if (canManage) {
+                        var modulosMenuOpen by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { modulosMenuOpen = true }) {
+                                Icon(Icons.Filled.GridView, contentDescription = "Módulos")
+                            }
+                            DropdownMenu(expanded = modulosMenuOpen, onDismissRequest = { modulosMenuOpen = false }) {
+                                DropdownMenuItem(
+                                    text = { Text("Configurações") },
+                                    leadingIcon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+                                    onClick = { modulosMenuOpen = false; onOpenSettings() },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Base de Dados") },
+                                    leadingIcon = { Icon(Icons.Filled.Storage, contentDescription = null) },
+                                    onClick = { modulosMenuOpen = false; onOpenBaseDeDados() },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Acessos") },
+                                    leadingIcon = { Icon(Icons.Filled.Security, contentDescription = null) },
+                                    onClick = { modulosMenuOpen = false; onOpenSeguranca() },
+                                )
+                            }
+                        }
+                    }
                     // Ícone "Configurações" -- réplica do ConfiguracoesMenu do
                     // site (ver topbar.tsx/configuracoes-menu.tsx): dropdown
                     // enxuto com só "Baixar para Android"/"Instalar no
@@ -720,8 +766,8 @@ fun HomeScreen(
                     // configurações aparecer apenas as opções baixar pelo
                     // android e ios... sempre no cabeçalho"): mostrado sempre
                     // que o backend libera (showConfiguracoesIcon já exclui o
-                    // OWNER, que continua acessando a tela completa via
-                    // "Módulos" na barra inferior, ver BottomNavBar.kt).
+                    // OWNER/ADMIN, que agora acessam a tela completa pelo
+                    // ícone "Módulos" logo acima).
                     if (home?.showConfiguracoesIcon == true) {
                         var configMenuOpen by remember { mutableStateOf(false) }
                         var iosStepsOpen by remember { mutableStateOf(false) }
@@ -754,8 +800,8 @@ fun HomeScreen(
                                 // módulo da lista suspensa mais opções").
                                 // Dropdown fica só com as 2 opções de
                                 // instalação; a tela completa de
-                                // Configurações continua acessível pelo dono
-                                // via "Módulos" na barra inferior.
+                                // Configurações continua acessível pelo dono/
+                                // admin via o ícone "Módulos" do cabeçalho.
                             }
                         }
                         if (iosStepsOpen) {

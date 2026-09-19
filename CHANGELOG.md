@@ -3,6 +3,44 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.87] -- 2026-09-19
+
+- **Botão "Módulos" consolidado no cabeçalho (owner/admin)**: os três
+  atalhos administrativos -- Configurações, Base de Dados e Acessos --
+  agora ficam num único ícone novo no cabeçalho (`Icons.Filled.GridView`,
+  ao lado do ícone de Backup), visível só pra quem pode gerenciar
+  (`canManage`, ou seja, owner/admin). Clicar abre um menu suspenso com os
+  três atalhos, cada um com seu próprio ícone (Settings/Storage/Security),
+  levando às mesmas telas de sempre (`onOpenSettings`/`onOpenBaseDeDados`/
+  novo `onOpenSeguranca` -> `Routes.SEGURANCA`). Antes esses três atalhos
+  só apareciam juntos no dropdown "Módulos" da barra inferior; pedido do
+  usuário foi mover esse agrupamento pro cabeçalho.
+- **"Pecuária" vira aba direta na barra inferior, no lugar de "Módulos"
+  (owner/admin)**: como os três atalhos administrativos saíram da barra
+  inferior pro cabeçalho, o slot que era do dropdown "Módulos" (só
+  aparecia pra owner/admin) foi liberado -- agora mostra "Pecuária"
+  (`Icons.Filled.Pets`) como acesso direto, igual as outras abas de
+  domínio (Safra, Colheita, etc.), usando a mesma tela genérica de
+  cadastro (`DomainListScreen`/`DomainFormScreen`) e a mesma API mobile já
+  existente, sem tela nova. Pra outros papéis (não owner/admin), "Pecuária"
+  entra no grupo "Produção" da barra inferior achatada. O dropdown
+  "Módulos" da barra inferior continua existindo só com "Acessos" pra
+  quem não é owner/admin (`menuSistemaLinks` filtra por
+  `it.path == "seguranca"` nesse caso); pra owner/admin, esse dropdown
+  fica vazio (esvaziado de propósito, já que os 3 atalhos moraram pro
+  cabeçalho).
+- **Login de teste "Pecuária"** criado no banco (mesmo padrão dos outros
+  5 logins de teste por setor): `teste.pecuaria@bragro.app` / `Teste@123`,
+  papel CUSTOM, org BRAgro, com acesso aos módulos Pecuária + Base de
+  Dados + Configurações + blocos do Início.
+- **Corrigido RLS ausente em `prescricoes_taxa_variavel`**: a tabela não
+  tinha Row Level Security habilitado nem políticas de isolamento por
+  organização (mesmo padrão de `org_isolation`/`org_write_insert`/
+  `org_write_update`/`org_write_delete` usado em `safra_registros` e
+  demais tabelas do sistema) -- falha de segurança que permitiria uma
+  organização ler/escrever prescrições de taxa variável de outra. Corrigido
+  com as 4 políticas padrão baseadas em `current_user_org_ids()`.
+
 ## [1.2.86] -- 2026-09-18
 
 - **Corrigido bug real que travava o `gradlew assembleRelease`**: o

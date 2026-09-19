@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
@@ -138,6 +139,12 @@ private val BOTTOM_TABS = listOf(
             // ("coloque romaneio rápido como um botão dentro de romaneio,
             // unifique").
             SectorTarget.Domain("romaneios", "Romaneios"),
+            // Pecuária (Task #685-692) -- domínio genérico igual aos demais
+            // acima (mesmo motor DomainListScreen/DomainFormScreen, API
+            // mobile já 100% genérica), entra em Produção por ser atividade
+            // de campo do dia a dia (mesmo critério do site, section
+            // "campo").
+            SectorTarget.Domain("pecuaria", "Pecuária"),
         ),
     ),
     // Ex-categoria "Sanidade": pragas/doenças e o receituário que as trata.
@@ -282,7 +289,12 @@ private val BOTTOM_TABS = listOf(
 )
 
 // Barra do DONO/OWNER: 6 botões fixos (Safra, Financeiro, Frota, Estoque, RH,
-// Módulos) -- pedido do usuário (mockup: "coloque os seguintes botões..." +
+// Pecuária) -- a 6ª vaga era ocupada pelo menu "Módulos" (Configurações/Base
+// de Dados/Acessos); esses 3 agora vivem num ícone próprio no CABEÇALHO da
+// Início (ver bloco "Ícone 'Módulos'" em HomeScreen.kt), então a vaga na
+// barra inferior abriu pra "Pecuária" (pedido do usuário: "troque o botão
+// pecuária na barra inferior no lugar de módulos"). Pedido original do
+// usuário (mockup: "coloque os seguintes botões..." +
 // depois "vc retirou as listas suspensas dos botões... crie um mockup
 // mostrando as listas suspensas abertas"). Ao contrário de BOTTOM_TABS (que
 // ACHATA cada categoria em aba própria, pensado pra contas de setor
@@ -350,6 +362,10 @@ private val OWNER_BOTTOM_TABS = listOf(
             SectorTarget.Domain("controleinterno", "Controle Interno"),
         ),
     ),
+    // Acesso direto -- ocupa a vaga que era do menu "Módulos" (ver comentário
+    // no topo de OWNER_BOTTOM_TABS). Mesmo critério de "Frota" acima (domínio
+    // genérico simples, sem dropdown).
+    BottomTab("pecuaria", "Pecuária", Icons.Filled.Pets, directDomainId = "pecuaria"),
 )
 
 /** As 3 telas administrativas (Configurações/Base de Dados/Acessos) agora são
@@ -469,9 +485,12 @@ fun BRAgroBottomBar(
     // completos... pra seus locais de origem"). Configurações/Base de Dados
     // viraram ícone no CABEÇALHO da Início pra quem NÃO é dono/admin (ver
     // showConfiguracoesIcon/showBaseDeDadosIcon em HomeScreen.kt, réplica do
-    // ConfiguracoesMenu/BaseDeDadosMenu do site). Dono e admin continuam
-    // acessando essas 2 telas por aqui, no menu "Módulos", pra não duplicar
-    // o ponto de acesso.
+    // ConfiguracoesMenu/BaseDeDadosMenu do site). Dono e admin agora TAMBÉM
+    // acessam essas 2 telas + Acessos por um ícone de CABEÇALHO próprio (o
+    // novo "Módulos" em HomeScreen.kt, exclusivo de canManage) -- não mais
+    // pelo menu "Módulos" da barra inferior, que passa a ficar reservado só
+    // pra "Acessos" de contas que não são dono/admin (ver menuSistemaLinks
+    // abaixo).
     isOwner: Boolean,
     // Fonte da barra (OWNER_BOTTOM_TABS agrupado vs BOTTOM_TABS achatado) --
     // pedido do usuario ("replique a barra inferior [do dono] pra conta
@@ -544,13 +563,17 @@ fun BRAgroBottomBar(
     val visibleSistemaLinks = remember(allowedModules) {
         SISTEMA_LINKS.filter { isAllowed(allowedModules, it.path) }
     }
-    // Configurações/Base de Dados saem do menu "Módulos" pra quem NÃO é
-    // dono -- essas contas já acessam as duas pelo ícone do CABEÇALHO da
-    // Início (ver comentário no parâmetro isOwner acima). "Acessos"
-    // (seguranca) não tem ícone equivalente -- continua aqui pra todo mundo
-    // que tiver a permissão, dono ou não.
+    // Dono/admin: os 3 links (Configurações/Base de Dados/Acessos) saem
+    // TOTALMENTE do menu "Módulos" da barra inferior -- agora vivem no novo
+    // ícone "Módulos" do CABEÇALHO da Início (ver HomeScreen.kt), pedido do
+    // usuário ("coloque o botão inteiro módulos em cabeçalho... aplique isso
+    // em owner e admin"). Lista vazia aqui faz o botão "Módulos" da barra
+    // inferior sumir por completo pra essas contas (ver "if (menuSistemaLinks
+    // .isNotEmpty())" mais abaixo), abrindo espaço pra "Pecuária" em
+    // OWNER_BOTTOM_TABS. Demais contas (sem ícone de cabeçalho) continuam só
+    // com "Acessos" aqui, como sempre foi.
     val menuSistemaLinks = remember(visibleSistemaLinks, isOwner) {
-        if (isOwner) visibleSistemaLinks else visibleSistemaLinks.filter { it.path == "seguranca" }
+        if (isOwner) emptyList() else visibleSistemaLinks.filter { it.path == "seguranca" }
     }
 
     fun openSector(target: SectorTarget) {
@@ -770,9 +793,13 @@ fun BRAgroBottomBar(
                 }
             }
         }
-        // Aba "Módulos" (Acessos pra todo mundo; Configurações/Base de Dados
-        // só pro dono, ver menuSistemaLinks acima) some por completo se
-        // sobrar zero itens -- mesmo critério de filtragem das demais abas.
+        // Aba "Módulos" -- pro dono/admin agora fica sempre vazia (Configu-
+        // rações/Base de Dados/Acessos migraram pro ícone de CABEÇALHO, ver
+        // menuSistemaLinks acima), então o botão inteiro some da barra
+        // inferior pra essas contas, sobrando o lugar pra "Pecuária" em
+        // OWNER_BOTTOM_TABS. Demais contas continuam vendo aqui só "Acessos"
+        // (quando tiverem a permissão) -- mesmo critério de filtragem das
+        // demais abas: sobrar zero itens some o botão inteiro.
         if (menuSistemaLinks.isNotEmpty()) {
         Box(modifier = Modifier.weight(1f)) {
             this@NavigationBar.NavigationBarItem(

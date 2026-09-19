@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Science
@@ -67,6 +68,9 @@ private val DOMAIN_SECTION_ID: Map<String, String> = mapOf(
     "receituarios" to "campo",
     "pragas" to "campo",
     "clima" to "campo",
+    // Pecuária (Task #685-692, gap analysis) -- mesma seção "campo" do site
+    // (lib/modules.ts: section: "campo").
+    "pecuaria" to "campo",
     "estoque" to "estoque",
     "inventario" to "estoque",
     "frota" to "estoque",
@@ -101,6 +105,10 @@ private val DOMAIN_ICON: Map<String, ImageVector> = mapOf(
     "receituarios" to Icons.Filled.Science,
     "pragas" to Icons.Filled.BugReport,
     "clima" to Icons.Filled.WbSunny,
+    // Pets (pata) -- Material Icons não tem um ícone de boi/gado no set
+    // base; mesmo critério de "espírito visual" usado nos demais ícones
+    // deste mapa (ver comentário no topo do arquivo).
+    "pecuaria" to Icons.Filled.Pets,
     "estoque" to Icons.Filled.Inventory2,
     // Trocado de Inventory (caixa única) -- pedido do usuário ("trocar
     // ícone inventário"); parecia demais com o ícone de "Estoque"
