@@ -3,6 +3,26 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.95] -- 2026-09-20
+
+- **Pecuária: módulos de Confinamento intensivo e Leite** (10ª exceção de
+  schema, autorizada pelo usuário -- auditoria comparativa mostrou que o
+  módulo existente cobre só corte cria-recria-engorda). Duas novas
+  Operações no formulário dinâmico (site + native, sem código nativo extra
+  -- motor genérico já renderiza os campos a partir do `registry.ts`):
+  - **CONFINAMENTO**: Data de Entrada, Dieta Fornecida, Consumo de Matéria
+    Seca (kg/cab/dia), Custo da Dieta (R$/cab/dia); Dias em Confinamento e
+    Conversão Alimentar (kg MS/kg ganho) calculados automaticamente
+    reaproveitando o GMD já existente de Peso Atual/Anterior.
+  - **ORDENHA**: Turno, Produção de Leite (litros), Teor de Gordura/
+    Proteína (%), Contagem de Células Somáticas (mil cél/mL).
+  - Novos indicadores no painel DRE (site `dre-client.tsx` + native
+    `DreScreen.kt`): Conversão Alimentar média, Custo Diário médio da
+    dieta, Produção de Leite total/média por ordenha, Gordura/Proteína
+    médias, CCS média -- só aparecem quando a org tem lançamentos do tipo.
+- Bluetooth (balança/RFID) segue pendente: aguardando o usuário confirmar
+  marca/modelo do equipamento antes de implementar qualquer protocolo.
+
 ## [1.2.94] -- 2026-09-20
 
 - **Orçamentos: nova tela de lista/histórico** (#710, gap de auditoria de

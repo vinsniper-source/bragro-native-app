@@ -717,6 +717,16 @@ data class DreIndicadoresPecuariaData(
     val produtividadeArrobaHaAno: Double? = null,
     val custoTotalPecuariaR: Double = 0.0,
     val custoPorArroba: Double? = null,
+    // Confinamento intensivo e Leite (10a excecao de schema -- "implemente
+    // tudo"). Espelha os mesmos campos novos de IndicadoresPecuaria
+    // (services/pecuaria.ts).
+    val conversaoAlimentarMedia: Double? = null,
+    val custoDiarioConfinamentoMedioR: Double? = null,
+    val producaoLeiteTotalLitros: Double? = null,
+    val producaoMediaLitrosOrdenha: Double? = null,
+    val teorGorduraMedioPct: Double? = null,
+    val teorProteinaMedioPct: Double? = null,
+    val ccsMedia: Double? = null,
 )
 
 @Serializable

@@ -743,6 +743,40 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                                     Text("Custo por Arroba: ")
                                     Text(ip.custoPorArroba?.let { "${formatMoneyBrl(it)}/@" } ?: "—", fontWeight = FontWeight.Bold)
                                 }
+                                // Confinamento/Leite (10a excecao de schema -- "implemente
+                                // tudo") -- so aparecem quando ha lancamentos de
+                                // CONFINAMENTO/ORDENHA no periodo (espelha dre-client.tsx).
+                                if (ip.conversaoAlimentarMedia != null || ip.custoDiarioConfinamentoMedioR != null) {
+                                    Row {
+                                        Text("Conversão Alimentar (Confinamento): ")
+                                        Text(ip.conversaoAlimentarMedia?.let { "${"%.2f".format(it)} kg MS/kg" } ?: "—", fontWeight = FontWeight.Bold)
+                                    }
+                                    Row {
+                                        Text("Custo Diário Médio da Dieta: ")
+                                        Text(ip.custoDiarioConfinamentoMedioR?.let { "${formatMoneyBrl(it)}/cab/dia" } ?: "—", fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                                if (ip.producaoLeiteTotalLitros != null) {
+                                    Row {
+                                        Text("Produção de Leite (Total): ")
+                                        Text("${"%.1f".format(ip.producaoLeiteTotalLitros)} L", fontWeight = FontWeight.Bold)
+                                    }
+                                    Row {
+                                        Text("Média por Ordenha: ")
+                                        Text(ip.producaoMediaLitrosOrdenha?.let { "${"%.1f".format(it)} L" } ?: "—", fontWeight = FontWeight.Bold)
+                                    }
+                                    Row {
+                                        Text("Gordura / Proteína Médias: ")
+                                        Text(
+                                            "${ip.teorGorduraMedioPct?.let { "%.1f".format(it) } ?: "—"}% / ${ip.teorProteinaMedioPct?.let { "%.1f".format(it) } ?: "—"}%",
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    }
+                                    Row {
+                                        Text("CCS Média (mil cél/mL): ")
+                                        Text(ip.ccsMedia?.let { "%.0f".format(it) } ?: "—", fontWeight = FontWeight.Bold)
+                                    }
+                                }
                             }
                         }
                     }
