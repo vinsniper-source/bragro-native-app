@@ -619,6 +619,24 @@ fun DomainListScreen(
                         contentColor = MaterialTheme.colorScheme.onPrimary,
                     ) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
                 }
+            } else if (domainId == "pecuaria") {
+                // Card "Acesso automático via prestadora de serviço"
+                // (balança/RFID Bluetooth) -- mesmo padrão de Frota/
+                // Romaneios acima, pedido do usuário ("insira numa lista
+                // suspensa todos os equipamentos do mercado").
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    FloatingActionButton(
+                        onClick = { showIntegracaoDialog = true },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    ) {
+                        Icon(Icons.Filled.Bolt, contentDescription = "Acesso automático (balança/RFID Bluetooth)")
+                    }
+                    FloatingActionButton(
+                        onClick = onNewRecord,
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
+                }
             } else if (domainId == "estoque" && onOpenReconciliacaoEstoque != null) {
                 // Reconciliação Físico x Fiscal (Task #603) unificada como 2º
                 // FAB -- mesmo padrão de "Diagnóstico por foto"/"Romaneio
@@ -1520,7 +1538,7 @@ fun DomainListScreen(
     // ModuleProviderIntegrationCard.kt de antes, só que agora dentro de um
     // AlertDialog dedicado (já abre expandido -- initiallyOpen = true --
     // já que o usuário tocou num botão especificamente pra ver isto).
-    if (showIntegracaoDialog && (domainId == "frota" || domainId == "romaneios")) {
+    if (showIntegracaoDialog && (domainId == "frota" || domainId == "romaneios" || domainId == "pecuaria")) {
         AlertDialog(
             onDismissRequest = { showIntegracaoDialog = false },
             // Largura fixa + usePlatformDefaultWidth=false -- bug real
@@ -1538,7 +1556,7 @@ fun DomainListScreen(
             // quebrar normalmente, como parágrafo.
             modifier = Modifier.width(340.dp),
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-            title = { Text(if (domainId == "frota") "Bomba de combustível" else "Balança") },
+            title = { Text(if (domainId == "frota") "Bomba de combustível" else if (domainId == "pecuaria") "Balança/RFID Bluetooth" else "Balança") },
             text = { ModuleProviderIntegrationCard(domainId) },
             confirmButton = {
                 TextButton(onClick = { showIntegracaoDialog = false }) { Text("Fechar") }

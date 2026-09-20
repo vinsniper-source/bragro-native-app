@@ -32,6 +32,11 @@ enum class IntegrationModule(val wireValue: String) {
     // rota genérica /api/mobile/module-integration (sem rota bespoke
     // própria), card exibido dentro da tela FieldView.
     SATELITE_NDVI("SATELITE_NDVI"),
+    // Balanca eletronica de curral + leitor RFID (Pecuaria) -- pedido do
+    // usuario ("insira numa lista suspensa todos os equipamentos do
+    // mercado") apos eu confirmar que nao existe protocolo Bluetooth
+    // universal. Mesmo scaffolding acima (rota generica).
+    PECUARIA_BLUETOOTH("PECUARIA_BLUETOOTH"),
 }
 
 /** Resultado de "Testar sincronização" -- [ok] reflete se a sincronização
@@ -139,7 +144,7 @@ class ProviderIntegrationRepository(context: Context, private val module: Integr
         when (module) {
             IntegrationModule.FIELDVIEW -> NetworkModule.mobileApi.fieldviewGetIntegration(GetProviderIntegrationRequest(accessToken, refreshToken))
             IntegrationModule.DRONE -> NetworkModule.mobileApi.droneGetIntegration(GetProviderIntegrationRequest(accessToken, refreshToken))
-            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA, IntegrationModule.SATELITE_NDVI ->
+            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA, IntegrationModule.SATELITE_NDVI, IntegrationModule.PECUARIA_BLUETOOTH ->
                 NetworkModule.mobileApi.moduleGetIntegration(GetModuleIntegrationRequest(accessToken, refreshToken, modulo = module.wireValue))
         }
 
@@ -147,7 +152,7 @@ class ProviderIntegrationRepository(context: Context, private val module: Integr
         when (module) {
             IntegrationModule.FIELDVIEW -> NetworkModule.mobileApi.fieldviewSaveIntegration(SaveProviderIntegrationRequest(accessToken, refreshToken, provedor = provedor, apiKey = apiKey))
             IntegrationModule.DRONE -> NetworkModule.mobileApi.droneSaveIntegration(SaveProviderIntegrationRequest(accessToken, refreshToken, provedor = provedor, apiKey = apiKey))
-            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA, IntegrationModule.SATELITE_NDVI ->
+            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA, IntegrationModule.SATELITE_NDVI, IntegrationModule.PECUARIA_BLUETOOTH ->
                 NetworkModule.mobileApi.moduleSaveIntegration(SaveModuleIntegrationRequest(accessToken, refreshToken, modulo = module.wireValue, provedor = provedor, apiKey = apiKey))
         }
 
@@ -155,7 +160,7 @@ class ProviderIntegrationRepository(context: Context, private val module: Integr
         when (module) {
             IntegrationModule.FIELDVIEW -> NetworkModule.mobileApi.fieldviewDisconnectIntegration(DisconnectProviderIntegrationRequest(accessToken, refreshToken))
             IntegrationModule.DRONE -> NetworkModule.mobileApi.droneDisconnectIntegration(DisconnectProviderIntegrationRequest(accessToken, refreshToken))
-            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA, IntegrationModule.SATELITE_NDVI ->
+            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA, IntegrationModule.SATELITE_NDVI, IntegrationModule.PECUARIA_BLUETOOTH ->
                 NetworkModule.mobileApi.moduleDisconnectIntegration(DisconnectModuleIntegrationRequest(accessToken, refreshToken, modulo = module.wireValue))
         }
 
@@ -163,7 +168,7 @@ class ProviderIntegrationRepository(context: Context, private val module: Integr
         when (module) {
             IntegrationModule.FIELDVIEW -> NetworkModule.mobileApi.fieldviewSyncIntegration(SyncProviderIntegrationRequest(accessToken, refreshToken))
             IntegrationModule.DRONE -> NetworkModule.mobileApi.droneSyncIntegration(SyncProviderIntegrationRequest(accessToken, refreshToken))
-            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA, IntegrationModule.SATELITE_NDVI ->
+            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA, IntegrationModule.SATELITE_NDVI, IntegrationModule.PECUARIA_BLUETOOTH ->
                 NetworkModule.mobileApi.moduleSyncIntegration(SyncModuleIntegrationRequest(accessToken, refreshToken, modulo = module.wireValue))
         }
 }

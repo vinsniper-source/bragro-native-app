@@ -3,6 +3,23 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.96] -- 2026-09-20
+
+- **Pecuária: card "Acesso automático via prestadora de serviço"
+  (balança eletrônica / leitor RFID Bluetooth)** -- pedido do usuário
+  ("insira numa lista suspensa todos os equipamentos do mercado") após eu
+  confirmar que não existe protocolo Bluetooth universal entre
+  fabricantes. Mesmo scaffolding já usado em Frota (bomba de combustível)
+  e Romaneios (balança): novo `IntegrationModule.PECUARIA_BLUETOOTH`,
+  FAB próprio (ícone raio) acima do "+" no módulo Pecuária, lista
+  suspensa com os fabricantes mais usados no Brasil (Coimma, Bezerra
+  Balanças, Intergado, Gallagher, Tru-Test/Datamars, Allflex, Zeetag,
+  Toledo do Brasil, Digitron, Outro). A credencial fica salva com
+  segurança por organização; a leitura automática via Bluetooth em si
+  ainda depende de aprovação de parceiro/SDK junto ao fabricante
+  escolhido -- não existe padrão self-service hoje pra esse tipo de
+  hardware, mesma ressalva já feita em Frota/Romaneios.
+
 ## [1.2.95] -- 2026-09-20
 
 - **Pecuária: módulos de Confinamento intensivo e Leite** (10ª exceção de

@@ -126,13 +126,87 @@ class RomaneioIntegrationViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
+// Balanca eletronica de curral + leitor RFID (Pecuaria) -- pedido do
+// usuario ("insira numa lista suspensa todos os equipamentos do mercado")
+// apos eu confirmar que nao existe protocolo Bluetooth universal. Mesmo
+// scaffolding de Frota/Romaneios acima.
+class PecuariaIntegrationViewModel(app: Application) : AndroidViewModel(app) {
+    private val repo = ProviderIntegrationRepository(app, IntegrationModule.PECUARIA_BLUETOOTH)
+    var integration = mutableStateOf<ProviderIntegrationDto?>(null)
+        private set
+    var busy = mutableStateOf<IntegrationBusy?>(null)
+        private set
+    var message = mutableStateOf<String?>(null)
+        private set
+
+    fun load() {
+        viewModelScope.launch { integration.value = repo.get() }
+    }
+
+    fun save(provedor: String, apiKey: String) {
+        busy.value = IntegrationBusy.SALVANDO
+        message.value = null
+        viewModelScope.launch {
+            val ok = repo.save(provedor, apiKey)
+            message.value = if (ok) "Credencial salva." else "Falha ao salvar credencial -- confira a conexão e tente de novo."
+            if (ok) integration.value = repo.get()
+            busy.value = null
+        }
+    }
+
+    fun disconnect() {
+        busy.value = IntegrationBusy.DESCONECTANDO
+        message.value = null
+        viewModelScope.launch {
+            val ok = repo.disconnect()
+            if (ok) {
+                integration.value = repo.get()
+                message.value = "Integração desconectada."
+            } else {
+                message.value = "Falha ao desconectar -- confira a conexão e tente de novo."
+            }
+            busy.value = null
+        }
+    }
+
+    fun sync() {
+        busy.value = IntegrationBusy.SINCRONIZANDO
+        message.value = null
+        viewModelScope.launch {
+            val result = repo.sync()
+            message.value = result.mensagem
+            integration.value = repo.get()
+            busy.value = null
+        }
+    }
+}
+
 /** Ponto de entrada único -- chamado de DomainListScreen.kt só quando
- * domainId é "frota" ou "romaneios" (ver bloco "integracao" no ícone Dados
- * de cada um). Cada ramo usa seu próprio ViewModel (módulo diferente no
- * enum IntegrationModule), mas o mesmo ProviderIntegrationCard visual. */
+ * domainId é "frota", "romaneios" ou "pecuaria" (ver bloco "integracao" no
+ * ícone Dados de cada um). Cada ramo usa seu próprio ViewModel (módulo
+ * diferente no enum IntegrationModule), mas o mesmo ProviderIntegrationCard
+ * visual. */
 @Composable
 fun ModuleProviderIntegrationCard(domainId: String) {
-    if (domainId == "frota") {
+    if (domainId == "pecuaria") {
+        val vm: PecuariaIntegrationViewModel = viewModel()
+        LaunchedEffect(Unit) { vm.load() }
+        val integration by vm.integration
+        val busy by vm.busy
+        val message by vm.message
+        ProviderIntegrationCard(
+            providers = listOf("Coimma", "Bezerra Balanças", "Intergado", "Gallagher", "Tru-Test / Datamars", "Allflex", "Zeetag", "Toledo do Brasil", "Digitron", "Outro"),
+            descricao = "Hoje o peso e a identificação do animal são lançados manualmente no formulário. A credencial abaixo já fica salva com segurança; a leitura automática via Bluetooth (balança/bastão RFID) ainda depende de aprovação de parceiro/SDK junto ao fabricante escolhido.",
+            integration = integration,
+            busy = busy,
+            syncMessage = message,
+            onSave = { provedor, apiKey -> vm.save(provedor, apiKey) },
+            onDisconnect = { vm.disconnect() },
+            onSync = { vm.sync() },
+            initiallyOpen = true,
+            showCloseButton = false,
+        )
+    } else if (domainId == "frota") {
         val vm: FrotaIntegrationViewModel = viewModel()
         LaunchedEffect(Unit) { vm.load() }
         val integration by vm.integration
