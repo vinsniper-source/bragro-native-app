@@ -16,3 +16,7 @@ app/debug/
 *.jks
 /keystore.properties
 app/google-services.json
+
+# JVM crash dumps (gradle/gradlew) -- nunca devem ser versionados
+hs_err_pid*.log
+replay_pid*.log
