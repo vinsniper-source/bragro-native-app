@@ -3,6 +3,26 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.97] -- 2026-09-20
+
+- **Ativação do Firebase Crashlytics** -- pedido do usuário ("o app
+  continua fechando ao clicar em campos de Pecuária/Pastagem, preciso
+  ver o erro real"). Duas revisões completas do código do formulário
+  genérico (`DomainFormScreen.kt`, `StatusStyle.kt`,
+  `DomainListScreen.kt`, `ModuleActionsRepository`) não encontraram
+  nenhum código inseguro -- o crash só pode ser diagnosticado com o
+  stack trace real do aparelho, que hoje não é capturado em lugar
+  nenhum. O app já trazia a dependência do Crashlytics pronta desde uma
+  sessão anterior (ver `build.gradle.kts`), só faltando o arquivo
+  `google-services.json` do projeto Firebase do usuário
+  (`vavsistemaagro01`) -- adicionado agora em `app/google-services.json`
+  (app Android `com.bragro.mobile` registrado no console). Nenhuma
+  mudança de código necessária: o plugin `com.google.gms.google-services`
+  já é aplicado automaticamente quando esse arquivo existe. A partir
+  desta versão, qualquer fechamento inesperado do app é reportado ao
+  Firebase Console (Crashlytics) com o stack trace completo, permitindo
+  finalmente identificar a causa raiz do crash relatado.
+
 ## [1.2.96] -- 2026-09-20
 
 - **Pecuária: card "Acesso automático via prestadora de serviço"
