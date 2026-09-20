@@ -618,6 +618,15 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                 Button(onClick = { viewModel.reset() }, modifier = Modifier.fillMaxWidth()) {
                     Text("Lançar outro orçamento")
                 }
+                // Fecha o ciclo lançamento -> lista (Task #710, auditoria de
+                // paridade site-vs-native): antes só existia "Lançar outro"
+                // (ficava na mesma tela); agora que existe uma tela de lista
+                // de verdade (OrcamentoListScreen.kt, aberta antes deste
+                // form pelo FAB "+"), este botão devolve pra ela em vez de
+                // depender só da seta Voltar do topo.
+                OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
+                    Text("Voltar para a lista")
+                }
             }
             return@Scaffold
         }

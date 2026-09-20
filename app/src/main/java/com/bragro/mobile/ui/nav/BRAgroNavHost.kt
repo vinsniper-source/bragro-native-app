@@ -47,6 +47,7 @@ import com.bragro.mobile.ui.fieldview.PrescricaoNovoScreen
 import com.bragro.mobile.ui.dossie.DossieScreen
 import com.bragro.mobile.ui.simulador.SimuladorScreen
 import com.bragro.mobile.ui.orcamento.OrcamentoScreen
+import com.bragro.mobile.ui.orcamento.OrcamentoListScreen
 import com.bragro.mobile.ui.nfe.NfeScreen
 import com.bragro.mobile.ui.seguranca.SegurancaScreen
 import com.bragro.mobile.ui.settings.SettingsScreen
@@ -74,6 +75,12 @@ private object Routes {
     // Não confundir com NFE_IMPORT acima (import de XML dentro de
     // Financeiro, feature diferente e pré-existente).
     const val NFE = "nfe"
+    // Orçamentos -- lista/histórico (Task #710, auditoria de paridade
+    // site-vs-native: só existia o form de lançamento, sem tela pra ver/
+    // filtrar/conferir orçamentos já lançados). ORCAMENTO_LISTA vira o
+    // destino do botão "Orçamentos" na barra inferior; ORCAMENTO_NOVO
+    // continua sendo o form (agora aberto pelo FAB "+" dentro da lista).
+    const val ORCAMENTO_LISTA = "orcamento_lista"
     const val ORCAMENTO_NOVO = "orcamento_novo"
     const val BANK_IMPORT = "bank_import"
     const val SETTINGS = "settings"
@@ -179,7 +186,10 @@ fun BRAgroNavHost() {
                     onOpenFieldview = { navController.navigate(Routes.FIELDVIEW) },
                     onOpenControleInsumos = { navController.navigate(Routes.CONTROLE_INSUMOS) },
                     onOpenOperacoes = { navController.navigate(Routes.OPERACOES) },
-                    onOpenOrcamento = { navController.navigate(Routes.ORCAMENTO_NOVO) },
+                    // Abre a LISTA primeiro agora (Task #710) -- o form de
+                    // lançamento (ORCAMENTO_NOVO) continua existindo, só que
+                    // acessado pelo FAB "+" dentro da lista.
+                    onOpenOrcamento = { navController.navigate(Routes.ORCAMENTO_LISTA) },
                     // Dossiê Bancário e Simulador "E se?" (Task #599/#600,
                     // paridade nativa #615/#616) -- mesmo critério de
                     // SectorTarget.Special dos outros itens acima.
@@ -325,7 +335,18 @@ fun BRAgroNavHost() {
         composable(Routes.RECONCILIACAO_ESTOQUE) {
             ReconciliacaoEstoqueScreen(onBack = { navController.popBackStack() })
         }
+        composable(Routes.ORCAMENTO_LISTA) {
+            OrcamentoListScreen(
+                onBack = { navController.popBackStack() },
+                onNovo = { navController.navigate(Routes.ORCAMENTO_NOVO) },
+            )
+        }
         composable(Routes.ORCAMENTO_NOVO) {
+            // onBack aqui volta pra ORCAMENTO_LISTA (topo da pilha logo
+            // abaixo, ver composable acima) -- fecha o ciclo pedido (Task
+            // #710): tanto a seta Voltar quanto o botão "Voltar para a
+            // lista" no aviso de sucesso (ver OrcamentoScreen.kt) usam este
+            // mesmo callback.
             OrcamentoScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.DOSSIE) {

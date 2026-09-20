@@ -3,6 +3,32 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.94] -- 2026-09-20
+
+- **Orçamentos: nova tela de lista/histórico** (#710, gap de auditoria de
+  paridade #622): o app só tinha o form "Novo Orçamento" -- não dava pra
+  ver, filtrar ou conferir orçamentos já lançados sem abrir o site. Nova
+  `OrcamentoListScreen.kt` com vista Bloco/Tabela, filtro de Status
+  (Pendente NF/Faturado), filtro de Período e impressão. O botão
+  "Orçamentos" da barra inferior agora abre a lista primeiro; o "+"
+  continua abrindo o form de lançamento (com OCR).
+- **Dossiê Bancário: botão Imprimir/PDF** (#711, gap de auditoria): a tela
+  não tinha nenhuma forma de exportar o dossiê pelo app -- só pelo site,
+  o que ia contra o propósito do módulo (gerar documento pra anexar num
+  pedido de crédito ou apresentar a investidor). Adicionado ícone
+  Imprimir no topo, reaproveitando o mesmo motor de impressão
+  (`HtmlPrinter`) já usado em Reconciliação/Frota/DRE/Livro Caixa.
+- **Prescrição: "Copiar último lançamento" implementado** (#712, gap de
+  auditoria -- a task #624 de uma rodada anterior tinha marcado isso como
+  feito, mas não estava presente no código; reimplementado do zero):
+  ícone no topo da tela de nova prescrição que busca a prescrição mais
+  recente e pré-preenche produto/unidade de taxa/safra/cultura/talhão.
+- **NF-e: "Copiar última nota" + alternância Linhas/Blocos** (#713, gap de
+  auditoria): dois atalhos que já existiam no site e faltavam no app --
+  copiar todos os campos da nota mais recente pro formulário de nova
+  NF-e, e alternar a lista entre cards (Blocos) e linhas compactas
+  (Linhas), igual ao site.
+
 ## [1.2.93] -- 2026-09-19
 
 - **Análises nativo: 12 gráficos comparativos novos (paridade com o site)**

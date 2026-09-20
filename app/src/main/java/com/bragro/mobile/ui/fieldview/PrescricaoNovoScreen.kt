@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -98,6 +99,16 @@ class PrescricaoNovoViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var successId = mutableStateOf<String?>(null)
         private set
+    // "Copiar último lançamento" (Task #624, gap encontrado em auditoria de
+    // paridade -- a auditoria anterior tinha marcado como concluído, mas
+    // nunca chegou neste arquivo) -- busca sob demanda ao tocar o ícone, em
+    // vez de pré-carregar no init() como listFarms() acima: reaproveita
+    // 100% o mesmo repository.fetch() já usado por PrescricaoScreen.kt (sem
+    // endpoint dedicado "getUltimo"), então cada toque só paga o custo da
+    // requisição quando o usuário realmente quer copiar. Mesmo padrão de
+    // PragaFotoViewModel.preencherComUltimo() (PragaFotoScreen.kt).
+    var copiando = mutableStateOf(false)
+        private set
 
     init {
         viewModelScope.launch { farms.value = repository.listFarms() }
@@ -154,6 +165,38 @@ class PrescricaoNovoViewModel(app: Application) : AndroidViewModel(app) {
         successId.value = null
         errorMessage.value = null
     }
+
+    /** "Copiar último lançamento" (Task #624) -- paridade com
+     * preencherComUltimo() do site (prescricao-client.tsx): reaproveita o
+     * mesmo fetch() já usado pra listar prescrições em PrescricaoScreen.kt
+     * (sem endpoint dedicado "getUltimo"). A resposta já vem ordenada por
+     * criadoEm desc (ver /api/mobile/prescricao/route.ts, action "list"),
+     * então o primeiro item é o mais recente. Só copia METADADOS (produto/
+     * unidade/safra/cultura/talhão) -- o arquivo ISO-XML (zonas) sempre
+     * precisa ser reimportado, cada prescrição é um mapa de zonas próprio;
+     * "nome" fica de fora de propósito, mesmo critério do site (cada
+     * prescrição normalmente precisa de um nome próprio pra identificar).
+     * farmId não é copiado aqui -- a rota mobile ("list") não retorna esse
+     * campo no select (só a Server Action do site expõe farmId), fora do
+     * escopo desta rodada (só native). */
+    fun copiarUltimoLancamento() {
+        copiando.value = true
+        errorMessage.value = null
+        viewModelScope.launch {
+            val resultado = repository.fetch()
+            copiando.value = false
+            val ultima = resultado?.prescricoes?.firstOrNull()
+            if (ultima == null) {
+                errorMessage.value = "Nenhuma prescrição lançada ainda para copiar."
+                return@launch
+            }
+            ultima.produto?.let { produto = it }
+            ultima.unidadeTaxa?.let { unidadeTaxa = it }
+            ultima.safra?.let { safra = it }
+            ultima.cultura?.let { cultura = it }
+            ultima.talhao?.let { talhao = it }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -166,6 +209,7 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
     val errorMessage by viewModel.errorMessage
     val busy by viewModel.busy
     val successId by viewModel.successId
+    val copiando by viewModel.copiando
     var farmExpanded by remember { mutableStateOf(false) }
 
     val isoXmlPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
@@ -196,6 +240,20 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
                         Spacer(modifier = Modifier.height(16.dp))
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                },
+                // Ícone "Copiar último lançamento" (Task #624, gap
+                // encontrado em auditoria de paridade) -- mesmo padrão de
+                // PragaFotoScreen.kt: spinner enquanto busca, sempre
+                // habilitado (copiarUltimoLancamento() já avisa via
+                // errorMessage se não houver nada pra copiar).
+                actions = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        IconButton(onClick = { viewModel.copiarUltimoLancamento() }, enabled = !copiando) {
+                            if (copiando) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            else Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último lançamento", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 },

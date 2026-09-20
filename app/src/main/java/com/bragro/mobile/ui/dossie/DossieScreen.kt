@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -33,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
@@ -43,6 +45,7 @@ import com.bragro.mobile.data.model.DossieDreFazendaData
 import com.bragro.mobile.data.model.DossiePatrimonioItemData
 import com.bragro.mobile.data.model.DossieResponse
 import com.bragro.mobile.data.repo.DossieRepository
+import com.bragro.mobile.ui.print.HtmlPrinter
 import com.bragro.mobile.ui.theme.Card
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -99,6 +102,135 @@ private fun formatArea(value: Double): String {
     return "${nf.format(value)} ha"
 }
 
+private fun escapeHtml(value: String): String =
+    value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
+
+/** Monta o HTML impresso do Dossiê Bancário a partir dos MESMOS dados já
+ * exibidos em Compose acima (nenhum cálculo novo) -- mesmas seções: Resumo
+ * Executivo, Resultado por Fazenda (DRE), Livro Caixa, Contratos Ativos e
+ * Patrimônio. Retrato (ver HtmlPrinter.printHtml) por ser um documento pra
+ * anexar num pedido de crédito rural ou apresentar a um investidor, não uma
+ * tabela larga de lista. */
+private fun buildDossieHtml(d: DossieResponse, ano: Int): String {
+    val geradoEm = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR")).format(java.util.Date())
+    val dre = d.dre
+    val livroCaixa = d.livroCaixa
+    val patrimonio = d.patrimonio
+
+    val resumoSecao = if (dre != null) {
+        val resumoRows = """
+            <tr><td>Área total</td><td>${escapeHtml(formatArea(dre.totais.areaHa))}</td></tr>
+            <tr><td>Receita total</td><td>${escapeHtml(formatMoneyBrl(dre.totais.receitaTotal))}</td></tr>
+            <tr><td>Custo total</td><td>${escapeHtml(formatMoneyBrl(dre.totais.custoTotal))}</td></tr>
+            <tr><td>Margem</td><td>${escapeHtml(formatMoneyBrl(dre.totais.margem))}</td></tr>
+            <tr><td>Custo/ha</td><td>${escapeHtml(formatMoneyBrl(dre.totais.custoPorHa))}</td></tr>
+        """.trimIndent()
+        val dreFazendaRows = dre.porFazenda.joinToString("") { f ->
+            """
+                <tr>
+                  <td>${escapeHtml(f.farmName)}</td>
+                  <td>${escapeHtml(formatArea(f.areaHa))}</td>
+                  <td>${escapeHtml(formatMoneyBrl(f.custoTotal))}</td>
+                  <td>${escapeHtml(formatMoneyBrl(f.receitaTotal))}</td>
+                  <td>${escapeHtml(formatMoneyBrl(f.margem))}</td>
+                </tr>
+            """.trimIndent()
+        }
+        val dreFazendaTabela = if (dre.porFazenda.isEmpty()) {
+            "<p>Nenhuma fazenda cadastrada.</p>"
+        } else {
+            "<table><thead><tr><th>Fazenda</th><th>Área</th><th>Custo</th><th>Receita</th><th>Margem</th></tr></thead><tbody>$dreFazendaRows</tbody></table>"
+        }
+        """
+            <h2>Resumo Executivo</h2>
+            <table><tbody>$resumoRows</tbody></table>
+            <h2>Resultado por Fazenda (DRE)</h2>
+            $dreFazendaTabela
+        """.trimIndent()
+    } else ""
+
+    val livroCaixaSecao = if (livroCaixa != null) {
+        """
+            <h2>Livro Caixa -- $ano</h2>
+            <table><tbody>
+              <tr><td>Entradas</td><td>${escapeHtml(formatMoneyBrl(livroCaixa.totalEntradas))}</td></tr>
+              <tr><td>Saídas</td><td>${escapeHtml(formatMoneyBrl(livroCaixa.totalSaidas))}</td></tr>
+              <tr><td>Saldo do ano</td><td>${escapeHtml(formatMoneyBrl(livroCaixa.saldoFinal))}</td></tr>
+            </tbody></table>
+        """.trimIndent()
+    } else ""
+
+    val contratoRows = d.contratosAtivos.joinToString("") { c ->
+        val vencimento = c.vencimento?.let { it.substring(0, minOf(10, it.length)).split("-").reversed().joinToString("/") }
+            ?: "Vitalício/sem vencimento"
+        """
+            <tr>
+              <td>${escapeHtml(c.descricao)}</td>
+              <td>${escapeHtml(c.tipo ?: "—")}</td>
+              <td>${escapeHtml(c.contraparte ?: "—")}</td>
+              <td>${escapeHtml(formatMoneyBrl(c.valorR))}</td>
+              <td>${escapeHtml(vencimento)}</td>
+            </tr>
+        """.trimIndent()
+    }
+    val contratosSecao = """
+        <h2>Contratos Ativos -- ${d.contratosAtivos.size} contrato(s), total ${escapeHtml(formatMoneyBrl(d.contratosValorTotal))}</h2>
+        ${
+            if (d.contratosAtivos.isEmpty()) {
+                "<p>Nenhum contrato ativo cadastrado.</p>"
+            } else {
+                "<table><thead><tr><th>Descrição</th><th>Tipo</th><th>Contraparte</th><th>Valor</th><th>Vencimento</th></tr></thead><tbody>$contratoRows</tbody></table>"
+            }
+        }
+    """.trimIndent()
+
+    val patrimonioSecao = if (patrimonio != null) {
+        val patrimonioItemRows = patrimonio.principais.joinToString("") { p ->
+            """
+                <tr>
+                  <td>${escapeHtml(p.descricao)}</td>
+                  <td>${escapeHtml(p.categoria ?: "—")}</td>
+                  <td>${escapeHtml(formatMoneyBrl(p.valorContabil))}</td>
+                </tr>
+            """.trimIndent()
+        }
+        val itensTabela = if (patrimonio.principais.isNotEmpty()) {
+            "<table><thead><tr><th>Descrição</th><th>Categoria</th><th>Valor contábil</th></tr></thead><tbody>$patrimonioItemRows</tbody></table>"
+        } else ""
+        """
+            <h2>Patrimônio (Ativos) -- ${patrimonio.totalItens} item(ns)</h2>
+            <table><tbody>
+              <tr><td>Valor de aquisição (total)</td><td>${escapeHtml(formatMoneyBrl(patrimonio.valorAquisicaoTotal))}</td></tr>
+              <tr><td>Depreciação acumulada</td><td>${escapeHtml(formatMoneyBrl(patrimonio.deprecAcumTotal))}</td></tr>
+              <tr><td>Valor contábil (atual)</td><td>${escapeHtml(formatMoneyBrl(patrimonio.valorContabilTotal))}</td></tr>
+            </tbody></table>
+            $itensTabela
+        """.trimIndent()
+    } else ""
+
+    return """
+        <!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Dossiê Bancário</title>
+        <style>
+          @page { size: portrait; margin: 14mm; }
+          body { font-family: Arial, Helvetica, sans-serif; padding: 16px; color: #111; }
+          h1 { font-size: 20px; margin-bottom: 2px; }
+          h2 { font-size: 14px; margin-top: 20px; margin-bottom: 6px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+          p.subtitulo { font-size: 11px; color: #666; margin-top: 0; margin-bottom: 12px; }
+          table { border-collapse: collapse; width: 100%; font-size: 11px; margin-bottom: 8px; }
+          th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+          th { background: #f2f2f2; }
+        </style></head>
+        <body>
+          <h1>Dossiê Bancário</h1>
+          <p class="subtitulo">Gerado em $geradoEm -- relatório único pra anexar num pedido de crédito rural ou apresentar a um investidor.</p>
+          $resumoSecao
+          $livroCaixaSecao
+          $contratosSecao
+          $patrimonioSecao
+        </body></html>
+    """.trimIndent()
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AnoDropdown(ano: Int, onSelect: (Int) -> Unit) {
@@ -129,6 +261,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
     val erro by viewModel.erro
     val dados by viewModel.dados
     val ano by viewModel.ano
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -137,6 +270,21 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
+                    }
+                },
+                // Ícone Imprimir/PDF (Task #615/#711, paridade com o botão
+                // Imprimir do dossie-client.tsx no site) -- monta o MESMO
+                // relatório já exibido na tela (Resumo Executivo + DRE por
+                // fazenda + Livro Caixa + Contratos + Patrimônio) como um
+                // único HTML e reaproveita o motor de impressão genérico do
+                // HtmlPrinter (mesmo usado por Reconciliação/Frota/DRE/Livro
+                // Caixa), em vez de recriar o mecanismo de impressão aqui.
+                actions = {
+                    val d = dados
+                    if (d != null) {
+                        IconButton(onClick = { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(d, ano)) }) {
+                            Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
+                        }
                     }
                 },
             )

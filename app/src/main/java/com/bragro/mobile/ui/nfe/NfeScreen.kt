@@ -17,9 +17,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FolderZip
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.ViewAgenda
+import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -28,6 +31,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -47,12 +51,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bragro.mobile.data.model.InvoiceData
 import com.bragro.mobile.data.repo.NfeRepository
+import com.bragro.mobile.ui.domain.isoDateOnly
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.appFieldColors
 import com.bragro.mobile.ui.util.shareBinaryFile
@@ -176,7 +182,26 @@ class NfeViewModel(app: Application) : AndroidViewModel(app) {
 private fun formatoMoeda(valor: Double): String =
     NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(valor)
 
+/** Inverso de parseValor() (ver NovaNotaDialog abaixo) -- usado só pra
+ * pré-preencher o campo "Valor total" a partir de um Double vindo do
+ * servidor (ex.: "Copiar última nota"). parseValor() remove "." (separador
+ * de milhar) e troca "," por "." antes de converter, então o campo NUNCA
+ * pode conter um "." aqui (senão um valor como 1234.56 viraria "123456" ao
+ * ser reaberto/reenviado) -- por isso a vírgula decimal sem separador de
+ * milhar, mesmo com valores grandes. */
+private fun valorParaCampo(v: Double): String {
+    val texto = if (v % 1.0 == 0.0) v.toLong().toString() else v.toString()
+    return texto.replace(".", ",")
+}
+
 private val TIPO_OPTIONS = listOf("ENTRADA", "SAIDA")
+
+/** Alternância Linhas/Blocos (achado de auditoria: paridade com o toggle
+ * "mobileView" de nfe-client.tsx, site) -- BLOCOS é o card completo já
+ * existente (InvoiceCard); LINHAS é uma versão compacta de uma linha só
+ * (InvoiceRow, abaixo), útil pra escanear muitas notas de uma vez. Começa em
+ * BLOCOS, mesmo padrão default do site. */
+private enum class NfeViewMode { BLOCOS, LINHAS }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -257,15 +282,83 @@ private fun InvoiceCard(
     }
 }
 
+/** Versão compacta (uma linha) de InvoiceCard acima, pra vista "Linhas"
+ * (achado de auditoria: paridade com a tabela/linhas do site, ver
+ * mobileView em nfe-client.tsx). Mesmas ações (Emitir/Excluir), só que sem
+ * os blocos internos de status/erro SEFAZ (ficam só no card completo) --
+ * o objetivo aqui é caber mais notas na tela pra escanear rápido. */
+@Composable
+private fun InvoiceRow(
+    inv: InvoiceData,
+    pendingAction: String?,
+    onEmitir: () -> Unit,
+    onExcluir: () -> Unit,
+) {
+    val emitindo = pendingAction == "emitir:${inv.id}"
+    val excluindo = pendingAction == "delete:${inv.id}"
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                "Nº ${inv.numero}${inv.serie?.takeIf { it.isNotBlank() }?.let { " / $it" } ?: ""}",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                inv.emitenteNome ?: inv.destinatarioNome ?: "-",
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Text(
+            formatoMoeda(inv.valorTotal),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 8.dp),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (inv.tipo == "SAIDA" && inv.statusSefaz != "AUTORIZADA") {
+                IconButton(onClick = onEmitir, enabled = !emitindo, modifier = Modifier.size(36.dp)) {
+                    if (emitindo) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    else Icon(Icons.Filled.Send, contentDescription = "Emitir junto à SEFAZ", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                }
+            }
+            IconButton(onClick = onExcluir, enabled = !excluindo, modifier = Modifier.size(36.dp)) {
+                if (excluindo) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                else Icon(Icons.Filled.Delete, contentDescription = "Excluir nota", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun NovaNotaDialog(pending: Boolean, onDismiss: () -> Unit, onConfirm: (String, String?, String, String, Double, String?) -> Unit) {
-    var numero by remember { mutableStateOf("") }
-    var serie by remember { mutableStateOf("") }
-    var tipo by remember { mutableStateOf("ENTRADA") }
-    var emitenteNome by remember { mutableStateOf("") }
-    var valorTotal by remember { mutableStateOf("") }
-    var dataEmissao by remember { mutableStateOf("") }
+private fun NovaNotaDialog(
+    pending: Boolean,
+    initial: InvoiceData? = null,
+    onDismiss: () -> Unit,
+    onConfirm: (String, String?, String, String, Double, String?) -> Unit,
+) {
+    // "Copiar última nota" (achado de auditoria, paridade com
+    // openDuplicateManual()/nfe-client.tsx no site) -- reabre este MESMO
+    // diálogo de "Nova NF-e", só que pré-preenchido com os campos da nota
+    // mais recente (numero/dataEmissao inclusive, igual ao site: o usuário
+    // ainda ajusta o que for preciso antes de salvar, nunca sobrescreve a
+    // nota copiada).
+    var numero by remember { mutableStateOf(initial?.numero ?: "") }
+    var serie by remember { mutableStateOf(initial?.serie ?: "") }
+    var tipo by remember { mutableStateOf(initial?.tipo?.takeIf { it in TIPO_OPTIONS } ?: "ENTRADA") }
+    var emitenteNome by remember { mutableStateOf(initial?.emitenteNome ?: "") }
+    var valorTotal by remember { mutableStateOf(initial?.let { valorParaCampo(it.valorTotal) } ?: "") }
+    var dataEmissao by remember { mutableStateOf(initial?.dataEmissao?.let { isoDateOnly(it) } ?: "") }
 
     fun parseValor(s: String): Double =
         s.trim().replace(".", "").replace(",", ".").toDoubleOrNull() ?: s.trim().toDoubleOrNull() ?: 0.0
@@ -274,7 +367,7 @@ private fun NovaNotaDialog(pending: Boolean, onDismiss: () -> Unit, onConfirm: (
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nova NF-e (manual)") },
+        title = { Text(if (initial != null) "Nova NF-e (copiada da última)" else "Nova NF-e (manual)") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(value = numero, onValueChange = { numero = it }, label = { Text("Número *") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
@@ -339,6 +432,14 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
     val pendingAction by viewModel.pendingAction
 
     var showNovaNota by remember { mutableStateOf(false) }
+    // "Copiar última nota" (achado de auditoria, paridade com
+    // duplicateSource/nfe-client.tsx) -- guarda a nota de origem quando o
+    // diálogo é aberto pelo ícone Copiar (em vez do FAB "+"); null = diálogo
+    // abre em branco, igual antes.
+    var copiaOrigem by remember { mutableStateOf<InvoiceData?>(null) }
+    // Alternância Linhas/Blocos (achado de auditoria, paridade com
+    // mobileView/nfe-client.tsx) -- ver NfeViewMode acima.
+    var viewMode by remember { mutableStateOf(NfeViewMode.BLOCOS) }
     var dialogErro by remember { mutableStateOf<String?>(null) }
     var confirmarExclusao by remember { mutableStateOf<InvoiceData?>(null) }
     var mensagemEmissao by remember { mutableStateOf<String?>(null) }
@@ -359,6 +460,34 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
                     }
                 },
                 actions = {
+                    // "Copiar última nota" (achado de auditoria, paridade
+                    // com o botão homônimo de nfe-client.tsx no site) --
+                    // reaproveita o MESMO diálogo "Nova NF-e", só que
+                    // pré-preenchido com a nota mais recente (invoices já
+                    // vem ordenado por criadoEm desc do servidor, igual o
+                    // invoices[0] do site). Sempre visível, só inerte sem
+                    // nenhuma nota lançada ainda (mesmo critério do ícone
+                    // Copiar do motor genérico de domínios).
+                    val ultimaNota = invoices.firstOrNull()
+                    IconButton(onClick = { copiaOrigem = ultimaNota; showNovaNota = true }, enabled = ultimaNota != null) {
+                        Icon(
+                            Icons.Filled.ContentCopy,
+                            contentDescription = "Copiar última nota",
+                            tint = if (ultimaNota != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                        )
+                    }
+                    // Alternância Linhas/Blocos (achado de auditoria,
+                    // paridade com o toggle "mobileView" de nfe-client.tsx
+                    // no site) -- ícone mostra o modo PRA ONDE o toque vai
+                    // trocar, mesmo critério do botão Expandir/Recolher e do
+                    // toggle Tabela/Bloco do motor genérico de domínios.
+                    IconButton(onClick = { viewMode = if (viewMode == NfeViewMode.BLOCOS) NfeViewMode.LINHAS else NfeViewMode.BLOCOS }) {
+                        Icon(
+                            if (viewMode == NfeViewMode.BLOCOS) Icons.Filled.ViewList else Icons.Filled.ViewAgenda,
+                            contentDescription = if (viewMode == NfeViewMode.BLOCOS) "Ver em linhas" else "Ver em blocos",
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                     // Repositório de XML -- download em lote (recebidas e
                     // enviadas), mesmo botão "Baixar XMLs (lote)" do site,
                     // já usado pelo papel CONTADOR.
@@ -369,7 +498,7 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showNovaNota = true }) {
+            FloatingActionButton(onClick = { copiaOrigem = null; showNovaNota = true }) {
                 Icon(Icons.Filled.Add, contentDescription = "Nova NF-e")
             }
         },
@@ -395,7 +524,7 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
                 Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Nenhuma nota fiscal lançada ainda.", style = MaterialTheme.typography.bodyMedium)
                 }
-            } else {
+            } else if (viewMode == NfeViewMode.BLOCOS) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(12.dp),
@@ -412,6 +541,24 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
                         )
                     }
                 }
+            } else {
+                // Vista "Linhas" (achado de auditoria, paridade com
+                // mobileView === "linhas" de nfe-client.tsx no site) -- uma
+                // linha compacta por nota, separadas por um HorizontalDivider
+                // em vez do espaçamento largo entre cards da vista Blocos.
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(invoices, key = { it.id }) { inv ->
+                        InvoiceRow(
+                            inv = inv,
+                            pendingAction = pendingAction,
+                            onEmitir = {
+                                viewModel.emitir(inv.id) { mensagem, _ -> mensagemEmissao = mensagem }
+                            },
+                            onExcluir = { confirmarExclusao = inv },
+                        )
+                        HorizontalDivider()
+                    }
+                }
             }
         }
     }
@@ -419,10 +566,11 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
     if (showNovaNota) {
         NovaNotaDialog(
             pending = pendingAction == "create",
-            onDismiss = { if (pendingAction != "create") showNovaNota = false },
+            initial = copiaOrigem,
+            onDismiss = { if (pendingAction != "create") { showNovaNota = false; copiaOrigem = null } },
             onConfirm = { numero, serie, tipo, emitenteNome, valorTotal, dataEmissao ->
                 viewModel.criar(numero, serie, tipo, emitenteNome, valorTotal, dataEmissao) { erroMsg ->
-                    if (erroMsg == null) showNovaNota = false else dialogErro = erroMsg
+                    if (erroMsg == null) { showNovaNota = false; copiaOrigem = null } else dialogErro = erroMsg
                 }
             },
         )

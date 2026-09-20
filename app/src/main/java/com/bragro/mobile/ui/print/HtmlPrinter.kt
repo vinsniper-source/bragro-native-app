@@ -80,6 +80,18 @@ object HtmlPrinter {
         print(context, jobName = title, html = html)
     }
 
+    // Ícone Imprimir/PDF de telas de RELATÓRIO multi-seção (ex.: Dossiê
+    // Bancário -- Task #599/#615/#711) que não cabem nem em printList (uma
+    // tabela guiada por DomainConfig) nem em printSimpleTable (uma tabela
+    // simples só): a tela monta o próprio HTML completo (várias seções,
+    // resumos, tabelas) a partir dos dados já carregados e reaproveita o
+    // MESMO motor de impressão (WebView + PrintManager) abaixo, em vez de
+    // duplicar esse mecanismo. Retrato por padrão -- é um documento pra
+    // anexar num pedido de crédito, não uma tabela larga.
+    fun printHtml(context: Context, jobName: String, html: String, landscape: Boolean = false) {
+        print(context, jobName = jobName, html = html, landscape = landscape)
+    }
+
     private fun print(context: Context, jobName: String, html: String, landscape: Boolean = true) {
         val webView = WebView(context)
         activeWebView = webView
