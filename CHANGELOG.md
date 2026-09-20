@@ -3,6 +3,29 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.93] -- 2026-09-19
+
+- **Análises nativo: 12 gráficos comparativos novos (paridade com o site)**
+  (#621, gap de auditoria): a tela "Análises" no app só mostrava os 15
+  cruzamentos de `getAnalisesCruzadas()` como cards de texto cru (JSON
+  genérico) -- o site (`analises-client.tsx`) sempre teve 13 gráficos de
+  barra reais, organizados em 4 abas (Financeiro/Estoque & Operação/
+  Agronômico/Pessoas). Adicionado bloco "Gráficos" (colapsável, fechado
+  por padrão, mesmo padrão do site) com as mesmas 4 abas e os mesmos
+  gráficos: Planejado x Realizado x Pago, Custo/ha por Fazenda (com
+  alternância ha/sc, igual ao site), Contrato x Volume Transportado,
+  Margem por saca, Margem por tonelada, Conciliação Caixa x Financeiro,
+  Pedido x Recebimento, Consumo de Estoque por origem, Item mais
+  consumido x Saldo, Eficiência de máquina, Chuva x Produtividade,
+  Ocorrências de Praga x Produtividade e RH x Atividade de campo --
+  usando `SimpleBarChart` (mesma réplica leve de gráfico, sem lib nova,
+  já usada no DRE e nos módulos). Os cards de texto cru continuam
+  existindo embaixo (aditivo, não removeu nada). Sem suporte a barra
+  empilhada nem eixo duplo no `SimpleBarChart` -- os gráficos que usavam
+  essas features no site (Custo/ha, RH x Atividade = empilhados; Chuva/
+  Praga x Produtividade = eixo duplo) aparecem aqui como séries lado a
+  lado, mesma aproximação já aceita nos outros módulos.
+
 ## [1.2.92] -- 2026-09-19
 
 - **Financeiro nativo: campo "Data" já nasce preenchido com hoje no Novo
