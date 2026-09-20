@@ -78,11 +78,14 @@ import com.bragro.mobile.data.model.DreData
 import com.bragro.mobile.data.model.DreFazendaData
 import com.bragro.mobile.data.model.DreRamoItemData
 import com.bragro.mobile.data.repo.DreRepository
+import com.bragro.mobile.ui.domain.BarSeries
 import com.bragro.mobile.ui.domain.EqualWidthBlockRow
 import com.bragro.mobile.ui.domain.FarmSelectorButton
 import com.bragro.mobile.ui.domain.LabeledIconButton
 import com.bragro.mobile.ui.domain.RecordTableHeader
 import com.bragro.mobile.ui.domain.RecordTableRow
+import com.bragro.mobile.ui.domain.SimpleBarChart
+import com.bragro.mobile.ui.domain.defaultSeriesColor
 import com.bragro.mobile.ui.domain.exportXlsx
 import com.bragro.mobile.ui.print.HtmlPrinter
 import kotlinx.coroutines.flow.collectLatest
@@ -182,10 +185,15 @@ private val DRE_EXPORT_COLUMNS = listOf(
     ColumnConfig(key = "custoTotal", label = "Custo Total", type = "number", money = true),
     ColumnConfig(key = "custoPorHa", label = "Custo/ha", type = "number", money = true),
     ColumnConfig(key = "custoPorSc", label = "Custo/sc", type = "number", money = true),
+    // Custo/ton -- mesmo criterio de Custo/sc acima, gap de paridade com o
+    // site (Task #620: dre.ts ja tinha totalTon/custoPorTon, faltava so a
+    // coluna de export/tabela aqui).
+    ColumnConfig(key = "custoPorTon", label = "Custo/ton", type = "number", money = true),
     ColumnConfig(key = "receitaTotal", label = "Receita Total", type = "number", money = true),
     ColumnConfig(key = "margem", label = "Margem", type = "number", money = true),
     ColumnConfig(key = "margemPorHa", label = "Margem/ha", type = "number", money = true),
     ColumnConfig(key = "totalSacas", label = "Sacas", type = "number"),
+    ColumnConfig(key = "totalTon", label = "Toneladas", type = "number"),
 )
 
 private fun dreExportConfig(): DomainConfig = DomainConfig(id = "dre", label = "DRE", columns = DRE_EXPORT_COLUMNS)
@@ -197,10 +205,12 @@ private fun dreExportRecords(dre: DreData): List<Map<String, String?>> {
             "custoTotal" to f.custoTotal.toString(),
             "custoPorHa" to f.custoPorHa.toString(),
             "custoPorSc" to f.custoPorSc?.toString(),
+            "custoPorTon" to f.custoPorTon?.toString(),
             "receitaTotal" to f.receitaTotal.toString(),
             "margem" to f.margem.toString(),
             "margemPorHa" to f.margemPorHa.toString(),
             "totalSacas" to f.totalSacas?.toString(),
+            "totalTon" to f.totalTon?.toString(),
         )
     }
     val totalizacao = mapOf(
@@ -208,10 +218,12 @@ private fun dreExportRecords(dre: DreData): List<Map<String, String?>> {
         "custoTotal" to dre.totais.custoTotal.toString(),
         "custoPorHa" to dre.totais.custoPorHa.toString(),
         "custoPorSc" to dre.totais.custoPorSc?.toString(),
+        "custoPorTon" to dre.totais.custoPorTon?.toString(),
         "receitaTotal" to dre.totais.receitaTotal.toString(),
         "margem" to dre.totais.margem.toString(),
         "margemPorHa" to null,
         "totalSacas" to dre.totais.totalSacas.toString(),
+        "totalTon" to dre.totais.totalTon.toString(),
     )
     return linhas + totalizacao
 }
@@ -423,6 +435,9 @@ private fun FarmCard(f: DreFazendaData, arvore: List<DreRamoItemData>, expanded:
             if (f.custoPorSc != null) {
                 Row { Text("Custo/sc: "); Text(formatMoneyBrl(f.custoPorSc), fontWeight = FontWeight.Bold) }
             }
+            if (f.custoPorTon != null) {
+                Row { Text("Custo/ton: "); Text(formatMoneyBrl(f.custoPorTon), fontWeight = FontWeight.Bold) }
+            }
             Row { Text("Receita total: "); Text(formatMoneyBrl(f.receitaTotal), fontWeight = FontWeight.Bold) }
             Row { Text("Margem: "); Text(formatMoneyBrl(f.margem), fontWeight = FontWeight.Bold) }
             if (expanded && arvore.isNotEmpty()) {
@@ -468,6 +483,11 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
     // listas de lançamento).
     var tableView by remember { mutableStateOf(false) }
     val tableHScroll = remember { androidx.compose.foundation.ScrollState(0) }
+    // Alternância ha/sc/ton no gráfico "Custo por Fazenda" -- espelho do
+    // toggle já existente no site (dre-client.tsx, UnidadeToggleGroup),
+    // gap de paridade (Task #620: o app nunca teve esse gráfico, só as
+    // linhas de texto Custo/ha e Custo/sc dentro do card de cada fazenda).
+    var unidadeCusto by remember { mutableStateOf("ha") }
 
     Scaffold(
         topBar = {
@@ -626,8 +646,72 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                             if (data.totais.custoPorSc != null) {
                                 Row { Text("Custo/sc: "); Text(formatMoneyBrl(data.totais.custoPorSc), fontWeight = FontWeight.Bold) }
                             }
+                            if (data.totais.custoPorTon != null) {
+                                Row { Text("Custo/ton: "); Text(formatMoneyBrl(data.totais.custoPorTon), fontWeight = FontWeight.Bold) }
+                            }
                             Row { Text("Receita total: "); Text(formatMoneyBrl(data.totais.receitaTotal), fontWeight = FontWeight.Bold) }
                             Row { Text("Margem: "); Text(formatMoneyBrl(data.totais.margem), fontWeight = FontWeight.Bold) }
+                        }
+                    }
+                }
+                // Gráfico "Custo por Fazenda" com alternância ha/sc/ton --
+                // gap de paridade com o site (Task #620: dre-client.tsx já
+                // tinha esse gráfico + UnidadeToggleGroup há um tempo, o app
+                // só mostrava as linhas de texto Custo/ha e Custo/sc dentro
+                // de cada card de fazenda, sem gráfico nenhum). Reaproveita
+                // SimpleBarChart (mesma réplica leve de BarChart usada nos
+                // outros módulos, sem lib nova) -- "sc"/"ton" só entram nas
+                // opções quando ALGUMA fazenda tem o dado correspondente
+                // (mesmo critério de temAlgumaSaca/temAlgumTon do site).
+                if (data.porFazenda.isNotEmpty()) {
+                    item {
+                        val temAlgumaSaca = data.porFazenda.any { it.custoPorSc != null }
+                        val temAlgumTon = data.porFazenda.any { it.custoPorTon != null }
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(
+                                    when (unidadeCusto) {
+                                        "sc" -> "Custo/sc por Fazenda"
+                                        "ton" -> "Custo/ton por Fazenda"
+                                        else -> "Custo/ha por Fazenda"
+                                    },
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                                if (temAlgumaSaca || temAlgumTon) {
+                                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                                        val opcoes = buildList {
+                                            add("ha" to "ha")
+                                            if (temAlgumaSaca) add("sc" to "sc")
+                                            if (temAlgumTon) add("ton" to "ton")
+                                        }
+                                        opcoes.forEachIndexed { index, (v, label) ->
+                                            SegmentedButton(
+                                                selected = unidadeCusto == v,
+                                                onClick = { unidadeCusto = v },
+                                                shape = SegmentedButtonDefaults.itemShape(index = index, count = opcoes.size),
+                                            ) {
+                                                Text(label, style = MaterialTheme.typography.labelSmall)
+                                            }
+                                        }
+                                    }
+                                }
+                                val categorias = when (unidadeCusto) {
+                                    "sc" -> data.porFazenda.filter { it.custoPorSc != null }.map { it.farmName }
+                                    "ton" -> data.porFazenda.filter { it.custoPorTon != null }.map { it.farmName }
+                                    else -> data.porFazenda.map { it.farmName }
+                                }
+                                val valores = when (unidadeCusto) {
+                                    "sc" -> data.porFazenda.mapNotNull { it.custoPorSc }
+                                    "ton" -> data.porFazenda.mapNotNull { it.custoPorTon }
+                                    else -> data.porFazenda.map { it.custoPorHa }
+                                }
+                                SimpleBarChart(
+                                    categories = categorias,
+                                    series = listOf(BarSeries("Custo", valores, defaultSeriesColor(0))),
+                                    isMoney = true,
+                                )
+                            }
                         }
                     }
                 }

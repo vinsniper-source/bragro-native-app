@@ -659,6 +659,12 @@ data class DreFazendaData(
     val margemPorHa: Double,
     val totalSacas: Double? = null,
     val custoPorSc: Double? = null,
+    // Custo por tonelada -- gap de paridade com o site (Task #639/#620):
+    // dre.ts já calculava totalTon/custoPorTon há um tempo (útil pra
+    // Cana-de-Açúcar, que fecha em toneladas em vez de sacas de 60kg), mas
+    // o modelo Kotlin nunca ganhou os campos correspondentes.
+    val totalTon: Double? = null,
+    val custoPorTon: Double? = null,
 )
 
 @Serializable
@@ -673,6 +679,8 @@ data class DreTotais(
     val margem: Double,
     val totalSacas: Double,
     val custoPorSc: Double? = null,
+    val totalTon: Double = 0.0,
+    val custoPorTon: Double? = null,
 )
 
 // Espelho de DreRamoItem (lib/services/dre.ts) -- recursivo (cada no pode

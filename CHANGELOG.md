@@ -3,6 +3,36 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.92] -- 2026-09-19
+
+- **Financeiro nativo: campo "Data" já nasce preenchido com hoje no Novo
+  Lançamento** (#619, paridade com o site): abrir "Novo Lançamento" em
+  Financeiro exigia digitar a data manualmente toda vez, mesmo sendo quase
+  sempre a data de hoje -- o site já fazia esse auto-preenchimento
+  (`record-form.tsx`, `domain.id === "financeiro" && !initial`) mas o app
+  nativo não. Corrigido em `DomainFormScreen.kt` (`DomainFormViewModel.
+  load()`): só quando é um registro NOVO (não edição) do domínio
+  "financeiro" e o campo é "data", o valor inicial vira a data de hoje em
+  DD/MM/AAAA -- editando ou criando lançamento de outro módulo, ou editando
+  um Financeiro já existente, nada muda. "Copiar último lançamento"
+  continua preservando a data do lançamento copiado, como antes.
+
+## [1.2.91] -- 2026-09-19
+
+- **DRE nativo: gráfico "Custo por Fazenda" + Custo/ton (paridade com o
+  site)**: o app nunca teve o gráfico de barras "Custo por Fazenda" nem a
+  alternância ha/sc/ton que o site (`dre-client.tsx`) já tinha -- só mostrava
+  Custo/ha e Custo/sc como linhas de texto dentro do card de cada fazenda
+  (gap #620). Adicionado novo card com `SimpleBarChart` (mesma réplica leve
+  de gráfico já usada nos outros módulos, sem lib nova) + segmented button
+  ha/sc/ton logo abaixo do card "Totais"; "sc"/"ton" só aparecem como opção
+  quando alguma fazenda tem o dado correspondente. Também adicionados os
+  campos que faltavam no modelo Kotlin (`totalTon`/`custoPorTon` em
+  `DreFazendaData`/`DreTotais` -- dre.ts já calculava isso desde a Task
+  #639, só o Kotlin nunca tinha ganhado os campos) e a exibição de
+  Custo/ton no card de cada fazenda, no card Totais, e nas colunas de
+  export (Excel/PDF/tabela).
+
 ## [1.2.90] -- 2026-09-19
 
 - **Painel de Indicadores Zootécnicos em DRE (Custo por Arroba, GMD, Taxa de

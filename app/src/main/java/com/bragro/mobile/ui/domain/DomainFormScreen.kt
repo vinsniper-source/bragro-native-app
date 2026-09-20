@@ -174,7 +174,16 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
                 // corte, só que AAAA-MM-DD ainda lê como ano-mês-dia, fora
                 // do costume brasileiro). Mostra em DD/MM/AAAA no campo; a
                 // conversão de volta pra ISO só acontece em save().
-                fields[col.key] = if (col.type == "date") isoDateToBr(isoDateOnly(raw)) else raw
+                fields[col.key] = when {
+                    // Novo lançamento de Financeiro: campo "Data" já nasce
+                    // com hoje, igual ao site (record-form.tsx, domain.id
+                    // === "financeiro" && !initial) -- usuário tinha que
+                    // digitar a data toda vez que abria "Novo Lançamento".
+                    col.type == "date" && existing == null && domainId == "financeiro" && col.key == "data" ->
+                        millisToBrDate(System.currentTimeMillis())
+                    col.type == "date" -> isoDateToBr(isoDateOnly(raw))
+                    else -> raw
+                }
             }
             computedValues.value = computed
 
