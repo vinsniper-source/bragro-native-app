@@ -62,7 +62,11 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-private val ROLES = listOf("ADMIN", "AGRONOMO", "FINANCEIRO", "RH", "OPERADOR", "CUSTOM")
+// CONTADOR -- pedido do usuario (gap analysis), 10ª exceção de schema.
+// AGRICULTURA_FAMILIAR -- pedido do usuario ("crie um setor de agricultura
+// familiar"), 11ª exceção de schema (ver ROLE_MODULES em lib/permissions.ts
+// no site). Paridade: mesma lista de papeis de seguranca-client.tsx.
+private val ROLES = listOf("ADMIN", "AGRONOMO", "FINANCEIRO", "CONTADOR", "AGRICULTURA_FAMILIAR", "RH", "OPERADOR", "CUSTOM")
 private val MODULES = listOf(
     "financeiro" to "Financeiro", "pedidos" to "Pedidos", "cotacoesfornecedores" to "Cotações de Fornecedores", "estoque" to "Estoque",
     "safra" to "Safra", "planejamentosafra" to "Planejamento de Safra", "colheita" to "Colheita",
@@ -73,6 +77,13 @@ private val MODULES = listOf(
     "pragas" to "Pragas", "controleinterno" to "Controle Interno",
     "clima" to "Clima", "caixainterno" to "Caixa Interno",
     "cobrancas" to "Cobranças", "nfse" to "NFS-e",
+    // Adicionados junto com o papel AGRICULTURA_FAMILIAR -- faltavam na
+    // checklist manual de módulos do app nativo (gap de paridade: existem no
+    // site desde Pecuária/Pastagem/DRE/Livro Caixa, mas nunca tinham sido
+    // adicionados aqui). Sem eles, um ADMIN usando o app não conseguia
+    // marcar/desmarcar esses módulos manualmente pra nenhum membro.
+    "pecuaria" to "Pecuária", "pastagem" to "Pastagem", "controledeinsumos" to "Controle de Insumos",
+    "dre" to "DRE", "livrocaixa" to "Livro Caixa",
 )
 
 // Paridade com o site (seguranca-client.tsx/INICIO_WIDGETS em
