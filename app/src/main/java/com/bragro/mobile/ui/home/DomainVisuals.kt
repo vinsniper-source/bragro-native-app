@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.Engineering
 import androidx.compose.material.icons.filled.Grass
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocalShipping
@@ -80,6 +81,9 @@ private val DOMAIN_SECTION_ID: Map<String, String> = mapOf(
     "frota" to "estoque",
     "controleinterno" to "estoque",
     "rh" to "pessoas",
+    // Mão de Obra e Familiar (Task #752, gap analysis Agricultura Familiar)
+    // -- mesma seção "pessoas" do site (lib/modules.ts).
+    "maodeobra" to "pessoas",
 )
 
 // domainId -> icone (Material Icons Extended, ja e dependencia do projeto).
@@ -123,6 +127,7 @@ private val DOMAIN_ICON: Map<String, ImageVector> = mapOf(
     "frota" to Icons.Filled.DirectionsCar,
     "controleinterno" to Icons.Filled.Security,
     "rh" to Icons.Filled.People,
+    "maodeobra" to Icons.Filled.Engineering,
 )
 
 fun domainIcon(domainId: String): ImageVector = DOMAIN_ICON[domainId] ?: Icons.Filled.Apps

@@ -288,7 +288,17 @@ private val BOTTOM_TABS = listOf(
     // Ex-aba "RH" (2 itens soltos, sem category) -- virou 2 abas de acesso
     // direto de nível superior, pedido do usuário ("são 2 botões RH e
     // Controle Interno").
-    BottomTab("rh", "RH", Icons.Filled.People, directDomainId = "rh"),
+    // Deixa de ser acesso direto quando "Mão de Obra e Familiar" (Task #752,
+    // gap analysis Agricultura Familiar) também está liberado pro setor --
+    // mesma seção "pessoas" do site (lib/modules.ts), mesmo critério de
+    // Estoque acima (2 itens -> dropdown; 1 item só -> RenderTab.Direct).
+    BottomTab(
+        "rh", "RH", Icons.Filled.People,
+        items = listOf(
+            SectorTarget.Domain("rh", "RH"),
+            SectorTarget.Domain("maodeobra", "Mão de Obra e Familiar"),
+        ),
+    ),
     BottomTab("controleinterno", "Controle Interno", Icons.Filled.Security, directDomainId = "controleinterno"),
 )
 
@@ -370,6 +380,9 @@ private val OWNER_BOTTOM_TABS = listOf(
         items = listOf(
             SectorTarget.Domain("rh", "RH"),
             SectorTarget.Domain("controleinterno", "Controle Interno"),
+            // Mão de Obra e Familiar (Task #752) -- mesma seção "pessoas" do
+            // site (lib/modules.ts), ausente até aqui na barra do dono.
+            SectorTarget.Domain("maodeobra", "Mão de Obra e Familiar"),
         ),
     ),
     // Acesso direto -- ocupa a vaga que era do menu "Módulos" (ver comentário
