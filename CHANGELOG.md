@@ -3,6 +3,27 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.98] -- 2026-09-26
+
+- **Fix (tentativa): app fechando imediatamente ao abrir, antes da tela de
+  login** (Task #749, reportado pelo usuário após instalar a release
+  anterior). Sem stack trace real disponível (Crashlytics acabou de ser
+  ativado na v1.2.97 e ainda não tinha nenhum evento reportado até este
+  momento), a causa mais provável é uma regra de `keep` do R8/ProGuard
+  faltando envolvendo o Firebase/Crashlytics (`firebase-bom` foi adicionado
+  como dependência nova naquela mesma versão) -- o FirebaseApp inicializa
+  via `ContentProvider`, ANTES do `Application.onCreate()`, então uma falha
+  ali fecha o app antes de qualquer tela aparecer e antes do próprio
+  Crashlytics conseguir capturar o próprio erro. `isMinifyEnabled` e
+  `isShrinkResources` desligados temporariamente no `release` como
+  diagnóstico rápido (mesmo critério já documentado no `build.gradle.kts`
+  desde a Fase 3 do R8: "solução mais rápida enquanto investiga é voltar
+  isMinifyEnabled pra false") -- se o crash sumir nesta versão, confirma R8
+  como causa raiz; o próximo passo aí é reativar o minify e usar o
+  Crashlytics (agora com stack trace legível, sem ofuscação) pra achar a
+  regra exata faltando. Efeito colateral aceito enquanto isso: APK maior e
+  código não ofuscado nesta build.
+
 ## [1.2.97] -- 2026-09-20
 
 - **Ativação do Firebase Crashlytics** -- pedido do usuário ("o app

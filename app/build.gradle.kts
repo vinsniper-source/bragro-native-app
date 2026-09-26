@@ -41,8 +41,8 @@ android {
         // a instalaçao pegou o apk certo (se apos instalar ainda aparecer
         // 1.1.6, a instalaçao nao pegou o apk novo -- se aparecer 1.1.7,
         // pegou, e as cores tem que estar corrigidas tambem).
-        versionCode = 107
-        versionName = "1.2.97"
+        versionCode = 108
+        versionName = "1.2.98"
 
         // URLs do backend (o MESMO backend do site publicado -- ver
         // native-app/README.md). Trocaveis por variante/ambiente sem
@@ -97,19 +97,27 @@ android {
             // no release (nao no debug), a causa quase sempre e uma regra de
             // keep faltando -- a solucao mais rapida enquanto investiga e
             // voltar isMinifyEnabled pra false.
-            isMinifyEnabled = true
-            // shrinkResources ligado (pedido do usuario, so pelo ganho de
-            // tamanho -- nao e medida de seguranca de verdade, quem protege o
-            // codigo e o R8/ProGuard acima). Verificado por grep em todo
-            // app/src/main/java: nenhum uso de Resources.getIdentifier() ou
-            // equivalente (lookup de recurso por nome em runtime), que e o
-            // unico jeito comum desse recurso remover algo em uso e quebrar o
-            // app silenciosamente -- risco antes levantado aqui, agora
-            // descartado. Continua valendo o mesmo aviso de isMinifyEnabled:
-            // testar manualmente login, listar/criar lancamento em 2+ modulos,
-            // upload de foto/arquivo e o mapa (FieldView/KML) na PRIMEIRA
-            // build de release depois desta mudanca.
-            isShrinkResources = true
+            //
+            // DESLIGADO TEMPORARIAMENTE (usuario reportou: app instalado da
+            // ultima release fecha imediatamente, antes da tela de login --
+            // ver Task #749). Coincide com a ativacao do Firebase Crashlytics
+            // na v1.2.97 (google-services.json), que adicionou o
+            // firebase-bom como dependencia nova -- se o R8 remover/renomear
+            // algo que o Crashlytics/Firebase precisa via reflexao na
+            // inicializacao (FirebaseApp via ContentProvider, roda ANTES do
+            // Application.onCreate), o app fecha exatamente assim: antes de
+            // qualquer tela aparecer, sem log nenhum visivel (e o proprio
+            // Crashlytics que reportaria o erro pode nao inicializar a
+            // tempo de capturar sua propria falha). Desligar minify isola se
+            // a causa e regra de keep faltando; se o crash sumir aqui,
+            // confirma R8 como causa raiz -- proximo passo e achar a regra
+            // exata via Crashlytics (agora com stack trace legivel, sem
+            // ofuscacao) e so entao reativar isMinifyEnabled.
+            isMinifyEnabled = false
+            // shrinkResources exige minifyEnabled=true (o R8 e quem faz o
+            // shrink de recursos tambem) -- desligado junto, mesmo motivo
+            // acima.
+            isShrinkResources = false
             // Pedido do usuario ("corrija a lentidao do assemble release") --
             // trocado de "proguard-android-optimize.txt" pra
             // "proguard-android.txt" (arquivo padrao do proprio Android SDK,
