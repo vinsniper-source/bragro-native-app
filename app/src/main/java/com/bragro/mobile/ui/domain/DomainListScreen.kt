@@ -1349,6 +1349,15 @@ fun DomainListScreen(
                         )
                         return@items
                     }
+                    // Barra de acoes no TOPO do bloco (recolher/expandir,
+                    // emitir NFS-e, editar, excluir) -- pedido do usuario
+                    // ("realoque os icones, setinha, editar e excluir, para
+                    // o topo dos blocos e delimite as bordas onde esta em
+                    // branco"), mesmo padrao ja aplicado no site
+                    // (data-table.tsx). Antes essa coluna de icones ficava
+                    // do lado direito, ocupando a altura toda do card ao
+                    // lado dos campos -- agora e uma faixa fina no topo,
+                    // com HorizontalDivider separando do conteudo.
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1357,6 +1366,52 @@ fun DomainListScreen(
                                 if (isLastOfGroup) Modifier.padding(bottom = 8.dp) else Modifier
                             ),
                     ) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+                                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    if (domainId == "nfse" && record["status"] != "EMITIDA" && recordId != null) {
+                                        IconButton(
+                                            onClick = { viewModel.emitirNfse(recordId) },
+                                            enabled = nfseBusyId == null,
+                                            modifier = Modifier.size(28.dp),
+                                        ) {
+                                            if (nfseBusyId == recordId) {
+                                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                            } else {
+                                                Icon(Icons.Filled.Send, contentDescription = "Emitir NFS-e", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                            }
+                                        }
+                                    }
+                                    Spacer(Modifier.weight(1f))
+                                    if (hasMore) {
+                                        IconButton(onClick = { cardOverrides[recordId ?: ""] = !expanded }, modifier = Modifier.size(28.dp)) {
+                                            Icon(
+                                                if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                                contentDescription = if (expanded) "Recolher lançamento" else "Expandir lançamento",
+                                                modifier = Modifier.size(18.dp),
+                                                tint = MaterialTheme.colorScheme.primary,
+                                            )
+                                        }
+                                    }
+                                    // "Ver" removido da vista de BLOCO (aqui) --
+                                    // pedido do usuário ("pode retirar a opção do
+                                    // ícone ver quando está como bloco, na
+                                    // tabela permanece o ícone ver, em app e
+                                    // plataforma"): na vista Tabela (onView, ver
+                                    // RecordTable.kt) o ícone Ver continua igual.
+                                    IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
+                                        Icon(Icons.Filled.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                    }
+                                    IconButton(onClick = { recordPendingDelete = recordId }, modifier = Modifier.size(28.dp)) {
+                                        Icon(Icons.Filled.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                                    }
+                                }
+                                HorizontalDivider()
                         Row(modifier = Modifier.fillMaxWidth()) {
                             Column(modifier = Modifier.weight(1f).padding(12.dp)) {
                                 if (expanded) {
@@ -1386,62 +1441,7 @@ fun DomainListScreen(
                                     )
                                 }
                             }
-                            Column(
-                                modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp),
-                                verticalArrangement = Arrangement.spacedBy(0.dp),
-                            ) {
-                                // Verde (primary) nos 3 ícones de ação --
-                                // pedido do usuário ("ainda há ícones e
-                                // rótulos nos módulos que não estão verde
-                                // dentro dos blocos individuais"); Excluir
-                                // continua vermelho (error), cor semântica
-                                // de ação destrutiva.
-                                if (hasMore) {
-                                    IconButton(onClick = { cardOverrides[recordId ?: ""] = !expanded }, modifier = Modifier.size(28.dp)) {
-                                        Icon(
-                                            if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                            contentDescription = if (expanded) "Recolher lançamento" else "Expandir lançamento",
-                                            modifier = Modifier.size(18.dp),
-                                            tint = MaterialTheme.colorScheme.primary,
-                                        )
-                                    }
-                                }
-                                // "Emitir NFS-e" (varredura de auditoria,
-                                // pedido do usuário "implemente tudo") --
-                                // réplica mobile do botão só-do-domínio-nfse
-                                // do site (data-table.tsx, onEmitirNfse): só
-                                // aparece aqui, e só enquanto a nota ainda
-                                // não foi emitida.
-                                if (domainId == "nfse" && record["status"] != "EMITIDA" && recordId != null) {
-                                    IconButton(
-                                        onClick = { viewModel.emitirNfse(recordId) },
-                                        enabled = nfseBusyId == null,
-                                        modifier = Modifier.size(28.dp),
-                                    ) {
-                                        if (nfseBusyId == recordId) {
-                                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                                        } else {
-                                            Icon(Icons.Filled.Send, contentDescription = "Emitir NFS-e", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                                        }
-                                    }
-                                }
-                                // "Ver" removido da vista de BLOCO (aqui) --
-                                // pedido do usuário ("pode retirar a opção do
-                                // ícone ver quando está como bloco, na
-                                // tabela permanece o ícone ver, em app e
-                                // plataforma"): na vista Tabela (onView, ver
-                                // RecordTable.kt) o ícone Ver continua igual,
-                                // sem essa vista de resumo os dados não
-                                // aparecem sozinhos. Editar fica logo abaixo
-                                // da seta de recolher/expandir acima, e
-                                // Excluir logo abaixo de Editar.
-                                IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
-                                    Icon(Icons.Filled.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                                }
-                                IconButton(onClick = { recordPendingDelete = recordId }, modifier = Modifier.size(28.dp)) {
-                                    Icon(Icons.Filled.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
-                                }
-                            }
+                        }
                         }
                     }
                 }
@@ -1750,6 +1750,13 @@ private fun RecordFieldLine(
         DomainProgressCell(col.label, progress)
     } else if (isStatusLikeColumn(col.key)) {
         StatusBadge(value)
+    } else if (domainId == "financeiro" && col.key == "operacao") {
+        // Pill colorido pro campo "Operacao" (COMPRA/VENDA/PAGAMENTO...) --
+        // mesmo tratamento visual ja aplicado ao Bruto/Liquido, agora tambem
+        // destacando a propria operacao com fundo (pedido do usuario:
+        // "destacar as operacoes com fundos coloridos... procure onde mais
+        // e relevante"), espelhando OperacaoCell no site.
+        OperacaoBadge(value, isReceitaOp(record["operacao"]))
     } else {
         val displayValue = if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)
         // Verde (receita) / laranja-âmbar (despesa) só nas colunas Bruto/

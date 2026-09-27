@@ -3,6 +3,27 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.0] -- 2026-09-27
+
+- **Blocos: ícones de recolher/editar/excluir realocados pro TOPO** (pedido
+  do usuário: "realoque os ícones... para o topo dos blocos e delimite as
+  bordas onde está em branco"). Antes ficavam numa coluna do lado direito,
+  ocupando a altura toda do card ao lado dos campos, deixando espaço em
+  branco sobrando embaixo quando o card tinha poucos campos. Agora é uma
+  faixa fina no topo do bloco (fundo `surfaceVariant` sutil + divisória),
+  com o mesmo padrão já aplicado no site (`data-table.tsx`).
+- **Status: badge colorido garantido em qualquer campo status-like** --
+  antes só o primeiro campo desse tipo por card ganhava o badge
+  (verde/amarelo/vermelho); campos status extras (ex: `confere`,
+  `conferenNf`) apareciam em texto puro. Native já tinha esse
+  comportamento correto via `StatusBadge`/`isStatusLikeColumn`; corrigido
+  agora no site.
+- **Financeiro: campo "Operação" ganha badge colorido** (verde quando é
+  receita -- VENDA/RECEBIMENTO/RESGATE/ESTORNO/DEVOLUÇÃO --, âmbar quando é
+  despesa) -- mesmo critério que já colore os valores Bruto/Líquido, agora
+  também destacando a própria operação com um fundo. Aplicado no site
+  (`OperacaoCell`) e no app nativo (`OperacaoBadge`).
+
 ## [1.2.99] -- 2026-09-27
 
 - **Fix real (confirmado via adb logcat): app fechando imediatamente ao

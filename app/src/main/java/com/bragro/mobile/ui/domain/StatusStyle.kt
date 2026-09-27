@@ -222,6 +222,31 @@ fun StatusBadge(rawValue: String) {
     )
 }
 
+/** Pill colorido pro campo "Operação" do Financeiro (COMPRA/VENDA/PAGAMENTO
+ * etc.) -- mesmo criterio de isReceitaOp ja usado pra colorir Bruto/Liquido
+ * (ver FinanceiroViewLogic.kt), so que aqui destaca a propria Operacao com um
+ * fundo, nao so o numero. Espelha OperacaoCell em data-table.tsx (site).
+ * Pedido do usuario: "destacar as operacoes com fundos coloridos... procure
+ * onde mais e relevante". */
+@Composable
+fun OperacaoBadge(value: String, isReceita: Boolean) {
+    if (value.isBlank() || value == "—") {
+        Text(value, style = MaterialTheme.typography.bodyMedium)
+        return
+    }
+    val bg = if (isReceita) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.secondaryContainer
+    val fg = if (isReceita) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSecondaryContainer
+    Text(
+        value,
+        style = MaterialTheme.typography.labelMedium,
+        color = fg,
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(bg)
+            .padding(horizontal = 10.dp, vertical = 3.dp),
+    )
+}
+
 // Espelho de progressCellInfo() em data-table.tsx (site) -- pedido do
 // usuario ("a barra de progresso deve ser aplicada em modulos que envolvem
 // metas, limites, etapas continuas ou consumo de recursos", depois "sim"
