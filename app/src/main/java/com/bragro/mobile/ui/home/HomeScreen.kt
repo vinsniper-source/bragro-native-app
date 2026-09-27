@@ -65,6 +65,7 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.PlaylistAddCheck
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Receipt
@@ -1391,6 +1392,17 @@ fun HomeScreen(
                 weather?.commodities?.let { CotacoesCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth()) }
             }
             }
+            // Cotações Pecuária (Boi Gordo/CEPEA) -- pedido do usuário
+            // ("habilitar API tudo que for relacionado a pecuária, igual foi
+            // feito em cotações de grãos, crie bloco separado"). Bloco
+            // próprio, com o mesmo padrão visual/toggle de Cotações Grãos
+            // acima, mas alimentado por weather?.livestock (CEPEA/ESALQ) em
+            // vez de weather?.commodities (Grão Direto).
+            if (data.hasWidget("inicio.cotacoespecuaria")) {
+            item(key = "cotacoespecuaria") {
+                weather?.livestock?.boiGordo?.let { CotacoesPecuariaCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth()) }
+            }
+            }
         }
     }
 }
@@ -2609,6 +2621,67 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
             val dataFonte = itens.firstNotNullOfOrNull { it.atualizadoEm }
             Text(
                 if (dataFonte != null) "Fonte: Grão Direto ($dataFonte)" else "Fonte: Grão Direto",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+// Cotações Pecuária (Boi Gordo/CEPEA) -- bloco separado de Cotações Grãos,
+// pedido do usuário. Mesmo padrão visual (header com refresh, valor em R$,
+// variação com seta colorida, fonte no rodapé), simplificado pra 1 item só
+// (sem as 3 colunas divididas por linha vertical, já que por enquanto só há
+// o indicador do Boi Gordo -- ver LivestockQuotesData em quotes.ts/Models.kt,
+// estruturado pra permitir novos indicadores tipo bezerro/leite no futuro).
+@Composable
+private fun CotacoesPecuariaCard(q: com.bragro.mobile.data.model.LivestockQuoteData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = modifier, border = BorderStroke(0.dp, Color.Transparent)) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            MiniCardHeaderWithRefresh("Cotações Pecuária", Icons.Filled.Pets, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Icon(
+                    Icons.Filled.Pets,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(12.dp),
+                )
+                Text(
+                    q.nome,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "R$ ${formatMoneyNumberOnly(q.valor)}",
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
+                )
+                Text(
+                    "/${q.unidade}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                val positivo = q.variacaoPct >= 0
+                val corVariacao = if (positivo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Icon(
+                        if (positivo) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
+                        contentDescription = null,
+                        tint = corVariacao,
+                        modifier = Modifier.size(12.dp),
+                    )
+                    Text(
+                        formatVariacaoPct(q.variacaoPct),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = corVariacao,
+                    )
+                }
+            }
+            val fonteTexto = if (q.atualizadoEm != null) "Fonte: ${q.fonte} (${q.atualizadoEm})" else "Fonte: ${q.fonte}"
+            Text(
+                fonteTexto,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -3,6 +3,35 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.2] -- 2026-09-27
+
+- **Novo bloco "Cotações Pecuária" (Boi Gordo/CEPEA)** -- pedido do usuário
+  ("habilitar API tudo que for relacionado a pecuária, igual foi feito em
+  cotações de grãos, crie bloco separado"). Nova função `getLivestockQuotes()`
+  (site, `lib/services/quotes.ts`) lê o indicador do Boi Gordo direto da
+  página pública do CEPEA/ESALQ (mesma técnica de scraping HTML já usada
+  pra Grão Direto), com cache de 24h. Novo widget `inicio.cotacoespecuaria`
+  (toggle em Acessos, site e app), card próprio no dashboard do site e no
+  Início do app nativo (não reaproveita o card de Cotações Grãos -- é um
+  bloco separado, como pedido), e propagado pra rota pública
+  `/api/mobile/weather` (novo campo `livestock`). **Observação sobre
+  licenciamento**: o indicador do CEPEA é publicado sob licença CC BY-NC 4.0
+  (uso não-comercial) -- como a plataforma está sendo comercializada, essa é
+  uma fonte de dados a revisar/substituir por uma alternativa com termos
+  comerciais claros antes do lançamento comercial (mesma ressalva já se
+  aplica à fonte Grão Direto usada em Cotações Grãos, que não tem termos de
+  uso comercial explícitos).
+- **Clima + Cotações habilitados nos 4 logins de teste pedidos pelo
+  usuário**: `teste.agriculturafamiliar@bragro.app` ganhou `inicio.clima`
+  (estava faltando -- só esse login tinha o widget de Clima ausente) e
+  `inicio.cotacoespecuaria`; `teste.pecuaria@bragro.app` ganhou só
+  `inicio.cotacoespecuaria` (sem Clima, conforme pedido explícito do
+  usuário: "apareça somente no login Agricultura Familiar, nos outros já
+  está implementado nos setores relevantes"); OWNER (`vinsniper@gmail.com`)
+  ganhou `inicio.cotacoespecuaria` (já tinha Clima); `teste.admin@bragro.app`
+  não precisou de mudança (papel ADMIN com `modulosPermitidos` vazio já
+  recebe todos os widgets por padrão).
+
 ## [1.3.1] -- 2026-09-27
 
 - **Barra inferior do setor Agricultura Familiar: 9 abas cortadas -> 6

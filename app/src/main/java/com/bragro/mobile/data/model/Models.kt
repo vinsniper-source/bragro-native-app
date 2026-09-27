@@ -1609,6 +1609,25 @@ data class CommodityQuotesData(
     val sorgo: CommodityQuoteData? = null,
 )
 
+// Cotacoes de Pecuaria (Boi Gordo/CEPEA) -- pedido do usuario ("igual foi
+// feito em cotações de grãos, crie bloco separado"). Mesmo padrao de
+// CommodityQuoteData/CommodityQuotesData acima, so que com "fonte" (CEPEA/
+// ESALQ) em vez de "praca" (regiao do Grao Direto).
+@Serializable
+data class LivestockQuoteData(
+    val nome: String,
+    val unidade: String,
+    val fonte: String,
+    val valor: Double,
+    val variacaoPct: Double,
+    val atualizadoEm: String? = null,
+)
+
+@Serializable
+data class LivestockQuotesData(
+    val boiGordo: LivestockQuoteData? = null,
+)
+
 @Serializable
 data class WeatherResponse(
     val ok: Boolean,
