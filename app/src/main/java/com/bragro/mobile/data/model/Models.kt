@@ -1638,6 +1638,7 @@ data class WeatherResponse(
     val weather: WeatherData? = null,
     val fx: FxRatesData? = null,
     val commodities: CommodityQuotesData? = null,
+    val livestock: LivestockQuotesData? = null,
     val error: String? = null,
 )
 
