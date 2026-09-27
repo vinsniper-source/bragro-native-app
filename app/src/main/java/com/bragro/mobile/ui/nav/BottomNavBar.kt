@@ -128,27 +128,38 @@ private data class BottomTab(
 // permissão).
 private val BOTTOM_TABS = listOf(
     // Ex-categoria "Produção" (dentro da antiga aba Safra).
+    // "Painéis" (visões cruzadas: Controle de Insumos/Operações) foi
+    // absorvida como categoria DENTRO de Produção -- pedido do usuário
+    // (comparação de 2 logins: "reduza a barra inferior em 6 módulos... o
+    // que não couber, coloque no módulo correspondente"; Agricultura
+    // Familiar chegava a 9 abas cortadas). Cada item ganha "category" pra
+    // aparecer com cabeçalho de acordeão no dropdown (mesma UI já usada em
+    // OWNER_BOTTOM_TABS), então Produção deixa de ser lista plana.
     BottomTab(
         "producao", "Produção", Icons.Filled.Agriculture,
         items = listOf(
-            SectorTarget.Domain("safra", "Safra"),
-            SectorTarget.Domain("planejamentosafra", "Planejamento de Safra"),
-            SectorTarget.Domain("colheita", "Colheita"),
+            SectorTarget.Domain("safra", "Safra", category = "Produção"),
+            SectorTarget.Domain("planejamentosafra", "Planejamento de Safra", category = "Produção"),
+            SectorTarget.Domain("colheita", "Colheita", category = "Produção"),
             // "Romaneio rápido" virou um 2º FAB dentro do próprio módulo
             // Romaneios (ver DomainListScreen.kt), pedido do usuário
             // ("coloque romaneio rápido como um botão dentro de romaneio,
             // unifique").
-            SectorTarget.Domain("romaneios", "Romaneios"),
+            SectorTarget.Domain("romaneios", "Romaneios", category = "Produção"),
             // Pecuária (Task #685-692) -- domínio genérico igual aos demais
             // acima (mesmo motor DomainListScreen/DomainFormScreen, API
             // mobile já 100% genérica), entra em Produção por ser atividade
             // de campo do dia a dia (mesmo critério do site, section
             // "campo").
-            SectorTarget.Domain("pecuaria", "Pecuária"),
+            SectorTarget.Domain("pecuaria", "Pecuária", category = "Produção"),
             // Pastagem (Módulo de Suplementação e Pastagem, gap analysis do
             // usuário) -- mesmo critério de Pecuária acima: domínio genérico
             // de campo, entra em Produção.
-            SectorTarget.Domain("pastagem", "Pastagem"),
+            SectorTarget.Domain("pastagem", "Pastagem", category = "Produção"),
+            // Ex-aba "Painéis" (ver comentário acima do BottomTab) --
+            // absorvida aqui como 2ª categoria do dropdown.
+            SectorTarget.Special("controleinsumos", "Controle de Insumos", category = "Painéis"),
+            SectorTarget.Special("operacoes", "Operações", category = "Painéis"),
         ),
     ),
     // Ex-categoria "Sanidade": pragas/doenças e o receituário que as trata.
@@ -175,75 +186,46 @@ private val BOTTOM_TABS = listOf(
             SectorTarget.Special("prescricao", "Prescrição / Taxa Variável"),
         ),
     ),
-    // Ex-categoria "Painéis": visões cruzadas/agregadas, não um lançamento
-    // específico. Quando só um dos dois itens abaixo estiver liberado pra
-    // conta (ex.: só "controledeinsumos", sem "safra"), esta aba vira
-    // acesso direto com o ícone/rótulo do próprio item -- ver
-    // RenderTab.Direct mais abaixo (pedido do usuário: mockup do setor
-    // Estoque mostrando "Estoque" + "Controle de Insumos" lado a lado, sem
-    // um botão "Painéis" no meio).
-    BottomTab(
-        "paineis", "Painéis", Icons.Filled.Assignment,
-        items = listOf(
-            // Gap encontrado na auditoria módulo-a-módulo contra o site --
-            // no site fica na seção "estoque" (lib/modules.ts), mas aqui
-            // entra em Painéis por ser uma visão cruzada (Safra/Frota/ADM),
-            // ao lado de Operações.
-            SectorTarget.Special("controleinsumos", "Controle de Insumos"),
-            // Visão "Operação" agrupada -- no site é permissão "safra"
-            // (lib/modules.ts), então entra aqui também.
-            SectorTarget.Special("operacoes", "Operações"),
-        ),
-    ),
     // Acesso direto -- pedido do usuário ("botão frota acesso direto, retire
     // as listas suspensas").
     BottomTab("frota", "Frota", Icons.Filled.DirectionsCar, directDomainId = "frota"),
-    // Ex-categoria "Lançamentos" (dentro da antiga aba Financeiro):
-    // operações financeiras do dia a dia.
+    // Ex-categorias "Lançamentos" + "Relatórios" + "Compras" (antigas abas
+    // próprias da aba Financeiro) fundidas numa aba só -- pedido do usuário
+    // (mesmo motivo do merge de Produção/Painéis acima: reduzir a barra de 9
+    // pra 6 abas). Cada item ganha "category" pra manter o mesmo agrupamento
+    // visual de antes dentro do dropdown (acordeão, mesma UI de
+    // OWNER_BOTTOM_TABS).
     BottomTab(
-        "lancamentos", "Lançamentos", Icons.Filled.Receipt,
+        "financeiro", "Financeiro", Icons.Filled.Receipt,
         items = listOf(
-            SectorTarget.Domain("financeiro", "Lançamentos"),
+            SectorTarget.Domain("financeiro", "Lançamentos", category = "Lançamentos"),
             // Entrada PRÓPRIA -- pedido do usuário ("na barra inferior do
             // botão financeiro insira, na lista suspensa, um módulo chamado
             // gestão financeira"). Abre a mesma tela do Financeiro já na
             // visão "Contas a Pagar" (ver domainId == "gestaofinanceira" em
             // BRAgroNavHost.kt + startInGestao em FinanceiroScreen.kt).
             // "gestaofinanceira" não é um domínio de verdade separado.
-            SectorTarget.Domain("gestaofinanceira", "Gestão Financeira"),
-        ),
-    ),
-    // Ex-categoria "Relatórios": visões consolidadas/analíticas, não
-    // lançamento.
-    BottomTab(
-        "relatorios", "Relatórios", Icons.Filled.BarChart,
-        items = listOf(
-            SectorTarget.Special("dre", "DRE"),
-            SectorTarget.Special("analises", "Análises cruzadas"),
+            SectorTarget.Domain("gestaofinanceira", "Gestão Financeira", category = "Lançamentos"),
+            SectorTarget.Special("dre", "DRE", category = "Relatórios"),
+            SectorTarget.Special("analises", "Análises cruzadas", category = "Relatórios"),
             // Livro Caixa do Produtor Rural (Task #58).
-            SectorTarget.Special("livrocaixa", "Livro Caixa"),
+            SectorTarget.Special("livrocaixa", "Livro Caixa", category = "Relatórios"),
             // Dossiê Bancário e Simulador "E se?" (Task #599/#600, paridade
             // nativa #615/#616) -- mesmo critério dos itens acima.
-            SectorTarget.Special("dossie", "Dossiê Bancário"),
-            SectorTarget.Special("simulador", "Simulador \"E se?\""),
-        ),
-    ),
-    // Ex-categoria "Compras": aquisição de insumos/serviços de terceiros.
-    BottomTab(
-        "compras", "Compras", Icons.Filled.ShoppingCart,
-        items = listOf(
-            SectorTarget.Domain("pedidos", "Pedidos"),
+            SectorTarget.Special("dossie", "Dossiê Bancário", category = "Relatórios"),
+            SectorTarget.Special("simulador", "Simulador \"E se?\"", category = "Relatórios"),
+            SectorTarget.Domain("pedidos", "Pedidos", category = "Compras"),
             // Existia como domínio completo (colunas, cálculo automático de
             // Índice de Vantagem etc.) mas nunca tinha entrado numa lista
             // suspensa da barra inferior -- pedido do usuário ("ainda não
             // foi implementado o módulo cotações fornecedores").
-            SectorTarget.Domain("cotacoesfornecedores", "Cotações de Fornecedores"),
-            SectorTarget.Domain("contratos", "Contratos"),
+            SectorTarget.Domain("cotacoesfornecedores", "Cotações de Fornecedores", category = "Compras"),
+            SectorTarget.Domain("contratos", "Contratos", category = "Compras"),
             // Módulo de Orçamento (OCR + conciliação com nota mãe) -- ver
             // handoff-ocr-orcamento.md. Tela própria (não é um domínio
             // genérico, tabela nova Orcamento/OrcamentoItem), mesmo critério
             // de Romaneio Rápido/DRE/Análises (SectorTarget.Special).
-            SectorTarget.Special("orcamentos", "Orçamentos"),
+            SectorTarget.Special("orcamentos", "Orçamentos", category = "Compras"),
         ),
     ),
     // Ex-categoria "Faturamento": movimento de caixa/cobrança -- mesmo

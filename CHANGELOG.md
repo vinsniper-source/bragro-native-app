@@ -3,6 +3,32 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.1] -- 2026-09-27
+
+- **Barra inferior do setor Agricultura Familiar: 9 abas cortadas -> 6
+  abas completas** (pedido do usuário, comparação de 2 screenshots: login
+  dono com 6 botões vs. login Agricultura Familiar com 9 abas de rótulo
+  cortado). "Painéis" (Controle de Insumos/Operações) foi absorvida como
+  2ª categoria dentro do dropdown de "Produção"; "Lançamentos",
+  "Relatórios" e "Compras" foram fundidas numa única aba "Financeiro" com
+  3 categorias no dropdown (mesmo padrão de acordeão por categoria já usado
+  na barra do dono). Resultado pra Agricultura Familiar: Produção,
+  Sanidade, Frota, Financeiro, Estoque, RH -- exatamente 6 abas, sem corte
+  de texto. Esse reagrupamento é na lista compartilhada (`BOTTOM_TABS`),
+  então qualquer outro papel que hoje bata em 7+ abas (ex.: se algum dia
+  ganhar mais permissões) também se beneficia.
+- **Ícones de Configurações e Base de Dados no cabeçalho da Agricultura
+  Familiar** -- pedido do usuário (mesma comparação de screenshots: o
+  login dono tinha ícones extras no cabeçalho). Os ícones de nuvem
+  (Backup completo) e grade (menu Módulos: Configurações/Base de
+  Dados/Acessos) continuam reservados a OWNER/ADMIN por design (dão
+  acesso administrativo total, não é algo pra liberar por papel). O que
+  foi feito: os ícones PRÓPRIOS de Configurações e Base de Dados (que já
+  existiam no app, condicionados a permissão de módulo) agora vêm
+  habilitados por padrão no preset da Agricultura Familiar
+  (`ROLE_MODULES` em `permissions.ts`, site) -- aproxima o cabeçalho sem
+  dar acesso a Backup/Acessos.
+
 ## [1.3.0] -- 2026-09-27
 
 - **Blocos: ícones de recolher/editar/excluir realocados pro TOPO** (pedido
