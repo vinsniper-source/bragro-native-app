@@ -1400,7 +1400,7 @@ fun HomeScreen(
             // vez de weather?.commodities (Grão Direto).
             if (data.hasWidget("inicio.cotacoespecuaria")) {
             item(key = "cotacoespecuaria") {
-                weather?.livestock?.boiGordo?.let { CotacoesPecuariaCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth()) }
+                weather?.livestock?.let { CotacoesPecuariaCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth()) }
             }
             }
         }
@@ -2628,60 +2628,88 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
     }
 }
 
-// Cotações Pecuária (Boi Gordo/CEPEA) -- bloco separado de Cotações Grãos,
-// pedido do usuário. Mesmo padrão visual (header com refresh, valor em R$,
-// variação com seta colorida, fonte no rodapé), simplificado pra 1 item só
-// (sem as 3 colunas divididas por linha vertical, já que por enquanto só há
-// o indicador do Boi Gordo -- ver LivestockQuotesData em quotes.ts/Models.kt,
-// estruturado pra permitir novos indicadores tipo bezerro/leite no futuro).
+// Cotações Pecuária (Boi Gordo/Bezerro/Leite -- CEPEA) -- bloco separado de
+// Cotações Grãos, pedido do usuário. Ampliado pra 3 indicadores (mesmo
+// layout de 3 colunas com divisor vertical do CotacoesCard acima) depois
+// que o usuário reportou que só tinha Boi Gordo ("nao tem tantas
+// informacoes, apenas boi gordo") -- ver LivestockQuotesData em
+// quotes.ts/Models.kt.
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun CotacoesPecuariaCard(q: com.bragro.mobile.data.model.LivestockQuoteData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
+private fun CotacoesPecuariaCard(livestock: com.bragro.mobile.data.model.LivestockQuotesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier, border = BorderStroke(0.dp, Color.Transparent)) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MiniCardHeaderWithRefresh("Cotações Pecuária", Icons.Filled.Pets, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Icon(
-                    Icons.Filled.Pets,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(12.dp),
-                )
-                Text(
-                    q.nome,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    "R$ ${formatMoneyNumberOnly(q.valor)}",
-                    fontWeight = FontWeight.SemiBold,
-                    style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
-                )
-                Text(
-                    "/${q.unidade}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                val positivo = q.variacaoPct >= 0
-                val corVariacao = if (positivo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Icon(
-                        if (positivo) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
-                        contentDescription = null,
-                        tint = corVariacao,
-                        modifier = Modifier.size(12.dp),
-                    )
-                    Text(
-                        formatVariacaoPct(q.variacaoPct),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = corVariacao,
-                    )
+            val itens = listOfNotNull(livestock.boiGordo, livestock.bezerro, livestock.leite)
+            Row(modifier = Modifier.fillMaxWidth()) {
+                itens.forEachIndexed { index, q ->
+                    if (index > 0) {
+                        Box(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .padding(vertical = 2.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant)
+                                .fillMaxHeight(),
+                        )
+                    }
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = if (index > 0) 8.dp else 0.dp),
+                        verticalArrangement = Arrangement.spacedBy(1.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(
+                                Icons.Filled.Pets,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(12.dp),
+                            )
+                            Text(
+                                q.nome,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Clip,
+                                modifier = Modifier.basicMarquee(),
+                            )
+                        }
+                        Text(
+                            "R$ ${formatMoneyNumberOnly(q.valor)}",
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Clip,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+                            modifier = Modifier.basicMarquee(),
+                        )
+                        val positivo = q.variacaoPct >= 0
+                        val corVariacao = if (positivo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Icon(
+                                if (positivo) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
+                                contentDescription = null,
+                                tint = corVariacao,
+                                modifier = Modifier.size(12.dp),
+                            )
+                            Text(
+                                formatVariacaoPct(q.variacaoPct),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = corVariacao,
+                            )
+                        }
+                        Text(
+                            q.unidade,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Clip,
+                            modifier = Modifier.basicMarquee(),
+                        )
+                    }
                 }
             }
-            val fonteTexto = if (q.atualizadoEm != null) "Fonte: ${q.fonte} (${q.atualizadoEm})" else "Fonte: ${q.fonte}"
             Text(
-                fonteTexto,
+                "Fonte: CEPEA/ESALQ",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

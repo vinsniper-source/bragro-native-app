@@ -3,6 +3,28 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.3] -- 2026-09-27
+
+- **Fix real: Cotações Pecuária sem valor em produção.** O CEPEA/ESALQ
+  bloqueava (403 silencioso) as requisições feitas pelo servidor Next.js
+  (rodando numa IP de datacenter da Vercel) por faltar um User-Agent de
+  navegador -- confirmado comparando: um fetch direto do navegador
+  funcionava perfeitamente (Boi Gordo R$ 358,80 em 25/09/2026), mas o
+  fetch do servidor sem headers de navegador falhava sempre, deixando o
+  card sempre com "—". Corrigido enviando User-Agent/Accept/Accept-Language
+  de um Chrome real em toda chamada ao CEPEA (`getCepeaIndicador` em
+  quotes.ts).
+- **Cotações Pecuária: adicionados Bezerro e Leite** -- pedido do usuário
+  após o bloco ir ao ar só com Boi Gordo ("no bloco cotacoes nao tem
+  tantas informacoes, apenas boi gordo"). Agora o card (site e app) mostra
+  3 indicadores nacionais CEPEA/ESALQ lado a lado, no mesmo layout de 3
+  colunas com divisor vertical do card de Cotações Grãos: Boi Gordo (@,
+  variação diária), Bezerro (cabeça, variação diária) e Leite (R$/litro,
+  média Brasil, mensal -- variação calculada mês a mês, já que a CEPEA não
+  publica variação % pronta para esse indicador). `LivestockQuotes`
+  (quotes.ts) e `LivestockQuotesData` (Models.kt) ganharam os campos
+  `bezerro`/`leite`.
+
 ## [1.3.2] -- 2026-09-27
 
 - **Novo bloco "Cotações Pecuária" (Boi Gordo/CEPEA)** -- pedido do usuário

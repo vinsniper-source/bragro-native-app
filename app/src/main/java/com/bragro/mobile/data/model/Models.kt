@@ -1626,6 +1626,10 @@ data class LivestockQuoteData(
 @Serializable
 data class LivestockQuotesData(
     val boiGordo: LivestockQuoteData? = null,
+    // Bezerro e Leite -- pedido do usuario apos o bloco ir ao ar so com Boi
+    // Gordo ("nao tem tantas informacoes, apenas boi gordo").
+    val bezerro: LivestockQuoteData? = null,
+    val leite: LivestockQuoteData? = null,
 )
 
 @Serializable

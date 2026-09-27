@@ -131,7 +131,7 @@ private val INICIO_WIDGETS = listOf(
     "inicio.clima" to "Clima",
     "inicio.cambio" to "Câmbio (Dólar/Euro)",
     "inicio.cotacoes" to "Cotações agrícolas (Grão Direto)",
-    "inicio.cotacoespecuaria" to "Cotações de pecuária (Boi Gordo/CEPEA)",
+    "inicio.cotacoespecuaria" to "Cotações de pecuária (Boi Gordo/Bezerro/Leite - CEPEA)",
     "inicio.destaques" to "Destaques",
     // Indicador "barra segmentada por categoria" por setor -- adicionados no
     // site em lib/permissions.ts (Task #516/#519, "replique o que ainda
