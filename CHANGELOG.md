@@ -3,6 +3,30 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.2.99] -- 2026-09-27
+
+- **Fix real (confirmado via adb logcat): app fechando imediatamente ao
+  abrir, antes da tela de login** (Task #749). Causa raiz encontrada no
+  `FATAL EXCEPTION` capturado no aparelho do usuário:
+  `java.lang.IllegalStateException: The Crashlytics build ID is missing.
+  This occurs when the Crashlytics Gradle plugin is missing from your
+  app's build configuration.` A dependência `firebase-crashlytics` foi
+  adicionada na v1.2.97, mas o plugin Gradle
+  `com.google.firebase.crashlytics` (responsável por gerar o "build ID"
+  que o SDK exige em runtime) nunca foi declarado/aplicado -- só o
+  `com.google.gms.google-services` estava. Sem esse build ID, o
+  `FirebaseCrashlytics.init()` lança essa exceção dentro do
+  `FirebaseInitProvider`, que roda ANTES do `Application.onCreate()`,
+  derrubando o processo com `RuntimeException` antes de qualquer tela
+  (login incluso) -- exatamente o sintoma relatado. A tentativa anterior
+  (v1.2.98, desligar R8/minify) não tinha relação nenhuma com a causa
+  real, por isso o problema persistiu idêntico. Corrigido: plugin
+  `com.google.firebase.crashlytics` versão 3.0.2 declarado no
+  `build.gradle.kts` raiz e aplicado condicionalmente junto ao
+  google-services no `app/build.gradle.kts` (só quando
+  `google-services.json` existir, mesmo padrão já usado no projeto).
+  `isMinifyEnabled`/`isShrinkResources` reativados (nunca foram a causa).
+
 ## [1.2.98] -- 2026-09-26
 
 - **Fix (tentativa): app fechando imediatamente ao abrir, antes da tela de

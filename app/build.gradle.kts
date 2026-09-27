@@ -41,8 +41,8 @@ android {
         // a instalaçao pegou o apk certo (se apos instalar ainda aparecer
         // 1.1.6, a instalaçao nao pegou o apk novo -- se aparecer 1.1.7,
         // pegou, e as cores tem que estar corrigidas tambem).
-        versionCode = 108
-        versionName = "1.2.98"
+        versionCode = 109
+        versionName = "1.2.99"
 
         // URLs do backend (o MESMO backend do site publicado -- ver
         // native-app/README.md). Trocaveis por variante/ambiente sem
@@ -98,26 +98,18 @@ android {
             // keep faltando -- a solucao mais rapida enquanto investiga e
             // voltar isMinifyEnabled pra false.
             //
-            // DESLIGADO TEMPORARIAMENTE (usuario reportou: app instalado da
-            // ultima release fecha imediatamente, antes da tela de login --
-            // ver Task #749). Coincide com a ativacao do Firebase Crashlytics
-            // na v1.2.97 (google-services.json), que adicionou o
-            // firebase-bom como dependencia nova -- se o R8 remover/renomear
-            // algo que o Crashlytics/Firebase precisa via reflexao na
-            // inicializacao (FirebaseApp via ContentProvider, roda ANTES do
-            // Application.onCreate), o app fecha exatamente assim: antes de
-            // qualquer tela aparecer, sem log nenhum visivel (e o proprio
-            // Crashlytics que reportaria o erro pode nao inicializar a
-            // tempo de capturar sua propria falha). Desligar minify isola se
-            // a causa e regra de keep faltando; se o crash sumir aqui,
-            // confirma R8 como causa raiz -- proximo passo e achar a regra
-            // exata via Crashlytics (agora com stack trace legivel, sem
-            // ofuscacao) e so entao reativar isMinifyEnabled.
-            isMinifyEnabled = false
-            // shrinkResources exige minifyEnabled=true (o R8 e quem faz o
-            // shrink de recursos tambem) -- desligado junto, mesmo motivo
-            // acima.
-            isShrinkResources = false
+            // REATIVADO na v1.2.99 -- Task #749 resolvida de verdade. O crash
+            // "app fecha antes do login" NAO era causado pelo R8 (foi
+            // desligado em v1.2.98 como teste e o crash persistiu igual,
+            // "mesmo diagnostico" confirmado pelo usuario). A causa raiz,
+            // confirmada via adb logcat (FATAL EXCEPTION), era o plugin
+            // Gradle "com.google.firebase.crashlytics" nao estar aplicado
+            // (ver build.gradle.kts raiz e o bloco no fim deste arquivo) --
+            // sem ele, o SDK do Crashlytics derruba o app na inicializacao
+            // com "The Crashlytics build ID is missing". Corrigido isso,
+            // volta a minificacao/otimizacao normal de release.
+            isMinifyEnabled = true
+            isShrinkResources = true
             // Pedido do usuario ("corrija a lentidao do assemble release") --
             // trocado de "proguard-android-optimize.txt" pra
             // "proguard-android.txt" (arquivo padrao do proprio Android SDK,
@@ -307,4 +299,9 @@ dependencies {
 // assinatura de release.
 if (file("google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
+    // Task #749: precisa vir junto com o google-services -- sem este plugin,
+    // a dependencia "firebase-crashlytics" (acima) compila normal mas
+    // DERRUBA o app em runtime (ver comentario detalhado no build.gradle.kts
+    // raiz). Ambos os plugins juntos == Crashlytics funcionando de verdade.
+    apply(plugin = "com.google.firebase.crashlytics")
 }
