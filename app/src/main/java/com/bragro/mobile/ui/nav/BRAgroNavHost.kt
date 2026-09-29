@@ -460,6 +460,11 @@ fun BRAgroNavHost() {
                     recordId = null,
                     onBack = { navController.popBackStack() },
                     onSaved = { navController.popBackStack() },
+                    // Papel do usuário -- pedido pela Camada 2 de campos
+                    // dinâmicos (visibleWhenRoles/visibleWhenAll, task
+                    // #774), mesma sessão já usada acima (isOwner/
+                    // useGroupedTabs).
+                    role = session?.role,
                 )
             }
         }
@@ -477,6 +482,7 @@ fun BRAgroNavHost() {
                 recordId = recordId,
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
+                role = session?.role,
             )
         }
         }

@@ -3,6 +3,43 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.5] -- 2026-09-29
+
+- **Fix real (bug relatado): trava/comportamento incorreto ao clicar em
+  campo de Pecuária/Pastagem.** Varredura completa encontrou a causa:
+  `ColumnConfig` (Kotlin, `Models.kt`) não tinha os campos
+  `visibleWhenRoles`/`visibleWhenAll` que o site já usa extensivamente em
+  Pecuária/Pastagem/Contratos/Estoque pra mostrar campos condicionados à
+  Espécie/Categoria/papel do usuário (`pecuariaEspecieGate()` em
+  `registry.ts`). Como a desserialização JSON do app ignora chaves
+  desconhecidas, o app nunca quebrava com um erro visível, mas também
+  nunca aplicava esse gate -- o formulário de Pecuária acabava renderizando
+  campos demais/incorretos pra Espécie escolhida (ex.: campos de gado
+  aparecendo em Aves, campos de Confinamento/Leite aparecendo fora de
+  contexto), inflando o número de `ExposedDropdownMenuBox` simultâneos na
+  tela e aumentando a chance de instabilidade ao interagir com eles. Corrigido:
+  `ColumnConfig` ganhou `visibleWhenRoles`/`visibleWhenAll`; `isVisible()`
+  em `DomainFormScreen.kt` agora replica exatamente `isFieldVisible()` do
+  site (`record-form.tsx`); `DomainFormScreen`/`BRAgroNavHost` passam o
+  papel do usuário logado (`session.role`) pra função poder aplicar o gate
+  por papel quando presente.
+- **Varredura completa: 3 campos texto livre viram dropdown.** Auditoria
+  ampla (continuação da tarefa "mais campos sem dropdown"): "Motivo"
+  (Controle Interno/EPI), "Comprador/Destino" e "Armazém Destino"
+  (Romaneios) eram texto livre digitado a cada lançamento, sujeitos a
+  grafia inconsistente -- agora são listas suspensas com "+Criar"
+  (categorias `motivos_baixa_controleinterno`, `entidades_financeiro`
+  reaproveitada, `armazens_destino`).
+- **Varredura completa: "% Dano" (Pragas) vira campo numérico.** Era
+  `type: "text"`, impedindo qualquer agregação/gráfico por dano médio --
+  agora `type: "number"`, mesmo critério de umidade/impureza já numéricos
+  noutros domínios.
+- Auditoria de paridade site vs native (varredura completa) não encontrou
+  gaps de módulo/rota faltante além dos já catalogados (QR Code de
+  Rastreabilidade em Colheita, gráficos extras de Pastagem/Mão de Obra no
+  site) -- registrados como pendências separadas, não incluídos nesta
+  rodada por serem funcionalidades novas, não correções.
+
 ## [1.3.4] -- 2026-09-29
 
 - **Paridade nativa: ícone "ver senha" no login.** Réplica do

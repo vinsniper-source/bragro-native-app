@@ -320,17 +320,44 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
      * ColumnConfig (Models.kt) e isFieldVisible equivalente em
      * record-form.tsx (site). Sem essas duas props no campo, sempre visível
      * (comportamento de sempre, preservado). */
+    /** Papel do usuário logado -- só usado pela Camada 2 abaixo
+     * (visibleWhenRoles/visibleWhenAll), setado pela tela (ver
+     * DomainFormScreen composable) a partir da sessão local. Sem isso
+     * setado (null), a Camada 2 nunca ativa -- mesmo comportamento seguro
+     * de antes desta função existir. */
+    var currentRole: String? = null
+
     fun isVisible(col: ColumnConfig): Boolean {
-        val triggerField = col.visibleWhenField ?: return true
-        val allowed = col.visibleWhenValues ?: return true
-        val current = fields[triggerField]
-        // Sem o campo-gatilho ainda escolhido (ex.: "Operação" em branco),
-        // mostra TODOS os campos -- mesmo fix do site (record-form.tsx):
-        // esconder tudo até escolher a Operação fazia a maioria dos campos
-        // de Pecuária "desaparecer" (pedido do usuário reportando o bug).
-        // Filtra só depois que o gatilho já tem um valor definido.
-        if (current.isNullOrBlank()) return true
-        return allowed.contains(current)
+        // Camada 1 (legado, vale pra TODOS os papéis) -- mesmo critério de
+        // sempre, preservado.
+        val triggerField = col.visibleWhenField
+        val allowed = col.visibleWhenValues
+        if (triggerField != null && allowed != null) {
+            val current = fields[triggerField]
+            // Sem o campo-gatilho ainda escolhido (ex.: "Operação" em
+            // branco), mostra TODOS os campos -- mesmo fix do site
+            // (record-form.tsx): esconder tudo até escolher a Operação
+            // fazia a maioria dos campos de Pecuária "desaparecer" (pedido
+            // do usuário reportando o bug). Filtra só depois que o gatilho
+            // já tem um valor definido.
+            if (!current.isNullOrBlank() && !allowed.contains(current)) return false
+        }
+        // Camada 2 -- espelha isFieldVisible() de record-form.tsx (site).
+        // Quando visibleWhenRoles está presente, só entra em jogo pro(s)
+        // papel(is) listado(s) (ex.: Contratos/Estoque, exclusivos de
+        // AGRICULTURA_FAMILIAR). Quando está AUSENTE (só visibleWhenAll),
+        // vale pra QUALQUER papel logado (ex.: gates de Espécie da
+        // Pecuária/Pastagem). Todas as condições em visibleWhenAll precisam
+        // bater (AND); campo-gatilho ainda sem valor conta como visível
+        // (mesmo critério "não esconder tudo de uma vez" da Camada 1).
+        val allRules = col.visibleWhenAll
+        if (allRules != null && (col.visibleWhenRoles == null || (currentRole != null && col.visibleWhenRoles.contains(currentRole)))) {
+            for (rule in allRules) {
+                val v = fields[rule.field]
+                if (!v.isNullOrBlank() && !rule.values.contains(v)) return false
+            }
+        }
+        return true
     }
 
     /** Opções pro campo "select" -- caso especial pro campo "fazenda"
@@ -466,9 +493,16 @@ fun DomainFormScreen(
     recordId: String?,
     onBack: () -> Unit,
     onSaved: () -> Unit,
+    // Papel do usuário logado -- pedido pela Camada 2 de campos dinâmicos
+    // (visibleWhenRoles/visibleWhenAll, task #774), paridade com o `role`
+    // que o site repassa em record-form.tsx. Opcional/nulo por padrão:
+    // quem ainda não passa isso (nenhuma tela precisava até agora) continua
+    // com o comportamento de sempre -- só ativa a Camada 2 quando setado.
+    role: String? = null,
     viewModel: DomainFormViewModel = viewModel(),
 ) {
     LaunchedEffect(domainId, recordId) { viewModel.load(domainId, recordId) }
+    LaunchedEffect(role) { viewModel.currentRole = role }
     val config by viewModel.config
     val lookups by viewModel.lookupsByCategory
     val saving by viewModel.saving

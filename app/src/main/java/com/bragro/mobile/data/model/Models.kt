@@ -46,6 +46,25 @@ data class ColumnConfig(
     // (comportamento de sempre, preservado).
     val visibleWhenField: String? = null,
     val visibleWhenValues: List<String>? = null,
+    // Segunda camada de campos dinâmicos -- espelha visibleWhenRoles/
+    // visibleWhenAll de types.ts (site). Faltavam aqui (task #774, achado
+    // na varredura de paridade): como o Json do app usa
+    // ignoreUnknownKeys=true, o app nunca quebrava recebendo esses campos,
+    // mas também nunca os aplicava -- resultado: no Kotlin, campos de
+    // Pecuária/Pastagem/Contratos/Estoque que o site só mostra pra
+    // determinada Espécie/Categoria/papel apareciam SEMPRE, gerando um
+    // formulário com dropdowns/gates errados pra Espécie escolhida (raiz
+    // mais provável do "trava/comporta estranho ao clicar em campo de
+    // Pecuária/Pastagem" reportado). Ver isVisible() em DomainFormScreen.kt
+    // pra a aplicação real, espelhando isFieldVisible() de record-form.tsx.
+    val visibleWhenRoles: List<String>? = null,
+    val visibleWhenAll: List<VisibleWhenAllRule>? = null,
+)
+
+@Serializable
+data class VisibleWhenAllRule(
+    val field: String,
+    val values: List<String>,
 )
 
 @Serializable
