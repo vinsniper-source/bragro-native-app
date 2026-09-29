@@ -70,6 +70,11 @@ class ModuleActionsRepository(context: Context) {
         // por fazenda"), mesmo parâmetro que o site já manda (ver
         // record-form.tsx -> previewNextOsAction).
         local: String? = null,
+        // Só usados por "quick-create-lookup" -- categoria do lookup e o
+        // texto digitado, paridade nativa do "+Criar" do site (ver
+        // DomainFormScreen.kt -> FormField "select" branch).
+        category: String? = null,
+        rawValue: String? = null,
     ): JsonObject? {
         val tokens = tokenStore.current() ?: return null
         var (accessToken, refreshToken) = tokens
@@ -79,6 +84,7 @@ class ModuleActionsRepository(context: Context) {
             fazendaOrigemId = fazendaOrigemId, fazendaDestinoId = fazendaDestinoId,
             transferenciaEntradaId = transferenciaEntradaId,
             motivo = motivo, tipo = tipo, domainId = domainId, local = local,
+            category = category, rawValue = rawValue,
         )
         return try {
             var response = NetworkModule.mobileApi.moduleActions(buildRequest(accessToken))

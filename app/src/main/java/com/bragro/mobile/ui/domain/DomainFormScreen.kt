@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ContentCopy
@@ -120,6 +121,47 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
     // record-form.tsx).
     private var currentDomainId: String? = null
     private var currentRecordId: String? = null
+
+    /** Exposto pra "+Criar" (FormField "select" branch) saber pra qual
+     * domainId mandar quickCreateLookupItemAction -- currentDomainId em si
+     * continua privado (setado só por load()), esta é só a leitura pública. */
+    val domainId: String? get() = currentDomainId
+
+    /** Mescla um item recém-criado via "+Criar" na categoria correspondente
+     * de lookupsByCategory -- feedback imediato na lista sem precisar
+     * recarregar o formulário inteiro, mesmo padrão do "extraLookupOptions"
+     * do site (record-form.tsx). Ordena por nome, sem duplicar se por algum
+     * motivo o valor já estiver na lista (ex.: reaproveitou um existente). */
+    fun addQuickCreatedLookup(category: String, value: String) {
+        val current = lookupsByCategory.value[category].orEmpty()
+        if (current.any { it.value == value }) return
+        val updated = (current + LookupEntity(category, value, value, current.size)).sortedBy { it.label }
+        lookupsByCategory.value = lookupsByCategory.value + (category to updated)
+    }
+
+    /** "+Criar" dentro do dropdown de um campo select -- paridade nativa do
+     * onCreateOption do site (searchable-select.tsx). Chama a MESMA Server
+     * Action via o endpoint genérico de ações (quick-create-lookup ->
+     * quickCreateLookupItemAction, mesmo motor de dedup fuzzy/CAIXA ALTA/
+     * acentos obrigatórios de sempre), mescla o resultado em
+     * lookupsByCategory pra feedback imediato e já seleciona o valor
+     * criado no campo. onDone recebe o valor final (criado ou reaproveitado)
+     * pra quem chamou atualizar o texto exibido no campo. */
+    fun quickCreateLookupOption(category: String, rawValue: String, onDone: (String?) -> Unit) {
+        val domainId = currentDomainId ?: return onDone(null)
+        viewModelScope.launch {
+            val result = ModuleActionsRepository(getApplication()).run(
+                "quick-create-lookup", domainId = domainId, category = category, rawValue = rawValue,
+            )
+            val value = (result?.get("value") as? JsonPrimitive)?.contentOrNull
+            if (!value.isNullOrBlank()) {
+                addQuickCreatedLookup(category, value)
+                onDone(value)
+            } else {
+                onDone(null)
+            }
+        }
+    }
 
     fun load(domainId: String, recordId: String?) {
         currentDomainId = domainId
@@ -876,6 +918,21 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                 val q = query.trim()
                 if (q.isEmpty()) allOptions else allOptions.filter { it.second.contains(q, ignoreCase = true) }
             }
+            // "+Criar" -- paridade nativa do pedido do usuário ("em todas as
+            // listas suspensas da plataforma coloque a opção criar na
+            // segunda posição... abasteça automaticamente o banco de dados,
+            // com CAIXA ALTA e acentos obrigatórios"), mesmo gate do site
+            // (searchable-select.tsx: só campos com lookupCategory de
+            // verdade, não staticOptions fixos; exige >=2 letras digitadas;
+            // some se já existe uma opção idêntica, ignorando maiúscula/
+            // minúscula). A normalização em si (CAIXA ALTA + acentos
+            // preservados) acontece no servidor (toCanonicalUpper), não aqui.
+            val creatableCategory = if (staticOpts == null) viewModel.effectiveLookupCategory(col) else null
+            val trimmedQuery = query.trim()
+            val canCreate = creatableCategory != null &&
+                trimmedQuery.length >= 2 &&
+                allOptions.none { it.second.equals(trimmedQuery, ignoreCase = true) }
+            var creating by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
                 OutlinedTextField(
                     value = query,
@@ -900,6 +957,30 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                         query = ""
                         expanded = false
                     })
+                    // "+Criar" na 2ª posição -- mesmo lugar do site
+                    // (SearchableSelect: logo após "—"). Ao confirmar, chama
+                    // o servidor (quickCreateLookupItemAction) e só então
+                    // seleciona o valor -- nunca otimista, pra não ficar
+                    // fora de sincronia se o servidor reaproveitar um valor
+                    // existente diferente do texto digitado.
+                    if (canCreate) {
+                        DropdownMenuItem(
+                            text = { Text(if (creating) "Cadastrando..." else "+ Criar \"$trimmedQuery\"", color = MaterialTheme.colorScheme.primary) },
+                            enabled = !creating,
+                            leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                            onClick = {
+                                creating = true
+                                viewModel.quickCreateLookupOption(creatableCategory!!, trimmedQuery) { created ->
+                                    creating = false
+                                    if (created != null) {
+                                        viewModel.setField(col.key, created)
+                                        query = created
+                                    }
+                                    expanded = false
+                                }
+                            },
+                        )
+                    }
                     if (filtered.isEmpty()) {
                         DropdownMenuItem(text = { Text("Nenhum resultado", color = MaterialTheme.colorScheme.onSurfaceVariant) }, onClick = {}, enabled = false)
                     }

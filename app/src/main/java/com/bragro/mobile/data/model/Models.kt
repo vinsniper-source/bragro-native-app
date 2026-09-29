@@ -457,6 +457,13 @@ data class ModuleActionRequest(
     // SEQUÊNCIA DAQUELA FAZENDA (pedido do usuário: "uma sequência por
     // fazenda"), mesmo parâmetro que o site manda (record-form.tsx).
     val local: String? = null,
+    // Só usados por "quick-create-lookup" -- categoria do lookup e o texto
+    // digitado no dropdown, paridade nativa do "+Criar" do site
+    // (searchable-select.tsx -> onCreateOption). Mesmo motor de dedup fuzzy/
+    // CAIXA ALTA/acentos obrigatórios do servidor (quickCreateLookupItemAction),
+    // nenhuma lógica nova aqui.
+    val category: String? = null,
+    val rawValue: String? = null,
 )
 
 @Serializable

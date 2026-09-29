@@ -3,6 +3,41 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.4] -- 2026-09-29
+
+- **Paridade nativa: ícone "ver senha" no login.** Réplica do
+  `PasswordInput.tsx` do site (pedido do usuário: "em login coloque no
+  campo senha o icone ver") -- `LoginScreen.kt` agora tem um `IconButton`
+  (olho/olho riscado, `Icons.Filled.Visibility`/`VisibilityOff`) alternando
+  `PasswordVisualTransformation()` <-> `VisualTransformation.None` no campo
+  Senha.
+- **Paridade nativa: "+Criar" nas listas suspensas.** Réplica do
+  `onCreateOption` do `SearchableSelect` do site (pedido do usuário: "em
+  todas as listas suspensas da plataforma coloque a opção criar na
+  segunda posição... abasteça automaticamente o banco de dados, com CAIXA
+  ALTA e acentos obrigatórios") -- `FormField`'s "select" branch em
+  `DomainFormScreen.kt` ganha um item "+ Criar" logo após "(vazio)" (2ª
+  posição), habilitado quando o campo usa `lookupCategory` de verdade (não
+  `staticOptions`), tem >=2 letras digitadas e nenhuma opção idêntica já
+  existe. Chama a MESMA Server Action do site (`quickCreateLookupItemAction`
+  -> `resolveOrCreateLookupValue`, mesmo motor de dedup fuzzy e CAIXA
+  ALTA/acentos obrigatórios), via novo endpoint `"quick-create-lookup"` em
+  `/api/mobile/module-actions` (reaproveitando o mesmo dispatcher genérico
+  já usado por `preview-next-os`/`clima-hoje`/etc.). O item recém-criado
+  entra em `lookupsByCategory` na hora (sem precisar recarregar o
+  formulário), mesmo padrão do `extraLookupOptions` do site.
+- **Fix real: transparência do fundo em diálogos (Conferência de
+  importação NF-e).** A causa real não era CSS -- o `bg-background` já
+  estava correto em `dialog.tsx` desde uma correção anterior, mas o
+  Service Worker (`sw.js`/`sw-native.js`) nunca detectava a mudança porque
+  as próprias correções ficavam em componentes React, não nos arquivos do
+  SW, e o navegador só reinstala o SW quando os BYTES dele mudam. Isso
+  deixava o `STATIC_CACHE` antigo servindo bundles JS desatualizados
+  indefinidamente, mesmo após deploy confirmado e hard refresh
+  (Ctrl+Shift+R não afeta cache de Service Worker). Corrigido subindo a
+  versão de cache-busting (`sw.js` v16->v17, `sw-native.js` v4->v5),
+  forçando todo cliente a reinstalar o SW e descartar os caches antigos.
+
 ## [1.3.3] -- 2026-09-27
 
 - **Fix real: Cotações Pecuária sem valor em produção.** O CEPEA/ESALQ

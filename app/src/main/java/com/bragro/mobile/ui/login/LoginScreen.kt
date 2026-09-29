@@ -13,8 +13,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -143,12 +149,26 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
             colors = appFieldColors(),
         )
         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 12.dp))
+        // Ícone "ver" (olho) no campo de senha -- pedido do usuário ("em
+        // login coloque no campo senha o icone ver"), paridade com o site
+        // (PasswordInput.tsx: alterna type="password"/"text" com Eye/EyeOff
+        // do lucide-react). Aqui alterna PasswordVisualTransformation() <->
+        // VisualTransformation.None, mesmo efeito visual.
+        var senhaVisivel by remember { mutableStateOf(false) }
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Senha") },
-            visualTransformation = PasswordVisualTransformation(),
+            visualTransformation = if (senhaVisivel) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            trailingIcon = {
+                IconButton(onClick = { senhaVisivel = !senhaVisivel }) {
+                    Icon(
+                        imageVector = if (senhaVisivel) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                        contentDescription = if (senhaVisivel) "Ocultar senha" else "Ver senha",
+                    )
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             colors = appFieldColors(),
