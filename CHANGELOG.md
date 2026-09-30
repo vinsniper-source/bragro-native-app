@@ -3,6 +3,31 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.11] -- 2026-09-30
+
+- **Cotações Pecuária: estado vazio/desatualizado**: o card "Cotações
+  Pecuária" (Boi Gordo/Bezerro/Leite) não mostrava nenhum aviso quando os
+  3 indicadores vinham `null` (scraping CEPEA falhou e sem fallback) --
+  ficava só com cabeçalho + "Fonte: CEPEA/ESALQ", parecendo quebrado.
+  Agora mostra "Cotações indisponíveis no momento" nesse caso. Também
+  passou a exibir "(desatualizado)" ao lado do valor quando o backend usa
+  o fallback via Redis (campo novo `stale` em `LivestockQuoteData`,
+  default `false`, compatível com respostas antigas).
+- **Financeiro: agrupar lançamentos da mesma NF-e**: lançamentos vindos
+  de import de NF-e rateados em várias fazendas (mesmo `origemId`,
+  `origem == "nfe"`) apareciam um card por fazenda, soltos. Na vista
+  Bloco (não mexe na vista Tabela), agora viram um card único com
+  cabeçalho Doc/NF + Entidade + Data + Categoria + badge "{N} fazendas ·
+  {total}", e uma sub-linha por fazenda (local + itens da NF formatados +
+  valor bruto + editar/excluir individuais) -- mesmo padrão já usado no
+  site (`data-table.tsx`).
+- **Campo "Itens (automático)" formatado**: o campo computado `itensNf`
+  (Financeiro) mostrava o JSON cru pro usuário quando vinha de um
+  rateio por item de NF-e. Agora formata como
+  "{descrição} ({quantidade} {unidade}) {valor em R$}" por item, juntando
+  com "; " -- mesmo formato usado no site. Fallback seguro: qualquer
+  erro de parse mostra o texto original, nunca quebra a tela.
+
 ## [1.3.10] -- 2026-09-30
 
 - **Correção de compilação da 1.3.9**: `ExposedDropdownMenu` do

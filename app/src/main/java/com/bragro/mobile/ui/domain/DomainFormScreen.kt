@@ -69,6 +69,8 @@ import com.bragro.mobile.ui.theme.BrGreen
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.jsonPrimitive
 
 class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
     private val configRepository = ConfigRepository(app)
@@ -811,14 +813,52 @@ private fun groupThousands(digits: String): String =
 // usuário. Só o "*" de obrigatório é acrescentado.
 private fun fieldLabel(col: ColumnConfig): String = col.label + if (col.required) " *" else ""
 
+// "Itens (automático)" (itensNf) -- bug real reportado pelo usuário: o campo
+// computado mostrava o JSON cru (ex.: [{"unidade":"SC","descricao":"SEM.
+// SOJA M64","quantidade":20,"valorTotal":6200}]) em vez de formatado.
+// Réplica de fmtValue() no site (data-table.tsx linhas 68-87): monta
+// "{descricao} ({quantidade} {unidade}) {valorFormatado}" por item, juntando
+// com "; ". Mesmo padrão de parse de JsonArray/JsonObject usado em
+// EstoqueFazendaExtras.kt. Fallback seguro: qualquer erro de parse retorna o
+// raw original (nunca quebra a tela).
+// Não-private -- reutilizada em DomainListScreen.kt (agrupamento de
+// lançamentos NF-e no Financeiro), mesmo pacote (ui.domain).
+internal fun formatItensNf(raw: String): String {
+    return try {
+        val el = kotlinx.serialization.json.Json.parseToJsonElement(raw)
+        val arr = el as? kotlinx.serialization.json.JsonArray
+        if (arr == null || arr.isEmpty()) return "—"
+        arr.mapNotNull { it as? kotlinx.serialization.json.JsonObject }
+            .joinToString("; ") { obj ->
+                val descricao = obj["descricao"]?.jsonPrimitive?.contentOrNull
+                val quantidade = obj["quantidade"]?.jsonPrimitive?.contentOrNull
+                val unidade = obj["unidade"]?.jsonPrimitive?.contentOrNull
+                val valorTotal = obj["valorTotal"]?.jsonPrimitive?.doubleOrNull
+                val valorFormatado = valorTotal?.let { formatMoneyValue(it.toString()) }
+                val qtdUnidade = listOfNotNull(quantidade, unidade).joinToString(" ").takeIf { it.isNotBlank() }
+                buildString {
+                    append(descricao ?: "")
+                    if (qtdUnidade != null) append(" ($qtdUnidade)")
+                    if (valorFormatado != null) append(" $valorFormatado")
+                }.trim()
+            }
+    } catch (e: Exception) {
+        raw
+    }
+}
+
 // Réplica de fmtComputed() em record-form.tsx: "—" enquanto vazio (registro
 // novo, ainda sem passar pelo servidor), money formatado com formatMoneyValue
 // (mesma função usada em toda a lista), select mapeado pro rótulo amigável
-// via lookup, e o resto pelo displayValueFor genérico (datas/números).
+// via lookup, itensNf formatado (linhas legíveis em vez de JSON cru), e o
+// resto pelo displayValueFor genérico (datas/números).
 private fun computedDisplayValue(col: ColumnConfig, raw: String, optionLabels: Map<String, String>): String {
     if (raw.isBlank()) return "—"
     if (col.money) return formatMoneyValue(raw)
     if (col.type == "select") return optionLabels[raw] ?: raw
+    if (col.key == "itensNf" || (raw.trim().startsWith("[") && col.key.contains("itens", ignoreCase = true))) {
+        return formatItensNf(raw)
+    }
     return displayValueFor(col.key, raw, col.type)
 }
 

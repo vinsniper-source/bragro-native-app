@@ -2636,6 +2636,17 @@ private fun CotacoesPecuariaCard(livestock: com.bragro.mobile.data.model.Livesto
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MiniCardHeaderWithRefresh("Cotações Pecuária", Icons.Filled.Pets, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
             val itens = listOfNotNull(livestock.boiGordo, livestock.bezerro, livestock.leite)
+            // Estado vazio -- bug relatado pelo usuario ("cotacoes pecuaria
+            // esta incompleto"): se os 3 indicadores vierem null (scraping
+            // CEPEA falhou e nao havia fallback no Redis), o card so
+            // mostrava cabecalho + "Fonte: CEPEA/ESALQ" sem nenhum aviso.
+            if (itens.isEmpty()) {
+                Text(
+                    "Cotações indisponíveis no momento",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Row(modifier = Modifier.fillMaxWidth()) {
                 itens.forEachIndexed { index, q ->
                     if (index > 0) {
@@ -2677,6 +2688,18 @@ private fun CotacoesPecuariaCard(livestock: com.bragro.mobile.data.model.Livesto
                             style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
                             modifier = Modifier.basicMarquee(),
                         )
+                        // stale -- indicador visual quando o backend usou o
+                        // fallback do Redis (scraping CEPEA falhou) e o valor
+                        // pode estar desatualizado.
+                        if (q.stale) {
+                            Text(
+                                "(desatualizado)",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Clip,
+                            )
+                        }
                         val positivo = q.variacaoPct >= 0
                         val corVariacao = if (positivo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {

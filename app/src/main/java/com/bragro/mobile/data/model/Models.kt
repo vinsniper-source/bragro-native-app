@@ -1647,6 +1647,11 @@ data class LivestockQuoteData(
     val valor: Double,
     val variacaoPct: Double,
     val atualizadoEm: String? = null,
+    // stale -- backend (quotes.ts) agora tenta fallback via Redis quando o
+    // scraping CEPEA falha; quando usa esse fallback marca o quote com este
+    // campo (valor pode estar desatualizado). Default false p/ compat com
+    // respostas antigas do backend que nao mandam o campo.
+    val stale: Boolean = false,
 )
 
 @Serializable
