@@ -60,6 +60,7 @@ import com.bragro.mobile.data.model.InvoiceData
 import com.bragro.mobile.data.repo.NfeRepository
 import com.bragro.mobile.ui.domain.isoDateOnly
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
 import com.bragro.mobile.ui.util.shareBinaryFile
 import kotlinx.coroutines.launch
@@ -203,26 +204,15 @@ private val TIPO_OPTIONS = listOf("ENTRADA", "SAIDA")
  * BLOCOS, mesmo padrão default do site. */
 private enum class NfeViewMode { BLOCOS, LINHAS }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StringDropdown(label: String, value: String, options: List<String>, onSelect: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(label) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
-            colors = appFieldColors(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            for (opt in options) {
-                DropdownMenuItem(text = { Text(opt) }, onClick = { onSelect(opt); expanded = false })
-            }
-        }
-    }
+    SearchableDropdownField(
+        value = value,
+        label = label,
+        options = remember(options) { options.map { it to it } },
+        onSelect = onSelect,
+        emptyOptionLabel = null,
+    )
 }
 
 @Composable

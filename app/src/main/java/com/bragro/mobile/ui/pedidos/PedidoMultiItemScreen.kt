@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
@@ -264,27 +265,14 @@ private fun StringDropdown(
     allowEmpty: Boolean = false,
     onSelect: (String?) -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = value ?: "",
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(label) },
-            placeholder = { Text(placeholder) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
-            colors = appFieldColors(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            if (allowEmpty) {
-                DropdownMenuItem(text = { Text(" ") }, onClick = { onSelect(null); expanded = false })
-            }
-            for (opt in options) {
-                DropdownMenuItem(text = { Text(opt, maxLines = 1, overflow = TextOverflow.Ellipsis) }, onClick = { onSelect(opt); expanded = false })
-            }
-        }
-    }
+    SearchableDropdownField(
+        value = value ?: "",
+        label = label,
+        options = remember(options) { options.map { it to it } },
+        onSelect = { picked -> onSelect(picked.ifEmpty { null }) },
+        placeholder = placeholder,
+        emptyOptionLabel = if (allowEmpty) " " else null,
+    )
 }
 
 // Bloco individual por campo dentro de cada item -- pedido do usuário

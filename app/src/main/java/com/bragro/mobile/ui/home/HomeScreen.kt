@@ -84,6 +84,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -1726,7 +1727,6 @@ private fun AddNoticeDialog(
     // Mesma ideia do <select> unico do site (bulletin-board-client.tsx).
     val setorOptions = remember(allowedModules) { NOTICE_SETOR_OPTIONS.filter { (id, _) -> hasModuleAccessLocal(allowedModules, id) } }
     var escopo by remember { mutableStateOf(if (canManage) "geral" else "lembrete") }
-    var escopoMenuOpen by remember { mutableStateOf(false) }
     val tipo = if (escopo == "lembrete") "lembrete" else "aviso"
     val moduloId = if (escopo.startsWith("setor:")) escopo.removePrefix("setor:") else null
     val escopoLabel = when {
@@ -1742,25 +1742,20 @@ private fun AddNoticeDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(value = titulo, onValueChange = { titulo = it }, label = { Text("Título") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
                 OutlinedTextField(value = mensagem, onValueChange = { mensagem = it }, label = { Text("Mensagem") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
-                ExposedDropdownMenuBox(expanded = escopoMenuOpen, onExpandedChange = { escopoMenuOpen = it }) {
-                    OutlinedTextField(
-                        value = escopoLabel,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Tipo e alcance") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = escopoMenuOpen) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
-                        colors = appFieldColors(),
-                    )
-                    ExposedDropdownMenu(expanded = escopoMenuOpen, onDismissRequest = { escopoMenuOpen = false }) {
-                        DropdownMenuItem(text = { Text("Lembrete (só eu vejo)") }, onClick = { escopo = "lembrete"; escopoMenuOpen = false })
-                        setorOptions.forEach { (id, label) ->
-                            DropdownMenuItem(text = { Text("Aviso — $label") }, onClick = { escopo = "setor:$id"; escopoMenuOpen = false })
-                        }
-                        if (canManage) {
-                            DropdownMenuItem(text = { Text("Aviso geral (toda a empresa)") }, onClick = { escopo = "geral"; escopoMenuOpen = false })
-                        }
+                run {
+                    val escopoOptions = remember(setorOptions, canManage) {
+                        listOf("lembrete" to "Lembrete (só eu vejo)") +
+                            (if (canManage) listOf("geral" to "Aviso geral (toda a empresa)") else emptyList()) +
+                            setorOptions.map { (id, label) -> "setor:$id" to "Aviso — $label" }
                     }
+                    SearchableDropdownField(
+                        value = escopoLabel,
+                        label = "Tipo e alcance",
+                        options = escopoOptions,
+                        onSelect = { escopo = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        emptyOptionLabel = null,
+                    )
                 }
                 OutlinedTextField(
                     value = expiraEm,

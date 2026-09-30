@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material3.Button
 import androidx.compose.material3.AlertDialog
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -189,21 +190,14 @@ class EstoqueFazendaViewModel(app: Application) : AndroidViewModel(app) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FazendaDropdown(label: String, options: List<FazendaOpt>, placeholder: String, selectedId: String, onSelect: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    val selectedName = options.firstOrNull { it.id == selectedId }?.name ?: placeholder
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = selectedName, onValueChange = {}, readOnly = true, label = { Text(label) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.menuAnchor().fillMaxWidth(),
-            colors = appFieldColors(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { f ->
-                DropdownMenuItem(text = { Text(f.name) }, onClick = { onSelect(f.id); expanded = false })
-            }
-        }
-    }
+    SearchableDropdownField(
+        value = options.firstOrNull { it.id == selectedId }?.name ?: "",
+        label = label,
+        options = remember(options) { options.map { it.id to it.name } },
+        onSelect = onSelect,
+        placeholder = placeholder,
+        emptyOptionLabel = null,
+    )
 }
 
 /** Item agora é lista suspensa (pedido do usuário) -- mesmo mecanismo de
@@ -213,21 +207,14 @@ private fun FazendaDropdown(label: String, options: List<FazendaOpt>, placeholde
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ItemDropdown(label: String, options: List<LookupEntity>, placeholder: String, selectedValue: String, onSelect: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    val selectedLabel = options.firstOrNull { it.value == selectedValue }?.label ?: selectedValue.ifBlank { placeholder }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = selectedLabel, onValueChange = {}, readOnly = true, label = { Text(label) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.menuAnchor().fillMaxWidth(),
-            colors = appFieldColors(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { i ->
-                DropdownMenuItem(text = { Text(i.label) }, onClick = { onSelect(i.value); expanded = false })
-            }
-        }
-    }
+    SearchableDropdownField(
+        value = options.firstOrNull { it.value == selectedValue }?.label ?: selectedValue,
+        label = label,
+        options = remember(options) { options.map { it.value to it.label } },
+        onSelect = onSelect,
+        placeholder = placeholder,
+        emptyOptionLabel = null,
+    )
 }
 
 /** Bloco colapsável "Transferências entre Fazendas" -- só aparece no módulo
@@ -439,7 +426,6 @@ private fun AjusteManualFazendaDialog(farms: List<FazendaOpt>, itens: List<Looku
     var tipo by remember { mutableStateOf("ENTRADA") }
     var motivo by remember { mutableStateOf("") }
     var saving by remember { mutableStateOf(false) }
-    var tipoExpanded by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -452,19 +438,13 @@ private fun AjusteManualFazendaDialog(farms: List<FazendaOpt>, itens: List<Looku
                     style = MaterialTheme.typography.bodySmall,
                 )
                 ItemDropdown("Item *", itens, "Selecione", item) { item = it }
-                ExposedDropdownMenuBox(expanded = tipoExpanded, onExpandedChange = { tipoExpanded = it }) {
-                    OutlinedTextField(
-                        value = if (tipo == "ENTRADA") "Entrada (aumenta o saldo)" else "Saída (reduz o saldo)",
-                        onValueChange = {}, readOnly = true, label = { Text("Tipo *") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = tipoExpanded) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth(),
-                        colors = appFieldColors(),
-                    )
-                    ExposedDropdownMenu(expanded = tipoExpanded, onDismissRequest = { tipoExpanded = false }) {
-                        DropdownMenuItem(text = { Text("Entrada (aumenta o saldo)") }, onClick = { tipo = "ENTRADA"; tipoExpanded = false })
-                        DropdownMenuItem(text = { Text("Saída (reduz o saldo)") }, onClick = { tipo = "SAIDA"; tipoExpanded = false })
-                    }
-                }
+                SearchableDropdownField(
+                    value = if (tipo == "ENTRADA") "Entrada (aumenta o saldo)" else "Saída (reduz o saldo)",
+                    label = "Tipo *",
+                    options = remember { listOf("ENTRADA" to "Entrada (aumenta o saldo)", "SAIDA" to "Saída (reduz o saldo)") },
+                    onSelect = { tipo = it },
+                    emptyOptionLabel = null,
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(value = quantidade, onValueChange = { quantidade = it }, label = { Text("Quantidade *") }, modifier = Modifier.weight(1f), colors = appFieldColors())
                     OutlinedTextField(value = unidade, onValueChange = { unidade = it }, label = { Text("Unidade") }, modifier = Modifier.weight(1f), colors = appFieldColors())

@@ -2,18 +2,32 @@ package com.bragro.mobile.ui.theme
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CardElevation
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenu
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 /** SEM borda em TODO Card do app -- pedido do usuário ("tire todas as
@@ -120,3 +134,86 @@ fun appFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
     cursorColor = MaterialTheme.colorScheme.primary,
     focusedTrailingIconColor = MaterialTheme.colorScheme.primary,
 )
+
+/** Dropdown pesquisável e EDITÁVEL, compartilhado por todo o app -- pedido
+ * real do usuário ("todos os campos com lista suspensa... quando seleciono
+ * o nome e preciso trocar não consigo excluir no cursor, e quando clico
+ * vazio o app é fechado totalmente"). A causa raiz: dezenas de telas
+ * (BaseDeDadosScreen, FinanceiroItensInline, CotacaoMultiItemScreen,
+ * DreScreen, AnalisesScreen, OrcamentoScreen, NfeScreen, LivroCaixaScreen,
+ * FieldviewScreen, PragaFotoScreen, RomaneioQuickScreen, DroneScreen,
+ * ProviderIntegrationCard, DossieScreen, SegurancaScreen, PrescricaoNovoScreen,
+ * QuickAbastecimentoDialog, PedidoMultiItemScreen, NfeImportScreen,
+ * EstoqueFazendaExtras, HomeScreen, OrcamentoListScreen) montavam seu próprio
+ * `ExposedDropdownMenuBox` com `readOnly = true` e `onValueChange = {}` --
+ * backspace não tem efeito nenhum nesse estado (dá a impressão de "não
+ * consigo apagar"). O único select do app que já era editável de verdade é o
+ * branch "select" de DomainFormScreen.kt (task #26) -- esta função é
+ * exatamente aquele mesmo padrão, já comprovado seguro (filtro nunca indexa
+ * lista vazia, "(vazio)" limpa sem crashar, fecha sem match reverte pro
+ * valor selecionado), extraído pra cá pra ser reusado por todas as telas
+ * acima em vez de cada uma reimplementar (e errar) o próprio dropdown.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SearchableDropdownField(
+    value: String,
+    label: String,
+    options: List<Pair<String, String>>,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String? = null,
+    // Rótulo do item que limpa a seleção -- null = não mostrar essa opção
+    // (telas onde o campo é obrigatório e não faz sentido "esvaziar").
+    emptyOptionLabel: String? = "(nenhuma)",
+    dense: Boolean = false,
+) {
+    val optionLabels = remember(options) { options.associate { it.first to it.second } }
+    var expanded by remember { mutableStateOf(false) }
+    var query by remember(value, options) { mutableStateOf(optionLabels[value] ?: value) }
+    val filtered = remember(query, options) {
+        val q = query.trim()
+        if (q.isEmpty()) options else options.filter { it.second.contains(q, ignoreCase = true) }
+    }
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = modifier) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = { typed -> query = typed; expanded = true },
+            label = { Text(label, style = if (dense) MaterialTheme.typography.labelSmall else LocalTextStyle.current, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            placeholder = placeholder?.let { p -> { Text(p) } },
+            textStyle = if (dense) MaterialTheme.typography.bodySmall else LocalTextStyle.current,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().menuAnchor(),
+            colors = appFieldColors(),
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = {
+                expanded = false
+                // Fechou sem escolher nada novo -- volta o texto pro que
+                // realmente está selecionado (senão um texto digitado e não
+                // confirmado ficaria "preso" no campo).
+                query = optionLabels[value] ?: value
+            },
+        ) {
+            if (emptyOptionLabel != null) {
+                DropdownMenuItem(text = { Text(emptyOptionLabel) }, onClick = {
+                    onSelect("")
+                    query = ""
+                    expanded = false
+                })
+            }
+            if (filtered.isEmpty()) {
+                DropdownMenuItem(text = { Text("Nenhum resultado", color = MaterialTheme.colorScheme.onSurfaceVariant) }, onClick = {}, enabled = false)
+            }
+            for ((optValue, optLabel) in filtered) {
+                DropdownMenuItem(text = { Text(optLabel) }, onClick = {
+                    onSelect(optValue)
+                    query = optLabel
+                    expanded = false
+                })
+            }
+        }
+    }
+}

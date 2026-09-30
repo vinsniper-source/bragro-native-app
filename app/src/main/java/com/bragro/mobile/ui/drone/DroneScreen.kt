@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -447,41 +448,24 @@ private fun NovoDroneRegistroDialog(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DroneLookupDropdown(label: String, options: List<LookupEntity>, value: String, onChange: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    val labelFor = options.associate { it.value to it.label }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = labelFor[value] ?: value, onValueChange = {}, readOnly = true,
-            label = { Text(label) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
-            colors = appFieldColors(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(text = { Text("(nenhum)") }, onClick = { onChange(""); expanded = false })
-            options.forEach { opt -> DropdownMenuItem(text = { Text(opt.label) }, onClick = { onChange(opt.value); expanded = false }) }
-        }
-    }
+    SearchableDropdownField(
+        value = value,
+        label = label,
+        options = remember(options) { options.map { it.value to it.label } },
+        onSelect = onChange,
+        emptyOptionLabel = "(nenhum)",
+    )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DroneStaticDropdown(label: String, options: List<Pair<String, String>>, value: String, onChange: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    val labelFor = options.toMap()
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = labelFor[value] ?: value, onValueChange = {}, readOnly = true,
-            label = { Text(label) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
-            colors = appFieldColors(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { (key, lbl) -> DropdownMenuItem(text = { Text(lbl) }, onClick = { onChange(key); expanded = false }) }
-        }
-    }
+    SearchableDropdownField(
+        value = value,
+        label = label,
+        options = options,
+        onSelect = onChange,
+        emptyOptionLabel = null,
+    )
 }

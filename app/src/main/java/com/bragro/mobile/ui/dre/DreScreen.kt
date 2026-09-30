@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.GridOn
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -228,27 +229,15 @@ private fun dreExportRecords(dre: DreData): List<Map<String, String?>> {
     return linhas + totalizacao
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FilterDropdown(label: String, value: String?, options: List<String>, onSelect: (String?) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = value ?: "Todos",
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(label) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
-            colors = appFieldColors(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(text = { Text("Todos") }, onClick = { onSelect(null); expanded = false })
-            for (opt in options) {
-                DropdownMenuItem(text = { Text(opt) }, onClick = { onSelect(opt); expanded = false })
-            }
-        }
-    }
+    SearchableDropdownField(
+        value = value ?: "",
+        label = label,
+        options = remember(options) { listOf("" to "Todos") + options.map { it to it } },
+        onSelect = { picked -> onSelect(picked.ifEmpty { null }) },
+        emptyOptionLabel = null,
+    )
 }
 
 // Fase 2 (Task #33): um no da arvore de custos (Financeiro/Frota/Safra),

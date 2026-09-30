@@ -24,6 +24,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -309,22 +310,12 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LookupDropdown(label: String, options: List<LookupEntity>, value: String, onChange: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    val labelFor = options.associate { it.value to it.label }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = labelFor[value] ?: value,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(label) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
-            colors = appFieldColors(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { opt ->
-                DropdownMenuItem(text = { Text(opt.label) }, onClick = { onChange(opt.value); expanded = false })
-            }
-        }
-    }
+    SearchableDropdownField(
+        value = options.firstOrNull { it.value == value }?.label ?: value,
+        label = label,
+        options = remember(options) { options.map { it.label to it.label } },
+        onSelect = { picked -> options.firstOrNull { it.label == picked }?.let { onChange(it.value) } },
+        modifier = Modifier.fillMaxWidth(),
+        emptyOptionLabel = null,
+    )
 }

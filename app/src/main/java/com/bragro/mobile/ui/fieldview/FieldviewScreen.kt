@@ -37,6 +37,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -960,25 +961,13 @@ private fun ManualBoundaryDialog(
  * com OutlinedTextField somente-leitura), só que com uma opção extra
  * "Nenhuma" pra limpar a seleção (o vínculo com fazenda é opcional aqui,
  * diferente do NF-e, onde a fazenda de destino é obrigatória). */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun OptionalFarmDropdown(farms: List<FarmEntity>, selected: FarmEntity?, onSelect: (FarmEntity?) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = selected?.name ?: "Nenhuma",
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Fazenda (opcional)") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
-            colors = appFieldColors(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(text = { Text("Nenhuma") }, onClick = { onSelect(null); expanded = false })
-            for (farm in farms) {
-                DropdownMenuItem(text = { Text(farm.name) }, onClick = { onSelect(farm); expanded = false })
-            }
-        }
-    }
+    SearchableDropdownField(
+        value = selected?.id ?: "",
+        label = "Fazenda (opcional)",
+        options = remember(farms) { farms.map { it.id to it.name } },
+        onSelect = { id -> onSelect(farms.firstOrNull { it.id == id }) },
+        emptyOptionLabel = "Nenhuma",
+    )
 }

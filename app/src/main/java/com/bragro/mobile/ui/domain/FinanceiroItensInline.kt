@@ -43,6 +43,7 @@ import com.bragro.mobile.data.local.LookupEntity
 import com.bragro.mobile.data.model.NotaMultiItemItemData
 import com.bragro.mobile.data.repo.ConfigRepository
 import com.bragro.mobile.data.repo.NotaMultiItemRepository
+import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -190,24 +191,17 @@ private fun ItemStringDropdown(
     placeholder: String,
     onSelect: (String) -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = value ?: "",
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(label) },
-            placeholder = { Text(placeholder) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
-            colors = appFieldColors(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            for (opt in options) {
-                DropdownMenuItem(text = { Text(opt, maxLines = 1, overflow = TextOverflow.Ellipsis) }, onClick = { onSelect(opt); expanded = false })
-            }
-        }
-    }
+    SearchableDropdownField(
+        value = value ?: "",
+        label = label,
+        options = remember(options) { options.map { it to it } },
+        onSelect = onSelect,
+        placeholder = placeholder,
+        // Campo obrigatório em ambos os call sites (Item/Unidade) -- não faz
+        // sentido oferecer "(nenhuma)" pra esvaziar, mesmo comportamento de
+        // antes (readOnly não tinha opção de limpar).
+        emptyOptionLabel = null,
+    )
 }
 
 // Bloco individual por campo -- pedido do usuário ("crie blocos

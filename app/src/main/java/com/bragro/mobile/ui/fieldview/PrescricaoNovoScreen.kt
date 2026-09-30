@@ -55,6 +55,7 @@ import com.bragro.mobile.data.vra.ZonaTaxaVra
 import com.bragro.mobile.data.vra.parseIsoXmlZonas
 import com.bragro.mobile.data.vra.zonaParaFeatureJson
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
 import kotlinx.coroutines.launch
 
@@ -210,7 +211,6 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
     val busy by viewModel.busy
     val successId by viewModel.successId
     val copiando by viewModel.copiando
-    var farmExpanded by remember { mutableStateOf(false) }
 
     val isoXmlPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         if (uri != null) {
@@ -320,27 +320,14 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
                 )
             }
             item {
-                ExposedDropdownMenuBox(expanded = farmExpanded, onExpandedChange = { farmExpanded = it }) {
-                    OutlinedTextField(
-                        value = farms.find { it.id == viewModel.farmId }?.name ?: "",
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Fazenda (opcional)") },
-                        placeholder = { Text("Não vincular") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = farmExpanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
-                        colors = appFieldColors(),
-                    )
-                    ExposedDropdownMenu(expanded = farmExpanded, onDismissRequest = { farmExpanded = false }) {
-                        DropdownMenuItem(text = { Text("Não vincular") }, onClick = { viewModel.farmId = null; farmExpanded = false })
-                        for (f in farms) {
-                            DropdownMenuItem(
-                                text = { Text(f.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                                onClick = { viewModel.farmId = f.id; farmExpanded = false },
-                            )
-                        }
-                    }
-                }
+                SearchableDropdownField(
+                    value = viewModel.farmId ?: "",
+                    label = "Fazenda (opcional)",
+                    options = remember(farms) { farms.map { it.id to it.name } },
+                    onSelect = { id -> viewModel.farmId = id.ifEmpty { null } },
+                    placeholder = "Não vincular",
+                    emptyOptionLabel = "Não vincular",
+                )
             }
             item {
                 OutlinedTextField(

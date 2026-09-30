@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Sync
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -381,36 +382,15 @@ private fun CulturaDropdownField(
     // o formulário "Nova fazenda" mantém o tamanho normal.
     dense: Boolean = false,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = modifier) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = {},
-            readOnly = true,
-            // maxLines = 1 + Ellipsis no LABEL -- rede de segurança contra o
-            // bug encontrado pelo usuário (screenshot com "Cultura 1"
-            // quebrado letra por letra na vertical): quando o campo está
-            // vazio e sem foco, o Material3 mostra o label no tamanho
-            // "grande" (não a versão pequena flutuante), e sem maxLines/
-            // overflow ele quebra palavra a cada caractere quando a coluna é
-            // estreita demais -- isso by itself não bastava (ver Row com
-            // apenas 2 campos por linha logo abaixo, a causa raiz real),
-            // mas garante que NUNCA MAIS apareça esse efeito quebrado, só
-            // reticências na pior hipótese.
-            label = { Text(label, style = if (dense) MaterialTheme.typography.labelSmall else LocalTextStyle.current, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-            textStyle = if (dense) MaterialTheme.typography.bodySmall else LocalTextStyle.current,
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
-            colors = appFieldColors(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(text = { Text("(nenhuma)") }, onClick = { onValueChange(""); expanded = false })
-            CULTURAS_SAFRINHA.forEach { c ->
-                DropdownMenuItem(text = { Text(c) }, onClick = { onValueChange(c); expanded = false })
-            }
-        }
-    }
+    SearchableDropdownField(
+        value = value,
+        label = label,
+        options = remember { CULTURAS_SAFRINHA.map { it to it } },
+        onSelect = onValueChange,
+        modifier = modifier,
+        emptyOptionLabel = "(nenhuma)",
+        dense = dense,
+    )
 }
 
 // Situação da terra / regime de posse da fazenda (9ª exceção de schema, ver
@@ -430,26 +410,15 @@ private fun SituacaoTerraDropdownField(
     modifier: Modifier = Modifier,
     dense: Boolean = false,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = modifier) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Situação da terra", style = if (dense) MaterialTheme.typography.labelSmall else LocalTextStyle.current, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-            textStyle = if (dense) MaterialTheme.typography.bodySmall else LocalTextStyle.current,
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
-            colors = appFieldColors(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(text = { Text("(nenhuma)") }, onClick = { onValueChange(""); expanded = false })
-            SITUACOES_TERRA.forEach { s ->
-                DropdownMenuItem(text = { Text(s) }, onClick = { onValueChange(s); expanded = false })
-            }
-        }
-    }
+    SearchableDropdownField(
+        value = value,
+        label = "Situação da terra",
+        options = remember { SITUACOES_TERRA.map { it to it } },
+        onSelect = onValueChange,
+        modifier = modifier,
+        emptyOptionLabel = "(nenhuma)",
+        dense = dense,
+    )
 }
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
@@ -921,25 +890,15 @@ private fun SectorCard(
                     values?.mapNotNull { it.jsonObject["label"]?.jsonPrimitive?.contentOrNull?.trim()?.uppercase() }?.toSet() ?: emptySet()
                 }
                 val disponiveis = farmNames.filter { it.trim().uppercase() !in jaListados }
-                var expanded by remember { mutableStateOf(false) }
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)) {
-                    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = Modifier.weight(1f)) {
-                        OutlinedTextField(
-                            value = newValue,
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text(if (disponiveis.isEmpty()) "Todas as fazendas já estão na lista" else "Selecione a fazenda") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth().menuAnchor(),
-                            colors = appFieldColors(),
-                        )
-                        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                            disponiveis.forEach { f ->
-                                DropdownMenuItem(text = { Text(f) }, onClick = { newValue = f; expanded = false })
-                            }
-                        }
-                    }
+                    SearchableDropdownField(
+                        value = newValue,
+                        label = if (disponiveis.isEmpty()) "Todas as fazendas já estão na lista" else "Selecione a fazenda",
+                        options = remember(disponiveis) { disponiveis.map { it to it } },
+                        onSelect = { newValue = it },
+                        modifier = Modifier.weight(1f),
+                        emptyOptionLabel = null,
+                    )
                     Spacer(Modifier.width(8.dp))
                     Button(onClick = { if (newValue.isNotBlank()) { onAddValue(category, newValue.trim()); newValue = "" } }, enabled = !busy && newValue.isNotBlank()) { Text("+") }
                 }

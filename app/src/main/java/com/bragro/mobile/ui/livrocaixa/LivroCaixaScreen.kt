@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -265,102 +266,56 @@ private fun livroCaixaExportRecords(lancamentos: List<LivroCaixaLancamentoData>)
         )
     }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AnoDropdown(ano: Int, onSelect: (Int) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
     val anoAtual = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
     val anos = (anoAtual downTo anoAtual - 6).toList()
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = ano.toString(),
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Ano") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
-            colors = appFieldColors(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            for (a in anos) {
-                DropdownMenuItem(text = { Text(a.toString()) }, onClick = { onSelect(a); expanded = false })
-            }
-        }
-    }
+    SearchableDropdownField(
+        value = ano.toString(),
+        label = "Ano",
+        options = remember(anos) { anos.map { it.toString() to it.toString() } },
+        onSelect = { picked -> picked.toIntOrNull()?.let(onSelect) },
+        emptyOptionLabel = null,
+    )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BancoDropdown(banco: String?, opcoes: List<String>, onSelect: (String?) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = banco ?: "Todas as contas",
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Conta") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
-            colors = appFieldColors(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(text = { Text("Todas as contas") }, onClick = { onSelect(null); expanded = false })
-            for (opt in opcoes) {
-                DropdownMenuItem(text = { Text(opt) }, onClick = { onSelect(opt); expanded = false })
-            }
-        }
-    }
+    SearchableDropdownField(
+        value = banco ?: "",
+        label = "Conta",
+        options = remember(opcoes) { listOf("" to "Todas as contas") + opcoes.map { it to it } },
+        onSelect = { picked -> onSelect(picked.ifEmpty { null }) },
+        emptyOptionLabel = null,
+    )
 }
 
 // Filtro de imóvel rural (COD_IMOVEL do LCDPR) -- pedido do usuário
 // ("implemente tudo que falta ainda para o app native da plataforma"): já
 // existia na tela web (livro-caixa-client.tsx), faltava no app.
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ImovelDropdown(imovel: String?, opcoes: List<String>, onSelect: (String?) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = imovel ?: "Todos os imóveis",
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Imóvel") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
-            colors = appFieldColors(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(text = { Text("Todos os imóveis") }, onClick = { onSelect(null); expanded = false })
-            for (opt in opcoes) {
-                DropdownMenuItem(text = { Text(opt) }, onClick = { onSelect(opt); expanded = false })
-            }
-        }
-    }
+    SearchableDropdownField(
+        value = imovel ?: "",
+        label = "Imóvel",
+        options = remember(opcoes) { listOf("" to "Todos os imóveis") + opcoes.map { it to it } },
+        onSelect = { picked -> onSelect(picked.ifEmpty { null }) },
+        emptyOptionLabel = null,
+    )
 }
 
 // Tipo do certificado digital (A1 = arquivo, A3 = token/cartão) -- mesmas
 // opções do card no site (produtor-rural-card.tsx).
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CertificadoTipoDropdown(tipo: String, onSelect: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    val opcoes = listOf("" to "Não informado", "A1" to "A1 (arquivo)", "A3" to "A3 (token/cartão)")
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = opcoes.firstOrNull { it.first == tipo }?.second ?: "Não informado",
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Tipo") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
-            colors = appFieldColors(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            for ((valor, rotulo) in opcoes) {
-                DropdownMenuItem(text = { Text(rotulo) }, onClick = { onSelect(valor); expanded = false })
-            }
-        }
-    }
+    val opcoes = remember { listOf("" to "Não informado", "A1" to "A1 (arquivo)", "A3" to "A3 (token/cartão)") }
+    SearchableDropdownField(
+        value = tipo,
+        label = "Tipo",
+        options = opcoes,
+        onSelect = onSelect,
+        emptyOptionLabel = null,
+    )
 }
 
 // Saldo inicial editável -- pedido do usuário ("implemente tudo que falta

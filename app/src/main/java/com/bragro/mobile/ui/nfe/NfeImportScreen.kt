@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -196,26 +197,16 @@ class NfeImportViewModel(app: Application) : AndroidViewModel(app) {
 private fun formatMoneyBrl(value: Double): String =
     NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(value)
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FarmDropdown(value: String?, options: List<String>, onSelect: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = value ?: "Selecione a fazenda",
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Fazenda de destino") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
-            colors = appFieldColors(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            for (opt in options) {
-                DropdownMenuItem(text = { Text(opt) }, onClick = { onSelect(opt); expanded = false })
-            }
-        }
-    }
+    SearchableDropdownField(
+        value = value ?: "",
+        label = "Fazenda de destino",
+        options = remember(options) { options.map { it to it } },
+        onSelect = onSelect,
+        placeholder = "Selecione a fazenda",
+        emptyOptionLabel = null,
+    )
 }
 
 @Composable

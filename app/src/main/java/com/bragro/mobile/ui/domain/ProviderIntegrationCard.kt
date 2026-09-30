@@ -45,6 +45,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.bragro.mobile.data.model.ProviderIntegrationDto
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
 
 /** "Ocupado com" -- espelha o `busy` (union "salvar"|"sync"|"desconectar"|
@@ -165,22 +166,14 @@ fun ProviderIntegrationCard(
                 // fechar"). Cada campo continua no seu FieldBlock individual
                 // (task #438), só que agora ocupando a largura toda.
                 FieldBlock(modifier = Modifier.fillMaxWidth()) {
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = it },
+                    SearchableDropdownField(
+                        value = provedor,
+                        label = "Provedor",
+                        options = remember(providers) { providers.map { it to it } },
+                        onSelect = { provedor = it },
                         modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        OutlinedTextField(
-                            value = provedor, onValueChange = {}, readOnly = true,
-                            label = { Text("Provedor") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                            modifier = Modifier.fillMaxWidth().menuAnchor(),
-                            colors = appFieldColors(),
-                        )
-                        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                            providers.forEach { p -> DropdownMenuItem(text = { Text(p) }, onClick = { provedor = p; expanded = false }) }
-                        }
-                    }
+                        emptyOptionLabel = null,
+                    )
                 }
 
                 FieldBlock(modifier = Modifier.fillMaxWidth()) {

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
@@ -319,7 +320,6 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StringDropdown(
     label: String,
@@ -330,27 +330,15 @@ private fun StringDropdown(
     modifier: Modifier = Modifier,
     onSelect: (String?) -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = modifier) {
-        OutlinedTextField(
-            value = value ?: "",
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(label) },
-            placeholder = { Text(placeholder) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
-            colors = appFieldColors(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            if (allowEmpty) {
-                DropdownMenuItem(text = { Text(" ") }, onClick = { onSelect(null); expanded = false })
-            }
-            for (opt in options) {
-                DropdownMenuItem(text = { Text(opt, maxLines = 1, overflow = TextOverflow.Ellipsis) }, onClick = { onSelect(opt); expanded = false })
-            }
-        }
-    }
+    SearchableDropdownField(
+        value = value ?: "",
+        label = label,
+        options = remember(options) { options.map { it to it } },
+        onSelect = { picked -> onSelect(picked.ifEmpty { null }) },
+        modifier = modifier,
+        placeholder = placeholder,
+        emptyOptionLabel = if (allowEmpty) " " else null,
+    )
 }
 
 // Sombra verde: a partir de agora vem de graça pelo Card compartilhado

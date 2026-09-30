@@ -3,6 +3,30 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.6] -- 2026-09-30
+
+- **Fix real (bug relatado): dropdowns não deixavam apagar/editar com o
+  cursor, e o app fechava ao esvaziar o campo.** Causa: ~22 telas
+  (Base de Dados, Financeiro/Nota com itens, Cotações, DRE, Análises,
+  Orçamentos, NF-e, Livro Caixa, FieldView, Prescrição, Pragas, Romaneio
+  Rápido, Frota/Drone, integrações de provedor, Dossiê, Segurança,
+  Abastecimento rápido, Pedidos, Estoque por fazenda, Início/Avisos)
+  implementavam seu próprio dropdown pesquisável com
+  `readOnly = true` + `onValueChange = {}` — nesse estado o backspace não
+  tem nenhum efeito (dá a impressão de "não consigo apagar"). Só o select
+  genérico do motor de formulários (`DomainFormScreen.kt`) já era editável
+  de verdade. Extraído esse padrão seguro pra um componente único
+  reutilizável (`SearchableDropdownField` em `ui/theme/AppCard.kt`) e
+  migradas todas as ~22 telas pra usá-lo — agora digitar filtra e
+  backspace funciona em todo lugar, com o mesmo comportamento seguro
+  (nunca indexa lista vazia, "(vazio)"/"(nenhuma)" limpa sem travar).
+- Não foi possível reproduzir/confirmar via crash log o "app fecha
+  totalmente" (Sentry não está configurado pro app Android, só pro site) —
+  a hipótese mais provável é justamente essa mesma trava de teclado (não
+  um crash de verdade, e sim o campo "engasgado" sem resposta ao toque);
+  se o fechamento total persistir depois desta correção, precisa de um
+  logcat/relatório de crash do aparelho pra investigar a causa exata.
+
 ## [1.3.5] -- 2026-09-29
 
 - **Fix real (bug relatado): trava/comportamento incorreto ao clicar em

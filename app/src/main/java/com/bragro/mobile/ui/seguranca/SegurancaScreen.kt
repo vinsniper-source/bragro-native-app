@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Settings
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -300,20 +301,13 @@ private fun CollapsibleCard(title: String, initiallyOpen: Boolean = false, conte
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RoleDropdown(selected: String, onSelect: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = selected, onValueChange = {}, readOnly = true, label = { Text("Papel") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.menuAnchor(),
-            colors = appFieldColors(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            ROLES.forEach { role ->
-                DropdownMenuItem(text = { Text(role) }, onClick = { onSelect(role); expanded = false })
-            }
-        }
-    }
+    SearchableDropdownField(
+        value = selected,
+        label = "Papel",
+        options = remember { ROLES.map { it to it } },
+        onSelect = onSelect,
+        emptyOptionLabel = null,
+    )
 }
 
 @Composable

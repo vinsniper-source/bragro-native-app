@@ -234,24 +234,16 @@ private fun buildDossieHtml(d: DossieResponse, ano: Int): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AnoDropdown(ano: Int, onSelect: (Int) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
     val anoAtual = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
     val anos = (anoAtual downTo anoAtual - 4).toList()
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = Modifier.width(120.dp)) {
-        OutlinedTextField(
-            value = ano.toString(),
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Ano") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            for (a in anos) {
-                DropdownMenuItem(text = { Text(a.toString()) }, onClick = { onSelect(a); expanded = false })
-            }
-        }
-    }
+    SearchableDropdownField(
+        value = ano.toString(),
+        label = "Ano",
+        options = remember(anos) { anos.map { it.toString() to it.toString() } },
+        onSelect = { picked -> picked.toIntOrNull()?.let(onSelect) },
+        modifier = Modifier.width(120.dp),
+        emptyOptionLabel = null,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
