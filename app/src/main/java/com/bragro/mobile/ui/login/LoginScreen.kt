@@ -143,7 +143,11 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
             value = email,
             onValueChange = { email = it },
             label = { Text("E-mail") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            // autoCorrect = false -- pedido do usuário ("aplique isso também
+            // nos campos" da tela de login): e-mail não deve sofrer
+            // autocorreção do teclado (evita o teclado reinserir/alterar
+            // caracteres já apagados/editados pelo usuário).
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, autoCorrect = false),
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             colors = appFieldColors(),

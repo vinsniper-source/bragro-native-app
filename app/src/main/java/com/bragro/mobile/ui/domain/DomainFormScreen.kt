@@ -972,6 +972,17 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                     value = query,
                     onValueChange = { typed -> query = typed; expanded = true },
                     label = { Text(fieldLabel(col)) },
+                    // autoCorrect = false -- pedido do usuário ("digito letras
+                    // pra frente mas não consigo apagar com o cursor"): em
+                    // alguns teclados (Gboard/Samsung Keyboard) com correção
+                    // automática ligada, apagar o fim de uma palavra que bate
+                    // com uma sugestão do dicionário faz o próprio teclado
+                    // reinserir os caracteres apagados (efeito de
+                    // "autocorreção reversa") -- dá exatamente a impressão de
+                    // "backspace não funciona". Não é comportamento do app,
+                    // mas desligar autoCorrect no campo evita o teclado brigar
+                    // com a edição.
+                    keyboardOptions = KeyboardOptions(autoCorrect = false),
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     modifier = Modifier.fillMaxWidth().menuAnchor(),
                     colors = fieldColors,
@@ -987,8 +998,19 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                     },
                 ) {
                     DropdownMenuItem(text = { Text("(vazio)") }, onClick = {
-                        viewModel.setField(col.key, "")
-                        query = ""
+                        // try/catch -- pedido do usuário ("quando clico vazio
+                        // o app é fechado totalmente"): qualquer exceção aqui
+                        // (ex.: efeito colateral de um campo dependente
+                        // configurado de forma inesperada no servidor) agora
+                        // vira um aviso na tela em vez de derrubar o app
+                        // inteiro, e vai pro Crashlytics pra diagnóstico.
+                        try {
+                            viewModel.setField(col.key, "")
+                            query = ""
+                        } catch (e: Exception) {
+                            com.bragro.mobile.data.AppLog.e("DomainFormScreen", "Erro ao esvaziar campo ${col.key}", e)
+                            viewModel.errorMessage.value = "Não foi possível limpar este campo. Tente novamente."
+                        }
                         expanded = false
                     })
                     // "+Criar" na 2ª posição -- mesmo lugar do site
@@ -1020,8 +1042,13 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                     }
                     for ((optValue, optLabel) in filtered) {
                         DropdownMenuItem(text = { Text(optLabel) }, onClick = {
-                            viewModel.setField(col.key, optValue)
-                            query = optLabel
+                            try {
+                                viewModel.setField(col.key, optValue)
+                                query = optLabel
+                            } catch (e: Exception) {
+                                com.bragro.mobile.data.AppLog.e("DomainFormScreen", "Erro ao selecionar valor em ${col.key}", e)
+                                viewModel.errorMessage.value = "Não foi possível selecionar este valor. Tente novamente."
+                            }
                             expanded = false
                         })
                     }

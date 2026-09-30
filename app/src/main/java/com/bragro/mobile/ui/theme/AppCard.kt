@@ -181,6 +181,11 @@ fun SearchableDropdownField(
             label = { Text(label, style = if (dense) MaterialTheme.typography.labelSmall else LocalTextStyle.current, maxLines = 1, overflow = TextOverflow.Ellipsis) },
             placeholder = placeholder?.let { p -> { Text(p) } },
             textStyle = if (dense) MaterialTheme.typography.bodySmall else LocalTextStyle.current,
+            // autoCorrect = false -- mesmo motivo do select genérico em
+            // DomainFormScreen.kt: evita o teclado (Gboard/Samsung Keyboard)
+            // reinserir caracteres apagados por autocorreção, o que dava a
+            // falsa impressão de "backspace não funciona".
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(autoCorrect = false),
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().menuAnchor(),
@@ -198,8 +203,15 @@ fun SearchableDropdownField(
         ) {
             if (emptyOptionLabel != null) {
                 DropdownMenuItem(text = { Text(emptyOptionLabel) }, onClick = {
-                    onSelect("")
-                    query = ""
+                    // try/catch -- mesmo fix do select genérico (evita
+                    // fechar o app inteiro se onSelect("") lançar por algum
+                    // efeito colateral inesperado do chamador).
+                    try {
+                        onSelect("")
+                        query = ""
+                    } catch (e: Exception) {
+                        com.bragro.mobile.data.AppLog.e("SearchableDropdownField", "Erro ao esvaziar campo \"$label\"", e)
+                    }
                     expanded = false
                 })
             }
@@ -208,8 +220,12 @@ fun SearchableDropdownField(
             }
             for ((optValue, optLabel) in filtered) {
                 DropdownMenuItem(text = { Text(optLabel) }, onClick = {
-                    onSelect(optValue)
-                    query = optLabel
+                    try {
+                        onSelect(optValue)
+                        query = optLabel
+                    } catch (e: Exception) {
+                        com.bragro.mobile.data.AppLog.e("SearchableDropdownField", "Erro ao selecionar valor em \"$label\"", e)
+                    }
                     expanded = false
                 })
             }

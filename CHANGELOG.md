@@ -3,6 +3,30 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.8] -- 2026-09-30
+
+- **Usuário confirmou que o bug persistia mesmo na 1.3.7** (dropdown
+  "Cultura" não deixava apagar com backspace, e "(vazio)" ainda fechava
+  o app). Revisão de código não encontrou `readOnly`/bloqueio nem
+  exceção óbvia no caminho do select genérico (`DomainFormScreen.kt`) —
+  então, sem um stack trace real disponível (Crashlytics só registra
+  crash não tratado, e o app não tinha nenhum ponto de captura nesses
+  cliques), apliquei duas frentes de correção defensiva:
+  - `autoCorrect = false` nos campos de dropdown pesquisável (select
+    genérico + `SearchableDropdownField`) e no e-mail do login: em
+    alguns teclados (Gboard/Samsung Keyboard) com correção automática
+    ligada, apagar o fim de uma palavra reconhecida como sugestão do
+    dicionário faz o próprio teclado reinserir os caracteres apagados —
+    efeito que se sente exatamente como "não consigo apagar com o
+    cursor".
+  - `try/catch` ao redor de clicar "(vazio)" e selecionar qualquer item
+    do dropdown (select genérico + `SearchableDropdownField`): antes,
+    qualquer exceção nesse ponto derrubava o app inteiro sem deixar
+    rastro; agora vira um aviso na tela (via `AppLog.e`, que também
+    reporta ao Firebase Crashlytics) em vez de fechar o app -- se ainda
+    ocorrer, vamos finalmente ter um stack trace real pra achar a causa
+    exata.
+
 ## [1.3.7] -- 2026-09-30
 
 - **Correção de compilação da 1.3.6**: essa versão nunca chegou a gerar
