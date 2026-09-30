@@ -3,6 +3,25 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.7] -- 2026-09-30
+
+- **Correção de compilação da 1.3.6**: essa versão nunca chegou a gerar
+  um APK de fato — o `gradlew assembleRelease` falhava com 2 erros
+  (`import` inválido de `ExposedDropdownMenu` em `AppCard.kt` e `import`
+  faltante de `SearchableDropdownField` em `DossieScreen.kt`). Ambos
+  corrigidos. Se o app instalado no celular ainda mostra "versão 1.3.6"
+  em Configurações > Informações do app, é porque o APK instalado é de
+  antes desse fix — reinstale com o novo APK (mostrará "1.3.7") pra
+  confirmar que pegou o build certo.
+- **Campo de Data (todos os módulos, motor genérico de formulário):
+  revisado a pedido do usuário** ("coloque a mesma lógica no campo data
+  que dá para apagar com o cursor"). Diferente dos dropdowns do item
+  anterior, o campo de data nunca teve `readOnly` nem bloqueio de
+  edição — é um `OutlinedTextField` comum com `onValueChange` real,
+  digitação livre em DD/MM/AAAA, e um ícone de calendário só como atalho
+  opcional (abre um seletor, mas não obriga usá-lo). Confirmado por
+  revisão de código que apagar/editar com o cursor já funciona.
+
 ## [1.3.6] -- 2026-09-30
 
 - **Fix real (bug relatado): dropdowns não deixavam apagar/editar com o
