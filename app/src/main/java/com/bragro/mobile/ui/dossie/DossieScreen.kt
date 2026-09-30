@@ -47,6 +47,8 @@ import com.bragro.mobile.data.model.DossieResponse
 import com.bragro.mobile.data.repo.DossieRepository
 import com.bragro.mobile.ui.print.HtmlPrinter
 import com.bragro.mobile.ui.theme.Card
+import com.bragro.mobile.ui.theme.SearchableDropdownField
+import com.bragro.mobile.ui.theme.appFieldColors
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
