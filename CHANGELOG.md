@@ -3,6 +3,28 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.12] -- 2026-09-30
+
+- **Correção real: as duas mudanças de Financeiro da v1.3.11 (agrupar
+  NF-e + formatar Itens) tinham sido implementadas no arquivo errado**
+  (`DomainListScreen.kt`), que nunca chega a rodar pro domínio
+  "financeiro" -- ele é roteado exclusivamente pra `FinanceiroScreen.kt`
+  (`BRAgroNavHost.kt`). O código anterior ficou órfão, sem nenhum efeito
+  visível. Agora as duas correções estão de fato em `FinanceiroScreen.kt`:
+  - **Dialog "Ver" mostrando JSON cru no campo Itens**: `FinanceiroFieldLine`
+    (usada tanto nos cards da lista quanto no diálogo "Ver") agora detecta
+    o campo `itensNf` (ou qualquer coluna de itens cujo valor comece com
+    `[`) e usa `formatItensNf` pra exibir "{descrição} ({quantidade}
+    {unidade}) {valor em R$}" por item, em vez do JSON bruto.
+  - **Agrupar lançamentos da mesma NF-e**: a `LazyColumn` de lançamentos
+    de `FinanceiroScreen.kt` agora calcula os grupos por `origemId`
+    (só quando `origem == "nfe"` e há mais de 1 fazenda) e renderiza um
+    card único por grupo (`FinanceiroNfeGroupCard`, novo composable neste
+    arquivo, no mesmo padrão visual dos cards individuais já existentes),
+    com sub-linha por fazenda (local + itens formatados + valor + editar/
+    excluir individuais). A vista Tabela e os lançamentos que não vêm de
+    NF-e continuam exatamente como antes.
+
 ## [1.3.11] -- 2026-09-30
 
 - **Cotações Pecuária: estado vazio/desatualizado**: o card "Cotações

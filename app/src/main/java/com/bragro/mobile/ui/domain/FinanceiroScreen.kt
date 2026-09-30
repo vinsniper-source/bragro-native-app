@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import android.app.Application
 import androidx.compose.material.icons.filled.Add
@@ -616,11 +617,35 @@ fun FinanceiroScreen(
                             if (!isQuickView && expandedBlocks["recalcular-vencimentos"] == true) {
                                 item(key = "recalcular-vencimentos") { RecalcularVencimentosButton(showHeader = false) }
                             }
+                            // Agrupar lançamentos vindos da MESMA NF-e (origem == "nfe" +
+                            // mesmo origemId, rateado em >1 fazenda) num único card --
+                            // mesma lógica de financeiroGroups já existente (mas órfã, sem
+                            // efeito) em DomainListScreen.kt (~linhas 696-718/1390-1401):
+                            // aqui é o lugar certo, já que o domínio "financeiro" é roteado
+                            // exclusivamente pra este arquivo (ver BRAgroNavHost.kt).
+                            // Registros sem origem nfe ou com origemId não repetido
+                            // continuam soltos, um card cada, como sempre foi.
+                            val financeiroGroups: Map<String, List<Int>> = remember(filtered) {
+                                val byOrigemId = mutableMapOf<String, MutableList<Int>>()
+                                filtered.forEachIndexed { idx, r ->
+                                    val origemId = r["origemId"]
+                                    if (r["origem"] == "nfe" && !origemId.isNullOrBlank()) {
+                                        byOrigemId.getOrPut(origemId) { mutableListOf() }.add(idx)
+                                    }
+                                }
+                                byOrigemId.filterValues { it.size > 1 }
+                            }
+                            val financeiroHiddenIndexes: Set<Int> = remember(financeiroGroups) {
+                                financeiroGroups.values.flatMap { it.drop(1) }.toSet()
+                            }
+                            val financeiroGroupByStartIndex: Map<Int, List<Int>> = remember(financeiroGroups) {
+                                financeiroGroups.values.associateBy { it.first() }
+                            }
                             if (allExpanded) {
                             if (tableView && cols.isNotEmpty()) {
                                 item(key = "table-header") { RecordTableHeader(cols, tableHScroll) }
                             }
-                            items(filtered, key = { it["id"] ?: it.hashCode().toString() }) { record ->
+                            itemsIndexed(filtered, key = { _, it -> it["id"] ?: it.hashCode().toString() }) { idx, record ->
                                 val recordId = record["id"]
                                 if (tableView && cols.isNotEmpty()) {
                                     RecordTableRow(
@@ -632,7 +657,23 @@ fun FinanceiroScreen(
                                         onEdit = { if (recordId != null) onEditRecord(recordId) },
                                         onDelete = { recordPendingDelete = recordId },
                                     )
-                                    return@items
+                                    return@itemsIndexed
+                                }
+                                // Vista Tabela continua linha-a-linha, sem agrupar (já
+                                // retornou acima). Vista Bloco: registros que fazem parte de
+                                // um grupo NF-e viram UM card único no primeiro índice do
+                                // grupo; os demais índices do mesmo grupo são pulados.
+                                if (idx in financeiroHiddenIndexes) {
+                                    return@itemsIndexed
+                                }
+                                val groupIndexes = financeiroGroupByStartIndex[idx]
+                                if (groupIndexes != null) {
+                                    FinanceiroNfeGroupCard(
+                                        groupRecords = groupIndexes.map { filtered[it] },
+                                        onEditRecord = onEditRecord,
+                                        onDeleteRequest = { idToDelete -> recordPendingDelete = idToDelete },
+                                    )
+                                    return@itemsIndexed
                                 }
                                 // Mostra TODAS as colunas (não só as 6
                                 // primeiras) -- mesmo pedido do usuário já
@@ -785,7 +826,13 @@ private fun FinanceiroFieldLine(col: com.bragro.mobile.data.model.ColumnConfig, 
         value.isNullOrBlank() -> {}
         isStatusLikeColumn(col.key) -> StatusBadge(value)
         else -> {
-            val displayValue = if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)
+            val displayValue = if (col.money) {
+                formatMoneyValue(value)
+            } else if (col.key == "itensNf" || (value.trim().startsWith("[") && col.key.contains("itens", ignoreCase = true))) {
+                formatItensNf(value)
+            } else {
+                displayValueFor(col.key, value, col.type)
+            }
             // Mesmo critério do módulo genérico: negrito só no valor
             // preenchido, cabeçalho normal -- "vcto" (isFinanceiroBoldColumn)
             // ganha um destaque extra de cor, sem dobrar o negrito na linha.
@@ -810,6 +857,90 @@ private fun FinanceiroFieldLine(col: com.bragro.mobile.data.model.ColumnConfig, 
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 modifier = Modifier.padding(vertical = 2.dp),
             )
+        }
+    }
+}
+
+// Card único pra um GRUPO de lançamentos vindos da MESMA NF-e (mesmo
+// origemId, rateado em >1 fazenda) -- réplica adaptada de
+// FinanceiroNfeGroupCard em DomainListScreen.kt (~linha 1842), que ficava
+// órfã lá (o domínio "financeiro" nunca passa por aquele arquivo). Segue o
+// mesmo padrão visual de Card/Column/Row já usado nos cards individuais
+// deste arquivo: cabeçalho com Doc/NF + Entidade + Data + Categoria, badge
+// "{N} fazendas · {total}", e uma sub-linha por fazenda com local + itensNf
+// formatado (formatItensNf) + valor bruto + ícones editar/excluir
+// individuais -- cada fazenda continua sendo seu próprio registro,
+// editável/excluível separadamente; só a apresentação é agrupada.
+@Composable
+private fun FinanceiroNfeGroupCard(
+    groupRecords: List<Map<String, String?>>,
+    onEditRecord: (String) -> Unit,
+    onDeleteRequest: (String?) -> Unit,
+) {
+    val first = groupRecords.first()
+    val totalBruto = groupRecords.sumOf { it["bruto"]?.toDoubleOrNull() ?: 0.0 }
+    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+            Text(
+                "Doc/NF ${first["docNf"].takeUnless { it.isNullOrBlank() } ?: "—"}",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                listOfNotNull(
+                    first["entidade"]?.takeIf { it.isNotBlank() },
+                    first["data"]?.let { displayValueFor("data", it, "date") }?.takeIf { it.isNotBlank() },
+                    first["categoria"]?.takeIf { it.isNotBlank() },
+                ).joinToString(" · "),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Box(
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer, androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+            ) {
+                Text(
+                    "${groupRecords.size} fazendas · ${formatMoneyValue(totalBruto.toString())}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            groupRecords.forEachIndexed { i, rec ->
+                val recId = rec["id"]
+                if (i > 0) HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            rec["local"].takeUnless { it.isNullOrBlank() } ?: "—",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        rec["itensNf"]?.takeIf { it.isNotBlank() }?.let { itens ->
+                            Text(
+                                formatItensNf(itens),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            )
+                        }
+                        Text(
+                            formatMoneyValue(rec["bruto"] ?: "0"),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    IconButton(onClick = { if (recId != null) onEditRecord(recId) }, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                    }
+                    IconButton(onClick = { onDeleteRequest(recId) }, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
         }
     }
 }
