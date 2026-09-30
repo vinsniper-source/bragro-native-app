@@ -28,6 +28,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -987,22 +988,25 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                     modifier = Modifier.fillMaxWidth().menuAnchor(),
                     colors = fieldColors,
                 )
-                ExposedDropdownMenu(
+                // DropdownMenu (não ExposedDropdownMenu) + exposedDropdownSize()
+                // -- ExposedDropdownMenu do material3 1.2.1 NÃO expõe
+                // `properties` (só apareceu em versões mais novas), então o
+                // fix precisou trocar pro DropdownMenu "cru" com o modifier
+                // exposedDropdownSize() (replica a largura do campo âncora,
+                // mesmo efeito visual do ExposedDropdownMenu) pra poder
+                // passar properties = PopupProperties(focusable = false).
+                // Causa raiz do bug reportado ("coloco o cursor no fim pra
+                // apagar e ele não se move, mas letra por letra vai sendo
+                // excluída no teclado"): o Popup por trás é FOCUSABLE por
+                // padrão, e como a lista filtrada muda a cada tecla (o popup
+                // é recomposto a cada letra digitada), em certos aparelhos
+                // isso disputa foco/conexão de IME com o campo de texto -- a
+                // edição acontece por baixo, mas o campo não repinta o
+                // cursor. O campo de Data nunca teve esse problema porque não
+                // usa nenhum popup desse tipo.
+                DropdownMenu(
                     expanded = expanded,
-                    // focusable = false -- causa raiz real do bug reportado
-                    // ("coloco o cursor no fim pra apagar e ele não se move,
-                    // mas letra por letra vai sendo excluída no teclado"): o
-                    // Popup por trás do ExposedDropdownMenu é FOCUSABLE por
-                    // padrão, e como a lista filtrada muda a cada tecla (o
-                    // popup é recriado/recomposto a cada letra digitada), em
-                    // certos aparelhos/teclados isso disputa o foco/conexão
-                    // de IME com o campo de texto -- o app processa a edição
-                    // por baixo (daí "aparece letra por letra sendo
-                    // excluída"), mas o campo na tela não repinta o cursor.
-                    // O campo de Data nunca teve esse problema porque não usa
-                    // ExposedDropdownMenu nenhum. Recomendação oficial do
-                    // Google pra combinar campo de busca ao vivo com popup:
-                    // popup NÃO focável.
+                    modifier = Modifier.exposedDropdownSize(),
                     properties = androidx.compose.ui.window.PopupProperties(focusable = false),
                     onDismissRequest = {
                         expanded = false

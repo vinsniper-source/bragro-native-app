@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CardElevation
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -191,11 +192,16 @@ fun SearchableDropdownField(
             modifier = Modifier.fillMaxWidth().menuAnchor(),
             colors = appFieldColors(),
         )
-        ExposedDropdownMenu(
+        // DropdownMenu (não ExposedDropdownMenu) + exposedDropdownSize() --
+        // ExposedDropdownMenu do material3 1.2.1 NÃO expõe `properties` (só
+        // em versões mais novas), então precisou trocar pro DropdownMenu
+        // "cru" com exposedDropdownSize() (replica a largura do campo
+        // âncora) pra poder passar properties = PopupProperties(focusable =
+        // false) -- mesmo fix e mesmo motivo do select genérico em
+        // DomainFormScreen.kt (ver comentário lá).
+        DropdownMenu(
             expanded = expanded,
-            // focusable = false -- mesmo fix aplicado ao select genérico de
-            // DomainFormScreen.kt (ver comentário lá): evita o Popup do menu
-            // disputar foco/IME com o campo de texto a cada tecla digitada.
+            modifier = Modifier.exposedDropdownSize(),
             properties = androidx.compose.ui.window.PopupProperties(focusable = false),
             onDismissRequest = {
                 expanded = false

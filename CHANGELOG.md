@@ -3,6 +3,17 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.10] -- 2026-09-30
+
+- **Correção de compilação da 1.3.9**: `ExposedDropdownMenu` do
+  material3 1.2.1 (versão travada neste projeto) não tem o parâmetro
+  `properties` -- só apareceu em versões mais novas da biblioteca, então
+  o build falhou. Troquei pelo `DropdownMenu` "cru" + modifier
+  `exposedDropdownSize()` (replica a largura do campo âncora, mesmo
+  efeito visual), que aceita `properties = PopupProperties(focusable =
+  false)` normalmente -- mesma correção da 1.3.9, só com a API certa
+  pra essa versão da biblioteca.
+
 ## [1.3.9] -- 2026-09-30
 
 - **Causa raiz real encontrada** (o usuário deu a pista certa: "coloco o
