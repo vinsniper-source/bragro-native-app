@@ -3,6 +3,23 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.9] -- 2026-09-30
+
+- **Causa raiz real encontrada** (o usuário deu a pista certa: "coloco o
+  cursor no fim pra apagar e ele não se move, mas letra por letra vai
+  sendo excluída" -- ou seja, a EDIÇÃO estava funcionando por baixo, só
+  a TELA não repintava o cursor/texto). O Popup por trás do
+  `ExposedDropdownMenu` (select genérico + `SearchableDropdownField`) é
+  **focusable por padrão** no Material3 -- como a lista filtrada muda a
+  cada letra digitada (o popup é recomposto a cada tecla), em vários
+  aparelhos isso disputa foco/conexão de IME com o campo de texto por
+  trás, e o cursor trava visualmente mesmo a edição acontecendo. O
+  campo de Data nunca teve esse problema porque não usa
+  `ExposedDropdownMenu` nenhum -- só um `OutlinedTextField` puro.
+  Corrigido com `properties = PopupProperties(focusable = false)` nos
+  dois lugares -- é a recomendação oficial do Google pra esse padrão
+  (busca ao vivo + popup).
+
 ## [1.3.8] -- 2026-09-30
 
 - **Usuário confirmou que o bug persistia mesmo na 1.3.7** (dropdown

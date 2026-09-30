@@ -193,6 +193,10 @@ fun SearchableDropdownField(
         )
         ExposedDropdownMenu(
             expanded = expanded,
+            // focusable = false -- mesmo fix aplicado ao select genérico de
+            // DomainFormScreen.kt (ver comentário lá): evita o Popup do menu
+            // disputar foco/IME com o campo de texto a cada tecla digitada.
+            properties = androidx.compose.ui.window.PopupProperties(focusable = false),
             onDismissRequest = {
                 expanded = false
                 // Fechou sem escolher nada novo -- volta o texto pro que

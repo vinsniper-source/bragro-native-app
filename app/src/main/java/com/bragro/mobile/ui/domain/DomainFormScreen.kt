@@ -989,6 +989,21 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                 )
                 ExposedDropdownMenu(
                     expanded = expanded,
+                    // focusable = false -- causa raiz real do bug reportado
+                    // ("coloco o cursor no fim pra apagar e ele não se move,
+                    // mas letra por letra vai sendo excluída no teclado"): o
+                    // Popup por trás do ExposedDropdownMenu é FOCUSABLE por
+                    // padrão, e como a lista filtrada muda a cada tecla (o
+                    // popup é recriado/recomposto a cada letra digitada), em
+                    // certos aparelhos/teclados isso disputa o foco/conexão
+                    // de IME com o campo de texto -- o app processa a edição
+                    // por baixo (daí "aparece letra por letra sendo
+                    // excluída"), mas o campo na tela não repinta o cursor.
+                    // O campo de Data nunca teve esse problema porque não usa
+                    // ExposedDropdownMenu nenhum. Recomendação oficial do
+                    // Google pra combinar campo de busca ao vivo com popup:
+                    // popup NÃO focável.
+                    properties = androidx.compose.ui.window.PopupProperties(focusable = false),
                     onDismissRequest = {
                         expanded = false
                         // Fechou sem escolher nada novo -- volta o texto pro
