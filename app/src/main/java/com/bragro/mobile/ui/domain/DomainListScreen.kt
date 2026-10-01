@@ -270,6 +270,10 @@ fun DomainListScreen(
     // com frota-qr-codes-button.tsx do site) -- 3º FAB só no módulo Frota.
     // Nulo em qualquer outro domínio.
     onOpenFrotaQr: (() -> Unit)? = null,
+    // Mesmo padrão acima, pro "QR Code de Rastreabilidade" de Colheita
+    // (Task #773, paridade com RastreabilidadeQrButton do site) -- FAB só
+    // no módulo Colheita. Nulo em qualquer outro domínio.
+    onOpenColheitaQr: (() -> Unit)? = null,
     onOpenReconciliacaoEstoque: (() -> Unit)? = null,
     // Cobranças/NFS-e unificados (ver BottomNavBar.kt/BRAgroNavHost.kt):
     // quando não-nulo, mostra um alternador no topo da lista pra trocar de
@@ -631,6 +635,24 @@ fun DomainListScreen(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
                         Icon(Icons.Filled.Bolt, contentDescription = "Acesso automático (balança/RFID Bluetooth)")
+                    }
+                    FloatingActionButton(
+                        onClick = onNewRecord,
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
+                }
+            } else if (domainId == "colheita" && onOpenColheitaQr != null) {
+                // QR Code de Rastreabilidade (Task #773) unificado como 2º
+                // FAB -- mesmo padrão de "Diagnóstico por foto"/"Reconciliação"
+                // acima. É só um RELATÓRIO (sem formulário), então o FAB
+                // principal continua indo pro "Novo lançamento" normal.
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    FloatingActionButton(
+                        onClick = onOpenColheitaQr,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    ) {
+                        Icon(Icons.Filled.QrCode, contentDescription = "QR Code de Rastreabilidade")
                     }
                     FloatingActionButton(
                         onClick = onNewRecord,

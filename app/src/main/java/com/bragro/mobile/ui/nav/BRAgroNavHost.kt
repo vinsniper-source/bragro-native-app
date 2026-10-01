@@ -40,6 +40,7 @@ import com.bragro.mobile.ui.cotacoes.CotacaoMultiItemScreen
 import com.bragro.mobile.ui.operacoes.OperacoesScreen
 import com.bragro.mobile.ui.romaneio.RomaneioQuickScreen
 import com.bragro.mobile.ui.pragas.PragaFotoScreen
+import com.bragro.mobile.ui.domain.ColheitaQrScreen
 import com.bragro.mobile.ui.domain.FrotaQrScreen
 import com.bragro.mobile.ui.estoque.ReconciliacaoEstoqueScreen
 import com.bragro.mobile.ui.fieldview.PrescricaoScreen
@@ -66,6 +67,7 @@ private object Routes {
     const val ROMANEIO_QUICK = "romaneio_quick"
     const val PRAGA_FOTO = "praga_foto"
     const val FROTA_QR = "frota_qr"
+    const val COLHEITA_QR = "colheita_qr"
     const val RECONCILIACAO_ESTOQUE = "reconciliacao_estoque"
     const val PRESCRICAO = "prescricao"
     const val PRESCRICAO_NOVO = "prescricao_novo"
@@ -332,6 +334,9 @@ fun BRAgroNavHost() {
         composable(Routes.FROTA_QR) {
             FrotaQrScreen(onBack = { navController.popBackStack() })
         }
+        composable(Routes.COLHEITA_QR) {
+            ColheitaQrScreen(onBack = { navController.popBackStack() })
+        }
         composable(Routes.RECONCILIACAO_ESTOQUE) {
             ReconciliacaoEstoqueScreen(onBack = { navController.popBackStack() })
         }
@@ -414,6 +419,9 @@ fun BRAgroNavHost() {
                     } else null,
                     onOpenFrotaQr = if (domainId == "frota") {
                         { navController.navigate(Routes.FROTA_QR) }
+                    } else null,
+                    onOpenColheitaQr = if (domainId == "colheita") {
+                        { navController.navigate(Routes.COLHEITA_QR) }
                     } else null,
                     onOpenReconciliacaoEstoque = if (domainId == "estoque") {
                         { navController.navigate(Routes.RECONCILIACAO_ESTOQUE) }

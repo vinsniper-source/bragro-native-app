@@ -16,6 +16,8 @@ import com.bragro.mobile.data.model.BootstrapRequest
 import com.bragro.mobile.data.model.BridgeCodeRequest
 import com.bragro.mobile.data.model.BridgeCodeResponse
 import com.bragro.mobile.data.model.BootstrapResponse
+import com.bragro.mobile.data.model.ColheitaLotesQrRequest
+import com.bragro.mobile.data.model.ColheitaLotesQrResponse
 import com.bragro.mobile.data.model.ConfigResponse
 import com.bragro.mobile.data.model.ControleInsumosRequest
 import com.bragro.mobile.data.model.ControleInsumosResponse
@@ -187,6 +189,11 @@ interface MobileApi {
     // pura, sem input do usuário.
     @POST("api/mobile/reconciliacao-estoque")
     suspend fun reconciliacaoEstoque(@Body body: ReconciliacaoEstoqueRequest): Response<ReconciliacaoEstoqueResponse>
+
+    // QR Code de Rastreabilidade de Colheita (Task #773) -- leitura dos
+    // últimos lotes (registros de Colheita já colhidos) pra gerar o QR.
+    @POST("api/mobile/colheita-lotes-qr")
+    suspend fun colheitaLotesQr(@Body body: ColheitaLotesQrRequest): Response<ColheitaLotesQrResponse>
 
     // Prescrição / Taxa Variável (Task #604/#608) -- leitura das prescrições
     // salvas. A partir da v1.2.85 (pedido do usuário, "crie no native como

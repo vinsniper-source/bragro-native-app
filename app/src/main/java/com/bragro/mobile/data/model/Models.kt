@@ -812,6 +812,36 @@ data class ReconciliacaoEstoqueResponse(
     val error: String? = null,
 )
 
+// QR Code de Rastreabilidade de Colheita (Task #773) -- espelho de
+// listLotesParaQr/RastreabilidadeQrButton (lib/services/colheita.ts,
+// rastreabilidade-qr.ts). Rota de LEITURA pura (sem input do usuário) -- ver
+// /api/mobile/colheita-lotes-qr/route.ts. O payload do QR em si é montado
+// aqui no app (ColheitaQr.kt, mesmo formato "BRAGRO:LOTE:..." do site), só
+// os dados de cada lote vêm do servidor.
+@Serializable
+data class ColheitaLotesQrRequest(
+    val accessToken: String,
+    val refreshToken: String,
+)
+
+@Serializable
+data class LoteQrData(
+    val id: String,
+    val cultura: String,
+    val safra: String,
+    val local: String,
+    val dataFim: String? = null,
+    val colhida: Double? = null,
+    val label: String,
+)
+
+@Serializable
+data class ColheitaLotesQrResponse(
+    val ok: Boolean,
+    val lotes: List<LoteQrData> = emptyList(),
+    val error: String? = null,
+)
+
 // Livro Caixa do Produtor Rural (Task #58) -- ver POST /api/mobile/livro-caixa
 // no site (src/app/api/mobile/livro-caixa/route.ts), que so serializa o
 // retorno de getLivroCaixaData() (lib/services/livro-caixa.ts) -- MESMO

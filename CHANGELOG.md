@@ -3,6 +3,17 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.15] -- 2026-10-01
+
+- **Novo: QR Code de Rastreabilidade (Colheita)** -- paridade com
+  RastreabilidadeQrButton/listLotesParaQr do site (Task #773). Gera um QR
+  Code por lote colhido (mesmo payload "BRAGRO:LOTE:Produto=...|Safra=...
+  |Origem=...|Data=...|Qtd=...|Lote=..." do site, pensado pra ser colado na
+  embalagem/sacaria), com tela de grade + impressão em lote, mesmo padrão
+  já usado em "QR Codes das máquinas" (Frota). Diferente da Frota -- que lê
+  de lookups já sincronizados localmente --, aqui os lotes são registros de
+  verdade, buscados numa nova rota /api/mobile/colheita-lotes-qr.
+
 ## [1.3.14] -- 2026-10-01
 
 - **Removido o ícone "Ver" (olho) remanescente no Financeiro**: já tinha
