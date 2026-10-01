@@ -66,6 +66,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bragro.mobile.data.model.OrcamentoData
 import com.bragro.mobile.data.repo.OrcamentoRepository
+import com.bragro.mobile.ui.domain.EqualWidthBlockRow
 import com.bragro.mobile.ui.domain.LabeledIconButton
 import com.bragro.mobile.ui.domain.ModuleIconButton
 import com.bragro.mobile.ui.domain.ModuleIconItem
@@ -460,7 +461,14 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
         },
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            // EqualWidthBlockRow (mesmo padrão já usado em Lançamentos/
+            // Financeiro e nos demais módulos) em vez de um Row simples --
+            // pedido do usuário ("padronize igual as outras abas
+            // lançamentos"): Row simples não distribui nem quebra linha,
+            // então em telas estreitas os 4 ícones ficavam espremidos/
+            // cortados. EqualWidthBlockRow dá célula de largura igual e
+            // borda vertical entre elas, como no resto do app.
+            EqualWidthBlockRow(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
                 ModuleIconButton(
                     ModuleIconItem("filtros", Icons.Filled.FilterAlt, "Filtros", active = statusFiltro != null, badgeCount = if (statusFiltro != null) 1 else 0),
                 ) { showFiltroDialog = true }

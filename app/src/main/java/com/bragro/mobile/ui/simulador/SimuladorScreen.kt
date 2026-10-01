@@ -13,7 +13,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.CircularProgressIndicator
@@ -300,14 +302,29 @@ private fun CampoPercentual(
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text("$label (%)", style = MaterialTheme.typography.labelSmall)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = { onChange((value - 5).coerceIn(min, max)) }, modifier = Modifier.size(40.dp)) { Text("−") }
+            // Ícones Add/Remove (vetoriais) em vez de Text("+")/Text("−") --
+            // bug real de auditoria ("faltou colocar os sinais de + e -"):
+            // o glifo Unicode U+2212 (MINUS SIGN) usado antes não é coberto
+            // pela fonte padrão em alguns aparelhos, renderizando em branco
+            // dentro do botão (o "+" ASCII normalmente aparece, mas ficava
+            // estranho um botão com símbolo e outro sem). Ícones Material
+            // são vetores, nunca dependem de glifo de fonte.
+            OutlinedButton(
+                onClick = { onChange((value - 5).coerceIn(min, max)) },
+                modifier = Modifier.size(40.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+            ) { Icon(Icons.Filled.Remove, contentDescription = "Diminuir") }
             OutlinedTextField(
                 value = value.toString(),
                 onValueChange = { txt -> txt.toIntOrNull()?.let { onChange(it.coerceIn(min, max)) } },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f),
             )
-            OutlinedButton(onClick = { onChange((value + 5).coerceIn(min, max)) }, modifier = Modifier.size(40.dp)) { Text("+") }
+            OutlinedButton(
+                onClick = { onChange((value + 5).coerceIn(min, max)) },
+                modifier = Modifier.size(40.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+            ) { Icon(Icons.Filled.Add, contentDescription = "Aumentar") }
         }
         if (hint != null) Text(hint, style = MaterialTheme.typography.labelSmall)
     }

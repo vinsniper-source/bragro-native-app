@@ -69,6 +69,13 @@ enum class IntegrationBusy { SALVANDO, SINCRONIZANDO, DESCONECTANDO }
 fun ProviderIntegrationCard(
     providers: List<String>,
     descricao: String,
+    // Título do card -- pedido do usuário ("coloque um titulo no bloco pra
+    // diferenciar um do outro pq parece que está em duplicidade até abrir o
+    // bloco"): FieldviewScreen.kt usa este card 2x seguidas (prestadora de
+    // KML/máquinas e NDVI via satélite) com título idêntico antes disso,
+    // só distinguíveis depois de expandir. Default mantém o texto genérico
+    // original pras demais telas que não passam este parâmetro.
+    titulo: String = "Acesso automático via prestadora de serviço",
     integration: ProviderIntegrationDto?,
     busy: IntegrationBusy?,
     syncMessage: String?,
@@ -116,7 +123,7 @@ fun ProviderIntegrationCard(
                 // estreitas; agora ela simplesmente quebra em 2 linhas
                 // normais quando não cabe numa só, sem perder texto.
                 Text(
-                    "Acesso automático via prestadora de serviço",
+                    titulo,
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.weight(1f),
                 )

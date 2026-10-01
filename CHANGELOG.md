@@ -3,6 +3,36 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.13] -- 2026-10-01
+
+- **Bug real corrigido: câmera não abria em Novo Orçamento (e também em
+  Pragas/IA e QR Code de Frota)**: `file_paths.xml` só declarava as pastas
+  de cache `romaneio/` e `exports/` pro FileProvider -- `orcamento/`,
+  `pragas/` e `frota_qr/` nunca foram adicionadas, então `getUriForFile()`
+  lançava `IllegalArgumentException` (capturada silenciosamente pelo
+  try/catch de cada tela), e o app de Câmera simplesmente nunca abria.
+  Adicionadas as 3 pastas faltantes.
+- **Mão de Obra e Familiar / Orçamentos: toolbar de ícones espremido numa
+  única linha** (`EqualWidthBlockRow` divide a largura igualmente entre
+  TODOS os ícones sem quebrar linha): "maodeobra" adicionado a
+  `CATEGORIZED_BLOCK_DOMAINS` (mesmo padrão Dados/Operações/Arquivos já
+  usado em Romaneios/Pragas/Pedidos/etc.); Orçamentos trocou seu `Row`
+  simples por `EqualWidthBlockRow`, mesmo padrão do resto do app.
+- **FieldView: os 2 cards "Acesso automático via prestadora de serviço"
+  (KML e NDVI) eram indistinguíveis até abrir** -- `ProviderIntegrationCard`
+  ganhou parâmetro `titulo`, agora "Acesso automático via prestadora
+  (talhões/KML)" e "Acesso automático via satélite (NDVI)".
+- **Simulador "E se?": botões +/- dos campos percentuais apareciam em
+  branco** -- trocado `Text("+")`/`Text("−")` por `Icon(Icons.Filled.Add)`/
+  `Icon(Icons.Filled.Remove)` (vetoriais, não dependem de glifo de fonte).
+- **Site (Next.js, deploy separado): Cotações Pecuária sem dados mesmo
+  após trocar a fonte de CEPEA pra Notícias Agrícolas** -- a rota
+  `/api/mobile/weather` rodava em runtime Node.js (Função Serverless da
+  Vercel), cujo pool de IPs também é bloqueado por `noticiasagricolas.com.br`
+  (mesmo bloqueio que já afetava `cepea.org.br`), mesmo com
+  `dynamic = "force-dynamic"` já corrigindo o cache estático. Trocado pra
+  `runtime = "edge"` (Edge Network da Vercel, outro pool de IPs).
+
 ## [1.3.12] -- 2026-09-30
 
 - **Correção real: as duas mudanças de Financeiro da v1.3.11 (agrupar

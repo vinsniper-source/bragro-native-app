@@ -1634,6 +1634,15 @@ private val CATEGORIZED_BLOCK_DOMAINS = setOf(
     // native") -- mesmo bloco Dados/Operações/Arquivos genérico de
     // Romaneios/Pragas/etc. acima.
     "pecuaria", "pastagem",
+    // Mão de Obra e Familiar caia no layout padrao (fora de
+    // CATEGORIZED_BLOCK_DOMAINS/PER_MODULE_BLOCK_DOMAINS) -- fileira unica
+    // de ate 8 icones (Periodo/Filtros/Atualizar/Expandir/Tabela/Colunas/
+    // Excel/PDF) todos espremidos em celulas de mesma largura na MESMA
+    // linha (EqualWidthBlockRow nao quebra linha) -- rotulos cortados/
+    // ilegiveis. Pedido do usuario ("coloque o padrao das outras abas
+    // lancamentos") -- mesmo bloco Dados/Operacoes/Arquivos genericos
+    // acima, que distribui esses icones em ate 3 linhas por categoria.
+    "maodeobra",
 )
 
 // Safra/Clima/Planejamento Safra/Colheita/Frota: mesmo layout em blocos

@@ -404,6 +404,10 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
             // no mobile (a credencial já era 100% funcional no site).
             ProviderIntegrationCard(
                 providers = listOf("Climate FieldView", "John Deere Operations Center", "Outro", "Trimble Ag Software"),
+                // Título distinto do card NDVI abaixo -- pedido do usuário
+                // ("coloque um titulo no bloco pra diferenciar um do outro
+                // pq parece que está em duplicidade até abrir o bloco").
+                titulo = "Acesso automático via prestadora (talhões/KML)",
                 // Aviso resumido -- pedido do usuário ("resuma os avisos").
                 descricao = "Hoje os limites de talhão são importados manualmente por KML/KMZ. Credencial salva com segurança abaixo.",
                 integration = integration,
@@ -420,6 +424,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
             // em fieldview-client.tsx no site.
             ProviderIntegrationCard(
                 providers = listOf("Sentinel Hub", "Planet", "EOS Data Analytics", "Outro"),
+                titulo = "Acesso automático via satélite (NDVI)",
                 descricao = "NDVI por talhão ainda não está disponível -- depende de assinatura com um provedor de imagens de satélite. Credencial salva com segurança abaixo.",
                 integration = ndviIntegration,
                 busy = ndviIntegrationBusy,

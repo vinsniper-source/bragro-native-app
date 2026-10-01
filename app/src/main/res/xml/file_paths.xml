@@ -5,6 +5,21 @@
      grantUriPermissions no AndroidManifest). -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <cache-path name="romaneio_fotos" path="romaneio/" />
+    <!-- Bug real encontrado em auditoria: OrcamentoScreen.kt, PragaFotoScreen.kt
+         e QuickAbastecimentoDialog.kt (QR Code Frota) já usavam
+         FileProvider.getUriForFile() com suas próprias subpastas de cache
+         ("orcamento/", "pragas/", "frota_qr/"), só que NENHUMA das 3 estava
+         declarada aqui: FileProvider lança IllegalArgumentException
+         ("failed to find configured root") pra qualquer pasta não listada,
+         capturada pelo try/catch de cada tela (launchCamera/launchScanner),
+         que só loga o erro e chama onPhotoCancelled()/equivalente; daí o
+         clique no botão de câmera "não fazer nada" (nenhum crash visível,
+         nenhum log de usuário, só o app de Câmera nunca abrindo). Pedido do
+         usuário ("quando clica na opção câmera a câmera do celular não
+         abre", Novo Orçamento). -->
+    <cache-path name="orcamento_fotos" path="orcamento/" />
+    <cache-path name="pragas_fotos" path="pragas/" />
+    <cache-path name="frota_qr" path="frota_qr/" />
     <!-- Backup completo (JSON) e exportações CSV: salvos temporariamente
          aqui antes de abrir o Intent de compartilhamento (ver HomeScreen.kt
          e ui/domain/ColumnsAndExport.kt). -->
