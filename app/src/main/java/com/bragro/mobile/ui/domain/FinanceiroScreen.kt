@@ -740,9 +740,13 @@ fun FinanceiroScreen(
                                                     )
                                                 }
                                             }
-                                            IconButton(onClick = { recordBeingViewed = recordId }, modifier = Modifier.size(28.dp)) {
-                                                Icon(Icons.Filled.Visibility, contentDescription = "Ver lançamento completo", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                                            }
+                                            // "Ver" removido da vista de BLOCO -- pedido do usuário
+                                            // ("retire todos os icones ver dos blocos de todos os
+                                            // módulos do app native"), mesmo ajuste já feito no
+                                            // módulo genérico (DomainListScreen.kt): aqui tinha
+                                            // ficado órfão, único "Ver" de bloco restante no app
+                                            // (continua existindo na vista Tabela, ver RecordTable.kt,
+                                            // que o usuário pediu pra manter).
                                             IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
                                                 Icon(Icons.Filled.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                                             }

@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Person
@@ -501,6 +502,10 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
     // showActions).
     var tableView by remember { mutableStateOf(false) }
     val tableHScroll = remember { androidx.compose.foundation.ScrollState(0) }
+    // Recolher conteúdo (cards/tabela) -- pedido do usuário, mesma setinha
+    // já usada em Mural/Alertas/Monitor (HomeScreen.kt). O cabeçalho
+    // (texto explicativo + barra de ciclo) continua sempre visível.
+    var contentExpanded by remember { mutableStateOf(true) }
 
     Scaffold(
         topBar = {
@@ -551,6 +556,13 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                                     tint = MaterialTheme.colorScheme.primary,
                                 )
                             }
+                            IconButton(onClick = { contentExpanded = !contentExpanded }) {
+                                Icon(
+                                    if (contentExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                    contentDescription = if (contentExpanded) "Recolher" else "Expandir",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
+                            }
                         }
                     }
                 },
@@ -589,24 +601,26 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                     }
                 }
             }
-            if (offline) {
-                item { Text(NetworkStatus.failureMessage(context), style = MaterialTheme.typography.bodySmall) }
-            }
-            if (operacoes.isEmpty()) {
-                item {
-                    Text(
-                        if (loading) "Carregando..." else if (!temCache) "Sem dados ainda. Conecte-se à internet e atualize." else "Nenhuma operação de safra lançada nesta janela.",
-                        modifier = Modifier.padding(vertical = 24.dp),
-                    )
+            if (contentExpanded) {
+                if (offline) {
+                    item { Text(NetworkStatus.failureMessage(context), style = MaterialTheme.typography.bodySmall) }
                 }
-            } else if (tableView) {
-                item(key = "table-header") { RecordTableHeader(OPERACOES_EXPORT_COLUMNS, tableHScroll, showActions = false) }
-                items(operacoesExportRecords(operacoes), key = { it["cultura"] + "|" + it["safra"] + "|" + it["local"] }) { row ->
-                    RecordTableRow(columns = OPERACOES_EXPORT_COLUMNS, record = row, domainId = "", hScroll = tableHScroll)
-                }
-            } else {
-                items(operacoes, key = { it.chave }) { op ->
-                    OperacaoCard(op, onEditRecord = onEditRecord)
+                if (operacoes.isEmpty()) {
+                    item {
+                        Text(
+                            if (loading) "Carregando..." else if (!temCache) "Sem dados ainda. Conecte-se à internet e atualize." else "Nenhuma operação de safra lançada nesta janela.",
+                            modifier = Modifier.padding(vertical = 24.dp),
+                        )
+                    }
+                } else if (tableView) {
+                    item(key = "table-header") { RecordTableHeader(OPERACOES_EXPORT_COLUMNS, tableHScroll, showActions = false) }
+                    items(operacoesExportRecords(operacoes), key = { it["cultura"] + "|" + it["safra"] + "|" + it["local"] }) { row ->
+                        RecordTableRow(columns = OPERACOES_EXPORT_COLUMNS, record = row, domainId = "", hScroll = tableHScroll)
+                    }
+                } else {
+                    items(operacoes, key = { it.chave }) { op ->
+                        OperacaoCard(op, onEditRecord = onEditRecord)
+                    }
                 }
             }
         }

@@ -1399,15 +1399,15 @@ fun DomainListScreen(
                         )
                         return@itemsIndexed
                     }
-                    // Barra de acoes no TOPO do bloco (recolher/expandir,
-                    // emitir NFS-e, editar, excluir) -- pedido do usuario
-                    // ("realoque os icones, setinha, editar e excluir, para
-                    // o topo dos blocos e delimite as bordas onde esta em
-                    // branco"), mesmo padrao ja aplicado no site
-                    // (data-table.tsx). Antes essa coluna de icones ficava
-                    // do lado direito, ocupando a altura toda do card ao
-                    // lado dos campos -- agora e uma faixa fina no topo,
-                    // com HorizontalDivider separando do conteudo.
+                    // Coluna de ícones (recolher/expandir, emitir NFS-e,
+                    // editar, excluir) em PILHA VERTICAL no canto superior
+                    // direito do card -- pedido do usuário ("ícones
+                    // seta/editar/excluir em coluna vertical, igual
+                    // Romaneios/Financeiro"), mesmo padrão já usado em
+                    // FinanceiroScreen.kt. Antes era uma faixa horizontal
+                    // no topo do card com HorizontalDivider separando do
+                    // conteúdo; agora os ícones ficam ao lado dos campos,
+                    // empilhados verticalmente à direita.
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1416,52 +1416,6 @@ fun DomainListScreen(
                                 if (isLastOfGroup) Modifier.padding(bottom = 8.dp) else Modifier
                             ),
                     ) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
-                                        .padding(horizontal = 4.dp, vertical = 2.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    if (domainId == "nfse" && record["status"] != "EMITIDA" && recordId != null) {
-                                        IconButton(
-                                            onClick = { viewModel.emitirNfse(recordId) },
-                                            enabled = nfseBusyId == null,
-                                            modifier = Modifier.size(28.dp),
-                                        ) {
-                                            if (nfseBusyId == recordId) {
-                                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                                            } else {
-                                                Icon(Icons.Filled.Send, contentDescription = "Emitir NFS-e", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                                            }
-                                        }
-                                    }
-                                    Spacer(Modifier.weight(1f))
-                                    if (hasMore) {
-                                        IconButton(onClick = { cardOverrides[recordId ?: ""] = !expanded }, modifier = Modifier.size(28.dp)) {
-                                            Icon(
-                                                if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                                contentDescription = if (expanded) "Recolher lançamento" else "Expandir lançamento",
-                                                modifier = Modifier.size(18.dp),
-                                                tint = MaterialTheme.colorScheme.primary,
-                                            )
-                                        }
-                                    }
-                                    // "Ver" removido da vista de BLOCO (aqui) --
-                                    // pedido do usuário ("pode retirar a opção do
-                                    // ícone ver quando está como bloco, na
-                                    // tabela permanece o ícone ver, em app e
-                                    // plataforma"): na vista Tabela (onView, ver
-                                    // RecordTable.kt) o ícone Ver continua igual.
-                                    IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
-                                        Icon(Icons.Filled.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                                    }
-                                    IconButton(onClick = { recordPendingDelete = recordId }, modifier = Modifier.size(28.dp)) {
-                                        Icon(Icons.Filled.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
-                                    }
-                                }
-                                HorizontalDivider()
                         Row(modifier = Modifier.fillMaxWidth()) {
                             Column(modifier = Modifier.weight(1f).padding(12.dp)) {
                                 if (expanded) {
@@ -1491,7 +1445,46 @@ fun DomainListScreen(
                                     )
                                 }
                             }
-                        }
+                            Column(
+                                modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp),
+                                verticalArrangement = Arrangement.spacedBy(0.dp),
+                            ) {
+                                if (domainId == "nfse" && record["status"] != "EMITIDA" && recordId != null) {
+                                    IconButton(
+                                        onClick = { viewModel.emitirNfse(recordId) },
+                                        enabled = nfseBusyId == null,
+                                        modifier = Modifier.size(28.dp),
+                                    ) {
+                                        if (nfseBusyId == recordId) {
+                                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                        } else {
+                                            Icon(Icons.Filled.Send, contentDescription = "Emitir NFS-e", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                        }
+                                    }
+                                }
+                                if (hasMore) {
+                                    IconButton(onClick = { cardOverrides[recordId ?: ""] = !expanded }, modifier = Modifier.size(28.dp)) {
+                                        Icon(
+                                            if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                            contentDescription = if (expanded) "Recolher lançamento" else "Expandir lançamento",
+                                            modifier = Modifier.size(18.dp),
+                                            tint = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
+                                }
+                                // "Ver" removido da vista de BLOCO (aqui) --
+                                // pedido do usuário ("pode retirar a opção do
+                                // ícone ver quando está como bloco, na
+                                // tabela permanece o ícone ver, em app e
+                                // plataforma"): na vista Tabela (onView, ver
+                                // RecordTable.kt) o ícone Ver continua igual.
+                                IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
+                                    Icon(Icons.Filled.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                }
+                                IconButton(onClick = { recordPendingDelete = recordId }, modifier = Modifier.size(28.dp)) {
+                                    Icon(Icons.Filled.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                                }
+                            }
                         }
                     }
                 }

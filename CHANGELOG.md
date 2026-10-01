@@ -3,6 +3,28 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.14] -- 2026-10-01
+
+- **Removido o ícone "Ver" (olho) remanescente no Financeiro**: já tinha
+  sido retirado da vista de Bloco no motor genérico (`DomainListScreen.kt`)
+  numa versão anterior, mas `FinanceiroScreen.kt` mantém sua própria
+  renderização de card (módulo roteado à parte) e ainda tinha o ícone --
+  agora removido também daqui. O ícone continua normalmente na vista
+  Tabela em todos os módulos (pedido explícito do usuário).
+- **Ícones de ação (expandir/recolher, editar, excluir) agora em pilha
+  vertical no canto superior direito do card**, em todos os ~18 módulos
+  que usam o motor genérico (`DomainListScreen.kt`) -- antes era uma
+  faixa horizontal no topo do card com linha divisória; agora segue o
+  mesmo padrão já usado no Financeiro.
+- **Seta de recolher/expandir em Operações**: adicionado o mesmo padrão
+  de ícone colapsável já usado em Mural/Alertas/Monitor, no canto
+  superior direito do cabeçalho -- recolhe a lista/tabela de operações,
+  mantendo sempre visível o texto explicativo e a barra de janela
+  (30/60/90/180d).
+- Confirmado que as cores dos badges de status em Lançamentos (Financeiro)
+  já funcionavam corretamente (StatusBadge/isStatusLikeColumn já estavam
+  conectados) -- nenhuma mudança necessária.
+
 ## [1.3.13] -- 2026-10-01
 
 - **Bug real corrigido: câmera não abria em Novo Orçamento (e também em
