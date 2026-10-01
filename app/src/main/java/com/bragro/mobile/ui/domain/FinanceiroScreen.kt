@@ -247,6 +247,33 @@ fun FinanceiroScreen(
         if (view == FinanceiroView.FLUXO) computeFluxoRows(filtered.sortedBy { it["vcto"] ?: "" }) else null
     }
 
+    // Agrupar lançamentos vindos da MESMA NF-e (origem == "nfe" +
+    // mesmo origemId, rateado em >1 fazenda) num único card -- mesma
+    // lógica de financeiroGroups já existente (mas órfã, sem efeito)
+    // em DomainListScreen.kt (~linhas 696-718/1390-1401): aqui é o
+    // lugar certo, já que o domínio "financeiro" é roteado
+    // exclusivamente pra este arquivo (ver BRAgroNavHost.kt).
+    // Registros sem origem nfe ou com origemId não repetido continuam
+    // soltos, um card cada, como sempre foi. Declarado aqui (contexto
+    // @Composable válido) em vez de dentro do corpo do LazyColumn
+    // (LazyListScope.() -> Unit não é @Composable).
+    val financeiroGroups: Map<String, List<Int>> = remember(filtered) {
+        val byOrigemId = mutableMapOf<String, MutableList<Int>>()
+        filtered.forEachIndexed { idx, r ->
+            val origemId = r["origemId"]
+            if (r["origem"] == "nfe" && !origemId.isNullOrBlank()) {
+                byOrigemId.getOrPut(origemId) { mutableListOf() }.add(idx)
+            }
+        }
+        byOrigemId.filterValues { it.size > 1 }
+    }
+    val financeiroHiddenIndexes: Set<Int> = remember(financeiroGroups) {
+        financeiroGroups.values.flatMap { it.drop(1) }.toSet()
+    }
+    val financeiroGroupByStartIndex: Map<Int, List<Int>> = remember(financeiroGroups) {
+        financeiroGroups.values.associateBy { it.first() }
+    }
+
     // Colunas do preset da visão atual (Pagar/Receber/Conciliado têm um
     // subconjunto fixo, ver FINANCEIRO_VIEW_COLUMN_KEYS) -- é sobre ESSE
     // conjunto que o botão "Colunas" (pedido do usuário) deixa escolher um
@@ -617,30 +644,10 @@ fun FinanceiroScreen(
                             if (!isQuickView && expandedBlocks["recalcular-vencimentos"] == true) {
                                 item(key = "recalcular-vencimentos") { RecalcularVencimentosButton(showHeader = false) }
                             }
-                            // Agrupar lançamentos vindos da MESMA NF-e (origem == "nfe" +
-                            // mesmo origemId, rateado em >1 fazenda) num único card --
-                            // mesma lógica de financeiroGroups já existente (mas órfã, sem
-                            // efeito) em DomainListScreen.kt (~linhas 696-718/1390-1401):
-                            // aqui é o lugar certo, já que o domínio "financeiro" é roteado
-                            // exclusivamente pra este arquivo (ver BRAgroNavHost.kt).
-                            // Registros sem origem nfe ou com origemId não repetido
-                            // continuam soltos, um card cada, como sempre foi.
-                            val financeiroGroups: Map<String, List<Int>> = remember(filtered) {
-                                val byOrigemId = mutableMapOf<String, MutableList<Int>>()
-                                filtered.forEachIndexed { idx, r ->
-                                    val origemId = r["origemId"]
-                                    if (r["origem"] == "nfe" && !origemId.isNullOrBlank()) {
-                                        byOrigemId.getOrPut(origemId) { mutableListOf() }.add(idx)
-                                    }
-                                }
-                                byOrigemId.filterValues { it.size > 1 }
-                            }
-                            val financeiroHiddenIndexes: Set<Int> = remember(financeiroGroups) {
-                                financeiroGroups.values.flatMap { it.drop(1) }.toSet()
-                            }
-                            val financeiroGroupByStartIndex: Map<Int, List<Int>> = remember(financeiroGroups) {
-                                financeiroGroups.values.associateBy { it.first() }
-                            }
+                            // financeiroGroups / financeiroHiddenIndexes /
+                            // financeiroGroupByStartIndex: declarados acima, antes do
+                            // LazyColumn (precisam de contexto @Composable pro remember;
+                            // disponíveis aqui por closure).
                             if (allExpanded) {
                             if (tableView && cols.isNotEmpty()) {
                                 item(key = "table-header") { RecordTableHeader(cols, tableHScroll) }
