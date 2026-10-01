@@ -98,13 +98,13 @@ class PrescricaoNovoViewModel(app: Application) : AndroidViewModel(app) {
 
     var farms = mutableStateOf<List<PrescricaoFarmDto>>(emptyList())
         private set
-    var unidadesOptions = mutableStateOf<List<com.bragro.mobile.data.model.LookupEntity>>(emptyList())
+    var unidadesOptions = mutableStateOf<List<com.bragro.mobile.data.local.LookupEntity>>(emptyList())
         private set
-    var safrasOptions = mutableStateOf<List<com.bragro.mobile.data.model.LookupEntity>>(emptyList())
+    var safrasOptions = mutableStateOf<List<com.bragro.mobile.data.local.LookupEntity>>(emptyList())
         private set
-    var culturasOptions = mutableStateOf<List<com.bragro.mobile.data.model.LookupEntity>>(emptyList())
+    var culturasOptions = mutableStateOf<List<com.bragro.mobile.data.local.LookupEntity>>(emptyList())
         private set
-    var talhoesOptions = mutableStateOf<List<com.bragro.mobile.data.model.LookupEntity>>(emptyList())
+    var talhoesOptions = mutableStateOf<List<com.bragro.mobile.data.local.LookupEntity>>(emptyList())
         private set
     var origemArquivo = mutableStateOf<String?>(null)
         private set

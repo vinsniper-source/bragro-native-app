@@ -1030,15 +1030,20 @@ private fun FinanceiroGestaoDropdownButton(view: FinanceiroView, onSelect: (Fina
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            containerColor = com.bragro.mobile.ui.theme.BrGreen,
         ) {
-            FINANCEIRO_VIEW_GESTAO.forEach { v ->
-                DropdownMenuItem(
-                    text = { Text(v.label, maxLines = 1, overflow = TextOverflow.Ellipsis, color = Color.White) },
-                    leadingIcon = { Icon(financeiroViewIcon(v), contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White) },
-                    modifier = if (v == view) Modifier.background(Color.Black.copy(alpha = 0.15f)) else Modifier,
-                    onClick = { onSelect(v); expanded = false },
-                )
+            // material3 1.2.1 (versao real do projeto) nao tem o parametro
+            // containerColor em DropdownMenu (só chegou na 1.3.0) -- por
+            // isso o fundo verde é aplicado envolvendo os itens num Column
+            // próprio em vez de via parametro, que não existe nessa versão.
+            Column(modifier = Modifier.background(com.bragro.mobile.ui.theme.BrGreen)) {
+                FINANCEIRO_VIEW_GESTAO.forEach { v ->
+                    DropdownMenuItem(
+                        text = { Text(v.label, maxLines = 1, overflow = TextOverflow.Ellipsis, color = Color.White) },
+                        leadingIcon = { Icon(financeiroViewIcon(v), contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White) },
+                        modifier = if (v == view) Modifier.background(Color.Black.copy(alpha = 0.15f)) else Modifier,
+                        onClick = { onSelect(v); expanded = false },
+                    )
+                }
             }
         }
     }

@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
@@ -454,7 +455,7 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                         IconButton(onClick = {
                             android.widget.Toast.makeText(context, "Conectado -- dados sincronizados com o servidor.", android.widget.Toast.LENGTH_SHORT).show()
                         }) {
-                            Icon(androidx.compose.material.icons.Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 },
