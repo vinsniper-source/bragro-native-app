@@ -1,7 +1,9 @@
 package com.bragro.mobile.ui.orcamento
 
+import android.Manifest
 import android.app.Application
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
@@ -57,6 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
@@ -562,6 +565,25 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
             viewModel.onPhotoCancelled()
         }
     }
+    // Ícone de câmera não abria em alguns aparelhos -- o app nunca pedia a
+    // permissão CAMERA em tempo de execução, e vários apps de câmera de
+    // fabricante (Xiaomi/MIUI, Samsung) recusam SILENCIOSAMENTE o Intent
+    // implícito quando ela não está concedida. Guarda a chamada pendente
+    // (prefixo/setPending/launcher) e só executa depois de concedida.
+    var pendingCameraCall by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedida ->
+        val call = pendingCameraCall
+        pendingCameraCall = null
+        if (concedida && call != null) call() else if (!concedida) viewModel.onPhotoCancelled()
+    }
+    fun launchCameraComPermissao(prefixo: String, setPending: (Uri) -> Unit, launcher: androidx.activity.result.ActivityResultLauncher<Uri>) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            launchCamera(prefixo, setPending, launcher)
+        } else {
+            pendingCameraCall = { launchCamera(prefixo, setPending, launcher) }
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -666,7 +688,7 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     OutlinedButton(
-                        onClick = { launchCamera("requisicao", { uri -> pendingRequisicaoUri = uri }, takeRequisicaoPicture) },
+                        onClick = { launchCameraComPermissao("requisicao", { uri -> pendingRequisicaoUri = uri }, takeRequisicaoPicture) },
                         enabled = !uploadingRequisicao,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
@@ -706,7 +728,7 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     OutlinedButton(
-                        onClick = { launchCamera("comprovante", { uri -> pendingComprovanteUri = uri }, takeComprovantePicture) },
+                        onClick = { launchCameraComPermissao("comprovante", { uri -> pendingComprovanteUri = uri }, takeComprovantePicture) },
                         enabled = !uploadingComprovante,
                         modifier = Modifier.fillMaxWidth(),
                     ) {

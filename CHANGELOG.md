@@ -3,6 +3,43 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.17] -- 2026-10-01
+
+- **Fix: ícones de câmera/QR Code não abriam em alguns aparelhos** (relatado
+  pelo usuário) -- causa real: o app nunca pedia a permissão CAMERA em
+  tempo de execução (nem declarava no manifest), e vários apps de câmera de
+  fabricante (Xiaomi/MIUI, Samsung) recusam SILENCIOSAMENTE o Intent
+  implícito ACTION_IMAGE_CAPTURE quando essa permissão não está concedida
+  -- sem erro, sem crash, só não acontecia nada ao tocar no ícone (exatamente
+  o sintoma relatado). Adicionado `<uses-permission android:name=
+  "android.permission.CAMERA"/>` ao manifest e um pedido de permissão em
+  tempo de execução antes de abrir a câmera nas 4 telas que usam foto:
+  Romaneio Rápido (ticket), Pragas (diagnóstico de IA), Orçamentos
+  (requisição/comprovante) e Abastecimento rápido/QR da Frota.
+- **Abastecimento rápido: QR só aceita máquinas de verdade cadastradas** --
+  pedido do usuário ("aceitar apenas dados para o qr que venha da base de
+  dados"). A leitura do QR Code agora valida o texto escaneado contra a
+  mesma lista de frotas REALMENTE usadas (via /api/mobile/frota-
+  registradas, igual à geração dos QR Codes em 1.3.16), não mais o catálogo
+  genérico inteiro -- cai de volta pro catálogo completo só se a fazenda
+  ainda não tiver nenhum lançamento registrado.
+
+## [1.3.16] -- 2026-10-01
+
+- **Fix: "QR Codes das máquinas" (Frota) só com equipamento realmente usado**
+  -- antes gerava um QR pra TODO o catálogo genérico de Base de Dados >
+  Frotas (~50 tipos de equipamento padrão, tipo "DRONE PULVERIZADOR",
+  "MOTONIVELADORA" etc.), mesmo sem a fazenda ter aquele equipamento
+  (pergunta do usuário: "esses QRCode foram criados a partir da base de
+  dados ou são ficticios"). Agora busca (nova rota /api/mobile/frota-
+  registradas, serviço listFrotasRegistradas em frota.ts) os nomes de frota
+  com pelo menos um lançamento real (FrotaRegistro) e só gera QR pra esses --
+  cai de volta pro catálogo completo só se a fazenda ainda não tiver nenhum
+  lançamento (nunca fica vazio). Mesmo fix no site (frota-qr-codes-button.tsx
+  via page.tsx). O ícone de scan no Abastecimento rápido continua aceitando
+  qualquer valor do catálogo completo (sem mudança) -- só a tela de GERAR os
+  QR Codes impressos ficou mais seletiva.
+
 ## [1.3.15] -- 2026-10-01
 
 - **Novo: QR Code de Rastreabilidade (Colheita)** -- paridade com

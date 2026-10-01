@@ -31,6 +31,8 @@ import com.bragro.mobile.data.model.DroneCreateRequest
 import com.bragro.mobile.data.model.DroneCreateResponse
 import com.bragro.mobile.data.model.DroneListRequest
 import com.bragro.mobile.data.model.DroneListResponse
+import com.bragro.mobile.data.model.FrotasRegistradasRequest
+import com.bragro.mobile.data.model.FrotasRegistradasResponse
 import com.bragro.mobile.data.model.FieldviewImportRequest
 import com.bragro.mobile.data.model.FieldviewImportResponse
 import com.bragro.mobile.data.model.FieldviewRequest
@@ -194,6 +196,12 @@ interface MobileApi {
     // últimos lotes (registros de Colheita já colhidos) pra gerar o QR.
     @POST("api/mobile/colheita-lotes-qr")
     suspend fun colheitaLotesQr(@Body body: ColheitaLotesQrRequest): Response<ColheitaLotesQrResponse>
+
+    // Nomes de frota com pelo menos um lançamento real -- usado pra limitar
+    // "QR Codes das máquinas" (FrotaQrScreen.kt) ao que a fazenda de fato usa,
+    // em vez do catálogo genérico inteiro de Base de Dados > Frotas.
+    @POST("api/mobile/frota-registradas")
+    suspend fun frotasRegistradas(@Body body: FrotasRegistradasRequest): Response<FrotasRegistradasResponse>
 
     // Prescrição / Taxa Variável (Task #604/#608) -- leitura das prescrições
     // salvas. A partir da v1.2.85 (pedido do usuário, "crie no native como

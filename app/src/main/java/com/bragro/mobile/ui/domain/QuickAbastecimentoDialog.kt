@@ -4,8 +4,11 @@ import android.app.Application
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,6 +46,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.local.LookupEntity
 import com.bragro.mobile.data.repo.ConfigRepository
+import com.bragro.mobile.data.repo.FrotaRegistradasRepository
 import com.bragro.mobile.data.repo.RecordRepository
 import com.bragro.mobile.data.repo.SaveResult
 import com.google.mlkit.vision.barcode.BarcodeScanning
@@ -61,9 +65,19 @@ private val ITENS_COMBUSTIVEL = listOf("DIESEL S10", "DIESEL S500", "ETANOL", "G
 class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
     private val configRepository = ConfigRepository(app)
     private val recordRepository = RecordRepository(app)
+    private val frotaRegistradasRepository = FrotaRegistradasRepository(app)
 
     var frotas = mutableStateOf<List<LookupEntity>>(emptyList())
         private set
+    // Nomes de frota REALMENTE registrados (pelo menos um lançamento em
+    // FrotaRegistro) -- usado SÓ pra validar o QR escaneado (pedido do
+    // usuário: "aceitar apenas dados para o qr que venha da base de
+    // dados"), consistente com o mesmo filtro aplicado na geração dos QR
+    // Codes (FrotaQrScreen.kt). O dropdown "Máquina/Frota" continua com o
+    // catálogo completo (frotas acima) -- só a checagem do QR fica mais
+    // restrita. null = ainda não carregou/falhou -> cai pro catálogo
+    // completo (frotas.value) como fallback, nunca bloqueia o uso offline.
+    private var frotasRegistradas: List<String>? = null
     var locais = mutableStateOf<List<LookupEntity>>(emptyList())
         private set
     var colaboradores = mutableStateOf<List<LookupEntity>>(emptyList())
@@ -88,6 +102,7 @@ class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
             frotas.value = configRepository.lookupsByCategory("frotas")
             locais.value = configRepository.lookupsByCategory("locais")
             colaboradores.value = configRepository.lookupsByCategory("colaboradores")
+            frotasRegistradas = frotaRegistradasRepository.fetch()
         }
     }
 
@@ -137,7 +152,14 @@ class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
                     qrMensagem.value = "Nenhum QR Code encontrado na foto -- tente novamente com mais luz e foco."
                     return@launch
                 }
-                val valoresValidos = frotas.value.map { it.value }
+                // Pedido do usuário: "aceitar apenas dados para o qr que
+                // venha da base de dados" -- restringe a validação do QR às
+                // frotas REALMENTE registradas (pelo menos um lançamento),
+                // não ao catálogo genérico inteiro. Sem registros ainda
+                // (fazenda nova) ou sem conseguir buscar (offline), cai de
+                // volta pro catálogo completo -- nunca trava o uso.
+                val registradas = frotasRegistradas
+                val valoresValidos = if (registradas.isNullOrEmpty()) frotas.value.map { it.value } else registradas
                 val match = parseFrotaQrPayload(texto, valoresValidos)
                 if (match != null) {
                     frota = match
@@ -220,6 +242,22 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
             viewModel.onQrPhotoCancelled()
         }
     }
+    // Ícone de câmera/QR não abria em alguns aparelhos -- o app nunca pedia
+    // a permissão CAMERA em tempo de execução, e vários apps de câmera de
+    // fabricante (Xiaomi/MIUI, Samsung) recusam SILENCIOSAMENTE o Intent
+    // implícito quando ela não está concedida (sem erro nenhum, só não
+    // acontece nada ao tocar). Pede a permissão antes de abrir a câmera;
+    // só chama launchQrCamera() depois de concedida.
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedida ->
+        if (concedida) launchQrCamera() else viewModel.onQrPhotoCancelled()
+    }
+    fun launchQrCameraComPermissao() {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            launchQrCamera()
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -250,7 +288,7 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
                     androidx.compose.foundation.layout.Box(modifier = Modifier.weight(1f)) {
                         LookupDropdown("Máquina/Frota *", frotas, viewModel.frota) { viewModel.frota = it }
                     }
-                    androidx.compose.material3.IconButton(onClick = { launchQrCamera() }, enabled = !lendoQr) {
+                    androidx.compose.material3.IconButton(onClick = { launchQrCameraComPermissao() }, enabled = !lendoQr) {
                         if (lendoQr) {
                             CircularProgressIndicator(modifier = Modifier)
                         } else {

@@ -1,7 +1,9 @@
 package com.bragro.mobile.ui.romaneio
 
+import android.Manifest
 import android.app.Application
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
@@ -48,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
@@ -393,6 +396,22 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
             viewModel.onCameraLaunchFailed()
         }
     }
+    // Bug relatado pelo usuario ("câmera não abre pra tirar foto do
+    // ticket"): o app nunca pedia a permissão CAMERA em tempo de execução, e
+    // vários apps de câmera de fabricante (Xiaomi/MIUI, Samsung) recusam
+    // SILENCIOSAMENTE o Intent implícito quando ela não está concedida (sem
+    // erro, sem crash -- só não acontece nada ao tocar no botão, o que
+    // parece "não abre"). Pede a permissão antes de abrir a câmera.
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedida ->
+        if (concedida) launchCamera() else viewModel.onCameraLaunchFailed()
+    }
+    fun launchCameraComPermissao() {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            launchCamera()
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -440,7 +459,7 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    OutlinedButton(onClick = { launchCamera() }, enabled = !uploadingFoto, modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(onClick = { launchCameraComPermissao() }, enabled = !uploadingFoto, modifier = Modifier.fillMaxWidth()) {
                         if (uploadingFoto) {
                             CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
                             Text("Lendo e enviando foto...")

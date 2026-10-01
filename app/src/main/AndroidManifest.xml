@@ -22,6 +22,20 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <!-- Ícones de câmera/QR Code não abriam em alguns aparelhos (relatado
+         pelo usuário: Romaneio, Abastecimento rápido/QR da Frota) mesmo com
+         <queries>/FileProvider corretos -- causa real: o app nunca declarava
+         nem pedia a permissão CAMERA em tempo de execução, e vários apps de
+         câmera de fabricante (Xiaomi/MIUI, Samsung) recusam SILENCIOSAMENTE
+         o Intent implícito ACTION_IMAGE_CAPTURE quando o app chamador não
+         tem essa permissão concedida -- o launch() não dá erro nenhum, só
+         não acontece nada visível, exatamente o sintoma relatado. Cada tela
+         com ícone de câmera agora pede essa permissão (runtime, Android 6+)
+         antes de abrir a câmera -- ver rememberLauncherForActivityResult
+         (RequestPermission) em QuickAbastecimentoDialog/RomaneioQuickScreen/
+         PragaFotoScreen/OrcamentoScreen. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
     <!-- Necessario a partir do Android 11 (targetSdk 30+, aqui targetSdk 34):
          sem declarar a intent de camera aqui, o sistema pode nao conseguir
          RESOLVER o app de camera pra abrir via Intent implicito

@@ -1,7 +1,9 @@
 package com.bragro.mobile.ui.pragas
 
+import android.Manifest
 import android.app.Application
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
@@ -47,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
@@ -398,6 +401,20 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
             viewModel.onCameraLaunchFailed()
         }
     }
+    // Ícone de câmera não abria em alguns aparelhos -- o app nunca pedia a
+    // permissão CAMERA em tempo de execução, e vários apps de câmera de
+    // fabricante (Xiaomi/MIUI, Samsung) recusam SILENCIOSAMENTE o Intent
+    // implícito quando ela não está concedida. Pede a permissão antes.
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedida ->
+        if (concedida) launchCamera() else viewModel.onCameraLaunchFailed()
+    }
+    fun launchCameraComPermissao() {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            launchCamera()
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -443,7 +460,7 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    OutlinedButton(onClick = { launchCamera() }, enabled = !enviandoFoto, modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(onClick = { launchCameraComPermissao() }, enabled = !enviandoFoto, modifier = Modifier.fillMaxWidth()) {
                         if (enviandoFoto) {
                             CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
                             Text("Enviando e analisando foto...")

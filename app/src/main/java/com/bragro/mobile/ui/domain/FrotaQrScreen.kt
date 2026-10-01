@@ -38,6 +38,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bragro.mobile.data.local.LookupEntity
 import com.bragro.mobile.data.repo.ConfigRepository
+import com.bragro.mobile.data.repo.FrotaRegistradasRepository
 import com.bragro.mobile.ui.print.HtmlPrinter
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
@@ -53,6 +54,7 @@ import kotlinx.coroutines.launch
  * pra preencher o campo Máquina/Frota sem digitar. */
 class FrotaQrViewModel(app: Application) : AndroidViewModel(app) {
     private val configRepository = ConfigRepository(app)
+    private val frotaRegistradasRepository = FrotaRegistradasRepository(app)
 
     var frotas = mutableStateOf<List<LookupEntity>>(emptyList())
         private set
@@ -61,7 +63,21 @@ class FrotaQrViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         viewModelScope.launch {
-            frotas.value = configRepository.lookupsByCategory("frotas")
+            val catalogo = configRepository.lookupsByCategory("frotas")
+            // Só as máquinas que já têm pelo menos um lançamento real
+            // (FrotaRegistro), não o catálogo genérico inteiro de Base de
+            // Dados > Frotas (pedido do usuário: "esses QRCode foram criados
+            // a partir da base de dados ou são ficticios... use como padrao
+            // os que tiverem cadastrado na base de dados"). Sem rede/sessão
+            // ou fazenda ainda sem nenhum lançamento, cai de volta pro
+            // catálogo completo -- nunca fica vazio por causa disso.
+            val usadas = frotaRegistradasRepository.fetch()
+            frotas.value = if (usadas.isNullOrEmpty()) {
+                catalogo
+            } else {
+                val usadasSet = usadas.map { it.trim().uppercase() }.toSet()
+                catalogo.filter { it.value.trim().uppercase() in usadasSet }
+            }
             carregando.value = false
         }
     }

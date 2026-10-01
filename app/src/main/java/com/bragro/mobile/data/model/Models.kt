@@ -842,6 +842,23 @@ data class ColheitaLotesQrResponse(
     val error: String? = null,
 )
 
+// Nomes de frota REALMENTE usados em algum lançamento (FrotaRegistro),
+// diferente do catálogo genérico inteiro de Base de Dados > Frotas --
+// usado pela tela "QR Codes das máquinas" (FrotaQrScreen.kt) pra não gerar
+// QR de equipamento que a fazenda não tem (ver frota-qr-codes-button.tsx no
+// site pro mesmo fix, e /api/mobile/frota-registradas no servidor).
+data class FrotasRegistradasRequest(
+    val accessToken: String,
+    val refreshToken: String,
+)
+
+@Serializable
+data class FrotasRegistradasResponse(
+    val ok: Boolean,
+    val frotas: List<String> = emptyList(),
+    val error: String? = null,
+)
+
 // Livro Caixa do Produtor Rural (Task #58) -- ver POST /api/mobile/livro-caixa
 // no site (src/app/api/mobile/livro-caixa/route.ts), que so serializa o
 // retorno de getLivroCaixaData() (lib/services/livro-caixa.ts) -- MESMO
