@@ -115,7 +115,16 @@ fun darkerBorderColor(base: Color, amount: Float = 0.18f): Color = lerp(base, Co
 // próprios.
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ModuleIconButton(item: ModuleIconItem, onClick: () -> Unit) {
+fun ModuleIconButton(
+    item: ModuleIconItem,
+    // Override opcional -- usado pelo bloco Faturamento (Cobranças/NFS-e)
+    // pra fonte branca sobre fundo verde escuro (pedido do usuário: "coloque
+    // o fundo verde escuro e a fonte branca"), sem mudar o MODULE_ICON_FG
+    // padrão (preto/branco automático) usado por todos os outros ~14 módulos.
+    contentColor: Color? = null,
+    onClick: () -> Unit,
+) {
+    val fg = contentColor ?: MODULE_ICON_FG
     Column(
         modifier = Modifier
             .widthIn(min = 44.dp)
@@ -127,14 +136,14 @@ fun ModuleIconButton(item: ModuleIconItem, onClick: () -> Unit) {
             Icon(
                 item.icon,
                 contentDescription = null,
-                tint = MODULE_ICON_FG,
+                tint = fg,
                 modifier = Modifier.size(MODULE_ICON_SIZE),
             )
         }
         Text(
             item.label,
             style = MaterialTheme.typography.labelSmall,
-            color = MODULE_ICON_FG,
+            color = fg,
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Clip,

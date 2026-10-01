@@ -3,6 +3,36 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.18] -- 2026-10-01
+
+- **Drone**: botão + com fundo verde (primary) e ícone branco, igual aos
+  demais módulos (antes usava as cores padrão claras do FAB).
+- **Nova Prescrição**: botão + na altura padrão (tela sem BottomNavBar) +
+  fundo verde; campos Unidade da taxa/Safra/Cultura/Talhão viraram listas
+  suspensas (Base de Dados), reaproveitando as mesmas categorias de
+  Pedido/Cotação/Drone. Produto fica texto livre (sem catálogo próprio).
+- **Operações**: cada card individual ganhou sua própria seta de
+  recolher/expandir no canto superior direito (além da seta global que já
+  recolhia a tela inteira).
+- **Financeiro**: fundo da lista suspensa "Gestão Financeira" (Contas a
+  Pagar/Receber, Conciliado, Fluxo de Caixa, Rateio) agora é verde sólido
+  (cor da conta/visão selecionada), com item ativo destacado e fonte/ícone
+  brancos -- antes era um popup claro padrão do Android.
+- **Orçamentos**: toolbar reorganizada em categorias "Dados" (Filtros,
+  Tabela/Bloco) e "Operações" (Atualizar, Período), mesma apresentação dos
+  demais módulos (Safra/Financeiro); botão + subido pra altura padrão.
+- **Cobranças/NFS-e**: bloco do alternador (Faturamento) com fundo verde
+  escuro sólido e fonte/ícone brancos -- antes era verde translúcido claro
+  com texto escuro.
+- **NF-e**: botão + subido pra altura padrão + cores padronizadas
+  (fundo verde/ícone branco).
+- **Drone e Orçamentos**: adicionado ícone de Nuvem no cabeçalho (achado de
+  auditoria -- eram os 2 únicos módulos de lista sem esse ícone).
+- **Frota QR Codes** (continuação da v1.3.17): gera só a partir das
+  máquinas com uso real registrado (já cobria o site; agora o app nativo
+  usa a mesma lista real via `/api/mobile/frota-registradas`, com fallback
+  pro catálogo completo se a consulta falhar).
+
 ## [1.3.17] -- 2026-10-01
 
 - **Fix: ícones de câmera/QR Code não abriam em alguns aparelhos** (relatado

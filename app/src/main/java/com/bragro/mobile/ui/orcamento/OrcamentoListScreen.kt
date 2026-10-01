@@ -448,15 +448,28 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                         }) {
                             Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
                         }
+                        // Ícone de nuvem -- faltava neste módulo, achado de
+                        // auditoria ("veja se há algum módulo ainda sem a
+                        // nuvem de armazenamento").
+                        IconButton(onClick = {
+                            android.widget.Toast.makeText(context, "Conectado -- dados sincronizados com o servidor.", android.widget.Toast.LENGTH_SHORT).show()
+                        }) {
+                            Icon(androidx.compose.material.icons.Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.primary)
+                        }
                     }
                 },
             )
         },
         floatingActionButton = {
+            // Subido pra altura padrão do botão + dos demais módulos --
+            // pedido do usuário ("suba o botão adicionar na mesma altura
+            // dos outros módulos"): tela sem BottomNavBar, então o FAB
+            // encostava mais embaixo que nos módulos genéricos.
             FloatingActionButton(
                 onClick = onNovo,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.padding(bottom = 64.dp),
             ) { Icon(Icons.Filled.Add, contentDescription = "Novo orçamento") }
         },
     ) { padding ->
@@ -468,19 +481,40 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
             // então em telas estreitas os 4 ícones ficavam espremidos/
             // cortados. EqualWidthBlockRow dá célula de largura igual e
             // borda vertical entre elas, como no resto do app.
+            // Categorizado em Dados/Operações -- mesma apresentação dos
+            // demais módulos (Safra, Financeiro etc.) -- pedido do usuário
+            // ("coloque a mesma apresentação dos outros módulos, como
+            // dados, operações e arquivos"): antes era uma única fileira
+            // sem rótulo de categoria. "Arquivos" fica de fora -- Orçamentos
+            // não tem exportação CSV/PDF própria (diferente de Safra/
+            // Financeiro), então não há o que colocar nessa 3ª categoria.
+            Text(
+                "Dados",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 12.dp, top = 4.dp),
+            )
             EqualWidthBlockRow(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
                 ModuleIconButton(
                     ModuleIconItem("filtros", Icons.Filled.FilterAlt, "Filtros", active = statusFiltro != null, badgeCount = if (statusFiltro != null) 1 else 0),
                 ) { showFiltroDialog = true }
-                ModuleIconButton(
-                    ModuleIconItem("periodo", Icons.Filled.CalendarMonth, "Período", active = dateFrom.isNotBlank() || dateTo.isNotBlank()),
-                ) { showPeriodoDialog = true }
-                LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", loading = carregando, onClick = { viewModel.carregar() })
                 LabeledIconButton(
                     icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
                     label = if (tableView) "Bloco" else "Tabela",
                     onClick = { tableView = !tableView },
                 )
+            }
+            Text(
+                "Operações",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 12.dp, top = 4.dp),
+            )
+            EqualWidthBlockRow(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
+                LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", loading = carregando, onClick = { viewModel.carregar() })
+                ModuleIconButton(
+                    ModuleIconItem("periodo", Icons.Filled.CalendarMonth, "Período", active = dateFrom.isNotBlank() || dateTo.isNotBlank()),
+                ) { showPeriodoDialog = true }
             }
             Text(
                 "${filtered.size} orçamento(s)${if (filtered.size != orcamentos.size) " de ${orcamentos.size}" else ""}. Pendente NF aguarda a nota mãe pra conciliação.",

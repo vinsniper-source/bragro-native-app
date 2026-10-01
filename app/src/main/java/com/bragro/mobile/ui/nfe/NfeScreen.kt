@@ -488,7 +488,21 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { copiaOrigem = null; showNovaNota = true }) {
+            // Subido pra altura padrão do botão + dos demais módulos --
+            // pedido do usuário ("suba o botão adicionar na mesma altura
+            // dos outros módulos"): esta tela não tem BottomNavBar (é uma
+            // tela "cheia", fora da barra inferior principal), então o FAB
+            // encostava bem mais embaixo que nos módulos genéricos (onde a
+            // barra inferior empurra o FAB pra cima). Padding compensa essa
+            // diferença sem precisar adicionar uma barra aqui. Cores
+            // padronizadas (fundo verde cheio + ícone branco), igual aos
+            // demais botões + do app.
+            FloatingActionButton(
+                onClick = { copiaOrigem = null; showNovaNota = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.padding(bottom = 64.dp),
+            ) {
                 Icon(Icons.Filled.Add, contentDescription = "Nova NF-e")
             }
         },

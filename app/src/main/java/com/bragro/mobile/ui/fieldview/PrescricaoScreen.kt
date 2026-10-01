@@ -265,7 +265,15 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
         // FAB "Nova Prescrição" (Task #651) -- pedido do usuário ("crie no
         // native como foi criado na plataforma"): antes só o site criava.
         floatingActionButton = {
-            androidx.compose.material3.FloatingActionButton(onClick = onNovo) {
+            // Altura padrão (tela sem BottomNavBar) + fundo verde do título --
+            // pedido do usuário ("suba o botão + de Prescrição na altura
+            // padrão dos outros botões + do app... fundo verde do título").
+            androidx.compose.material3.FloatingActionButton(
+                onClick = onNovo,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.padding(bottom = 64.dp),
+            ) {
                 Icon(Icons.Filled.Add, contentDescription = "Nova prescrição")
             }
         },

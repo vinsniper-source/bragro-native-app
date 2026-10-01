@@ -49,6 +49,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bragro.mobile.data.model.PrescricaoFarmDto
 import com.bragro.mobile.data.model.PrescricaoFeatureInput
+import com.bragro.mobile.data.repo.ConfigRepository
 import com.bragro.mobile.data.repo.PrescricaoRepository
 import com.bragro.mobile.data.vra.IsoXmlSemZonasException
 import com.bragro.mobile.data.vra.ZonaTaxaVra
@@ -79,6 +80,13 @@ import kotlinx.coroutines.launch
  */
 class PrescricaoNovoViewModel(app: Application) : AndroidViewModel(app) {
     private val repository = PrescricaoRepository(app)
+    // Listas suspensas pra Unidade/Safra/Cultura/Talhão -- pedido do usuário
+    // ("coloque lista suspensa nos campos relevantes"): reaproveita as MESMAS
+    // categorias de lookup já usadas em Pedido/Cotação/Drone (Base de Dados),
+    // em vez de texto livre. "Produto" fica texto livre -- não existe
+    // catálogo de produtos agrícolas na Base de Dados (seria uma categoria
+    // nova, fora do escopo desta rodada).
+    private val configRepository = ConfigRepository(app)
 
     var nome by mutableStateOf("")
     var produto by mutableStateOf("")
@@ -89,6 +97,14 @@ class PrescricaoNovoViewModel(app: Application) : AndroidViewModel(app) {
     var farmId by mutableStateOf<String?>(null)
 
     var farms = mutableStateOf<List<PrescricaoFarmDto>>(emptyList())
+        private set
+    var unidadesOptions = mutableStateOf<List<com.bragro.mobile.data.model.LookupEntity>>(emptyList())
+        private set
+    var safrasOptions = mutableStateOf<List<com.bragro.mobile.data.model.LookupEntity>>(emptyList())
+        private set
+    var culturasOptions = mutableStateOf<List<com.bragro.mobile.data.model.LookupEntity>>(emptyList())
+        private set
+    var talhoesOptions = mutableStateOf<List<com.bragro.mobile.data.model.LookupEntity>>(emptyList())
         private set
     var origemArquivo = mutableStateOf<String?>(null)
         private set
@@ -113,6 +129,12 @@ class PrescricaoNovoViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         viewModelScope.launch { farms.value = repository.listFarms() }
+        viewModelScope.launch {
+            unidadesOptions.value = configRepository.lookupsByCategory("unidades").sortedBy { it.label }
+            safrasOptions.value = configRepository.lookupsByCategory("safras").sortedBy { it.label }
+            culturasOptions.value = configRepository.lookupsByCategory("culturas").sortedBy { it.label }
+            talhoesOptions.value = configRepository.lookupsByCategory("talhoes").sortedBy { it.label }
+        }
     }
 
     fun onIsoXmlImportado(nomeArquivo: String, zonasLidas: List<ZonaTaxaVra>) {
@@ -211,6 +233,10 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
     val busy by viewModel.busy
     val successId by viewModel.successId
     val copiando by viewModel.copiando
+    val unidadesOptions by viewModel.unidadesOptions
+    val safrasOptions by viewModel.safrasOptions
+    val culturasOptions by viewModel.culturasOptions
+    val talhoesOptions by viewModel.talhoesOptions
 
     val isoXmlPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         if (uri != null) {
@@ -310,13 +336,14 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
                 )
             }
             item {
-                OutlinedTextField(
+                // Lista suspensa (Base de Dados > "unidades") -- pedido do
+                // usuário ("coloque lista suspensa nos campos relevantes").
+                SearchableDropdownField(
                     value = viewModel.unidadeTaxa,
-                    onValueChange = { viewModel.unidadeTaxa = it },
-                    label = { Text("Unidade da taxa") },
-                    placeholder = { Text("Ex.: kg/ha") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = appFieldColors(),
+                    label = "Unidade da taxa",
+                    options = remember(unidadesOptions) { unidadesOptions.map { it.value to it.label } },
+                    onSelect = { viewModel.unidadeTaxa = it },
+                    placeholder = "Ex.: kg/ha",
                 )
             }
             item {
@@ -330,33 +357,30 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
                 )
             }
             item {
-                OutlinedTextField(
+                SearchableDropdownField(
                     value = viewModel.safra,
-                    onValueChange = { viewModel.safra = it },
-                    label = { Text("Safra") },
-                    placeholder = { Text("Ex.: 2025/26") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = appFieldColors(),
+                    label = "Safra",
+                    options = remember(safrasOptions) { safrasOptions.map { it.value to it.label } },
+                    onSelect = { viewModel.safra = it },
+                    placeholder = "Ex.: 2025/26",
                 )
             }
             item {
-                OutlinedTextField(
+                SearchableDropdownField(
                     value = viewModel.cultura,
-                    onValueChange = { viewModel.cultura = it },
-                    label = { Text("Cultura") },
-                    placeholder = { Text("Ex.: Soja") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = appFieldColors(),
+                    label = "Cultura",
+                    options = remember(culturasOptions) { culturasOptions.map { it.value to it.label } },
+                    onSelect = { viewModel.cultura = it },
+                    placeholder = "Ex.: Soja",
                 )
             }
             item {
-                OutlinedTextField(
+                SearchableDropdownField(
                     value = viewModel.talhao,
-                    onValueChange = { viewModel.talhao = it },
-                    label = { Text("Talhão") },
-                    placeholder = { Text("Ex.: 12") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = appFieldColors(),
+                    label = "Talhão",
+                    options = remember(talhoesOptions) { talhoesOptions.map { it.value to it.label } },
+                    onSelect = { viewModel.talhao = it },
+                    placeholder = "Ex.: 12",
                 )
             }
             item {

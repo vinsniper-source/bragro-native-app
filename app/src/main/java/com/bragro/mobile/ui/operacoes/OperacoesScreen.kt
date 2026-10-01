@@ -233,6 +233,14 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onEditRecord: (String, String
         else -> MaterialTheme.colorScheme.error
     }
 
+    // Seta de recolher DESTE card (canto superior direito do bloco) --
+    // pedido do usuário ("realoque a seta pro canto superior direito do
+    // bloco"): antes só existia a seta GLOBAL no TopAppBar (recolhe/expande
+    // a tela inteira de uma vez); esta aqui recolhe só ESTE card individual,
+    // escondendo progresso/financeiro/estoque/linha do tempo e deixando só
+    // o cabeçalho (cultura/safra/local/status) visível.
+    var cardExpanded by remember { mutableStateOf(true) }
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.Top) {
@@ -264,7 +272,17 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onEditRecord: (String, String
                         com.bragro.mobile.ui.domain.StatusBadge("ATRASADO")
                     }
                 }
+                IconButton(onClick = { cardExpanded = !cardExpanded }, modifier = Modifier.size(24.dp)) {
+                    Icon(
+                        if (cardExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                        contentDescription = if (cardExpanded) "Recolher card" else "Expandir card",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
+
+            if (cardExpanded) {
 
             if (op.osTotal > 0) {
                 Column {
@@ -480,6 +498,7 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onEditRecord: (String, String
             // Financeiro mais acima) agora tem seu proprio icone de editar
             // apontando pro registro exato, entao o link generico ficou
             // redundante (mesma decisao ja tomada no site).
+            } // fecha if (cardExpanded)
         }
     }
 }

@@ -117,6 +117,7 @@ import com.bragro.mobile.data.repo.ModuleActionsRepository
 import com.bragro.mobile.data.repo.RecordRepository
 import com.bragro.mobile.data.repo.WeatherRepository
 import com.bragro.mobile.ui.print.HtmlPrinter
+import com.bragro.mobile.ui.theme.BrGreen
 import com.bragro.mobile.ui.theme.BrYellow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -793,9 +794,14 @@ fun DomainListScreen(
                         // (Faturamento), não ModuleCategoryBlock como um todo
                         // (que os demais ~14 módulos também usam, sem Card
                         // externo por pedido anterior).
+                        // Fundo verde ESCURO sólido (era translúcido, texto
+                        // escuro em cima de fundo claro) + fonte branca --
+                        // pedido do usuário ("troque a cor do bloco cobranças
+                        // e nfe, coloque o fundo verde escuro e a fonte
+                        // branca").
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                            colors = CardDefaults.cardColors(containerColor = BrGreen),
                         ) {
                             // Borda vertical dividindo em partes iguais +
                             // ícones centralizados dentro de cada bloco --
@@ -821,6 +827,7 @@ fun DomainListScreen(
                                     val active = id == domainId
                                     ModuleIconButton(
                                         ModuleIconItem(id, linkedDomainIcon(id), label, active = active),
+                                        contentColor = Color.White,
                                     ) { if (!active) onSwitchDomain(id) }
                                 }
                             }

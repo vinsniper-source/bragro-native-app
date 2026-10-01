@@ -1021,11 +1021,22 @@ private fun FinanceiroGestaoDropdownButton(view: FinanceiroView, onSelect: (Fina
             )
             Icon(Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.size(18.dp))
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        // Fundo verde (mesma cor do botão quando a conta/visão está
+        // selecionada) -- pedido do usuário ("coloque a cor do fundo da
+        // lista suspensa de Financeiro na cor da conta selecionada, verde").
+        // Item ativo ganha destaque (verde mais escuro) dentro da lista;
+        // ícone/texto brancos em toda a lista pra manter contraste sobre o
+        // fundo verde.
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            containerColor = com.bragro.mobile.ui.theme.BrGreen,
+        ) {
             FINANCEIRO_VIEW_GESTAO.forEach { v ->
                 DropdownMenuItem(
-                    text = { Text(v.label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                    leadingIcon = { Icon(financeiroViewIcon(v), contentDescription = null, modifier = Modifier.size(18.dp)) },
+                    text = { Text(v.label, maxLines = 1, overflow = TextOverflow.Ellipsis, color = Color.White) },
+                    leadingIcon = { Icon(financeiroViewIcon(v), contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White) },
+                    modifier = if (v == view) Modifier.background(Color.Black.copy(alpha = 0.15f)) else Modifier,
                     onClick = { onSelect(v); expanded = false },
                 )
             }

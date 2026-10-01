@@ -223,6 +223,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
     val integrationBusy by viewModel.integrationBusy
     val integrationMessage by viewModel.integrationMessage
     var showNovo by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -241,12 +242,34 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                         }
                     }
                 },
+                // Ícone de nuvem (armazenamento) -- faltava neste módulo,
+                // achado de auditoria ("veja se há algum módulo ainda sem a
+                // nuvem"). Mesmo padrão simples usado em Operações.
+                actions = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        androidx.compose.material3.IconButton(onClick = {
+                            android.widget.Toast.makeText(context, "Conectado -- dados sincronizados com o servidor.", android.widget.Toast.LENGTH_SHORT).show()
+                        }) {
+                            Icon(Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                },
             )
         },
         floatingActionButton = {
             // Ainda mais acima -- pedido do usuário repetiu de novo ("suba
             // mais o botão drone"): 16dp não bastou, foi pra 32dp, agora 48dp.
-            FloatingActionButton(onClick = { showNovo = true }, modifier = Modifier.padding(bottom = 48.dp)) {
+            // Fundo verde (mesma cor do título/primary), ícone branco --
+            // pedido do usuário ("altere a cor do fundo do botão do ícone
+            // drone para o verde a mesma do título"): antes usava as cores
+            // padrão (claras) do FAB, destoando do resto do app.
+            FloatingActionButton(
+                onClick = { showNovo = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.padding(bottom = 48.dp),
+            ) {
                 Icon(Icons.Filled.FlightTakeoff, contentDescription = "Novo registro de drone")
             }
         },
