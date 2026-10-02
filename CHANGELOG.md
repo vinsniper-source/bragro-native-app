@@ -3,6 +3,21 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.25] -- 2026-10-02
+
+- **QR Code do Abastecimento (Frota) -- leitor nativo do aparelho**: pedido
+  do usuário ("existem celulares mais antigos que o QR code é separado da
+  câmera"). Até agora o único jeito de ler o QR era "tirar uma foto e
+  decodificar com ML Kit" -- funciona bem na maioria dos aparelhos, mas em
+  celulares mais antigos (ou com câmera que não foca bem de perto) pode
+  falhar, mesmo quando o aparelho já tem um leitor de QR dedicado instalado
+  (muitos apps de câmera de fábrica -- Xiaomi/Samsung/etc. -- têm um "modo
+  QR" próprio, separado da câmera de fotos). Adicionado um 2º botão (ícone
+  de mira) que abre esse leitor nativo do aparelho via Intent padrão de
+  scan, sem precisar da permissão de câmera do próprio BRAgro -- quem lê é
+  o app externo. Os dois botões ficam lado a lado; se o aparelho não tiver
+  nenhum leitor de QR dedicado, mostra aviso claro pra usar o botão de foto.
+
 ## [1.3.24] -- 2026-10-02
 
 - **Operações -- formulário completo por O.S. (correção da v1.3.23)**: o

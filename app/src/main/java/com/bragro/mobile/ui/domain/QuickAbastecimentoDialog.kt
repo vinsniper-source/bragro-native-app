@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CenterFocusWeak
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.AlertDialog
@@ -152,27 +153,53 @@ class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
                     qrMensagem.value = "Nenhum QR Code encontrado na foto -- tente novamente com mais luz e foco."
                     return@launch
                 }
-                // Pedido do usuário: "aceitar apenas dados para o qr que
-                // venha da base de dados" -- restringe a validação do QR às
-                // frotas REALMENTE registradas (pelo menos um lançamento),
-                // não ao catálogo genérico inteiro. Sem registros ainda
-                // (fazenda nova) ou sem conseguir buscar (offline), cai de
-                // volta pro catálogo completo -- nunca trava o uso.
-                val registradas = frotasRegistradas
-                val valoresValidos = if (registradas.isNullOrEmpty()) frotas.value.map { it.value } else registradas
-                val match = parseFrotaQrPayload(texto, valoresValidos)
-                if (match != null) {
-                    frota = match
-                    qrMensagem.value = null
-                } else {
-                    qrMensagem.value = "QR Code lido, mas não corresponde a nenhuma máquina/frota cadastrada."
-                }
+                aplicarTextoQrLido(texto)
             } catch (e: Exception) {
                 AppLog.e("QuickAbastecimentoDialog", "Falha ao ler QR Code do abastecimento", e)
                 qrMensagem.value = "Falha ao ler o QR Code -- tente novamente ou escolha manualmente."
             } finally {
                 lendoQr.value = false
             }
+        }
+    }
+
+    /** "Colocar a condição de acessar o QR nativo do celular, pq existem
+     * celulares mais antigos que o QR code é separado da câmera" -- quando o
+     * leitor NATIVO do aparelho (câmera ao vivo, via Intent de scan) já
+     * devolve o texto pronto, sem precisar passar pelo fluxo de foto+ML Kit.
+     * Reaproveita a MESMA validação contra as frotas registradas usada em
+     * [onQrPhotoTaken], só pulando a etapa de decodificar bitmap. */
+    fun onQrTextoLidoExterno(texto: String?) {
+        if (texto.isNullOrBlank()) {
+            qrMensagem.value = "Nenhum QR Code lido -- tente novamente ou escolha manualmente."
+            return
+        }
+        lendoQr.value = true
+        qrMensagem.value = null
+        viewModelScope.launch {
+            try {
+                aplicarTextoQrLido(texto)
+            } finally {
+                lendoQr.value = false
+            }
+        }
+    }
+
+    private fun aplicarTextoQrLido(texto: String) {
+        // Pedido do usuário: "aceitar apenas dados para o qr que
+        // venha da base de dados" -- restringe a validação do QR às
+        // frotas REALMENTE registradas (pelo menos um lançamento),
+        // não ao catálogo genérico inteiro. Sem registros ainda
+        // (fazenda nova) ou sem conseguir buscar (offline), cai de
+        // volta pro catálogo completo -- nunca trava o uso.
+        val registradas = frotasRegistradas
+        val valoresValidos = if (registradas.isNullOrEmpty()) frotas.value.map { it.value } else registradas
+        val match = parseFrotaQrPayload(texto, valoresValidos)
+        if (match != null) {
+            frota = match
+            qrMensagem.value = null
+        } else {
+            qrMensagem.value = "QR Code lido, mas não corresponde a nenhuma máquina/frota cadastrada."
         }
     }
 
@@ -297,6 +324,36 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
         }
     }
 
+    // "Colocar a condição de acessar o QR nativo do celular, pq existem
+    // celulares mais antigos que o QR code é separado da câmera" (pedido do
+    // usuário): o fluxo acima (foto + ML Kit) depende da câmera do app saber
+    // focar de perto o suficiente pra decodificar um QR Code -- em aparelhos
+    // mais antigos/ROMs customizadas isso nem sempre funciona bem, mas
+    // normalmente JÁ existe um app de leitor de QR dedicado instalado
+    // (muitas vezes o próprio app de câmera de fábrica, com um "modo QR"
+    // separado). Este segundo botão abre esse leitor nativo diretamente (via
+    // Intent padrão de scan), sem precisar da permissão CAMERA do nosso
+    // próprio app -- quem lê é o app externo.
+    val qrExternoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            viewModel.onQrTextoLidoExterno(extrairResultadoLeitorQrNativo(result.data))
+        } else {
+            viewModel.onQrPhotoCancelled()
+        }
+    }
+    fun launchQrExterno() {
+        if (temLeitorQrNativoDisponivel(context)) {
+            try {
+                qrExternoLauncher.launch(criarIntentLeitorQrNativo())
+            } catch (e: Exception) {
+                AppLog.e("QuickAbastecimentoDialog", "Falha ao abrir o leitor de QR nativo do aparelho", e)
+                android.widget.Toast.makeText(context, "Não foi possível abrir o leitor de QR do aparelho -- use o botão de foto.", android.widget.Toast.LENGTH_LONG).show()
+            }
+        } else {
+            android.widget.Toast.makeText(context, "Nenhum leitor de QR Code do aparelho encontrado -- use o botão de foto ao lado.", android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Abastecimento rápido") },
@@ -332,12 +389,28 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
                         } else {
                             androidx.compose.material3.Icon(
                                 Icons.Filled.QrCodeScanner,
-                                contentDescription = "Ler QR Code da máquina",
+                                contentDescription = "Ler QR Code da máquina (foto)",
                                 tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                             )
                         }
                     }
+                    // 2º botão -- leitor de QR NATIVO do aparelho (câmera ao
+                    // vivo do app de QR/câmera de fábrica), alternativa ao
+                    // botão de foto acima pra celulares mais antigos onde o
+                    // leitor de QR é separado da câmera (pedido do usuário).
+                    androidx.compose.material3.IconButton(onClick = { launchQrExterno() }, enabled = !lendoQr) {
+                        androidx.compose.material3.Icon(
+                            Icons.Filled.CenterFocusWeak,
+                            contentDescription = "Ler QR Code com o leitor do aparelho",
+                            tint = androidx.compose.material3.MaterialTheme.colorScheme.secondary,
+                        )
+                    }
                 }
+                Text(
+                    "Câmera lê por foto -- leitor do aparelho usa o app de QR nativo (melhor em celulares mais antigos).",
+                    style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 if (qrMensagem != null) Text(qrMensagem ?: "", style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
                 if (cameraPermanentementeNegada) {
                     Text(
