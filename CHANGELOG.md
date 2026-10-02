@@ -3,6 +3,21 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.19] -- 2026-10-01
+
+- **Fix build**: `AndroidManifest.xml` tinha hífen duplo (`--`) dentro de um
+  comentário, inválido em XML -- causava `ManifestMerger2$MergeFailureException`
+  bloqueando `assembleRelease`.
+- **Fix build**: 6 erros de compilação Kotlin -- `DropdownMenu.containerColor`
+  não existe no material3 1.2.1 (versão real do projeto, só chegou na 1.3.0)
+  no dropdown verde do Financeiro; import de `Icons.Filled.Cloud` faltando em
+  Drone/Orçamentos; pacote errado de `LookupEntity` (`data.model` em vez de
+  `data.local`) em 4 lugares de Nova Prescrição.
+- **Orçamentos**: barra oval Dados/Operações/Arquivos (mesmo padrão
+  ModuleCategoryTabs de Cotações/Receituários/Safra), substituindo o par de
+  seções simples empilhadas de antes -- inclui nova categoria Arquivos com
+  exportação Excel e PDF, que faltava nesse módulo.
+
 ## [1.3.18] -- 2026-10-01
 
 - **Drone**: botão + com fundo verde (primary) e ícone branco, igual aos

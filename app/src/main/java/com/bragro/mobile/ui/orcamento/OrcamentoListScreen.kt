@@ -28,6 +28,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.GridOn
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.TableChart
@@ -67,8 +69,10 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bragro.mobile.data.model.OrcamentoData
 import com.bragro.mobile.data.repo.OrcamentoRepository
-import com.bragro.mobile.ui.domain.EqualWidthBlockRow
+import com.bragro.mobile.data.export.XlsxWriter
 import com.bragro.mobile.ui.domain.LabeledIconButton
+import com.bragro.mobile.ui.domain.ModuleBlockSpec
+import com.bragro.mobile.ui.domain.ModuleCategoryTabs
 import com.bragro.mobile.ui.domain.ModuleIconButton
 import com.bragro.mobile.ui.domain.ModuleIconItem
 import com.bragro.mobile.ui.domain.PeriodoCategoria
@@ -79,8 +83,11 @@ import com.bragro.mobile.ui.print.HtmlPrinter
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
+import com.bragro.mobile.ui.util.shareBinaryFile
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 /**
@@ -475,27 +482,16 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
         },
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            // EqualWidthBlockRow (mesmo padrão já usado em Lançamentos/
-            // Financeiro e nos demais módulos) em vez de um Row simples --
-            // pedido do usuário ("padronize igual as outras abas
-            // lançamentos"): Row simples não distribui nem quebra linha,
-            // então em telas estreitas os 4 ícones ficavam espremidos/
-            // cortados. EqualWidthBlockRow dá célula de largura igual e
-            // borda vertical entre elas, como no resto do app.
-            // Categorizado em Dados/Operações -- mesma apresentação dos
-            // demais módulos (Safra, Financeiro etc.) -- pedido do usuário
-            // ("coloque a mesma apresentação dos outros módulos, como
-            // dados, operações e arquivos"): antes era uma única fileira
-            // sem rótulo de categoria. "Arquivos" fica de fora -- Orçamentos
-            // não tem exportação CSV/PDF própria (diferente de Safra/
-            // Financeiro), então não há o que colocar nessa 3ª categoria.
-            Text(
-                "Dados",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 12.dp, top = 4.dp),
-            )
-            EqualWidthBlockRow(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
+            // Barra oval (pill) Dados/Operações/Arquivos -- mesmo padrão
+            // ModuleCategoryTabs usado em Cotações/Receituários/Safra etc.
+            // (DomainListScreen.kt), em vez do antigo par de Text+
+            // EqualWidthBlockRow empilhados -- pedido do usuário ("replique
+            // a imagem 5 com dados, operações e arquivos" em Orçamentos,
+            // que tem tela própria fora do motor genérico DomainListScreen,
+            // por isso ModuleBlockSpec/ModuleCategoryTabs tiveram o
+            // `private` removido lá pra serem reaproveitados aqui). Agora
+            // com Arquivos (Excel/PDF), que antes faltava.
+            val dadosBlock = ModuleBlockSpec("Dados", vertical = false) {
                 ModuleIconButton(
                     ModuleIconItem("filtros", Icons.Filled.FilterAlt, "Filtros", active = statusFiltro != null, badgeCount = if (statusFiltro != null) 1 else 0),
                 ) { showFiltroDialog = true }
@@ -505,18 +501,40 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                     onClick = { tableView = !tableView },
                 )
             }
-            Text(
-                "Operações",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 12.dp, top = 4.dp),
-            )
-            EqualWidthBlockRow(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
+            val operacoesBlock = ModuleBlockSpec("Operações", vertical = false) {
                 LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", loading = carregando, onClick = { viewModel.carregar() })
                 ModuleIconButton(
                     ModuleIconItem("periodo", Icons.Filled.CalendarMonth, "Período", active = dateFrom.isNotBlank() || dateTo.isNotBlank()),
                 ) { showPeriodoDialog = true }
             }
+            val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
+                val headers = listOf("Data", "Nº Orçamento", "Requisição", "Autorizado por", "Itens", "Total", "Status")
+                val rows = filtered.map { o ->
+                    listOf(
+                        isoDateToBr(isoDateOnly(o.data)),
+                        o.numeroOrcamento ?: "",
+                        o.requisicao ?: "",
+                        o.autorizadoPorNome ?: "",
+                        o.itens.size.toString(),
+                        formatoMoeda(totalOrcamento(o)),
+                        if (o.status == "FATURADO") "Faturado" else "Pendente NF",
+                    )
+                }
+                LabeledIconButton(
+                    icon = Icons.Filled.GridOn,
+                    label = "Excel",
+                    onClick = {
+                        val fileName = "orcamentos-${SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())}.xlsx"
+                        shareBinaryFile(context, XlsxWriter.buildXlsx(headers, rows), fileName)
+                    },
+                )
+                LabeledIconButton(
+                    icon = Icons.Filled.PictureAsPdf,
+                    label = "PDF",
+                    onClick = { HtmlPrinter.printSimpleTable(context, "Orçamentos", headers, rows) },
+                )
+            }
+            ModuleCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp))
             Text(
                 "${filtered.size} orçamento(s)${if (filtered.size != orcamentos.size) " de ${orcamentos.size}" else ""}. Pendente NF aguarda a nota mãe pra conciliação.",
                 style = MaterialTheme.typography.bodySmall,

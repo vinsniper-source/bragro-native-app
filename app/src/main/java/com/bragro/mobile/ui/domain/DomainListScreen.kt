@@ -1680,7 +1680,12 @@ private val PER_MODULE_BLOCK_DOMAINS = setOf(
 // vertical de ícones), reaproveitado aqui pros módulos genéricos listados
 // acima. Duplicado (em vez de compartilhado) pra não arriscar mexer no
 // Financeiro, que já está funcionando, só pra extrair código comum.
-private data class ModuleBlockSpec(
+// Sem `private` -- reaproveitado fora deste arquivo (OrcamentoListScreen.kt,
+// pacote ui.orcamento) pra replicar o mesmo padrão de barra oval
+// Dados/Operações/Arquivos (pedido do usuário: "replique a imagem 5 com
+// dados, operações e arquivos" em Orçamentos, que tem sua própria tela
+// dedicada em vez de usar o motor genérico DomainListScreen).
+data class ModuleBlockSpec(
     val title: String,
     val vertical: Boolean,
     val content: @Composable () -> Unit,
@@ -1736,9 +1741,10 @@ private fun ModuleCategoryBlock(spec: ModuleBlockSpec, modifier: Modifier = Modi
 // juntos de uma vez. Substitui o Column de N ModuleCategoryBlock nos 3
 // pontos que usam esse padrão (blocos genéricos, blocos por módulo em
 // PER_MODULE_BLOCK_DOMAINS, e Cobranças/NFS-e).
+// Sem `private` pelo mesmo motivo de ModuleBlockSpec acima.
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
-private fun ModuleCategoryTabs(blocks: List<ModuleBlockSpec>, modifier: Modifier = Modifier) {
+fun ModuleCategoryTabs(blocks: List<ModuleBlockSpec>, modifier: Modifier = Modifier) {
     var selected by remember { mutableStateOf(0) }
     // Trava o índice dentro dos limites -- essa mesma instância do
     // Composable é reaproveitada ao trocar de módulo (ex.: Cobranças <->
