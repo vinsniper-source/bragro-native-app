@@ -3,6 +3,23 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.24] -- 2026-10-02
+
+- **Operações -- formulário completo por O.S. (correção da v1.3.23)**: o
+  bloco novo que lista todos os campos do lançamento de Safra ao expandir
+  uma O.S. estava mostrando os valores CRUS do servidor -- datas como
+  "2026-08-12T00:00:00.000Z", checkbox como "true", números com ponto em
+  vez de vírgula (pedido do usuário: "conserte erros ortograficos, data
+  hora"). Agora reaproveita a mesma formatação usada em todo o resto do
+  app (data vira dd/MM/yyyy, moeda vira "R$ X.XXX,XX", checkbox vira
+  Sim/Não) e os campos Status/Desvio ganham badge colorido (pedido:
+  "coloque badges coloridos"), igual ao resto da plataforma.
+- **Operações -- "recolha até a linha 3"**: a lista completa de campos
+  agora mostra só as 3 primeiras linhas por padrão, com um link "Ver mais"
+  pra expandir o restante (e "Ver menos" pra recolher de novo) -- meio-
+  termo entre a reclamação anterior ("não só 2-3 linhas") e esta, sem
+  perder o acesso ao formulário completo.
+
 ## [1.3.23] -- 2026-10-02
 
 - **Câmera/QR Code -- reforço ("continua sem abrir, há como forçar")**:

@@ -36,6 +36,10 @@ import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.Wallet
 import com.bragro.mobile.ui.domain.RecordTableHeader
 import com.bragro.mobile.ui.domain.RecordTableRow
+import com.bragro.mobile.ui.domain.StatusBadge
+import com.bragro.mobile.ui.domain.displayValueFor
+import com.bragro.mobile.ui.domain.formatMoneyValue
+import com.bragro.mobile.ui.domain.isStatusLikeColumn
 import com.bragro.mobile.ui.theme.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -556,18 +560,26 @@ private fun OperacaoCard(
 @Composable
 private fun OperacaoDetalheCompleto(recordId: String) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    var campos by remember(recordId) { mutableStateOf<List<Pair<String, String>>?>(null) }
+    // Guarda a ColumnConfig inteira (não só label+valor cru) -- necessário
+    // pra formatar cada campo com a MESMA lógica usada no resto do app
+    // (RecordFieldLine, DomainListScreen.kt): datas ISO viram dd/MM/yyyy,
+    // moeda vira "R$ X.XXX,XX", checkbox vira Sim/Não, em vez do valor cru
+    // do servidor aparecendo na tela ("2026-08-12T00:00:00.000Z", "true",
+    // "320" sem separador decimal pt-BR) -- bug real apontado pelo usuário
+    // ("conserte erros ortograficos, data hora").
+    var campos by remember(recordId) { mutableStateOf<List<com.bragro.mobile.data.model.ColumnConfig>?>(null) }
+    var valoresMap by remember(recordId) { mutableStateOf<Map<String, String?>>(emptyMap()) }
+    var verTudo by remember(recordId) { mutableStateOf(false) }
     androidx.compose.runtime.LaunchedEffect(recordId) {
         val recordRepo = com.bragro.mobile.data.repo.RecordRepository(context)
         val configRepo = com.bragro.mobile.data.repo.ConfigRepository(context)
         val valores = recordRepo.getRecord("safra", recordId)
         val config = configRepo.domainConfig("safra")
-        campos = if (valores != null && config != null) {
-            config.columns
-                .filter { col -> !valores[col.key].isNullOrBlank() }
-                .map { col -> col.label to (valores[col.key] ?: "") }
+        if (valores != null && config != null) {
+            valoresMap = valores
+            campos = config.columns.filter { col -> !valores[col.key].isNullOrBlank() }
         } else {
-            emptyList()
+            campos = emptyList()
         }
     }
     val lista = campos
@@ -580,15 +592,44 @@ private fun OperacaoDetalheCompleto(recordId: String) {
         )
         lista.isEmpty() -> {}
         else -> {
+            // "recolha até a linha 3" (pedido do usuário): por padrão mostra só
+            // as 3 primeiras linhas preenchidas, com "ver mais"/"ver menos" pra
+            // alternar com a lista completa -- meio-termo entre a reclamação
+            // original ("não só 2-3 linhas") e esta ("recolha até a linha 3"):
+            // os dados completos continuam disponíveis, só não despejados todos
+            // de uma vez por padrão.
+            val visiveis = if (verTudo) lista else lista.take(3)
             Column(
                 modifier = Modifier.fillMaxWidth().padding(start = 4.dp, top = 2.dp, bottom = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                lista.forEach { (label, valor) ->
+                visiveis.forEach { col ->
+                    val valorCru = valoresMap[col.key] ?: ""
+                    if (isStatusLikeColumn(col.key)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                "${col.label}: ",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            StatusBadge(valorCru)
+                        }
+                    } else {
+                        val valorFormatado = if (col.money) formatMoneyValue(valorCru) else displayValueFor(col.key, valorCru, col.type)
+                        Text(
+                            "${col.label}: $valorFormatado",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                if (lista.size > 3) {
                     Text(
-                        "$label: $valor",
+                        if (verTudo) "Ver menos" else "Ver mais (${lista.size - 3})",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 2.dp).clickable { verTudo = !verTudo },
                     )
                 }
             }
