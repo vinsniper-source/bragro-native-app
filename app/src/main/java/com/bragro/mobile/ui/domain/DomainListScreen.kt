@@ -1848,6 +1848,14 @@ private fun RecordFieldLine(
         CotacaoAvaliacaoBadge(value)
     } else if (domainId == "cotacoesfornecedores" && col.key == "melhorOpcao") {
         CotacaoMelhorOpcaoBadge(value)
+    } else if (domainId == "inventario" && col.key == "estado") {
+        // Badge colorido pro estado de conservação do Ativo (BOM/REGULAR/
+        // RUIM) -- achado do usuário ("inventário, badges coloridos"): esse
+        // campo aparecia como texto simples sem cor/fundo, mesmo critério
+        // visual do StatusBadge genérico (a chave "estado" não bate no regex
+        // isStatusLikeColumn, então precisa desse caso especial, igual
+        // Cotações/Financeiro acima).
+        StatusBadge(value)
     } else {
         val displayValue = if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)
         // Verde (receita) / laranja-âmbar (despesa) só nas colunas Bruto/

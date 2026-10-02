@@ -39,6 +39,10 @@ private val STATUS_TONE: Map<String, Tone> = mapOf(
     "OK" to Tone.GOOD, "ATIVO" to Tone.GOOD, "EM DIA" to Tone.GOOD, "ATENDIDO" to Tone.GOOD, "PAGO" to Tone.GOOD,
     "RECEBIDO" to Tone.GOOD, "CONTROLADO" to Tone.GOOD, "DENTRO" to Tone.GOOD, "FINALIZADO" to Tone.GOOD, "VITALICIO" to Tone.GOOD,
     "LIBERADO" to Tone.GOOD,
+    // "ENTREGUE" -- status de item (Romaneios/Controle Interno) sem cor
+    // ainda (achado do usuário: "romaneios/controle interno, badges
+    // coloridos" -- aparecia como texto simples sem fundo/cor).
+    "ENTREGUE" to Tone.GOOD,
     // "APLICADO" -- status de Receituários (aplicação já realizada) --
     // mesmo motivo (achado do usuário: "receituários... falta destacar cor
     // fonte e fundo de palavras").
@@ -55,8 +59,18 @@ private val STATUS_TONE: Map<String, Tone> = mapOf(
     // "REPOR" -- Controle Interno (item de EPI/estoque interno abaixo do
     // mínimo, precisa repor) -- mesmo motivo acima.
     "REPOR" to Tone.WARN,
+    // "A CONCEDER" -- status de férias do RH (ainda não venceu, mas precisa
+    // ser agendada) -- mesmo motivo acima, faltava no mapa.
+    "A CONCEDER" to Tone.WARN,
     "ATRASADO" to Tone.BAD, "VENCIDO" to Tone.BAD, "REGULARIZAR" to Tone.BAD, "ACIMA" to Tone.BAD,
     "DESLIGADO" to Tone.BAD, "AFASTADO" to Tone.BAD, "CANCELADO" to Tone.BAD,
+    // "SALDO NEGATIVO" -- Caixa Interno (saldo do dia ficou negativo) e
+    // "VENCIDAS" -- férias do RH vencidas -- mesmo achado do usuário (badges
+    // coloridos faltando em Caixa Interno/Controle Interno).
+    "SALDO NEGATIVO" to Tone.BAD, "VENCIDAS" to Tone.BAD,
+    // "BOM"/"REGULAR"/"RUIM" -- estado de conservação do Inventário (Ativos)
+    // -- achado do usuário ("inventário, badges coloridos").
+    "BOM" to Tone.GOOD, "REGULAR" to Tone.WARN, "RUIM" to Tone.BAD,
     // Origem do lançamento em Estoque (ver ORIGEM_LABELS abaixo) -- badge
     // verde só pra indicar "isto chegou sozinho de outro módulo".
     "PEDIDO" to Tone.GOOD, "FROTA" to Tone.GOOD, "SAFRA" to Tone.GOOD, "CONTROLE INTERNO" to Tone.GOOD,

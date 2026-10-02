@@ -27,8 +27,11 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.GridOn
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
@@ -67,15 +70,19 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bragro.mobile.data.model.ColumnConfig
 import com.bragro.mobile.data.model.OrcamentoData
 import com.bragro.mobile.data.repo.OrcamentoRepository
 import com.bragro.mobile.data.export.XlsxWriter
+import com.bragro.mobile.ui.domain.ColumnsPickerButton
 import com.bragro.mobile.ui.domain.LabeledIconButton
 import com.bragro.mobile.ui.domain.ModuleBlockSpec
 import com.bragro.mobile.ui.domain.ModuleCategoryTabs
 import com.bragro.mobile.ui.domain.ModuleIconButton
 import com.bragro.mobile.ui.domain.ModuleIconItem
 import com.bragro.mobile.ui.domain.PeriodoCategoria
+import com.bragro.mobile.ui.domain.BarSeries
+import com.bragro.mobile.ui.domain.SimpleBarChart
 import com.bragro.mobile.ui.domain.genericPeriodoRange
 import com.bragro.mobile.ui.domain.isoDateOnly
 import com.bragro.mobile.ui.domain.isoDateToBr
@@ -140,6 +147,24 @@ class OrcamentoListViewModel(app: Application) : AndroidViewModel(app) {
 
 private val STATUS_FILTRO_OPTIONS = listOf("PENDENTE_NF" to "Pendente NF", "FATURADO" to "Faturado")
 
+// "Orçamentos, force aparecer os outros ícones de dados, operações e
+// arquivos" -- pedido do usuário (imagem 3): faltavam Gráficos/Colunas/
+// Recolher no bloco Dados, únicos 3 dos 5 ícones padrão (Gráficos/Filtros/
+// Colunas/Recolher/Tabela) que essa tela -- por ter form próprio fora do
+// motor genérico DomainListScreen.kt -- nunca tinha ganho. ColumnsPickerButton
+// é o MESMO componente usado pelos módulos genéricos, só que aqui com uma
+// lista fixa de colunas (Orçamentos não tem ColumnConfig de verdade, é
+// OrcamentoData/OrcamentoItem com tabela própria).
+private val ORCAMENTO_COLUMNS = listOf(
+    ColumnConfig(key = "data", label = "Data", type = "date"),
+    ColumnConfig(key = "numero", label = "Nº Orçamento", type = "text"),
+    ColumnConfig(key = "requisicao", label = "Requisição", type = "text"),
+    ColumnConfig(key = "autorizado", label = "Autorizado por", type = "text"),
+    ColumnConfig(key = "itens", label = "Itens", type = "number"),
+    ColumnConfig(key = "total", label = "Total", type = "number"),
+    ColumnConfig(key = "status", label = "Status", type = "text"),
+)
+
 private fun formatoMoeda(valor: Double): String =
     NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(valor)
 
@@ -189,7 +214,7 @@ private fun OrcamentoStatusBadge(status: String) {
 }
 
 @Composable
-private fun OrcamentoCard(o: OrcamentoData, onClick: () -> Unit) {
+private fun OrcamentoCard(o: OrcamentoData, expanded: Boolean = true, onClick: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -207,6 +232,12 @@ private fun OrcamentoCard(o: OrcamentoData, onClick: () -> Unit) {
                 Text(isoDateToBr(isoDateOnly(o.data)), style = MaterialTheme.typography.bodySmall)
                 Text(formatoMoeda(totalOrcamento(o)), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
             }
+            // "Recolher" (toggle global no bloco Dados) -- pedido do usuário
+            // (imagem 3): quando recolhido, esconde o miolo do card
+            // (requisição/autorizado/itens) e deixa só o cabeçalho acima,
+            // mesmo espírito do "Recolher tudo" já usado em Operações/
+            // DomainListScreen.kt.
+            if (!expanded) return@Column
             if (!o.requisicao.isNullOrBlank()) {
                 Text("Requisição: ${o.requisicao}", style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
@@ -238,17 +269,17 @@ private fun TableCell(text: String, width: Dp, bold: Boolean = false) {
 // compensa a complexidade de um LazyColumn com ScrollState horizontal
 // compartilhado só pra esse volume.
 @Composable
-private fun OrcamentoTable(orcamentos: List<OrcamentoData>, onClick: (OrcamentoData) -> Unit) {
+private fun OrcamentoTable(orcamentos: List<OrcamentoData>, visibleKeys: Set<String> = ORCAMENTO_COLUMNS.map { it.key }.toSet(), onClick: (OrcamentoData) -> Unit) {
     Box(modifier = Modifier.fillMaxSize().horizontalScroll(rememberScrollState())) {
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             Row(modifier = Modifier.padding(vertical = 6.dp)) {
-                TableCell("Data", 84.dp, bold = true)
-                TableCell("Nº Orçamento", 110.dp, bold = true)
-                TableCell("Requisição", 100.dp, bold = true)
-                TableCell("Autorizado por", 130.dp, bold = true)
-                TableCell("Itens", 50.dp, bold = true)
-                TableCell("Total", 110.dp, bold = true)
-                TableCell("Status", 110.dp, bold = true)
+                if (visibleKeys.contains("data")) TableCell("Data", 84.dp, bold = true)
+                if (visibleKeys.contains("numero")) TableCell("Nº Orçamento", 110.dp, bold = true)
+                if (visibleKeys.contains("requisicao")) TableCell("Requisição", 100.dp, bold = true)
+                if (visibleKeys.contains("autorizado")) TableCell("Autorizado por", 130.dp, bold = true)
+                if (visibleKeys.contains("itens")) TableCell("Itens", 50.dp, bold = true)
+                if (visibleKeys.contains("total")) TableCell("Total", 110.dp, bold = true)
+                if (visibleKeys.contains("status")) TableCell("Status", 110.dp, bold = true)
             }
             HorizontalDivider()
             orcamentos.forEach { o ->
@@ -256,13 +287,13 @@ private fun OrcamentoTable(orcamentos: List<OrcamentoData>, onClick: (OrcamentoD
                     modifier = Modifier.fillMaxWidth().clickable { onClick(o) }.padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TableCell(isoDateToBr(isoDateOnly(o.data)), 84.dp)
-                    TableCell(o.numeroOrcamento ?: "—", 110.dp)
-                    TableCell(o.requisicao ?: "—", 100.dp)
-                    TableCell(o.autorizadoPorNome ?: "—", 130.dp)
-                    TableCell(o.itens.size.toString(), 50.dp)
-                    TableCell(formatoMoeda(totalOrcamento(o)), 110.dp)
-                    Box(modifier = Modifier.width(110.dp)) { OrcamentoStatusBadge(o.status) }
+                    if (visibleKeys.contains("data")) TableCell(isoDateToBr(isoDateOnly(o.data)), 84.dp)
+                    if (visibleKeys.contains("numero")) TableCell(o.numeroOrcamento ?: "—", 110.dp)
+                    if (visibleKeys.contains("requisicao")) TableCell(o.requisicao ?: "—", 100.dp)
+                    if (visibleKeys.contains("autorizado")) TableCell(o.autorizadoPorNome ?: "—", 130.dp)
+                    if (visibleKeys.contains("itens")) TableCell(o.itens.size.toString(), 50.dp)
+                    if (visibleKeys.contains("total")) TableCell(formatoMoeda(totalOrcamento(o)), 110.dp)
+                    if (visibleKeys.contains("status")) Box(modifier = Modifier.width(110.dp)) { OrcamentoStatusBadge(o.status) }
                 }
                 HorizontalDivider()
             }
@@ -408,6 +439,14 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
     var showFiltroDialog by remember { mutableStateOf(false) }
     var showPeriodoDialog by remember { mutableStateOf(false) }
     var viewingOrcamento by remember { mutableStateOf<OrcamentoData?>(null) }
+    // 3 ícones que faltavam no bloco Dados -- pedido do usuário ("force
+    // aparecer os outros ícones de dados, operações e arquivos"): Gráficos
+    // (barra Pendente NF x Faturado), Colunas (ColumnsPickerButton, mesmo
+    // componente dos módulos genéricos) e Recolher (esconde o miolo dos
+    // cards, não afeta a vista Tabela que já tem suas próprias colunas).
+    var showCharts by remember { mutableStateOf(false) }
+    var cardsExpanded by remember { mutableStateOf(true) }
+    var visibleColumnKeys by remember { mutableStateOf(ORCAMENTO_COLUMNS.map { it.key }.toSet()) }
 
     val filtered = remember(orcamentos, statusFiltro, dateFrom, dateTo) {
         orcamentos.filter { o ->
@@ -500,9 +539,22 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
             // `private` removido lá pra serem reaproveitados aqui). Agora
             // com Arquivos (Excel/PDF), que antes faltava.
             val dadosBlock = ModuleBlockSpec("Dados", vertical = false) {
+                // Ordem igual à do motor genérico (DomainListScreen.kt):
+                // Gráficos / Filtros / Colunas / Recolher / Tabela -- faltavam
+                // 3 desses aqui porque Orçamentos tem tela própria, fora do
+                // motor genérico ("force aparecer os outros ícones de dados").
+                ModuleIconButton(
+                    ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = showCharts),
+                ) { showCharts = !showCharts }
                 ModuleIconButton(
                     ModuleIconItem("filtros", Icons.Filled.FilterAlt, "Filtros", active = statusFiltro != null, badgeCount = if (statusFiltro != null) 1 else 0),
                 ) { showFiltroDialog = true }
+                ColumnsPickerButton(ORCAMENTO_COLUMNS, visibleColumnKeys) { visibleColumnKeys = it }
+                LabeledIconButton(
+                    icon = if (cardsExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                    label = if (cardsExpanded) "Recolher" else "Expandir",
+                    onClick = { cardsExpanded = !cardsExpanded },
+                )
                 LabeledIconButton(
                     icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
                     label = if (tableView) "Bloco" else "Tabela",
@@ -551,6 +603,21 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
             if (erro != null) {
                 Text(erro ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 12.dp))
             }
+            if (showCharts && filtered.isNotEmpty()) {
+                // Gráfico simples Pendente NF x Faturado -- mesmo componente
+                // SimpleBarChart usado em todos os outros módulos.
+                val totalPendente = filtered.filter { it.status != "FATURADO" }.sumOf { totalOrcamento(it) }
+                val totalFaturado = filtered.filter { it.status == "FATURADO" }.sumOf { totalOrcamento(it) }
+                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
+                    SimpleBarChart(
+                        categories = listOf("Pendente NF", "Faturado"),
+                        series = listOf(
+                            BarSeries("Total (R$)", listOf(totalPendente, totalFaturado), MaterialTheme.colorScheme.primary),
+                        ),
+                        isMoney = true,
+                    )
+                }
+            }
             when {
                 carregando && orcamentos.isEmpty() -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -569,7 +636,7 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                     }
                 }
                 tableView -> {
-                    OrcamentoTable(filtered) { viewingOrcamento = it }
+                    OrcamentoTable(filtered, visibleKeys = visibleColumnKeys) { viewingOrcamento = it }
                 }
                 else -> {
                     LazyColumn(
@@ -578,7 +645,7 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         items(filtered, key = { it.id }) { o ->
-                            OrcamentoCard(o) { viewingOrcamento = o }
+                            OrcamentoCard(o, expanded = cardsExpanded) { viewingOrcamento = o }
                         }
                     }
                 }

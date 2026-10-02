@@ -215,7 +215,21 @@ private fun AreaProgressBar(pct: Int) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun OperacaoCard(op: OperacaoAgrupadaData, onEditRecord: (String, String) -> Unit) {
+private fun OperacaoCard(
+    op: OperacaoAgrupadaData,
+    onEditRecord: (String, String) -> Unit,
+    // "setinha nas atividades recolher e expandir tudo" -- pedido do
+    // usuário (imagem 2): antes só existia a setinha POR atividade
+    // (osExpanded local, ver comentário mais abaixo), sem um jeito de
+    // recolher/expandir todas de uma vez. O estado de cada atividade agora
+    // mora num mapa compartilhado (activityOverrides, em OperacoesScreen),
+    // com atividadesExpandidasPadrao como valor-padrão quando a atividade
+    // ainda não foi tocada individualmente -- assim o botão global
+    // "recolher/expandir tudo" no topo consegue afetar todas de uma vez,
+    // sem perder a possibilidade de abrir/fechar uma atividade específica.
+    atividadesExpandidasPadrao: Boolean,
+    activityOverrides: androidx.compose.runtime.snapshots.SnapshotStateMap<String, Boolean>,
+) {
     var abrirFinanceiro by remember { mutableStateOf(false) }
     var abrirEstoque by remember { mutableStateOf(false) }
 
@@ -444,15 +458,23 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onEditRecord: (String, String
 
             if (op.timeline.isNotEmpty()) {
                 Column {
-                    op.timeline.takeLast(6).forEach { ev ->
+                    op.timeline.takeLast(6).forEachIndexed { idx, ev ->
                         // Setinha ao lado do ícone editar -- pedido do usuário
                         // ("coloque em cada atividade do lado do icone editar
                         // a setinha"): recolhe/expande os detalhes dessa O.S.
                         // específica, mesmo padrão ExpandLess/ExpandMore usado
-                        // nos cards de lançamento (DomainListScreen.kt).
-                        var osExpanded by remember { mutableStateOf(true) }
+                        // nos cards de lançamento (DomainListScreen.kt). O
+                        // estado agora vem do mapa compartilhado
+                        // (activityOverrides) em vez de remember local, pra
+                        // dar pro botão global "recolher/expandir tudo"
+                        // (TopAppBar) controlar todas de uma vez -- pedido do
+                        // usuário (imagem 2: "setinha nas atividades recolher
+                        // e expandir tudo").
+                        val activityKey = "${op.chave}|$idx"
+                        val osExpanded = activityOverrides[activityKey] ?: atividadesExpandidasPadrao
+                        fun toggleOsExpanded() { activityOverrides[activityKey] = !osExpanded }
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 3.dp)) {
-                            Column(modifier = Modifier.weight(1f).clickable { osExpanded = !osExpanded }) {
+                            Column(modifier = Modifier.weight(1f).clickable { toggleOsExpanded() }) {
                                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                                     Icon(Icons.Filled.CalendarMonth, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text(
@@ -484,7 +506,7 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onEditRecord: (String, String
                                     )
                                 }
                             }
-                            IconButton(onClick = { osExpanded = !osExpanded }, modifier = Modifier.size(24.dp)) {
+                            IconButton(onClick = { toggleOsExpanded() }, modifier = Modifier.size(24.dp)) {
                                 Icon(
                                     if (osExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
                                     contentDescription = if (osExpanded) "Recolher" else "Expandir",
@@ -541,6 +563,16 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
     // (imagem do próprio cabeçalho de Operações: "retire a setinha do
     // cabeçalho"). Conteúdo agora sempre visível, sem botão de toggle.
 
+    // "setinha nas atividades recolher e expandir tudo" -- pedido do usuário
+    // (imagem 2): botão global que recolhe/expande TODAS as atividades
+    // (linha do tempo) de TODOS os cards de uma vez, além da setinha
+    // individual por atividade que já existia (ver OperacaoCard). O mapa de
+    // overrides é limpo a cada toggle global pra que o novo valor padrão
+    // valha pra todo mundo, inclusive atividades que o usuário já tinha
+    // mexido manualmente antes.
+    var atividadesExpandidasPadrao by remember { mutableStateOf(true) }
+    val activityOverrides = remember { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -589,6 +621,18 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                                     contentDescription = if (tableView) "Ver em Coluna" else "Ver em Tabela",
                                     tint = MaterialTheme.colorScheme.primary,
                                 )
+                            }
+                            if (!tableView && operacoes.isNotEmpty()) {
+                                IconButton(onClick = {
+                                    atividadesExpandidasPadrao = !atividadesExpandidasPadrao
+                                    activityOverrides.clear()
+                                }) {
+                                    Icon(
+                                        if (atividadesExpandidasPadrao) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                        contentDescription = if (atividadesExpandidasPadrao) "Recolher todas as atividades" else "Expandir todas as atividades",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
                             }
                         }
                     }
@@ -646,7 +690,12 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                     }
                 } else {
                     items(operacoes, key = { it.chave }) { op ->
-                        OperacaoCard(op, onEditRecord = onEditRecord)
+                        OperacaoCard(
+                            op,
+                            onEditRecord = onEditRecord,
+                            atividadesExpandidasPadrao = atividadesExpandidasPadrao,
+                            activityOverrides = activityOverrides,
+                        )
                     }
                 }
             }

@@ -253,12 +253,29 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
     // implícito quando ela não está concedida (sem erro nenhum, só não
     // acontece nada ao tocar). Pede a permissão antes de abrir a câmera;
     // só chama launchQrCamera() depois de concedida.
+    // "Continuo sem acesso a câmera e leitor QR" (2ª reclamação -- a correção
+    // anterior só avisava, não resolvia): uma vez que o Android nega a
+    // permissão CAMERA permanentemente, `shouldShowRequestPermissionRationale`
+    // vira false e pedir de novo não mostra diálogo nenhum. Detecta esse
+    // estado e manda direto pra Configurações do app.
+    var cameraPermanentementeNegada by remember { mutableStateOf(false) }
     val cameraPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedida ->
-        if (concedida) launchQrCamera() else viewModel.onQrPhotoCancelled()
+        if (concedida) {
+            cameraPermanentementeNegada = false
+            launchQrCamera()
+        } else {
+            val activity = context as? android.app.Activity
+            cameraPermanentementeNegada = activity != null &&
+                !androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.CAMERA)
+            viewModel.onQrPhotoCancelled()
+        }
     }
     fun launchQrCameraComPermissao() {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            cameraPermanentementeNegada = false
             launchQrCamera()
+        } else if (cameraPermanentementeNegada) {
+            openAppSettings(context)
         } else {
             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
@@ -306,6 +323,16 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
                     }
                 }
                 if (qrMensagem != null) Text(qrMensagem ?: "", style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
+                if (cameraPermanentementeNegada) {
+                    Text(
+                        "Permissão da câmera bloqueada pelo sistema -- toque abaixo pra liberar.",
+                        style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.error,
+                    )
+                    androidx.compose.material3.TextButton(onClick = { openAppSettings(context) }) {
+                        Text("Abrir Configurações do app")
+                    }
+                }
                 LookupDropdown("Combustível", ITENS_COMBUSTIVEL.map { LookupEntity(category = "combustivel", value = it, label = it, order = 0) }, viewModel.item) { viewModel.item = it }
                 OutlinedTextField(
                     value = viewModel.qtd,

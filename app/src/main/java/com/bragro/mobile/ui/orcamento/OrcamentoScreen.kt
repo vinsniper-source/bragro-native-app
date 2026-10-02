@@ -1,9 +1,12 @@
 package com.bragro.mobile.ui.orcamento
 
 import android.Manifest
+import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.content.pm.PackageManager
+import androidx.core.app.ActivityCompat
+import com.bragro.mobile.ui.domain.openAppSettings
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
@@ -30,6 +33,7 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
@@ -577,17 +581,45 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
     // implícito quando ela não está concedida. Guarda a chamada pendente
     // (prefixo/setPending/launcher) e só executa depois de concedida.
     var pendingCameraCall by remember { mutableStateOf<(() -> Unit)?>(null) }
+    // "Continuo sem acesso a câmera e leitor QR" (2ª reclamação do usuário --
+    // a correção anterior só mostrava uma mensagem, mas não resolvia nada):
+    // depois que o Android nega a permissão CAMERA permanentemente (usuário
+    // negou 2x, ou negou antes dessa permissão existir no manifest),
+    // `shouldShowRequestPermissionRationale` vira false e o app NUNCA MAIS
+    // consegue mostrar o diálogo do sistema -- só reabrindo o pedido não
+    // adianta. Detecta esse estado e oferece o atalho pra Configurações do
+    // app, único jeito de reverter.
+    var cameraPermanentementeNegada by remember { mutableStateOf(false) }
     val cameraPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedida ->
         val call = pendingCameraCall
         pendingCameraCall = null
-        if (concedida && call != null) call() else if (!concedida) viewModel.onPhotoCancelled()
+        if (concedida && call != null) {
+            cameraPermanentementeNegada = false
+            call()
+        } else if (!concedida) {
+            val activity = context as? Activity
+            cameraPermanentementeNegada = activity != null &&
+                !ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.CAMERA)
+            viewModel.onPhotoCancelled()
+        }
     }
     fun launchCameraComPermissao(prefixo: String, setPending: (Uri) -> Unit, launcher: androidx.activity.result.ActivityResultLauncher<Uri>) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            cameraPermanentementeNegada = false
             launchCamera(prefixo, setPending, launcher)
         } else {
-            pendingCameraCall = { launchCamera(prefixo, setPending, launcher) }
-            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+            val activity = context as? Activity
+            if (activity != null && !ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.CAMERA)
+                && ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED
+                && cameraPermanentementeNegada
+            ) {
+                // Já sabemos que está permanentemente negada -- pedir de novo
+                // não mostra diálogo nenhum, então manda direto pra Configurações.
+                openAppSettings(context)
+            } else {
+                pendingCameraCall = { launchCamera(prefixo, setPending, launcher) }
+                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+            }
         }
     }
 
@@ -708,6 +740,16 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                     }
                     if (ocrMensagemRequisicao != null) {
                         Text(ocrMensagemRequisicao ?: "", style = MaterialTheme.typography.labelSmall)
+                    }
+                    if (cameraPermanentementeNegada) {
+                        Text(
+                            "Permissão da câmera bloqueada pelo sistema -- toque abaixo pra liberar em Configurações.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                        TextButton(onClick = { openAppSettings(context) }) {
+                            Text("Abrir Configurações do app")
+                        }
                     }
                 }
             }

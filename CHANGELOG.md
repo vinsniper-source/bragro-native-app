@@ -3,6 +3,33 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.22] -- 2026-10-02
+
+- **Fix real (câmera/QR Code -- "continuo sem acesso")**: o fix anterior
+  (v1.3.21) só tinha adicionado mensagens de erro quando a permissão era
+  negada, mas não resolvia o caso real reportado -- permissão negada
+  "permanentemente" pelo Android (2ª recusa ou "Não perguntar de novo"),
+  onde o sistema nunca mais mostra o diálogo de permissão de novo, então
+  o botão da câmera parecia simplesmente travado pra sempre. Criado
+  helper único `openAppSettings()` (`CameraPermissionUtils.kt`) e
+  aplicado nos 4 pontos de acesso à câmera do app -- Orçamento (foto da
+  requisição/comprovante), Abastecimento de Frota (QR Code), Diagnóstico
+  de Pragas por foto, e Romaneio Rápido (foto do ticket): cada tela agora
+  detecta a negação permanente (`shouldShowRequestPermissionRationale`)
+  e mostra um botão "Abrir Configurações do app" que leva direto pra
+  tela de permissões do Android, em vez de insistir num diálogo que
+  nunca mais aparece.
+- **Operações**: além da setinha por O.S. (v1.3.21), adicionado um botão
+  global "recolher/expandir todas as atividades" no cabeçalho da tela --
+  antes só dava pra recolher uma O.S. de cada vez.
+- **Orçamentos**: restaurados os 3 ícones que faltavam no bloco Dados
+  (Gráficos, Colunas, Recolher) -- a tela de lista de Orçamentos tem
+  formulário próprio fora do motor genérico de módulos, então nunca
+  tinha herdado esses ícones automaticamente como os demais módulos.
+  Gráficos mostra o total Pendente NF x Faturado; Colunas permite
+  esconder/mostrar colunas da vista Tabela; Recolher esconde os campos
+  secundários (Requisição/Autorizado/Itens) de cada card da vista Bloco.
+
 ## [1.3.21] -- 2026-10-02
 
 - **Fix real (câmera/QR Code "sem acesso")**: `OrcamentoScreen.kt` e

@@ -40,6 +40,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -405,12 +406,28 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
     // permissão CAMERA em tempo de execução, e vários apps de câmera de
     // fabricante (Xiaomi/MIUI, Samsung) recusam SILENCIOSAMENTE o Intent
     // implícito quando ela não está concedida. Pede a permissão antes.
+    // "Continuo sem acesso a câmera e leitor QR" (2ª reclamação -- a correção
+    // anterior só avisava, não resolvia): uma vez que o Android nega CAMERA
+    // permanentemente, `shouldShowRequestPermissionRationale` vira false e
+    // pedir de novo não mostra diálogo nenhum. Detecta e oferece Configurações.
+    var cameraPermanentementeNegada by remember { mutableStateOf(false) }
     val cameraPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedida ->
-        if (concedida) launchCamera() else viewModel.onCameraLaunchFailed()
+        if (concedida) {
+            cameraPermanentementeNegada = false
+            launchCamera()
+        } else {
+            val activity = context as? android.app.Activity
+            cameraPermanentementeNegada = activity != null &&
+                !androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.CAMERA)
+            viewModel.onCameraLaunchFailed()
+        }
     }
     fun launchCameraComPermissao() {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            cameraPermanentementeNegada = false
             launchCamera()
+        } else if (cameraPermanentementeNegada) {
+            com.bragro.mobile.ui.domain.openAppSettings(context)
         } else {
             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
@@ -471,6 +488,16 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
                     }
                     if (mensagemFoto != null) {
                         Text(mensagemFoto ?: "", style = MaterialTheme.typography.labelSmall)
+                    }
+                    if (cameraPermanentementeNegada) {
+                        Text(
+                            "Permissão da câmera bloqueada pelo sistema -- toque abaixo pra liberar.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                        TextButton(onClick = { com.bragro.mobile.ui.domain.openAppSettings(context) }) {
+                            Text("Abrir Configurações do app")
+                        }
                     }
                     if (latitude != null && longitude != null) {
                         Text(
