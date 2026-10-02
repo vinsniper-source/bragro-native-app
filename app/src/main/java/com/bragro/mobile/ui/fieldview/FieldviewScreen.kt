@@ -90,6 +90,7 @@ import com.bragro.mobile.data.repo.IntegrationModule
 import com.bragro.mobile.data.repo.ProviderIntegrationRepository
 import com.bragro.mobile.ui.domain.IntegrationBusy
 import com.bragro.mobile.ui.domain.ProviderIntegrationCard
+import com.bragro.mobile.ui.domain.StatusBadge
 import com.bragro.mobile.ui.domain.displayValueFor
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonElement
@@ -300,6 +301,48 @@ private val IGNORED_KEYS = setOf("id", "orgId", "criadoEm", "editadoEm", "update
 // cru vazando pra tela.
 private val ISO_DATETIME_PREFIX = Regex("^\\d{4}-\\d{2}-\\d{2}T")
 
+// Rótulos em português pra cada chave crua (Safra/Frota) -- bug real
+// encontrado (usuário: "corrigir as palavras inglês para o português"):
+// RawRecordFields mostrava a chave JSON crua ("os", "kmOdometro",
+// "custoPorKm"...) como rótulo, em vez do label em português já usado pelo
+// mesmo campo no domínio genérico (ver registry.ts, domínios "frota" e
+// "safra"). Mesmo texto exato dos rótulos de lá, pra não inventar
+// terminologia nova.
+private val RAW_FIELD_LABELS: Map<String, String> = mapOf(
+    "os" to "O.S.",
+    "data" to "Data",
+    "entrada" to "Entrada",
+    "proxRevisao" to "Próxima Revisão",
+    "cultura" to "Cultura",
+    "safra" to "Safra",
+    "local" to "Local",
+    "areaTotal" to "Área Total (ha)",
+    "talhao" to "Talhão",
+    "colaborador" to "Colaborador",
+    "responsavel" to "Responsável",
+    "funcao" to "Função",
+    "frota" to "Frota/Equipamento",
+    "oficina" to "Oficina",
+    "operacao" to "Operação",
+    "sistema" to "Sistema",
+    "kmOdometro" to "Km/Odômetro",
+    "horimetro" to "Horímetro",
+    "total" to "Total (R$)",
+    "custoPorKm" to "Custo por Km (R$)",
+    "custoPorHora" to "Custo por Hora (R$)",
+    "revisaoVencida" to "Revisão Vencida",
+    "acumFrota" to "Acumulado (R$)",
+    "emEstoque" to "Em Estoque",
+    "alertaEstoque" to "Alerta Estoque",
+    "dias" to "Dias",
+    "status" to "Status",
+)
+
+// Campos checkbox cujo valor cru vem "true"/"false" -- precisam de
+// colType="checkbox" em displayValueFor pra virar "Sim"/"Não" em vez do
+// literal cru (outro bug real: "revisaoVencida: false" aparecia na tela).
+private val RAW_CHECKBOX_KEYS = setOf("revisaoVencida", "emEstoque", "alertaEstoque")
+
 /** Mostra os campos primitivos de um registro cru (Safra/Frota), exceto
  * campos técnicos -- mesmo critério de "mostrar tudo que veio preenchido"
  * já usado no Ver de DomainListScreen, só que sem um ColumnConfig por trás
@@ -311,9 +354,22 @@ private fun RawRecordFields(obj: JsonObject) {
             .filter { (k, v) -> k !in IGNORED_KEYS && v.jsonPrimitive.contentOrNull?.isNotBlank() == true }
             .forEach { (k, v) ->
                 val raw = v.jsonPrimitive.contentOrNull ?: ""
-                val colType = if (ISO_DATETIME_PREFIX.containsMatchIn(raw)) "date" else "text"
+                val label = RAW_FIELD_LABELS[k] ?: k
+                if (k == "status") {
+                    // Badge colorido -- faltava aqui (outro achado do
+                    // usuário: cor/fundo de destaque), mesmo StatusBadge já
+                    // usado no resto do app (STATUS_TONE já reconhece
+                    // ANDAMENTO/FINALIZADO/ATRASADO etc.).
+                    StatusBadge(raw)
+                    return@forEach
+                }
+                val colType = when {
+                    k in RAW_CHECKBOX_KEYS -> "checkbox"
+                    ISO_DATETIME_PREFIX.containsMatchIn(raw) -> "date"
+                    else -> "text"
+                }
                 Text(
-                    "$k: ${displayValueFor(k, raw, colType)}",
+                    "$label: ${displayValueFor(k, raw, colType)}",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }

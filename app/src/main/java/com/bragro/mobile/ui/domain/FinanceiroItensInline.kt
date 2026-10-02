@@ -46,6 +46,7 @@ import com.bragro.mobile.data.repo.NotaMultiItemRepository
 import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.contentOrNull
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -104,6 +105,30 @@ class FinanceiroItensInlineViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             itensOptions.value = configRepository.lookupsByCategory("itens_estoque").sortedBy { it.label }
             unidadesOptions.value = configRepository.lookupsByCategory("unidades").sortedBy { it.label }
+        }
+    }
+
+    /** "+Criar" (Task #869) -- mesmo motor quick-create-lookup usado em
+     * Prescrição/Pedidos/Cotações, aplicado a Item/Unidade desta seção
+     * embutida. */
+    fun quickCreateLookupOption(category: String, rawValue: String, onDone: (String?) -> Unit) {
+        viewModelScope.launch {
+            val result = com.bragro.mobile.data.repo.ModuleActionsRepository(getApplication()).run(
+                "quick-create-lookup", domainId = "financeiro", category = category, rawValue = rawValue,
+            )
+            val value = (result?.get("value") as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull
+            if (!value.isNullOrBlank()) {
+                fun merge(current: List<LookupEntity>) =
+                    if (current.any { it.value == value }) current
+                    else (current + LookupEntity(category, value, value, current.size)).sortedBy { it.label }
+                when (category) {
+                    "itens_estoque" -> itensOptions.value = merge(itensOptions.value)
+                    "unidades" -> unidadesOptions.value = merge(unidadesOptions.value)
+                }
+                onDone(value)
+            } else {
+                onDone(null)
+            }
         }
     }
 
@@ -190,6 +215,8 @@ private fun ItemStringDropdown(
     options: List<String>,
     placeholder: String,
     onSelect: (String) -> Unit,
+    // "+Criar" (Task #869) -- paridade com o onCreate de SearchableDropdownField.
+    onCreate: ((String) -> Unit)? = null,
 ) {
     SearchableDropdownField(
         value = value ?: "",
@@ -201,6 +228,7 @@ private fun ItemStringDropdown(
         // sentido oferecer "(nenhuma)" pra esvaziar, mesmo comportamento de
         // antes (readOnly não tinha opção de limpar).
         emptyOptionLabel = null,
+        onCreate = onCreate,
     )
 }
 
@@ -231,6 +259,7 @@ private fun ItemNotaLinhaRow(
     linha: ItemNotaLinha,
     itensOptions: List<LookupEntity>,
     unidadesOptions: List<LookupEntity>,
+    viewModel: FinanceiroItensInlineViewModel,
     showRemove: Boolean,
     onRemove: () -> Unit,
 ) {
@@ -254,6 +283,7 @@ private fun ItemNotaLinhaRow(
                 options = itensOptions.map { it.label },
                 placeholder = "Selecione o item",
                 onSelect = { picked -> linha.descricao = itensOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                onCreate = { raw -> viewModel.quickCreateLookupOption("itens_estoque", raw) { value -> value?.let { linha.descricao = it } } },
             )
         }
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -264,6 +294,7 @@ private fun ItemNotaLinhaRow(
                     options = unidadesOptions.map { it.label },
                     placeholder = "Opcional",
                     onSelect = { picked -> linha.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                    onCreate = { raw -> viewModel.quickCreateLookupOption("unidades", raw) { value -> value?.let { linha.unidade = it } } },
                 )
             }
             ItemFieldBlock(modifier = Modifier.weight(1f)) {
@@ -355,6 +386,7 @@ fun FinanceiroItensInlineSection(
                 linha = linha,
                 itensOptions = itensOptions,
                 unidadesOptions = unidadesOptions,
+                viewModel = viewModel,
                 showRemove = viewModel.linhas.size > 1,
                 onRemove = { viewModel.removeLinha(i) },
             )

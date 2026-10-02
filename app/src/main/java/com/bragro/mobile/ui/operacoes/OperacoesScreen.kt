@@ -445,8 +445,14 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onEditRecord: (String, String
             if (op.timeline.isNotEmpty()) {
                 Column {
                     op.timeline.takeLast(6).forEach { ev ->
+                        // Setinha ao lado do ícone editar -- pedido do usuário
+                        // ("coloque em cada atividade do lado do icone editar
+                        // a setinha"): recolhe/expande os detalhes dessa O.S.
+                        // específica, mesmo padrão ExpandLess/ExpandMore usado
+                        // nos cards de lançamento (DomainListScreen.kt).
+                        var osExpanded by remember { mutableStateOf(true) }
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 3.dp)) {
-                            Column(modifier = Modifier.weight(1f)) {
+                            Column(modifier = Modifier.weight(1f).clickable { osExpanded = !osExpanded }) {
                                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                                     Icon(Icons.Filled.CalendarMonth, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text(
@@ -467,13 +473,23 @@ private fun OperacaoCard(op: OperacaoAgrupadaData, onEditRecord: (String, String
                                         )
                                     }
                                 }
-                                Text(
-                                    ev.operacao + (ev.os?.let { " (O.S. $it)" } ?: ""),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Clip,
-                                    modifier = Modifier.basicMarquee(),
+                                if (osExpanded) {
+                                    Text(
+                                        ev.operacao + (ev.os?.let { " (O.S. $it)" } ?: ""),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Clip,
+                                        modifier = Modifier.basicMarquee(),
+                                    )
+                                }
+                            }
+                            IconButton(onClick = { osExpanded = !osExpanded }, modifier = Modifier.size(24.dp)) {
+                                Icon(
+                                    if (osExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                    contentDescription = if (osExpanded) "Recolher" else "Expandir",
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                             // Icone de editar por linha, direto pro registro certo em

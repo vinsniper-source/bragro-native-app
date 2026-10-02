@@ -3,6 +3,33 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.21] -- 2026-10-02
+
+- **Fix real (câmera/QR Code "sem acesso")**: `OrcamentoScreen.kt` e
+  `QuickAbastecimentoDialog.kt` tinham handlers de cancelamento/falha de
+  foto que não avisavam nada ao usuário (um era até uma auto-atribuição
+  vazia) -- agora mostram mensagem clara (permissão negada ou falha ao
+  capturar) em vez de parecer que a câmera "não funciona".
+- **"+Criar" nos dropdowns**: estendido de Prescrição e DomainFormScreen
+  genérico para as 3 telas de lançamento multi-item que tinham campos
+  próprios (Pedidos, Cotações de Fornecedores, Financeiro "Lançar nota com
+  itens") -- agora dá pra cadastrar um item/unidade/categoria/fornecedor/
+  safra/cultura/setor/forma de pagamento novo direto no dropdown, sem sair
+  da tela, mesmo motor de dedup/fuzzy-matching do site.
+- **Operações**: cada O.S. da timeline (dentro do card da Safra) ganhou
+  sua própria setinha de recolher/expandir ao lado do ícone de editar, em
+  vez de só a data/responsável aparecer sempre visível.
+- **Orçamentos**: corrigido o cabeçalho da lista (ícones Imprimir/Nuvem
+  estavam empilhados verticalmente em vez de lado a lado -- bug real de
+  `Column` em vez de `Row` na TopAppBar).
+- **Badges coloridos**: Controle Interno ("Válido"/"Repor") e Receituários
+  ("Aplicado") -- status que ainda apareciam como texto simples, sem
+  destaque de cor/fundo.
+- **FieldView (Máquinas)**: campos passam a mostrar rótulo em português
+  (antes era a chave bruta em inglês/camelCase), checkboxes mostram
+  "Sim"/"Não" em vez de `true`/`false`, e o campo Status ganhou o mesmo
+  badge colorido usado no resto do app.
+
 ## [1.3.20] -- 2026-10-01
 
 - **Cotações de Fornecedores**: campos "Avaliação" e "Melhor Opção" agora

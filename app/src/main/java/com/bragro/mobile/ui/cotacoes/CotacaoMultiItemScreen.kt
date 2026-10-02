@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.serialization.json.contentOrNull
 import com.bragro.mobile.data.local.LookupEntity
 import com.bragro.mobile.data.model.CotacaoComparacaoPropostaData
 import com.bragro.mobile.data.model.CotacaoPrecoMedioResponse
@@ -201,6 +202,33 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
     var copiando = mutableStateOf(false)
         private set
 
+    /** "+Criar" (Task #869) -- mesmo motor quick-create-lookup usado em
+     * Prescrição/Pedidos, aplicado às 5 listas suspensas deste formulário
+     * (categoria/item/unidade/forma de pagamento/fornecedor). */
+    fun quickCreateLookupOption(category: String, rawValue: String, onDone: (String?) -> Unit) {
+        viewModelScope.launch {
+            val result = com.bragro.mobile.data.repo.ModuleActionsRepository(getApplication()).run(
+                "quick-create-lookup", domainId = "cotacoesfornecedores", category = category, rawValue = rawValue,
+            )
+            val value = (result?.get("value") as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull
+            if (!value.isNullOrBlank()) {
+                fun merge(current: List<LookupEntity>) =
+                    if (current.any { it.value == value }) current
+                    else (current + LookupEntity(category, value, value, current.size)).sortedBy { it.label }
+                when (category) {
+                    "categorias_cotacao" -> categoriasOptions.value = merge(categoriasOptions.value)
+                    "itens_estoque" -> itensOptions.value = merge(itensOptions.value)
+                    "unidades" -> unidadesOptions.value = merge(unidadesOptions.value)
+                    "formas_pgto" -> formasPgtoOptions.value = merge(formasPgtoOptions.value)
+                    "entidades_financeiro" -> entidadesOptions.value = merge(entidadesOptions.value)
+                }
+                onDone(value)
+            } else {
+                onDone(null)
+            }
+        }
+    }
+
     fun addGrupo() {
         grupos.add(GrupoLinha())
     }
@@ -329,6 +357,8 @@ private fun StringDropdown(
     allowEmpty: Boolean = false,
     modifier: Modifier = Modifier,
     onSelect: (String?) -> Unit,
+    // "+Criar" (Task #869) -- paridade com o onCreate de SearchableDropdownField.
+    onCreate: ((String) -> Unit)? = null,
 ) {
     SearchableDropdownField(
         value = value ?: "",
@@ -338,6 +368,7 @@ private fun StringDropdown(
         modifier = modifier,
         placeholder = placeholder,
         emptyOptionLabel = if (allowEmpty) " " else null,
+        onCreate = onCreate,
     )
 }
 
@@ -386,6 +417,7 @@ private fun PropostaCard(
     entidadesOptions: List<LookupEntity>,
     formasPgtoOptions: List<LookupEntity>,
     mediaHistorica: Double?,
+    viewModel: CotacaoMultiItemViewModel,
     showRemove: Boolean,
     onRemove: () -> Unit,
 ) {
@@ -398,6 +430,7 @@ private fun PropostaCard(
                     options = entidadesOptions.map { it.label },
                     placeholder = "Selecione o fornecedor",
                     onSelect = { picked -> proposta.fornecedor = entidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                    onCreate = { raw -> viewModel.quickCreateLookupOption("entidades_financeiro", raw) { value -> value?.let { proposta.fornecedor = it } } },
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -445,6 +478,7 @@ private fun PropostaCard(
                         placeholder = "Opcional",
                         allowEmpty = true,
                         onSelect = { picked -> proposta.condicaoPagamento = formasPgtoOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                        onCreate = { raw -> viewModel.quickCreateLookupOption("formas_pgto", raw) { value -> value?.let { proposta.condicaoPagamento = it } } },
                     )
                 }
                 ItemFieldBlock(modifier = Modifier.weight(1f)) {
@@ -478,6 +512,7 @@ private fun GrupoCard(
     formasPgtoOptions: List<LookupEntity>,
     historico: Map<String, CotacaoPrecoMedioResponse?>,
     onBuscarHistorico: (String, String) -> Unit,
+    viewModel: CotacaoMultiItemViewModel,
     showRemoveGrupo: Boolean,
     onRemoveGrupo: () -> Unit,
     onAddProposta: () -> Unit,
@@ -518,6 +553,7 @@ private fun GrupoCard(
                     entidadesOptions = entidadesOptions,
                     formasPgtoOptions = formasPgtoOptions,
                     mediaHistorica = mediaHistorica,
+                    viewModel = viewModel,
                     showRemove = grupo.propostas.size > 1,
                     onRemove = { onRemoveProposta(pi) },
                 )
@@ -534,6 +570,7 @@ private fun GrupoCard(
                     options = categoriasOptions.map { it.label },
                     placeholder = "Categoria",
                     onSelect = { picked -> grupo.categoria = categoriasOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                    onCreate = { raw -> viewModel.quickCreateLookupOption("categorias_cotacao", raw) { value -> value?.let { grupo.categoria = it } } },
                 )
             }
             ItemFieldBlock {
@@ -543,6 +580,7 @@ private fun GrupoCard(
                     options = itensOptions.map { it.label },
                     placeholder = "Selecione o item",
                     onSelect = { picked -> grupo.item = itensOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                    onCreate = { raw -> viewModel.quickCreateLookupOption("itens_estoque", raw) { value -> value?.let { grupo.item = it } } },
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -554,6 +592,7 @@ private fun GrupoCard(
                         placeholder = "Opcional",
                         allowEmpty = true,
                         onSelect = { picked -> grupo.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                        onCreate = { raw -> viewModel.quickCreateLookupOption("unidades", raw) { value -> value?.let { grupo.unidade = it } } },
                     )
                 }
                 ItemFieldBlock(modifier = Modifier.weight(1f)) {
@@ -699,6 +738,7 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                     formasPgtoOptions = formasPgtoOptions,
                     historico = viewModel.historico,
                     onBuscarHistorico = { cat, it -> viewModel.buscarHistoricoSeNecessario(cat, it) },
+                    viewModel = viewModel,
                     showRemoveGrupo = viewModel.grupos.size > 1,
                     onRemoveGrupo = { viewModel.removeGrupo(gi) },
                     onAddProposta = { viewModel.addProposta(gi) },

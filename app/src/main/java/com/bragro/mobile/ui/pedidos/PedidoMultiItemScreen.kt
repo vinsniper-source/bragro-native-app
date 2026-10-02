@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.serialization.json.contentOrNull
 import com.bragro.mobile.data.local.LookupEntity
 import com.bragro.mobile.data.model.PedidoMultiItemItemData
 import com.bragro.mobile.data.repo.ConfigRepository
@@ -167,6 +168,36 @@ class PedidoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** "+Criar" (Task #869) -- mesmo motor quick-create-lookup (dedup/
+     * fuzzy-matching) usado em Prescrição/DomainFormScreen, aplicado às 7
+     * listas suspensas deste formulário (setor/fornecedor/categoria/item/
+     * unidade/safra/cultura). */
+    fun quickCreateLookupOption(category: String, rawValue: String, onDone: (String?) -> Unit) {
+        viewModelScope.launch {
+            val result = com.bragro.mobile.data.repo.ModuleActionsRepository(getApplication()).run(
+                "quick-create-lookup", domainId = "pedidos", category = category, rawValue = rawValue,
+            )
+            val value = (result?.get("value") as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull
+            if (!value.isNullOrBlank()) {
+                fun merge(current: List<LookupEntity>) =
+                    if (current.any { it.value == value }) current
+                    else (current + LookupEntity(category, value, value, current.size)).sortedBy { it.label }
+                when (category) {
+                    "setores" -> setoresOptions.value = merge(setoresOptions.value)
+                    "entidades_financeiro" -> fornecedoresOptions.value = merge(fornecedoresOptions.value)
+                    "categorias_estoque" -> categoriasOptions.value = merge(categoriasOptions.value)
+                    "itens_estoque" -> itensOptions.value = merge(itensOptions.value)
+                    "unidades" -> unidadesOptions.value = merge(unidadesOptions.value)
+                    "safras" -> safrasOptions.value = merge(safrasOptions.value)
+                    "culturas" -> culturasOptions.value = merge(culturasOptions.value)
+                }
+                onDone(value)
+            } else {
+                onDone(null)
+            }
+        }
+    }
+
     fun addLinha() {
         linhas.add(PedidoLinha())
     }
@@ -264,6 +295,9 @@ private fun StringDropdown(
     placeholder: String,
     allowEmpty: Boolean = false,
     onSelect: (String?) -> Unit,
+    // "+Criar" (Task #869, pedido do usuário "ou em qualquer outro que
+    // ainda não tenha") -- paridade com o onCreate de SearchableDropdownField.
+    onCreate: ((String) -> Unit)? = null,
 ) {
     SearchableDropdownField(
         value = value ?: "",
@@ -272,6 +306,7 @@ private fun StringDropdown(
         onSelect = { picked -> onSelect(picked.ifEmpty { null }) },
         placeholder = placeholder,
         emptyOptionLabel = if (allowEmpty) " " else null,
+        onCreate = onCreate,
     )
 }
 
@@ -298,7 +333,7 @@ private fun ItemFieldBlock(modifier: Modifier = Modifier, content: @Composable (
 }
 
 @Composable
-private fun PedidoLinhaCard(linha: PedidoLinha, categoriasOptions: List<LookupEntity>, itensOptions: List<LookupEntity>, unidadesOptions: List<LookupEntity>, showRemove: Boolean, onRemove: () -> Unit) {
+private fun PedidoLinhaCard(linha: PedidoLinha, categoriasOptions: List<LookupEntity>, itensOptions: List<LookupEntity>, unidadesOptions: List<LookupEntity>, viewModel: PedidoMultiItemViewModel, showRemove: Boolean, onRemove: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             ItemFieldBlock {
@@ -309,6 +344,7 @@ private fun PedidoLinhaCard(linha: PedidoLinha, categoriasOptions: List<LookupEn
                     placeholder = "Opcional",
                     allowEmpty = true,
                     onSelect = { picked -> linha.categoria = categoriasOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                    onCreate = { raw -> viewModel.quickCreateLookupOption("categorias_estoque", raw) { value -> value?.let { linha.categoria = it } } },
                 )
             }
             ItemFieldBlock {
@@ -318,6 +354,7 @@ private fun PedidoLinhaCard(linha: PedidoLinha, categoriasOptions: List<LookupEn
                     options = itensOptions.map { it.label },
                     placeholder = "Selecione o item",
                     onSelect = { picked -> linha.item = itensOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                    onCreate = { raw -> viewModel.quickCreateLookupOption("itens_estoque", raw) { value -> value?.let { linha.item = it } } },
                 )
             }
             ItemFieldBlock {
@@ -328,6 +365,7 @@ private fun PedidoLinhaCard(linha: PedidoLinha, categoriasOptions: List<LookupEn
                     placeholder = "Opcional",
                     allowEmpty = true,
                     onSelect = { picked -> linha.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                    onCreate = { raw -> viewModel.quickCreateLookupOption("unidades", raw) { value -> value?.let { linha.unidade = it } } },
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -484,6 +522,7 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                             placeholder = "Opcional",
                             allowEmpty = true,
                             onSelect = { picked -> viewModel.setor = setoresOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                            onCreate = { raw -> viewModel.quickCreateLookupOption("setores", raw) { value -> value?.let { viewModel.setor = it } } },
                         )
                     }
                     Column(modifier = Modifier.weight(1f)) {
@@ -494,6 +533,7 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                             placeholder = "Opcional",
                             allowEmpty = true,
                             onSelect = { picked -> viewModel.fornecedor = fornecedoresOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                            onCreate = { raw -> viewModel.quickCreateLookupOption("entidades_financeiro", raw) { value -> value?.let { viewModel.fornecedor = it } } },
                         )
                     }
                 }
@@ -508,6 +548,7 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                             placeholder = "Opcional",
                             allowEmpty = true,
                             onSelect = { picked -> viewModel.safra = safrasOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                            onCreate = { raw -> viewModel.quickCreateLookupOption("safras", raw) { value -> value?.let { viewModel.safra = it } } },
                         )
                     }
                     Column(modifier = Modifier.weight(1f)) {
@@ -518,6 +559,7 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                             placeholder = "Opcional",
                             allowEmpty = true,
                             onSelect = { picked -> viewModel.cultura = culturasOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                            onCreate = { raw -> viewModel.quickCreateLookupOption("culturas", raw) { value -> value?.let { viewModel.cultura = it } } },
                         )
                     }
                 }
@@ -564,6 +606,7 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                     categoriasOptions = categoriasOptions,
                     itensOptions = itensOptions,
                     unidadesOptions = unidadesOptions,
+                    viewModel = viewModel,
                     showRemove = viewModel.linhas.size > 1,
                     onRemove = { viewModel.removeLinha(i) },
                 )

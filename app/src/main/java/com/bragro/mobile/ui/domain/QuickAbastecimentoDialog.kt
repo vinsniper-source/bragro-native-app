@@ -176,8 +176,13 @@ class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // Bug real encontrado (usuário: "sem acesso a câmera e QR code"): quando
+    // a permissão CAMERA era negada (ou a câmera falhava ao abrir), essa
+    // função só zerava o spinner sem dizer nada -- parecia que o app
+    // simplesmente não tinha acesso, sem explicação nem alternativa.
     fun onQrPhotoCancelled() {
         lendoQr.value = false
+        qrMensagem.value = "Nenhuma foto do QR Code capturada -- tente novamente ou escolha a máquina manualmente."
     }
 
     fun submit(onDone: (SaveResult) -> Unit) {

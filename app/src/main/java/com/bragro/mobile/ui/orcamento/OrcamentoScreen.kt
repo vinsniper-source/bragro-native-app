@@ -298,8 +298,14 @@ class OrcamentoViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // Bug real encontrado (usuário: "sem acesso a câmera e QR code"): esta
+    // função só reatribuía a mensagem a si mesma (no-op) -- quando a
+    // permissão CAMERA era negada ou a câmera falhava ao abrir, NADA
+    // acontecia na tela, parecendo que o app "não tem acesso" sem explicar
+    // o motivo nem oferecer alternativa. Agora avisa e deixa claro que dá
+    // pra lançar sem foto, mesmo padrão de Romaneio/Pragas.
     fun onPhotoCancelled() {
-        ocrMensagemRequisicao.value = ocrMensagemRequisicao.value
+        ocrMensagemRequisicao.value = "Nenhuma foto capturada -- você pode lançar sem foto ou tentar de novo."
     }
 
     /** "Copiar último lançamento" -- busca o último Orçamento lançado no

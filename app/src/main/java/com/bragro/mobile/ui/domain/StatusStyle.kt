@@ -39,10 +39,22 @@ private val STATUS_TONE: Map<String, Tone> = mapOf(
     "OK" to Tone.GOOD, "ATIVO" to Tone.GOOD, "EM DIA" to Tone.GOOD, "ATENDIDO" to Tone.GOOD, "PAGO" to Tone.GOOD,
     "RECEBIDO" to Tone.GOOD, "CONTROLADO" to Tone.GOOD, "DENTRO" to Tone.GOOD, "FINALIZADO" to Tone.GOOD, "VITALICIO" to Tone.GOOD,
     "LIBERADO" to Tone.GOOD,
+    // "APLICADO" -- status de Receituários (aplicação já realizada) --
+    // mesmo motivo (achado do usuário: "receituários... falta destacar cor
+    // fonte e fundo de palavras").
+    "APLICADO" to Tone.GOOD,
+    // "VALIDO" -- status de item de Controle Interno (EPI/documento ainda
+    // dentro da validade) -- faltava no mapa, caía em texto simples sem cor
+    // (achado do usuário: "controle interno... falta destacar cor fonte e
+    // fundo de palavras").
+    "VALIDO" to Tone.GOOD,
     "ANDAMENTO" to Tone.WARN, "PENDENTE" to Tone.WARN, "PARCIAL" to Tone.WARN, "PROX VENC" to Tone.WARN,
     "ATENCAO" to Tone.WARN, "EM ABERTO" to Tone.WARN, "ABERTO" to Tone.WARN, "MONITORANDO" to Tone.WARN, "EM CONTROLE" to Tone.WARN, "REAVALIAR" to Tone.WARN,
     "SEM ASO" to Tone.WARN, "SEM CNH" to Tone.WARN, "SEM SEGURO" to Tone.WARN, "SEM VENCIMENTO" to Tone.WARN, "SEM FRETE" to Tone.WARN,
     "AGUARDANDO APLICAÇÃO" to Tone.WARN, "EM CARÊNCIA" to Tone.WARN,
+    // "REPOR" -- Controle Interno (item de EPI/estoque interno abaixo do
+    // mínimo, precisa repor) -- mesmo motivo acima.
+    "REPOR" to Tone.WARN,
     "ATRASADO" to Tone.BAD, "VENCIDO" to Tone.BAD, "REGULARIZAR" to Tone.BAD, "ACIMA" to Tone.BAD,
     "DESLIGADO" to Tone.BAD, "AFASTADO" to Tone.BAD, "CANCELADO" to Tone.BAD,
     // Origem do lançamento em Estoque (ver ORIGEM_LABELS abaixo) -- badge

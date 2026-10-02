@@ -49,8 +49,12 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bragro.mobile.data.model.PrescricaoFarmDto
 import com.bragro.mobile.data.model.PrescricaoFeatureInput
+import com.bragro.mobile.data.local.LookupEntity
 import com.bragro.mobile.data.repo.ConfigRepository
+import com.bragro.mobile.data.repo.ModuleActionsRepository
 import com.bragro.mobile.data.repo.PrescricaoRepository
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import com.bragro.mobile.data.vra.IsoXmlSemZonasException
 import com.bragro.mobile.data.vra.ZonaTaxaVra
 import com.bragro.mobile.data.vra.parseIsoXmlZonas
@@ -134,6 +138,39 @@ class PrescricaoNovoViewModel(app: Application) : AndroidViewModel(app) {
             safrasOptions.value = configRepository.lookupsByCategory("safras").sortedBy { it.label }
             culturasOptions.value = configRepository.lookupsByCategory("culturas").sortedBy { it.label }
             talhoesOptions.value = configRepository.lookupsByCategory("talhoes").sortedBy { it.label }
+        }
+    }
+
+    /** "+Criar" (Task #869, pedido do usuário "lista suspensa prescrição
+     * inserir criar ou em qualquer outro que ainda não tenha") -- paridade
+     * com quickCreateLookupOption() de DomainFormScreen.kt: mesma Server
+     * Action quick-create-lookup (dedup/fuzzy-matching), só que aqui mescla
+     * o resultado direto nas listas do próprio ViewModel (unidadesOptions/
+     * safrasOptions/culturasOptions/talhoesOptions) em vez do mapa genérico
+     * lookupsByCategory usado por DomainFormScreen. domainId="prescricoes"
+     * -- mesmo critério de nfe-client.tsx (não precisa bater com um domínio
+     * real, só identifica quem chamou a ação pro log do servidor). */
+    fun quickCreateLookupOption(category: String, rawValue: String, onDone: (String?) -> Unit) {
+        viewModelScope.launch {
+            val result = ModuleActionsRepository(getApplication()).run(
+                "quick-create-lookup", domainId = "prescricoes", category = category, rawValue = rawValue,
+            )
+            val value = (result?.get("value") as? JsonPrimitive)?.contentOrNull
+            if (!value.isNullOrBlank()) {
+                fun merge(current: List<LookupEntity>): List<LookupEntity> {
+                    if (current.any { it.value == value }) return current
+                    return (current + LookupEntity(category, value, value, current.size)).sortedBy { it.label }
+                }
+                when (category) {
+                    "unidades" -> unidadesOptions.value = merge(unidadesOptions.value)
+                    "safras" -> safrasOptions.value = merge(safrasOptions.value)
+                    "culturas" -> culturasOptions.value = merge(culturasOptions.value)
+                    "talhoes" -> talhoesOptions.value = merge(talhoesOptions.value)
+                }
+                onDone(value)
+            } else {
+                onDone(null)
+            }
         }
     }
 
@@ -344,6 +381,7 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
                     options = remember(unidadesOptions) { unidadesOptions.map { it.value to it.label } },
                     onSelect = { viewModel.unidadeTaxa = it },
                     placeholder = "Ex.: kg/ha",
+                    onCreate = { raw -> viewModel.quickCreateLookupOption("unidades", raw) { value -> value?.let { viewModel.unidadeTaxa = it } } },
                 )
             }
             item {
@@ -363,6 +401,7 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
                     options = remember(safrasOptions) { safrasOptions.map { it.value to it.label } },
                     onSelect = { viewModel.safra = it },
                     placeholder = "Ex.: 2025/26",
+                    onCreate = { raw -> viewModel.quickCreateLookupOption("safras", raw) { value -> value?.let { viewModel.safra = it } } },
                 )
             }
             item {
@@ -372,6 +411,7 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
                     options = remember(culturasOptions) { culturasOptions.map { it.value to it.label } },
                     onSelect = { viewModel.cultura = it },
                     placeholder = "Ex.: Soja",
+                    onCreate = { raw -> viewModel.quickCreateLookupOption("culturas", raw) { value -> value?.let { viewModel.cultura = it } } },
                 )
             }
             item {
@@ -381,6 +421,7 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
                     options = remember(talhoesOptions) { talhoesOptions.map { it.value to it.label } },
                     onSelect = { viewModel.talhao = it },
                     placeholder = "Ex.: 12",
+                    onCreate = { raw -> viewModel.quickCreateLookupOption("talhoes", raw) { value -> value?.let { viewModel.talhao = it } } },
                 )
             }
             item {

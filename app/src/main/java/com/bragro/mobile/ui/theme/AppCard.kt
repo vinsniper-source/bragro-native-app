@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
@@ -167,6 +168,16 @@ fun SearchableDropdownField(
     // (telas onde o campo é obrigatório e não faz sentido "esvaziar").
     emptyOptionLabel: String? = "(nenhuma)",
     dense: Boolean = false,
+    // "+Criar" -- bug/gap real encontrado (usuário: "lista suspensa
+    // prescrição inserir criar ou em qualquer outro que ainda não tenha"):
+    // este componente era usado por Prescrição e outras telas mais simples,
+    // mas só o select "cru" de DomainFormScreen.kt tinha a opção +Criar
+    // (implementação própria, duplicada). Null = não oferece (comportamento
+    // de sempre, sem quebrar nenhum uso existente) -- quem passar essa
+    // lambda decide como criar o item (normalmente via
+    // ModuleActionsRepository "quick-create-lookup", mesmo endpoint do
+    // select genérico) e deve chamar onSelect() com o valor final.
+    onCreate: ((String) -> Unit)? = null,
 ) {
     val optionLabels = remember(options) { options.associate { it.first to it.second } }
     var expanded by remember { mutableStateOf(false) }
@@ -224,6 +235,25 @@ fun SearchableDropdownField(
                     }
                     expanded = false
                 })
+            }
+            // "+Criar \"...\"" -- só aparece quando o texto digitado não bate
+            // EXATO (ignorando maiúsculas) com nenhuma opção já existente,
+            // mesmo critério do select genérico (DomainFormScreen.kt) e do
+            // site (searchable-select.tsx).
+            val trimmedQuery = query.trim()
+            val queryMatchesExisting = trimmedQuery.isNotBlank() && options.any { it.second.equals(trimmedQuery, ignoreCase = true) }
+            if (onCreate != null && trimmedQuery.isNotBlank() && !queryMatchesExisting) {
+                DropdownMenuItem(
+                    text = { Text("+ Criar \"$trimmedQuery\"", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+                    onClick = {
+                        try {
+                            onCreate(trimmedQuery)
+                        } catch (e: Exception) {
+                            com.bragro.mobile.data.AppLog.e("SearchableDropdownField", "Erro ao criar item \"$trimmedQuery\" em \"$label\"", e)
+                        }
+                        expanded = false
+                    },
+                )
             }
             if (filtered.isEmpty()) {
                 DropdownMenuItem(text = { Text("Nenhum resultado", color = MaterialTheme.colorScheme.onSurfaceVariant) }, onClick = {}, enabled = false)
