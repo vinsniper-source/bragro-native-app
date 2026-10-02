@@ -3,6 +3,31 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.23] -- 2026-10-02
+
+- **Câmera/QR Code -- reforço ("continua sem abrir, há como forçar")**:
+  duas camadas novas além da v1.3.22, nos mesmos 4 pontos de acesso
+  (Orçamento, Abastecimento de Frota/QR, Diagnóstico de Pragas,
+  Romaneio Rápido): (1) a negação permanente agora é detectada já na
+  ABERTURA da tela (antes só era detectada depois de um toque que
+  falhava) -- novo flag salvo em `SharedPreferences` lembra se o app já
+  pediu a permissão de câmera antes, permitindo diferenciar "nunca
+  pedi" de "pedi e foi negado de vez" sem depender de um toque prévio;
+  (2) checagem se existe algum app de câmera instalado no aparelho
+  antes de tentar abrir -- em vez de falhar silenciosamente, mostra um
+  aviso claro ("Nenhum app de câmera encontrado neste aparelho").
+- **Operações**: removida a setinha global de recolher/expandir do
+  cabeçalho (adicionada na v1.3.21/22, revertida a pedido do usuário).
+  A setinha individual de cada O.S. (ao lado do ícone editar) agora
+  mostra TODAS as informações do lançamento de Safra ao expandir, em
+  vez de só o nome da operação -- busca o registro completo já em
+  cache local (mesmo dado offline-first do resto do app).
+- **Caixa Interno**: badge colorido (pill verde/neutro Sim-Não) no
+  campo "Conferido", que antes aparecia como texto simples em negrito
+  sem nenhuma cor -- mesmo padrão já aplicado a Cotações/Inventário/
+  Controle Interno/Receituários/Romaneio. O campo "Status" (OK/SALDO
+  NEGATIVO) desse módulo já tinha badge colorido automaticamente.
+
 ## [1.3.22] -- 2026-10-02
 
 - **Fix real (câmera/QR Code -- "continuo sem acesso")**: o fix anterior

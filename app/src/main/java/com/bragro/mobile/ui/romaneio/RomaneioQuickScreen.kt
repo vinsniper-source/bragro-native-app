@@ -373,6 +373,16 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
     }
 
     fun launchCamera() {
+        // "Continuo sem acesso... há como forçar a abertura" (3ª reclamação):
+        // confere ANTES se existe algum app no aparelho capaz de responder ao
+        // Intent de captura -- sem isso o launch() falhava em silêncio em
+        // aparelho/ROM sem nenhum app de câmera, sintoma idêntico a "não abre
+        // nada" (ver temAppDeCameraDisponivel, CameraPermissionUtils.kt).
+        if (!com.bragro.mobile.ui.domain.temAppDeCameraDisponivel(context)) {
+            com.bragro.mobile.ui.domain.avisarSemAppDeCamera(context)
+            viewModel.onCameraLaunchFailed()
+            return
+        }
         try {
             val file = File(File(context.cacheDir, "romaneio").apply { mkdirs() }, "ticket_${System.currentTimeMillis()}.jpg")
             // createNewFile() ANTES de gerar o Uri -- alguns apps de Camera
@@ -408,6 +418,12 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
     // permanentemente, `shouldShowRequestPermissionRationale` vira false e
     // pedir de novo não mostra diálogo nenhum. Detecta e oferece Configurações.
     var cameraPermanentementeNegada by remember { mutableStateOf(false) }
+    // "há como forçar a abertura" (3ª reclamação) -- detecta a negação
+    // permanente já na ABERTURA da tela, em vez de só depois de um 1º toque
+    // morto no botão.
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        cameraPermanentementeNegada = com.bragro.mobile.ui.domain.isCameraPermanentementeNegada(context)
+    }
     val cameraPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedida ->
         if (concedida) {
             cameraPermanentementeNegada = false
@@ -426,6 +442,7 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
         } else if (cameraPermanentementeNegada) {
             com.bragro.mobile.ui.domain.openAppSettings(context)
         } else {
+            com.bragro.mobile.ui.domain.marcarCameraPermissaoJaPedida(context)
             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }

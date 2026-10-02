@@ -564,6 +564,15 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
     }
 
     fun launchCamera(prefixo: String, setPending: (Uri) -> Unit, launcher: androidx.activity.result.ActivityResultLauncher<Uri>) {
+        // "Continuo sem acesso... há como forçar a abertura" (3ª reclamação):
+        // confere ANTES se existe algum app no aparelho capaz de responder ao
+        // Intent de captura -- sem isso o launch() falhava em silêncio em
+        // aparelho/ROM sem nenhum app de câmera.
+        if (!com.bragro.mobile.ui.domain.temAppDeCameraDisponivel(context)) {
+            com.bragro.mobile.ui.domain.avisarSemAppDeCamera(context)
+            viewModel.onPhotoCancelled()
+            return
+        }
         try {
             val file = File(File(context.cacheDir, "orcamento").apply { mkdirs() }, "${prefixo}_${System.currentTimeMillis()}.jpg")
             file.createNewFile()
@@ -590,6 +599,12 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
     // adianta. Detecta esse estado e oferece o atalho pra Configurações do
     // app, único jeito de reverter.
     var cameraPermanentementeNegada by remember { mutableStateOf(false) }
+    // "há como forçar a abertura" (3ª reclamação) -- detecta a negação
+    // permanente já na ABERTURA da tela, em vez de só depois de um 1º toque
+    // morto no botão.
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        cameraPermanentementeNegada = com.bragro.mobile.ui.domain.isCameraPermanentementeNegada(context)
+    }
     val cameraPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedida ->
         val call = pendingCameraCall
         pendingCameraCall = null
@@ -607,19 +622,14 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             cameraPermanentementeNegada = false
             launchCamera(prefixo, setPending, launcher)
+        } else if (cameraPermanentementeNegada) {
+            // Já sabemos que está permanentemente negada -- pedir de novo
+            // não mostra diálogo nenhum, então manda direto pra Configurações.
+            openAppSettings(context)
         } else {
-            val activity = context as? Activity
-            if (activity != null && !ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.CAMERA)
-                && ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED
-                && cameraPermanentementeNegada
-            ) {
-                // Já sabemos que está permanentemente negada -- pedir de novo
-                // não mostra diálogo nenhum, então manda direto pra Configurações.
-                openAppSettings(context)
-            } else {
-                pendingCameraCall = { launchCamera(prefixo, setPending, launcher) }
-                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-            }
+            com.bragro.mobile.ui.domain.marcarCameraPermissaoJaPedida(context)
+            pendingCameraCall = { launchCamera(prefixo, setPending, launcher) }
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
 

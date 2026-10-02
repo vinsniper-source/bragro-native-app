@@ -1856,6 +1856,17 @@ private fun RecordFieldLine(
         // isStatusLikeColumn, então precisa desse caso especial, igual
         // Cotações/Financeiro acima).
         StatusBadge(value)
+    } else if (domainId == "caixainterno" && col.key == "conferido") {
+        // Badge colorido pro checkbox "Conferido" -- pedido do usuário
+        // (imagem 2: "caixa interno colocar badges coloridos"). A chave
+        // "conferido" não bate no regex isStatusLikeColumn (só "confere"
+        // exato), então sem esse caso especial o campo caía no texto
+        // simples "Conferido: Sim/Não" em negrito, sem nenhuma cor. O campo
+        // "status" (OK/SALDO NEGATIVO) desse mesmo módulo já ganha o pill
+        // colorido automaticamente via StatusBadge (a chave contém
+        // "status"), então só faltava este. Reaproveita o mesmo
+        // pill verde/neutro Sim-Não já usado em Cotações ("Melhor Opção").
+        CotacaoMelhorOpcaoBadge(value)
     } else {
         val displayValue = if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)
         // Verde (receita) / laranja-âmbar (despesa) só nas colunas Bruto/

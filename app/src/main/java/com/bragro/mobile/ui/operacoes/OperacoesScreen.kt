@@ -495,16 +495,6 @@ private fun OperacaoCard(
                                         )
                                     }
                                 }
-                                if (osExpanded) {
-                                    Text(
-                                        ev.operacao + (ev.os?.let { " (O.S. $it)" } ?: ""),
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Clip,
-                                        modifier = Modifier.basicMarquee(),
-                                    )
-                                }
                             }
                             IconButton(onClick = { toggleOsExpanded() }, modifier = Modifier.size(24.dp)) {
                                 Icon(
@@ -526,6 +516,20 @@ private fun OperacaoCard(
                                 Icon(Icons.Filled.Edit, contentDescription = "Editar em Safra", modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
+                        if (osExpanded) {
+                            // "quando clicadas precisa aparecer todas as
+                            // informações do formulário, não só 2 ou 3 linhas,
+                            // mas todo o formulário expandido" -- pedido do
+                            // usuário (imagem 1): antes só mostrava o nome da
+                            // operação (1 linha truncada por marquee). Agora
+                            // busca o registro completo no cache local
+                            // (RecordRepository, mesmo dado offline-first usado
+                            // em todo o app) e lista TODOS os campos
+                            // preenchidos desse lançamento específico de Safra,
+                            // fora da coluna com peso/marquee (que trunca a 1
+                            // linha) pra caber o texto inteiro.
+                            OperacaoDetalheCompleto(ev.id)
+                        }
                     }
                 }
             }
@@ -537,6 +541,57 @@ private fun OperacaoCard(
             // apontando pro registro exato, entao o link generico ficou
             // redundante (mesma decisao ja tomada no site).
             } // fecha if (cardExpanded)
+        }
+    }
+}
+
+// "todo o formulário expandido" (pedido do usuário) -- busca o registro
+// COMPLETO de Safra no cache local (RecordRepository, mesmo dado offline-
+// first de toda a plataforma) e lista cada campo preenchido com seu rótulo
+// em português (DomainConfig.columns, mesmo catálogo usado no formulário de
+// edição), em vez de só o nome da operação que já aparecia. Sem round-trip
+// de rede: Operações já exige que Safra tenha sido aberta pelo menos uma vez
+// pra essa O.S. existir no timeline, e a essa altura o registro já está no
+// Room (refreshFromServer do próprio módulo Safra).
+@Composable
+private fun OperacaoDetalheCompleto(recordId: String) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var campos by remember(recordId) { mutableStateOf<List<Pair<String, String>>?>(null) }
+    androidx.compose.runtime.LaunchedEffect(recordId) {
+        val recordRepo = com.bragro.mobile.data.repo.RecordRepository(context)
+        val configRepo = com.bragro.mobile.data.repo.ConfigRepository(context)
+        val valores = recordRepo.getRecord("safra", recordId)
+        val config = configRepo.domainConfig("safra")
+        campos = if (valores != null && config != null) {
+            config.columns
+                .filter { col -> !valores[col.key].isNullOrBlank() }
+                .map { col -> col.label to (valores[col.key] ?: "") }
+        } else {
+            emptyList()
+        }
+    }
+    val lista = campos
+    when {
+        lista == null -> Text(
+            "Carregando detalhes...",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 4.dp, top = 2.dp),
+        )
+        lista.isEmpty() -> {}
+        else -> {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(start = 4.dp, top = 2.dp, bottom = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                lista.forEach { (label, valor) ->
+                    Text(
+                        "$label: $valor",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
     }
 }
@@ -622,18 +677,12 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                                     tint = MaterialTheme.colorScheme.primary,
                                 )
                             }
-                            if (!tableView && operacoes.isNotEmpty()) {
-                                IconButton(onClick = {
-                                    atividadesExpandidasPadrao = !atividadesExpandidasPadrao
-                                    activityOverrides.clear()
-                                }) {
-                                    Icon(
-                                        if (atividadesExpandidasPadrao) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                        contentDescription = if (atividadesExpandidasPadrao) "Recolher todas as atividades" else "Expandir todas as atividades",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                            }
+                            // Botão global "recolher/expandir tudo" REMOVIDO do
+                            // cabeçalho -- pedido do usuário (imagem 1: "exclua
+                            // a setinha do cabeçalho do lado superior direito").
+                            // A setinha individual de cada O.S. (OperacaoCard,
+                            // ao lado do ícone editar) continua controlando
+                            // cada linha por conta própria.
                         }
                     }
                 },

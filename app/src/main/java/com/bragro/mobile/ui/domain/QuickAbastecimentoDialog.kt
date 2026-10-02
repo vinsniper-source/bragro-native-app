@@ -234,6 +234,15 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
         }
     }
     fun launchQrCamera() {
+        // "Continuo sem acesso... há como forçar a abertura" (3ª reclamação):
+        // confere ANTES se existe algum app no aparelho capaz de responder ao
+        // Intent de captura -- sem isso o launch() falhava em silêncio em
+        // aparelho/ROM sem nenhum app de câmera.
+        if (!temAppDeCameraDisponivel(context)) {
+            avisarSemAppDeCamera(context)
+            viewModel.onQrPhotoCancelled()
+            return
+        }
         try {
             val file = File(File(context.cacheDir, "frota_qr").apply { mkdirs() }, "qr_${System.currentTimeMillis()}.jpg")
             // createNewFile() antes do Uri -- mesma incompatibilidade de
@@ -259,6 +268,12 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
     // vira false e pedir de novo não mostra diálogo nenhum. Detecta esse
     // estado e manda direto pra Configurações do app.
     var cameraPermanentementeNegada by remember { mutableStateOf(false) }
+    // "há como forçar a abertura" (3ª reclamação) -- detecta a negação
+    // permanente já na ABERTURA do diálogo, em vez de só depois de um 1º
+    // toque morto no botão.
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        cameraPermanentementeNegada = isCameraPermanentementeNegada(context)
+    }
     val cameraPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedida ->
         if (concedida) {
             cameraPermanentementeNegada = false
@@ -277,6 +292,7 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
         } else if (cameraPermanentementeNegada) {
             openAppSettings(context)
         } else {
+            marcarCameraPermissaoJaPedida(context)
             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
