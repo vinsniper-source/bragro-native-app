@@ -50,16 +50,16 @@
          #852/#868/#875/#883): a v1.3.25 (#883) adicionou um 2o leitor,
          delegando pro leitor de QR NATIVO do aparelho via Intent implicito
          "com.google.zxing.client.android.SCAN" (CameraPermissionUtils.kt,
-         temLeitorQrNativoDisponivel/criarIntentLeitorQrNativo) -- mas essa
+         temLeitorQrNativoDisponivel/criarIntentLeitorQrNativo), mas essa
          action NUNCA foi declarada aqui em <queries>. A partir do Android 11
          (API 30+, este app e targetSdk 34), o PackageManager so enxerga
          apps capazes de responder a um Intent CUSTOMIZADO (que nao esta na
          lista de visibilidade automatica do sistema) se a action constar
-         em <queries> -- diferente de android.media.action.IMAGE_CAPTURE
+         em <queries>, diferente de android.media.action.IMAGE_CAPTURE
          acima, que JA esta nessa lista. Resultado: resolveActivity() para
          o Intent de SCAN retornava SEMPRE null em qualquer aparelho Android
          11+ (a imensa maioria do parque hoje), mesmo com um app leitor de
-         QR de fabrica instalado -- o app sempre mostrava "Nenhum leitor de
+         QR de fabrica instalado, o app sempre mostrava "Nenhum leitor de
          QR Code do aparelho encontrado" e caia de volta pro MESMO fluxo de
          foto+ML Kit que ja vinha falhando, fazendo a correcao mais recente
          (o motivo de abrir esta investigacao) nunca ter funcionado de
@@ -84,7 +84,7 @@
          como este app distribui as atualizacoes - ver ApkInstaller.kt),
          pode fazer o PackageManager filtrar/recusar a resolucao de
          componentes de camera em builds mais restritos. Nenhuma tela do
-         app depende de ter camera obrigatoriamente -- todas as 4 (Romaneio,
+         app depende de ter camera obrigatoriamente: todas as 4 (Romaneio,
          Pragas, Orcamentos, Abastecimento/Frota QR) ja tratam "nenhum app
          de camera disponivel" (temAppDeCameraDisponivel) e "nenhum leitor
          de QR disponivel" de forma graciosa, sem travar o app. -->
