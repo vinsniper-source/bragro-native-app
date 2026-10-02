@@ -247,6 +247,60 @@ fun OperacaoBadge(value: String, isReceita: Boolean) {
     )
 }
 
+/** Pill colorido pro campo "Avaliação" de Cotações de Fornecedores -- pedido
+ * do usuário ("imagem 1 ... não há fontes coloridas e fundo nos blocos",
+ * esclarecido depois: "Badges de Avaliação/Melhor Opção"). O valor real vem
+ * de recomputeCotacaoGroup (cotacoes.ts, site): "MELHOR CUSTO-BENEFÍCIO" ou
+ * "Única cotação" pra proposta vencedora do grupo (verde), "+X% vs. melhor
+ * opção" pras demais (âmbar, só indica "não é a mais vantajosa", não um
+ * erro). Cai em texto simples pra valor vazio/não reconhecido. */
+@Composable
+fun CotacaoAvaliacaoBadge(rawValue: String) {
+    if (rawValue.isBlank() || rawValue == "—") {
+        Text(rawValue, style = MaterialTheme.typography.bodyMedium)
+        return
+    }
+    val tone = if (rawValue.contains("MELHOR CUSTO-BENEFÍCIO", ignoreCase = true) ||
+        rawValue.contains("Única cotação", ignoreCase = true)
+    ) Tone.GOOD else Tone.WARN
+    val (bg, fg) = when (tone) {
+        Tone.GOOD -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) to MaterialTheme.colorScheme.primary
+        Tone.WARN -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+        Tone.BAD -> MaterialTheme.colorScheme.error.copy(alpha = 0.15f) to MaterialTheme.colorScheme.error
+    }
+    Text(
+        rawValue,
+        style = MaterialTheme.typography.labelMedium,
+        color = fg,
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(bg)
+            .padding(horizontal = 10.dp, vertical = 3.dp),
+    )
+}
+
+/** Pill colorido pro campo "Melhor Opção" (checkbox) de Cotações de
+ * Fornecedores -- mesmo pedido do usuário acima. "Sim" (a proposta vencedora
+ * do grupo) em verde, "Não" em âmbar (não é a melhor, mas não é um erro). */
+@Composable
+fun CotacaoMelhorOpcaoBadge(rawValue: String) {
+    val isSim = rawValue == "true" || rawValue.equals("Sim", ignoreCase = true)
+    val (bg, fg) = if (isSim) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) to MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+    }
+    Text(
+        if (isSim) "Sim" else "Não",
+        style = MaterialTheme.typography.labelMedium,
+        color = fg,
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(bg)
+            .padding(horizontal = 10.dp, vertical = 3.dp),
+    )
+}
+
 // Espelho de progressCellInfo() em data-table.tsx (site) -- pedido do
 // usuario ("a barra de progresso deve ser aplicada em modulos que envolvem
 // metas, limites, etapas continuas ou consumo de recursos", depois "sim"

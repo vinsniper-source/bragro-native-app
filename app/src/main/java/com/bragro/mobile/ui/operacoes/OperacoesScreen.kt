@@ -521,10 +521,9 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
     // showActions).
     var tableView by remember { mutableStateOf(false) }
     val tableHScroll = remember { androidx.compose.foundation.ScrollState(0) }
-    // Recolher conteúdo (cards/tabela) -- pedido do usuário, mesma setinha
-    // já usada em Mural/Alertas/Monitor (HomeScreen.kt). O cabeçalho
-    // (texto explicativo + barra de ciclo) continua sempre visível.
-    var contentExpanded by remember { mutableStateOf(true) }
+    // Setinha de recolher removida do cabeçalho -- pedido do usuário
+    // (imagem do próprio cabeçalho de Operações: "retire a setinha do
+    // cabeçalho"). Conteúdo agora sempre visível, sem botão de toggle.
 
     Scaffold(
         topBar = {
@@ -575,13 +574,6 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                                     tint = MaterialTheme.colorScheme.primary,
                                 )
                             }
-                            IconButton(onClick = { contentExpanded = !contentExpanded }) {
-                                Icon(
-                                    if (contentExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                    contentDescription = if (contentExpanded) "Recolher" else "Expandir",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                )
-                            }
                         }
                     }
                 },
@@ -620,7 +612,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                     }
                 }
             }
-            if (contentExpanded) {
+            run {
                 if (offline) {
                     item { Text(NetworkStatus.failureMessage(context), style = MaterialTheme.typography.bodySmall) }
                 }

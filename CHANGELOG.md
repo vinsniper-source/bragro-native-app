@@ -3,6 +3,17 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.20] -- 2026-10-01
+
+- **Cotações de Fornecedores**: campos "Avaliação" e "Melhor Opção" agora
+  aparecem como badge colorido (verde = melhor custo-benefício/única
+  cotação ou "Sim", âmbar = demais propostas/"Não"), igual ao padrão de
+  status já usado em Operações/Financeiro.
+- **Operações**: removida a setinha de recolher/expandir do cabeçalho
+  (TopAppBar) -- conteúdo (cards/tabela) agora sempre visível.
+- **FieldView**: blocos "Talhão" e "Máquina" ganharam a setinha de
+  recolher/expandir que faltava (único lugar do FieldView sem esse padrão).
+
 ## [1.3.19] -- 2026-10-01
 
 - **Fix build**: `AndroidManifest.xml` tinha hífen duplo (`--`) dentro de um

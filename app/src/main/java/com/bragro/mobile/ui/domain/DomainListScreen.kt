@@ -1844,6 +1844,10 @@ private fun RecordFieldLine(
         // "destacar as operacoes com fundos coloridos... procure onde mais
         // e relevante"), espelhando OperacaoCell no site.
         OperacaoBadge(value, isReceitaOp(record["operacao"]))
+    } else if (domainId == "cotacoesfornecedores" && col.key == "avaliacao") {
+        CotacaoAvaliacaoBadge(value)
+    } else if (domainId == "cotacoesfornecedores" && col.key == "melhorOpcao") {
+        CotacaoMelhorOpcaoBadge(value)
     } else {
         val displayValue = if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)
         // Verde (receita) / laranja-âmbar (despesa) só nas colunas Bruto/

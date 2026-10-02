@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,6 +31,8 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.EditLocationAlt
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.UploadFile
@@ -555,6 +558,11 @@ private fun TalhaoStatusList(rows: List<JsonObject>) {
     }
     LazyColumn(contentPadding = PaddingValues(16.dp)) {
         items(rows.size) { i ->
+            // Setinha de recolher/expandir -- pedido do usuário ("na imagem
+            // 3 coloque setinha nos blocos"): mesmo padrão ExpandLess/
+            // ExpandMore já usado nos cards de lançamento (DomainListScreen.kt),
+            // que faltava nestes 2 blocos (Talhão/Máquina).
+            var open by remember { mutableStateOf(true) }
             Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     // Ícone + rótulo -- pedido do usuário ("acho que todo o
@@ -564,11 +572,19 @@ private fun TalhaoStatusList(rows: List<JsonObject>) {
                     // texto solto (RawRecordFields), diferente do padrão
                     // ícone+label já usado nas outras 2 abas e no resto do
                     // app.
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        Modifier.fillMaxWidth().clickable { open = !open },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Icon(Icons.Filled.Eco, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
-                        Text("Talhão", style = MaterialTheme.typography.titleSmall)
+                        Text("Talhão", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                        Icon(
+                            if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                            contentDescription = if (open) "Recolher" else "Expandir",
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
                     }
-                    RawRecordFields(rows[i])
+                    if (open) RawRecordFields(rows[i])
                 }
             }
         }
@@ -591,6 +607,11 @@ private fun MaquinaStatusList(rows: List<JsonObject>) {
             // nenhuma indicação visual de atraso.
             val proxRevisaoIso = rows[i]["proxRevisao"]?.jsonPrimitive?.contentOrNull
             val vencida = proxRevisaoIso?.let { isDatePast(it) } ?: false
+            // Setinha de recolher/expandir -- pedido do usuário ("na imagem
+            // 3 coloque setinha nos blocos"): mesmo padrão ExpandLess/
+            // ExpandMore já usado nos cards de lançamento (DomainListScreen.kt),
+            // que faltava neste bloco (Máquina não tinha nenhuma).
+            var open by remember { mutableStateOf(true) }
             Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     // Ícone SEM rótulo -- achado da auditoria (usuário:
@@ -598,7 +619,10 @@ private fun MaquinaStatusList(rows: List<JsonObject>) {
                     // sozinho, sem nenhum texto ao lado explicando o que
                     // representa (diferente do padrão ícone+label do resto
                     // do app, ex.: BoundariesList abaixo já tem Map + nome).
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        Modifier.fillMaxWidth().clickable { open = !open },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Icon(Icons.Filled.DirectionsCar, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
                         Text("Máquina", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                         if (!proxRevisaoIso.isNullOrBlank()) {
@@ -615,8 +639,14 @@ private fun MaquinaStatusList(rows: List<JsonObject>) {
                                     .padding(horizontal = 8.dp, vertical = 2.dp),
                             )
                         }
+                        Icon(
+                            if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                            contentDescription = if (open) "Recolher" else "Expandir",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 4.dp),
+                        )
                     }
-                    RawRecordFields(rows[i])
+                    if (open) RawRecordFields(rows[i])
                 }
             }
         }
