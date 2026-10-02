@@ -328,30 +328,24 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
     // celulares mais antigos que o QR code é separado da câmera" (pedido do
     // usuário): o fluxo acima (foto + ML Kit) depende da câmera do app saber
     // focar de perto o suficiente pra decodificar um QR Code -- em aparelhos
-    // mais antigos/ROMs customizadas isso nem sempre funciona bem, mas
-    // normalmente JÁ existe um app de leitor de QR dedicado instalado
-    // (muitas vezes o próprio app de câmera de fábrica, com um "modo QR"
-    // separado). Este segundo botão abre esse leitor nativo diretamente (via
-    // Intent padrão de scan), sem precisar da permissão CAMERA do nosso
-    // próprio app -- quem lê é o app externo.
-    val qrExternoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            viewModel.onQrTextoLidoExterno(extrairResultadoLeitorQrNativo(result.data))
-        } else {
-            viewModel.onQrPhotoCancelled()
-        }
-    }
+    // mais antigos/ROMs customizadas isso nem sempre funciona bem. Este
+    // segundo botão usa o leitor de QR NATIVO de verdade do Android moderno
+    // (Code Scanner API do Google Play Services, GmsBarcodeScanning --
+    // ver comentário completo em iniciarLeitorQrNativo/CameraPermissionUtils.kt):
+    // diferente da 1ª tentativa (#883, Intent implícito pra action do antigo
+    // ZXing, confirmado pelo usuário que NÃO existe mais em celular nenhum),
+    // esta é uma chamada de API direta que abre um bottomsheet pronto do
+    // próprio sistema, sem precisar da permissão CAMERA do nosso próprio app.
     fun launchQrExterno() {
-        if (temLeitorQrNativoDisponivel(context)) {
-            try {
-                qrExternoLauncher.launch(criarIntentLeitorQrNativo())
-            } catch (e: Exception) {
+        iniciarLeitorQrNativo(
+            context = context,
+            onSucesso = { texto -> viewModel.onQrTextoLidoExterno(texto) },
+            onCancelado = { viewModel.onQrPhotoCancelled() },
+            onFalha = { e ->
                 AppLog.e("QuickAbastecimentoDialog", "Falha ao abrir o leitor de QR nativo do aparelho", e)
                 android.widget.Toast.makeText(context, "Não foi possível abrir o leitor de QR do aparelho -- use o botão de foto.", android.widget.Toast.LENGTH_LONG).show()
-            }
-        } else {
-            android.widget.Toast.makeText(context, "Nenhum leitor de QR Code do aparelho encontrado -- use o botão de foto ao lado.", android.widget.Toast.LENGTH_LONG).show()
-        }
+            },
+        )
     }
 
     AlertDialog(

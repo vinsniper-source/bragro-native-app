@@ -47,31 +47,23 @@
          file_paths.xml, ja estava correto).
 
          CAUSA RAIZ REAL do "QR ainda nao abre" (persistente mesmo apos
-         #852/#868/#875/#883): a v1.3.25 (#883) adicionou um 2o leitor,
-         delegando pro leitor de QR NATIVO do aparelho via Intent implicito
-         "com.google.zxing.client.android.SCAN" (CameraPermissionUtils.kt,
-         temLeitorQrNativoDisponivel/criarIntentLeitorQrNativo), mas essa
-         action NUNCA foi declarada aqui em <queries>. A partir do Android 11
-         (API 30+, este app e targetSdk 34), o PackageManager so enxerga
-         apps capazes de responder a um Intent CUSTOMIZADO (que nao esta na
-         lista de visibilidade automatica do sistema) se a action constar
-         em <queries>, diferente de android.media.action.IMAGE_CAPTURE
-         acima, que JA esta nessa lista. Resultado: resolveActivity() para
-         o Intent de SCAN retornava SEMPRE null em qualquer aparelho Android
-         11+ (a imensa maioria do parque hoje), mesmo com um app leitor de
-         QR de fabrica instalado, o app sempre mostrava "Nenhum leitor de
-         QR Code do aparelho encontrado" e caia de volta pro MESMO fluxo de
-         foto+ML Kit que ja vinha falhando, fazendo a correcao mais recente
-         (o motivo de abrir esta investigacao) nunca ter funcionado de
-         verdade. Com a action declarada aqui, resolveActivity() passa a
-         enxergar corretamente os leitores de QR/camera de fabrica (Xiaomi/
-         MIUI, Samsung, Google Lens, Barcode Scanner, etc.) quando existem. -->
+         #852/#868/#875/#883): a v1.3.25 (#883) tentou um 2o leitor via
+         Intent implicito pra action "com.google.zxing.client.android.SCAN"
+         (a action do antigo app "ZXing Barcode Scanner"). O usuario
+         confirmou com screenshot do proprio aparelho que NENHUM app
+         moderno responde mais a essa action, nem mesmo depois dela ter
+         sido declarada aqui em <queries> (correcao anterior, #896);
+         resolveActivity() continuava sem achar ninguem. Troca (#896): em
+         vez de depender de um Intent implicito pra um app de terceiros que
+         nao existe mais, o leitor nativo agora usa a Code Scanner API do
+         Google Play Services (GmsBarcodeScanning, ver
+         iniciarLeitorQrNativo em CameraPermissionUtils.kt), uma chamada
+         de API direta, sem Intent implicito nenhum e sem precisar de
+         entrada em <queries>, por isso a action do ZXing foi removida
+         daqui. -->
     <queries>
         <intent>
             <action android:name="android.media.action.IMAGE_CAPTURE" />
-        </intent>
-        <intent>
-            <action android:name="com.google.zxing.client.android.SCAN" />
         </intent>
     </queries>
 

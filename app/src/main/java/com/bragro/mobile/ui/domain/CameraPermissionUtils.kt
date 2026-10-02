@@ -78,35 +78,42 @@ fun avisarSemAppDeCamera(context: Context) {
     Toast.makeText(context, "Nenhum app de câmera encontrado neste aparelho -- verifique se há um app de câmera instalado e habilitado.", Toast.LENGTH_LONG).show()
 }
 
-// Nome da ação padrão do Intent de scan QR/barcode, definida originalmente
-// pelo ZXing ("Barcode Scanner") e adotada como PADRÃO DE FATO por
-// praticamente todo app de leitor de QR Code do Google Play, inclusive os
-// pré-instalados por fabricante (Xiaomi/Samsung respondem a este mesmo
-// Intent por compatibilidade) -- usada só como string de ação, nenhuma
-// dependência do ZXing é adicionada ao projeto.
-private const val ACAO_SCAN_QR = "com.google.zxing.client.android.SCAN"
-private const val EXTRA_RESULTADO_SCAN_QR = "SCAN_RESULT"
-
 /** "Colocar a condição de acessar o QR nativo do celular, pq existem
  * celulares mais antigos que o QR code é separado da câmera" (pedido do
  * usuário): em vez de SEMPRE depender do fluxo "tira foto -> decodifica com
  * ML Kit" (que exige boa resolução/foco de perto da câmera do app, nem
- * sempre bom em aparelhos antigos), esta função detecta se o aparelho tem
- * um leitor de QR Code NATIVO/dedicado instalado (app de câmera com modo QR
- * próprio, ou um app de leitor dedicado) capaz de responder ao Intent de
- * scan -- se tiver, o app usa esse leitor diretamente (câmera ao vivo,
- * já otimizada pelo fabricante pra foco de perto) em vez do fluxo de foto. */
-fun temLeitorQrNativoDisponivel(context: Context): Boolean {
-    val intent = Intent(ACAO_SCAN_QR)
-    return intent.resolveActivity(context.packageManager) != null
+ * sempre bom em aparelhos antigos), chama o leitor de QR NATIVO de verdade
+ * do Android moderno -- a Code Scanner API do Google Play Services
+ * (GmsBarcodeScanning). Investigação anterior (#883) tentou um Intent
+ * implícito pra "com.google.zxing.client.android.SCAN" (a action do antigo
+ * app "ZXing Barcode Scanner"), mas o usuário confirmou com screenshot do
+ * próprio aparelho que NENHUM app moderno responde mais a essa action --
+ * causa raiz real do "QR ainda não abre" que persistia mesmo depois da
+ * action ter sido declarada em <queries> (#896). A Code Scanner API não é
+ * um Intent de terceiros: é uma chamada de API direta que abre um
+ * bottomsheet pronto do próprio sistema ("Scan QR code"), funciona em
+ * qualquer aparelho com Google Play Services (a imensa maioria), e não
+ * exige a permissão CAMERA do nosso app (quem acessa a câmera é o próprio
+ * Play Services, isolado do app chamador). */
+fun iniciarLeitorQrNativo(
+    context: Context,
+    onSucesso: (String) -> Unit,
+    onCancelado: () -> Unit,
+    onFalha: (Exception) -> Unit,
+) {
+    val options = com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions.Builder()
+        .setBarcodeFormats(com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE)
+        .build()
+    val scanner = com.google.mlkit.vision.codescanner.GmsBarcodeScanning.getClient(context, options)
+    scanner.startScan()
+        .addOnSuccessListener { barcode ->
+            val texto = barcode.rawValue ?: barcode.displayValue
+            if (texto.isNullOrBlank()) {
+                onFalha(IllegalStateException("QR Code lido sem conteúdo de texto"))
+            } else {
+                onSucesso(texto)
+            }
+        }
+        .addOnCanceledListener { onCancelado() }
+        .addOnFailureListener { e -> onFalha(e) }
 }
-
-/** Intent padrão de scan (modo QR_CODE_MODE) pro leitor nativo detectado por
- * [temLeitorQrNativoDisponivel]. */
-fun criarIntentLeitorQrNativo(): Intent =
-    Intent(ACAO_SCAN_QR).putExtra("SCAN_MODE", "QR_CODE_MODE")
-
-/** Extrai o texto lido do resultado devolvido pelo leitor de QR nativo --
- * chave padrão "SCAN_RESULT", a mesma usada pelo ZXing e por todo app
- * compatível com esse Intent (ver [criarIntentLeitorQrNativo]). */
-fun extrairResultadoLeitorQrNativo(data: Intent?): String? = data?.getStringExtra(EXTRA_RESULTADO_SCAN_QR)

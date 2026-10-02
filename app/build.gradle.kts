@@ -266,6 +266,16 @@ dependencies {
     // frota como Bitmap/impressao -- nao tem gerador no ML Kit, so leitura.
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
     implementation("com.google.zxing:core:3.5.3")
+    // Leitor de QR NATIVO do aparelho (Task #883/#896): a action antiga
+    // "com.google.zxing.client.android.SCAN" (app ZXing "Barcode Scanner")
+    // não existe mais em celular nenhum atual -- confirmado pelo usuário com
+    // screenshot do próprio aparelho, nenhum app responde a essa action.
+    // O leitor de QR nativo de verdade em Android moderno é a Code Scanner
+    // API do Google Play Services: abre um bottomsheet pronto do sistema
+    // ("Scan QR code"), SEM pedir permissão CAMERA do nosso app e SEM
+    // depender de resolver nenhum Intent implícito de terceiros -- é uma
+    // chamada de API direta (GmsBarcodeScanning), ver CameraPermissionUtils.kt.
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
     // Ponte suspend/await para as Task<> do Google Play Services (ML Kit
     // devolve Task<Text>, nao uma suspend fun) -- sem isso, `.await()" nao
     // compila.
