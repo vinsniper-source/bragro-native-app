@@ -115,6 +115,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -1070,7 +1071,18 @@ fun HomeScreen(
                 // LazyColumn, logo abaixo do slogan ("Conectando a força da
                 // nossa terra..."), ver mais abaixo neste arquivo. Sem essa
                 // linha aqui, o divisor volta a ficar colado na logo.
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                // Filete decorativo com gradiente verde->amarelo->azul (cores
+                // da bandeira do Brasil) separando o cabeçalho da saudação --
+                // mockup aprovado pelo usuário, réplica do
+                // bg-gradient-to-r from-primary via-brazil-yellow to-brazil-blue
+                // do topbar.tsx (site Next.js). Só esta linha divisória foi
+                // trocada; logo/ícones do cabeçalho acima permanecem intactos.
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(3.dp)
+                        .background(Brush.horizontalGradient(listOf(BrGreen, BrYellow, BrBlue))),
+                )
             }
         },
     ) { padding ->
