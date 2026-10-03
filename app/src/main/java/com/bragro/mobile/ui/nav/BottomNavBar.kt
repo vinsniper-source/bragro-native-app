@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Warehouse
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -923,7 +924,7 @@ private fun sectorItemIcon(item: SectorTarget, fallback: ImageVector): ImageVect
         "reconciliacaoestoque" -> Icons.Filled.Balance
         "nfe" -> Icons.Filled.ReceiptLong
         // Pivôs de Irrigação (Task #904-909) -- mesmo critério acima.
-        "pivos" -> Icons.Filled.Water
+        "pivos" -> Icons.Filled.WaterDrop
         else -> fallback
     }
 }

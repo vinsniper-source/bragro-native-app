@@ -21,7 +21,7 @@ import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.Power
 import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Water
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
@@ -219,7 +219,7 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.padding(bottom = 48.dp),
             ) {
-                Icon(Icons.Filled.Water, contentDescription = "Novo pivô")
+                Icon(Icons.Filled.WaterDrop, contentDescription = "Novo pivô")
             }
         },
     ) { padding ->
@@ -322,7 +322,7 @@ private fun PivoCard(
     Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Water, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
+                Icon(Icons.Filled.WaterDrop, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
                 Text(pivo.nome, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                 Badge { Text(statusLabel(pivo.status)) }
             }
