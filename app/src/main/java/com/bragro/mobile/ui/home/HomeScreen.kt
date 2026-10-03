@@ -1078,10 +1078,27 @@ fun HomeScreen(
                 // bg-gradient-to-r from-primary via-brazil-yellow to-brazil-blue
                 // do topbar.tsx (site Next.js). Só esta linha divisória foi
                 // trocada; logo/ícones do cabeçalho acima permanecem intactos.
+                //
+                // Ajuste de simetria (print real do usuário comparado ao
+                // mockup): no ramo headerFits=true a Row da logo+ícones tem
+                // altura fixa de 150dp (herdada do Modifier.height(150.dp) da
+                // IMAGEM da logo -- não tocamos nisso, só compensamos
+                // visualmente aqui), e os ícones (~48dp) ficam centralizados
+                // dentro dela. Isso deixa uns ~50dp de espaço vazio entre a
+                // base visível dos ícones e a borda inferior da Row, antes
+                // mesmo da padding(bottom=2dp) -- daí o respiro enorme acima
+                // do filete reportado nos screenshots. Em vez de alterar a
+                // Row da logo/ícones (fora do escopo pedido), puxamos só o
+                // filete pra cima com offset negativo nesse ramo, encolhendo
+                // esse vazio sem tocar em logo/ícones. No ramo
+                // headerFits=false (ícones já numa 2ª linha própria, sem a
+                // caixa de 150dp por trás) esse vazio não existe, por isso o
+                // offset fica em 0.dp ali.
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(3.dp)
+                        .offset(y = if (headerFits) (-40).dp else 0.dp)
                         .drawWithCache {
                             val brush = Brush.horizontalGradient(
                                 colors = listOf(BrGreen, BrYellow, BrBlue),
@@ -1141,7 +1158,19 @@ fun HomeScreen(
                 // offset negativo aplicado SÓ a este item -- não toca em
                 // nenhum modifier do Row/Column do cabeçalho (logo+ícones)
                 // no topBar do Scaffold, lá acima.
-                Column(modifier = Modifier.offset(y = (-8).dp)) {
+                //
+                // Esse -8dp foi calibrado ANTES de existir o filete
+                // decorativo (commit c5a65a3, depois deste aqui). Com o
+                // filete somando +3dp de altura ao cabeçalho e o -8dp ainda
+                // puxando a saudação pra cima com a mesma força de antes, o
+                // resultado reportado pelo usuário é a saudação ficando
+                // praticamente colada no filete (quase 0dp de respiro),
+                // enquanto o espaço ANTES do filete (ver offset condicional
+                // no Box do filete, acima) ficava bem maior. Reduzindo pra
+                // 0.dp aqui, deixamos o espaçamento natural do LazyColumn
+                // aparecer abaixo do filete, pra ficar parecido com o
+                // respiro deixado acima dele.
+                Column(modifier = Modifier.offset(y = 0.dp)) {
                     Text("Olá, bem-vindo de volta", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Text(
                         "${data?.orgName ?: "BRAgro"} — ${todayLongBrazil()}",
