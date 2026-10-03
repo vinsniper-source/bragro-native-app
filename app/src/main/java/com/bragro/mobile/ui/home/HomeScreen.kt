@@ -1015,11 +1015,21 @@ fun HomeScreen(
                         // limitada pela LARGURA (widthIn(max=190dp) -- logo tem
                         // proporção larga/baixa, então o Fit escala pela
                         // largura primeiro), renderizando de verdade só uns
-                        // 50-57dp -- por isso CenterVertically já basta pra
-                        // alinhar visualmente com os ícones.
+                        // 50-57dp -- por isso o default Alignment.Center do
+                        // Image deixava uns ~50dp de vão vazio embaixo da
+                        // logo/ícones, dentro da própria caixa de 150dp (raiz
+                        // real do "espaço grande acima do filete" reportado
+                        // pelo usuário). Fix determinístico (sem offset
+                        // chutado): verticalAlignment = Bottom nesta Row +
+                        // alignment = BottomCenter no Image ancoram o pixel
+                        // VISÍVEL da logo e os ícones na base da caixa de
+                        // 150dp -- a caixa continua com o mesmo tamanho
+                        // (altura/largura da logo intactas), só o conteúdo
+                        // visível dela desce pra base, eliminando o vão sem
+                        // precisar adivinhar nenhum valor de offset.
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(start = 0.dp, end = 8.dp, top = 4.dp, bottom = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically,
+                            verticalAlignment = Alignment.Bottom,
                         ) {
                             // Voltamos pro tamanho de ANTES de toda a saga de
                             // recorte (v1.2.66 a v1.2.70) -- usuário confirmou
@@ -1032,6 +1042,7 @@ fun HomeScreen(
                             Image(
                                 painter = painterResource(R.drawable.logo_bragro),
                                 contentDescription = "BRAgro",
+                                alignment = Alignment.BottomCenter,
                                 modifier = Modifier
                                     .height(150.dp)
                                     .widthIn(max = 190.dp),
@@ -1052,6 +1063,7 @@ fun HomeScreen(
                                 Image(
                                     painter = painterResource(R.drawable.logo_bragro),
                                     contentDescription = "BRAgro",
+                                    alignment = Alignment.BottomCenter,
                                     modifier = Modifier
                                         .height(150.dp)
                                         .widthIn(max = 190.dp),
@@ -1076,29 +1088,20 @@ fun HomeScreen(
                 // da bandeira do Brasil) separando o cabeçalho da saudação --
                 // mockup aprovado pelo usuário, réplica do
                 // bg-gradient-to-r from-primary via-brazil-yellow to-brazil-blue
-                // do topbar.tsx (site Next.js). Só esta linha divisória foi
-                // trocada; logo/ícones do cabeçalho acima permanecem intactos.
-                //
-                // Ajuste de simetria (print real do usuário comparado ao
-                // mockup): no ramo headerFits=true a Row da logo+ícones tem
-                // altura fixa de 150dp (herdada do Modifier.height(150.dp) da
-                // IMAGEM da logo -- não tocamos nisso, só compensamos
-                // visualmente aqui), e os ícones (~48dp) ficam centralizados
-                // dentro dela. Isso deixa uns ~50dp de espaço vazio entre a
-                // base visível dos ícones e a borda inferior da Row, antes
-                // mesmo da padding(bottom=2dp) -- daí o respiro enorme acima
-                // do filete reportado nos screenshots. Em vez de alterar a
-                // Row da logo/ícones (fora do escopo pedido), puxamos só o
-                // filete pra cima com offset negativo nesse ramo, encolhendo
-                // esse vazio sem tocar em logo/ícones. No ramo
-                // headerFits=false (ícones já numa 2ª linha própria, sem a
-                // caixa de 150dp por trás) esse vazio não existe, por isso o
-                // offset fica em 0.dp ali.
+                // do topbar.tsx (site Next.js). Logo/ícones do cabeçalho
+                // acima permanecem com o mesmo tamanho de sempre -- a causa
+                // raiz do respiro desigual (vão grande acima, colado abaixo)
+                // já foi corrigida na raiz logo acima (Image com
+                // alignment=BottomCenter + Row com verticalAlignment=Bottom,
+                // ancorando o pixel visível da logo/ícones na base da caixa
+                // de 150dp, sem precisar de nenhum offset chutado aqui).
+                // Com isso, só falta um respiro FIXO e IGUAL dos dois lados
+                // do filete -- 8dp acima e 8dp abaixo, nada de offset.
+                Spacer(Modifier.height(8.dp))
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(3.dp)
-                        .offset(y = if (headerFits) (-40).dp else 0.dp)
                         .drawWithCache {
                             val brush = Brush.horizontalGradient(
                                 colors = listOf(BrGreen, BrYellow, BrBlue),
@@ -1108,6 +1111,7 @@ fun HomeScreen(
                             onDrawBehind { drawRect(brush) }
                         },
                 )
+                Spacer(Modifier.height(8.dp))
             }
         },
     ) { padding ->
