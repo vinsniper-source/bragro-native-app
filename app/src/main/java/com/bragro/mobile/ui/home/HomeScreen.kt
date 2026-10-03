@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -1109,7 +1110,16 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item(key = "greeting") {
-                Column {
+                // Desloca só este bloco (saudação + linhas abaixo) um pouco
+                // pra cima, mais perto do cabeçalho -- pedido do usuário
+                // ("aproxime a saudação da logo/cabeçalho, sem alterar
+                // tamanho da logo nem os ícones"). contentPadding do
+                // LazyColumn acima já estava em top=0.dp (mínimo possível
+                // sem ficar negativo), então o ajuste fica aqui, via
+                // offset negativo aplicado SÓ a este item -- não toca em
+                // nenhum modifier do Row/Column do cabeçalho (logo+ícones)
+                // no topBar do Scaffold, lá acima.
+                Column(modifier = Modifier.offset(y = (-8).dp)) {
                     Text("Olá, bem-vindo de volta", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Text(
                         "${data?.orgName ?: "BRAgro"} — ${todayLongBrazil()}",
