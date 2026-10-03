@@ -1044,7 +1044,7 @@ fun HomeScreen(
                                 contentDescription = "BRAgro",
                                 alignment = Alignment.BottomCenter,
                                 modifier = Modifier
-                                    .height(150.dp)
+                                    .height(80.dp)
                                     .widthIn(max = 190.dp),
                             )
                             Box(modifier = Modifier.weight(1f)) { headerTrailingContent() }
@@ -1065,7 +1065,7 @@ fun HomeScreen(
                                     contentDescription = "BRAgro",
                                     alignment = Alignment.BottomCenter,
                                     modifier = Modifier
-                                        .height(150.dp)
+                                        .height(80.dp)
                                         .widthIn(max = 190.dp),
                                 )
                             }
@@ -1097,7 +1097,13 @@ fun HomeScreen(
                 // de 150dp, sem precisar de nenhum offset chutado aqui).
                 // Com isso, só falta um respiro FIXO e IGUAL dos dois lados
                 // do filete -- 8dp acima e 8dp abaixo, nada de offset.
-                Spacer(Modifier.height(8.dp))
+                // Pedido do usuário ("suba duas linhas o logo/ícones, solte
+                // uma linha, coloque o filete, solte outra linha, e a frase
+                // de boas vindas"): logo já subiu (altura da caixa reduzida
+                // de 150dp pra 80dp acima, eliminando o vão morto) -- aqui
+                // ficam os dois respiros de "uma linha" (16dp, igual à altura
+                // de uma linha de texto comum) antes e depois do filete.
+                Spacer(Modifier.height(16.dp))
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1111,7 +1117,7 @@ fun HomeScreen(
                             onDrawBehind { drawRect(brush) }
                         },
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(16.dp))
             }
         },
     ) { padding ->
