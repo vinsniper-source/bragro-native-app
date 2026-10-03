@@ -3,6 +3,18 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.27] -- 2026-10-03
+
+- **Correção de build: módulo Pivôs de Irrigação não compilava.**
+  `Api.kt` referenciava os data classes `Pivo*` (Request/Response de
+  listagem, salvamento, arquivamento, controle, telemetria e balanço
+  hídrico) sem importá-los -- os modelos existiam certos em `Models.kt`,
+  só faltou o `import` em `Api.kt`. Também `Icons.Filled.Water` não existe
+  no Compose Material (nem no `material-icons-extended`); troca por
+  `Icons.Filled.WaterDrop` em `PivosScreen.kt` e `BottomNavBar.kt` (este
+  último nem tinha import nenhum pro ícone). Sem mudança visual nem de
+  comportamento -- só destrava o `gradlew assembleRelease`.
+
 ## [1.3.26] -- 2026-10-03
 
 - **Novo módulo: Pivôs de Irrigação** (Lindsay FieldNET, Valley 365/AgSense,
