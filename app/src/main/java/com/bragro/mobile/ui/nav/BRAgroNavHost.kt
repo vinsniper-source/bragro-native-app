@@ -52,6 +52,11 @@ import com.bragro.mobile.ui.orcamento.OrcamentoListScreen
 import com.bragro.mobile.ui.nfe.NfeScreen
 import com.bragro.mobile.ui.seguranca.SegurancaScreen
 import com.bragro.mobile.ui.settings.SettingsScreen
+// Pivôs de Irrigação (Lindsay FieldNET/Valley 365-AgSense/Reinke ReinCloud) --
+// pedido do usuário com documentação técnica de integração OAuth2. Mesmo
+// scaffolding dos demais módulos com fabricante externo (Frota/Romaneio/
+// Pecuária): cadastro/telemetria/"controle" manuais, sync real fica stub.
+import com.bragro.mobile.ui.pivos.PivosScreen
 
 private object Routes {
     const val LOGIN = "login"
@@ -73,6 +78,9 @@ private object Routes {
     const val PRESCRICAO_NOVO = "prescricao_novo"
     const val DOSSIE = "dossie"
     const val SIMULADOR = "simulador"
+    // Pivôs de Irrigação (Task #904-909) -- entrada própria na barra, mesmo
+    // critério de Prescrição/Reconciliação abaixo.
+    const val PIVOS = "pivos"
     // NF-e -- módulo novo (Task #628, ausente por completo no app até aqui).
     // Não confundir com NFE_IMPORT acima (import de XML dentro de
     // Financeiro, feature diferente e pré-existente).
@@ -205,6 +213,9 @@ fun BRAgroNavHost() {
                     onOpenPrescricao = { navController.navigate(Routes.PRESCRICAO) },
                     onOpenReconciliacaoEstoque = { navController.navigate(Routes.RECONCILIACAO_ESTOQUE) },
                     onOpenNfe = { navController.navigate(Routes.NFE) },
+                    // Pivôs de Irrigação -- mesma rota/tela reaproveitada por
+                    // qualquer entrada da barra (sem tela duplicada).
+                    onOpenPivos = { navController.navigate(Routes.PIVOS) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                     onOpenBaseDeDados = { navController.navigate(Routes.BASE_DE_DADOS) },
                     onOpenSeguranca = { navController.navigate(Routes.SEGURANCA) },
@@ -339,6 +350,9 @@ fun BRAgroNavHost() {
         }
         composable(Routes.RECONCILIACAO_ESTOQUE) {
             ReconciliacaoEstoqueScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.PIVOS) {
+            PivosScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.ORCAMENTO_LISTA) {
             OrcamentoListScreen(

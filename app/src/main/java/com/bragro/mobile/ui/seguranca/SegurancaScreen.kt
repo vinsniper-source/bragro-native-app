@@ -85,6 +85,10 @@ private val MODULES = listOf(
     // marcar/desmarcar esses módulos manualmente pra nenhum membro.
     "pecuaria" to "Pecuária", "pastagem" to "Pastagem", "controledeinsumos" to "Controle de Insumos",
     "dre" to "DRE", "livrocaixa" to "Livro Caixa",
+    // Pivôs de Irrigação (Task #904-909) -- permissão própria de verdade no
+    // site (lib/permissions.ts), mesmo critério de pecuaria/dre/livrocaixa
+    // acima (sem PERMISSION_ALIAS).
+    "pivos" to "Pivôs de Irrigação",
 )
 
 // Paridade com o site (seguranca-client.tsx/INICIO_WIDGETS em

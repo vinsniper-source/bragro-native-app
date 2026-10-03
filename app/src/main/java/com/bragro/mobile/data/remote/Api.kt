@@ -282,6 +282,33 @@ interface MobileApi {
     @POST("api/mobile/orcamento")
     suspend fun orcamentoOcrItens(@Body body: OrcamentoOcrItensRequest): Response<OrcamentoOcrItensResponse>
 
+    // Módulo Pivôs de Irrigação -- mesmo padrão de Orçamento acima: UMA
+    // rota só (/api/mobile/pivos), "action" no corpo decide o que roda no
+    // servidor. Ver lib/services/pivos.ts no site.
+    @POST("api/mobile/pivos")
+    suspend fun pivoList(@Body body: PivoListRequest): Response<PivoListResponse>
+
+    @POST("api/mobile/pivos")
+    suspend fun pivoListFarms(@Body body: PivoListRequest): Response<PivoFarmsResponse>
+
+    @POST("api/mobile/pivos")
+    suspend fun pivoSave(@Body body: PivoSaveRequest): Response<PivoSaveResponse>
+
+    @POST("api/mobile/pivos")
+    suspend fun pivoArchive(@Body body: PivoArchiveRequest): Response<PivoGenericResponse>
+
+    @POST("api/mobile/pivos")
+    suspend fun pivoControle(@Body body: PivoControleRequest): Response<PivoGenericResponse>
+
+    @POST("api/mobile/pivos")
+    suspend fun pivoListTelemetria(@Body body: PivoTelemetriaListRequest): Response<PivoTelemetriaListResponse>
+
+    @POST("api/mobile/pivos")
+    suspend fun pivoCreateTelemetria(@Body body: PivoTelemetriaCreateRequest): Response<PivoGenericResponse>
+
+    @POST("api/mobile/pivos")
+    suspend fun pivoBalancoHidrico(@Body body: PivoBalancoHidricoRequest): Response<PivoBalancoHidricoResponse>
+
     // Módulo NF-e (Task #628, ausente por completo no app até aqui) -- mesmo
     // padrão de módulo de Orçamento acima: UMA rota só (/api/mobile/nfe),
     // "action" no corpo decide o que roda no servidor.

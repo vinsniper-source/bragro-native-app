@@ -37,6 +37,10 @@ enum class IntegrationModule(val wireValue: String) {
     // mercado") apos eu confirmar que nao existe protocolo Bluetooth
     // universal. Mesmo scaffolding acima (rota generica).
     PECUARIA_BLUETOOTH("PECUARIA_BLUETOOTH"),
+    // Pivôs de Irrigação (Lindsay FieldNET/Valley 365-AgSense/Reinke
+    // ReinCloud) -- mesmo scaffolding acima (rota genérica), card exibido
+    // dentro da tela PivosScreen.
+    PIVO_IRRIGACAO("PIVO_IRRIGACAO"),
 }
 
 /** Resultado de "Testar sincronização" -- [ok] reflete se a sincronização
@@ -144,7 +148,7 @@ class ProviderIntegrationRepository(context: Context, private val module: Integr
         when (module) {
             IntegrationModule.FIELDVIEW -> NetworkModule.mobileApi.fieldviewGetIntegration(GetProviderIntegrationRequest(accessToken, refreshToken))
             IntegrationModule.DRONE -> NetworkModule.mobileApi.droneGetIntegration(GetProviderIntegrationRequest(accessToken, refreshToken))
-            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA, IntegrationModule.SATELITE_NDVI, IntegrationModule.PECUARIA_BLUETOOTH ->
+            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA, IntegrationModule.SATELITE_NDVI, IntegrationModule.PECUARIA_BLUETOOTH, IntegrationModule.PIVO_IRRIGACAO ->
                 NetworkModule.mobileApi.moduleGetIntegration(GetModuleIntegrationRequest(accessToken, refreshToken, modulo = module.wireValue))
         }
 
@@ -152,7 +156,7 @@ class ProviderIntegrationRepository(context: Context, private val module: Integr
         when (module) {
             IntegrationModule.FIELDVIEW -> NetworkModule.mobileApi.fieldviewSaveIntegration(SaveProviderIntegrationRequest(accessToken, refreshToken, provedor = provedor, apiKey = apiKey))
             IntegrationModule.DRONE -> NetworkModule.mobileApi.droneSaveIntegration(SaveProviderIntegrationRequest(accessToken, refreshToken, provedor = provedor, apiKey = apiKey))
-            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA, IntegrationModule.SATELITE_NDVI, IntegrationModule.PECUARIA_BLUETOOTH ->
+            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA, IntegrationModule.SATELITE_NDVI, IntegrationModule.PECUARIA_BLUETOOTH, IntegrationModule.PIVO_IRRIGACAO ->
                 NetworkModule.mobileApi.moduleSaveIntegration(SaveModuleIntegrationRequest(accessToken, refreshToken, modulo = module.wireValue, provedor = provedor, apiKey = apiKey))
         }
 
@@ -160,7 +164,7 @@ class ProviderIntegrationRepository(context: Context, private val module: Integr
         when (module) {
             IntegrationModule.FIELDVIEW -> NetworkModule.mobileApi.fieldviewDisconnectIntegration(DisconnectProviderIntegrationRequest(accessToken, refreshToken))
             IntegrationModule.DRONE -> NetworkModule.mobileApi.droneDisconnectIntegration(DisconnectProviderIntegrationRequest(accessToken, refreshToken))
-            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA, IntegrationModule.SATELITE_NDVI, IntegrationModule.PECUARIA_BLUETOOTH ->
+            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA, IntegrationModule.SATELITE_NDVI, IntegrationModule.PECUARIA_BLUETOOTH, IntegrationModule.PIVO_IRRIGACAO ->
                 NetworkModule.mobileApi.moduleDisconnectIntegration(DisconnectModuleIntegrationRequest(accessToken, refreshToken, modulo = module.wireValue))
         }
 
@@ -168,7 +172,7 @@ class ProviderIntegrationRepository(context: Context, private val module: Integr
         when (module) {
             IntegrationModule.FIELDVIEW -> NetworkModule.mobileApi.fieldviewSyncIntegration(SyncProviderIntegrationRequest(accessToken, refreshToken))
             IntegrationModule.DRONE -> NetworkModule.mobileApi.droneSyncIntegration(SyncProviderIntegrationRequest(accessToken, refreshToken))
-            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA, IntegrationModule.SATELITE_NDVI, IntegrationModule.PECUARIA_BLUETOOTH ->
+            IntegrationModule.FROTA_COMBUSTIVEL, IntegrationModule.ROMANEIO_BALANCA, IntegrationModule.SATELITE_NDVI, IntegrationModule.PECUARIA_BLUETOOTH, IntegrationModule.PIVO_IRRIGACAO ->
                 NetworkModule.mobileApi.moduleSyncIntegration(SyncModuleIntegrationRequest(accessToken, refreshToken, modulo = module.wireValue))
         }
 }

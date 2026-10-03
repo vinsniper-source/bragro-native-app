@@ -184,6 +184,11 @@ private val BOTTOM_TABS = listOf(
             // usuário), antes só um ícone dentro de FieldView. Mesma tela/
             // rota (Routes.PRESCRICAO), sem lógica duplicada.
             SectorTarget.Special("prescricao", "Prescrição / Taxa Variável"),
+            // Pivôs de Irrigação (Lindsay FieldNET/Valley 365-AgSense/Reinke
+            // ReinCloud, Task #904-909) -- telemetria de campo captada de
+            // fonte externa, mesmo critério de Drone/FieldView/Prescrição
+            // acima.
+            SectorTarget.Special("pivos", "Pivôs de Irrigação"),
         ),
     ),
     // Acesso direto -- pedido do usuário ("botão frota acesso direto, retire
@@ -323,6 +328,9 @@ private val OWNER_BOTTOM_TABS = listOf(
             SectorTarget.Special("drone", "Drone", category = "Monitoramento"),
             SectorTarget.Special("fieldview", "FieldView", category = "Monitoramento"),
             SectorTarget.Special("prescricao", "Prescrição / Taxa Variável", category = "Monitoramento"),
+            // Pivôs de Irrigação (Task #904-909) -- mesmo critério de
+            // Drone/FieldView/Prescrição acima.
+            SectorTarget.Special("pivos", "Pivôs de Irrigação", category = "Monitoramento"),
             SectorTarget.Special("controleinsumos", "Controle de Insumos", category = "Painéis"),
             SectorTarget.Special("operacoes", "Operações", category = "Painéis"),
         ),
@@ -526,6 +534,9 @@ fun BRAgroBottomBar(
     onOpenPrescricao: () -> Unit,
     onOpenReconciliacaoEstoque: () -> Unit,
     onOpenNfe: () -> Unit,
+    // Pivôs de Irrigação (Task #904-909) -- mesmo critério de
+    // onOpenPrescricao/onOpenReconciliacaoEstoque acima.
+    onOpenPivos: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenBaseDeDados: () -> Unit,
     onOpenSeguranca: () -> Unit,
@@ -599,6 +610,7 @@ fun BRAgroBottomBar(
                 "prescricao" -> onOpenPrescricao()
                 "reconciliacaoestoque" -> onOpenReconciliacaoEstoque()
                 "nfe" -> onOpenNfe()
+                "pivos" -> onOpenPivos()
             }
         }
     }
@@ -910,6 +922,8 @@ private fun sectorItemIcon(item: SectorTarget, fallback: ImageVector): ImageVect
         "prescricao" -> Icons.Filled.Map
         "reconciliacaoestoque" -> Icons.Filled.Balance
         "nfe" -> Icons.Filled.ReceiptLong
+        // Pivôs de Irrigação (Task #904-909) -- mesmo critério acima.
+        "pivos" -> Icons.Filled.Water
         else -> fallback
     }
 }

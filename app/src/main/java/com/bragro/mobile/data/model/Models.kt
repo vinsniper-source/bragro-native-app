@@ -2372,3 +2372,141 @@ data class BankImportConfirmRequest(
 
 @Serializable
 data class BankImportConfirmResponse(val ok: Boolean, val imported: Int = 0, val error: String? = null)
+
+// Pivôs de Irrigação (Lindsay FieldNET/Valley 365-AgSense/Reinke ReinCloud)
+// -- pedido do usuário com documentação técnica completa de integração
+// OAuth2. Mesmo scaffolding dos demais módulos com integração de
+// fabricante (Frota/Romaneio/Pecuária): cadastro/telemetria/controle 100%
+// funcionais via lançamento manual; sincronização automática real fica
+// stub até alguma marca aprovar parceria de desenvolvedor (ver
+// lib/services/pivos.ts e provider-integration.ts no site). UMA rota só
+// (/api/mobile/pivos), "action" no corpo decide o que roda no servidor --
+// mesmo padrão do módulo Orçamento acima.
+@Serializable
+data class PivoData(
+    val id: String,
+    val nome: String,
+    val marca: String,
+    val farmId: String? = null,
+    val externalId: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val raioM: Double? = null,
+    val status: String? = null,
+    val anguloAtual: Double? = null,
+    val sentido: String? = null,
+    val laminaAtualMm: Double? = null,
+    val pressaoPsi: Double? = null,
+    val ultimaSincronizacaoEm: String? = null,
+)
+
+@Serializable
+data class PivoTelemetriaLogData(
+    val id: String,
+    val pivoId: String,
+    val waterAppliedMm: Double = 0.0,
+    val rainGaugeMm: Double = 0.0,
+    val operatingHours: Double? = null,
+    val recordedAt: String,
+)
+
+@Serializable
+data class BalancoHidricoPontoData(
+    val data: String,
+    val laminaMm: Double,
+    val chuvaMm: Double,
+    val totalMm: Double,
+)
+
+@Serializable
+data class PivoListRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String = "list",
+    val farmId: String? = null,
+)
+
+@Serializable
+data class PivoListResponse(val ok: Boolean, val pivos: List<PivoData>? = null, val error: String? = null)
+
+@Serializable
+data class PivoFarmsResponse(val ok: Boolean, val farms: List<FarmLookupData>? = null, val error: String? = null)
+
+@Serializable
+data class FarmLookupData(val id: String, val name: String)
+
+@Serializable
+data class PivoSaveRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String, // "create" | "update"
+    val id: String? = null,
+    val nome: String,
+    val marca: String,
+    val farmId: String? = null,
+    val externalId: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val raioM: Double? = null,
+    val status: String? = null,
+    val anguloAtual: Double? = null,
+    val sentido: String? = null,
+    val laminaAtualMm: Double? = null,
+    val pressaoPsi: Double? = null,
+)
+
+@Serializable
+data class PivoSaveResponse(val ok: Boolean, val pivo: PivoData? = null, val error: String? = null)
+
+@Serializable
+data class PivoArchiveRequest(val accessToken: String, val refreshToken: String, val action: String = "archive", val id: String)
+
+@Serializable
+data class PivoControleRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String = "controle",
+    val id: String,
+    val status: String,
+    val laminaAtualMm: Double? = null,
+    val sentido: String? = null,
+)
+
+@Serializable
+data class PivoTelemetriaListRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String = "list_telemetria",
+    val pivoId: String,
+    val dias: Int = 30,
+)
+
+@Serializable
+data class PivoTelemetriaListResponse(val ok: Boolean, val logs: List<PivoTelemetriaLogData>? = null, val error: String? = null)
+
+@Serializable
+data class PivoTelemetriaCreateRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String = "create_telemetria",
+    val pivoId: String,
+    val waterAppliedMm: Double,
+    val rainGaugeMm: Double,
+    val operatingHours: Double? = null,
+    val recordedAt: String,
+)
+
+@Serializable
+data class PivoBalancoHidricoRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String = "balanco_hidrico",
+    val pivoId: String? = null,
+    val dias: Int = 30,
+)
+
+@Serializable
+data class PivoBalancoHidricoResponse(val ok: Boolean, val balanco: List<BalancoHidricoPontoData>? = null, val error: String? = null)
+
+@Serializable
+data class PivoGenericResponse(val ok: Boolean, val pivo: PivoData? = null, val error: String? = null)

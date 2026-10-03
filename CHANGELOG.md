@@ -3,6 +3,21 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.26] -- 2026-10-03
+
+- **Novo módulo: Pivôs de Irrigação** (Lindsay FieldNET, Valley 365/AgSense,
+  Reinke ReinCloud). Cadastro de pivôs (nome, marca, fazenda, raio), lançamento
+  manual de telemetria (lâmina aplicada + pluviômetro), painel de "controle"
+  (status/lâmina desejada/sentido de rotação) e gráfico de Balanço Hídrico
+  (lâmina + chuva por dia, últimos 30 dias). Igual aos demais módulos com
+  fabricante externo (Frota/Romaneio/Pecuária): sincronização automática via
+  OAuth2 com o fabricante fica documentada como scaffolding -- sem parceria de
+  desenvolvedor assinada com nenhuma das 3 marcas, não dá pra autenticar de
+  verdade, então por enquanto todo dado é lançado manualmente e o card de
+  integração mostra isso com clareza. Entrada própria na barra inferior
+  (categoria Monitoramento, ao lado de Drone/FieldView/Prescrição) e em
+  Acessos.
+
 ## [1.3.25] -- 2026-10-02
 
 - **QR Code do Abastecimento (Frota) -- leitor nativo do aparelho**: pedido

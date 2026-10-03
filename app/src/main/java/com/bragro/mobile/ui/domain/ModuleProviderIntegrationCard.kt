@@ -181,14 +181,87 @@ class PecuariaIntegrationViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
+// Pivôs de Irrigação (Lindsay FieldNET/Valley 365-AgSense/Reinke ReinCloud)
+// -- mesmo scaffolding acima, chamado direto de PivosScreen.kt (que não é
+// um domainId genérico tipo Frota/Romaneios/Pecuária, mas reaproveita o
+// mesmo card/ViewModel em vez de duplicar a lógica de save/disconnect/sync).
+class PivosIntegrationViewModel(app: Application) : AndroidViewModel(app) {
+    private val repo = ProviderIntegrationRepository(app, IntegrationModule.PIVO_IRRIGACAO)
+    var integration = mutableStateOf<ProviderIntegrationDto?>(null)
+        private set
+    var busy = mutableStateOf<IntegrationBusy?>(null)
+        private set
+    var message = mutableStateOf<String?>(null)
+        private set
+
+    fun load() {
+        viewModelScope.launch { integration.value = repo.get() }
+    }
+
+    fun save(provedor: String, apiKey: String) {
+        busy.value = IntegrationBusy.SALVANDO
+        message.value = null
+        viewModelScope.launch {
+            val ok = repo.save(provedor, apiKey)
+            message.value = if (ok) "Credencial salva." else "Falha ao salvar credencial -- confira a conexão e tente de novo."
+            if (ok) integration.value = repo.get()
+            busy.value = null
+        }
+    }
+
+    fun disconnect() {
+        busy.value = IntegrationBusy.DESCONECTANDO
+        message.value = null
+        viewModelScope.launch {
+            val ok = repo.disconnect()
+            if (ok) {
+                integration.value = repo.get()
+                message.value = "Integração desconectada."
+            } else {
+                message.value = "Falha ao desconectar -- confira a conexão e tente de novo."
+            }
+            busy.value = null
+        }
+    }
+
+    fun sync() {
+        busy.value = IntegrationBusy.SINCRONIZANDO
+        message.value = null
+        viewModelScope.launch {
+            val result = repo.sync()
+            message.value = result.mensagem
+            integration.value = repo.get()
+            busy.value = null
+        }
+    }
+}
+
 /** Ponto de entrada único -- chamado de DomainListScreen.kt só quando
  * domainId é "frota", "romaneios" ou "pecuaria" (ver bloco "integracao" no
  * ícone Dados de cada um). Cada ramo usa seu próprio ViewModel (módulo
  * diferente no enum IntegrationModule), mas o mesmo ProviderIntegrationCard
- * visual. */
+ * visual. "pivos" tambem reaproveita (chamado direto de PivosScreen.kt). */
 @Composable
 fun ModuleProviderIntegrationCard(domainId: String) {
-    if (domainId == "pecuaria") {
+    if (domainId == "pivos") {
+        val vm: PivosIntegrationViewModel = viewModel()
+        LaunchedEffect(Unit) { vm.load() }
+        val integration by vm.integration
+        val busy by vm.busy
+        val message by vm.message
+        ProviderIntegrationCard(
+            providers = listOf("Lindsay FieldNET", "Valley 365/AgSense", "Reinke ReinCloud"),
+            descricao = "Hoje o cadastro, a telemetria (lâmina + pluviômetro) e o controle do pivô são lançados manualmente abaixo. A credencial OAuth2/API key abaixo já fica salva com segurança; a sincronização automática com o fabricante escolhido ainda depende de aprovação de parceiro de desenvolvedor.",
+            integration = integration,
+            busy = busy,
+            syncMessage = message,
+            onSave = { provedor, apiKey -> vm.save(provedor, apiKey) },
+            onDisconnect = { vm.disconnect() },
+            onSync = { vm.sync() },
+            initiallyOpen = false,
+            showCloseButton = false,
+        )
+    } else if (domainId == "pecuaria") {
         val vm: PecuariaIntegrationViewModel = viewModel()
         LaunchedEffect(Unit) { vm.load() }
         val integration by vm.integration
