@@ -333,6 +333,14 @@ data class HomeData(
     val rhAdmissoesMes: Int = 0,
     val safraLancamentosMes: Int = 0,
     val safraColheitasMes: Int = 0,
+    // KPIs de Pecuária (novo, pedido do usuário "crie kpis para pecuária") --
+    // mesmo critério dos demais campos acima: espelha pecuariaAnimaisDistintos/
+    // pecuariaLeiteMesLitros/pecuariaMortesMes de getDashboardStats() no
+    // backend (lib/services/dashboard.ts). Default 0 não quebra a leitura do
+    // cache offline salvo antes desses campos existirem.
+    val pecuariaAnimaisDistintos: Int = 0,
+    val pecuariaLeiteMesLitros: Double = 0.0,
+    val pecuariaMortesMes: Int = 0,
     // Icones "Configurações"/"Base de Dados" do cabeçalho -- réplica do
     // Topbar do site (ConfiguracoesMenu/BaseDeDadosMenu, ver topbar.tsx):
     // pedido do usuário ("no cabeçalho ao clicar em configurações aparecer
@@ -1985,6 +1993,37 @@ data class PrescricaoSalvarRequest(
 
 @Serializable
 data class PrescricaoSalvarResponse(val ok: Boolean, val id: String? = null, val error: String? = null)
+
+// Exportar SHP/ISO-XML a partir do app (Task #898) -- paridade com os 2
+// botões já existentes no site (onExportarShp/onExportarIsoXml,
+// prescricao-client.tsx). O app não tem shp-write em Kotlin, então os bytes
+// do .zip (SHP) são gerados no SERVIDOR (exportarShpAction, mesma lib
+// @mapbox/shp-write rodando em Node) e devolvidos em base64 -- mesmo padrão
+// de NfeDownloadLoteResponse. O ISO-XML vem como texto puro (xml), já que é
+// só texto (buildIsoXmlDeZonas, geo-vra.ts), sem precisar de base64.
+@Serializable
+data class PrescricaoExportarRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String,
+    val id: String,
+)
+
+@Serializable
+data class PrescricaoExportarShpResponse(
+    val ok: Boolean,
+    val base64: String? = null,
+    val filename: String? = null,
+    val error: String? = null,
+)
+
+@Serializable
+data class PrescricaoExportarIsoXmlResponse(
+    val ok: Boolean,
+    val xml: String? = null,
+    val filename: String? = null,
+    val error: String? = null,
+)
 
 // Dossiê Bancário (Task #599/#615) -- espelho de DossieData
 // (lib/services/dossie.ts). Rota de LEITURA pura (só "ano" como input) --

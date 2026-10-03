@@ -9,6 +9,9 @@ import com.bragro.mobile.data.model.PrescricaoFeatureInput
 import com.bragro.mobile.data.model.PrescricaoRequest
 import com.bragro.mobile.data.model.PrescricaoResponse
 import com.bragro.mobile.data.model.PrescricaoSalvarRequest
+import com.bragro.mobile.data.model.PrescricaoExportarRequest
+import com.bragro.mobile.data.model.PrescricaoExportarShpResponse
+import com.bragro.mobile.data.model.PrescricaoExportarIsoXmlResponse
 import com.bragro.mobile.data.remote.NetworkModule
 
 /** Prescrição / Taxa Variável -- busca em /api/mobile/prescricao, que
@@ -112,6 +115,55 @@ class PrescricaoRepository(context: Context) {
         } catch (e: Exception) {
             AppLog.e("PrescricaoRepository", "Falha ao salvar prescrição", e)
             Result.failure(e)
+        }
+    }
+
+    /** Exportar SHP (Task #898, paridade com o botão "Exportar SHP" do site)
+     * -- o servidor gera os bytes do .zip (@mapbox/shp-write em Node) e
+     * devolve em base64; decodificação e compartilhamento ficam a cargo de
+     * quem chamar (ver PrescricaoScreen.kt, shareBinaryFile), mesmo
+     * critério de baixarLote() em NfeRepository.kt. */
+    suspend fun exportarShp(id: String): PrescricaoExportarShpResponse? {
+        val tokens = tokenStore.current() ?: return null
+        var (accessToken, refreshToken) = tokens
+        return try {
+            fun montar(token: String) = PrescricaoExportarRequest(accessToken = token, refreshToken = refreshToken, action = "exportarShp", id = id)
+            var response = NetworkModule.mobileApi.prescricaoExportarShp(montar(accessToken))
+            if (response.code() == 401) {
+                val newAccess = TokenRefresher.refreshAccessToken(tokenStore, refreshToken)
+                if (newAccess != null) {
+                    accessToken = newAccess
+                    response = NetworkModule.mobileApi.prescricaoExportarShp(montar(accessToken))
+                }
+            }
+            response.body()
+        } catch (e: Exception) {
+            AppLog.e("PrescricaoRepository", "Falha ao exportar SHP", e)
+            null
+        }
+    }
+
+    /** Exportar ISO-XML (TASKDATA.XML) -- mesmo registro, reaproveitando
+     * buildIsoXmlDeZonas no servidor (lib/geo-vra.ts), a mesma função usada
+     * pelo botão "Exportar ISO-XML" do site. Devolve o XML como texto puro
+     * (sem base64 -- ver shareTextFile em ui/util/FileShare.kt). */
+    suspend fun exportarIsoXml(id: String): PrescricaoExportarIsoXmlResponse? {
+        val tokens = tokenStore.current() ?: return null
+        var (accessToken, refreshToken) = tokens
+        return try {
+            fun montar(token: String) = PrescricaoExportarRequest(accessToken = token, refreshToken = refreshToken, action = "exportarIsoXml", id = id)
+            var response = NetworkModule.mobileApi.prescricaoExportarIsoXml(montar(accessToken))
+            if (response.code() == 401) {
+                val newAccess = TokenRefresher.refreshAccessToken(tokenStore, refreshToken)
+                if (newAccess != null) {
+                    accessToken = newAccess
+                    response = NetworkModule.mobileApi.prescricaoExportarIsoXml(montar(accessToken))
+                }
+            }
+            response.body()
+        } catch (e: Exception) {
+            AppLog.e("PrescricaoRepository", "Falha ao exportar ISO-XML", e)
+            null
         }
     }
 }

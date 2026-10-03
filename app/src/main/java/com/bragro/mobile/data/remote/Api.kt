@@ -51,6 +51,9 @@ import com.bragro.mobile.data.model.PrescricaoFarmsRequest
 import com.bragro.mobile.data.model.PrescricaoFarmsResponse
 import com.bragro.mobile.data.model.PrescricaoSalvarRequest
 import com.bragro.mobile.data.model.PrescricaoSalvarResponse
+import com.bragro.mobile.data.model.PrescricaoExportarRequest
+import com.bragro.mobile.data.model.PrescricaoExportarShpResponse
+import com.bragro.mobile.data.model.PrescricaoExportarIsoXmlResponse
 import com.bragro.mobile.data.model.SimuladorRequest
 import com.bragro.mobile.data.model.SimuladorResponse
 import com.bragro.mobile.data.model.ModuleActionRequest
@@ -216,6 +219,14 @@ interface MobileApi {
 
     @POST("api/mobile/prescricao")
     suspend fun prescricaoSalvar(@Body body: PrescricaoSalvarRequest): Response<PrescricaoSalvarResponse>
+
+    // Exportar SHP/ISO-XML a partir do app (Task #898, paridade com o site)
+    // -- mesmo endpoint, action "exportarShp"/"exportarIsoXml".
+    @POST("api/mobile/prescricao")
+    suspend fun prescricaoExportarShp(@Body body: PrescricaoExportarRequest): Response<PrescricaoExportarShpResponse>
+
+    @POST("api/mobile/prescricao")
+    suspend fun prescricaoExportarIsoXml(@Body body: PrescricaoExportarRequest): Response<PrescricaoExportarIsoXmlResponse>
 
     // Dossiê Bancário (Task #599/#615) -- relatório consolidado (DRE +
     // Livro Caixa + Contratos + Patrimônio), leitura pura, só recebe "ano".

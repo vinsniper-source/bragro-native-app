@@ -129,6 +129,12 @@ private val INICIO_WIDGETS = listOf(
     "inicio.kpi.safra" to "KPI: Safras ativas",
     "inicio.kpi.safra.lancamentos" to "KPI: Lançamentos de safra no mês",
     "inicio.kpi.safra.colheitas" to "KPI: Colheitas no mês",
+    // KPIs de Pecuária (novo, pedido do usuário "crie kpis para pecuária") --
+    // mesmo critério dos demais setores acima, ver comentário em
+    // lib/permissions.ts (INICIO_WIDGETS) e HomeScreen.kt (KpiGrid).
+    "inicio.kpi.pecuaria" to "KPI: Animais cadastrados (Pecuária)",
+    "inicio.kpi.pecuaria.leite" to "KPI: Produção de leite no mês",
+    "inicio.kpi.pecuaria.mortes" to "KPI: Mortes registradas no mês",
     "inicio.clima" to "Clima",
     "inicio.cambio" to "Câmbio (Dólar/Euro)",
     "inicio.cotacoes" to "Cotações agrícolas (Grão Direto)",

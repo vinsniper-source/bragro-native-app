@@ -237,7 +237,7 @@ private fun buildDossieHtml(d: DossieResponse, ano: Int): String {
 @Composable
 private fun AnoDropdown(ano: Int, onSelect: (Int) -> Unit) {
     val anoAtual = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
-    val anos = (anoAtual downTo anoAtual - 4).toList()
+    val anos = (anoAtual downTo anoAtual - 9).toList()
     SearchableDropdownField(
         value = ano.toString(),
         label = "Ano",

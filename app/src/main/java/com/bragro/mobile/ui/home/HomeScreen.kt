@@ -62,6 +62,7 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.LocalDrink
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.NotificationsNone
@@ -71,6 +72,7 @@ import androidx.compose.material.icons.filled.PlaylistAddCheck
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
@@ -2162,6 +2164,34 @@ private fun KpiGrid(data: HomeData) {
             MaterialTheme.colorScheme.primary,
             KpiKind.QUANTIDADE,
             description = "Colheitas iniciadas no mês corrente",
+        ),
+        // KPIs de Pecuária (novo, pedido do usuário "crie kpis para
+        // pecuária") -- réplica do dashboard web (ver dashboard/page.tsx,
+        // ids "inicio.kpi.pecuaria*"), mesmo critério dos demais setores:
+        // antes o módulo não tinha nenhum KPI próprio aqui.
+        "inicio.kpi.pecuaria" to Kpi(
+            "Animais cadastrados",
+            data.pecuariaAnimaisDistintos.toString(),
+            Icons.Filled.Pets,
+            BrGreen,
+            KpiKind.QUANTIDADE,
+            description = "Animais distintos já lançados no plantel",
+        ),
+        "inicio.kpi.pecuaria.leite" to Kpi(
+            "Produção de leite (mês)",
+            "${data.pecuariaLeiteMesLitros.toInt()} L",
+            Icons.Filled.LocalDrink,
+            BrGreen,
+            KpiKind.QUANTIDADE,
+            description = "Litros de leite das ordenhas no mês corrente",
+        ),
+        "inicio.kpi.pecuaria.mortes" to Kpi(
+            "Mortes registradas (mês)",
+            data.pecuariaMortesMes.toString(),
+            Icons.Filled.ReportProblem,
+            BrGreen,
+            KpiKind.QUANTIDADE,
+            description = "Mortes registradas no mês corrente",
         ),
     )
     val kpis = allKpis.filter { (id, _) -> data.hasWidget(id) }.map { (_, kpi) -> kpi }

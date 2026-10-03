@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.basicMarquee
@@ -19,6 +20,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Print
@@ -51,6 +54,8 @@ import com.bragro.mobile.data.model.PrescricaoData
 import com.bragro.mobile.data.repo.PrescricaoRepository
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.print.HtmlPrinter
+import com.bragro.mobile.ui.util.shareBinaryFile
+import com.bragro.mobile.ui.util.shareTextFile
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.doubleOrNull
@@ -77,7 +82,15 @@ import kotlin.math.roundToInt
  * A partir da v1.2.85 (Task #651, pedido do usuário "crie no native como
  * foi criado na plataforma") o FAB "+" abre PrescricaoNovoScreen, que
  * também cria prescrições -- só a partir de ISO-XML importado no aparelho
- * (ver IsoXmlVraParser.kt); SHP continua exclusivo do site.
+ * (ver IsoXmlVraParser.kt); importação de SHP continua exclusiva do site.
+ *
+ * A EXPORTAÇÃO de SHP e ISO-XML (Task #898, pedido do usuário "dê paridade
+ * ao SHP no app nativo") passou a existir aqui também -- diferente da
+ * importação, exportar não precisa decodificar o formato binário no
+ * aparelho: o SERVIDOR gera os bytes (exportarShpAction/
+ * exportarIsoXmlAction, prescricao/actions.ts, mesma lib @mapbox/shp-write
+ * usada pelo site, só rodando em Node) e devolve pronto; o app só
+ * decodifica/grava/compartilha (shareBinaryFile/shareTextFile).
  */
 class PrescricaoViewModel(app: Application) : AndroidViewModel(app) {
     private val repository = PrescricaoRepository(app)
@@ -93,9 +106,50 @@ class PrescricaoViewModel(app: Application) : AndroidViewModel(app) {
     // desatualizada/vazia por falta de conexão, não por não ter dado cadastrado.
     var offline = mutableStateOf(false)
         private set
+    // Id da prescrição com uma exportação em andamento (SHP ou ISO-XML) --
+    // desabilita os 2 botões daquele card enquanto a chamada ao servidor
+    // não volta, mesmo critério de pendingAction em outras telas.
+    var exportandoId = mutableStateOf<String?>(null)
+        private set
 
     init {
         carregar()
+    }
+
+    /** Exportar SHP (Task #898) -- onResult recebe os bytes do .zip já
+     * decodificados + nome do arquivo, ou null+mensagem em caso de falha.
+     * Quem chamar (PrescricaoScreen) é responsável por shareBinaryFile. */
+    fun exportarShp(id: String, onResult: (ByteArray?, String?, String) -> Unit) {
+        exportandoId.value = id
+        viewModelScope.launch {
+            val resultado = repository.exportarShp(id)
+            exportandoId.value = null
+            if (resultado == null || !resultado.ok || resultado.base64.isNullOrBlank()) {
+                onResult(null, resultado?.error ?: "Sem conexão -- não foi possível exportar agora.", "")
+                return@launch
+            }
+            try {
+                val bytes = android.util.Base64.decode(resultado.base64, android.util.Base64.DEFAULT)
+                onResult(bytes, null, resultado.filename ?: "prescricao.zip")
+            } catch (e: Exception) {
+                onResult(null, "Falha ao processar o arquivo recebido.", "")
+            }
+        }
+    }
+
+    /** Exportar ISO-XML (TASKDATA.XML) -- devolve o texto já pronto (sem
+     * base64, ver exportarIsoXmlAction no servidor). */
+    fun exportarIsoXml(id: String, onResult: (String?, String?, String) -> Unit) {
+        exportandoId.value = id
+        viewModelScope.launch {
+            val resultado = repository.exportarIsoXml(id)
+            exportandoId.value = null
+            if (resultado == null || !resultado.ok || resultado.xml.isNullOrBlank()) {
+                onResult(null, resultado?.error ?: "Sem conexão -- não foi possível exportar agora.", "")
+                return@launch
+            }
+            onResult(resultado.xml, null, resultado.filename ?: "TASKDATA.xml")
+        }
     }
 
     /** Reaproveitada tanto no carregamento inicial quanto ao voltar da tela
@@ -202,7 +256,9 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
     val erro by viewModel.erro
     val prescricoes by viewModel.prescricoes
     val offline by viewModel.offline
+    val exportandoId by viewModel.exportandoId
     var expandidoId by remember { mutableStateOf<String?>(null) }
+    var erroExportacao by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -307,14 +363,45 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                     p = p,
                     expandido = expandidoId == p.id,
                     onToggle = { expandidoId = if (expandidoId == p.id) null else p.id },
+                    exportando = exportandoId == p.id,
+                    onExportarShp = {
+                        viewModel.exportarShp(p.id) { bytes, erroMsg, filename ->
+                            if (bytes != null) shareBinaryFile(context, bytes, filename, "application/zip")
+                            else erroExportacao = erroMsg
+                        }
+                    },
+                    onExportarIsoXml = {
+                        viewModel.exportarIsoXml(p.id) { xml, erroMsg, filename ->
+                            if (xml != null) shareTextFile(context, filename, "application/xml", xml)
+                            else erroExportacao = erroMsg
+                        }
+                    },
                 )
             }
         }
     }
+
+    if (erroExportacao != null) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { erroExportacao = null },
+            title = { Text("Não foi possível exportar") },
+            text = { Text(erroExportacao ?: "") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { erroExportacao = null }) { Text("Ok") }
+            },
+        )
+    }
 }
 
 @Composable
-private fun PrescricaoCard(p: PrescricaoData, expandido: Boolean, onToggle: () -> Unit) {
+private fun PrescricaoCard(
+    p: PrescricaoData,
+    expandido: Boolean,
+    onToggle: () -> Unit,
+    exportando: Boolean = false,
+    onExportarShp: () -> Unit = {},
+    onExportarIsoXml: () -> Unit = {},
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -322,6 +409,20 @@ private fun PrescricaoCard(p: PrescricaoData, expandido: Boolean, onToggle: () -
                     Text(p.nome, style = MaterialTheme.typography.bodyLarge)
                     val subtitulo = listOfNotNull(p.produto, p.safra, p.cultura, p.talhao).joinToString(" • ")
                     if (subtitulo.isNotBlank()) Text(subtitulo, style = MaterialTheme.typography.labelSmall)
+                }
+                // Exportar SHP/ISO-XML (Task #898, paridade com os 2 botões
+                // já existentes no site, onExportarShp/onExportarIsoXml em
+                // prescricao-client.tsx) -- bytes/texto gerados no servidor,
+                // ver PrescricaoViewModel.exportarShp/exportarIsoXml acima.
+                if (exportando) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                } else {
+                    IconButton(onClick = onExportarShp) {
+                        Icon(Icons.Filled.Download, contentDescription = "Exportar SHP", tint = MaterialTheme.colorScheme.primary)
+                    }
+                    IconButton(onClick = onExportarIsoXml) {
+                        Icon(Icons.Filled.Description, contentDescription = "Exportar ISO-XML", tint = MaterialTheme.colorScheme.secondary)
+                    }
                 }
                 IconButton(onClick = onToggle) {
                     Icon(if (expandido) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (expandido) "Recolher mapa" else "Ver mapa")
