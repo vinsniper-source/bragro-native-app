@@ -643,6 +643,12 @@ data class BaseDeDadosRequest(
     // Situação da terra / regime de posse (9ª exceção de schema, ver
     // MEMORY.md) -- mesmo padrão partial-update: omitido = não mexe.
     val situacaoTerra: String? = null,
+    // Foto anexada ao valor de lista suspensa (13ª exceção de schema, ver
+    // MEMORY.md) -- só exposta na UI pra categorias "visuais" (itens_estoque,
+    // frotas, marcas, racas_pecuaria, oficinas, locais), mesmo padrão
+    // partial-update: omitido (explicitNulls=false em NetworkModule.json) =
+    // não mexe no fotoUrl já salvo; presente + string = define.
+    val fotoUrl: String? = null,
 )
 
 @Serializable

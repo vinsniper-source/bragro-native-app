@@ -3,6 +3,20 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.28] -- 2026-10-03
+
+- **Anexar foto nos valores de lista suspensa (Base de Dados)**: pedido do
+  usuário -- agora dá pra anexar uma foto em cada valor cadastrado das
+  categorias "visuais": Itens de Estoque, Frota, Marcas, Raças (Pecuária),
+  Oficinas e Locais. Botão de câmera ao lado de cada valor já cadastrado
+  (dessas 6 categorias só -- as outras ~68 continuam exatamente iguais),
+  miniatura aparece ao lado do valor depois de anexada. Upload reaproveita
+  o mesmo mecanismo de Pragas/Romaneio (Supabase Storage, compressão
+  automática 1600px/JPEG 75%, limite 5MB) -- bucket próprio `lookup-fotos`.
+  Não pré-preenche foto nos valores que já existiam -- só os anexados daqui
+  pra frente (decisão tomada com o usuário: gerar foto de IA pra cada valor
+  já cadastrado não garantiria ser a foto real do item/máquina específico).
+
 ## [1.3.27] -- 2026-10-03
 
 - **Correção de build: módulo Pivôs de Irrigação não compilava.**

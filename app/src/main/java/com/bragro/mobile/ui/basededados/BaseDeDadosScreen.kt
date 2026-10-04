@@ -1,6 +1,13 @@
 package com.bragro.mobile.ui.basededados
 
 import android.app.Application
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
@@ -15,11 +22,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExpandLess
@@ -56,15 +66,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.repo.BaseDeDadosRepository
+import com.bragro.mobile.data.repo.LookupOptionUploadRepository
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
@@ -73,8 +90,18 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
+// Categorias "visuais" que ganham upload de foto por valor (pedido do
+// usuário: "anexar foto em cada valor de lista suspensa relevante") -- as
+// outras ~68 categorias de Base de Dados não ganham esse campo, mesmo
+// critério do site/backend (ver fotoUrl em api/mobile/base-de-dados/route.ts,
+// 13ª exceção de schema). Decisão tomada aqui (ver relatório): não
+// pré-popular fotos dos valores já cadastrados, só upload manual daqui pra
+// frente.
+private val FOTO_CATEGORIES = setOf("itens_estoque", "frotas", "marcas", "racas_pecuaria", "oficinas", "locais")
+
 class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = BaseDeDadosRepository(app)
+    private val uploadRepo = LookupOptionUploadRepository(app)
 
     var data = mutableStateOf<JsonObject?>(null)
         private set
@@ -83,6 +110,11 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
     var busy = mutableStateOf(false)
         private set
     var errorMessage = mutableStateOf<String?>(null)
+        private set
+    // Upload de foto por valor de lista suspensa (categorias "visuais" --
+    // ver FOTO_CATEGORIES) -- estado separado de "busy" pra não desabilitar
+    // o resto da tela enquanto só a foto está subindo.
+    var uploadingFoto = mutableStateOf(false)
         private set
 
     fun load() {
@@ -94,16 +126,93 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun act(action: String, category: String? = null, value: String? = null, id: String? = null, ativo: Boolean? = null, name: String? = null, areaHa: Double? = null, cultura: String? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null, situacaoTerra: String? = null, onDone: (Boolean) -> Unit = {}) {
+    private fun act(action: String, category: String? = null, value: String? = null, id: String? = null, ativo: Boolean? = null, name: String? = null, areaHa: Double? = null, cultura: String? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null, situacaoTerra: String? = null, fotoUrl: String? = null, onDone: (Boolean) -> Unit = {}) {
         busy.value = true
         viewModelScope.launch {
-            val result = repo.run(action, category, value, id, ativo, name, areaHa, cultura, areaSafrinhaHa, areaSafrinhaCultura1, areaSafrinhaCultura1Ha, areaSafrinhaCultura2, areaSafrinhaCultura2Ha, latitude, longitude, situacaoTerra)
+            val result = repo.run(action, category, value, id, ativo, name, areaHa, cultura, areaSafrinhaHa, areaSafrinhaCultura1, areaSafrinhaCultura1Ha, areaSafrinhaCultura2, areaSafrinhaCultura2Ha, latitude, longitude, situacaoTerra, fotoUrl)
             busy.value = false
             result.onSuccess { load(); onDone(true) }.onFailure { errorMessage.value = it.message; onDone(false) }
         }
     }
 
-    fun addLookup(category: String, value: String) = act("add_lookup", category = category, value = value)
+    // fotoUrl (13ª exceção de schema, ver MEMORY.md) -- opcional, colocado
+    // por ÚLTIMO pra não quebrar nenhuma chamada existente de addLookup.
+    // Como add_lookup é upsert por (category, value) no backend, chamar de
+    // novo pra um valor JÁ cadastrado só atualiza o fotoUrl (ver "Anexar
+    // foto" em SectorCard abaixo) -- não duplica nem recria o valor.
+    fun addLookup(category: String, value: String, fotoUrl: String? = null, onDone: (Boolean) -> Unit = {}) =
+        act("add_lookup", category = category, value = value, fotoUrl = fotoUrl, onDone = onDone)
+
+    /** Comprime a imagem escolhida no seletor, sobe pro Storage
+     * (LookupOptionUploadRepository) e só então chama addLookup de novo pro
+     * MESMO valor já cadastrado (upsert), agora com fotoUrl preenchido --
+     * pedido do usuário ("anexar foto em cada valor de lista suspensa
+     * relevante"). Nunca bloqueia o cadastro em si: se qualquer etapa falhar,
+     * só mostra erro, o valor continua existindo sem foto. */
+    fun uploadLookupFoto(context: Context, uri: Uri, category: String, value: String) {
+        uploadingFoto.value = true
+        errorMessage.value = null
+        viewModelScope.launch {
+            val bytes = compressFoto(context, uri)
+            if (bytes == null) {
+                uploadingFoto.value = false
+                errorMessage.value = "Não foi possível processar a imagem selecionada."
+                return@launch
+            }
+            val url = uploadRepo.uploadFoto(bytes)
+            if (url == null) {
+                uploadingFoto.value = false
+                errorMessage.value = "Sem conexão -- não foi possível enviar a foto agora."
+                return@launch
+            }
+            addLookup(category, value, fotoUrl = url) { ok ->
+                uploadingFoto.value = false
+                if (!ok) errorMessage.value = errorMessage.value ?: "Não foi possível salvar a foto."
+            }
+        }
+    }
+
+    /** Mesma lógica de PragaFotoScreen.kt (compressPhoto/applyExifRotation):
+     * redimensiona pro maior lado não passar de 1600px e reexporta em JPEG
+     * qualidade 0.75 antes de subir -- limite de 5MB (ver
+     * LookupOptionUploadRepository/padrão PragaUploadRepository) nunca é
+     * atingido com essa compressão. */
+    private fun compressFoto(context: Context, uri: Uri): ByteArray? {
+        return try {
+            val original = context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) } ?: return null
+            val rotated = applyExifRotation(context, uri, original)
+            val maxLado = 1600
+            val escala = minOf(1f, maxLado.toFloat() / maxOf(rotated.width, rotated.height))
+            val largura = (rotated.width * escala).toInt().coerceAtLeast(1)
+            val altura = (rotated.height * escala).toInt().coerceAtLeast(1)
+            val redimensionada = Bitmap.createScaledBitmap(rotated, largura, altura, true)
+            val out = ByteArrayOutputStream()
+            redimensionada.compress(Bitmap.CompressFormat.JPEG, 75, out)
+            out.toByteArray()
+        } catch (e: Exception) {
+            AppLog.e("BaseDeDadosScreen", "Falha ao comprimir/redimensionar foto do valor de lista suspensa", e)
+            null
+        }
+    }
+
+    private fun applyExifRotation(context: Context, uri: Uri, bitmap: Bitmap): Bitmap {
+        return try {
+            val exif = context.contentResolver.openInputStream(uri)?.use { ExifInterface(it) } ?: return bitmap
+            val orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+            val degrees = when (orientation) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+                ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+                ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+                else -> 0f
+            }
+            if (degrees == 0f) return bitmap
+            val matrix = Matrix().apply { postRotate(degrees) }
+            Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+        } catch (e: Exception) {
+            AppLog.e("BaseDeDadosScreen", "Falha ao ler EXIF/rotacionar foto do valor de lista suspensa -- mantendo bitmap original", e)
+            bitmap
+        }
+    }
     fun deleteLookup(id: String) = act("delete_lookup", id = id)
     fun toggleLookup(id: String, ativo: Boolean) = act("toggle_lookup", id = id, ativo = ativo)
     fun importDefaults() = act("import_defaults")
@@ -161,6 +270,23 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
     val loading by viewModel.loading
     val busy by viewModel.busy
     val error by viewModel.errorMessage
+    val uploadingFoto by viewModel.uploadingFoto
+
+    // Upload de foto por valor de lista suspensa (categorias "visuais" --
+    // ver FOTO_CATEGORIES) -- um ÚNICO seletor de imagem compartilhado por
+    // todas as categorias/valores (abrir um launcher por item dinâmico da
+    // lista não é seguro no Compose), igual padrão do "attach" de
+    // pendingPhotoUri em PragaFotoScreen.kt/RomaneioQuickScreen.kt: guarda
+    // qual (categoria, valor) está esperando a foto ANTES de abrir o
+    // seletor, e usa esse alvo quando o resultado volta.
+    val lookupFotoContext = LocalContext.current
+    var pendingFotoTarget by remember { mutableStateOf<Pair<String, String>?>(null) }
+    val lookupFotoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        val target = pendingFotoTarget
+        if (uri != null && target != null) {
+            viewModel.uploadLookupFoto(lookupFotoContext, uri, target.first, target.second)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -281,6 +407,8 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
                         onAddValue = { category, value -> viewModel.addLookup(category, value) },
                         onToggle = { id, ativo -> viewModel.toggleLookup(id, ativo) },
                         onDelete = { id -> viewModel.deleteLookup(id) },
+                        onAttachFoto = { category, value -> pendingFotoTarget = category to value; lookupFotoPicker.launch("image/*") },
+                        uploadingFoto = uploadingFoto,
                     )
                 }
             }
@@ -865,6 +993,13 @@ private fun SectorCard(
     onAddValue: (String, String) -> Unit,
     onToggle: (String, Boolean) -> Unit,
     onDelete: (String) -> Unit,
+    // Upload de foto por valor (categorias "visuais" -- ver FOTO_CATEGORIES)
+    // -- pedido do usuário ("anexar foto em cada valor de lista suspensa
+    // relevante"). onAttachFoto abre o seletor de imagem pro (category,
+    // value) desse valor já cadastrado; o upload em si (compressão +
+    // Storage + addLookup de novo com fotoUrl) acontece no ViewModel.
+    onAttachFoto: (String, String) -> Unit = { _, _ -> },
+    uploadingFoto: Boolean = false,
 ) {
     CollapsibleCard(label) {
         categories?.forEach { catEl ->
@@ -872,15 +1007,35 @@ private fun SectorCard(
             val category = cat["category"]?.jsonPrimitive?.contentOrNull ?: return@forEach
             val values = cat["values"]?.jsonArray
             var newValue by remember(category) { mutableStateOf("") }
+            val temFoto = category in FOTO_CATEGORIES
 
             Text(category, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp))
             values?.forEach { vEl ->
                 val v = vEl.jsonObject
                 val id = v["id"]?.jsonPrimitive?.contentOrNull ?: return@forEach
-                val vLabel = v["label"]?.jsonPrimitive?.contentOrNull ?: v["value"]?.jsonPrimitive?.contentOrNull ?: ""
+                val valorReal = v["value"]?.jsonPrimitive?.contentOrNull ?: ""
+                val vLabel = v["label"]?.jsonPrimitive?.contentOrNull ?: valorReal
                 val ativo = v["ativo"]?.jsonPrimitive?.booleanOrNull ?: true
+                // fotoUrl (13ª exceção de schema, ver MEMORY.md) -- pedido do
+                // usuário: não pré-popular valores já cadastrados, só exibe
+                // a miniatura se ALGUÉM já anexou manualmente daqui pra
+                // frente (ver uploadLookupFoto no ViewModel).
+                val fotoUrl = v["fotoUrl"]?.jsonPrimitive?.contentOrNull
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
+                    if (temFoto && !fotoUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = fotoUrl,
+                            contentDescription = vLabel,
+                            modifier = Modifier.size(32.dp).clip(CircleShape),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                    }
                     Text(vLabel, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    if (temFoto) {
+                        IconButton(onClick = { onAttachFoto(category, valorReal) }, enabled = !busy && !uploadingFoto) {
+                            Icon(Icons.Filled.CameraAlt, contentDescription = "Anexar foto")
+                        }
+                    }
                     Switch(checked = ativo, onCheckedChange = { onToggle(id, it) }, enabled = !busy, colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)))
                     IconButton(onClick = { onDelete(id) }, enabled = !busy) { Icon(Icons.Filled.Delete, contentDescription = "Excluir") }
                 }
