@@ -667,6 +667,14 @@ fun DomainListScreen(
                 // rápido" acima. É só um RELATÓRIO (sem formulário), então o
                 // FAB principal continua indo pro "Novo lançamento" normal.
                 Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Silos cilíndricos / armazenagem de grãos (card de
+                    // integração de provedor) -- mesmo padrão dos FABs acima.
+                    FloatingActionButton(
+                        onClick = { showIntegracaoDialog = true },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    ) {
+                        Icon(Icons.Filled.Bolt, contentDescription = "Acesso automático (silos)")
+                    }
                     FloatingActionButton(
                         onClick = onOpenReconciliacaoEstoque,
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -1610,7 +1618,7 @@ fun DomainListScreen(
     // ModuleProviderIntegrationCard.kt de antes, só que agora dentro de um
     // AlertDialog dedicado (já abre expandido -- initiallyOpen = true --
     // já que o usuário tocou num botão especificamente pra ver isto).
-    if (showIntegracaoDialog && (domainId == "frota" || domainId == "romaneios" || domainId == "pecuaria")) {
+    if (showIntegracaoDialog && (domainId == "frota" || domainId == "romaneios" || domainId == "pecuaria" || domainId == "estoque")) {
         AlertDialog(
             onDismissRequest = { showIntegracaoDialog = false },
             // Largura fixa + usePlatformDefaultWidth=false -- bug real
@@ -1628,7 +1636,7 @@ fun DomainListScreen(
             // quebrar normalmente, como parágrafo.
             modifier = Modifier.width(340.dp),
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-            title = { Text(if (domainId == "frota") "Bomba de combustível" else if (domainId == "pecuaria") "Balança/RFID Bluetooth" else "Balança") },
+            title = { Text(if (domainId == "frota") "Bomba de combustível" else if (domainId == "pecuaria") "Balança/RFID Bluetooth" else if (domainId == "estoque") "Silos cilíndricos" else "Balança") },
             text = { ModuleProviderIntegrationCard(domainId) },
             confirmButton = {
                 TextButton(onClick = { showIntegracaoDialog = false }) { Text("Fechar") }

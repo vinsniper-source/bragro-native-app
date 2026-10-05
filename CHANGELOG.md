@@ -3,6 +3,14 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.35] -- 2026-10-05
+
+- Silos cilíndricos / armazenagem de grãos: novo `IntegrationModule.SILO_ARMAZENAGEM`
+  (14ª exceção de schema), card de integração em Estoque (FAB raio) com
+  provedores de sensores de grãos, fabricantes de silo e "API genérica
+  (URL + token)". Só a API genérica tem teste real de conexão; os demais
+  ficam Pendente até haver parceria/SDK do fabricante.
+
 ## [1.3.34] -- 2026-10-05
 
 - **Integrações de provedores (FieldView, Drone, NDVI, Bomba, Balança,

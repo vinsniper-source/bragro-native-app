@@ -236,6 +236,58 @@ class PivosIntegrationViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
+// Silos cilíndricos / armazenagem de grãos (Estoque) -- mesmo scaffolding.
+class SiloIntegrationViewModel(app: Application) : AndroidViewModel(app) {
+    private val repo = ProviderIntegrationRepository(app, IntegrationModule.SILO_ARMAZENAGEM)
+    var integration = mutableStateOf<ProviderIntegrationDto?>(null)
+        private set
+    var busy = mutableStateOf<IntegrationBusy?>(null)
+        private set
+    var message = mutableStateOf<String?>(null)
+        private set
+
+    fun load() {
+        viewModelScope.launch { integration.value = repo.get() }
+    }
+
+    fun save(provedor: String, apiKey: String) {
+        busy.value = IntegrationBusy.SALVANDO
+        message.value = null
+        viewModelScope.launch {
+            val ok = repo.save(provedor, apiKey)
+            message.value = if (ok) "Credencial salva." else "Falha ao salvar credencial -- confira a conexão e tente de novo."
+            if (ok) integration.value = repo.get()
+            busy.value = null
+        }
+    }
+
+    fun disconnect() {
+        busy.value = IntegrationBusy.DESCONECTANDO
+        message.value = null
+        viewModelScope.launch {
+            val ok = repo.disconnect()
+            if (ok) {
+                integration.value = repo.get()
+                message.value = "Integração desconectada."
+            } else {
+                message.value = "Falha ao desconectar -- confira a conexão e tente de novo."
+            }
+            busy.value = null
+        }
+    }
+
+    fun sync() {
+        busy.value = IntegrationBusy.SINCRONIZANDO
+        message.value = null
+        viewModelScope.launch {
+            val result = repo.sync()
+            message.value = result.mensagem
+            integration.value = repo.get()
+            busy.value = null
+        }
+    }
+}
+
 /** Ponto de entrada único -- chamado de DomainListScreen.kt só quando
  * domainId é "frota", "romaneios" ou "pecuaria" (ver bloco "integracao" no
  * ícone Dados de cada um). Cada ramo usa seu próprio ViewModel (módulo
@@ -243,7 +295,29 @@ class PivosIntegrationViewModel(app: Application) : AndroidViewModel(app) {
  * visual. "pivos" tambem reaproveita (chamado direto de PivosScreen.kt). */
 @Composable
 fun ModuleProviderIntegrationCard(domainId: String) {
-    if (domainId == "pivos") {
+    if (domainId == "estoque") {
+        val vm: SiloIntegrationViewModel = viewModel()
+        LaunchedEffect(Unit) { vm.load() }
+        val integration by vm.integration
+        val busy by vm.busy
+        val message by vm.message
+        ProviderIntegrationCard(
+            providers = listOf(
+                "OPI Blue", "Aquabee", "Grain Sense", "Agrosmart",
+                "Cimbria", "Kepler Weber", "Silos Chapecó", "Pedrotti", "Fockink",
+                "API genérica (URL + token)",
+            ),
+            descricao = "Silos cilíndricos e armazenagem de grãos. Em \"API genérica\", informe na chave: https://sua-api.com/rota|SEU_TOKEN (teste real). Demais provedores ficam Pendente até haver parceria/SDK do fabricante.",
+            integration = integration,
+            busy = busy,
+            syncMessage = message,
+            onSave = { provedor, apiKey -> vm.save(provedor, apiKey) },
+            onDisconnect = { vm.disconnect() },
+            onSync = { vm.sync() },
+            initiallyOpen = true,
+            showCloseButton = false,
+        )
+    } else if (domainId == "pivos") {
         val vm: PivosIntegrationViewModel = viewModel()
         LaunchedEffect(Unit) { vm.load() }
         val integration by vm.integration
