@@ -64,6 +64,10 @@ class AuthRepository(private val context: Context) {
             if (!bootstrapOk) {
                 return LoginResult.Failure("Login feito, mas nao foi possivel carregar os dados da organizacao. Tente novamente.")
             }
+            // Pre-carrega os registros de todos os modulos pro uso offline
+            // (pedido do usuario: o app nao precisa ter sido aberto em cada
+            // modulo antes da conexao cair).
+            com.bragro.mobile.sync.PrefetchWorker.enqueue(context)
             LoginResult.Success
         } catch (e: Exception) {
             AppLog.e("AuthRepository", "Falha ao fazer login/bootstrap para email=$email", e)

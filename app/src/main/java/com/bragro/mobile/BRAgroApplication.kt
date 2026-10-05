@@ -5,6 +5,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import com.bragro.mobile.sync.PrefetchWorker
 import com.bragro.mobile.sync.SyncWorker
 import com.bragro.mobile.sync.TokenRefreshWorker
 
@@ -16,6 +17,9 @@ class BRAgroApplication : Application() {
         // SyncWorker) -- cobre o caso comum de campo: usuario lancou dados
         // offline ontem, hoje abre o app ja com internet.
         SyncWorker.enqueue(this)
+        // Pre-carrega o cache offline de TODOS os modulos (so roda com
+        // internet e sessao ativa) -- ver PrefetchWorker.
+        PrefetchWorker.enqueue(this)
         // Renovacao periodica de sessao em segundo plano (Task #37) --
         // ExistingPeriodicWorkPolicy.KEEP dentro do worker faz este enqueue
         // ser barato de chamar toda vez que o app abre (nao recria o
@@ -39,6 +43,7 @@ class BRAgroApplication : Application() {
         connectivityManager.registerNetworkCallback(request, object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 SyncWorker.enqueue(applicationContext)
+                PrefetchWorker.enqueue(applicationContext)
             }
         })
     }

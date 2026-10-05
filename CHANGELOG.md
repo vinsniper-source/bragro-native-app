@@ -3,6 +3,17 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.30] -- 2026-10-05
+
+- **Cache offline pré-carregado**: até agora os registros de um módulo só
+  eram baixados pro aparelho ao abrir aquele módulo com internet -- um módulo
+  nunca aberto aparecia vazio sem conexão. Agora, logo após o login, ao abrir
+  o app e quando a internet volta, o app baixa em segundo plano os registros
+  de todos os módulos. Depois de uma importação de CSV, o módulo importado é
+  atualizado no aparelho automaticamente.
+- Continua sendo necessário ter feito login com internet pelo menos uma vez
+  no aparelho (a senha só pode ser validada pelo servidor).
+
 ## [1.3.29] -- 2026-10-05
 
 - **Migração de dados por CSV no app (Base de Dados)**: novo botão "Migrar

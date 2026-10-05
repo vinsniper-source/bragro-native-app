@@ -173,6 +173,11 @@ class CsvImportViewModel(app: Application) : AndroidViewModel(app) {
                 return@launch
             }
             result.value = data
+            // Atualiza o cache local do modulo importado -- sem isso os
+            // registros novos so apareceriam apos reabrir o modulo.
+            if (data.criados > 0) {
+                com.bragro.mobile.sync.PrefetchWorker.enqueue(getApplication<Application>(), domainId.value)
+            }
             step.value = CsvStep.RESULTADO
         }
     }
