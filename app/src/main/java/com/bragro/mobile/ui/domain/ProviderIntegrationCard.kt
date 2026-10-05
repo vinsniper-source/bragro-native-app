@@ -220,24 +220,29 @@ fun ProviderIntegrationCard(
                     ) {
                         if (busy == IntegrationBusy.SALVANDO) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Salvar")
                     }
-                    if (conectado) {
-                        OutlinedButton(enabled = busy == null, onClick = onDisconnect) {
-                            if (busy == IntegrationBusy.DESCONECTANDO) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Desconectar")
+                    // "Testar conexão" sempre visível ao lado de Salvar: com
+                    // token digitado salva (o servidor testa ao salvar); sem
+                    // token, testa a credencial já salva.
+                    val digitado = provedor.isNotBlank() && apiKey.isNotBlank()
+                    OutlinedButton(
+                        enabled = busy == null && (digitado || conectado),
+                        onClick = { if (digitado) { onSave(provedor, apiKey.trim()); apiKey = "" } else onSync() },
+                    ) {
+                        if (busy == IntegrationBusy.SINCRONIZANDO || busy == IntegrationBusy.SALVANDO) {
+                            CircularProgressIndicator(modifier = Modifier.height(18.dp))
+                        } else {
+                            Icon(Icons.Filled.Sync, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
                         }
+                        Text("Testar conexão")
+                    }
+                }
+                if (conectado) {
+                    OutlinedButton(enabled = busy == null, onClick = onDisconnect) {
+                        if (busy == IntegrationBusy.DESCONECTANDO) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Desconectar")
                     }
                 }
 
                 if (conectado) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(enabled = busy == null, onClick = onSync) {
-                            if (busy == IntegrationBusy.SINCRONIZANDO) {
-                                CircularProgressIndicator(modifier = Modifier.height(18.dp))
-                            } else {
-                                Icon(Icons.Filled.Sync, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                            }
-                            Text("Testar conexão")
-                        }
-                    }
                     // Nota permanente (não só depois de clicar "Testar
                     // sincronização") -- pedido do usuário via auditoria
                     // ("deixar claro na UI que sync depende de parceria
