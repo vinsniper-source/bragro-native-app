@@ -18,7 +18,9 @@ import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -103,7 +105,14 @@ fun ProviderIntegrationCard(
     var expanded by remember { mutableStateOf(false) }
     var provedor by remember(integration?.provedor) { mutableStateOf(integration?.provedor ?: "") }
     var apiKey by remember { mutableStateOf("") }
-    val conectado = integration?.status == "CONECTADO"
+    // "conectado" = há credencial salva (inclui Pendente e Erro de credencial,
+    // pra Testar conexão/Desconectar continuarem acessíveis).
+    val conectado = integration?.status == "CONECTADO" || integration?.status == "ERRO"
+    val situacao = integration?.situacao ?: when (integration?.status) {
+        "CONECTADO" -> "CONECTADO"
+        "ERRO" -> "ERRO_CREDENCIAL"
+        else -> "NAO_CONECTADO"
+    }
 
     Card(modifier = modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -136,14 +145,21 @@ fun ProviderIntegrationCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (conectado) {
+                    // Selo de status: Conectado (validado) / Pendente (salvo,
+                    // ainda não validado) / Erro de credencial (recusado).
+                    val (rotulo, corFundo, icone) = when (situacao) {
+                        "CONECTADO" -> Triple("Conectado", MaterialTheme.colorScheme.primaryContainer, Icons.Filled.CheckCircle)
+                        "ERRO_CREDENCIAL" -> Triple("Erro de credencial", MaterialTheme.colorScheme.errorContainer, Icons.Filled.Error)
+                        else -> Triple("Pendente", MaterialTheme.colorScheme.tertiaryContainer, Icons.Filled.Schedule)
+                    }
                     Surface(
-                        color = MaterialTheme.colorScheme.primaryContainer,
+                        color = corFundo,
                         shape = MaterialTheme.shapes.small,
                     ) {
                         Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.height(14.dp))
+                            Icon(icone, contentDescription = null, modifier = Modifier.height(14.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text(integration?.provedor ?: "", style = MaterialTheme.typography.labelSmall)
+                            Text("$rotulo · ${integration?.provedor ?: ""}", style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 } else {
@@ -219,7 +235,7 @@ fun ProviderIntegrationCard(
                             } else {
                                 Icon(Icons.Filled.Sync, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
                             }
-                            Text("Testar sincronização")
+                            Text("Testar conexão")
                         }
                     }
                     // Nota permanente (não só depois de clicar "Testar
@@ -240,13 +256,16 @@ fun ProviderIntegrationCard(
                     // avisos"). O comportamento (sync automática ainda
                     // depende de aprovação de parceiro) continua o mesmo.
                     Text(
-                        "Sincronização automática ainda depende de aprovação do parceiro/fabricante.",
+                        "Pendente = fabricante sem validação online ainda (depende de parceria).",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    integration?.ultimaSincronizacaoEm?.let {
-                        Text("Última sincronização: ${formatIsoDateTime(it)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                    Text(
+                        integration?.ultimaSincronizacaoEm?.let { "Última sincronização: ${formatIsoDateTime(it)}" }
+                            ?: "Ainda não validada pelo provedor.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
 
                 syncMessage?.let {

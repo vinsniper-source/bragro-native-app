@@ -2217,6 +2217,9 @@ data class ProviderIntegrationDto(
     val apiKeyConfigurado: Boolean = false,
     // "DESCONECTADO" | "CONECTADO" | "ERRO" -- mesmo enum de status do site.
     val status: String = "DESCONECTADO",
+    // Derivada no servidor: "NAO_CONECTADO" | "PENDENTE" | "CONECTADO" |
+    // "ERRO_CREDENCIAL" (ver provider-integration.ts). Null em servidor antigo.
+    val situacao: String? = null,
     val ultimaSincronizacaoEm: String? = null,
 )
 
@@ -2237,7 +2240,7 @@ data class SaveProviderIntegrationRequest(
 )
 
 @Serializable
-data class SaveProviderIntegrationResponse(val ok: Boolean, val error: String? = null)
+data class SaveProviderIntegrationResponse(val ok: Boolean, val error: String? = null, val mensagem: String? = null)
 
 @Serializable
 data class DisconnectProviderIntegrationRequest(

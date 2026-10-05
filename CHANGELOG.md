@@ -3,6 +3,16 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.34] -- 2026-10-05
+
+- **Integrações de provedores (FieldView, Drone, NDVI, Bomba, Balança,
+  Pecuária, Pivôs)**: o botão agora é "Testar conexão" e confere a credencial
+  de verdade com o provedor (John Deere, Climate FieldView e Planet; os demais
+  fabricantes ficam "Pendente" até existir validação online). O selo mostra
+  Conectado / Pendente / Erro de credencial e a data/hora da última
+  sincronização. Ao salvar o token, o teste roda sozinho. Requer o deploy do
+  site (v. do commit de integrações).
+
 ## [1.3.33] -- 2026-10-05
 
 - **Sem duplicidade no reenvio offline**: cada lançamento com itens leva uma
