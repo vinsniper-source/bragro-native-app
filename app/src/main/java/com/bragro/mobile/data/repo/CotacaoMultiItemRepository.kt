@@ -2,6 +2,7 @@ package com.bragro.mobile.data.repo
 
 import android.content.Context
 import com.bragro.mobile.data.AppLog
+import com.bragro.mobile.data.NetworkStatus
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.model.CotacaoComparacaoPropostaData
 import com.bragro.mobile.data.model.CotacaoComparacaoRequest
@@ -23,7 +24,9 @@ import com.bragro.mobile.data.remote.NetworkModule
  * recalculados automaticamente contra o grupo Categoria+Item). Sem cache
  * offline de propósito, mesmo critério do NotaMultiItemRepository. */
 class CotacaoMultiItemRepository(context: Context) {
-    private val tokenStore = TokenStore(context)
+    private val appContext = context.applicationContext
+    private val tokenStore = TokenStore(appContext)
+    private val outbox = MultiItemOutbox(appContext)
 
     suspend fun criar(
         data: String,
@@ -35,6 +38,20 @@ class CotacaoMultiItemRepository(context: Context) {
     ): CotacaoMultiItemResponse? {
         val tokens = tokenStore.current() ?: return null
         var (accessToken, refreshToken) = tokens
+        // Offline: entra na fila do aparelho (MultiItemOutbox); o servidor
+        // cria as cotacoes e recalcula o Indice de Vantagem quando voltar.
+        val reqId = java.util.UUID.randomUUID().toString()
+        suspend fun queue(): CotacaoMultiItemResponse {
+            outbox.enqueueCotacao(
+                CotacaoMultiItemRequest(
+                    accessToken = "", refreshToken = "", data = data, fornecedor = fornecedor,
+                    condicaoPagamento = condicaoPagamento, validadeProposta = validadeProposta,
+                    observacoes = observacoes, itens = itens, clientRequestId = reqId,
+                )
+            )
+            return CotacaoMultiItemResponse(ok = true, count = itens.size, savedOffline = true)
+        }
+        if (!NetworkStatus.isOnline(appContext)) return queue()
         return try {
             fun buildRequest() = CotacaoMultiItemRequest(
                 accessToken = accessToken,
@@ -45,6 +62,7 @@ class CotacaoMultiItemRepository(context: Context) {
                 validadeProposta = validadeProposta,
                 observacoes = observacoes,
                 itens = itens,
+                clientRequestId = reqId,
             )
             var response = NetworkModule.mobileApi.cotacaoMultiItem(buildRequest())
             if (response.code() == 401) {
@@ -61,7 +79,8 @@ class CotacaoMultiItemRepository(context: Context) {
             body
         } catch (e: Exception) {
             AppLog.e("CotacaoMultiItemRepository", "Falha ao lançar cotação com itens", e)
-            CotacaoMultiItemResponse(ok = false, error = "Sem conexão. Tente novamente.")
+            if (MultiItemOutbox.seguroEnfileirar(e)) queue()
+            else CotacaoMultiItemResponse(ok = false, error = "Erro ao lançar a cotação. Tente novamente.")
         }
     }
 
@@ -81,6 +100,17 @@ class CotacaoMultiItemRepository(context: Context) {
     ): CotacaoComparacaoResponse? {
         val tokens = tokenStore.current() ?: return null
         var (accessToken, refreshToken) = tokens
+        val reqId = java.util.UUID.randomUUID().toString()
+        suspend fun queue(): CotacaoComparacaoResponse {
+            outbox.enqueueComparacao(
+                CotacaoComparacaoRequest(
+                    accessToken = "", refreshToken = "", data = data, categoria = categoria, item = item,
+                    quantidade = quantidade, unidade = unidade, observacoes = observacoes, propostas = propostas, clientRequestId = reqId,
+                )
+            )
+            return CotacaoComparacaoResponse(ok = true, count = propostas.size, savedOffline = true)
+        }
+        if (!NetworkStatus.isOnline(appContext)) return queue()
         return try {
             fun buildRequest() = CotacaoComparacaoRequest(
                 accessToken = accessToken,
@@ -92,6 +122,7 @@ class CotacaoMultiItemRepository(context: Context) {
                 unidade = unidade,
                 observacoes = observacoes,
                 propostas = propostas,
+                clientRequestId = reqId,
             )
             var response = NetworkModule.mobileApi.cotacaoComparacao(buildRequest())
             if (response.code() == 401) {
@@ -108,7 +139,8 @@ class CotacaoMultiItemRepository(context: Context) {
             body
         } catch (e: Exception) {
             AppLog.e("CotacaoMultiItemRepository", "Falha ao lançar propostas de comparação", e)
-            CotacaoComparacaoResponse(ok = false, error = "Sem conexão. Tente novamente.")
+            if (MultiItemOutbox.seguroEnfileirar(e)) queue()
+            else CotacaoComparacaoResponse(ok = false, error = "Erro ao lançar as propostas. Tente novamente.")
         }
     }
 

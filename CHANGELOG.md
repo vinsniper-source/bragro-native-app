@@ -3,6 +3,29 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.33] -- 2026-10-05
+
+- **Sem duplicidade no reenvio offline**: cada lançamento com itens leva uma
+  chave única (`clientRequestId`). Se a resposta do servidor se perder depois
+  de ele já ter lançado, o reenvio devolve o resultado guardado em vez de
+  lançar de novo. Por isso falhas de rede (inclusive timeout) agora também vão
+  pra fila, em vez de pedir pra conferir manualmente. Requer o deploy do site
+  desta versão (`lib/idempotency.ts`) e, pra proteção total entre instâncias,
+  o Upstash Redis configurado (o mesmo do rate-limit).
+
+## [1.3.32] -- 2026-10-05
+
+- **Nota com itens, Pedido e Cotação (vários itens/comparação) agora funcionam
+  offline**: sem internet o lançamento fica salvo no aparelho (fila
+  `pending_sync`, sem migração de banco) e é enviado sozinho quando a conexão
+  volta, pelos mesmos endpoints de antes -- então a entrada no Estoque, as
+  parcelas no Financeiro, Saldo do pedido e Índice de Vantagem da cotação são
+  calculados pelo servidor, uma única vez. A tela avisa "salvo no aparelho".
+- Se o servidor recusar o lançamento ao sincronizar (ex.: dado inválido), ele
+  fica visível na fila como pendência com a mensagem, sem reenvio automático.
+- Falha por timeout (servidor pode ter processado) NÃO entra na fila: o app
+  pede pra conferir antes de reenviar, evitando lançamento duplicado.
+
 ## [1.3.31] -- 2026-10-05
 
 - **Login offline**: depois de um login com internet neste aparelho, dá pra

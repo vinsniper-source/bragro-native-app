@@ -2,6 +2,7 @@ package com.bragro.mobile.data.repo
 
 import android.content.Context
 import com.bragro.mobile.data.AppLog
+import com.bragro.mobile.data.NetworkStatus
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.model.PedidoMultiItemItemData
 import com.bragro.mobile.data.model.PedidoMultiItemRequest
@@ -18,7 +19,9 @@ import com.bragro.mobile.data.remote.NetworkModule
  * offline de propósito, mesmo critério do NotaMultiItemRepository: é um
  * lançamento com efeito colateral em Estoque, não um dado de leitura. */
 class PedidoMultiItemRepository(context: Context) {
-    private val tokenStore = TokenStore(context)
+    private val appContext = context.applicationContext
+    private val tokenStore = TokenStore(appContext)
+    private val outbox = MultiItemOutbox(appContext)
 
     suspend fun criar(
         noPedido: String,
@@ -32,6 +35,20 @@ class PedidoMultiItemRepository(context: Context) {
     ): PedidoMultiItemResponse? {
         val tokens = tokenStore.current() ?: return null
         var (accessToken, refreshToken) = tokens
+        // Offline: entra na fila do aparelho (MultiItemOutbox) e o servidor
+        // lança (incl. baixa em Estoque) quando a internet voltar.
+        val reqId = java.util.UUID.randomUUID().toString()
+        suspend fun queue(): PedidoMultiItemResponse {
+            outbox.enqueuePedido(
+                PedidoMultiItemRequest(
+                    accessToken = "", refreshToken = "", noPedido = noPedido, setor = setor,
+                    fornecedor = fornecedor, safra = safra, cultura = cultura,
+                    dataEntrega = dataEntrega, nf = nf, itens = itens, clientRequestId = reqId,
+                )
+            )
+            return PedidoMultiItemResponse(ok = true, count = itens.size, savedOffline = true)
+        }
+        if (!NetworkStatus.isOnline(appContext)) return queue()
         return try {
             fun buildRequest() = PedidoMultiItemRequest(
                 accessToken = accessToken,
@@ -44,6 +61,7 @@ class PedidoMultiItemRepository(context: Context) {
                 dataEntrega = dataEntrega,
                 nf = nf,
                 itens = itens,
+                clientRequestId = reqId,
             )
             var response = NetworkModule.mobileApi.pedidoMultiItem(buildRequest())
             if (response.code() == 401) {
@@ -60,7 +78,8 @@ class PedidoMultiItemRepository(context: Context) {
             body
         } catch (e: Exception) {
             AppLog.e("PedidoMultiItemRepository", "Falha ao lançar pedido com itens", e)
-            PedidoMultiItemResponse(ok = false, error = "Sem conexão. Tente novamente.")
+            if (MultiItemOutbox.seguroEnfileirar(e)) queue()
+            else PedidoMultiItemResponse(ok = false, error = "Erro ao lançar o pedido. Tente novamente.")
         }
     }
 }

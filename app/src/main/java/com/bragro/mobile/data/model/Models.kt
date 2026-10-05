@@ -1041,6 +1041,10 @@ data class NotaMultiItemRequest(
     // comentário acima de NotaMultiItemItemData).
     val bruto: Double,
     val itens: List<NotaMultiItemItemData>,
+    // Chave de idempotencia (UUID gerado no app, igual em todo reenvio da
+    // fila offline) -- o servidor devolve o resultado ja guardado em vez de
+    // lancar de novo. Ver MultiItemOutbox.kt / lib/idempotency.ts.
+    val clientRequestId: String? = null,
 )
 
 @Serializable
@@ -1050,6 +1054,9 @@ data class NotaMultiItemResponse(
     val itensCount: Int? = null,
     val valorTotal: Double? = null,
     val error: String? = null,
+    // true = sem conexão: ficou na fila do aparelho (MultiItemOutbox) e será
+    // lançado sozinho quando a internet voltar. Nunca vem do servidor.
+    val savedOffline: Boolean = false,
 )
 
 // Pedidos/Cotações: "novo modelo" de vários itens no mesmo lançamento --
@@ -1082,6 +1089,7 @@ data class PedidoMultiItemRequest(
     val dataEntrega: String? = null,
     val nf: String? = null,
     val itens: List<PedidoMultiItemItemData>,
+    val clientRequestId: String? = null,
 )
 
 @Serializable
@@ -1089,6 +1097,7 @@ data class PedidoMultiItemResponse(
     val ok: Boolean,
     val count: Int? = null,
     val error: String? = null,
+    val savedOffline: Boolean = false,
 )
 
 // Módulo de Orçamento (OCR + conciliação com nota mãe) -- ver
@@ -1420,6 +1429,7 @@ data class CotacaoMultiItemRequest(
     val validadeProposta: String? = null,
     val observacoes: String? = null,
     val itens: List<CotacaoMultiItemItemData>,
+    val clientRequestId: String? = null,
 )
 
 @Serializable
@@ -1427,6 +1437,7 @@ data class CotacaoMultiItemResponse(
     val ok: Boolean,
     val count: Int? = null,
     val error: String? = null,
+    val savedOffline: Boolean = false,
 )
 
 // Inverso do multi-item acima -- pedido do usuário ("Cotações Fornecedores:
@@ -1455,6 +1466,7 @@ data class CotacaoComparacaoRequest(
     val unidade: String? = null,
     val observacoes: String? = null,
     val propostas: List<CotacaoComparacaoPropostaData>,
+    val clientRequestId: String? = null,
 )
 
 @Serializable
@@ -1462,6 +1474,7 @@ data class CotacaoComparacaoResponse(
     val ok: Boolean,
     val count: Int? = null,
     val error: String? = null,
+    val savedOffline: Boolean = false,
 )
 
 // Preço médio histórico de um item (task #472, pedido do usuário: "unifique

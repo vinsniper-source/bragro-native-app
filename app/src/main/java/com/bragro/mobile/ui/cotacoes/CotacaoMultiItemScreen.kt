@@ -314,6 +314,7 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             var total = 0
             var erro: String? = null
+            var offline = false
             for (g in validos) {
                 val resultado = repository.criarComparacao(
                     data = com.bragro.mobile.ui.domain.brDateToIso(data),
@@ -336,6 +337,7 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
                     erro = resultado?.error ?: "Erro ao lançar a cotação."
                     break
                 }
+                if (resultado.savedOffline) offline = true
                 total += resultado.count ?: g.propostasValidas().size
             }
             pending.value = false
@@ -343,7 +345,13 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
                 errorMessage.value = erro
                 return@launch
             }
-            successMessage.value = if (validos.size > 1) "$total proposta(s) lançada(s) em ${validos.size} itens." else "$total proposta(s) lançada(s)."
+            successMessage.value = if (offline) {
+                "Sem internet: $total proposta(s) salva(s) no aparelho. Serão lançadas sozinhas quando a conexão voltar."
+            } else if (validos.size > 1) {
+                "$total proposta(s) lançada(s) em ${validos.size} itens."
+            } else {
+                "$total proposta(s) lançada(s)."
+            }
         }
     }
 }

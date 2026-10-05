@@ -204,6 +204,24 @@ class RecordRepository(private val context: Context) {
         val pending = db.pendingSyncDao().allOnce().find { it.id == pendingId } ?: return null
         val tokens = tokenStore.current() ?: return null
 
+        // Lancamentos "com varios itens" (Nota/Pedido/Cotacao) tem fila propria
+        // de payload -- ver MultiItemOutbox. Nao passam pelo /api/offline-sync.
+        if (MultiItemOutbox.isMulti(pending.domainId)) {
+            return when (val r = MultiItemOutbox(context).replay(pending)) {
+                is MultiItemOutbox.Replay.Done -> {
+                    db.pendingSyncDao().delete(pending.id)
+                    SaveResult.SavedOnline
+                }
+                is MultiItemOutbox.Replay.Retry -> null
+                is MultiItemOutbox.Replay.Rejected -> {
+                    // Recusa do servidor nao se resolve tentando de novo --
+                    // vira "conflito" (fica visivel, sai do retry automatico).
+                    db.pendingSyncDao().marcarConflito(pending.id, r.message)
+                    SaveResult.Failure(r.message)
+                }
+            }
+        }
+
         return try {
             val fieldsMap = jsonStringToMap(pending.fieldsJson).mapValues { it.value ?: "" }
             var accessToken = tokens.first

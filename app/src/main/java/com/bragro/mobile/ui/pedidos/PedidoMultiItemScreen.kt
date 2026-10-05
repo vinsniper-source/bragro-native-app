@@ -281,7 +281,11 @@ class PedidoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
                 errorMessage.value = resultado?.error ?: "Erro ao lançar o pedido."
                 return@launch
             }
-            successMessage.value = "${resultado.count ?: validas.size} item(ns) lançado(s) no pedido ${noPedido.trim()}."
+            successMessage.value = if (resultado.savedOffline) {
+                "Sem internet: pedido ${noPedido.trim()} salvo no aparelho (${validas.size} item(ns)). Será lançado sozinho quando a conexão voltar."
+            } else {
+                "${resultado.count ?: validas.size} item(ns) lançado(s) no pedido ${noPedido.trim()}."
+            }
         }
     }
 }
