@@ -21,6 +21,7 @@ class AuthRepository(private val context: Context) {
     private val tokenStore = TokenStore(context)
     private val configRepository = ConfigRepository(context)
     private val db = AppDatabase.get(context)
+    private val vault = com.bragro.mobile.data.OfflineVault(context)
 
     suspend fun login(email: String, password: String): LoginResult {
         return try {
@@ -68,6 +69,9 @@ class AuthRepository(private val context: Context) {
             // (pedido do usuario: o app nao precisa ter sido aberto em cada
             // modulo antes da conexao cair).
             com.bragro.mobile.sync.PrefetchWorker.enqueue(context)
+            // Cofre de login offline (ver OfflineVault): permite entrar de novo
+            // sem internet neste aparelho, mesmo depois de sair da conta.
+            db.sessionDao().get()?.let { vault.save(email, password, it) }
             LoginResult.Success
         } catch (e: Exception) {
             AppLog.e("AuthRepository", "Falha ao fazer login/bootstrap para email=$email", e)
@@ -77,6 +81,10 @@ class AuthRepository(private val context: Context) {
             // aparelho (com.bragro.mobile.data.NetworkStatus) antes de
             // afirmar isso, pedido do usuario ("o app esta acusando sem
             // conexao mesmo com wifi e dados ligados").
+            if (!com.bragro.mobile.data.NetworkStatus.isOnline(context)) {
+                val offline = tryOfflineLogin(email, password)
+                if (offline != null) return offline
+            }
             val msg = if (com.bragro.mobile.data.NetworkStatus.isOnline(context)) {
                 "Não foi possível conectar ao servidor. Tente novamente em alguns instantes."
             } else {
@@ -86,13 +94,30 @@ class AuthRepository(private val context: Context) {
         }
     }
 
+    /** Login SEM internet: confere e-mail+senha contra o cofre (guardado no
+     * ultimo login online deste aparelho) e, se bater, restaura a sessao
+     * local -- os dados em cache (registros, listas, fazendas) continuam no
+     * aparelho. Devolve null se nao ha cofre / senha nao confere (quem chamou
+     * mostra o erro normal de "sem conexao"). Os tokens restaurados podem
+     * estar vencidos: sao renovados sozinhos quando a internet voltar, e a
+     * fila de lancamentos offline sincroniza nessa hora. */
+    private suspend fun tryOfflineLogin(email: String, password: String): LoginResult? {
+        val session = vault.verify(email, password) ?: return null
+        tokenStore.save(session.accessToken, session.refreshToken, session.email)
+        tokenStore.setLastOrgId(session.orgId)
+        db.sessionDao().upsert(session)
+        return LoginResult.Success
+    }
+
     suspend fun isLoggedIn(): Boolean = db.sessionDao().get() != null
 
     suspend fun logout() {
         tokenStore.clear()
         db.sessionDao().clear()
-        db.lookupDao().clearAll()
-        db.farmDao().clearAll()
+        // Listas suspensas e fazendas NAO sao apagadas no logout: o login
+        // offline (OfflineVault) precisa delas pra reabrir o app sem
+        // internet. O proximo login online reescreve ambas (bootstrap) e,
+        // se a organizacao mudou, limpa o resto (ver login()).
         // Registros e fila de sincronizacao pendente NAO sao apagados AQUI
         // no logout de proposito -- um lancamento feito offline nao pode se
         // perder so porque o usuario saiu da conta antes de reconectar.
