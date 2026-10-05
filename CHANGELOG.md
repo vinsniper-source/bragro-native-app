@@ -3,6 +3,19 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.29] -- 2026-10-05
+
+- **Migração de dados por CSV no app (Base de Dados)**: novo botão "Migrar
+  dados de outra plataforma (CSV)" (só dono/administrador). Escolha o módulo
+  de destino, a plataforma de origem numa lista suspensa (Aegro, Farmbox,
+  Granular, Solinftec, Siagri, TOTVS Agro, Conta Azul, Omie ou planilha
+  genérica), o arquivo CSV, confira o mapeamento de colunas sugerido e
+  importe. A importação roda no servidor com a mesma lógica do site (listas
+  suspensas e fazendas já cadastradas são reaproveitadas, sem duplicar).
+  Os mapeamentos por plataforma são baseados nos nomes de coluna mais comuns
+  de cada uma -- não em arquivos reais de exportação -- então sempre ficam
+  como sugestão a conferir.
+
 ## [1.3.28] -- 2026-10-03
 
 - **Anexar foto nos valores de lista suspensa (Base de Dados)**: pedido do

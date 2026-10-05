@@ -10,6 +10,10 @@ import com.bragro.mobile.data.model.BankImportConfirmRequest
 import com.bragro.mobile.data.model.BankImportConfirmResponse
 import com.bragro.mobile.data.model.BankImportSignaturesRequest
 import com.bragro.mobile.data.model.BankImportSignaturesResponse
+import com.bragro.mobile.data.model.CsvImportAnalyzeResponse
+import com.bragro.mobile.data.model.CsvImportOptionsResponse
+import com.bragro.mobile.data.model.CsvImportRequest
+import com.bragro.mobile.data.model.CsvImportRunResponse
 import com.bragro.mobile.data.model.BaseDeDadosRequest
 import com.bragro.mobile.data.model.BaseDeDadosResponse
 import com.bragro.mobile.data.model.BootstrapRequest
@@ -199,6 +203,16 @@ interface MobileApi {
 
     @POST("api/mobile/bank-import")
     suspend fun bankImportConfirm(@Body body: BankImportConfirmRequest): Response<BankImportConfirmResponse>
+
+    // Migração de Dados (CSV de outra plataforma) -- 1 rota, 3 actions, 3 formas de resposta.
+    @POST("api/mobile/csv-import")
+    suspend fun csvImportOptions(@Body body: CsvImportRequest): Response<CsvImportOptionsResponse>
+
+    @POST("api/mobile/csv-import")
+    suspend fun csvImportAnalyze(@Body body: CsvImportRequest): Response<CsvImportAnalyzeResponse>
+
+    @POST("api/mobile/csv-import")
+    suspend fun csvImportRun(@Body body: CsvImportRequest): Response<CsvImportRunResponse>
 
     @POST("api/mobile/dre")
     suspend fun dre(@Body body: DreRequest): Response<DreResponse>

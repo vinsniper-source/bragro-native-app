@@ -264,7 +264,12 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
 // mesmo pedido do usuário de tela fixa no app, sem redirecionar pro site.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = viewModel()) {
+fun BaseDeDadosScreen(
+    onBack: () -> Unit,
+    // Null = esconde o botão (só OWNER/ADMIN recebem a lambda, ver BRAgroNavHost).
+    onOpenCsvImport: (() -> Unit)? = null,
+    viewModel: BaseDeDadosViewModel = viewModel(),
+) {
     LaunchedEffect(Unit) { viewModel.load() }
     val data by viewModel.data
     val loading by viewModel.loading
@@ -376,6 +381,13 @@ fun BaseDeDadosScreen(onBack: () -> Unit, viewModel: BaseDeDadosViewModel = view
                                 }
                             }
                         }
+                    }
+                }
+            }
+            if (onOpenCsvImport != null) {
+                item(key = "csv_import") {
+                    OutlinedButton(onClick = onOpenCsvImport, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
+                        Text("Migrar dados de outra plataforma (CSV)")
                     }
                 }
             }

@@ -2379,6 +2379,70 @@ data class BankImportConfirmRequest(
 @Serializable
 data class BankImportConfirmResponse(val ok: Boolean, val imported: Int = 0, val error: String? = null)
 
+// -- Migração de Dados (CSV de outra plataforma) -- réplica de
+// base-de-dados/importar/import-client.tsx. O parsing e a gravação rodam no
+// servidor (/api/mobile/csv-import, mesmas Server Actions do site); o app só
+// manda o texto do CSV e o mapeamento coluna -> campo. "action" SEM valor
+// padrão de propósito: o Json do NetworkModule não usa encodeDefaults, então
+// um default nunca iria no corpo. --
+
+@Serializable
+data class CsvImportRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String, // "list_options" | "analyze" | "run"
+    val domainId: String? = null,
+    val csvText: String? = null,
+    val platformId: String? = null,
+    val mapping: Map<String, String>? = null, // coluna do CSV -> field key (só colunas mapeadas)
+)
+
+@Serializable
+data class CsvImportDomainOption(val id: String, val label: String)
+
+@Serializable
+data class CsvImportPlatformOption(val id: String, val label: String, val hint: String = "")
+
+@Serializable
+data class CsvImportOptionsResponse(
+    val ok: Boolean,
+    val domains: List<CsvImportDomainOption> = emptyList(),
+    val platforms: List<CsvImportPlatformOption> = emptyList(),
+    val error: String? = null,
+)
+
+@Serializable
+data class CsvImportField(
+    val key: String,
+    val label: String,
+    val type: String = "text",
+    val required: Boolean = false,
+)
+
+@Serializable
+data class CsvImportAnalyzeResponse(
+    val ok: Boolean,
+    val columns: List<String> = emptyList(),
+    val sampleRows: List<Map<String, String>> = emptyList(),
+    val totalRows: Int = 0,
+    val fields: List<CsvImportField> = emptyList(),
+    val suggestedMapping: Map<String, String?> = emptyMap(),
+    val error: String? = null,
+)
+
+@Serializable
+data class CsvImportRowError(val row: Int, val message: String)
+
+@Serializable
+data class CsvImportRunResponse(
+    val ok: Boolean,
+    val criados: Int = 0,
+    val lookupsReaproveitados: Int = 0,
+    val lookupsNovos: Int = 0,
+    val erros: List<CsvImportRowError> = emptyList(),
+    val error: String? = null,
+)
+
 // Pivôs de Irrigação (Lindsay FieldNET/Valley 365-AgSense/Reinke ReinCloud)
 // -- pedido do usuário com documentação técnica completa de integração
 // OAuth2. Mesmo scaffolding dos demais módulos com integração de

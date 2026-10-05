@@ -23,6 +23,7 @@ import com.bragro.mobile.data.local.AppDatabase
 import com.bragro.mobile.data.repo.AuthRepository
 import com.bragro.mobile.ui.analises.AnalisesScreen
 import com.bragro.mobile.ui.basededados.BaseDeDadosScreen
+import com.bragro.mobile.ui.csvimport.CsvImportScreen
 import com.bragro.mobile.ui.dre.DreScreen
 import com.bragro.mobile.ui.livrocaixa.LivroCaixaScreen
 import com.bragro.mobile.ui.drone.DroneScreen
@@ -95,6 +96,7 @@ private object Routes {
     const val BANK_IMPORT = "bank_import"
     const val SETTINGS = "settings"
     const val BASE_DE_DADOS = "base_de_dados"
+    const val CSV_IMPORT = "csv_import"
     const val SEGURANCA = "seguranca"
     const val DOMAIN_LIST = "domain/{domainId}"
     const val DOMAIN_FORM_NEW = "domain/{domainId}/new"
@@ -384,7 +386,17 @@ fun BRAgroNavHost() {
             SettingsScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.BASE_DE_DADOS) {
-            BaseDeDadosScreen(onBack = { navController.popBackStack() })
+            BaseDeDadosScreen(
+                onBack = { navController.popBackStack() },
+                // Migração de Dados (CSV) só pra OWNER/ADMIN (mesmo critério do
+                // site e do servidor, que também recusa outros papéis).
+                onOpenCsvImport = if (session?.role == "OWNER" || session?.role == "ADMIN") {
+                    { navController.navigate(Routes.CSV_IMPORT) }
+                } else null,
+            )
+        }
+        composable(Routes.CSV_IMPORT) {
+            CsvImportScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.SEGURANCA) {
             SegurancaScreen(onBack = { navController.popBackStack() })
