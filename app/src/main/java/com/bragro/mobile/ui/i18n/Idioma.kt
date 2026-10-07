@@ -70,6 +70,7 @@ object Idioma {
 
     fun tr(s: String): String {
         if (codigo != "es" || s.isBlank()) return s
+        if (pais == "AR" && s.contains("BRAgro")) return tr(s.replace("BRAgro", "ARgro"))
         val lead = s.takeWhile { it.isWhitespace() }
         val trail = s.takeLastWhile { it.isWhitespace() }
         val core = s.trim()
