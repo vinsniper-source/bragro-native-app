@@ -1448,6 +1448,10 @@ fun HomeScreen(
             if (com.bragro.mobile.ui.i18n.Idioma.argentina && dolarAr.isNotEmpty() && data.hasWidget("inicio.cambio")) {
                 item(key = "dolar-ar") { DolarArgentinaCard(dolarAr) }
             }
+            val mercadoAr = weather?.mercadoAr.orEmpty()
+            if (com.bragro.mobile.ui.i18n.Idioma.argentina && mercadoAr.isNotEmpty() && data.hasWidget("inicio.cambio")) {
+                item(key = "mercado-ar") { MercadoArgentinaCard(mercadoAr) }
+            }
             // Fazendas cadastradas -- pedido do usuário ("desabilite o kpi
             // total fazendas, deixe habilitado apenas no setor safra"): não
             // tem toggle próprio em Acessos (nunca teve, ver comentário
@@ -2588,6 +2592,34 @@ private fun DolarArgentinaCard(lista: List<com.bragro.mobile.data.model.DolarArD
             }
             Text(
                 "Compra / Venta · dolarapi.com",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun MercadoArgentinaCard(lista: List<com.bragro.mobile.data.model.MercadoArData>) {
+    val fmt = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("es", "AR")).apply {
+        currency = java.util.Currency.getInstance("ARS")
+        maximumFractionDigits = 0
+    }
+    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("Mercado de granos y hacienda", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            lista.forEach { q ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                    Text(q.nome + " (" + q.unidade + ")", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        fmt.format(q.valor) + if (q.stale) " ·último" else "",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+                    )
+                }
+            }
+            Text(
+                "BCR · MAG Cañuelas",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

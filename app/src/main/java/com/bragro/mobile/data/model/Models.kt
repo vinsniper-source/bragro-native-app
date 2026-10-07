@@ -1746,7 +1746,19 @@ data class WeatherResponse(
     val commodities: CommodityQuotesData? = null,
     val livestock: LivestockQuotesData? = null,
     val dolarAr: List<DolarArData> = emptyList(),
+    val mercadoAr: List<MercadoArData> = emptyList(),
     val error: String? = null,
+)
+
+// Graos (BCR Pizarra, ARS/t) e hacienda (MAG Canuelas, ARS/kg) -- ver
+// getMercadoArgentina em quotes.ts. Exibido so quando o pais = Argentina.
+@Serializable
+data class MercadoArData(
+    val nome: String = "",
+    val unidade: String = "",
+    val fonte: String = "",
+    val valor: Double = 0.0,
+    val stale: Boolean = false,
 )
 
 // Dolar na Argentina (oficial/blue/MEP/CCL), em AR$ -- ver getDolarArgentina
