@@ -210,7 +210,18 @@ fun statusTone(raw: String): Tone? {
     if (v.isEmpty() || v == "—") return null
     STATUS_TONE[v]?.let { return it }
     if (v.startsWith("⚠") || v.contains("VERIFICAR")) return Tone.BAD
-    return null
+    return statusToneHeuristic(v)
+}
+
+private val BAD_RE = Regex("(ATRAS|VENCID|CANCEL|NEGAT|RUIM|ERRO|FALH|REJEIT|BLOQUE|INATIV|PERDID|DEVEND|INADIMPL|EXCED|ACIMA|DESLIG|AFASTAD|RECUS|NEGAD|FALT)")
+private val WARN_RE = Regex("(PEND|ANDAMENT|ABERTO|AGUARD|PARCIAL|ANALISE|ANÁLISE|REPOR|ATEN|MONITOR|REAVAL|SEM |PROX|PRÓX|CARÊNC|CARENC|BAIXO|REGULAR|RASCUNHO|PLANEJ|EM )")
+
+/** Valor fora do dicionario: classifica por palavra-chave e, se nada bater,
+ * cai em GOOD (nunca deixa um status sem fundo/cor). Espelha o site. */
+private fun statusToneHeuristic(v: String): Tone = when {
+    BAD_RE.containsMatchIn(v) -> Tone.BAD
+    WARN_RE.containsMatchIn(v) -> Tone.WARN
+    else -> Tone.GOOD
 }
 
 /** Pill colorido (verde/amarelo/vermelho) pra colunas "status-like" -- mesmo

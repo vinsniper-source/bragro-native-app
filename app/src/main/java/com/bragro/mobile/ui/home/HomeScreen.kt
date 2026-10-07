@@ -2975,9 +2975,15 @@ private fun DestaquesCard(data: HomeData, updatedAtMillis: Long?, modifier: Modi
             // plataforma"). destaquesVisiveis() abaixo nunca retorna lista
             // vazia (pedido do usuário: "nunca deixe um espaço em branco").
             destaquesVisiveis(data).forEach { (label, valor) ->
-                Row {
-                    Text("$label: ")
-                    Text(valor, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                ) {
+                    Text("$label: ", color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text(valor, color = MaterialTheme.colorScheme.onSecondaryContainer, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
                 }
             }
             // Data/hora da última busca ao vivo -- pedido do usuário
