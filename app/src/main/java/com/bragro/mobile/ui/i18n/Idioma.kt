@@ -111,9 +111,12 @@ object Idioma {
     private val RE_FAZENDAS = Regex("^(\\d+) fazendas?$")
     private val RE_VALID = Regex("^(.+?) (é obrigatóri[oa]|inválid[oa]s?|muito long[oa]|não encontrad[oa])\\.?$", RegexOption.IGNORE_CASE)
 
+    private val PALAVRAS_ALL: Map<String, String> by lazy { IdiomaExtra2.PALAVRAS2 + IdiomaExtra.PALAVRAS }
+
     private fun traduzirPalavras(core: String): String? {
         if (core.length > 70 || core.any { it in "<>{}" }) return null
         if (core.none { it.isWhitespace() } && core.length <= 2) return null
+        val parcial = core == core.uppercase() && Regex("[A-ZÀ-Ú]{3}").containsMatchIn(core)
         var conhecidas = 0
         val out = StringBuilder()
         for (p in Regex("\\s+|\\S+").findAll(core).map { it.value }) {
@@ -123,10 +126,17 @@ object Idioma {
             val word = p.drop(pre.length).dropLast(post.length)
             if (word.none { it.isLetter() }) { out.append(p); continue }
             val key = norm(word).trimEnd('.', '/', '-')
-            val hit = IdiomaExtra.PALAVRAS[key]
-                ?: if ('-' in key) key.split("-").map { IdiomaExtra.PALAVRAS[it] ?: return null }.joinToString("-") else return null
+            var hit = PALAVRAS_ALL[key] ?: PALAVRAS_ALL[key.replace(".", "")]
+            if (hit == null && '-' in key) {
+                val segs = key.split("-").map { PALAVRAS_ALL[it] }
+                if (segs.all { it != null }) hit = segs.joinToString("-")
+            }
+            if (hit == null) {
+                if (parcial) { out.append(p); continue }
+                return null
+            }
             if (key !in STOP) conhecidas++
-            out.append(pre).append(hit).append(post)
+            out.append(pre).append(if (parcial) hit.uppercase() else hit).append(post)
         }
         return if (conhecidas > 0) out.toString() else null
     }
