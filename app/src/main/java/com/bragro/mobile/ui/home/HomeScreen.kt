@@ -2536,9 +2536,9 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: 
             fun cruz(a: Double?, b: Double?): Double? = if (a != null && b != null) ((1 + a / 100) / (1 + b / 100) - 1) * 100 else null
             // Argentina: Dolar/Euro/Real em ARS; Brasil: Dolar/Euro/Peso em R$.
             val itens: List<Triple<String, String, Double?>> = if (com.bragro.mobile.ui.i18n.Idioma.argentina) listOf(
-                Triple("Dólar:", if (ars != null && fx.usdBrl != null) comCodigo(fx.usdBrl / ars, "ARS", 0) else "—", cruz(fx.usdVariacaoPct, fx.arsVariacaoPct)),
-                Triple("Euro:", if (ars != null && fx.eurBrl != null) comCodigo(fx.eurBrl / ars, "ARS", 0) else "—", cruz(fx.eurVariacaoPct, fx.arsVariacaoPct)),
-                Triple("Real:", if (ars != null) comCodigo(1 / ars, "ARS", 0) else "—", fx.arsVariacaoPct?.let { -it }),
+                Triple("Dólar:", if (ars != null && fx.usdBrl != null) comCodigo(fx.usdBrl / ars, "ARS", 2) else "—", cruz(fx.usdVariacaoPct, fx.arsVariacaoPct)),
+                Triple("Euro:", if (ars != null && fx.eurBrl != null) comCodigo(fx.eurBrl / ars, "ARS", 2) else "—", cruz(fx.eurVariacaoPct, fx.arsVariacaoPct)),
+                Triple("Real:", if (ars != null) comCodigo(1 / ars, "ARS", 2) else "—", fx.arsVariacaoPct?.let { -it }),
             ) else listOf(
                 Triple("Dólar:", fx.usdBrl?.let { formatMoneyBrl(it) } ?: "—", fx.usdVariacaoPct),
                 Triple("Euro:", fx.eurBrl?.let { formatMoneyBrl(it) } ?: "—", fx.eurVariacaoPct),
