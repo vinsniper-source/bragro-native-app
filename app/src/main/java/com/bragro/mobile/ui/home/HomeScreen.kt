@@ -2573,12 +2573,20 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: 
     }
 }
 
+/** Nomenclatura exibida: R$ / U$D / ARS (codigo antes do valor). */
+private fun comCodigo(valor: Double, moeda: String, casas: Int = 2): String {
+    val locale = when (moeda) { "BRL" -> java.util.Locale("pt", "BR"); "USD" -> java.util.Locale.US; else -> java.util.Locale("es", "AR") }
+    val nf = java.text.NumberFormat.getNumberInstance(locale).apply {
+        minimumFractionDigits = casas
+        maximumFractionDigits = casas
+    }
+    val prefixo = when (moeda) { "BRL" -> "R\$"; "USD" -> "U\$D"; else -> "ARS" }
+    return "$prefixo ${nf.format(valor)}"
+}
+
 @Composable
 private fun DolarArgentinaCard(lista: List<com.bragro.mobile.data.model.DolarArData>) {
-    val fmt = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("es", "AR")).apply {
-        currency = java.util.Currency.getInstance("ARS")
-        maximumFractionDigits = 0
-    }
+    val fmt = object { fun format(v: Double) = comCodigo(v, "ARS", 0) }
     Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Dólar Argentina", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
@@ -2603,10 +2611,7 @@ private fun DolarArgentinaCard(lista: List<com.bragro.mobile.data.model.DolarArD
 
 @Composable
 private fun MercadoArgentinaCard(lista: List<com.bragro.mobile.data.model.MercadoArData>) {
-    val fmt = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("es", "AR")).apply {
-        currency = java.util.Currency.getInstance("ARS")
-        maximumFractionDigits = 0
-    }
+    val fmt = object { fun format(v: Double) = comCodigo(v, "ARS", 0) }
     Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Mercado de granos y hacienda", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
@@ -2637,7 +2642,7 @@ private fun CambioConversor(fx: com.bragro.mobile.data.model.FxRatesData) {
     var valor by remember { mutableStateOf("100") }
     var de by remember { mutableStateOf("BRL") }
     TextButton(onClick = { aberto = !aberto }) {
-        Text(if (aberto) "Fechar conversor" else "Conversor R\$ / US\$ / AR\$")
+        Text(if (aberto) "Fechar conversor" else "Conversor BRL / U\$D / ARS")
     }
     if (!aberto) return
     // BRL por 1 unidade de cada moeda.
@@ -2658,7 +2663,7 @@ private fun CambioConversor(fx: com.bragro.mobile.data.model.FxRatesData) {
         )
         listOf("BRL", "USD", "ARS").forEach { c ->
             TextButton(onClick = { de = c }) {
-                Text(c, fontWeight = if (de == c) FontWeight.Bold else FontWeight.Normal)
+                Text(if (c == "USD") "U\$D" else c, fontWeight = if (de == c) FontWeight.Bold else FontWeight.Normal)
             }
         }
     }
@@ -2666,11 +2671,10 @@ private fun CambioConversor(fx: com.bragro.mobile.data.model.FxRatesData) {
         val f = brlPer(de)
         val t = brlPer(alvo)
         val res = if (num != null && f != null && t != null && t > 0) num * f / t else null
-        val locale = when (alvo) { "BRL" -> java.util.Locale("pt", "BR"); "USD" -> java.util.Locale.US; else -> java.util.Locale("es", "AR") }
         Row {
-            Text("$alvo:", modifier = Modifier.width(52.dp))
+            Text((if (alvo == "USD") "U\$D" else alvo) + ":", modifier = Modifier.width(52.dp))
             Text(
-                res?.let { java.text.NumberFormat.getCurrencyInstance(locale).apply { currency = java.util.Currency.getInstance(alvo) }.format(it) } ?: "—",
+                res?.let { comCodigo(it, alvo) } ?: "—",
                 fontWeight = FontWeight.Bold,
             )
         }
@@ -2975,15 +2979,9 @@ private fun DestaquesCard(data: HomeData, updatedAtMillis: Long?, modifier: Modi
             // plataforma"). destaquesVisiveis() abaixo nunca retorna lista
             // vazia (pedido do usuário: "nunca deixe um espaço em branco").
             destaquesVisiveis(data).forEach { (label, valor) ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.secondaryContainer)
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                ) {
-                    Text("$label: ", color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    Text(valor, color = MaterialTheme.colorScheme.onSecondaryContainer, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
+                Row {
+                    Text("$label: ")
+                    Text(valor, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
                 }
             }
             // Data/hora da última busca ao vivo -- pedido do usuário

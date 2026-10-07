@@ -205,6 +205,22 @@ fun formatMoneyValue(rawValue: String): String {
     return if (n == null) rawValue else NumberFormat.getCurrencyInstance(PT_BR_MONEY).format(n)
 }
 
+private val VENC_KEY = Regex("^(vcto|vencimento|prazo|dataVencimento)", RegexOption.IGNORE_CASE)
+private val PAGO_RE = Regex("PAG|RECEB|CONCLU|FINALIZ|ENTREGUE|CANCEL|OK", RegexOption.IGNORE_CASE)
+
+/** Vencimento ja passado em lancamento nao concluido -> fonte vermelha
+ * (espelha overdueDateClass em data-table.tsx). So destaca o relevante. */
+fun isVencidoCampo(key: String, value: String?, status: String?): Boolean {
+    if (!VENC_KEY.containsMatchIn(key) || value.isNullOrBlank()) return false
+    if (status != null && PAGO_RE.containsMatchIn(status)) return false
+    val ms = isoDateMillis(value) ?: return false
+    val hoje = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply {
+        set(java.util.Calendar.HOUR_OF_DAY, 0); set(java.util.Calendar.MINUTE, 0)
+        set(java.util.Calendar.SECOND, 0); set(java.util.Calendar.MILLISECOND, 0)
+    }.timeInMillis
+    return ms < hoje
+}
+
 fun statusTone(raw: String): Tone? {
     val v = raw.trim().uppercase()
     if (v.isEmpty() || v == "—") return null

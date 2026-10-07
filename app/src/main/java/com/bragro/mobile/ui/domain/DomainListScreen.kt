@@ -1882,6 +1882,8 @@ private fun RecordFieldLine(
         // valores (mesmo critério de FinanceiroFieldLine/RecordTable).
         val moneyColor = if (domainId == "financeiro" && (col.key == "bruto" || col.key == "liquido")) {
             if (isReceitaOp(record["operacao"])) MaterialTheme.colorScheme.primary else com.bragro.mobile.ui.theme.BrOrange
+        } else if (isVencidoCampo(col.key, record[col.key], record["status"])) {
+            MaterialTheme.colorScheme.error
         } else null
         // Negrito só no valor preenchido, cabeçalho fica normal/mais claro --
         // pedido do usuário ("coloque ou o cabeçalho ou o campo preenchido em

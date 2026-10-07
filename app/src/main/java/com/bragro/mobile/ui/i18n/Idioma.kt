@@ -833,7 +833,7 @@ object Idioma {
     "Atualizado a cada 30 min · Fonte: Open-Meteo" to "Actualizado cada 30 min · Fuente: Open-Meteo",
     "Atualizado a cada 15 min · Fonte: AwesomeAPI" to "Actualizado cada 15 min · Fuente: AwesomeAPI",
     "Peso:" to "Peso:",
-    "Conversor R\$ / US\$ / AR\$" to "Conversor R\$ / US\$ / AR\$",
+    "Conversor BRL / U\$D / ARS" to "Conversor BRL / U\$D / ARS",
     "Fechar conversor" to "Cerrar conversor",
     "Nenhum registro ainda. Toque no botão para adicionar." to "Aún no hay registros. Toque el botón para agregar.",
     "Nenhum pivô cadastrado ainda. Toque no botão para adicionar." to "Aún no hay pivotes registrados. Toque el botón para agregar.",
