@@ -271,6 +271,7 @@ private val BOTTOM_TABS = listOf(
         items = listOf(
             SectorTarget.Domain("estoque", "Estoque"),
             SectorTarget.Special("reconciliacaoestoque", "Reconciliação Físico x Fiscal"),
+            SectorTarget.Special("silos", "Silos cilíndricos"),
         ),
     ),
     // Ex-aba "RH" (2 itens soltos, sem category) -- virou 2 abas de acesso
@@ -364,6 +365,7 @@ private val OWNER_BOTTOM_TABS = listOf(
             SectorTarget.Domain("estoque", "Estoque"),
             SectorTarget.Special("controleinsumos", "Controle de Insumos"),
             SectorTarget.Special("reconciliacaoestoque", "Reconciliação Físico x Fiscal"),
+            SectorTarget.Special("silos", "Silos cilíndricos"),
         ),
     ),
     BottomTab(
@@ -538,6 +540,7 @@ fun BRAgroBottomBar(
     // Pivôs de Irrigação (Task #904-909) -- mesmo critério de
     // onOpenPrescricao/onOpenReconciliacaoEstoque acima.
     onOpenPivos: () -> Unit,
+    onOpenSilos: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenBaseDeDados: () -> Unit,
     onOpenSeguranca: () -> Unit,
@@ -612,6 +615,7 @@ fun BRAgroBottomBar(
                 "reconciliacaoestoque" -> onOpenReconciliacaoEstoque()
                 "nfe" -> onOpenNfe()
                 "pivos" -> onOpenPivos()
+                "silos" -> onOpenSilos()
             }
         }
     }
@@ -925,6 +929,7 @@ private fun sectorItemIcon(item: SectorTarget, fallback: ImageVector): ImageVect
         "nfe" -> Icons.Filled.ReceiptLong
         // Pivôs de Irrigação (Task #904-909) -- mesmo critério acima.
         "pivos" -> Icons.Filled.WaterDrop
+        "silos" -> Icons.Filled.Storage
         else -> fallback
     }
 }

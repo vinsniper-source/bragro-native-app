@@ -3,6 +3,14 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.36] -- 2026-10-06
+
+- Módulo Silos cilíndricos completo (15ª exceção de schema): cadastro de silos
+  (produto, fabricante, capacidade, diâmetro/altura, ID externo), leituras de
+  nível/temperatura/umidade, status (Normal/Atenção/Crítico/Vazio), gráfico de
+  estoque armazenado e card de provedores. Entrada "Silos cilíndricos" no
+  menu Estoque (rota `/api/mobile/silos`).
+
 ## [1.3.35] -- 2026-10-05
 
 - Silos cilíndricos / armazenagem de grãos: novo `IntegrationModule.SILO_ARMAZENAGEM`

@@ -2596,3 +2596,73 @@ data class PivoBalancoHidricoResponse(val ok: Boolean, val balanco: List<Balanco
 
 @Serializable
 data class PivoGenericResponse(val ok: Boolean, val pivo: PivoData? = null, val error: String? = null)
+
+// Silos cilíndricos (armazenagem de grãos) -- 15a exceção de schema. UMA rota
+// (/api/mobile/silos), "action" no corpo decide o que roda no servidor
+// (list, list_farms, create, update, archive, list_leituras, create_leitura,
+// estoque) -- mesmo padrão de Pivôs. Request/Response únicos com campos
+// opcionais pra manter o transporte enxuto.
+@Serializable
+data class SiloData(
+    val id: String,
+    val nome: String,
+    val farmId: String? = null,
+    val produto: String? = null,
+    val capacidadeT: Double? = null,
+    val diametroM: Double? = null,
+    val alturaM: Double? = null,
+    val fabricante: String? = null,
+    val externalId: String? = null,
+    val nivelAtualPct: Double? = null,
+    val temperaturaAtualC: Double? = null,
+    val umidadeAtualPct: Double? = null,
+    val ultimaLeituraEm: String? = null,
+    val status: String? = null, // OK | ALERTA | CRITICO | VAZIO | SEM_DADOS
+)
+
+@Serializable
+data class SiloLeituraData(
+    val id: String,
+    val siloId: String,
+    val nivelPct: Double = 0.0,
+    val temperaturaC: Double? = null,
+    val umidadePct: Double? = null,
+    val quantidadeT: Double? = null,
+    val recordedAt: String,
+)
+
+@Serializable
+data class SiloEstoquePontoData(val data: String, val quantidadeT: Double)
+
+@Serializable
+data class SiloRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String,
+    val id: String? = null,
+    val siloId: String? = null,
+    val farmId: String? = null,
+    val nome: String? = null,
+    val produto: String? = null,
+    val capacidadeT: Double? = null,
+    val diametroM: Double? = null,
+    val alturaM: Double? = null,
+    val fabricante: String? = null,
+    val externalId: String? = null,
+    val nivelPct: Double? = null,
+    val temperaturaC: Double? = null,
+    val umidadePct: Double? = null,
+    val recordedAt: String? = null,
+    val dias: Int? = null,
+)
+
+@Serializable
+data class SiloResponse(
+    val ok: Boolean,
+    val silos: List<SiloData>? = null,
+    val silo: SiloData? = null,
+    val farms: List<FarmLookupData>? = null,
+    val leituras: List<SiloLeituraData>? = null,
+    val estoque: List<SiloEstoquePontoData>? = null,
+    val error: String? = null,
+)

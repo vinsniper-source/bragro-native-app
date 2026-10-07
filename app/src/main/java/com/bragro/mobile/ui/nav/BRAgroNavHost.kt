@@ -58,6 +58,7 @@ import com.bragro.mobile.ui.settings.SettingsScreen
 // scaffolding dos demais módulos com fabricante externo (Frota/Romaneio/
 // Pecuária): cadastro/telemetria/"controle" manuais, sync real fica stub.
 import com.bragro.mobile.ui.pivos.PivosScreen
+import com.bragro.mobile.ui.silos.SilosScreen
 
 private object Routes {
     const val LOGIN = "login"
@@ -82,6 +83,7 @@ private object Routes {
     // Pivôs de Irrigação (Task #904-909) -- entrada própria na barra, mesmo
     // critério de Prescrição/Reconciliação abaixo.
     const val PIVOS = "pivos"
+    const val SILOS = "silos"
     // NF-e -- módulo novo (Task #628, ausente por completo no app até aqui).
     // Não confundir com NFE_IMPORT acima (import de XML dentro de
     // Financeiro, feature diferente e pré-existente).
@@ -218,6 +220,7 @@ fun BRAgroNavHost() {
                     // Pivôs de Irrigação -- mesma rota/tela reaproveitada por
                     // qualquer entrada da barra (sem tela duplicada).
                     onOpenPivos = { navController.navigate(Routes.PIVOS) },
+                    onOpenSilos = { navController.navigate(Routes.SILOS) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                     onOpenBaseDeDados = { navController.navigate(Routes.BASE_DE_DADOS) },
                     onOpenSeguranca = { navController.navigate(Routes.SEGURANCA) },
@@ -355,6 +358,9 @@ fun BRAgroNavHost() {
         }
         composable(Routes.PIVOS) {
             PivosScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.SILOS) {
+            SilosScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.ORCAMENTO_LISTA) {
             OrcamentoListScreen(

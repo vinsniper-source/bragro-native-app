@@ -89,6 +89,7 @@ private val MODULES = listOf(
     // site (lib/permissions.ts), mesmo critério de pecuaria/dre/livrocaixa
     // acima (sem PERMISSION_ALIAS).
     "pivos" to "Pivôs de Irrigação",
+    "silos" to "Silos",
 )
 
 // Paridade com o site (seguranca-client.tsx/INICIO_WIDGETS em

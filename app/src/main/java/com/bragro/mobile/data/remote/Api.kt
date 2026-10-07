@@ -98,6 +98,8 @@ import com.bragro.mobile.data.model.NfeEmitirResponse
 import com.bragro.mobile.data.model.NfeDownloadLoteRequest
 import com.bragro.mobile.data.model.NfeDownloadLoteResponse
 import com.bragro.mobile.data.model.OrcamentoOcrItensResponse
+import com.bragro.mobile.data.model.SiloRequest
+import com.bragro.mobile.data.model.SiloResponse
 import com.bragro.mobile.data.model.PivoListRequest
 import com.bragro.mobile.data.model.PivoListResponse
 import com.bragro.mobile.data.model.PivoFarmsResponse
@@ -335,6 +337,10 @@ interface MobileApi {
 
     @POST("api/mobile/pivos")
     suspend fun pivoBalancoHidrico(@Body body: PivoBalancoHidricoRequest): Response<PivoBalancoHidricoResponse>
+
+    // Silos cilíndricos (15a exceção de schema) -- rota única, "action" no corpo.
+    @POST("api/mobile/silos")
+    suspend fun siloAction(@Body body: SiloRequest): Response<SiloResponse>
 
     // Módulo NF-e (Task #628, ausente por completo no app até aqui) -- mesmo
     // padrão de módulo de Orçamento acima: UMA rota só (/api/mobile/nfe),
