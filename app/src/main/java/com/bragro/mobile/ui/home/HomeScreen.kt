@@ -2532,32 +2532,28 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: 
             // a vírgula/casas decimais também ficam alinhadas quando os
             // valores são empilhados. Mesmo padrão usado em CotacoesCard
             // logo abaixo, pra alinhar entre os dois KPIs também.
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Dólar:", modifier = Modifier.width(52.dp))
-                Text(
-                    fx.usdBrl?.let { formatMoneyBrl(it) } ?: "—",
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
-                )
-                FxVariacaoTag(fx.usdVariacaoPct)
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Euro:", modifier = Modifier.width(52.dp))
-                Text(
-                    fx.eurBrl?.let { formatMoneyBrl(it) } ?: "—",
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
-                )
-                FxVariacaoTag(fx.eurVariacaoPct)
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Peso:", modifier = Modifier.width(52.dp))
-                Text(
-                    fx.arsBrl?.let { String.format(java.util.Locale("pt", "BR"), "R$ %.4f", it) } ?: "—",
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
-                )
-                FxVariacaoTag(fx.arsVariacaoPct)
+            val ars = fx.arsBrl?.takeIf { it > 0 }
+            fun cruz(a: Double?, b: Double?): Double? = if (a != null && b != null) ((1 + a / 100) / (1 + b / 100) - 1) * 100 else null
+            // Argentina: Dolar/Euro/Real em ARS; Brasil: Dolar/Euro/Peso em R$.
+            val itens: List<Triple<String, String, Double?>> = if (com.bragro.mobile.ui.i18n.Idioma.argentina) listOf(
+                Triple("Dólar:", if (ars != null && fx.usdBrl != null) comCodigo(fx.usdBrl / ars, "ARS", 0) else "—", cruz(fx.usdVariacaoPct, fx.arsVariacaoPct)),
+                Triple("Euro:", if (ars != null && fx.eurBrl != null) comCodigo(fx.eurBrl / ars, "ARS", 0) else "—", cruz(fx.eurVariacaoPct, fx.arsVariacaoPct)),
+                Triple("Real:", if (ars != null) comCodigo(1 / ars, "ARS", 0) else "—", fx.arsVariacaoPct?.let { -it }),
+            ) else listOf(
+                Triple("Dólar:", fx.usdBrl?.let { formatMoneyBrl(it) } ?: "—", fx.usdVariacaoPct),
+                Triple("Euro:", fx.eurBrl?.let { formatMoneyBrl(it) } ?: "—", fx.eurVariacaoPct),
+                Triple("Peso:", fx.arsBrl?.let { String.format(java.util.Locale("pt", "BR"), "R$ %.4f", it) } ?: "—", fx.arsVariacaoPct),
+            )
+            itens.forEach { (rotulo, valor, variacao) ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(rotulo, modifier = Modifier.width(52.dp))
+                    Text(
+                        valor,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+                    )
+                    FxVariacaoTag(variacao)
+                }
             }
             CambioConversor(fx)
             // Periodicidade + fonte -- pedido do usuário. Valor real do
