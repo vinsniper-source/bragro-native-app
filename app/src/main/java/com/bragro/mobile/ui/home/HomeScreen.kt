@@ -1041,7 +1041,7 @@ fun HomeScreen(
                             // limite esquerdo"), sem offset de centralização.
                             Image(
                                 painter = painterResource(if (com.bragro.mobile.ui.i18n.Idioma.argentina) R.drawable.logo_argro else R.drawable.logo_bragro),
-                                contentDescription = if (com.bragro.mobile.ui.i18n.Idioma.argentina) "ARgro" else "BRAgro",
+                                contentDescription = if (com.bragro.mobile.ui.i18n.Idioma.argentina) "ARGro" else "BRAgro",
                                 alignment = Alignment.BottomCenter,
                                 modifier = Modifier
                                     .height(80.dp)
@@ -1062,7 +1062,7 @@ fun HomeScreen(
                             ) {
                                 Image(
                                     painter = painterResource(if (com.bragro.mobile.ui.i18n.Idioma.argentina) R.drawable.logo_argro else R.drawable.logo_bragro),
-                                    contentDescription = if (com.bragro.mobile.ui.i18n.Idioma.argentina) "ARgro" else "BRAgro",
+                                    contentDescription = if (com.bragro.mobile.ui.i18n.Idioma.argentina) "ARGro" else "BRAgro",
                                     alignment = Alignment.BottomCenter,
                                     modifier = Modifier
                                         .height(80.dp)

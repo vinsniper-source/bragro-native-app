@@ -109,7 +109,7 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
         // nada, só reposicionar.
         Image(
             painter = painterResource(if (com.bragro.mobile.ui.i18n.Idioma.argentina) R.drawable.logo_argro else R.drawable.logo_bragro),
-            contentDescription = if (com.bragro.mobile.ui.i18n.Idioma.argentina) "ARgro" else "BRAgro",
+            contentDescription = if (com.bragro.mobile.ui.i18n.Idioma.argentina) "ARGro" else "BRAgro",
             modifier = Modifier
                 .height(200.dp)
                 .offset(x = (-32).dp),

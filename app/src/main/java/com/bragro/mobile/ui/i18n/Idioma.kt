@@ -72,7 +72,7 @@ object Idioma {
         if (codigo != "es" || s.isBlank()) return s
         if (pais == "AR") {
             var t = s
-            if (t.contains("BRAgro")) t = t.replace("BRAgro", "ARgro")
+            if (t.contains("BRAgro")) t = t.replace("BRAgro", "ARGro")
             t = nomesPropios(t)
             if (t != s) return tr(t)
         }
