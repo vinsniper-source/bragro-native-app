@@ -41,8 +41,8 @@ android {
         // a instalaçao pegou o apk certo (se apos instalar ainda aparecer
         // 1.1.6, a instalaçao nao pegou o apk novo -- se aparecer 1.1.7,
         // pegou, e as cores tem que estar corrigidas tambem).
-        versionCode = 146
-        versionName = "1.3.36"
+        versionCode = 147
+        versionName = "1.3.37"
 
         // URLs do backend (o MESMO backend do site publicado -- ver
         // native-app/README.md). Trocaveis por variante/ambiente sem
@@ -50,6 +50,12 @@ android {
         buildConfigField("String", "API_BASE_URL", "\"https://sistema-agro-bra.vercel.app\"")
         buildConfigField("String", "SUPABASE_URL", "\"https://njmycnbahhvodlhwqnfw.supabase.co\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"sb_publishable_DTtsVk2VEVJjOzSFV8iANg_mE_7JBGt\"")
+        // Sentry (travamentos e erros do app) -- MESMO projeto Sentry do site
+        // (sistema-agro-bra), entao os erros do app aparecem automaticamente
+        // no bloco "Erros abertos" do Painel BRAgro (/admin), marcados com
+        // environment "android". DSN e publico por design (so permite ENVIAR
+        // eventos, nao ler), igual ao NEXT_PUBLIC_SENTRY_DSN do site.
+        buildConfigField("String", "SENTRY_DSN", "\"https://ee1eea5f170d295fc59cf3706ecb7dee@o4511776072007681.ingest.us.sentry.io/4511776148226053\"")
 
         // Restringe as bibliotecas nativas (.so) do ML Kit (OCR do Romaneio
         // Rapido) so pra arm64-v8a -- sem isso, o APK carrega 4 copias
@@ -294,6 +300,16 @@ dependencies {
     // reportado, nenhum erro visivel, comportamento identico a hoje).
     implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
     implementation("com.google.firebase:firebase-crashlytics")
+
+    // Sentry -- relato de travamentos/ANR no MESMO projeto Sentry do site,
+    // pra aparecer no Painel BRAgro do /admin (o Crashlytics nao tem API de
+    // leitura). Convive com o Crashlytics acima (os dois capturam o mesmo
+    // crash, cada um no seu console). "-core" de proposito: sem o modulo
+    // NDK (.so nativos), pra nao aumentar o APK (limite de 50MB do bucket).
+    // Versao 7.14.0 (ago/2024) escolhida por ser da mesma epoca do resto do
+    // projeto (AGP 8.5 / compileSdk 34 / Kotlin 1.9) -- as 8.x mais novas
+    // podem exigir compileSdk maior.
+    implementation("io.sentry:sentry-android-core:7.14.0")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")

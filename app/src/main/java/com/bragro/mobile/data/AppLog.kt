@@ -36,6 +36,11 @@ object AppLog {
                 com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance().recordException(err)
             }
         }
+        // Sentry: so como contexto ("breadcrumb") -- aparece na linha do
+        // tempo de um crash posterior, sem virar erro aberto no painel.
+        runCatching {
+            io.sentry.Sentry.addBreadcrumb("$tag: $msg${if (err != null) " (${err.javaClass.simpleName}: ${err.message})" else ""}", "app.error")
+        }
     }
 
     fun w(tag: String, msg: String, err: Throwable? = null) {

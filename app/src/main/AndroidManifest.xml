@@ -97,6 +97,10 @@
         android:usesCleartextTraffic="false"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules">
+        <!-- Sentry: inicializado manualmente em BRAgroApplication.initSentry()
+             (so em release). Desliga o auto-init do SDK pra nao inicializar duas vezes. -->
+        <meta-data android:name="io.sentry.auto-init" android:value="false" />
+
 
         <activity
             android:name=".MainActivity"

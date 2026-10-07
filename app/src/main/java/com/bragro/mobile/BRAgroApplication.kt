@@ -8,10 +8,12 @@ import android.net.NetworkRequest
 import com.bragro.mobile.sync.PrefetchWorker
 import com.bragro.mobile.sync.SyncWorker
 import com.bragro.mobile.sync.TokenRefreshWorker
+import io.sentry.android.core.SentryAndroid
 
 class BRAgroApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        initSentry()
         // Tenta esvaziar a fila de sincronizacao pendente toda vez que o app
         // abre (o WorkManager so executa de fato quando ha rede, ver
         // SyncWorker) -- cobre o caso comum de campo: usuario lancou dados
@@ -33,6 +35,26 @@ class BRAgroApplication : Application() {
         // o SyncWorker toda vez que a conectividade volta, com o app
         // aberto ou nao.
         registerNetworkCallback()
+    }
+
+    // Sentry: travamentos (crash nao tratado) e ANR do app vao pro mesmo
+    // projeto Sentry do site -- aparecem no Painel BRAgro do /admin. So em
+    // build de RELEASE (o debug do Android Studio nao polui o painel).
+    // Excecoes TRATADAS (AppLog.e) entram so como "breadcrumb" (contexto do
+    // que aconteceu antes do crash), nao como erro proprio -- senao cada
+    // timeout de rede da fazenda viraria um erro aberto no painel.
+    private fun initSentry() {
+        runCatching {
+            SentryAndroid.init(this) { options ->
+                options.dsn = BuildConfig.SENTRY_DSN
+                options.isEnabled = !BuildConfig.DEBUG
+                options.environment = "android"
+                options.release = "com.bragro.mobile@${BuildConfig.VERSION_NAME}+${BuildConfig.VERSION_CODE}"
+                options.isAnrEnabled = true
+                options.tracesSampleRate = 0.0
+                options.isSendDefaultPii = false
+            }
+        }
     }
 
     private fun registerNetworkCallback() {
