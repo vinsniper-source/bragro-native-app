@@ -65,16 +65,108 @@ object Idioma {
 
     private val SUFIXO = Regex("^(.*?)(\\s*[*:…]+)$")
 
+    // Cache do resultado por texto (tr() roda a cada recomposicao). "" = sem traducao.
+    private val cache = java.util.concurrent.ConcurrentHashMap<String, String>()
+
     fun tr(s: String): String {
         if (codigo != "es" || s.isBlank()) return s
         val lead = s.takeWhile { it.isWhitespace() }
         val trail = s.takeLastWhile { it.isWhitespace() }
         val core = s.trim()
-        FRASES[core]?.let { return lead + it + trail }
-        SUFIXO.matchEntire(core)?.let { m ->
-            FRASES[m.groupValues[1]]?.let { return lead + it + m.groupValues[2] + trail }
+        val hit = cache.getOrPut(core) { traduzirCore(core) ?: "" }
+        return if (hit.isEmpty()) s else lead + hit + trail
+    }
+
+    private fun norm(s: String): String =
+        java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD)
+            .replace(Regex("\\p{M}+"), "").lowercase().replace(Regex("\\s+"), " ").trim()
+
+    // Mapa com chave normalizada (sem acento/caixa): opcoes em CAIXA ALTA, variacoes de caixa.
+    private val FRASES_N: Map<String, String> by lazy {
+        val m = HashMap<String, String>()
+        IdiomaExtra.FRASES.forEach { (k, v) -> m[norm(k)] = v }
+        FRASES.forEach { (k, v) -> m[norm(k)] = v }
+        m
+    }
+
+    private fun matchCase(core: String, tr: String): String {
+        val letras = core.filter { it.isLetter() }
+        if (letras.length > 1 && letras.all { it.isUpperCase() }) return tr.uppercase()
+        val c0 = core.firstOrNull()
+        if (c0 != null && c0.isLowerCase() && tr.firstOrNull()?.isUpperCase() == true) return tr.replaceFirstChar { it.lowercase() }
+        return tr
+    }
+
+    private val MESES = mapOf(
+        "janeiro" to "enero", "fevereiro" to "febrero", "marco" to "marzo", "abril" to "abril", "maio" to "mayo",
+        "junho" to "junio", "julho" to "julio", "agosto" to "agosto", "setembro" to "septiembre",
+        "outubro" to "octubre", "novembro" to "noviembre", "dezembro" to "diciembre",
+    )
+    private val DIAS = mapOf(
+        "segunda-feira" to "lunes", "terca-feira" to "martes", "quarta-feira" to "miércoles", "quinta-feira" to "jueves",
+        "sexta-feira" to "viernes", "sabado" to "sábado", "domingo" to "domingo",
+    )
+    private val STOP = setOf("de", "do", "da", "dos", "das", "e", "em", "com", "sem", "para", "por", "a", "o", "no", "na")
+    private val RE_DATA = Regex("^(.*?)([A-Za-zçÇáÁ-]+),?\\s+(\\d{1,2}) de ([A-Za-zçÇ]+) de (\\d{4})$")
+    private val RE_FAZENDAS = Regex("^(\\d+) fazendas?$")
+    private val RE_VALID = Regex("^(.+?) (é obrigatóri[oa]|inválid[oa]s?|muito long[oa]|não encontrad[oa])\\.?$", RegexOption.IGNORE_CASE)
+
+    private fun traduzirPalavras(core: String): String? {
+        if (core.length > 70 || core.any { it in "<>{}" }) return null
+        if (core.none { it.isWhitespace() } && core.length <= 2) return null
+        var conhecidas = 0
+        val out = StringBuilder()
+        for (p in Regex("\\s+|\\S+").findAll(core).map { it.value }) {
+            if (p.isBlank()) { out.append(p); continue }
+            val pre = p.takeWhile { it in "(\"'[" }
+            val post = p.drop(pre.length).takeLastWhile { it in ")\"']\\.,;:!?" }
+            val word = p.drop(pre.length).dropLast(post.length)
+            if (word.none { it.isLetter() }) { out.append(p); continue }
+            val key = norm(word).trimEnd('.', '/', '-')
+            val hit = IdiomaExtra.PALAVRAS[key]
+                ?: if ('-' in key) key.split("-").map { IdiomaExtra.PALAVRAS[it] ?: return null }.joinToString("-") else return null
+            if (key !in STOP) conhecidas++
+            out.append(pre).append(hit).append(post)
         }
-        return s
+        return if (conhecidas > 0) out.toString() else null
+    }
+
+    private fun traduzirCore(core: String): String? {
+        FRASES[core]?.let { return it }
+        FRASES_N[norm(core)]?.let { return matchCase(core, it) }
+        SUFIXO.matchEntire(core)?.let { m ->
+            val base = m.groupValues[1]
+            (FRASES[base] ?: FRASES_N[norm(base)]?.let { matchCase(base, it) })?.let { return it + m.groupValues[2] }
+        }
+        RE_DATA.matchEntire(core)?.let { m ->
+            val d = DIAS[norm(m.groupValues[2])]
+            val mo = MESES[norm(m.groupValues[4])]
+            if (d != null && mo != null) return "${m.groupValues[1]}$d, ${m.groupValues[3]} de $mo de ${m.groupValues[5]}"
+        }
+        RE_FAZENDAS.matchEntire(core)?.let { m ->
+            val n = m.groupValues[1]
+            return "$n finca" + if (n == "1") "" else "s"
+        }
+        Regex("^(\\S*\\s?)?(\\d+(?:[.,]\\d+)?)mm hoje$").matchEntire(core)?.let { m -> return "${m.groupValues[1]}${m.groupValues[2]}mm hoy" }
+        Regex("^sem atualização desde (.+)$", RegexOption.IGNORE_CASE).matchEntire(core)?.let { m -> return "sin actualización desde ${m.groupValues[1]}" }
+        RE_VALID.matchEntire(core)?.let { m ->
+            val subj = FRASES[m.groupValues[1]] ?: FRASES_N[norm(m.groupValues[1])] ?: traduzirPalavras(m.groupValues[1])
+            if (subj != null) {
+                val kind = norm(m.groupValues[2])
+                val f = kind.substringAfterLast(' ').let { it.endsWith("a") || it.endsWith("as") }
+                val es = when {
+                    kind.startsWith("e obrig") -> "es obligatori" + if (f) "a" else "o"
+                    kind.startsWith("invalid") -> "inválid" + (if (f) "a" else "o") + (if (kind.endsWith("s")) "s" else "")
+                    kind.startsWith("muito") -> "demasiado larg" + if (f) "a" else "o"
+                    else -> "no encontrad" + if (f) "a" else "o"
+                }
+                return subj + " " + es + if (core.endsWith(".")) "." else ""
+            }
+        }
+        if (core == core.uppercase() || core.length <= 40) {
+            traduzirPalavras(core)?.let { return matchCase(core, it) }
+        }
+        return null
     }
 
     private val FRASES: Map<String, String> = mapOf(

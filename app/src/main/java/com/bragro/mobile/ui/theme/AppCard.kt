@@ -179,12 +179,16 @@ fun SearchableDropdownField(
     // select genérico) e deve chamar onSelect() com o valor final.
     onCreate: ((String) -> Unit)? = null,
 ) {
-    val optionLabels = remember(options) { options.associate { it.first to it.second } }
+    // Rótulos traduzidos (espanhol): o valor (first) segue o original, só a
+    // exibição (second) passa por Idioma.tr.
+    val idiomaAtual = com.bragro.mobile.ui.i18n.Idioma.codigo
+    val opts = remember(options, idiomaAtual) { options.map { it.first to com.bragro.mobile.ui.i18n.Idioma.tr(it.second) } }
+    val optionLabels = remember(opts) { opts.associate { it.first to it.second } }
     var expanded by remember { mutableStateOf(false) }
-    var query by remember(value, options) { mutableStateOf(optionLabels[value] ?: value) }
-    val filtered = remember(query, options) {
+    var query by remember(value, opts) { mutableStateOf(optionLabels[value] ?: com.bragro.mobile.ui.i18n.Idioma.tr(value)) }
+    val filtered = remember(query, opts) {
         val q = query.trim()
-        if (q.isEmpty()) options else options.filter { it.second.contains(q, ignoreCase = true) }
+        if (q.isEmpty()) opts else opts.filter { it.second.contains(q, ignoreCase = true) }
     }
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = modifier) {
         OutlinedTextField(
@@ -219,7 +223,7 @@ fun SearchableDropdownField(
                 // Fechou sem escolher nada novo -- volta o texto pro que
                 // realmente está selecionado (senão um texto digitado e não
                 // confirmado ficaria "preso" no campo).
-                query = optionLabels[value] ?: value
+                query = optionLabels[value] ?: com.bragro.mobile.ui.i18n.Idioma.tr(value)
             },
         ) {
             if (emptyOptionLabel != null) {
@@ -241,7 +245,7 @@ fun SearchableDropdownField(
             // mesmo critério do select genérico (DomainFormScreen.kt) e do
             // site (searchable-select.tsx).
             val trimmedQuery = query.trim()
-            val queryMatchesExisting = trimmedQuery.isNotBlank() && options.any { it.second.equals(trimmedQuery, ignoreCase = true) }
+            val queryMatchesExisting = trimmedQuery.isNotBlank() && opts.any { it.second.equals(trimmedQuery, ignoreCase = true) }
             if (onCreate != null && trimmedQuery.isNotBlank() && !queryMatchesExisting) {
                 DropdownMenuItem(
                     text = { Text("+ Criar \"$trimmedQuery\"", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
