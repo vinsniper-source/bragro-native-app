@@ -108,8 +108,8 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
         // e centralizar a arte de verdade -- sem cortar nem redimensionar
         // nada, só reposicionar.
         Image(
-            painter = painterResource(R.drawable.logo_bragro),
-            contentDescription = "BRAgro",
+            painter = painterResource(if (com.bragro.mobile.ui.i18n.Idioma.argentina) R.drawable.logo_argro else R.drawable.logo_bragro),
+            contentDescription = if (com.bragro.mobile.ui.i18n.Idioma.argentina) "ARgro" else "BRAgro",
             modifier = Modifier
                 .height(200.dp)
                 .offset(x = (-32).dp),

@@ -1,6 +1,10 @@
 package com.bragro.mobile.ui.theme
 
 import android.content.Context
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -142,6 +146,44 @@ private val DarkColors = darkColorScheme(
     outlineVariant = Color(0xFF3F4A46),
 )
 
+// Tema Argentina (País = Argentina em Configurações): celeste e branco da
+// bandeira + amarelo "Sol de Mayo" nos acentos. Mesma estrutura de tokens do
+// tema verde, claro e escuro.
+val ArCeleste = Color(0xFF74ACDF)
+val ArSol = Color(0xFFF6B40E)
+
+private val ArLightColors = lightColorScheme(
+    primary = Color(0xFF1F5F99),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFD3E6F7),
+    onPrimaryContainer = Color(0xFF0B2A47),
+    secondary = ArSol,
+    secondaryContainer = Color(0xFFFCEFCD),
+    onSecondaryContainer = Color(0xFF4D3C00),
+    tertiary = ArCeleste,
+    background = Color(0xFFD6E8F7),
+    surface = Color(0xFFFFFFFF),
+    surfaceVariant = Color(0xFFF1F7FC),
+    outline = ArCeleste,
+    outlineVariant = Color(0xFFBBD6EE),
+)
+
+private val ArDarkColors = darkColorScheme(
+    primary = Color(0xFF8DBDE8),
+    onPrimary = Color(0xFF0A2238),
+    primaryContainer = Color(0xFF1F3F5C),
+    onPrimaryContainer = Color(0xFFD3E6F7),
+    secondary = ArSol,
+    secondaryContainer = Color(0xFF5E4F26),
+    onSecondaryContainer = Color(0xFFF4DFA5),
+    tertiary = ArCeleste,
+    background = Color(0xFF16273A),
+    surface = Color(0xFF223850),
+    surfaceVariant = Color(0xFF223850),
+    outline = Color(0xFF5E86AD),
+    outlineVariant = Color(0xFF2E4A66),
+)
+
 // Variantes de verde por tema -- mantidas prontas caso precise de um tom
 // diferente do BrGreen puro em algum lugar específico (ex.: botão +,
 // ícones de destaque). A borda dos Cards usa BrGreen direto (ver
@@ -236,8 +278,42 @@ fun BRAgroTheme(content: @Composable () -> Unit) {
             isNightTimeNow()
         }
     }
-    val colors = if (dark) DarkColors else LightColors
+    val ar = com.bragro.mobile.ui.i18n.Idioma.argentina
+    val colors = when {
+        ar && dark -> ArDarkColors
+        ar -> ArLightColors
+        dark -> DarkColors
+        else -> LightColors
+    }
     // Fonte Geist em todo o app -- pedido do usuario ("implemente a fonte
     // Geist no app"), ver ui/theme/Type.kt (AppTypography/GeistFontFamily).
-    MaterialTheme(colorScheme = colors, typography = AppTypography, content = content)
+    MaterialTheme(colorScheme = colors, typography = AppTypography) {
+        androidx.compose.foundation.layout.Box(modifier = androidx.compose.ui.Modifier) {
+            content()
+            if (ar) {
+                // Filete da bandeira (celeste / branco / celeste) no topo, com
+                // fio amarelo embaixo -- mesmo detalhe do site.
+                androidx.compose.foundation.layout.Column(
+                    modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                ) {
+                    androidx.compose.foundation.layout.Box(
+                        modifier = androidx.compose.ui.Modifier
+                            .fillMaxWidth().height(1.5.dp).background(ArCeleste),
+                    )
+                    androidx.compose.foundation.layout.Box(
+                        modifier = androidx.compose.ui.Modifier
+                            .fillMaxWidth().height(1.5.dp).background(Color.White),
+                    )
+                    androidx.compose.foundation.layout.Box(
+                        modifier = androidx.compose.ui.Modifier
+                            .fillMaxWidth().height(1.5.dp).background(ArCeleste),
+                    )
+                    androidx.compose.foundation.layout.Box(
+                        modifier = androidx.compose.ui.Modifier
+                            .fillMaxWidth().height(1.dp).background(ArSol),
+                    )
+                }
+            }
+        }
+    }
 }

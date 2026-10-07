@@ -1040,8 +1040,8 @@ fun HomeScreen(
                             // design (pedido antigo do usuário -- "logo no
                             // limite esquerdo"), sem offset de centralização.
                             Image(
-                                painter = painterResource(R.drawable.logo_bragro),
-                                contentDescription = "BRAgro",
+                                painter = painterResource(if (com.bragro.mobile.ui.i18n.Idioma.argentina) R.drawable.logo_argro else R.drawable.logo_bragro),
+                                contentDescription = if (com.bragro.mobile.ui.i18n.Idioma.argentina) "ARgro" else "BRAgro",
                                 alignment = Alignment.BottomCenter,
                                 modifier = Modifier
                                     .height(80.dp)
@@ -1061,8 +1061,8 @@ fun HomeScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Image(
-                                    painter = painterResource(R.drawable.logo_bragro),
-                                    contentDescription = "BRAgro",
+                                    painter = painterResource(if (com.bragro.mobile.ui.i18n.Idioma.argentina) R.drawable.logo_argro else R.drawable.logo_bragro),
+                                    contentDescription = if (com.bragro.mobile.ui.i18n.Idioma.argentina) "ARgro" else "BRAgro",
                                     alignment = Alignment.BottomCenter,
                                     modifier = Modifier
                                         .height(80.dp)
@@ -1442,6 +1442,11 @@ fun HomeScreen(
                         if (showDestaques) DestaquesCard(data, viewModel.lastUpdatedAt.value, modifier = Modifier.weight(1f).fillMaxHeight())
                     }
                 }
+            }
+            // Pais = Argentina: dolar oficial/blue/MEP/CCL (ver Idioma.pais).
+            val dolarAr = weather?.dolarAr.orEmpty()
+            if (com.bragro.mobile.ui.i18n.Idioma.argentina && dolarAr.isNotEmpty() && data.hasWidget("inicio.cambio")) {
+                item(key = "dolar-ar") { DolarArgentinaCard(dolarAr) }
             }
             // Fazendas cadastradas -- pedido do usuário ("desabilite o kpi
             // total fazendas, deixe habilitado apenas no setor safra"): não
@@ -2555,6 +2560,34 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: 
             // AwesomeAPI falhar).
             Text(
                 "Atualizado a cada 15 min · Fonte: AwesomeAPI",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DolarArgentinaCard(lista: List<com.bragro.mobile.data.model.DolarArData>) {
+    val fmt = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("es", "AR")).apply {
+        currency = java.util.Currency.getInstance("ARS")
+        maximumFractionDigits = 0
+    }
+    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("Dólar Argentina", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            lista.forEach { d ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(d.nome + ":", modifier = Modifier.width(64.dp))
+                    Text(
+                        (d.compra?.let { fmt.format(it) } ?: "—") + " / " + (d.venda?.let { fmt.format(it) } ?: "—"),
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+                    )
+                }
+            }
+            Text(
+                "Compra / Venta · dolarapi.com",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

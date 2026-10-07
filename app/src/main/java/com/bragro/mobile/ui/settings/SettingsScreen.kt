@@ -230,7 +230,20 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = viewModel(
 @Composable
 private fun IdiomaCard() {
     val ctx = LocalContext.current
-    CollapsibleCard(title = "Idioma", initiallyOpen = true) {
+    CollapsibleCard(title = "País e idioma", initiallyOpen = true) {
+        Text("País", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("BR" to "Brasil", "AR" to "Argentina").forEach { (cod, nome) ->
+                val ativo = com.bragro.mobile.ui.i18n.Idioma.pais == cod
+                val acao = { com.bragro.mobile.ui.i18n.Idioma.definirPais(ctx, cod) }
+                if (ativo) {
+                    androidx.compose.material3.Button(onClick = acao) { Text(nome) }
+                } else {
+                    OutlinedButton(onClick = acao) { Text(nome) }
+                }
+            }
+        }
+        Text("Idioma", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("pt" to "Português (Brasil)", "es" to "Español").forEach { (cod, nome) ->
                 val ativo = com.bragro.mobile.ui.i18n.Idioma.codigo == cod

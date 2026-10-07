@@ -3,6 +3,12 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.39] -- 2026-10-07
+
+- País Argentina (Configurações > País e idioma): tema celeste e branco (claro
+  e escuro) com filete da bandeira e amarelo "Sol de Mayo", idioma espanhol
+  automático e cartão "Dólar Argentina" (oficial/blue/MEP/CCL) na Início.
+
 ## [1.3.38] -- 2026-10-07
 
 - Peso argentino (ARS) no card Câmbio (com variação do dia) e conversor

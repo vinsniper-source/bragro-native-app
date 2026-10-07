@@ -1745,7 +1745,18 @@ data class WeatherResponse(
     val fx: FxRatesData? = null,
     val commodities: CommodityQuotesData? = null,
     val livestock: LivestockQuotesData? = null,
+    val dolarAr: List<DolarArData> = emptyList(),
     val error: String? = null,
+)
+
+// Dolar na Argentina (oficial/blue/MEP/CCL), em AR$ -- ver getDolarArgentina
+// em quotes.ts. Exibido so quando o pais = Argentina (Configuracoes > Pais).
+@Serializable
+data class DolarArData(
+    val casa: String = "",
+    val nome: String = "",
+    val compra: Double? = null,
+    val venda: Double? = null,
 )
 
 // Fase 2 (Task #36): Analises cruzadas entre modulos -- ver POST

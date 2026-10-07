@@ -33,8 +33,27 @@ object Idioma {
     var codigo by mutableStateOf("pt")
         private set
 
+    /** "BR" ou "AR". Define tema (celeste/branco), cartão do dólar Argentina e
+     * o idioma padrão. Estado observável como [codigo]. */
+    var pais by mutableStateOf("BR")
+        private set
+
+    val argentina: Boolean get() = pais == "AR"
+
     fun init(context: Context) {
-        codigo = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, "pt") ?: "pt"
+        val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        codigo = p.getString(KEY, "pt") ?: "pt"
+        pais = p.getString("pais", "BR") ?: "BR"
+    }
+
+    /** Troca o país e acopla o idioma (AR -> es, BR -> pt); o idioma ainda
+     * pode ser trocado à parte depois. */
+    fun definirPais(context: Context, novo: String) {
+        val idioma = if (novo == "AR") "es" else "pt"
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putString("pais", novo).putString(KEY, idioma).apply()
+        pais = novo
+        codigo = idioma
     }
 
     fun definir(context: Context, novo: String) {
