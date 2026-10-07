@@ -484,7 +484,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
             ProviderIntegrationCard(
                 providers = listOf("Sentinel Hub", "Planet", "EOS Data Analytics", "Outro"),
                 titulo = "Acesso automático via satélite (NDVI)",
-                descricao = "NDVI por talhão ainda não está disponível -- depende de assinatura com um provedor de imagens de satélite. Credencial salva com segurança abaixo.",
+                descricao = "NDVI por talhão ainda não está disponível -- depende de assinatura com um provedor de imagens de satélite. Credencial salva com segurança abaixo (Sentinel Hub: informe CLIENT_ID|CLIENT_SECRET; Planet: chave de API).",
                 integration = ndviIntegration,
                 busy = ndviIntegrationBusy,
                 syncMessage = ndviIntegrationMessage,
