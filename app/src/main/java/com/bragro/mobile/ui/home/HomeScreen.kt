@@ -1468,7 +1468,9 @@ fun HomeScreen(
             // tela -- pedido do usuário ("expanda kpi cotações grãos até o
             // limite da tela"), separado de Destaques (que foi pro lado de
             // Fazendas cadastradas acima).
-            if (data.hasWidget("inicio.cotacoes")) {
+            // Pais = Argentina: o card "Mercado de granos y hacienda" (BCR/MAG)
+            // substitui as cotacoes brasileiras (Grao Direto / CEPEA).
+            if (!com.bragro.mobile.ui.i18n.Idioma.argentina && data.hasWidget("inicio.cotacoes")) {
             item(key = "cotacoes") {
                 weather?.commodities?.let { CotacoesCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth()) }
             }
@@ -1479,7 +1481,7 @@ fun HomeScreen(
             // próprio, com o mesmo padrão visual/toggle de Cotações Grãos
             // acima, mas alimentado por weather?.livestock (CEPEA/ESALQ) em
             // vez de weather?.commodities (Grão Direto).
-            if (data.hasWidget("inicio.cotacoespecuaria")) {
+            if (!com.bragro.mobile.ui.i18n.Idioma.argentina && data.hasWidget("inicio.cotacoespecuaria")) {
             item(key = "cotacoespecuaria") {
                 weather?.livestock?.let { CotacoesPecuariaCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth()) }
             }

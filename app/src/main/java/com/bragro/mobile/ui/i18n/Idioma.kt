@@ -70,12 +70,44 @@ object Idioma {
 
     fun tr(s: String): String {
         if (codigo != "es" || s.isBlank()) return s
-        if (pais == "AR" && s.contains("BRAgro")) return tr(s.replace("BRAgro", "ARgro"))
+        if (pais == "AR") {
+            var t = s
+            if (t.contains("BRAgro")) t = t.replace("BRAgro", "ARgro")
+            t = nomesPropios(t)
+            if (t != s) return tr(t)
+        }
         val lead = s.takeWhile { it.isWhitespace() }
         val trail = s.takeLastWhile { it.isWhitespace() }
         val core = s.trim()
         val hit = cache.getOrPut(core) { traduzirCore(core) ?: "" }
         return if (hit.isEmpty()) s else lead + hit + trail
+    }
+
+    // Nomes proprios de fazendas ("Fazenda São João" -> "Finca San Juan"); so na Argentina.
+    private val NOMES: Map<String, String> = mapOf(
+        "fazenda" to "Finca", "sitio" to "Chacra", "chacara" to "Chacra", "estancia" to "Estancia",
+        "sao" to "San", "joao" to "Juan", "antonio" to "Antonio", "jose" to "José", "maria" to "María",
+        "sebastiao" to "Sebastián", "lourenco" to "Lorenzo", "tome" to "Tomás", "luiz" to "Luis", "luis" to "Luis",
+        "boa" to "Buena", "bom" to "Buen", "esperanca" to "Esperanza", "conceicao" to "Concepción",
+        "vitoria" to "Victoria", "senhora" to "Señora", "nossa" to "Nuestra", "jesus" to "Jesús",
+        "rio" to "Río", "lagoa" to "Laguna", "cachoeira" to "Cascada", "pedra" to "Piedra", "serra" to "Sierra",
+        "morro" to "Cerro", "ouro" to "Oro", "branca" to "Blanca", "branco" to "Blanco", "nova" to "Nueva",
+        "novo" to "Nuevo", "velha" to "Vieja", "velho" to "Viejo", "estrela" to "Estrella", "lua" to "Luna",
+        "palmeiras" to "Palmeras", "ipe" to "Lapacho", "trindade" to "Trinidad", "fe" to "Fe",
+    )
+    private val RE_GATILHO = Regex("\\b(?:Fazenda|Sítio|Sitio|Chácara|Chacara|Estância|Estancia|São|Sao|Santa|Santo|Nossa|FAZENDA|SÍTIO|CHÁCARA|ESTÂNCIA|SÃO|SANTA|SANTO|NOSSA)\\s+[A-ZÁÉÍÓÚÂÊÔÃÕÇ]")
+    private val RE_NOME = Regex("\\b(?:(?:Fazenda|Sítio|Sitio|Chácara|Chacara|Estância|Estancia)\\s+)?(?:(?:S[ãa]o|Santa|Santo|Nossa|Boa|Bom|Rio|Lagoa|Serra|Vista|Nova|Novo)\\s+)?[A-ZÁÉÍÓÚÂÊÔÃÕÇ][\\p{L}'’-]*(?:\\s+(?:d[aeo]s?\\s+)?[A-ZÁÉÍÓÚÂÊÔÃÕÇ][\\p{L}'’-]*)*")
+
+    private fun nomesPropios(s: String): String {
+        if (!RE_GATILHO.containsMatchIn(s)) return s
+        return RE_NOME.replace(s) { m ->
+            m.value.split(Regex("(?<=\\s)|(?=\\s)")).joinToString("") { w ->
+                if (w.isBlank()) w else {
+                    val t = NOMES[norm(w)]
+                    if (t == null) w else if (w.length > 1 && w == w.uppercase()) t.uppercase() else t
+                }
+            }
+        }
     }
 
     private fun norm(s: String): String =
