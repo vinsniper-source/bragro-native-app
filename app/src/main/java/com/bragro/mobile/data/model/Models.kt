@@ -1690,6 +1690,7 @@ data class FxRatesData(
     val arsBrl: Double? = null,
     val usdVariacaoPct: Double? = null,
     val eurVariacaoPct: Double? = null,
+    val arsVariacaoPct: Double? = null,
 )
 
 @Serializable

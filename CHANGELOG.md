@@ -3,6 +3,14 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.38] -- 2026-10-07
+
+- Peso argentino (ARS) no card Câmbio (com variação do dia) e conversor
+  R$ / US$ / AR$ com a cotação ao vivo.
+- Idioma Espanhol: seletor em Configurações > Idioma (Português / Español).
+  Textos traduzidos por `ui/i18n/Idioma.kt` (o que não tiver tradução fica
+  em português).
+
 ## [1.3.36] -- 2026-10-06
 
 - Módulo Silos cilíndricos completo (15ª exceção de schema): cadastro de silos

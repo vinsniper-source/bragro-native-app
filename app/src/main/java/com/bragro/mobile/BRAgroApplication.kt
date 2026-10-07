@@ -14,6 +14,7 @@ class BRAgroApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         initSentry()
+        com.bragro.mobile.ui.i18n.Idioma.init(this)
         // Tenta esvaziar a fila de sincronizacao pendente toda vez que o app
         // abre (o WorkManager so executa de fato quando ha rede, ver
         // SyncWorker) -- cobre o caso comum de campo: usuario lancou dados

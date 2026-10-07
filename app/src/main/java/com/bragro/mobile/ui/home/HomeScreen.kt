@@ -103,7 +103,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import com.bragro.mobile.ui.i18n.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -2539,6 +2539,16 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: 
                 )
                 FxVariacaoTag(fx.eurVariacaoPct)
             }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Peso:", modifier = Modifier.width(52.dp))
+                Text(
+                    fx.arsBrl?.let { String.format(java.util.Locale("pt", "BR"), "R$ %.4f", it) } ?: "—",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+                )
+                FxVariacaoTag(fx.arsVariacaoPct)
+            }
+            CambioConversor(fx)
             // Periodicidade + fonte -- pedido do usuário. Valor real do
             // backend (getFxRates em quotes.ts): revalidate 900s = 15 min,
             // AwesomeAPI (com fallback pra exchangerate-api.com só se a
@@ -2547,6 +2557,54 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: 
                 "Atualizado a cada 15 min · Fonte: AwesomeAPI",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+// Conversor R$ <-> US$ <-> AR$ com a cotacao ao vivo do proprio card Cambio
+// (mesma logica do CurrencyMenu no site).
+@Composable
+private fun CambioConversor(fx: com.bragro.mobile.data.model.FxRatesData) {
+    var aberto by remember { mutableStateOf(false) }
+    var valor by remember { mutableStateOf("100") }
+    var de by remember { mutableStateOf("BRL") }
+    TextButton(onClick = { aberto = !aberto }) {
+        Text(if (aberto) "Fechar conversor" else "Conversor R\$ / US\$ / AR\$")
+    }
+    if (!aberto) return
+    // BRL por 1 unidade de cada moeda.
+    fun brlPer(c: String): Double? = when (c) {
+        "BRL" -> 1.0
+        "USD" -> fx.usdBrl
+        else -> fx.arsBrl
+    }
+    val num = valor.replace(",", ".").toDoubleOrNull()
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        OutlinedTextField(
+            value = valor,
+            onValueChange = { valor = it },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            modifier = Modifier.weight(1f),
+            colors = appFieldColors(),
+        )
+        listOf("BRL", "USD", "ARS").forEach { c ->
+            TextButton(onClick = { de = c }) {
+                Text(c, fontWeight = if (de == c) FontWeight.Bold else FontWeight.Normal)
+            }
+        }
+    }
+    listOf("BRL", "USD", "ARS").filter { it != de }.forEach { alvo ->
+        val f = brlPer(de)
+        val t = brlPer(alvo)
+        val res = if (num != null && f != null && t != null && t > 0) num * f / t else null
+        val locale = when (alvo) { "BRL" -> java.util.Locale("pt", "BR"); "USD" -> java.util.Locale.US; else -> java.util.Locale("es", "AR") }
+        Row {
+            Text("$alvo:", modifier = Modifier.width(52.dp))
+            Text(
+                res?.let { java.text.NumberFormat.getCurrencyInstance(locale).apply { currency = java.util.Currency.getInstance(alvo) }.format(it) } ?: "—",
+                fontWeight = FontWeight.Bold,
             )
         }
     }

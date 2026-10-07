@@ -32,7 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import com.bragro.mobile.ui.i18n.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -200,6 +200,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = viewModel(
             // (src/app/(app)/configuracoes/configuracoes-client.tsx),
             // replicados aqui de verdade (não é redirecionamento), mesmo
             // padrão das outras seções desta tela.
+            item(key = "idioma") { IdiomaCard() }
             item(key = "app-android") { AppMobileAndroidCard(data?.get("appRelease")?.jsonObject) }
             item(key = "app-ios") { AppMobileIosCard() }
             item(key = "org") { OrgCard(org, saving) { name, tolerancia, onDone -> viewModel.saveOrg(name, tolerancia, onDone) } }
@@ -220,6 +221,25 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = viewModel(
                     },
                     onSendTest = { channel, onResult -> viewModel.sendTest(channel, onResult) },
                 )
+            }
+        }
+    }
+}
+
+// Seletor de idioma (Portugues / Espanhol) -- ver ui/i18n/Idioma.kt.
+@Composable
+private fun IdiomaCard() {
+    val ctx = LocalContext.current
+    CollapsibleCard(title = "Idioma", initiallyOpen = true) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("pt" to "Português (Brasil)", "es" to "Español").forEach { (cod, nome) ->
+                val ativo = com.bragro.mobile.ui.i18n.Idioma.codigo == cod
+                val acao = { com.bragro.mobile.ui.i18n.Idioma.definir(ctx, cod) }
+                if (ativo) {
+                    androidx.compose.material3.Button(onClick = acao) { Text(nome) }
+                } else {
+                    OutlinedButton(onClick = acao) { Text(nome) }
+                }
             }
         }
     }
