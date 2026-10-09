@@ -201,7 +201,6 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var successMessage = mutableStateOf<String?>(null)
         private set
-        private set
 
     /** "+Criar" (Task #869) -- mesmo motor quick-create-lookup usado em
      * Prescrição/Pedidos, aplicado às 5 listas suspensas deste formulário

@@ -275,6 +275,84 @@ fun StatusBadge(rawValue: String) {
     )
 }
 
+// Destaque genérico por TIPO de campo (espelho de highlightFor/HighlightCell em
+// data-table.tsx, padrão aprovado "imagem 2"): azul = categoria/tipo/fazenda...,
+// verde = totais/preço, âmbar = prazo, verde/vermelho = índice. Retorna true
+// se desenhou; false deixa o chamador usar o texto simples de sempre.
+private val INFO_KEY_RE = Regex("^(categoria|tipo|operacao|fazenda|cultura|local|safra|especie|grupo|setor|talhao|finalidade|destino|cultivar|variedade)", RegexOption.IGNORE_CASE)
+private val TOTAL_KEY_RE = Regex("total|bruto|liquido", RegexOption.IGNORE_CASE)
+private val PRAZO_KEY_RE = Regex("^prazo(Entrega)?(Dias)?$", RegexOption.IGNORE_CASE)
+
+@Composable
+fun FieldHighlight(
+    key: String,
+    type: String,
+    money: Boolean,
+    displayValue: String,
+    rawValue: String,
+): Boolean {
+    if (displayValue.isBlank() || displayValue == "—") return false
+    val cs = MaterialTheme.colorScheme
+    val good = cs.primary.copy(alpha = 0.15f) to cs.primary
+    val info = cs.tertiary.copy(alpha = 0.15f) to cs.tertiary
+    val warn = cs.secondaryContainer to cs.onSecondaryContainer
+    val bad = cs.error.copy(alpha = 0.15f) to cs.error
+    val neutral = cs.onSurface.copy(alpha = 0.08f) to cs.onSurfaceVariant
+
+    if (type == "checkbox") {
+        val sim = rawValue == "true" || rawValue.equals("Sim", ignoreCase = true)
+        val (bg, fg) = if (sim) good else neutral
+        FieldPill(if (sim) "Sim" else "Não", bg, fg)
+        return true
+    }
+    if (key.startsWith("indice", ignoreCase = true)) {
+        val n = rawValue.replace(",", ".").toDoubleOrNull() ?: return false
+        val (_, fg) = if (n <= 1.0) good else warn
+        FieldPill(displayValue, bg = Color.Transparent, fg = fg)
+        return true
+    }
+    if (money) {
+        if (TOTAL_KEY_RE.containsMatchIn(key)) {
+            Text(
+                displayValue,
+                style = MaterialTheme.typography.bodySmall,
+                color = good.second,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(good.first).padding(horizontal = 8.dp, vertical = 3.dp),
+            )
+        } else {
+            Text(displayValue, style = MaterialTheme.typography.bodySmall, color = good.second, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+        }
+        return true
+    }
+    if (PRAZO_KEY_RE.matches(key) && type == "number") {
+        val (bg, fg) = warn
+        FieldPill("$displayValue dias", bg, fg)
+        return true
+    }
+    if (type == "select" && INFO_KEY_RE.containsMatchIn(key)) {
+        val (bg, fg) = info
+        FieldPill(displayValue, bg, fg)
+        return true
+    }
+    return false
+}
+
+@Composable
+@Suppress("UNUSED_PARAMETER")
+private fun FieldPill(text: String, bg: Color, fg: Color) {
+    // Só o destaque mais relevante (valor total) tem fundo; os demais ficam só
+    // com a cor da fonte (pedido do usuário).
+    Text(
+        text,
+        style = MaterialTheme.typography.bodySmall,
+        color = fg,
+        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+    )
+}
+
 /** Pill colorido pro campo "Operação" do Financeiro (COMPRA/VENDA/PAGAMENTO
  * etc.) -- mesmo criterio de isReceitaOp ja usado pra colorir Bruto/Liquido
  * (ver FinanceiroViewLogic.kt), so que aqui destaca a propria Operacao com um
@@ -315,21 +393,13 @@ fun CotacaoAvaliacaoBadge(rawValue: String) {
     }
     val tone = if (rawValue.contains("MELHOR CUSTO-BENEFÍCIO", ignoreCase = true) ||
         rawValue.contains("Única cotação", ignoreCase = true)
-    ) Tone.GOOD else Tone.WARN
+    ) Tone.GOOD else Tone.BAD
     val (bg, fg) = when (tone) {
         Tone.GOOD -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) to MaterialTheme.colorScheme.primary
         Tone.WARN -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
         Tone.BAD -> MaterialTheme.colorScheme.error.copy(alpha = 0.15f) to MaterialTheme.colorScheme.error
     }
-    Text(
-        rawValue,
-        style = MaterialTheme.typography.labelMedium,
-        color = fg,
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(bg)
-            .padding(horizontal = 10.dp, vertical = 3.dp),
-    )
+    FieldPill(rawValue, bg, fg)
 }
 
 /** Pill colorido pro campo "Melhor Opção" (checkbox) de Cotações de
@@ -341,17 +411,9 @@ fun CotacaoMelhorOpcaoBadge(rawValue: String) {
     val (bg, fg) = if (isSim) {
         MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) to MaterialTheme.colorScheme.primary
     } else {
-        MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f) to MaterialTheme.colorScheme.onSurfaceVariant
     }
-    Text(
-        if (isSim) "Sim" else "Não",
-        style = MaterialTheme.typography.labelMedium,
-        color = fg,
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(bg)
-            .padding(horizontal = 10.dp, vertical = 3.dp),
-    )
+    FieldPill(if (isSim) "Sim" else "Não", bg, fg)
 }
 
 // Espelho de progressCellInfo() em data-table.tsx (site) -- pedido do

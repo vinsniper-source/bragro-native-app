@@ -1875,7 +1875,36 @@ private fun RecordFieldLine(
         // "status"), então só faltava este. Reaproveita o mesmo
         // pill verde/neutro Sim-Não já usado em Cotações ("Melhor Opção").
         CotacaoMelhorOpcaoBadge(value)
+    } else if (domainId == "financeiro" && (col.key == "bruto" || col.key == "liquido")) {
+        RecordFieldPlain(col, value, record, domainId)
+    } else if (isVencidoCampo(col.key, record[col.key], record["status"])) {
+        RecordFieldPlain(col, value, record, domainId)
+    } else if (col.type == "checkbox" || col.money || col.type == "select" || col.type == "number") {
+        // Destaque genérico por tipo de campo (padrão aprovado "imagem 2").
+        // Se nenhuma regra casar, cai no texto simples de sempre.
+        val displayValue = if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)
+        androidx.compose.foundation.layout.Row(
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp),
+            modifier = Modifier.padding(vertical = 2.dp),
+        ) {
+            Text("${col.label}:", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            val drawn = FieldHighlight(col.key, col.type, col.money, displayValue, value)
+            if (!drawn) Text(displayValue, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
     } else {
+        RecordFieldPlain(col, value, record, domainId)
+    }
+}
+
+@Composable
+private fun RecordFieldPlain(
+    col: com.bragro.mobile.data.model.ColumnConfig,
+    value: String,
+    record: Map<String, String?>,
+    domainId: String,
+) {
+    run {
         val displayValue = if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)
         // Verde (receita) / laranja-âmbar (despesa) só nas colunas Bruto/
         // Liquido do Financeiro -- pedido do usuário sobre a cor da fonte dos
