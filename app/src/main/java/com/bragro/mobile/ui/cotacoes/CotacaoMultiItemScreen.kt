@@ -119,9 +119,11 @@ private fun hojeIso(): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format
 private fun hojeBr(): String = com.bragro.mobile.ui.domain.isoDateToBr(hojeIso())
 
 private fun parseDecimal(s: String): Double =
-    s.trim().replace(".", "").replace(",", ".").toDoubleOrNull()
-        ?: s.trim().toDoubleOrNull()
-        ?: 0.0
+    s.trim().replace("R$", "").replace(" ", "").let { t ->
+        // Com vírgula: formato BR ("1.250,50"). Sem vírgula: ponto é decimal ("12.50").
+        if (t.contains(",")) t.replace(".", "").replace(",", ".").toDoubleOrNull()
+        else t.toDoubleOrNull()
+    } ?: 0.0
 
 private fun millisToBrDate(millis: Long): String {
     val cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
@@ -246,7 +248,7 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         if (propostas.size > 1) propostas.removeAt(pi)
     }
 
-    private fun GrupoLinha.propostasValidas() = propostas.filter { it.fornecedor.isNotBlank() && it.precoUnitario.isNotBlank() }
+    private fun GrupoLinha.propostasValidas() = propostas.filter { it.fornecedor.isNotBlank() && parseDecimal(it.precoUnitario) > 0.0 }
 
     private fun gruposValidos() = grupos.filter { it.categoria.isNotBlank() && it.item.isNotBlank() && it.propostasValidas().isNotEmpty() }
 
