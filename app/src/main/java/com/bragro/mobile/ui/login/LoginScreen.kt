@@ -79,6 +79,7 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
     val error by viewModel.errorMessage
     val context = androidx.compose.ui.platform.LocalContext.current
 
+    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -232,5 +233,42 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
         )
+    }
+    // País e idioma -- mesmo menu do login do site (CurrencyMenu), canto
+    // superior direito. Saiu de Configurações (pedido do usuário).
+    LoginIdiomaMenu(
+        modifier = Modifier
+            .align(Alignment.TopEnd)
+            .padding(top = 8.dp, end = 8.dp),
+    )
+    }
+}
+
+@Composable
+private fun LoginIdiomaMenu(modifier: Modifier = Modifier) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    var aberto by remember { mutableStateOf(false) }
+    val idioma = com.bragro.mobile.ui.i18n.Idioma
+    androidx.compose.foundation.layout.Box(modifier) {
+        androidx.compose.material3.TextButton(onClick = { aberto = true }) {
+            Text("${idioma.pais} · ${idioma.codigo.uppercase()}", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+        }
+        androidx.compose.material3.DropdownMenu(expanded = aberto, onDismissRequest = { aberto = false }) {
+            Text("País", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+            listOf("BR" to "Brasil (pt-BR · R$)", "AR" to "Argentina (es · ARS)").forEach { (cod, nome) ->
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text(nome + if (idioma.pais == cod) " ✓" else "") },
+                    onClick = { if (idioma.pais != cod) idioma.definirPais(ctx, cod); aberto = false },
+                )
+            }
+            androidx.compose.material3.HorizontalDivider()
+            Text("Idioma", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+            listOf("pt" to "Português (Brasil)", "es" to "Español").forEach { (cod, nome) ->
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text(nome + if (idioma.codigo == cod) " ✓" else "") },
+                    onClick = { if (idioma.codigo != cod) idioma.definir(ctx, cod); aberto = false },
+                )
+            }
+        }
     }
 }
