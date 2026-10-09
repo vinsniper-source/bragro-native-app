@@ -201,7 +201,6 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var successMessage = mutableStateOf<String?>(null)
         private set
-    var copiando = mutableStateOf(false)
         private set
 
     /** "+Criar" (Task #869) -- mesmo motor quick-create-lookup usado em
@@ -273,39 +272,6 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         historico.clear()
         successMessage.value = null
         errorMessage.value = null
-    }
-
-    /** "Copiar último lançamento" -- busca a última proposta de cotação
-     * lançada (qualquer fornecedor/item) no cache local e preenche a Data
-     * comum + o primeiro grupo (categoria/item/quantidade/unidade + 1
-     * proposta), mesmo padrão de preencherComUltimo() em
-     * cotacao-multi-item-button.tsx (site). */
-    fun preencherComUltimo() {
-        viewModelScope.launch {
-            copiando.value = true
-            val last = recordRepository.mostRecent("cotacoesfornecedores")
-            copiando.value = false
-            if (last == null) {
-                errorMessage.value = "Nenhuma cotação lançada ainda para copiar."
-                return@launch
-            }
-            last["data"]?.let { data = com.bragro.mobile.ui.domain.isoDateToBr(it) }
-            val grupo = GrupoLinha()
-            last["categoria"]?.let { grupo.categoria = it }
-            last["item"]?.let { grupo.item = it }
-            last["quantidade"]?.let { grupo.quantidade = it }
-            last["unidade"]?.let { grupo.unidade = it }
-            val proposta = grupo.propostas[0]
-            last["fornecedor"]?.let { proposta.fornecedor = it }
-            last["precoUnitario"]?.let { proposta.precoUnitario = it }
-            last["prazoEntregaDias"]?.let { proposta.prazoEntregaDias = it }
-            last["condicaoPagamento"]?.let { proposta.condicaoPagamento = it }
-            last["validadeProposta"]?.let { proposta.validadeProposta = com.bragro.mobile.ui.domain.isoDateToBr(it) }
-            grupos.clear()
-            grupos.add(grupo)
-            successMessage.value = null
-            errorMessage.value = null
-        }
     }
 
     fun submit() {
@@ -430,6 +396,8 @@ private fun PropostaCard(
     viewModel: CotacaoMultiItemViewModel,
     showRemove: Boolean,
     onRemove: () -> Unit,
+    showAdd: Boolean,
+    onAdd: () -> Unit,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -479,7 +447,7 @@ private fun PropostaCard(
                     )
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
                 ItemFieldBlock(modifier = Modifier.weight(1f)) {
                     StringDropdown(
                         label = "Condição pgto.",
@@ -500,6 +468,17 @@ private fun PropostaCard(
                         modifier = Modifier.fillMaxWidth(),
                         colors = appFieldColors(),
                     )
+                }
+                // "+" no fim da última linha da última proposta (mockup aprovado)
+                // -- adiciona outro fornecedor sem botão largo embaixo.
+                if (showAdd) {
+                    OutlinedButton(
+                        onClick = onAdd,
+                        modifier = Modifier.size(52.dp),
+                        contentPadding = PaddingValues(0.dp),
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = "Adicionar fornecedor")
+                    }
                 }
             }
             if (showRemove) {
@@ -527,6 +506,8 @@ private fun GrupoCard(
     onRemoveGrupo: () -> Unit,
     onAddProposta: () -> Unit,
     onRemoveProposta: (Int) -> Unit,
+    showAddGrupo: Boolean,
+    onAddGrupo: () -> Unit,
 ) {
     LaunchedEffect(grupo.categoria, grupo.item) {
         onBuscarHistorico(grupo.categoria, grupo.item)
@@ -566,11 +547,9 @@ private fun GrupoCard(
                     viewModel = viewModel,
                     showRemove = grupo.propostas.size > 1,
                     onRemove = { onRemoveProposta(pi) },
+                    showAdd = pi == grupo.propostas.lastIndex,
+                    onAdd = onAddProposta,
                 )
-            }
-            OutlinedButton(onClick = onAddProposta, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
-                Text("Adicionar fornecedor")
             }
             HorizontalDivider()
             ItemFieldBlock {
@@ -593,7 +572,7 @@ private fun GrupoCard(
                     onCreate = { raw -> viewModel.quickCreateLookupOption("itens_estoque", raw) { value -> value?.let { grupo.item = it } } },
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
                 ItemFieldBlock(modifier = Modifier.weight(1f)) {
                     StringDropdown(
                         label = "Unidade",
@@ -614,6 +593,16 @@ private fun GrupoCard(
                         modifier = Modifier.fillMaxWidth(),
                         colors = appFieldColors(),
                     )
+                }
+                // "+" no fim da linha do último item (mockup aprovado).
+                if (showAddGrupo) {
+                    OutlinedButton(
+                        onClick = onAddGrupo,
+                        modifier = Modifier.size(52.dp),
+                        contentPadding = PaddingValues(0.dp),
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = "Adicionar item")
+                    }
                 }
             }
             if (showRemoveGrupo) {
@@ -636,7 +625,6 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
     val pending by viewModel.pending
     val errorMessage by viewModel.errorMessage
     val successMessage by viewModel.successMessage
-    val copiando by viewModel.copiando
 
     Scaffold(
         topBar = {
@@ -652,21 +640,6 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                         Spacer(modifier = Modifier.height(16.dp))
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
-                        }
-                    }
-                },
-                actions = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(
-                            onClick = { viewModel.preencherComUltimo() },
-                            enabled = !copiando,
-                        ) {
-                            if (copiando) {
-                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            } else {
-                                Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar última cotação", tint = MaterialTheme.colorScheme.primary)
-                            }
                         }
                     }
                 },
@@ -753,13 +726,9 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                     onRemoveGrupo = { viewModel.removeGrupo(gi) },
                     onAddProposta = { viewModel.addProposta(gi) },
                     onRemoveProposta = { pi -> viewModel.removeProposta(gi, pi) },
+                    showAddGrupo = gi == viewModel.grupos.lastIndex,
+                    onAddGrupo = { viewModel.addGrupo() },
                 )
-            }
-            item {
-                OutlinedButton(onClick = { viewModel.addGrupo() }, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
-                    Text("Adicionar item")
-                }
             }
             item {
                 OutlinedTextField(
