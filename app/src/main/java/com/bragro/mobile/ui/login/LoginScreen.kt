@@ -19,6 +19,8 @@ import androidx.compose.material3.OutlinedTextField
 import com.bragro.mobile.ui.i18n.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -249,9 +251,24 @@ private fun LoginIdiomaMenu(modifier: Modifier = Modifier) {
     val ctx = androidx.compose.ui.platform.LocalContext.current
     var aberto by remember { mutableStateOf(false) }
     val idioma = com.bragro.mobile.ui.i18n.Idioma
+    // Cotação ao vivo (rota pública /api/mobile/weather) só pro conversor --
+    // buscada na 1ª abertura do menu.
+    var fx by remember { mutableStateOf<com.bragro.mobile.data.model.FxRatesData?>(null) }
+    var valor by remember { mutableStateOf("100") }
+    var de by remember { mutableStateOf("BRL") }
+    androidx.compose.runtime.LaunchedEffect(aberto) {
+        if (aberto && fx == null) {
+            fx = com.bragro.mobile.data.repo.WeatherRepository().fetch()?.fx
+        }
+    }
     androidx.compose.foundation.layout.Box(modifier) {
         androidx.compose.material3.TextButton(onClick = { aberto = true }) {
-            Text("${idioma.pais} · ${idioma.codigo.uppercase()}", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            Icon(Icons.Filled.AttachMoney, contentDescription = "Moeda, idioma e conversor", modifier = Modifier.height(18.dp))
+            Text(
+                if (idioma.argentina) "ARS" else "BRL",
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                modifier = Modifier.padding(start = 4.dp),
+            )
         }
         androidx.compose.material3.DropdownMenu(expanded = aberto, onDismissRequest = { aberto = false }) {
             Text("País", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
@@ -267,6 +284,42 @@ private fun LoginIdiomaMenu(modifier: Modifier = Modifier) {
                 androidx.compose.material3.DropdownMenuItem(
                     text = { Text(nome + if (idioma.codigo == cod) " ✓" else "") },
                     onClick = { if (idioma.codigo != cod) idioma.definir(ctx, cod); aberto = false },
+                )
+            }
+            androidx.compose.material3.HorizontalDivider()
+            Text("Conversor", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+            fun brlPer(c: String): Double? = when (c) { "BRL" -> 1.0; "USD" -> fx?.usdBrl; else -> fx?.arsBrl }
+            fun rotulo(c: String) = if (c == "USD") "U\$D" else c
+            androidx.compose.foundation.layout.Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp).width(260.dp)) {
+                androidx.compose.material3.OutlinedTextField(
+                    value = valor,
+                    onValueChange = { valor = it },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
+                )
+                androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    listOf("BRL", "USD", "ARS").forEach { c ->
+                        androidx.compose.material3.TextButton(onClick = { de = c }) {
+                            Text(rotulo(c), fontWeight = if (de == c) androidx.compose.ui.text.font.FontWeight.Bold else androidx.compose.ui.text.font.FontWeight.Normal)
+                        }
+                    }
+                }
+                val num = valor.replace(",", ".").toDoubleOrNull()
+                listOf("BRL", "USD", "ARS").filter { it != de }.forEach { alvo ->
+                    val f = brlPer(de)
+                    val t = brlPer(alvo)
+                    val res = if (num != null && f != null && t != null && t > 0) num * f / t else null
+                    androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(rotulo(alvo))
+                        Text(res?.let { String.format(java.util.Locale("pt", "BR"), "%,.2f", it) } ?: "—", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                    }
+                }
+                Text(
+                    if (fx?.usdBrl != null) String.format(java.util.Locale("pt", "BR"), "U\$D 1 = R$ %.2f", fx!!.usdBrl) else "Cotação indisponível",
+                    style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
         }

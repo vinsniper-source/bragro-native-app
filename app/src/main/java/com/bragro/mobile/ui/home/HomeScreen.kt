@@ -1180,8 +1180,27 @@ fun HomeScreen(
                 // 0.dp aqui, deixamos o espaçamento natural do LazyColumn
                 // aparecer abaixo do filete, pra ficar parecido com o
                 // respiro deixado acima dele.
+                var destaquesAberto by remember { mutableStateOf(false) }
+                val showDestaques = data.hasWidget("inicio.destaques")
                 Column(modifier = Modifier.offset(y = 0.dp)) {
-                    Text("Olá, bem-vindo de volta", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Olá, bem-vindo de volta",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f),
+                        )
+                        // Destaques reduzido a uma estrela amarela na margem direita;
+                        // toque abre/fecha o bloco com as informações.
+                        if (showDestaques) {
+                            IconButton(onClick = { destaquesAberto = !destaquesAberto }, modifier = Modifier.size(36.dp)) {
+                                Icon(Icons.Filled.Star, contentDescription = "Destaques", tint = BrYellow)
+                            }
+                        }
+                    }
+                    if (showDestaques && destaquesAberto && data != null) {
+                        DestaquesCard(data, viewModel.lastUpdatedAt.value, modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp))
+                    }
                     Text(
                         "${data?.orgName ?: "BRAgro"} — ${todayLongBrazil()}",
                         style = MaterialTheme.typography.bodySmall,
@@ -1432,15 +1451,11 @@ fun HomeScreen(
                     ClimaCard(clima!!, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth())
                 }
             }
-            if (showCambio || showDestaques) {
-                item(key = "cambio-destaques") {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        if (showCambio) CambioCard(fx!!, onRefresh = { viewModel.refresh() }, modifier = Modifier.weight(1f).fillMaxHeight())
-                        if (showDestaques) DestaquesCard(data, viewModel.lastUpdatedAt.value, modifier = Modifier.weight(1f).fillMaxHeight())
-                    }
+            // Câmbio ocupa a largura inteira (até a margem); Destaques virou a
+            // estrela amarela na linha da saudação (ver item "greeting").
+            if (showCambio) {
+                item(key = "cambio") {
+                    CambioCard(fx!!, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth())
                 }
             }
             // Pais = Argentina: dolar oficial/blue/MEP/CCL (ver Idioma.pais).
@@ -2544,16 +2559,38 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: 
                 Triple("Euro:", fx.eurBrl?.let { formatMoneyBrl(it) } ?: "—", fx.eurVariacaoPct),
                 Triple("Peso:", fx.arsBrl?.let { String.format(java.util.Locale("pt", "BR"), "R$ %.4f", it) } ?: "—", fx.arsVariacaoPct),
             )
-            itens.forEach { (rotulo, valor, variacao) ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(rotulo, modifier = Modifier.width(52.dp))
-                    Text(
-                        valor,
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
-                    )
-                    FxVariacaoTag(variacao)
+            // Colunas de peso igual com separadores finos; valor em 1 linha.
+            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), verticalAlignment = Alignment.Top) {
+                itens.forEachIndexed { i, (rotulo, valor, variacao) ->
+                    if (i > 0) {
+                        Box(
+                            Modifier
+                                .fillMaxHeight()
+                                .width(1.dp)
+                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)),
+                        )
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        Text(rotulo.removeSuffix(":"), style = MaterialTheme.typography.labelMedium, maxLines = 1, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            valor,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+                        )
+                        if (variacao != null) {
+                            Row(verticalAlignment = Alignment.CenterVertically) { FxVariacaoTagSemRecuo(variacao) }
+                        }
+                    }
                 }
+            }
+            if (com.bragro.mobile.ui.i18n.Idioma.argentina) {
+                Text("Valores em ARS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             CambioConversor(fx)
             // Periodicidade + fonte -- pedido do usuário. Valor real do
@@ -2586,16 +2623,32 @@ private fun DolarArgentinaCard(lista: List<com.bragro.mobile.data.model.DolarArD
     Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Dólar Argentina", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-            lista.forEach { d ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(d.nome + ":", modifier = Modifier.width(64.dp))
-                    Text(
-                        (d.compra?.let { fmt.format(it) } ?: "—") + " / " + (d.venda?.let { fmt.format(it) } ?: "—"),
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
-                    )
+            // 4 colunas iguais (Oficial, Blue, MEP, CCL), Compra/Venta empilhadas.
+            val num = { v: Double? -> v?.let { java.text.NumberFormat.getNumberInstance(java.util.Locale("es", "AR")).apply { maximumFractionDigits = 0 }.format(it) } ?: "—" }
+            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+                lista.take(4).forEachIndexed { i, d ->
+                    if (i > 0) {
+                        Box(
+                            Modifier
+                                .fillMaxHeight()
+                                .width(1.dp)
+                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)),
+                        )
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f).padding(horizontal = 2.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        Text(d.nome, style = MaterialTheme.typography.labelMedium, maxLines = 1, softWrap = false, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Compra", style = MaterialTheme.typography.labelSmall, maxLines = 1, softWrap = false, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(num(d.compra), fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false, style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"))
+                        Text("Venta", style = MaterialTheme.typography.labelSmall, maxLines = 1, softWrap = false, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(num(d.venda), fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false, style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"))
+                    }
                 }
             }
+            Text("Valores em ARS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(
                 "Compra / Venta · dolarapi.com",
                 style = MaterialTheme.typography.labelSmall,
@@ -2675,6 +2728,19 @@ private fun CambioConversor(fx: com.bragro.mobile.data.model.FxRatesData) {
             )
         }
     }
+}
+
+@Composable
+private fun FxVariacaoTagSemRecuo(pct: Double) {
+    val positive = pct >= 0
+    val color = if (positive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+    Icon(
+        if (positive) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
+        contentDescription = null,
+        tint = color,
+        modifier = Modifier.size(14.dp),
+    )
+    Text(formatVariacaoPct(pct), style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1, softWrap = false)
 }
 
 @Composable
