@@ -919,9 +919,9 @@ private fun ComputedFieldDisplay(col: ColumnConfig, raw: String, optionLabels: M
 // preenchimento, igual um bloco.
 @Composable
 private fun greenFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = Color.Transparent,
-    unfocusedBorderColor = Color.Transparent,
-    disabledBorderColor = Color.Transparent,
+    focusedBorderColor = MaterialTheme.colorScheme.primary,
+    unfocusedBorderColor = com.bragro.mobile.ui.theme.cardBorderColor(),
+    disabledBorderColor = com.bragro.mobile.ui.theme.cardBorderColor(),
     focusedContainerColor = MaterialTheme.colorScheme.surface,
     unfocusedContainerColor = MaterialTheme.colorScheme.surface,
     disabledContainerColor = MaterialTheme.colorScheme.surface,

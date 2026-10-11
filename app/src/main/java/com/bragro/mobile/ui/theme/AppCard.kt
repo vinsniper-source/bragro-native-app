@@ -48,16 +48,16 @@ import androidx.compose.ui.unit.dp
  * volta em algum ponto específico no futuro -- nenhum call site usa mais.
  */
 @Composable
-private fun cardBorderColor(): androidx.compose.ui.graphics.Color {
+fun cardBorderColor(): androidx.compose.ui.graphics.Color {
     val primary = MaterialTheme.colorScheme.primary
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    return if (isDark) Color(0xFF2F4A37) else Color(0xFFCFE3D4)
+    return if (isDark) Color(0xFF3F6A4B) else Color(0xFF9CC7A7)
 }
 
 /** Borda fina (0,5dp) verde adaptável claro/escuro -- volta a pedido do
  * usuário (mockup aprovado), espelhando --border do site. */
 @Composable
-fun thinGreenBorder(): BorderStroke = BorderStroke(0.5.dp, cardBorderColor())
+fun thinGreenBorder(): BorderStroke = BorderStroke(1.dp, cardBorderColor())
 
 /** Sombra verde (cor primária do app) em vez da sombra cinza padrão do
  * Material -- pedido do usuário ("aplique o verde de fundo nas sombras dos
