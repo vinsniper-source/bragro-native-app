@@ -51,8 +51,13 @@ import androidx.compose.ui.unit.dp
 private fun cardBorderColor(): androidx.compose.ui.graphics.Color {
     val primary = MaterialTheme.colorScheme.primary
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    return if (isDark) primary.copy(alpha = 0.35f) else primary
+    return if (isDark) Color(0xFF2F4A37) else Color(0xFFCFE3D4)
 }
+
+/** Borda fina (0,5dp) verde adaptável claro/escuro -- volta a pedido do
+ * usuário (mockup aprovado), espelhando --border do site. */
+@Composable
+fun thinGreenBorder(): BorderStroke = BorderStroke(0.5.dp, cardBorderColor())
 
 /** Sombra verde (cor primária do app) em vez da sombra cinza padrão do
  * Material -- pedido do usuário ("aplique o verde de fundo nas sombras dos
@@ -79,7 +84,7 @@ fun Card(
     shape: Shape = CardDefaults.shape,
     colors: CardColors = CardDefaults.cardColors(),
     elevation: CardElevation = CardDefaults.cardElevation(),
-    border: BorderStroke = BorderStroke(0.dp, Color.Transparent),
+    border: BorderStroke = thinGreenBorder(),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     androidx.compose.material3.Card(
@@ -100,7 +105,7 @@ fun Card(
     shape: Shape = CardDefaults.shape,
     colors: CardColors = CardDefaults.cardColors(),
     elevation: CardElevation = CardDefaults.elevatedCardElevation(),
-    border: BorderStroke = BorderStroke(0.dp, Color.Transparent),
+    border: BorderStroke = thinGreenBorder(),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     androidx.compose.material3.Card(
@@ -125,9 +130,9 @@ fun Card(
  * demarca o campo agora é só o preenchimento, igual um bloco. */
 @Composable
 fun appFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = Color.Transparent,
-    unfocusedBorderColor = Color.Transparent,
-    disabledBorderColor = Color.Transparent,
+    focusedBorderColor = MaterialTheme.colorScheme.primary,
+    unfocusedBorderColor = cardBorderColor(),
+    disabledBorderColor = cardBorderColor(),
     focusedContainerColor = MaterialTheme.colorScheme.surface,
     unfocusedContainerColor = MaterialTheme.colorScheme.surface,
     disabledContainerColor = MaterialTheme.colorScheme.surface,

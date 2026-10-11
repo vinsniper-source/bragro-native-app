@@ -113,7 +113,7 @@ fun EstagioSugestaoCard(
 ) {
     val sugestao = if (mostrarSugestao) ESTAGIO_SUGESTAO[estagio] else null
     if (!mostrarEstagio && sugestao == null) return
-    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Column {
             if (mostrarEstagio) {
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
@@ -537,7 +537,7 @@ private fun esriSatelliteUrl(lat: Double, lon: Double, delta: Double = 0.006): S
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
-    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column(modifier = Modifier.weight(1f)) {

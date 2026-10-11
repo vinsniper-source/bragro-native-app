@@ -1288,7 +1288,7 @@ fun HomeScreen(
 
             if (data == null) {
                 item(key = "empty") {
-                    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
+                    Card(modifier = Modifier.fillMaxWidth()) {
                         Text(
                             if (loading) "Carregando..." else "Sem dados ainda. Conecte-se à internet e atualize.",
                             modifier = Modifier.padding(16.dp),
@@ -1666,7 +1666,7 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, all
         )
     }
 
-    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 // Ícone estilo KPI (badge circular colorido) no cabeçalho --
@@ -1914,7 +1914,7 @@ private fun AlertsCard(alerts: List<AlertData>, onOpenDomain: (String) -> Unit) 
     // Fechado por padrão -- pedido do usuário ("os blocos mural, alertas e
     // monitor tem que aparecer fechados").
     var expanded by remember { mutableStateOf(false) }
-    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 SectionBadgeIcon(Icons.Filled.WarningAmber, BrOrange)
@@ -1986,7 +1986,7 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (
     // Fechado por padrão -- pedido do usuário ("os blocos mural, alertas e
     // monitor tem que aparecer fechados").
     var expanded by remember { mutableStateOf(false) }
-    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Bolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
@@ -2369,7 +2369,7 @@ private fun KpiCard(kpi: Kpi, modifier: Modifier = Modifier, fillHeight: Boolean
     // no card do Financeiro. Agora o valor/quantidade fica numa linha
     // PRÓPRIA, com a largura TOTAL do card, sem nenhum vizinho disputando
     // espaço -- nunca mais é cortado nem força a altura de ninguém.
-    Card(modifier = modifier, border = BorderStroke(0.dp, Color.Transparent)) {
+    Card(modifier = modifier) {
         Column(modifier = Modifier.padding(12.dp).fillMaxWidth().let { if (fillHeight) it.fillMaxHeight() else it }) {
             Row(verticalAlignment = Alignment.Top, modifier = Modifier.let { if (fillHeight) it.weight(1f) else it }) {
                 // Fundo translúcido em vez de contorno -- pedido do usuário
@@ -2468,7 +2468,7 @@ private fun MiniCardHeaderWithRefresh(
 
 @Composable
 private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
-    Card(modifier = modifier, border = BorderStroke(0.dp, Color.Transparent)) {
+    Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MiniCardHeaderWithRefresh("Clima", Icons.Filled.WbSunny, BrYellow, MaterialTheme.typography.titleMedium, onRefresh)
             // Temperatura atual centralizada, máx/mín centralizado na linha
@@ -2530,7 +2530,7 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh
 
 @Composable
 private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
-    Card(modifier = modifier, border = BorderStroke(0.dp, Color.Transparent)) {
+    Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MiniCardHeaderWithRefresh("Câmbio", Icons.Filled.CurrencyExchange, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
             // Ícone de variação (alta/baixa) + porcentagem do dia ao lado do
@@ -2620,7 +2620,7 @@ private fun comCodigo(valor: Double, moeda: String, casas: Int = 2): String {
 @Composable
 private fun DolarArgentinaCard(lista: List<com.bragro.mobile.data.model.DolarArData>) {
     val fmt = object { fun format(v: Double) = comCodigo(v, "ARS", 0) }
-    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Dólar Argentina", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             // 4 colunas iguais (Oficial, Blue, MEP, CCL), Compra/Venta empilhadas.
@@ -2661,7 +2661,7 @@ private fun DolarArgentinaCard(lista: List<com.bragro.mobile.data.model.DolarArD
 @Composable
 private fun MercadoArgentinaCard(lista: List<com.bragro.mobile.data.model.MercadoArData>) {
     val fmt = object { fun format(v: Double) = comCodigo(v, "ARS", 0) }
-    Card(modifier = Modifier.fillMaxWidth(), border = BorderStroke(0.dp, Color.Transparent)) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Mercado de granos y hacienda", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             lista.forEach { q ->
@@ -2767,7 +2767,7 @@ private fun FxVariacaoTag(pct: Double?) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
-    Card(modifier = modifier, border = BorderStroke(0.dp, Color.Transparent)) {
+    Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             // Renomeado -- pedido do usuário ("altere o kpi cotações
             // agrícolas para cotações grãos").
@@ -2922,7 +2922,7 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun CotacoesPecuariaCard(livestock: com.bragro.mobile.data.model.LivestockQuotesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
-    Card(modifier = modifier, border = BorderStroke(0.dp, Color.Transparent)) {
+    Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MiniCardHeaderWithRefresh("Cotações Pecuária", Icons.Filled.Pets, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
             val itens = listOfNotNull(livestock.boiGordo, livestock.bezerro, livestock.leite)
@@ -3028,7 +3028,7 @@ private fun CotacoesPecuariaCard(livestock: com.bragro.mobile.data.model.Livesto
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DestaquesCard(data: HomeData, updatedAtMillis: Long?, modifier: Modifier = Modifier.fillMaxWidth()) {
-    Card(modifier = modifier, border = BorderStroke(0.dp, Color.Transparent)) {
+    Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MiniCardHeader("Destaques", Icons.Filled.Star, BrYellow, MaterialTheme.typography.titleMedium)
             // Destaques por SETOR -- réplica de destaqueCandidates (site,
