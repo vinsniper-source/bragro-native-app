@@ -50,12 +50,15 @@ class SilosRepository(context: Context) {
         diametroM: Double?,
         alturaM: Double?,
         externalId: String?,
+        nivelCriticoPct: Double? = null,
+        lembreteLeituraDias: Int? = null,
     ): SiloResponse = call(
         { a, r ->
             SiloRequest(
                 a, r, action = if (id != null) "update" else "create", id = id,
                 nome = nome, produto = produto, fabricante = fabricante, farmId = farmId,
                 capacidadeT = capacidadeT, diametroM = diametroM, alturaM = alturaM, externalId = externalId,
+                nivelCriticoPct = nivelCriticoPct, lembreteLeituraDias = lembreteLeituraDias,
             )
         },
         "Falha ao salvar o silo.",

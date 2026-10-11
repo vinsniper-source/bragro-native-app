@@ -1785,7 +1785,7 @@ private val NOTICE_SETOR_OPTIONS = listOf(
     "pragas" to "Pragas",
     "receituarios" to "Receituários",
     "clima" to "Clima",
-    "fieldview" to "FieldView",
+    "fieldview" to "Talhões e Mapas",
     "drone" to "Drone",
     "estoque" to "Estoque",
     "controledeinsumos" to "Controle de Insumos",

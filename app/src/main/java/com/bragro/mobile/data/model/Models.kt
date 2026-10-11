@@ -1869,6 +1869,9 @@ data class RecordsRequest(val accessToken: String, val refreshToken: String, val
 data class RecordsResponse(
     val ok: Boolean,
     val records: List<JsonObject> = emptyList(),
+    // Ids "Pendentes de revisão" (importados por CSV/NF-e/extrato e ainda não
+    // abertos por um usuário) -- mesma regra do filtro do site.
+    val pendingIds: List<String> = emptyList(),
     val error: String? = null,
 )
 
@@ -2525,6 +2528,7 @@ data class BalancoHidricoPontoData(
     val data: String,
     val laminaMm: Double,
     val chuvaMm: Double,
+    val chuvaClimaMm: Double = 0.0, // chuva vinda automaticamente do módulo Clima
     val totalMm: Double,
 )
 
@@ -2642,6 +2646,26 @@ data class SiloData(
     val umidadeAtualPct: Double? = null,
     val ultimaLeituraEm: String? = null,
     val status: String? = null, // OK | ALERTA | CRITICO | VAZIO | SEM_DADOS
+    val nivelCriticoPct: Double? = null,
+    val lembreteLeituraDias: Int? = null,
+    val nivelCritico: Boolean = false,
+    val nivelCriticoLimitePct: Double = 15.0,
+    val lembreteDias: Int = 7,
+    val diasSemLeitura: Int? = null,
+    val leituraAtrasada: Boolean = false,
+    val estimadoT: Double? = null,
+    val estimadoPct: Double? = null,
+    val movimentos: List<SiloMovimentoData> = emptyList(),
+)
+
+@Serializable
+data class SiloMovimentoData(
+    val romaneioId: String,
+    val noRomaneio: String = "",
+    val data: String = "",
+    val toneladas: Double = 0.0,
+    val editadoPor: String? = null,
+    val editadoEm: String? = null,
 )
 
 @Serializable
@@ -2678,6 +2702,8 @@ data class SiloRequest(
     val umidadePct: Double? = null,
     val recordedAt: String? = null,
     val dias: Int? = null,
+    val nivelCriticoPct: Double? = null,
+    val lembreteLeituraDias: Int? = null,
 )
 
 @Serializable

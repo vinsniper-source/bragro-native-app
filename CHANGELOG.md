@@ -3,6 +3,18 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.40] -- 2026-10-11
+
+- Silos: lançamento rápido de nível (slider + atalhos 25/50/75/Cheio), alerta
+  de nível crítico, lembrete de leitura manual e saldo estimado com
+  movimentações de romaneios (data, hora e usuário que editou).
+- Pivôs: botão Ligar/Desligar agora e chuva automática do Clima no balanço
+  hídrico.
+- Estoque: botão "Movimentações".
+- Listas dos módulos: filtro "Pendentes de revisão" (registros importados por
+  CSV/NF-e/extrato ainda não abertos), igual ao site.
+- Base de Dados: importação/recusa lista quais itens padrão serão afetados.
+
 ## [1.3.39] -- 2026-10-07
 
 - País Argentina (Configurações > País e idioma): tema celeste e branco (claro

@@ -180,7 +180,7 @@ private val BOTTOM_TABS = listOf(
             // Réplica completa do site (Task #106/#107) -- não são domínio
             // genérico (DomainConfig), rotas próprias.
             SectorTarget.Special("drone", "Drone"),
-            SectorTarget.Special("fieldview", "FieldView"),
+            SectorTarget.Special("fieldview", "Talhões e Mapas"),
             // Prescrição/Taxa Variável -- ganha entrada própria (pedido do
             // usuário), antes só um ícone dentro de FieldView. Mesma tela/
             // rota (Routes.PRESCRICAO), sem lógica duplicada.
@@ -328,7 +328,7 @@ private val OWNER_BOTTOM_TABS = listOf(
             SectorTarget.Domain("receituarios", "Receituários", category = "Sanidade"),
             SectorTarget.Domain("clima", "Clima", category = "Monitoramento"),
             SectorTarget.Special("drone", "Drone", category = "Monitoramento"),
-            SectorTarget.Special("fieldview", "FieldView", category = "Monitoramento"),
+            SectorTarget.Special("fieldview", "Talhões e Mapas", category = "Monitoramento"),
             SectorTarget.Special("prescricao", "Prescrição / Taxa Variável", category = "Monitoramento"),
             // Pivôs de Irrigação (Task #904-909) -- mesmo critério de
             // Drone/FieldView/Prescrição acima.

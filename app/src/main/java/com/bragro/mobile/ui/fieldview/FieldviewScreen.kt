@@ -426,7 +426,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("FieldView", color = MaterialTheme.colorScheme.primary)
+                        Text("Talhões e Mapas", color = MaterialTheme.colorScheme.primary)
                     }
                 },
                 navigationIcon = {

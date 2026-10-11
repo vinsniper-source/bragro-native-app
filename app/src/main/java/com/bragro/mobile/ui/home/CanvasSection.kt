@@ -527,9 +527,8 @@ private fun googleEarthUrl(lat: Double?, lon: Double?, fallbackQuery: String): S
 // build.gradle.kts). delta=0.006 graus (~650m) dá um recorte que mostra a
 // fazenda com contexto ao redor, sem zoom excessivo nem de menos.
 private fun esriSatelliteUrl(lat: Double, lon: Double, delta: Double = 0.006): String {
-    val (xmin, ymin, xmax, ymax) = listOf(lon - delta, lat - delta, lon + delta, lat + delta)
-    return "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export" +
-        "?bbox=$xmin,$ymin,$xmax,$ymax&bboxSR=4326&size=300,300&format=png&f=image"
+    // Proxy do site (Mapbox, chave só no servidor) -- sem Esri.
+    return "${com.bragro.mobile.BuildConfig.API_BASE_URL}/api/public/satellite?lat=$lat&lng=$lon"
 }
 
 /** Card de detalhe da fazenda selecionada -- Custo médio/ha + barra

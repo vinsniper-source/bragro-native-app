@@ -1,6 +1,9 @@
 package com.bragro.mobile.ui.silos
 
 import android.app.Application
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Slider
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -122,9 +125,24 @@ class SilosViewModel(app: Application) : AndroidViewModel(app) {
         estoque.value = repo.estoque().estoque ?: estoque.value
     }
 
+    /** Leitura rápida direto do card (controle deslizante/atalhos): mantém a
+     * última temperatura/umidade conhecidas e usa o instante atual. */
+    fun leituraRapida(silo: SiloData, nivelPct: Double) {
+        busy.value = true
+        errorMessage.value = null
+        viewModelScope.launch {
+            val fmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+            fmt.timeZone = java.util.TimeZone.getTimeZone("UTC")
+            val r = repo.lancarLeitura(silo.id, nivelPct, silo.temperaturaAtualC, silo.umidadeAtualPct, fmt.format(java.util.Date()))
+            busy.value = false
+            if (r.ok) recarregar() else errorMessage.value = r.error ?: "Falha ao salvar leitura."
+        }
+    }
+
     fun salvar(
         id: String?, nome: String, produto: String, fabricante: String, farmId: String,
         capacidade: String, diametro: String, altura: String, externalId: String,
+        nivelCritico: String, lembreteDias: String,
         onDone: (Boolean) -> Unit,
     ) {
         busy.value = true
@@ -135,6 +153,7 @@ class SilosViewModel(app: Application) : AndroidViewModel(app) {
                 farmId.takeIf { it.isNotBlank() }, capacidade.replace(',', '.').toDoubleOrNull(),
                 diametro.replace(',', '.').toDoubleOrNull(), altura.replace(',', '.').toDoubleOrNull(),
                 externalId.takeIf { it.isNotBlank() },
+                nivelCritico.replace(',', '.').toDoubleOrNull(), lembreteDias.trim().toIntOrNull(),
             )
             busy.value = false
             if (r.ok) {
@@ -252,6 +271,20 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
             if (error != null && !showForm && leituraSilo == null) {
                 Text(error ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
+            silos.filter { it.nivelCritico }.forEach { s ->
+                AlertaBanner(
+                    "Nível crítico: ${s.nome} está com ${(s.estimadoPct ?: s.nivelAtualPct ?: 0.0).toInt()}% (limite ${s.nivelCriticoLimitePct.toInt()}%).",
+                    critico = true,
+                )
+            }
+            silos.filter { it.leituraAtrasada }.forEach { s ->
+                AlertaBanner(
+                    "Leitura pendente: ${s.nome} " +
+                        (s.diasSemLeitura?.let { "sem registro há $it dias" } ?: "ainda não tem leitura registrada") +
+                        " (lembrete a cada ${s.lembreteDias}).",
+                    critico = false,
+                )
+            }
             when {
                 loading -> Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator(modifier = Modifier.padding(top = 24.dp))
@@ -265,6 +298,8 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                             onEdit = { editing = silo; showForm = true },
                             onLeitura = { leituraSilo = silo },
                             onArchive = { viewModel.arquivar(silo.id) },
+                            onSalvarRapido = { pct -> viewModel.leituraRapida(silo, pct) },
+                            busy = busy,
                         )
                     }
                 }
@@ -276,8 +311,8 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
         SiloFormDialog(
             farms = farms, initial = editing, busy = busy, error = error,
             onDismiss = { showForm = false },
-            onSubmit = { nome, produto, fab, farmId, cap, diam, alt, ext ->
-                viewModel.salvar(editing?.id, nome, produto, fab, farmId, cap, diam, alt, ext) { ok -> if (ok) showForm = false }
+            onSubmit = { nome, produto, fab, farmId, cap, diam, alt, ext, crit, lemb ->
+                viewModel.salvar(editing?.id, nome, produto, fab, farmId, cap, diam, alt, ext, crit, lemb) { ok -> if (ok) showForm = false }
             },
         )
     }
@@ -294,18 +329,42 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
 }
 
 @Composable
+private fun AlertaBanner(texto: String, critico: Boolean) {
+    val bg = if (critico) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.tertiaryContainer
+    val fg = if (critico) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onTertiaryContainer
+    Text(
+        texto,
+        style = MaterialTheme.typography.bodySmall,
+        color = fg,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 6.dp)
+            .background(bg, RoundedCornerShape(8.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+    )
+}
+
+@Composable
 private fun SiloCard(
     silo: SiloData,
     farmNome: String?,
     onEdit: () -> Unit,
     onLeitura: () -> Unit,
     onArchive: () -> Unit,
+    onSalvarRapido: (Double) -> Unit,
+    busy: Boolean,
 ) {
+    val base = (silo.estimadoPct ?: silo.nivelAtualPct ?: 0.0).toInt().toFloat()
+    var pct by remember(base) { mutableStateOf(base) }
+    val dirty = pct != base
+    val estimado = silo.estimadoT != null
+    val critico = pct > 0f && pct <= silo.nivelCriticoLimitePct
     Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
                 Text(silo.nome, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                if (estimado) Badge(modifier = Modifier.padding(end = 4.dp)) { Text("Estimado") }
                 Badge { Text(statusLabel(silo.status)) }
             }
             Text(farmNome ?: "Sem fazenda vinculada", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -313,15 +372,48 @@ private fun SiloCard(
                 listOfNotNull(silo.produto, silo.fabricante, silo.capacidadeT?.let { "${it.toInt()} t" }).joinToString(" · ").ifBlank { "—" },
                 style = MaterialTheme.typography.bodySmall,
             )
-            LinearProgressIndicator(
-                progress = { ((silo.nivelAtualPct ?: 0.0) / 100.0).toFloat().coerceIn(0f, 1f) },
-                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+            val toneladas = silo.capacidadeT?.let { it * pct / 100.0 }
+            Text(
+                (toneladas?.let { "%.1f de %d t · ".format(Locale("pt", "BR"), it, silo.capacidadeT!!.toInt()) } ?: "") + "${pct.toInt()}%",
+                style = MaterialTheme.typography.labelMedium,
+                color = if (critico) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(top = 6.dp),
             )
-            Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Speed, contentDescription = null, modifier = Modifier.height(14.dp))
-                    Text(" ${silo.nivelAtualPct?.let { "${it.toInt()}%" } ?: "—"}", style = MaterialTheme.typography.labelSmall)
+            Slider(
+                value = pct,
+                onValueChange = { pct = it.toInt().toFloat() },
+                valueRange = 0f..100f,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                listOf(25f to "25%", 50f to "50%", 75f to "75%", 100f to "Cheio").forEach { (v, label) ->
+                    OutlinedButton(onClick = { pct = v }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) {
+                        Text(label, style = MaterialTheme.typography.labelSmall)
+                    }
                 }
+                Spacer(Modifier.weight(1f))
+                Button(
+                    enabled = !busy && (dirty || silo.leituraAtrasada || estimado),
+                    onClick = { onSalvarRapido(pct.toDouble()) },
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                ) { Text(if (estimado && !dirty) "Confirmar" else "Salvar", style = MaterialTheme.typography.labelMedium) }
+            }
+            if (estimado && silo.movimentos.isNotEmpty()) {
+                Text(
+                    "Leitura real + ${"%.1f".format(Locale("pt", "BR"), silo.movimentos.sumOf { it.toneladas })} t em romaneios desde a última leitura:",
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+                silo.movimentos.forEach { m ->
+                    Text(
+                        "Romaneio ${m.noRomaneio} · +${"%.1f".format(Locale("pt", "BR"), m.toneladas)} t · ${m.data.take(10)}" +
+                            (if (m.editadoPor != null && m.editadoEm != null) " · por ${m.editadoPor} em ${m.editadoEm.take(16).replace('T', ' ')}" else ""),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Thermostat, contentDescription = null, modifier = Modifier.height(14.dp))
                     Text(" ${silo.temperaturaAtualC?.let { "$it °C" } ?: "—"}", style = MaterialTheme.typography.labelSmall)
@@ -339,7 +431,7 @@ private fun SiloCard(
             )
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedButton(onClick = onEdit) { Text("Editar") }
-                OutlinedButton(onClick = onLeitura) { Text("Leitura") }
+                OutlinedButton(onClick = onLeitura) { Text("Temp./umid.") }
                 IconButton(onClick = onArchive) { Icon(Icons.Filled.Delete, contentDescription = "Arquivar") }
             }
         }
@@ -354,8 +446,10 @@ private fun SiloFormDialog(
     busy: Boolean,
     error: String?,
     onDismiss: () -> Unit,
-    onSubmit: (nome: String, produto: String, fabricante: String, farmId: String, capacidade: String, diametro: String, altura: String, externalId: String) -> Unit,
+    onSubmit: (nome: String, produto: String, fabricante: String, farmId: String, capacidade: String, diametro: String, altura: String, externalId: String, nivelCritico: String, lembreteDias: String) -> Unit,
 ) {
+    var nivelCritico by remember { mutableStateOf(initial?.nivelCriticoPct?.toString() ?: "") }
+    var lembreteDias by remember { mutableStateOf(initial?.lembreteLeituraDias?.toString() ?: "") }
     var nome by remember { mutableStateOf(initial?.nome ?: "") }
     var produto by remember { mutableStateOf(initial?.produto ?: PRODUTOS[0]) }
     var fabricante by remember { mutableStateOf(initial?.fabricante ?: "") }
@@ -389,12 +483,22 @@ private fun SiloFormDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors(),
                 )
+                OutlinedTextField(
+                    value = nivelCritico, onValueChange = { nivelCritico = it }, label = { Text("Alerta crítico abaixo de (%) — padrão 15") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors(),
+                )
+                OutlinedTextField(
+                    value = lembreteDias, onValueChange = { lembreteDias = it }, label = { Text("Lembrar leitura a cada (dias) — padrão 7") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors(),
+                )
                 OutlinedTextField(value = externalId, onValueChange = { externalId = it }, label = { Text("ID externo (sensor/provedor)") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
                 if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
         },
         confirmButton = {
-            Button(enabled = !busy && nome.isNotBlank(), onClick = { onSubmit(nome, produto, fabricante, farmId, capacidade, diametro, altura, externalId) }) {
+            Button(enabled = !busy && nome.isNotBlank(), onClick = { onSubmit(nome, produto, fabricante, farmId, capacidade, diametro, altura, externalId, nivelCritico, lembreteDias) }) {
                 if (busy) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Salvar")
             }
         },

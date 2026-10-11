@@ -154,6 +154,39 @@ class PivosViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Ligar com um toque (mesmo registro de estado desejado do painel Controle). */
+    fun ligar(pivo: PivoData) {
+        busy.value = true
+        viewModelScope.launch {
+            val result = repo.registrarControle(pivo.id, "RUNNING_WATER", null, null)
+            busy.value = false
+            if (result?.ok == true) pivos.value = repo.listar()?.pivos ?: pivos.value
+            else errorMessage.value = result?.error ?: "Falha ao ligar o pivô."
+        }
+    }
+
+    /** Desligar + lâmina aplicada (atalhos 5/10/15/20 mm) já lançada no balanço hídrico. */
+    fun desligar(pivo: PivoData, laminaMm: Double, horas: Double?, onDone: (Boolean) -> Unit) {
+        busy.value = true
+        viewModelScope.launch {
+            val result = repo.registrarControle(pivo.id, "STOPPED", null, null)
+            if (result?.ok == true && laminaMm > 0) {
+                val fmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+                fmt.timeZone = java.util.TimeZone.getTimeZone("UTC")
+                repo.lancarTelemetria(pivo.id, laminaMm, 0.0, horas, fmt.format(java.util.Date()))
+            }
+            busy.value = false
+            if (result?.ok == true) {
+                pivos.value = repo.listar()?.pivos ?: pivos.value
+                refreshBalanco(null)
+                onDone(true)
+            } else {
+                errorMessage.value = result?.error ?: "Falha ao desligar o pivô."
+                onDone(false)
+            }
+        }
+    }
+
     fun lancarTelemetria(pivoId: String, waterAppliedMm: String, rainGaugeMm: String, dataBr: String, onDone: (Boolean) -> Unit) {
         val iso = brDateToIsoOrNull(dataBr)
         val lamina = waterAppliedMm.toDoubleOrNull()
@@ -192,6 +225,7 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
     var editing by remember { mutableStateOf<PivoData?>(null) }
     var telemetriaPivo by remember { mutableStateOf<PivoData?>(null) }
     var controlePivo by remember { mutableStateOf<PivoData?>(null) }
+    var desligarPivo by remember { mutableStateOf<PivoData?>(null) }
 
     Scaffold(
         topBar = {
@@ -244,7 +278,8 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                             categories = balanco.map { it.data.takeLast(5) },
                             series = listOf(
                                 BarSeries("Lâmina aplicada", balanco.map { it.laminaMm }, MaterialTheme.colorScheme.primary),
-                                BarSeries("Chuva", balanco.map { it.chuvaMm }, MaterialTheme.colorScheme.secondary),
+                                BarSeries("Chuva (pluviômetro)", balanco.map { it.chuvaMm }, MaterialTheme.colorScheme.secondary),
+                                BarSeries("Chuva (Clima, automática)", balanco.map { it.chuvaClimaMm }, MaterialTheme.colorScheme.tertiary),
                             ),
                             isMoney = false,
                         )
@@ -265,6 +300,9 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                             onTelemetria = { telemetriaPivo = pivo },
                             onControle = { controlePivo = pivo },
                             onArchive = { viewModel.arquivar(pivo.id) },
+                            onLigar = { viewModel.ligar(pivo) },
+                            onDesligar = { desligarPivo = pivo },
+                            busy = busy,
                         )
                     }
                 }
@@ -297,6 +335,17 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
         )
     }
 
+    desligarPivo?.let { pivo ->
+        DesligarDialog(
+            pivoNome = pivo.nome,
+            busy = busy,
+            onDismiss = { desligarPivo = null },
+            onSubmit = { lamina, horas ->
+                viewModel.desligar(pivo, lamina, horas) { ok -> if (ok) desligarPivo = null }
+            },
+        )
+    }
+
     controlePivo?.let { pivo ->
         ControleDialog(
             pivo = pivo,
@@ -318,7 +367,11 @@ private fun PivoCard(
     onTelemetria: () -> Unit,
     onControle: () -> Unit,
     onArchive: () -> Unit,
+    onLigar: () -> Unit,
+    onDesligar: () -> Unit,
+    busy: Boolean,
 ) {
+    val ligado = pivo.status == "RUNNING_WATER" || pivo.status == "RUNNING_DRY"
     Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -348,6 +401,11 @@ private fun PivoCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp),
             )
+            Button(
+                onClick = if (ligado) onDesligar else onLigar,
+                enabled = !busy,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            ) { Text(if (ligado) "Desligar agora" else "Ligar agora") }
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = onEdit) { Text("Editar") }
                 OutlinedButton(onClick = onTelemetria) { Text("Telemetria") }
@@ -356,6 +414,50 @@ private fun PivoCard(
             }
         }
     }
+}
+
+@Composable
+private fun DesligarDialog(
+    pivoNome: String,
+    busy: Boolean,
+    onDismiss: () -> Unit,
+    onSubmit: (laminaMm: Double, horas: Double?) -> Unit,
+) {
+    var lamina by remember { mutableStateOf("") }
+    var horas by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = { if (!busy) onDismiss() },
+        title = { Text("Desligar -- $pivoNome") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Lâmina aplicada nesta irrigação (mm)", style = MaterialTheme.typography.labelMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf("5", "10", "15", "20").forEach { v ->
+                        OutlinedButton(onClick = { lamina = v }, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp)) {
+                            Text("$v mm", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    value = lamina, onValueChange = { lamina = it }, label = { Text("Outro valor (mm)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
+                    singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors(),
+                )
+                OutlinedTextField(
+                    value = horas, onValueChange = { horas = it }, label = { Text("Horas de operação (opcional)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
+                    singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors(),
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = !busy,
+                onClick = { onSubmit(lamina.replace(',', '.').toDoubleOrNull() ?: 0.0, horas.replace(',', '.').toDoubleOrNull()) },
+            ) { if (busy) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Desligar") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancelar") } },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

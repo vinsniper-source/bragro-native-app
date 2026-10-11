@@ -242,7 +242,7 @@ fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel(), 
             if (showHeader) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.CompareArrows, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                    Text("Transferências entre Fazendas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Text("Movimentações de Estoque", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     IconButton(onClick = { open = !open }) {
                         Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
                     }

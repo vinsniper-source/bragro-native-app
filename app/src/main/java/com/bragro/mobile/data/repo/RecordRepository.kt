@@ -39,6 +39,16 @@ class RecordRepository(private val context: Context) {
 
     fun observePendingCount(): Flow<Int> = db.pendingSyncDao().observeCount()
 
+    companion object {
+        /** Ids "Pendentes de revisão" por módulo (última resposta do
+         * servidor). Em memória de propósito: só vale online; offline o
+         * filtro simplesmente não aparece. */
+        private val pendingReviewIds = kotlinx.coroutines.flow.MutableStateFlow<Map<String, Set<String>>>(emptyMap())
+    }
+
+    fun observePendingReviewIds(domainId: String): Flow<Set<String>> =
+        pendingReviewIds.map { it[domainId] ?: emptySet() }
+
     // Lista completa da fila (não só a contagem) -- pedido do usuário
     // ("poderia saber ao clicar na frase quais são os lançamentos"), pro
     // banner "N lançamentos aguardando conexão" do Início abrir um diálogo
@@ -96,6 +106,7 @@ class RecordRepository(private val context: Context) {
             if (!response.isSuccessful || body?.ok != true) return false
 
             val orgId = currentOrgId()
+            pendingReviewIds.value = pendingReviewIds.value + (domainId to body.pendingIds.toSet())
             db.recordDao().clearSyncedForDomain(domainId)
             db.recordDao().upsertAll(
                 body.records.map { obj ->

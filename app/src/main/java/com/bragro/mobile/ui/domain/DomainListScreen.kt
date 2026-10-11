@@ -73,6 +73,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -173,6 +174,11 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
     var auditInfo = mutableStateOf<Map<String, AuditEntry>>(emptyMap())
         private set
 
+    // Filtro "Pendentes de revisão" (espelho do site): ids importados por
+    // CSV/NF-e/extrato ainda não abertos por um usuário.
+    var pendingReviewIds = mutableStateOf<Set<String>>(emptySet())
+        private set
+
     fun loadAuditInfo(domainId: String, recordIds: List<String>) {
         viewModelScope.launch {
             val info = auditInfoRepository.fetch(domainId, recordIds)
@@ -195,6 +201,9 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             config.value = configRepository.domainConfig(domainId)
             recordRepository.observeRecords(domainId).collectLatest { records.value = it }
+        }
+        viewModelScope.launch {
+            recordRepository.observePendingReviewIds(domainId).collectLatest { pendingReviewIds.value = it }
         }
         if (domainId == "clima") {
             viewModelScope.launch { weather.value = weatherRepository.fetch() }
@@ -293,6 +302,8 @@ fun DomainListScreen(
     val weather by viewModel.weather
     val sprayAlert by viewModel.sprayAlert
     val auditInfo by viewModel.auditInfo
+    val pendingReviewIds by viewModel.pendingReviewIds
+    var pendingOnly by remember(domainId) { mutableStateOf(false) }
     val nfseBusyId by viewModel.nfseBusyId
     val nfseResult by viewModel.nfseResult
     val context = LocalContext.current
@@ -434,8 +445,12 @@ fun DomainListScreen(
     var customVisibleKeys by remember(domainId) { mutableStateOf<Set<String>?>(null) }
     val allNonHiddenKeys = config?.columns?.filter { !it.hideInTable }?.map { it.key }?.toSet().orEmpty()
     val visibleKeys = customVisibleKeys ?: allNonHiddenKeys
-    val filteredRecords = remember(records, periodo, intervalFrom, intervalTo, dateCol, columnFilters.toMap()) {
+    // Só conta pendentes que ainda existem na lista carregada (mesmo critério
+    // do site, que cruza com registros vivos).
+    val pendingVisibleCount = remember(records, pendingReviewIds) { records.count { it["id"] in pendingReviewIds } }
+    val filteredRecords = remember(records, periodo, intervalFrom, intervalTo, dateCol, columnFilters.toMap(), pendingOnly, pendingReviewIds) {
         var result = records
+        if (pendingOnly) result = result.filter { it["id"] in pendingReviewIds }
         if (dateCol != null) {
             if (periodo != null) {
                 val (from, to) = genericPeriodoRange(periodo!!)
@@ -1000,7 +1015,7 @@ fun DomainListScreen(
                         // ícones, e deixe nuvem na mesma linha").
                         if (domainId == "estoque") {
                             ModuleIconButton(
-                                ModuleIconItem("estoque-fazenda", Icons.Filled.CompareArrows, "Transferências", active = expandedBlocks["estoque-fazenda"] == true),
+                                ModuleIconItem("estoque-fazenda", Icons.Filled.CompareArrows, "Movimentações", active = expandedBlocks["estoque-fazenda"] == true),
                             ) { expandedBlocks["estoque-fazenda"] = expandedBlocks["estoque-fazenda"] != true }
                         }
                         // Previsão do tempo entra dentro de Dados também --
@@ -1191,7 +1206,7 @@ fun DomainListScreen(
                     }
                     if (showEstoqueFazenda) {
                         ModuleIconButton(
-                            ModuleIconItem("estoque-fazenda", Icons.Filled.CompareArrows, "Transferências", active = expandedBlocks["estoque-fazenda"] == true),
+                            ModuleIconItem("estoque-fazenda", Icons.Filled.CompareArrows, "Movimentações", active = expandedBlocks["estoque-fazenda"] == true),
                         ) { expandedBlocks["estoque-fazenda"] = expandedBlocks["estoque-fazenda"] != true }
                     }
                     if (showRecalcularArea) {
@@ -1331,6 +1346,18 @@ fun DomainListScreen(
                             }
                         }
                     }
+                }
+            }
+            // "Pendentes de revisão" (espelho do site): só aparece se houver
+            // registros importados (CSV/NF-e/extrato) ainda não abertos.
+            if (pendingVisibleCount > 0 || pendingOnly) {
+                item(key = "pending-review") {
+                    FilterChip(
+                        selected = pendingOnly,
+                        onClick = { pendingOnly = !pendingOnly },
+                        label = { Text("Pendentes de revisão ($pendingVisibleCount)") },
+                        modifier = Modifier.padding(bottom = 8.dp),
+                    )
                 }
             }
             if (offline) {
