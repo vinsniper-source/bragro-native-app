@@ -281,3 +281,21 @@ fun SearchableDropdownField(
         }
     }
 }
+
+/** Cores do calendario (DatePicker/DatePickerDialog) no verde do app, claro/escuro. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun appDatePickerColors() = androidx.compose.material3.DatePickerDefaults.colors(
+    containerColor = MaterialTheme.colorScheme.surface,
+    titleContentColor = MaterialTheme.colorScheme.primary,
+    headlineContentColor = MaterialTheme.colorScheme.onSurface,
+    weekdayContentColor = MaterialTheme.colorScheme.primary,
+    subheadContentColor = MaterialTheme.colorScheme.primary,
+    selectedDayContainerColor = MaterialTheme.colorScheme.primary,
+    selectedDayContentColor = MaterialTheme.colorScheme.onPrimary,
+    todayContentColor = MaterialTheme.colorScheme.primary,
+    todayDateBorderColor = MaterialTheme.colorScheme.primary,
+    selectedYearContainerColor = MaterialTheme.colorScheme.primary,
+    selectedYearContentColor = MaterialTheme.colorScheme.onPrimary,
+    currentYearContentColor = MaterialTheme.colorScheme.primary,
+)

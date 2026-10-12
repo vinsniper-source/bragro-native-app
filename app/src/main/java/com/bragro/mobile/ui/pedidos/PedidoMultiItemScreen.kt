@@ -598,7 +598,7 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                         },
                         dismissButton = { TextButton(onClick = { showPicker = false }) { Text("Cancelar") } },
                     ) {
-                        DatePicker(state = pickerState)
+                        DatePicker(state = pickerState, colors = com.bragro.mobile.ui.theme.appDatePickerColors())
                     }
                 }
             }

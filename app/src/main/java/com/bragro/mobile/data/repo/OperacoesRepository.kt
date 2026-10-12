@@ -5,6 +5,7 @@ import com.bragro.mobile.data.AppLog
 import com.bragro.mobile.data.TokenStore
 import com.bragro.mobile.data.local.AppDatabase
 import com.bragro.mobile.data.local.OperacoesEntity
+import com.bragro.mobile.data.model.ModuleActionRequest
 import com.bragro.mobile.data.model.OperacoesRequest
 import com.bragro.mobile.data.model.OperacoesResponse
 import com.bragro.mobile.data.remote.NetworkModule
@@ -27,6 +28,30 @@ class OperacoesRepository(context: Context) {
 
     fun parse(entity: OperacoesEntity): List<com.bragro.mobile.data.model.OperacaoAgrupadaData> =
         json.decodeFromString(OperacoesResponse.serializer(), entity.dataJson).operacoes
+
+    fun parsePending(entity: OperacoesEntity): List<String> =
+        json.decodeFromString(OperacoesResponse.serializer(), entity.dataJson).pendingIds
+
+    /** Marca o lançamento de Safra como revisado (action "mark-reviewed"). */
+    suspend fun marcarRevisado(recordId: String): Boolean {
+        val tokens = tokenStore.current() ?: return false
+        var (accessToken, refreshToken) = tokens
+        fun build(token: String) = ModuleActionRequest(token, refreshToken, "mark-reviewed", domainId = "safra", id = recordId)
+        return try {
+            var response = NetworkModule.mobileApi.moduleActions(build(accessToken))
+            if (response.code() == 401) {
+                val newAccess = TokenRefresher.refreshAccessToken(tokenStore, refreshToken)
+                if (newAccess != null) {
+                    accessToken = newAccess
+                    response = NetworkModule.mobileApi.moduleActions(build(accessToken))
+                }
+            }
+            response.isSuccessful
+        } catch (e: Exception) {
+            AppLog.e("OperacoesRepository", "Falha ao marcar revisado ($recordId)", e)
+            false
+        }
+    }
 
     /** Retorna true se conseguiu atualizar do servidor; false se
      * offline/sem sessao (quem chamou continua podendo mostrar o cache

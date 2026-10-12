@@ -6,6 +6,11 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.background
+import androidx.compose.material.icons.filled.FactCheck
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.heightIn
@@ -894,6 +899,12 @@ fun DomainListScreen(
             // abaixo).
             val useCustomBlocks = domainId in PER_MODULE_BLOCK_DOMAINS
             item(key = "module-icon-row") {
+                // Revisar: linha própria na aba Operações, filtra os lançamentos
+                // importados ainda não conferidos (abrir um lançamento o confirma).
+                val revisarFooter: (@Composable () -> Unit)? =
+                    if (pendingVisibleCount > 0 || pendingOnly) {
+                        { RevisarRow(count = pendingVisibleCount, active = pendingOnly) { pendingOnly = !pendingOnly } }
+                    } else null
                 if (useCategorizedBlocks) {
                     val dadosBlock = ModuleBlockSpec("Dados", vertical = false) {
                         ModuleIconButton(
@@ -925,7 +936,7 @@ fun DomainListScreen(
                             )
                         }
                     }
-                    val operacoesBlock = ModuleBlockSpec("Operações", vertical = false) {
+                    val operacoesBlock = ModuleBlockSpec("Operações", vertical = false, badgeCount = pendingVisibleCount, footer = revisarFooter) {
                         LabeledIconButton(
                             icon = Icons.Filled.Refresh,
                             label = "Atualizar",
@@ -1046,7 +1057,7 @@ fun DomainListScreen(
                     // período + calculadora), Frota (atualizar + período +
                     // recalcular área) -- personalização confirmada por
                     // imagem, módulo por módulo.
-                    val operacoesBlock = ModuleBlockSpec("Operações", vertical = false) {
+                    val operacoesBlock = ModuleBlockSpec("Operações", vertical = false, badgeCount = pendingVisibleCount, footer = revisarFooter) {
                         if (domainId == "safra") {
                             ModuleIconButton(
                                 ModuleIconItem("recalcular-area", Icons.Filled.Autorenew, "Recalcular"),
@@ -1147,7 +1158,7 @@ fun DomainListScreen(
                     // vertical = false (era true) -- pedido do usuário
                     // reverteu ("os ícones estão mal distribuídos, estão na
                     // vertical, volte para a horizontal").
-                    val operacoesBlockCobrancas = ModuleBlockSpec("Operações", vertical = false) {
+                    val operacoesBlockCobrancas = ModuleBlockSpec("Operações", vertical = false, badgeCount = pendingVisibleCount, footer = revisarFooter) {
                         LabeledIconButton(
                             icon = Icons.Filled.Refresh,
                             label = "Atualizar",
@@ -1723,6 +1734,10 @@ private val PER_MODULE_BLOCK_DOMAINS = setOf(
 data class ModuleBlockSpec(
     val title: String,
     val vertical: Boolean,
+    // Notificação na aba: >0 pinta o fundo de amarelo e mostra a contagem.
+    val badgeCount: Int = 0,
+    // Linha extra (largura inteira) abaixo dos ícones quando a aba está ativa.
+    val footer: (@Composable () -> Unit)? = null,
     val content: @Composable () -> Unit,
 )
 
@@ -1800,7 +1815,7 @@ fun ModuleCategoryTabs(blocks: List<ModuleBlockSpec>, modifier: Modifier = Modif
                     colors = SegmentedButtonDefaults.colors(
                         activeContainerColor = MaterialTheme.colorScheme.primary,
                         activeContentColor = MaterialTheme.colorScheme.onPrimary,
-                        inactiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        inactiveContainerColor = if (block.badgeCount > 0) BrYellow.copy(alpha = 0.35f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                     ),
                     // maxLines/ellipsis -- achado de auditoria (nomes de
                     // categoria mais longos, ex. módulos com blocos
@@ -1809,7 +1824,7 @@ fun ModuleCategoryTabs(blocks: List<ModuleBlockSpec>, modifier: Modifier = Modif
                     // que precisam ficar com a MESMA medida entre eles).
                     label = {
                         Text(
-                            block.title,
+                            if (block.badgeCount > 0) "${block.title} ${block.badgeCount}" else block.title,
                             maxLines = 1,
                             softWrap = false,
                             overflow = TextOverflow.Clip,
@@ -1833,6 +1848,34 @@ fun ModuleCategoryTabs(blocks: List<ModuleBlockSpec>, modifier: Modifier = Modif
             // ModuleCategoryBlock acima.
             EqualWidthBlockRow { active.content() }
         }
+        active.footer?.let { footer ->
+            Spacer(modifier = Modifier.height(6.dp))
+            footer()
+        }
+    }
+}
+
+// Botão "Revisar (N)" em linha inteira (aba Operações). Amarelo = há pendências.
+@Composable
+fun RevisarRow(count: Int, active: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (active) BrYellow.copy(alpha = 0.55f) else BrYellow.copy(alpha = 0.30f))
+            .border(BorderStroke(1.dp, BrYellow), RoundedCornerShape(8.dp))
+            .clickable { onClick() }
+            .padding(vertical = 10.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.FactCheck, contentDescription = null, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(
+            if (active) "Revisar ($count) — toque para ver tudo" else "Revisar ($count)",
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 

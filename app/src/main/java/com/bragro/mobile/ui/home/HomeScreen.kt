@@ -1190,16 +1190,6 @@ fun HomeScreen(
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.weight(1f),
                         )
-                        // Destaques reduzido a uma estrela amarela na margem direita;
-                        // toque abre/fecha o bloco com as informações.
-                        if (showDestaques) {
-                            IconButton(onClick = { destaquesAberto = !destaquesAberto }, modifier = Modifier.size(36.dp)) {
-                                Icon(Icons.Filled.Star, contentDescription = "Destaques", tint = BrYellow)
-                            }
-                        }
-                    }
-                    if (showDestaques && destaquesAberto && data != null) {
-                        DestaquesCard(data, viewModel.lastUpdatedAt.value, modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp))
                     }
                     Text(
                         "${data?.orgName ?: "BRAgro"} — ${todayLongBrazil()}",
@@ -1218,6 +1208,17 @@ fun HomeScreen(
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(top = 2.dp),
                     )
+                    if (data != null) {
+                        HomeShortcutsRow(
+                            data = data,
+                            showDestaques = showDestaques,
+                            destaquesAberto = destaquesAberto,
+                            onDestaquesChange = { destaquesAberto = it },
+                            canManage = canManage,
+                            viewModel = viewModel,
+                            onOpenDomain = onOpenDomain,
+                        )
+                    }
                     if (pending > 0) {
                         // Virou um banner destacado (ícone + fundo tonal em
                         // âmbar) em vez de texto simples -- pedido do
@@ -1364,21 +1365,14 @@ fun HomeScreen(
             // site sem confirmar, mas pode ser removido numa faxina futura
             // se ninguem mais chamar.
 
-            if (data.hasWidget("inicio.mural")) {
-            item(key = "mural") { BulletinBoardCard(data.notices, canManage, data.allowedModules, viewModel) }
-            }
-            if (data.hasWidget("inicio.alertas")) {
-            item(key = "alertas") { AlertsCard(data.alerts, onOpenDomain) }
-            }
+            // Mural/Alertas/Monitor viraram atalhos em pílula abaixo do slogan
+            // (ver HomeShortcutsRow) -- pedido do usuário.
             // Revertido -- pedido do usuário ("os kpis estão dentro do
             // monitor em tempo real, volte eles para a posição original"):
             // dentro do Monitor os cards ficavam espremidos (Card dentro de
             // Card, menos largura disponível) e os rótulos cortavam
             // ("Itens no e...", "Operaç...", "Colabor..."). Volta a ser
             // seção própria, largura cheia.
-            if (data.hasWidget("inicio.monitor")) {
-            item(key = "monitor") { ActivityMonitorCard(data.recentActivity, onOpenDomain) }
-            }
             if (data.hasWidget("inicio.kpis")) {
             item(key = "kpis") { KpiGrid(data) }
             }
@@ -1649,11 +1643,11 @@ private fun PendingSyncDialog(items: List<PendingSyncEntity>, onDismiss: () -> U
 }
 
 @Composable
-private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, allowedModules: List<String>, viewModel: HomeViewModel) {
+private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, allowedModules: List<String>, viewModel: HomeViewModel, startExpanded: Boolean = false) {
     var showAddDialog by remember { mutableStateOf(false) }
     // Fechado por padrão -- pedido do usuário ("os blocos mural, alertas e
     // monitor tem que aparecer fechados"), expande só ao tocar na setinha.
-    var expanded by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(startExpanded) }
 
     if (showAddDialog) {
         AddNoticeDialog(
@@ -1879,6 +1873,84 @@ private fun AddNoticeDialog(
     )
 }
 
+// Atalhos em pílula (Destaques / Alertas / Monitor / Avisos) numa linha só,
+// abaixo do slogan. Sem itens = verde; com itens = amarelo + contagem.
+// Cada pílula abre o conteúdo num diálogo (reaproveita os cards antigos).
+@Composable
+private fun HomeShortcutsRow(
+    data: HomeData,
+    showDestaques: Boolean,
+    destaquesAberto: Boolean,
+    onDestaquesChange: (Boolean) -> Unit,
+    canManage: Boolean,
+    viewModel: HomeViewModel,
+    onOpenDomain: (String) -> Unit,
+) {
+    val showAlertas = data.hasWidget("inicio.alertas")
+    val showMonitor = data.hasWidget("inicio.monitor")
+    val showMural = data.hasWidget("inicio.mural")
+    if (!showDestaques && !showAlertas && !showMonitor && !showMural) return
+    var open by remember { mutableStateOf<String?>(null) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        if (showDestaques) HomeShortcutPill("Destaques", Icons.Filled.Star, 0, Modifier.weight(1f)) { onDestaquesChange(true) }
+        if (showAlertas) HomeShortcutPill("Alertas", Icons.Filled.WarningAmber, data.alerts.size, Modifier.weight(1f)) { open = "alertas" }
+        if (showMonitor) HomeShortcutPill("Monitor", Icons.Filled.Bolt, data.recentActivity.size, Modifier.weight(1f)) { open = "monitor" }
+        if (showMural) HomeShortcutPill("Avisos", Icons.Filled.Campaign, data.notices.size, Modifier.weight(1f)) { open = "mural" }
+    }
+
+    val which = if (destaquesAberto) "destaques" else open
+    if (which != null) {
+        AlertDialog(
+            onDismissRequest = { if (destaquesAberto) onDestaquesChange(false) else open = null },
+            confirmButton = {
+                TextButton(onClick = { if (destaquesAberto) onDestaquesChange(false) else open = null }) { Text("Fechar") }
+            },
+            text = {
+                Column(modifier = Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState())) {
+                    when (which) {
+                        "destaques" -> DestaquesCard(data, viewModel.lastUpdatedAt.value, modifier = Modifier.fillMaxWidth())
+                        "alertas" -> AlertsCard(data.alerts, { id -> open = null; onOpenDomain(id) }, startExpanded = true)
+                        "monitor" -> ActivityMonitorCard(data.recentActivity, { id -> open = null; onOpenDomain(id) }, startExpanded = true)
+                        "mural" -> BulletinBoardCard(data.notices, canManage, data.allowedModules, viewModel, startExpanded = true)
+                    }
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun HomeShortcutPill(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, count: Int, modifier: Modifier, onClick: () -> Unit) {
+    val alert = count > 0 && label != "Destaques"
+    val container = if (alert) BrYellow.copy(alpha = 0.30f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+    val content = if (alert) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.primary
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(50))
+            .background(container)
+            .border(BorderStroke(1.dp, if (alert) BrYellow else com.bragro.mobile.ui.theme.cardBorderColor()), RoundedCornerShape(50))
+            .clickable { onClick() }
+            .padding(horizontal = 4.dp, vertical = 7.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = if (alert) BrOrange else content, modifier = Modifier.size(14.dp))
+        Spacer(Modifier.width(3.dp))
+        Text(
+            if (alert) "$label $count" else label,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = if (alert) FontWeight.Bold else FontWeight.Medium,
+            color = content,
+            maxLines = 1,
+            overflow = TextOverflow.Clip,
+        )
+    }
+}
+
 @Composable
 private fun CollapsibleHeader(title: String, expanded: Boolean, onToggle: () -> Unit) {
     Row(
@@ -1910,10 +1982,10 @@ private fun SectionBadgeIcon(icon: androidx.compose.ui.graphics.vector.ImageVect
 }
 
 @Composable
-private fun AlertsCard(alerts: List<AlertData>, onOpenDomain: (String) -> Unit) {
+private fun AlertsCard(alerts: List<AlertData>, onOpenDomain: (String) -> Unit, startExpanded: Boolean = false) {
     // Fechado por padrão -- pedido do usuário ("os blocos mural, alertas e
     // monitor tem que aparecer fechados").
-    var expanded by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(startExpanded) }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -1982,10 +2054,10 @@ private fun AlertsCard(alerts: List<AlertData>, onOpenDomain: (String) -> Unit) 
 // em uma linha só").
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (String) -> Unit) {
+private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (String) -> Unit, startExpanded: Boolean = false) {
     // Fechado por padrão -- pedido do usuário ("os blocos mural, alertas e
     // monitor tem que aparecer fechados").
-    var expanded by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(startExpanded) }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

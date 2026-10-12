@@ -1656,6 +1656,8 @@ data class OperacoesRequest(
 data class OperacoesResponse(
     val ok: Boolean,
     val operacoes: List<OperacaoAgrupadaData> = emptyList(),
+    // IDs de registros de Safra pendentes de revisão (importados) -- botão Revisar.
+    val pendingIds: List<String> = emptyList(),
     val error: String? = null,
 )
 

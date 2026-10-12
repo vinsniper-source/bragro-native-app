@@ -1226,7 +1226,7 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                     },
                     dismissButton = { TextButton(onClick = { showPicker = false }) { Text("Cancelar") } },
                 ) {
-                    DatePicker(state = pickerState)
+                    DatePicker(state = pickerState, colors = com.bragro.mobile.ui.theme.appDatePickerColors())
                 }
             }
         }

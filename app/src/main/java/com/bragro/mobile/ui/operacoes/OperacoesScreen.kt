@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -91,6 +92,8 @@ class OperacoesViewModel(app: Application) : AndroidViewModel(app) {
 
     var operacoes = mutableStateOf<List<OperacaoAgrupadaData>>(emptyList())
         private set
+    var pendingIds = mutableStateOf<Set<String>>(emptySet())
+        private set
     var loading = mutableStateOf(false)
         private set
     var offline = mutableStateOf(false)
@@ -105,11 +108,24 @@ class OperacoesViewModel(app: Application) : AndroidViewModel(app) {
             repository.observeCached().collectLatest { entity ->
                 if (entity != null) {
                     temCache.value = true
-                    if (entity.janela == janela.value) operacoes.value = repository.parse(entity)
+                    if (entity.janela == janela.value) {
+                        operacoes.value = repository.parse(entity)
+                        pendingIds.value = repository.parsePending(entity).toSet()
+                    }
                 }
             }
         }
         refresh()
+    }
+
+    fun marcarRevisado(recordId: String) {
+        // Otimista: some o selo na hora; refresh confirma com o servidor.
+        pendingIds.value = pendingIds.value - recordId
+        viewModelScope.launch {
+            repository.marcarRevisado(recordId)
+            loading.value = false
+            refresh()
+        }
     }
 
     fun setJanela(value: Int) {
@@ -233,6 +249,8 @@ private fun OperacaoCard(
     // sem perder a possibilidade de abrir/fechar uma atividade específica.
     atividadesExpandidasPadrao: Boolean,
     activityOverrides: androidx.compose.runtime.snapshots.SnapshotStateMap<String, Boolean>,
+    pendingIds: Set<String> = emptySet(),
+    onReview: (String) -> Unit = {},
 ) {
     var abrirFinanceiro by remember { mutableStateOf(false) }
     var abrirEstoque by remember { mutableStateOf(false) }
@@ -516,6 +534,18 @@ private fun OperacaoCard(
                             // no site (operacao-card.tsx, "?editId="), so que aqui
                             // navega direto pra rota domain/{id}/edit/{recordId} que
                             // ja existia no app (usada por Copiar ultimo lancamento).
+                            // Revisar: confirma o lançamento importado (some o selo
+                            // "Pendente de revisão"). Só aparece se pendente.
+                            if (ev.id in pendingIds) {
+                                androidx.compose.material3.TextButton(
+                                    onClick = { onReview(ev.id) },
+                                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+                                    modifier = Modifier.height(24.dp),
+                                ) {
+                                    Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Text(" Revisar", style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
                             IconButton(onClick = { onEditRecord("safra", ev.id) }, modifier = Modifier.size(24.dp)) {
                                 Icon(Icons.Filled.Edit, contentDescription = "Editar em Safra", modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
@@ -642,6 +672,7 @@ private fun OperacaoDetalheCompleto(recordId: String) {
 fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, viewModel: OperacoesViewModel = viewModel()) {
     val operacoes by viewModel.operacoes
     val loading by viewModel.loading
+    val pendingIds by viewModel.pendingIds
     val offline by viewModel.offline
     val temCache by viewModel.temCache
     val janela by viewModel.janela
@@ -785,6 +816,8 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                             onEditRecord = onEditRecord,
                             atividadesExpandidasPadrao = atividadesExpandidasPadrao,
                             activityOverrides = activityOverrides,
+                            pendingIds = pendingIds,
+                            onReview = { viewModel.marcarRevisado(it) },
                         )
                     }
                 }

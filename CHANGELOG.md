@@ -3,6 +3,16 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.43] -- 2026-10-12
+
+- Início: atalhos Destaques, Alertas, Monitor e Avisos em uma linha abaixo do slogan (pílula amarela + contagem quando há itens); blocos antigos removidos.
+- Módulos: "Revisar (N)" em linha própria na aba Operações; abas Dados/Operações/Arquivos ficam amarelas com contagem quando há pendências.
+
+## [1.3.42] -- 2026-10-12
+
+- Operações: botão Revisar em cada lançamento pendente de revisão.
+- Calendário de datas com seletor verde.
+
 ## [1.3.41] -- 2026-10-11
 
 - Borda fina verde (claro/escuro) de volta em cards, blocos e campos.
