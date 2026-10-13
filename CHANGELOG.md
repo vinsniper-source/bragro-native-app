@@ -4,6 +4,7 @@ Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
 ## [1.3.52] - 2026-10-13
+- Janelas (diálogos) no padrão do Abastecimento rápido: janela em verde-acinzentado (claro DCE4DE / escuro 4B5A4E) e campos um degrau diferente (claro EFF1EE / escuro 3E4A3F) com borda verde, em todas as janelas do app.
 - Padrão fundo verde + blocos claros nos modos claro e escuro: blocos que contêm campos (itens de Pedido/Cotação/Orçamento, Livro Caixa, Dossiê, Simulador, Prescrição, Extrato, Segurança, calculadoras, nota com itens) usam tom mais escuro que o campo; Card dentro de Card herda o mesmo tom.
 
 ## [1.3.51] -- 2026-10-13

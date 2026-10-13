@@ -120,8 +120,11 @@ private val LightColors = lightColorScheme(
     surfaceContainerLowest = Color(0xFFEFF1EE),
     surfaceContainerLow = Color(0xFFEFF1EE),
     surfaceContainer = Color(0xFFEFF1EE),
-    surfaceContainerHigh = Color(0xFFEFF1EE),
-    surfaceContainerHighest = Color(0xFFEFF1EE),
+    // Janelas (AlertDialog/DatePicker): verde-acinzentado claro, um degrau
+    // abaixo do campo (EFF1EE) -- campos se destacam dentro da janela,
+    // igual ao Abastecimento rápido aprovado.
+    surfaceContainerHigh = Color(0xFFDCE4DE),
+    surfaceContainerHighest = Color(0xFFDCE4DE),
     surfaceDim = Color(0xFFEFF1EE),
     surfaceBright = Color(0xFFEFF1EE),
     outline = Color(0xFF4A5C57),
@@ -156,8 +159,10 @@ private val DarkColors = darkColorScheme(
     surfaceContainerLowest = Color(0xFF434B40),
     surfaceContainerLow = Color(0xFF434B40),
     surfaceContainer = Color(0xFF434B40),
-    surfaceContainerHigh = Color(0xFF434B40),
-    surfaceContainerHighest = Color(0xFF434B40),
+    // Janelas: verde-musgo mais claro que o campo (3E4A3F) -- padrão do
+    // Abastecimento rápido no escuro.
+    surfaceContainerHigh = Color(0xFF4B5A4E),
+    surfaceContainerHighest = Color(0xFF4B5A4E),
     surfaceDim = Color(0xFF434B40),
     surfaceBright = Color(0xFF434B40),
     outline = Color(0xFF7A9186),

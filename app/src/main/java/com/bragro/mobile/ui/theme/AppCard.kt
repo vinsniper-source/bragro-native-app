@@ -187,7 +187,7 @@ fun Card(
 @Composable
 fun appFieldColors(): TextFieldColors {
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val fill = if (dark) MaterialTheme.colorScheme.surface else Color(0xFFEEF1EE)
+    val fill = if (dark) Color(0xFF3E4A3F) else Color(0xFFEFF1EE)
     return OutlinedTextFieldDefaults.colors(
     focusedBorderColor = MaterialTheme.colorScheme.primary,
     unfocusedBorderColor = cardBorderColor(),
