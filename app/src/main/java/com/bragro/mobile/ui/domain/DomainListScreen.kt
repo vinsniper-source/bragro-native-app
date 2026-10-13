@@ -912,7 +912,7 @@ fun DomainListScreen(
                     )
                 }
                 if (useCategorizedBlocks) {
-                    val dadosBlock = ModuleBlockSpec("Dados", vertical = false) {
+                    val dadosBlock = ModuleBlockSpec("Dados", vertical = false, badgeCount = if (showFiltros) activeFilterCountGeneric else 0) {
                         ModuleIconButton(
                             ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
                         ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
@@ -996,7 +996,7 @@ fun DomainListScreen(
                 } else if (useCustomBlocks) {
                     // Dados: igual pros 5 módulos -- gráfico, filtro, coluna,
                     // expandir/recolher (mesmo bloco Dados do padrão genérico).
-                    val dadosBlock = ModuleBlockSpec("Dados", vertical = false) {
+                    val dadosBlock = ModuleBlockSpec("Dados", vertical = false, badgeCount = if (showFiltros) activeFilterCountGeneric else 0) {
                         ModuleIconButton(
                             ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
                         ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
@@ -1131,7 +1131,7 @@ fun DomainListScreen(
                     // e coloque... gráfico, filtros, expandir e colunas...
                     // bloco operações... atualizar e período... bloco
                     // arquivos... csv e pdf").
-                    val dadosBlockCobrancas = ModuleBlockSpec("Dados", vertical = false) {
+                    val dadosBlockCobrancas = ModuleBlockSpec("Dados", vertical = false, badgeCount = if (showFiltros) activeFilterCountGeneric else 0) {
                         ModuleIconButton(
                             ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
                         ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
@@ -1806,10 +1806,13 @@ fun ModuleCategoryTabs(blocks: List<ModuleBlockSpec>, modifier: Modifier = Modif
                     // também a cor de fundo dos blocos das categorias a
                     // mesma cor do ícone fazenda"), aplicado a todos os
                     // módulos que usam esse padrão (não só Financeiro).
+                    // Aba com aviso (ícone com contagem dentro dela) fica
+                    // amarela, selecionada ou não.
                     colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = MaterialTheme.colorScheme.primary,
-                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
-                        inactiveContainerColor = if (block.badgeCount > 0) BrYellow.copy(alpha = 0.35f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        activeContainerColor = if (block.badgeCount > 0) BrYellow else MaterialTheme.colorScheme.primary,
+                        activeContentColor = if (block.badgeCount > 0) androidx.compose.ui.graphics.Color(0xFF1A1A1A) else MaterialTheme.colorScheme.onPrimary,
+                        inactiveContainerColor = if (block.badgeCount > 0) BrYellow.copy(alpha = 0.55f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        inactiveContentColor = if (block.badgeCount > 0) androidx.compose.ui.graphics.Color(0xFF4D3C00) else MaterialTheme.colorScheme.onSurface,
                     ),
                     // maxLines/ellipsis -- achado de auditoria (nomes de
                     // categoria mais longos, ex. módulos com blocos

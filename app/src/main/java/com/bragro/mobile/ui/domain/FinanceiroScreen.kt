@@ -462,7 +462,7 @@ fun FinanceiroScreen(
             // usuário no desenho mais recente -- e ganhou o filtro (Banco)
             // que estava em Operações e tinha ficado faltando aqui.
             val dadosBlock =
-                FinBlockSpec("Dados", MaterialTheme.typography.titleSmall, vertical = false) {
+                FinBlockSpec("Dados", MaterialTheme.typography.titleSmall, vertical = false, badgeCount = if (banco != null) 1 else 0) {
                     if (!isQuickView) {
                         ModuleIconButton(
                             ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
@@ -517,7 +517,7 @@ fun FinanceiroScreen(
                     )
                 }
             val operacoesBlock =
-                FinBlockSpec("Operações", MaterialTheme.typography.titleSmall, vertical = false) {
+                FinBlockSpec("Operações", MaterialTheme.typography.titleSmall, vertical = false, badgeCount = pendingVisibleCount) {
                     if (!isQuickView) {
                         ModuleIconButton(
                             ModuleIconItem("calculators", Icons.Filled.Calculate, "Calculadoras", active = expandedBlocks["calculators"] == true),
@@ -1075,6 +1075,7 @@ private data class FinBlockSpec(
     val title: String,
     val titleStyle: androidx.compose.ui.text.TextStyle,
     val vertical: Boolean,
+    val badgeCount: Int = 0,
     val content: @Composable () -> Unit,
 )
 
@@ -1162,9 +1163,10 @@ private fun FinanceiroCategoryTabs(blocks: List<FinBlockSpec>, modifier: Modifie
                     // pedido do usuário ("coloque também a cor de fundo dos
                     // blocos das categorias a mesma cor do ícone fazenda").
                     colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = MaterialTheme.colorScheme.primary,
-                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
-                        inactiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        activeContainerColor = if (block.badgeCount > 0) com.bragro.mobile.ui.theme.BrYellow else MaterialTheme.colorScheme.primary,
+                        activeContentColor = if (block.badgeCount > 0) androidx.compose.ui.graphics.Color(0xFF1A1A1A) else MaterialTheme.colorScheme.onPrimary,
+                        inactiveContainerColor = if (block.badgeCount > 0) com.bragro.mobile.ui.theme.BrYellow.copy(alpha = 0.55f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        inactiveContentColor = if (block.badgeCount > 0) androidx.compose.ui.graphics.Color(0xFF4D3C00) else MaterialTheme.colorScheme.onSurface,
                     ),
                     // maxLines/ellipsis -- achado de auditoria (mesma razão
                     // do ModuleCategoryTabs em DomainListScreen.kt: título

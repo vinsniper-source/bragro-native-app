@@ -535,7 +535,7 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
             // por isso ModuleBlockSpec/ModuleCategoryTabs tiveram o
             // `private` removido lá pra serem reaproveitados aqui). Agora
             // com Arquivos (Excel/PDF), que antes faltava.
-            val dadosBlock = ModuleBlockSpec("Dados", vertical = false) {
+            val dadosBlock = ModuleBlockSpec("Dados", vertical = false, badgeCount = if (statusFiltro != null) 1 else 0) {
                 // Ordem igual à do motor genérico (DomainListScreen.kt):
                 // Gráficos / Filtros / Colunas / Recolher / Tabela -- faltavam
                 // 3 desses aqui porque Orçamentos tem tela própria, fora do
