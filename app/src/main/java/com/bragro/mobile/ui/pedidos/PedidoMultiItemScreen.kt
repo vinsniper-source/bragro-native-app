@@ -330,7 +330,7 @@ private fun ItemFieldBlock(modifier: Modifier = Modifier, content: @Composable (
 
 @Composable
 private fun PedidoLinhaCard(linha: PedidoLinha, categoriasOptions: List<LookupEntity>, itensOptions: List<LookupEntity>, unidadesOptions: List<LookupEntity>, viewModel: PedidoMultiItemViewModel, showRemove: Boolean, onRemove: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             ItemFieldBlock {
                 StringDropdown(

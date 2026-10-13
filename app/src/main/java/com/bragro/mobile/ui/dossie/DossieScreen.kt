@@ -390,7 +390,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
 @Composable
 private fun SecaoCard(titulo: String, conteudo: @Composable () -> Unit) {
     var aberto by remember { mutableStateOf(true) }
-    Card(modifier = Modifier.fillMaxWidth()) {
+    com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             com.bragro.mobile.ui.domain.TituloRecolhivel(titulo, aberto) { aberto = !aberto }
             if (aberto) {
@@ -416,7 +416,7 @@ private fun LinhaResumo(label: String, valor: String, destaquePositivo: Boolean?
 
 @Composable
 private fun FazendaDreCard(f: DossieDreFazendaData) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(f.farmName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -438,7 +438,7 @@ private fun FazendaDreCard(f: DossieDreFazendaData) {
 
 @Composable
 private fun ContratoCard(c: DossieContratoData) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(c.descricao, style = MaterialTheme.typography.bodyLarge)
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -458,7 +458,7 @@ private fun ContratoCard(c: DossieContratoData) {
 
 @Composable
 private fun PatrimonioItemCard(p: DossiePatrimonioItemData) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column {
                 Text(p.descricao, style = MaterialTheme.typography.bodyMedium)

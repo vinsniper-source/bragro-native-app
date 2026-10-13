@@ -390,7 +390,7 @@ private fun PropostaCard(
     showAdd: Boolean,
     onAdd: () -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             ItemFieldBlock {
                 StringDropdown(
@@ -513,7 +513,7 @@ private fun GrupoCard(
     // fornecedores agora vem ANTES de Categoria/Item/Unidade/Quantidade,
     // com "Adicionar fornecedor" logo abaixo da lista. Nenhuma mudança de
     // dado/validação, só a ordem visual dos dois blocos dentro do card.
-    Card(modifier = Modifier.fillMaxWidth()) {
+    com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Propostas dos fornecedores *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             // Preço médio histórico (task #472) -- movido pro topo, junto do

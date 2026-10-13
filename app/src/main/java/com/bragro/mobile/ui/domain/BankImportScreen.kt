@@ -255,7 +255,7 @@ fun BankImportScreen(onBack: () -> Unit, viewModel: BankImportViewModel = viewMo
 
             item {
                 var formAberto by remember { mutableStateOf(true) }
-                Card(modifier = Modifier.fillMaxWidth()) {
+                com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         com.bragro.mobile.ui.domain.TituloRecolhivel("Dados do extrato", formAberto) { formAberto = !formAberto }
                         if (formAberto) {

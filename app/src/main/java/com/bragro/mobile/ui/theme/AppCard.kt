@@ -97,24 +97,57 @@ fun StandardFieldBlock(modifier: Modifier = Modifier, content: @Composable () ->
  * próprios (o bloco já é a única camada visível -- sem "dupla camada"). */
 val LocalInStandardBlock = androidx.compose.runtime.compositionLocalOf { false }
 
+/** Cor do bloco que CONTÉM campos (ex.: "Itens do pedido") -- mais escura
+ * que o campo, nos dois modos, pra o campo (appFieldColors) se destacar
+ * dentro do bloco, igual aos campos soltos sobre o fundo verde da tela.
+ * Claro: verde um pouco mais escuro que o fundo; escuro: bem mais escuro. */
+@Composable
+fun formBlockColor(): Color {
+    val bg = MaterialTheme.colorScheme.background
+    val dark = bg.luminance() < 0.5f
+    return androidx.compose.ui.graphics.lerp(bg, Color.Black, if (dark) 0.35f else 0.07f)
+}
+
+/** Card de bloco com campos dentro (itens de Pedido/Cotação/Orçamento etc.). */
+@Composable
+fun FormBlockCard(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = formBlockColor()),
+        content = content,
+    )
+}
+
 @Composable
 fun Card(
     modifier: Modifier = Modifier,
     shape: Shape = CardDefaults.shape,
-    colors: CardColors = CardDefaults.cardColors(),
+    colors: CardColors? = null,
     elevation: CardElevation = CardDefaults.cardElevation(),
     border: BorderStroke = thinGreenBorder(),
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    // Card dentro de Card (bloco interno) = tom mais escuro, pra campos e
+    // blocos de dentro se destacarem (padrão claro/escuro aprovado).
+    val inside = LocalInsideCard.current
+    val resolved = colors ?: if (inside) CardDefaults.cardColors(containerColor = formBlockColor()) else CardDefaults.cardColors()
     androidx.compose.material3.Card(
         modifier = greenShadow(shape).then(modifier),
         shape = shape,
-        colors = colors,
+        colors = resolved,
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = border,
-        content = content,
+        content = {
+            androidx.compose.runtime.CompositionLocalProvider(LocalInsideCard provides true) { content() }
+        },
     )
 }
+
+/** true dentro do conteúdo de um Card (ver Card acima). */
+val LocalInsideCard = androidx.compose.runtime.compositionLocalOf { false }
 
 @Composable
 fun Card(
@@ -122,20 +155,24 @@ fun Card(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     shape: Shape = CardDefaults.shape,
-    colors: CardColors = CardDefaults.cardColors(),
+    colors: CardColors? = null,
     elevation: CardElevation = CardDefaults.elevatedCardElevation(),
     border: BorderStroke = thinGreenBorder(),
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val inside = LocalInsideCard.current
+    val resolved = colors ?: if (inside) CardDefaults.cardColors(containerColor = formBlockColor()) else CardDefaults.cardColors()
     androidx.compose.material3.Card(
         onClick = onClick,
         modifier = greenShadow(shape).then(modifier),
         enabled = enabled,
         shape = shape,
-        colors = colors,
+        colors = resolved,
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = border,
-        content = content,
+        content = {
+            androidx.compose.runtime.CompositionLocalProvider(LocalInsideCard provides true) { content() }
+        },
     )
 }
 

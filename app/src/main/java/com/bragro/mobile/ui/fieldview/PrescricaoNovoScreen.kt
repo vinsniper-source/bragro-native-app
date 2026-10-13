@@ -328,7 +328,7 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
     ) { padding ->
         if (successId != null) {
             Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Card(modifier = Modifier.fillMaxWidth()) {
+                com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text("Prescrição salva com sucesso", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     }

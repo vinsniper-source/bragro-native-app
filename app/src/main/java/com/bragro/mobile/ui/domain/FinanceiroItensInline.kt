@@ -341,7 +341,7 @@ fun FinanceiroItensInlineSection(
     // blocos de fora e de dentro ficam com o mesmo fundo.
     val sectionShape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp)
     val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val sectionBg = if (isDarkTheme) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else androidx.compose.ui.graphics.Color(0xFFEEF1EE)
+    val sectionBg = com.bragro.mobile.ui.theme.formBlockColor()
     Column(
         modifier = Modifier
             .fillMaxWidth()

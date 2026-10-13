@@ -295,7 +295,7 @@ fun SegurancaScreen(onBack: () -> Unit, viewModel: SegurancaViewModel = viewMode
 @Composable
 private fun CollapsibleCard(title: String, initiallyOpen: Boolean = false, content: @Composable () -> Unit) {
     var open by remember { mutableStateOf(initiallyOpen) }
-    Card(modifier = Modifier.fillMaxWidth()) {
+    com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth().clickable { open = !open },

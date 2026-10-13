@@ -457,7 +457,7 @@ private fun ProdutorRuralCard(
     var certValidade by remember(config) { mutableStateOf(isoDateToBr(config?.certificadoDigitalValidade ?: "")) }
     var contaIrpf by remember(config) { mutableStateOf(config?.contaIrpfPadrao ?: "") }
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
         var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             com.bragro.mobile.ui.domain.TituloRecolhivel("Produtor Rural / IRPF", aberto) { aberto = !aberto }

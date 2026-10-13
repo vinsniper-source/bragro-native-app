@@ -201,7 +201,7 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
             }
 
             item {
-                Card(modifier = Modifier.fillMaxWidth()) {
+                com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
                         val partes = buildList {
                             add("${NumberFormat.getNumberInstance(Locale("pt", "BR")).format(b.areaHa)} ha")
