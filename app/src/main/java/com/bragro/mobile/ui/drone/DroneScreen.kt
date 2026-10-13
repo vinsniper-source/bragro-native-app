@@ -238,7 +238,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        androidx.compose.material3.com.bragro.mobile.ui.domain.HomeNavButton()
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
                 // Ícone de nuvem (armazenamento) -- faltava neste módulo,
