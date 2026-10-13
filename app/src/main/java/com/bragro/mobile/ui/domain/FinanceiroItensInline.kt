@@ -3,6 +3,7 @@ package com.bragro.mobile.ui.domain
 import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -243,15 +244,7 @@ private fun ItemStringDropdown(
 // aplicado nos outros dois arquivos.
 @Composable
 private fun ItemFieldBlock(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-        shape = MaterialTheme.shapes.small,
-    ) {
-        Box(modifier = Modifier.padding(6.dp)) {
-            content()
-        }
-    }
+    com.bragro.mobile.ui.theme.StandardFieldBlock(modifier = modifier, content = content)
 }
 
 @Composable
@@ -263,13 +256,12 @@ private fun ItemNotaLinhaRow(
     showRemove: Boolean,
     onRemove: () -> Unit,
 ) {
-    val borderColor = darkerBorderColor(MaterialTheme.colorScheme.surface)
+    // Sem fundo/borda próprios: os campos já são blocos padrão dentro do
+    // bloco externo (mesmo fundo nos dois, sem faixa de tom diferente).
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, borderColor)
-            .padding(10.dp),
+            .padding(vertical = 2.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         // Item fica sozinho na própria linha (dropdown de pesquisa, precisa
@@ -345,13 +337,16 @@ fun FinanceiroItensInlineSection(
     val brutoNum = bruto.toDoubleOrNull() ?: 0.0
     val podeSalvar = viewModel.podeSalvar(docNf, data, local, entidade, bruto)
 
-    val sectionBg = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-    val sectionBorder = darkerBorderColor(MaterialTheme.colorScheme.surfaceVariant)
+    // Mesmo padrão dos demais blocos (borda fina verde + fundo claro) -- os
+    // blocos de fora e de dentro ficam com o mesmo fundo.
+    val sectionShape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp)
+    val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val sectionBg = if (isDarkTheme) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else androidx.compose.ui.graphics.Color(0xFFEEF1EE)
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(sectionBg)
-            .border(1.dp, sectionBorder)
+            .background(sectionBg, sectionShape)
+            .border(com.bragro.mobile.ui.theme.thinGreenBorder(), sectionShape)
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {

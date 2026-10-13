@@ -110,9 +110,7 @@ fun ColheitaQrScreen(onBack: () -> Unit, viewModel: ColheitaQrViewModel = viewMo
             TopAppBar(
                 title = { Text("QR Code de Rastreabilidade", color = MaterialTheme.colorScheme.primary) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
-                    }
+                    com.bragro.mobile.ui.domain.HomeNavButton()
                 },
                 actions = {
                     IconButton(

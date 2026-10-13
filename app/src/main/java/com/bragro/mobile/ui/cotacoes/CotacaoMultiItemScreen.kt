@@ -359,15 +359,7 @@ private fun StringDropdown(
  * era imperceptível em display real). */
 @Composable
 private fun ItemFieldBlock(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-        shape = MaterialTheme.shapes.small,
-    ) {
-        Box(modifier = Modifier.padding(6.dp)) {
-            content()
-        }
-    }
+    com.bragro.mobile.ui.theme.StandardFieldBlock(modifier = modifier, content = content)
 }
 
 /** Texto do preço médio histórico do item (task #472) -- mesmo texto do
@@ -637,9 +629,7 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
-                        }
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )

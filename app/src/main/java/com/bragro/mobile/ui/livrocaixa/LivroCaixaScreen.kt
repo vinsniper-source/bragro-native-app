@@ -423,15 +423,7 @@ private fun LancamentoRow(l: LivroCaixaLancamentoData) {
 // real nos outros arquivos).
 @Composable
 private fun ItemFieldBlock(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-        shape = MaterialTheme.shapes.small,
-    ) {
-        Box(modifier = Modifier.padding(6.dp)) {
-            content()
-        }
-    }
+    com.bragro.mobile.ui.theme.StandardFieldBlock(modifier = modifier, content = content)
 }
 
 // Card Produtor Rural / IRPF -- pedido do usuário ("implemente tudo que
@@ -466,8 +458,10 @@ private fun ProdutorRuralCard(
     var contaIrpf by remember(config) { mutableStateOf(config?.contaIrpfPadrao ?: "") }
 
     Card(modifier = Modifier.fillMaxWidth()) {
+        var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Produtor Rural / IRPF", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            com.bragro.mobile.ui.domain.TituloRecolhivel("Produtor Rural / IRPF", aberto) { aberto = !aberto }
+            if (aberto) {
             Text(
                 "Dados usados na apuração do Livro Caixa da Atividade Rural (LCDPR) -- confira com seu contador antes de declarar.",
                 style = MaterialTheme.typography.labelSmall,
@@ -520,6 +514,7 @@ private fun ProdutorRuralCard(
                 ) { Text(if (loading) "Salvando..." else "Salvar") }
             }
         }
+}
     }
 }
 
@@ -529,8 +524,10 @@ private fun ProdutorRuralCard(
 @Composable
 private fun ResumoPorImovelCard(imoveis: List<com.bragro.mobile.data.model.LivroCaixaImovelResumoData>, onSelect: (String) -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
+        var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
         Column(modifier = Modifier.padding(12.dp)) {
-            Text("Resumo por imóvel rural", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            com.bragro.mobile.ui.domain.TituloRecolhivel("Resumo por imóvel rural", aberto) { aberto = !aberto }
+            if (aberto) {
             Column(modifier = Modifier.padding(top = 6.dp)) {
                 imoveis.forEach { i ->
                     Row(
@@ -550,6 +547,7 @@ private fun ResumoPorImovelCard(imoveis: List<com.bragro.mobile.data.model.Livro
                 }
             }
         }
+}
     }
 }
 
@@ -560,8 +558,10 @@ private fun ResumoPorImovelCard(imoveis: List<com.bragro.mobile.data.model.Livro
 @Composable
 private fun ResumoMensalCard(porMes: List<com.bragro.mobile.data.model.LivroCaixaMesData>) {
     Card(modifier = Modifier.fillMaxWidth()) {
+        var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
         Column(modifier = Modifier.padding(12.dp)) {
-            Text("Resumo mensal", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            com.bragro.mobile.ui.domain.TituloRecolhivel("Resumo mensal", aberto) { aberto = !aberto }
+            if (aberto) {
             Column(modifier = Modifier.padding(top = 6.dp)) {
                 porMes.forEach { m ->
                     if (m.entradas > 0 || m.saidas > 0) {
@@ -575,6 +575,7 @@ private fun ResumoMensalCard(porMes: List<com.bragro.mobile.data.model.LivroCaix
                 }
             }
         }
+}
     }
 }
 
@@ -592,6 +593,7 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
     val saldoInicialAtual by viewModel.saldoInicial
     val produtorRural by viewModel.produtorRural
     val produtorRuralLoading by viewModel.produtorRuralLoading
+    var extratoAberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
     val context = LocalContext.current
     var filtrosOpen by remember { mutableStateOf(false) }
     var contentExpanded by remember { mutableStateOf(false) }
@@ -620,9 +622,7 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
-                        }
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
                 actions = {
@@ -746,19 +746,24 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
             } else if (contentExpanded) {
                 item {
                     Card(modifier = Modifier.fillMaxWidth()) {
+                        var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text("Totais de $ano", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            com.bragro.mobile.ui.domain.TituloRecolhivel("Totais de $ano", aberto) { aberto = !aberto }
+                            if (aberto) {
                             Row { Text("Entradas: "); Text(formatMoneyBrl(data.totalEntradas), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
                             Row { Text("Saídas: "); Text(formatMoneyBrl(data.totalSaidas), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error) }
                             Row { Text("Saldo final: "); Text(formatMoneyBrl(data.saldoFinal), fontWeight = FontWeight.Bold) }
                         }
+}
                     }
                 }
                 if (data.contas.isNotEmpty()) {
                     item {
                         Card(modifier = Modifier.fillMaxWidth()) {
+                            var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
                             Column(modifier = Modifier.padding(12.dp)) {
-                                Text("Resumo por conta", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                com.bragro.mobile.ui.domain.TituloRecolhivel("Resumo por conta", aberto) { aberto = !aberto }
+                                if (aberto) {
                                 Column(modifier = Modifier.padding(top = 6.dp)) {
                                     data.contas.forEach { c ->
                                         // Clicável (filtra por essa conta) +
@@ -801,6 +806,7 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                                     }
                                 }
                             }
+}
                         }
                     }
                 }
@@ -811,9 +817,11 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                     item { ResumoMensalCard(data.porMes) }
                 }
                 item {
-                    Text("Extrato (${data.lancamentos.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
+                    Box(modifier = Modifier.padding(top = 4.dp)) {
+                        com.bragro.mobile.ui.domain.TituloRecolhivel("Extrato (${data.lancamentos.size})", extratoAberto) { extratoAberto = !extratoAberto }
+                    }
                 }
-                items(data.lancamentos, key = { it.id }) { l -> LancamentoRow(l) }
+                if (extratoAberto) items(data.lancamentos, key = { it.id }) { l -> LancamentoRow(l) }
             }
         }
     }

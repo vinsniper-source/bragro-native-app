@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.domain
 
+import com.bragro.mobile.ui.theme.BrYellow
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.background
@@ -124,15 +125,19 @@ fun ModuleIconButton(
     contentColor: Color? = null,
     onClick: () -> Unit,
 ) {
-    val fg = contentColor ?: MODULE_ICON_FG
+    // Liga/desliga: ativo = fundo verde cheio + ícone/rótulo brancos; tocar de
+    // novo volta ao padrão (pedido do usuário). contentColor explícito (bloco
+    // Faturamento) é respeitado só quando inativo.
+    val fg = if (item.active) MaterialTheme.colorScheme.onPrimary else (contentColor ?: MODULE_ICON_FG)
     Column(
         modifier = Modifier
             .widthIn(min = 44.dp)
+            .then(if (item.active) Modifier.background(MaterialTheme.colorScheme.primary) else Modifier)
             .clickable(onClick = onClick)
             .padding(horizontal = 6.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        BadgedBox(badge = { if (item.badgeCount > 0) Badge { Text("${item.badgeCount}") } }) {
+        BadgedBox(badge = { if (item.badgeCount > 0) Badge(containerColor = BrYellow, contentColor = Color.Black) { Text("${item.badgeCount}") } }) {
             Icon(
                 item.icon,
                 contentDescription = null,
@@ -189,24 +194,41 @@ fun LabeledIconButton(
     // cor quando "ativo") continuam funcionando normalmente.
     tint: Color = MaterialTheme.colorScheme.onSurface,
     loading: Boolean = false,
+    // Liga/desliga: ativo = fundo verde cheio + ícone/rótulo brancos.
+    active: Boolean = false,
+    // Bolinha de contagem (Revisar): fundo amarelo, número preto.
+    badgeCount: Int = 0,
 ) {
+    val fg = if (active) MaterialTheme.colorScheme.onPrimary else tint
     // Sem Card próprio -- mesmo motivo do ModuleIconButton acima.
     Column(
         modifier = modifier
             .widthIn(min = 44.dp)
+            .then(if (active) Modifier.background(MaterialTheme.colorScheme.primary) else Modifier)
             .clickable(enabled = !loading, onClick = onClick)
             .padding(horizontal = 6.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (loading) {
             CircularProgressIndicator(modifier = Modifier.size(MODULE_ICON_SIZE), strokeWidth = 2.dp)
+        } else if (badgeCount > 0) {
+            BadgedBox(
+                badge = {
+                    Badge(
+                        containerColor = BrYellow,
+                        contentColor = Color.Black,
+                    ) { Text("$badgeCount") }
+                },
+            ) {
+                Icon(icon, contentDescription = null, tint = fg, modifier = Modifier.size(MODULE_ICON_SIZE))
+            }
         } else {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(MODULE_ICON_SIZE))
+            Icon(icon, contentDescription = null, tint = fg, modifier = Modifier.size(MODULE_ICON_SIZE))
         }
         Text(
             label,
             style = MaterialTheme.typography.labelSmall,
-            color = tint,
+            color = fg,
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Clip,

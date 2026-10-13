@@ -262,9 +262,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
             TopAppBar(
                 title = { Text("Dossiê Bancário", color = MaterialTheme.colorScheme.primary) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
-                    }
+                    com.bragro.mobile.ui.domain.HomeNavButton()
                 },
                 // Ícone Imprimir/PDF (Task #615/#711, paridade com o botão
                 // Imprimir do dossie-client.tsx no site) -- monta o MESMO
@@ -391,11 +389,14 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
 
 @Composable
 private fun SecaoCard(titulo: String, conteudo: @Composable () -> Unit) {
+    var aberto by remember { mutableStateOf(true) }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(titulo, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            HorizontalDivider()
-            conteudo()
+            com.bragro.mobile.ui.domain.TituloRecolhivel(titulo, aberto) { aberto = !aberto }
+            if (aberto) {
+                HorizontalDivider()
+                conteudo()
+            }
         }
     }
 }

@@ -470,9 +470,7 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
-                        }
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
                 actions = {
@@ -524,7 +522,6 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                 onClick = onNovo,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.padding(bottom = 64.dp),
             ) { Icon(Icons.Filled.Add, contentDescription = "Novo orçamento") }
         },
     ) { padding ->

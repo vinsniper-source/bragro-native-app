@@ -116,12 +116,22 @@ private object Routes {
 // -- ver BottomNavBar.kt). Telas mais "de fluxo" (formulário, DRE, Análises,
 // importação de NF-e, romaneio, login) ficam sem a barra, mesmo critério já
 // usado nelas de ter seu próprio botão "Voltar".
+// Barra inferior SEMPRE por cima -- pedido do usuário ("sobrepor a barra
+// inferior sempre"): aparece em todas as telas (formulários, DRE, Simulador
+// etc.), só some no login e enquanto a rota ainda não foi resolvida.
 private fun showsBottomBar(route: String?): Boolean =
-    route == Routes.HOME || route == Routes.DOMAIN_LIST
+    route != null && route != Routes.LOGIN
 
 @Composable
 fun BRAgroNavHost() {
     val navController = rememberNavController()
+    // Botão "casinha" do cabeçalho dos módulos: volta direto para a Início.
+    com.bragro.mobile.ui.domain.HomeNavigator.goHome = {
+        navController.navigate(Routes.HOME) {
+            popUpTo(Routes.HOME)
+            launchSingleTop = true
+        }
+    }
     val context = LocalContext.current
     var startDestination by remember { mutableStateOf<String?>(null) }
 

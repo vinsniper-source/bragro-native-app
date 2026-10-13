@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.FactCheck
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CallMade
@@ -233,13 +234,20 @@ fun FinanceiroScreen(
     // o subtítulo que ecoava o nome do bloco aberto (ex.: "Gráficos"),
     // já que cada ícone agora mostra seu próprio rótulo embaixo.
 
-    val filtered = remember(allRecords, view, periodo, intervalFrom, intervalTo, banco) {
+    // Revisar (igual à plataforma): filtra os lançamentos importados
+    // (CSV/NF-e/extrato) ainda não conferidos; abrir um lançamento o confirma.
+    val pendingReviewIds by viewModel.pendingReviewIds
+    var pendingOnly by remember { mutableStateOf(false) }
+    val pendingVisibleCount = remember(allRecords, pendingReviewIds) { allRecords.count { it["id"] in pendingReviewIds } }
+
+    val filtered = remember(allRecords, view, periodo, intervalFrom, intervalTo, banco, pendingOnly, pendingReviewIds) {
         var result = filterByFinanceiroView(allRecords, view)
         result = filterByFinanceiroPeriodo(result, periodo, view)
         result = filterByDateInterval(result, dateKey, intervalFrom, intervalTo)
         if (view == FinanceiroView.CONCILIADO && !banco.isNullOrBlank()) {
             result = result.filter { it["banco"] == banco }
         }
+        if (pendingOnly) result = result.filter { it["id"] in pendingReviewIds }
         result
     }
     val presetKeys = FINANCEIRO_VIEW_COLUMN_KEYS[view]
@@ -326,7 +334,7 @@ fun FinanceiroScreen(
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary) }
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
                 // Nuvem/Imprimir promovidos pro canto superior direito, na
@@ -535,6 +543,13 @@ fun FinanceiroScreen(
                         label = "Atualizar",
                         loading = refreshing,
                         onClick = { viewModel.refresh("financeiro") },
+                    )
+                    LabeledIconButton(
+                        icon = Icons.Filled.FactCheck,
+                        label = "Revisar",
+                        active = pendingOnly,
+                        badgeCount = pendingVisibleCount,
+                        onClick = { pendingOnly = !pendingOnly },
                     )
                 }
             val arquivosBlock =

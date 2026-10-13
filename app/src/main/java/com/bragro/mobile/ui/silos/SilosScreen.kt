@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -57,6 +59,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bragro.mobile.data.model.FarmLookupData
 import com.bragro.mobile.data.model.SiloData
 import com.bragro.mobile.data.model.SiloEstoquePontoData
+import com.bragro.mobile.data.model.SiloLeituraData
 import com.bragro.mobile.data.repo.SilosRepository
 import com.bragro.mobile.ui.domain.BarSeries
 import com.bragro.mobile.ui.domain.ModuleProviderIntegrationCard
@@ -101,12 +104,34 @@ class SilosViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var estoque = mutableStateOf<List<SiloEstoquePontoData>>(emptyList())
         private set
+    var filtroSiloId = mutableStateOf("")
+        private set
+    var leituras = mutableStateOf<List<SiloLeituraData>>(emptyList())
+        private set
+    var leiturasLoading = mutableStateOf(false)
+        private set
     var loading = mutableStateOf(false)
         private set
     var busy = mutableStateOf(false)
         private set
     var errorMessage = mutableStateOf<String?>(null)
         private set
+
+    /** Filtro do gráfico de estoque por silo ("" = todos). */
+    fun setFiltro(siloId: String) {
+        filtroSiloId.value = siloId
+        viewModelScope.launch { estoque.value = repo.estoque(siloId.takeIf { it.isNotBlank() }).estoque ?: emptyList() }
+    }
+
+    /** Histórico de leituras (últimos 60 dias) de um silo. */
+    fun carregarLeituras(siloId: String) {
+        leituras.value = emptyList()
+        leiturasLoading.value = true
+        viewModelScope.launch {
+            leituras.value = repo.listarLeituras(siloId).leituras ?: emptyList()
+            leiturasLoading.value = false
+        }
+    }
 
     fun load() {
         loading.value = true
@@ -122,7 +147,7 @@ class SilosViewModel(app: Application) : AndroidViewModel(app) {
 
     private suspend fun recarregar() {
         silos.value = repo.listar().silos ?: silos.value
-        estoque.value = repo.estoque().estoque ?: estoque.value
+        estoque.value = repo.estoque(filtroSiloId.value.takeIf { it.isNotBlank() }).estoque ?: estoque.value
     }
 
     /** Leitura rápida direto do card (controle deslizante/atalhos): mantém a
@@ -213,6 +238,10 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
     var showForm by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<SiloData?>(null) }
     var leituraSilo by remember { mutableStateOf<SiloData?>(null) }
+    var historicoSilo by remember { mutableStateOf<SiloData?>(null) }
+    val filtroSilo by viewModel.filtroSiloId
+    val leituras by viewModel.leituras
+    val leiturasLoading by viewModel.leiturasLoading
 
     Scaffold(
         topBar = {
@@ -220,15 +249,13 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Silos cilíndricos", color = MaterialTheme.colorScheme.primary)
+                        Text("Silos", color = MaterialTheme.colorScheme.primary)
                     }
                 },
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
-                        }
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )
@@ -238,46 +265,35 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                 onClick = { editing = null; showForm = true },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.padding(bottom = 48.dp),
             ) {
                 Icon(Icons.Filled.Storage, contentDescription = "Novo silo")
             }
         },
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
-            Text(
-                "Cadastro de silos e leituras de nível, temperatura e umidade lançadas manualmente. Leitura automática depende de parceria com o provedor -- ver card abaixo.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 12.dp),
-            )
-            ModuleProviderIntegrationCard(domainId = "estoque")
-            Spacer(Modifier.height(8.dp))
-            Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Text("Estoque armazenado (t, 30 dias)", style = MaterialTheme.typography.titleSmall)
-                    Spacer(Modifier.height(8.dp))
-                    if (estoque.isEmpty()) {
-                        Text("Sem leituras com capacidade cadastrada no período.", style = MaterialTheme.typography.bodySmall)
-                    } else {
-                        SimpleBarChart(
-                            categories = estoque.map { it.data.takeLast(5) },
-                            series = listOf(BarSeries("Armazenado (t)", estoque.map { it.quantidadeT }, MaterialTheme.colorScheme.primary)),
-                            isMoney = false,
-                        )
-                    }
-                }
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp),
+        ) {
+            item(key = "intro") {
+                Text(
+                    "Cadastro de silos e leituras de nível, temperatura e umidade lançadas manualmente. Leitura automática depende de parceria com o provedor -- ver card abaixo.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 12.dp),
+                )
             }
             if (error != null && !showForm && leituraSilo == null) {
-                Text(error ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                item(key = "erro") {
+                    Text(error ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
             }
-            silos.filter { it.nivelCritico }.forEach { s ->
+            items(silos.filter { it.nivelCritico }, key = { "c-" + it.id }) { s ->
                 AlertaBanner(
                     "Nível crítico: ${s.nome} está com ${(s.estimadoPct ?: s.nivelAtualPct ?: 0.0).toInt()}% (limite ${s.nivelCriticoLimitePct.toInt()}%).",
                     critico = true,
                 )
             }
-            silos.filter { it.leituraAtrasada }.forEach { s ->
+            items(silos.filter { it.leituraAtrasada }, key = { "a-" + it.id }) { s ->
                 AlertaBanner(
                     "Leitura pendente: ${s.nome} " +
                         (s.diasSemLeitura?.let { "sem registro há $it dias" } ?: "ainda não tem leitura registrada") +
@@ -285,24 +301,91 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                     critico = false,
                 )
             }
-            when {
-                loading -> Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(modifier = Modifier.padding(top = 24.dp))
-                }
-                silos.isEmpty() -> Text("Nenhum silo cadastrado ainda. Toque no botão para adicionar.", modifier = Modifier.padding(vertical = 24.dp))
-                else -> LazyColumn(contentPadding = PaddingValues(bottom = 80.dp)) {
-                    items(silos, key = { it.id }) { silo ->
-                        SiloCard(
-                            silo = silo,
-                            farmNome = farms.firstOrNull { it.id == silo.farmId }?.name,
-                            onEdit = { editing = silo; showForm = true },
-                            onLeitura = { leituraSilo = silo },
-                            onArchive = { viewModel.arquivar(silo.id) },
-                            onSalvarRapido = { pct -> viewModel.leituraRapida(silo, pct) },
-                            busy = busy,
-                        )
+            item(key = "kpis") {
+                val ativos = silos.size
+                val capTotal = silos.sumOf { it.capacidadeT ?: 0.0 }
+                val armazenado = silos.sumOf { (it.capacidadeT ?: 0.0) * ((it.estimadoPct ?: it.nivelAtualPct ?: 0.0) / 100.0) }
+                val emAlerta = silos.count { it.status == "ALERTA" || it.status == "CRITICO" }
+                val pendentes = silos.count { it.leituraAtrasada }
+                val br = Locale("pt", "BR")
+                Column(Modifier.padding(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        KpiBox("Silos ativos", ativos.toString(), Modifier.weight(1f))
+                        KpiBox("Armazenado / capacidade", "%,.0f / %,.0f t".format(br, armazenado, capTotal), Modifier.weight(1f))
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        KpiBox("Silos em atenção/crítico", emAlerta.toString(), Modifier.weight(1f), destaque = emAlerta > 0)
+                        KpiBox("Leitura pendente", pendentes.toString(), Modifier.weight(1f), destaque = pendentes > 0)
                     }
                 }
+            }
+            item(key = "estoque") {
+                Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text("Estoque armazenado (t, 30 dias)", style = MaterialTheme.typography.titleSmall)
+                        Spacer(Modifier.height(8.dp))
+                        SearchableDropdownField(
+                            value = filtroSilo,
+                            label = "Silo",
+                            options = silos.map { it.id to it.nome },
+                            onSelect = { viewModel.setFiltro(it) },
+                            emptyOptionLabel = "Todos os silos",
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        if (estoque.isEmpty()) {
+                            Text("Sem leituras com capacidade cadastrada no período.", style = MaterialTheme.typography.bodySmall)
+                        } else {
+                            SimpleBarChart(
+                                categories = estoque.map { it.data.takeLast(5) },
+                                series = listOf(BarSeries("Armazenado (t)", estoque.map { it.quantidadeT }, MaterialTheme.colorScheme.primary)),
+                                isMoney = false,
+                            )
+                        }
+                    }
+                }
+            }
+            when {
+                loading -> item(key = "loading") {
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(modifier = Modifier.padding(top = 24.dp))
+                    }
+                }
+                silos.isEmpty() -> {
+                    item(key = "vazio") {
+                        Text("Nenhum silo cadastrado ainda. Toque no botão para adicionar.", modifier = Modifier.padding(vertical = 12.dp))
+                    }
+                    item(key = "exemplo") {
+                        // Card de exemplo (fictício, sem ação) -- mostra o layout antes do primeiro cadastro.
+                        Column(Modifier.alpha(0.6f)) {
+                            Text("EXEMPLO", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            SiloCard(
+                                silo = SiloData(
+                                    id = "exemplo", nome = "Silo 01 — Exemplo", produto = "Soja", capacidadeT = 1000.0,
+                                    nivelAtualPct = 62.0, temperaturaAtualC = 24.5, umidadeAtualPct = 13.2,
+                                    status = "OK",
+                                ),
+                                farmNome = "Fazenda exemplo",
+                                onEdit = {}, onLeitura = {}, onHistorico = {}, onArchive = {}, onSalvarRapido = {}, busy = true,
+                            )
+                        }
+                    }
+                }
+                else -> items(silos, key = { it.id }) { silo ->
+                    SiloCard(
+                        silo = silo,
+                        farmNome = farms.firstOrNull { it.id == silo.farmId }?.name,
+                        onEdit = { editing = silo; showForm = true },
+                        onLeitura = { leituraSilo = silo },
+                        onHistorico = { historicoSilo = silo; viewModel.carregarLeituras(silo.id) },
+                        onArchive = { viewModel.arquivar(silo.id) },
+                        onSalvarRapido = { pct -> viewModel.leituraRapida(silo, pct) },
+                        busy = busy,
+                    )
+                }
+            }
+            item(key = "integracao") {
+                Spacer(Modifier.height(8.dp))
+                ModuleProviderIntegrationCard(domainId = "estoque")
             }
         }
     }
@@ -326,6 +409,50 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
             },
         )
     }
+
+    historicoSilo?.let { silo ->
+        HistoricoLeiturasDialog(silo.nome, leituras, leiturasLoading) { historicoSilo = null }
+    }
+}
+
+@Composable
+private fun KpiBox(titulo: String, valor: String, modifier: Modifier = Modifier, destaque: Boolean = false) {
+    Card(modifier = modifier) {
+        Column(Modifier.padding(12.dp)) {
+            Text(titulo, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                valor,
+                style = MaterialTheme.typography.titleMedium,
+                color = if (destaque) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
+
+@Composable
+private fun HistoricoLeiturasDialog(siloNome: String, leituras: List<SiloLeituraData>, loading: Boolean, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Histórico -- $siloNome") },
+        text = {
+            Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                when {
+                    loading -> CircularProgressIndicator(modifier = Modifier.padding(12.dp))
+                    leituras.isEmpty() -> Text("Nenhuma leitura nos últimos 60 dias.", style = MaterialTheme.typography.bodySmall)
+                    else -> leituras.forEach { l ->
+                        Text(
+                            "${l.recordedAt.take(10)} · ${l.nivelPct.toInt()}%" +
+                                (l.quantidadeT?.let { " · ${"%.1f".format(Locale("pt", "BR"), it)} t" } ?: "") +
+                                (l.temperaturaC?.let { " · $it °C" } ?: "") +
+                                (l.umidadePct?.let { " · $it %" } ?: ""),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar") } },
+    )
 }
 
 @Composable
@@ -350,6 +477,7 @@ private fun SiloCard(
     farmNome: String?,
     onEdit: () -> Unit,
     onLeitura: () -> Unit,
+    onHistorico: () -> Unit,
     onArchive: () -> Unit,
     onSalvarRapido: (Double) -> Unit,
     busy: Boolean,
@@ -429,9 +557,11 @@ private fun SiloCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp),
             )
-            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                OutlinedButton(onClick = onEdit) { Text("Editar") }
-                OutlinedButton(onClick = onLeitura) { Text("Temp./umid.") }
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                val pad = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+                OutlinedButton(onClick = onEdit, modifier = Modifier.weight(1f), contentPadding = pad) { Text("Editar", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium) }
+                OutlinedButton(onClick = onLeitura, modifier = Modifier.weight(1.5f), contentPadding = pad) { Text("Temp./umid.", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium) }
+                OutlinedButton(onClick = onHistorico, modifier = Modifier.weight(1.2f), contentPadding = pad) { Text("Histórico", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium) }
                 IconButton(onClick = onArchive) { Icon(Icons.Filled.Delete, contentDescription = "Arquivar") }
             }
         }

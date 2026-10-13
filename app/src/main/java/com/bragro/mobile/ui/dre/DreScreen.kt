@@ -490,9 +490,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
-                        }
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
                 // Nuvem/Imprimir no canto superior direito -- mesmo padrão
@@ -628,8 +626,10 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
             } else if (contentExpanded) {
                 item {
                     Card(modifier = Modifier.fillMaxWidth()) {
+                        var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text("Totais", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            com.bragro.mobile.ui.domain.TituloRecolhivel("Totais", aberto) { aberto = !aberto }
+                            if (aberto) {
                             Row { Text("Custo total: "); Text(formatMoneyBrl(data.totais.custoTotal), fontWeight = FontWeight.Bold) }
                             Row { Text("Custo/ha: "); Text(formatMoneyBrl(data.totais.custoPorHa), fontWeight = FontWeight.Bold) }
                             if (data.totais.custoPorSc != null) {
@@ -641,6 +641,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                             Row { Text("Receita total: "); Text(formatMoneyBrl(data.totais.receitaTotal), fontWeight = FontWeight.Bold) }
                             Row { Text("Margem: "); Text(formatMoneyBrl(data.totais.margem), fontWeight = FontWeight.Bold) }
                         }
+}
                     }
                 }
                 // Gráfico "Custo por Fazenda" com alternância ha/sc/ton --
@@ -714,8 +715,10 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                 data.indicadoresPecuaria?.let { ip ->
                     item {
                         Card(modifier = Modifier.fillMaxWidth()) {
+                            var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
                             Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text("Indicadores Zootécnicos (Pecuária)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                com.bragro.mobile.ui.domain.TituloRecolhivel("Indicadores Zootécnicos (Pecuária)", aberto) { aberto = !aberto }
+                                if (aberto) {
                                 Row {
                                     Text("Taxa de Prenhez: ")
                                     Text(ip.taxaPrenhezPct?.let { "${"%.1f".format(it)}%" } ?: "—", fontWeight = FontWeight.Bold)
@@ -767,19 +770,23 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                                     }
                                 }
                             }
+}
                         }
                     }
                 }
                 if (data.composicaoPorCategoria.isNotEmpty()) {
                     item {
                         Card(modifier = Modifier.fillMaxWidth()) {
+                            var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
                             Column(modifier = Modifier.padding(12.dp)) {
-                                Text("Composição de custo por categoria", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                com.bragro.mobile.ui.domain.TituloRecolhivel("Composição de custo por categoria", aberto) { aberto = !aberto }
+                                if (aberto) {
                                 val maxValor = data.composicaoPorCategoria.maxOf { it.valor }
                                 Column(modifier = Modifier.padding(top = 6.dp)) {
                                     data.composicaoPorCategoria.forEach { cat -> CategoriaBarRow(cat, maxValor) }
                                 }
                             }
+}
                         }
                     }
                 }

@@ -1,5 +1,8 @@
 package com.bragro.mobile.ui.estoque
 
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.foundation.clickable
 import android.app.Application
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
@@ -133,9 +136,7 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
-                        }
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
                 // Ícones Imprimir + Nuvem na mesma altura do título -- pedido
@@ -241,14 +242,17 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
 private fun ReconciliacaoItemCard(i: ReconciliacaoEstoqueItemData) {
     val divergente = kotlin.math.abs(i.diferenca) > TOLERANCIA
     val corDiferenca = if (divergente) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+    var aberto by remember { mutableStateOf(true) }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
+            Row(modifier = Modifier.fillMaxWidth().clickable { aberto = !aberto }, horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(i.item, style = MaterialTheme.typography.bodyLarge)
                     if (!i.categoria.isNullOrBlank()) Text(i.categoria, style = MaterialTheme.typography.labelSmall)
                 }
+                Icon(if (aberto) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (aberto) "Recolher" else "Expandir")
             }
+            if (aberto) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
                     Text("Saldo Fiscal", style = MaterialTheme.typography.labelSmall)
@@ -271,4 +275,5 @@ private fun ReconciliacaoItemCard(i: ReconciliacaoEstoqueItemData) {
             }
         }
     }
+}
 }

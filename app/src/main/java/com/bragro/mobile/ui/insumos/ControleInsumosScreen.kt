@@ -380,9 +380,7 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
-                        }
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
                 actions = {
@@ -454,8 +452,10 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                 if (sit != null) {
                     item {
                         Card(modifier = Modifier.fillMaxWidth()) {
+                            var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
                             Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text("Resumo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                com.bragro.mobile.ui.domain.TituloRecolhivel("Resumo", aberto) { aberto = !aberto }
+                                if (aberto) {
                                 Row { Text("Itens únicos: "); Text(sit.itensUnicos.toString(), fontWeight = FontWeight.Bold) }
                                 Row { Text("Total pedido: "); Text(fmtNum(sit.totalPedido), fontWeight = FontWeight.Bold) }
                                 Row { Text("Total em estoque: "); Text(fmtNum(sit.totalEmEstoque), fontWeight = FontWeight.Bold) }
@@ -467,14 +467,17 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                                     }
                                 }
                             }
+}
                         }
                     }
                 }
                 if (d.saldoTop10.isNotEmpty()) {
                     item {
                         Card(modifier = Modifier.fillMaxWidth()) {
+                            var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
                             Column(modifier = Modifier.padding(12.dp)) {
-                                Text("Saldo por item (top 10)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                com.bragro.mobile.ui.domain.TituloRecolhivel("Saldo por item (top 10)", aberto) { aberto = !aberto }
+                                if (aberto) {
                                 Spacer(modifier = Modifier.height(6.dp))
                                 SimpleBarChart(
                                     categories = d.saldoTop10.map { it.item },
@@ -482,14 +485,17 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                                     isMoney = false,
                                 )
                             }
+}
                         }
                     }
                 }
                 if (sit != null) {
                     item {
                         Card(modifier = Modifier.fillMaxWidth()) {
+                            var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
                             Column(modifier = Modifier.padding(12.dp)) {
-                                Text("Situação consolidada por item", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                com.bragro.mobile.ui.domain.TituloRecolhivel("Situação consolidada por item", aberto) { aberto = !aberto }
+                                if (aberto) {
                                 Text(
                                     "Cruza Pedido → Entrega → Estoque → Aplicação por item. Toque numa categoria para expandir.",
                                     style = MaterialTheme.typography.labelSmall,
@@ -517,6 +523,7 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                                     }
                                 }
                             }
+}
                         }
                     }
                 }

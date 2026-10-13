@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.simulador
 
+import androidx.compose.runtime.remember
 import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -159,9 +160,7 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
             TopAppBar(
                 title = { Text("Simulador \"E se?\"", color = MaterialTheme.colorScheme.primary) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
-                    }
+                    com.bragro.mobile.ui.domain.HomeNavButton()
                 },
                 actions = {
                     IconButton(onClick = { viewModel.restaurarPadrao() }) {
@@ -187,6 +186,8 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
         val b = base!!
         val resultado = calcularResultado(b, varPrecoPct, varProdutividadePct, cambioProjetado, pctExposicaoCambio)
 
+        var premissasAbertas by remember { mutableStateOf(true) }
+        var resultadoAberto by remember { mutableStateOf(true) }
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(12.dp),
@@ -214,9 +215,9 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
             }
 
             item {
-                SecaoTitulo("Premissas do Cenário")
+                SecaoTitulo("Premissas do Cenário", premissasAbertas) { premissasAbertas = !premissasAbertas }
             }
-            item {
+            if (premissasAbertas) item {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         CampoPercentual(
@@ -231,31 +232,39 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
                             onChange = { viewModel.varProdutividadePct.value = it },
                             hint = "Ex.: -15 numa quebra de safra, +10 numa safra recorde.",
                         )
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text("Câmbio projetado (R$/USD)", style = MaterialTheme.typography.labelSmall)
-                            OutlinedTextField(
-                                value = if (cambioProjetado == cambioProjetado.toLong().toDouble()) cambioProjetado.toLong().toString() else cambioProjetado.toString(),
-                                onValueChange = { txt -> txt.replace(",", ".").toDoubleOrNull()?.let { viewModel.cambioProjetado.value = it } },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                modifier = Modifier.fillMaxWidth(),
+                        // Câmbio projetado e % do custo exposto na MESMA linha.
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text("Câmbio projetado (R$/USD)", style = MaterialTheme.typography.labelSmall, maxLines = 2)
+                                OutlinedTextField(
+                                    value = if (cambioProjetado == cambioProjetado.toLong().toDouble()) cambioProjetado.toLong().toString() else cambioProjetado.toString(),
+                                    onValueChange = { txt -> txt.replace(",", ".").toDoubleOrNull()?.let { viewModel.cambioProjetado.value = it } },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            }
+                            CampoPercentual(
+                                label = "% do custo exposto ao câmbio",
+                                value = pctExposicaoCambio,
+                                onChange = { viewModel.pctExposicaoCambio.value = it },
+                                min = 0,
+                                max = 100,
+                                compact = true,
+                                modifier = Modifier.weight(1f),
                             )
                         }
-                        CampoPercentual(
-                            label = "% do custo exposto ao câmbio",
-                            value = pctExposicaoCambio,
-                            onChange = { viewModel.pctExposicaoCambio.value = it },
-                            min = 0,
-                            max = 100,
-                            hint = "Fatia do seu custo em insumo importado/indexado ao dólar (fertilizante, defensivo). Estimativa sua -- ajuste conforme sua realidade.",
+                        Text(
+                            "Fatia do seu custo em insumo importado/indexado ao dólar (fertilizante, defensivo). Estimativa sua -- ajuste conforme sua realidade.",
+                            style = MaterialTheme.typography.labelSmall,
                         )
                     }
                 }
             }
 
             item {
-                SecaoTitulo("Resultado Projetado")
+                SecaoTitulo("Resultado Projetado", resultadoAberto) { resultadoAberto = !resultadoAberto }
             }
-            item {
+            if (resultadoAberto) item {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         LinhaComparativo("Receita", b.receitaBaseTotal, resultado.receitaProjetada)
@@ -286,8 +295,8 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
 }
 
 @Composable
-private fun SecaoTitulo(texto: String) {
-    Text(texto, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+private fun SecaoTitulo(texto: String, aberto: Boolean, onToggle: () -> Unit) {
+    com.bragro.mobile.ui.domain.TituloRecolhivel(texto, aberto, onToggle)
 }
 
 @Composable
@@ -298,9 +307,23 @@ private fun CampoPercentual(
     hint: String? = null,
     min: Int = -50,
     max: Int = 50,
+    // Compacto: só o campo (sem botões +/-), pra caber ao lado de outro campo
+    // na mesma linha (Câmbio projetado + % do custo exposto).
+    compact: Boolean = false,
+    modifier: Modifier = Modifier,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text("$label (%)", style = MaterialTheme.typography.labelSmall)
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(if (compact) label else "$label (%)", style = MaterialTheme.typography.labelSmall)
+        if (compact) {
+            OutlinedTextField(
+                value = value.toString(),
+                onValueChange = { txt -> txt.toIntOrNull()?.let { onChange(it.coerceIn(min, max)) } },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                suffix = { Text("%") },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            return@Column
+        }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             // Ícones Add/Remove (vetoriais) em vez de Text("+")/Text("−") --
             // bug real de auditoria ("faltou colocar os sinais de + e -"):

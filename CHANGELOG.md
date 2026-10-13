@@ -3,6 +3,63 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.51] -- 2026-10-13
+
+- Prescrição: campo Produto virou lista suspensa (com + Criar).
+- Botões flutuantes (Drone, Silos, Pivôs, NF-e, Orçamentos) alinhados à altura padrão do +.
+- Irrigação: setinha de recolher em Balanço Hídrico, Gráficos e Pivôs cadastrados.
+- Monitor: cada informação em duas linhas.
+- Contagem de pendentes (Revisar) com fundo amarelo e número preto.
+- Setinha de recolher nos blocos de Controle de Insumos, DRE, Análises, Livro Caixa, Extrato, Dossiê, Simulador e Reconciliação.
+- Livro Caixa: setinha de recolher no Extrato.
+- Prescrição: botão + na altura padrão.
+- Cabeçalho dos módulos: seta de voltar trocada por casinha (vai direto à Início).
+- Tema claro/escuro: janelas, menus e campos agora seguem a paleta verde nos dois modos.
+
+## [1.3.50] -- 2026-10-13
+
+- Configurações: data/hora de publicação do APK convertida para o fuso de Brasília (America/Sao_Paulo).
+- Base de Dados: botão de recolher em cada bloco de fazenda; rótulos por extenso (Hectares, latitude, longitude).
+- Base de Dados: ícone de foto liberado em culturas, estoque (todos os itens), prescrição, combustíveis, colaboradores, funções, EPI, escritório, limpeza, seguradoras, bancos, patrimônio (tipos) e receituário.
+
+## [1.3.49] -- 2026-10-13
+
+- Lançamentos (Financeiro): botão Revisar na aba Operações (filtra importados ainda não conferidos), igual à plataforma.
+- Botões liga/desliga: ativo = fundo verde cheio com ícone/rótulo brancos; tocar de novo volta ao padrão (`ModuleIconButton`/`LabeledIconButton`, vale para Dados, Operações, Arquivos, Cobranças etc.).
+- Revisar: bolinha com a contagem (escura com número amarelo; cores invertidas quando ligado) em todos os módulos.
+- Simulador: "Câmbio projetado" e "% do custo exposto" na mesma linha.
+- Barra inferior sempre visível em todas as telas (exceto login).
+
+## [1.3.48] -- 2026-10-12
+
+- Padrão único de campos/blocos (borda verde fina, fundo claro, sombra leve, sem camada cinza): `StandardFieldBlock` em AppCard.kt, usado por Cotação, Orçamento, Pedidos, Livro Caixa, Financeiro (itens) e cards de integração (Drone/FieldView/Silos/Pivôs/Talhões); CalcCard (calculadoras) no mesmo estilo; sombra dos Cards reduzida (6dp → 3dp).
+- Início: número dos pills Alertas/Monitor dentro de bolinha com cores invertidas (fundo escuro, número âmbar).
+- Pivôs: gráficos agora num card próprio "Gráficos".
+- MODELO ÚNICO (campo da janela Abastecimento rápido): campo = OutlinedTextField com fundo claro + borda de 1dp; `StandardFieldBlock` virou passagem direta (sem fundo/borda/sombra/padding); `Card` sem sombra; borda global 1dp (`thinGreenBorder`).
+- Silos/Pivôs: botões (Editar, Temp./umid. ou Telemetria/Controle, Histórico, ícone) numa linha só; cards de integração: Salvar + Testar conexão na mesma linha.
+- Nota com itens: bloco externo e interno com o mesmo fundo/borda do padrão.
+- Status do Diagnóstico (Pragas): campo automático (lista, somente leitura) no site.
+
+## [1.3.47] -- 2026-10-12
+
+- Silos: 4 cartões de resumo, filtro por silo no gráfico de estoque, histórico de leituras e card de exemplo.
+- Pivôs: Latitude/Longitude no cadastro, painel de gráficos do módulo, histórico de telemetria e card de exemplo.
+- Telas de Silos e Pivôs agora rolam como uma lista única.
+
+## [1.3.46] -- 2026-10-12
+
+- Login: removido o conversor de moeda do menu País/Idioma.
+
+## [1.3.45] -- 2026-10-12
+
+- Bolinha de notificação agora amarela (mesmo tom dos alertas).
+- Pecuária (dono): botão com lista suspensa Pecuária/Pastagem; Pastagem sai do dropdown Safra.
+- Silos: removida a palavra "cilíndricos" (nome igual ao da plataforma).
+
+## [1.3.44] -- 2026-10-12
+
+- Módulos: Revisar vira ícone na linha Atualizar/Período (sempre visível; amarelo com contagem se houver pendências); removidos o chip Pendentes de revisão e a contagem na aba Operações (aba segue amarela).
+
 ## [1.3.43] -- 2026-10-12
 
 - Início: atalhos Destaques, Alertas, Monitor e Avisos em uma linha abaixo do slogan (pílula amarela + contagem quando há itens); blocos antigos removidos.

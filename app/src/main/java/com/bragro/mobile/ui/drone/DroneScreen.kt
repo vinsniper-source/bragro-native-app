@@ -238,9 +238,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        androidx.compose.material3.IconButton(onClick = onBack) {
-                            Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
-                        }
+                        androidx.compose.material3.com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
                 // Ícone de nuvem (armazenamento) -- faltava neste módulo,
@@ -269,7 +267,6 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                 onClick = { showNovo = true },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.padding(bottom = 48.dp),
             ) {
                 Icon(Icons.Filled.FlightTakeoff, contentDescription = "Novo registro de drone")
             }

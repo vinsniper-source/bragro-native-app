@@ -486,7 +486,6 @@ object Idioma {
     "Vazio" to "Vacío",
     "Normal" to "Normal",
     "Sem dados" to "Sin datos",
-    "Silos cilíndricos" to "Silos cilíndricos",
     "Novo silo" to "Nuevo silo",
     "Silos ativos" to "Silos activos",
     "Armazenado / capacidade" to "Almacenado / capacidad",

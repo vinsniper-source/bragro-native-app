@@ -501,7 +501,7 @@ fun DomainListScreen(
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary) }
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
                 // Nuvem/Imprimir promovidos pro canto superior direito, sem
@@ -902,10 +902,15 @@ fun DomainListScreen(
             item(key = "module-icon-row") {
                 // Revisar: linha própria na aba Operações, filtra os lançamentos
                 // importados ainda não conferidos (abrir um lançamento o confirma).
-                val revisarFooter: (@Composable () -> Unit)? =
-                    if (pendingVisibleCount > 0 || pendingOnly) {
-                        { RevisarRow(count = pendingVisibleCount, active = pendingOnly) { pendingOnly = !pendingOnly } }
-                    } else null
+                val revisarFooter: (@Composable () -> Unit)? = {
+                    LabeledIconButton(
+                        icon = Icons.Filled.FactCheck,
+                        label = "Revisar",
+                        active = pendingOnly,
+                        badgeCount = pendingVisibleCount,
+                        onClick = { pendingOnly = !pendingOnly },
+                    )
+                }
                 if (useCategorizedBlocks) {
                     val dadosBlock = ModuleBlockSpec("Dados", vertical = false) {
                         ModuleIconButton(
@@ -1360,18 +1365,6 @@ fun DomainListScreen(
                     }
                 }
             }
-            // "Pendentes de revisão" (espelho do site): só aparece se houver
-            // registros importados (CSV/NF-e/extrato) ainda não abertos.
-            if (pendingVisibleCount > 0 || pendingOnly) {
-                item(key = "pending-review") {
-                    FilterChip(
-                        selected = pendingOnly,
-                        onClick = { pendingOnly = !pendingOnly },
-                        label = { Text("Pendentes de revisão ($pendingVisibleCount)") },
-                        modifier = Modifier.padding(bottom = 8.dp),
-                    )
-                }
-            }
             if (offline) {
                 item(key = "offline-banner") {
                     Text(
@@ -1675,7 +1668,7 @@ fun DomainListScreen(
             // quebrar normalmente, como parágrafo.
             modifier = Modifier.width(340.dp),
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-            title = { Text(if (domainId == "frota") "Bomba de combustível" else if (domainId == "pecuaria") "Balança/RFID Bluetooth" else if (domainId == "estoque") "Silos cilíndricos" else "Balança") },
+            title = { Text(if (domainId == "frota") "Bomba de combustível" else if (domainId == "pecuaria") "Balança/RFID Bluetooth" else if (domainId == "estoque") "Silos" else "Balança") },
             text = { ModuleProviderIntegrationCard(domainId) },
             confirmButton = {
                 TextButton(onClick = { showIntegracaoDialog = false }) { Text("Fechar") }
@@ -1825,7 +1818,7 @@ fun ModuleCategoryTabs(blocks: List<ModuleBlockSpec>, modifier: Modifier = Modif
                     // que precisam ficar com a MESMA medida entre eles).
                     label = {
                         Text(
-                            if (block.badgeCount > 0) "${block.title} ${block.badgeCount}" else block.title,
+                            block.title,
                             maxLines = 1,
                             softWrap = false,
                             overflow = TextOverflow.Clip,
@@ -1847,36 +1840,8 @@ fun ModuleCategoryTabs(blocks: List<ModuleBlockSpec>, modifier: Modifier = Modif
         } else {
             // EqualWidthBlockRow (ModuleIconRow.kt) -- mesmo ajuste de
             // ModuleCategoryBlock acima.
-            EqualWidthBlockRow { active.content() }
+            EqualWidthBlockRow { active.content(); active.footer?.invoke() }
         }
-        active.footer?.let { footer ->
-            Spacer(modifier = Modifier.height(6.dp))
-            footer()
-        }
-    }
-}
-
-// Botão "Revisar (N)" em linha inteira (aba Operações). Amarelo = há pendências.
-@Composable
-fun RevisarRow(count: Int, active: Boolean, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (active) BrYellow.copy(alpha = 0.55f) else BrYellow.copy(alpha = 0.30f))
-            .border(BorderStroke(1.dp, BrYellow), RoundedCornerShape(8.dp))
-            .clickable { onClick() }
-            .padding(vertical = 10.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(Icons.Filled.FactCheck, contentDescription = null, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(6.dp))
-        Text(
-            if (active) "Revisar ($count) — toque para ver tudo" else "Revisar ($count)",
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-        )
     }
 }
 

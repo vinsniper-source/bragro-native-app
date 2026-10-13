@@ -110,6 +110,8 @@ class PrescricaoNovoViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var talhoesOptions = mutableStateOf<List<com.bragro.mobile.data.local.LookupEntity>>(emptyList())
         private set
+    var produtosOptions = mutableStateOf<List<com.bragro.mobile.data.local.LookupEntity>>(emptyList())
+        private set
     var origemArquivo = mutableStateOf<String?>(null)
         private set
     var zonas = mutableStateOf<List<ZonaTaxaVra>>(emptyList())
@@ -138,6 +140,7 @@ class PrescricaoNovoViewModel(app: Application) : AndroidViewModel(app) {
             safrasOptions.value = configRepository.lookupsByCategory("safras").sortedBy { it.label }
             culturasOptions.value = configRepository.lookupsByCategory("culturas").sortedBy { it.label }
             talhoesOptions.value = configRepository.lookupsByCategory("talhoes").sortedBy { it.label }
+            produtosOptions.value = configRepository.lookupsByCategory("produtos_prescricao").sortedBy { it.label }
         }
     }
 
@@ -166,6 +169,7 @@ class PrescricaoNovoViewModel(app: Application) : AndroidViewModel(app) {
                     "safras" -> safrasOptions.value = merge(safrasOptions.value)
                     "culturas" -> culturasOptions.value = merge(culturasOptions.value)
                     "talhoes" -> talhoesOptions.value = merge(talhoesOptions.value)
+                    "produtos_prescricao" -> produtosOptions.value = merge(produtosOptions.value)
                 }
                 onDone(value)
             } else {
@@ -271,6 +275,7 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
     val successId by viewModel.successId
     val copiando by viewModel.copiando
     val unidadesOptions by viewModel.unidadesOptions
+    val produtosOptions by viewModel.produtosOptions
     val safrasOptions by viewModel.safrasOptions
     val culturasOptions by viewModel.culturasOptions
     val talhoesOptions by viewModel.talhoesOptions
@@ -301,9 +306,7 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
-                        }
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
                 // Ícone "Copiar último lançamento" (Task #624, gap
@@ -363,13 +366,13 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
                 )
             }
             item {
-                OutlinedTextField(
+                SearchableDropdownField(
                     value = viewModel.produto,
-                    onValueChange = { viewModel.produto = it },
-                    label = { Text("Produto") },
-                    placeholder = { Text("Ex.: Ureia") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = appFieldColors(),
+                    label = "Produto",
+                    options = remember(produtosOptions) { produtosOptions.map { it.value to it.label } },
+                    onSelect = { viewModel.produto = it },
+                    placeholder = "Ex.: Ureia",
+                    onCreate = { raw -> viewModel.quickCreateLookupOption("produtos_prescricao", raw) { value -> value?.let { viewModel.produto = it } } },
                 )
             }
             item {

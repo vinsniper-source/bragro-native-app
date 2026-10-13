@@ -325,15 +325,7 @@ private fun StringDropdown(
 // aplicado em CotacaoMultiItemScreen.kt/FinanceiroItensInline.kt.
 @Composable
 private fun ItemFieldBlock(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-        shape = MaterialTheme.shapes.small,
-    ) {
-        Box(modifier = Modifier.padding(6.dp)) {
-            content()
-        }
-    }
+    com.bragro.mobile.ui.theme.StandardFieldBlock(modifier = modifier, content = content)
 }
 
 @Composable
@@ -430,9 +422,7 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
-                        }
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
                 // Ícone de copiar no topo direito -- pedido do usuário ("na

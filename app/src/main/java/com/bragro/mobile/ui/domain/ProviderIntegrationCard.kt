@@ -30,6 +30,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -213,7 +214,7 @@ fun ProviderIntegrationCard(
                     )
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Button(
                         enabled = busy == null && provedor.isNotBlank() && apiKey.isNotBlank(),
                         onClick = { onSave(provedor, apiKey.trim()); apiKey = "" },
@@ -225,15 +226,17 @@ fun ProviderIntegrationCard(
                     // token, testa a credencial já salva.
                     val digitado = provedor.isNotBlank() && apiKey.isNotBlank()
                     OutlinedButton(
+                        modifier = Modifier.weight(1f),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                         enabled = busy == null && (digitado || conectado),
                         onClick = { if (digitado) { onSave(provedor, apiKey.trim()); apiKey = "" } else onSync() },
                     ) {
                         if (busy == IntegrationBusy.SINCRONIZANDO || busy == IntegrationBusy.SALVANDO) {
-                            CircularProgressIndicator(modifier = Modifier.height(18.dp))
+                            CircularProgressIndicator(modifier = Modifier.height(16.dp))
                         } else {
-                            Icon(Icons.Filled.Sync, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                            Icon(Icons.Filled.Sync, contentDescription = null, modifier = Modifier.padding(end = 4.dp).size(16.dp))
                         }
-                        Text("Testar conexão")
+                        Text("Testar conexão", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium)
                     }
                 }
                 if (conectado) {
@@ -318,15 +321,7 @@ private fun IconButtonToggle(open: Boolean, onClick: () -> Unit) {
  * contraste, não importa o fundo). */
 @Composable
 private fun FieldBlock(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-        shape = MaterialTheme.shapes.small,
-    ) {
-        Box(modifier = Modifier.padding(6.dp)) {
-            content()
-        }
-    }
+    com.bragro.mobile.ui.theme.StandardFieldBlock(modifier = modifier, content = content)
 }
 
 /** "AAAA-MM-DDTHH:mm:ss..." (ISO, mesmo formato que Prisma/Next.js mandam)

@@ -174,7 +174,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = viewModel(
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary) }
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )
@@ -406,9 +406,13 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
                     // o comportamento anterior so-data).
                     Text(
                         "Versão $versao" + (publicadoEm?.let {
-                            val data = it.take(10).split("-").reversed().joinToString("/")
-                            val hora = if (it.length >= 16) it.substring(11, 16) else null
-                            " — publicada em $data" + (hora?.let { h -> " às $h" } ?: "")
+                            // Converte UTC -> America/Sao_Paulo (fuso de Brasilia).
+                            val sp = runCatching {
+                                java.time.OffsetDateTime.parse(it)
+                                    .atZoneSameInstant(java.time.ZoneId.of("America/Sao_Paulo"))
+                                    .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm"))
+                            }.getOrNull()
+                            if (sp != null) " — publicada em $sp" else ""
                         } ?: ""),
                         style = MaterialTheme.typography.bodyMedium,
                     )

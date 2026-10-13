@@ -2,13 +2,19 @@ package com.bragro.mobile.ui.pivos
 
 import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,6 +37,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -52,6 +59,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bragro.mobile.data.model.BalancoHidricoPontoData
 import com.bragro.mobile.data.model.FarmLookupData
 import com.bragro.mobile.data.model.PivoData
+import com.bragro.mobile.data.model.PivoTelemetriaLogData
+import com.bragro.mobile.ui.domain.ModuleChartsCard
 import com.bragro.mobile.data.repo.PivosRepository
 import com.bragro.mobile.ui.domain.BarSeries
 import com.bragro.mobile.ui.domain.ModuleProviderIntegrationCard
@@ -92,6 +101,10 @@ class PivosViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var balanco = mutableStateOf<List<BalancoHidricoPontoData>>(emptyList())
         private set
+    var historico = mutableStateOf<List<PivoTelemetriaLogData>>(emptyList())
+        private set
+    var historicoLoading = mutableStateOf(false)
+        private set
     var loading = mutableStateOf(false)
         private set
     var busy = mutableStateOf(false)
@@ -109,15 +122,25 @@ class PivosViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Histórico de telemetria (últimos 60 dias) de um pivô. */
+    fun carregarHistorico(pivoId: String) {
+        historico.value = emptyList()
+        historicoLoading.value = true
+        viewModelScope.launch {
+            historico.value = repo.listarTelemetria(pivoId, 60)?.logs ?: emptyList()
+            historicoLoading.value = false
+        }
+    }
+
     fun refreshBalanco(pivoId: String?) {
         viewModelScope.launch { balanco.value = repo.balancoHidrico(pivoId)?.balanco ?: emptyList() }
     }
 
-    fun salvar(id: String?, nome: String, marca: String, farmId: String?, raioM: String, onDone: (Boolean) -> Unit) {
+    fun salvar(id: String?, nome: String, marca: String, farmId: String?, raioM: String, latitude: String, longitude: String, onDone: (Boolean) -> Unit) {
         busy.value = true
         errorMessage.value = null
         viewModelScope.launch {
-            val result = repo.salvar(id, nome, marca, farmId?.takeIf { it.isNotBlank() }, raioM.toDoubleOrNull(), null, null)
+            val result = repo.salvar(id, nome, marca, farmId?.takeIf { it.isNotBlank() }, raioM.replace(',', '.').toDoubleOrNull(), latitude.replace(',', '.').toDoubleOrNull(), longitude.replace(',', '.').toDoubleOrNull())
             busy.value = false
             if (result?.ok == true) {
                 pivos.value = repo.listar()?.pivos ?: pivos.value
@@ -222,10 +245,16 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
     val busy by viewModel.busy
     val error by viewModel.errorMessage
     var showNovo by remember { mutableStateOf(false) }
+    var balancoOpen by remember { mutableStateOf(true) }
+    var graficosOpen by remember { mutableStateOf(true) }
+    var pivosOpen by remember { mutableStateOf(true) }
     var editing by remember { mutableStateOf<PivoData?>(null) }
     var telemetriaPivo by remember { mutableStateOf<PivoData?>(null) }
     var controlePivo by remember { mutableStateOf<PivoData?>(null) }
     var desligarPivo by remember { mutableStateOf<PivoData?>(null) }
+    var historicoPivo by remember { mutableStateOf<PivoData?>(null) }
+    val historico by viewModel.historico
+    val historicoLoading by viewModel.historicoLoading
 
     Scaffold(
         topBar = {
@@ -239,9 +268,7 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
-                        }
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )
@@ -251,61 +278,110 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                 onClick = { editing = null; showNovo = true },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.padding(bottom = 48.dp),
             ) {
                 Icon(Icons.Filled.WaterDrop, contentDescription = "Novo pivô")
             }
         },
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
-            Text(
-                "Cadastro, telemetria (lâmina + pluviômetro) e controle de pivôs lançados manualmente. Sincronização automática com o fabricante depende de parceria -- ver card abaixo.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 12.dp),
-            )
-            ModuleProviderIntegrationCard(domainId = "pivos")
-            Spacer(Modifier.height(8.dp))
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp),
+        ) {
+            item(key = "intro") {
+                Text(
+                    "Cadastro, telemetria (lâmina + pluviômetro) e controle de pivôs lançados manualmente. Sincronização automática com o fabricante depende de parceria -- ver card abaixo.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 12.dp),
+                )
+            }
             // Balanço Hídrico -- lâmina aplicada + chuva (pluviômetro) por dia.
-            Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Text("Balanço Hídrico (30 dias)", style = MaterialTheme.typography.titleSmall)
-                    Spacer(Modifier.height(8.dp))
-                    if (balanco.isEmpty()) {
-                        Text("Sem lançamentos de telemetria no período.", style = MaterialTheme.typography.bodySmall)
-                    } else {
-                        SimpleBarChart(
-                            categories = balanco.map { it.data.takeLast(5) },
-                            series = listOf(
-                                BarSeries("Lâmina aplicada", balanco.map { it.laminaMm }, MaterialTheme.colorScheme.primary),
-                                BarSeries("Chuva (pluviômetro)", balanco.map { it.chuvaMm }, MaterialTheme.colorScheme.secondary),
-                                BarSeries("Chuva (Clima, automática)", balanco.map { it.chuvaClimaMm }, MaterialTheme.colorScheme.tertiary),
-                            ),
-                            isMoney = false,
-                        )
+            item(key = "balanco") {
+                Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        SecaoCabecalho("Balanço Hídrico (30 dias)", balancoOpen) { balancoOpen = !balancoOpen }
+                        if (balancoOpen) Spacer(Modifier.height(8.dp))
+                        if (!balancoOpen) {
+                        } else if (balanco.isEmpty()) {
+                            Text("Sem lançamentos de telemetria no período.", style = MaterialTheme.typography.bodySmall)
+                        } else {
+                            SimpleBarChart(
+                                categories = balanco.map { it.data.takeLast(5) },
+                                series = listOf(
+                                    BarSeries("Lâmina aplicada", balanco.map { it.laminaMm }, MaterialTheme.colorScheme.primary),
+                                    BarSeries("Chuva (pluviômetro)", balanco.map { it.chuvaMm }, MaterialTheme.colorScheme.secondary),
+                                    BarSeries("Chuva (Clima, automática)", balanco.map { it.chuvaClimaMm }, MaterialTheme.colorScheme.tertiary),
+                                ),
+                                isMoney = false,
+                            )
+                        }
+                    }
+                }
+            }
+            // Painel de gráficos do módulo (mesmo ModuleChartsPanel do site, aberto por padrão).
+            item(key = "graficos") {
+                Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        SecaoCabecalho("Gráficos", graficosOpen) { graficosOpen = !graficosOpen }
+                        if (graficosOpen) {
+                            Spacer(Modifier.height(8.dp))
+                            ModuleChartsCard(domainId = "pivos", showHeader = false)
+                        }
+                    }
+                }
+            }
+            item(key = "pivos_cab") {
+                Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        SecaoCabecalho("Pivôs cadastrados (${pivos.size})", pivosOpen) { pivosOpen = !pivosOpen }
                     }
                 }
             }
             when {
-                loading -> Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(modifier = Modifier.padding(top = 24.dp))
-                }
-                pivos.isEmpty() -> Text("Nenhum pivô cadastrado ainda. Toque no botão para adicionar.", modifier = Modifier.padding(vertical = 24.dp))
-                else -> LazyColumn(contentPadding = PaddingValues(bottom = 80.dp)) {
-                    items(pivos, key = { it.id }) { pivo ->
-                        PivoCard(
-                            pivo = pivo,
-                            farmNome = farms.firstOrNull { it.id == pivo.farmId }?.name,
-                            onEdit = { editing = pivo; showNovo = true },
-                            onTelemetria = { telemetriaPivo = pivo },
-                            onControle = { controlePivo = pivo },
-                            onArchive = { viewModel.arquivar(pivo.id) },
-                            onLigar = { viewModel.ligar(pivo) },
-                            onDesligar = { desligarPivo = pivo },
-                            busy = busy,
-                        )
+                !pivosOpen -> {}
+                loading -> item(key = "loading") {
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(modifier = Modifier.padding(top = 24.dp))
                     }
                 }
+                pivos.isEmpty() -> {
+                    item(key = "vazio") {
+                        Text("Nenhum pivô cadastrado ainda. Toque no botão para adicionar.", modifier = Modifier.padding(vertical = 12.dp))
+                    }
+                    item(key = "exemplo") {
+                        // Card de exemplo (fictício, sem ação) -- mostra o layout antes do primeiro cadastro.
+                        Column(Modifier.alpha(0.6f)) {
+                            Text("EXEMPLO", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            PivoCard(
+                                pivo = PivoData(
+                                    id = "exemplo", nome = "Pivô 01 — Exemplo", marca = MARCAS[0], status = "RUNNING_WATER",
+                                    anguloAtual = 142.0, laminaAtualMm = 8.0, pressaoPsi = 38.0,
+                                ),
+                                farmNome = "Fazenda exemplo",
+                                onEdit = {}, onTelemetria = {}, onHistorico = {}, onControle = {}, onArchive = {},
+                                onLigar = {}, onDesligar = {}, busy = true,
+                            )
+                        }
+                    }
+                }
+                else -> items(pivos, key = { it.id }) { pivo ->
+                    PivoCard(
+                        pivo = pivo,
+                        farmNome = farms.firstOrNull { it.id == pivo.farmId }?.name,
+                        onEdit = { editing = pivo; showNovo = true },
+                        onTelemetria = { telemetriaPivo = pivo },
+                        onHistorico = { historicoPivo = pivo; viewModel.carregarHistorico(pivo.id) },
+                        onControle = { controlePivo = pivo },
+                        onArchive = { viewModel.arquivar(pivo.id) },
+                        onLigar = { viewModel.ligar(pivo) },
+                        onDesligar = { desligarPivo = pivo },
+                        busy = busy,
+                    )
+                }
+            }
+            item(key = "integracao") {
+                Spacer(Modifier.height(8.dp))
+                ModuleProviderIntegrationCard(domainId = "pivos")
             }
         }
     }
@@ -317,8 +393,8 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
             busy = busy,
             error = error,
             onDismiss = { showNovo = false },
-            onSubmit = { nome, marca, farmId, raioM ->
-                viewModel.salvar(editing?.id, nome, marca, farmId, raioM) { ok -> if (ok) showNovo = false }
+            onSubmit = { nome, marca, farmId, raioM, lat, lon ->
+                viewModel.salvar(editing?.id, nome, marca, farmId, raioM, lat, lon) { ok -> if (ok) showNovo = false }
             },
         )
     }
@@ -346,6 +422,10 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
         )
     }
 
+    historicoPivo?.let { pivo ->
+        HistoricoTelemetriaDialog(pivo.nome, historico, historicoLoading) { historicoPivo = null }
+    }
+
     controlePivo?.let { pivo ->
         ControleDialog(
             pivo = pivo,
@@ -360,11 +440,36 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
 }
 
 @Composable
+private fun HistoricoTelemetriaDialog(pivoNome: String, logs: List<PivoTelemetriaLogData>, loading: Boolean, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Histórico -- $pivoNome") },
+        text = {
+            Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                when {
+                    loading -> CircularProgressIndicator(modifier = Modifier.padding(12.dp))
+                    logs.isEmpty() -> Text("Nenhuma telemetria nos últimos 60 dias.", style = MaterialTheme.typography.bodySmall)
+                    else -> logs.forEach { l ->
+                        Text(
+                            "${l.recordedAt.take(10)} · lâmina ${l.waterAppliedMm} mm · chuva ${l.rainGaugeMm} mm" +
+                                (l.operatingHours?.let { " · $it h" } ?: ""),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar") } },
+    )
+}
+
+@Composable
 private fun PivoCard(
     pivo: PivoData,
     farmNome: String?,
     onEdit: () -> Unit,
     onTelemetria: () -> Unit,
+    onHistorico: () -> Unit,
     onControle: () -> Unit,
     onArchive: () -> Unit,
     onLigar: () -> Unit,
@@ -406,11 +511,13 @@ private fun PivoCard(
                 enabled = !busy,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             ) { Text(if (ligado) "Desligar agora" else "Ligar agora") }
-            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = onEdit) { Text("Editar") }
-                OutlinedButton(onClick = onTelemetria) { Text("Telemetria") }
-                OutlinedButton(onClick = onControle) { Text("Controle") }
-                IconButton(onClick = onArchive) { Icon(Icons.Filled.Power, contentDescription = "Arquivar") }
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                val pad = androidx.compose.foundation.layout.PaddingValues(horizontal = 2.dp, vertical = 8.dp)
+                OutlinedButton(onClick = onEdit, modifier = Modifier.weight(1f), contentPadding = pad) { Text("Editar", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) }
+                OutlinedButton(onClick = onTelemetria, modifier = Modifier.weight(1.3f), contentPadding = pad) { Text("Telemetria", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) }
+                OutlinedButton(onClick = onControle, modifier = Modifier.weight(1.1f), contentPadding = pad) { Text("Controle", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) }
+                OutlinedButton(onClick = onHistorico, modifier = Modifier.weight(1.2f), contentPadding = pad) { Text("Histórico", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) }
+                IconButton(onClick = onArchive, modifier = Modifier.size(36.dp)) { Icon(Icons.Filled.Power, contentDescription = "Arquivar") }
             }
         }
     }
@@ -468,12 +575,14 @@ private fun NovoPivoDialog(
     busy: Boolean,
     error: String?,
     onDismiss: () -> Unit,
-    onSubmit: (nome: String, marca: String, farmId: String?, raioM: String) -> Unit,
+    onSubmit: (nome: String, marca: String, farmId: String?, raioM: String, latitude: String, longitude: String) -> Unit,
 ) {
     var nome by remember { mutableStateOf(initial?.nome ?: "") }
     var marca by remember { mutableStateOf(initial?.marca ?: MARCAS[0]) }
     var farmId by remember { mutableStateOf(initial?.farmId ?: "") }
     var raioM by remember { mutableStateOf(initial?.raioM?.toString() ?: "") }
+    var latitude by remember { mutableStateOf(initial?.latitude?.toString() ?: "") }
+    var longitude by remember { mutableStateOf(initial?.longitude?.toString() ?: "") }
 
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
@@ -493,11 +602,21 @@ private fun NovoPivoDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
                     singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors(),
                 )
+                OutlinedTextField(
+                    value = latitude, onValueChange = { latitude = it }, label = { Text("Latitude") },
+                    keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
+                    singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors(),
+                )
+                OutlinedTextField(
+                    value = longitude, onValueChange = { longitude = it }, label = { Text("Longitude") },
+                    keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
+                    singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors(),
+                )
                 if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
         },
         confirmButton = {
-            Button(enabled = !busy && nome.isNotBlank(), onClick = { onSubmit(nome, marca, farmId.takeIf { it.isNotBlank() }, raioM) }) {
+            Button(enabled = !busy && nome.isNotBlank(), onClick = { onSubmit(nome, marca, farmId.takeIf { it.isNotBlank() }, raioM, latitude, longitude) }) {
                 if (busy) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Salvar")
             }
         },
@@ -589,4 +708,18 @@ private fun ControleDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancelar") } },
     )
+}
+
+@Composable
+private fun SecaoCabecalho(titulo: String, aberto: Boolean, onToggle: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable { onToggle() },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(titulo, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+        Icon(
+            if (aberto) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+            contentDescription = if (aberto) "Recolher" else "Expandir",
+        )
+    }
 }

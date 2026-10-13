@@ -115,6 +115,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -887,7 +888,7 @@ fun HomeScreen(
                         }
                     }
                     IconButton(onClick = { notificationsOpen = true; viewModel.loadNotifications() }) {
-                        BadgedBox(badge = { if (unreadCount > 0) Badge { Text(unreadCount.toString()) } }) {
+                        BadgedBox(badge = { if (unreadCount > 0) Badge(containerColor = BrYellow, contentColor = Color(0xFF412402)) { Text(unreadCount.toString()) } }) {
                             Icon(
                                 if (unreadCount > 0) Icons.Filled.NotificationsActive else Icons.Filled.NotificationsNone,
                                 contentDescription = "Notificações",
@@ -1941,13 +1942,30 @@ private fun HomeShortcutPill(label: String, icon: androidx.compose.ui.graphics.v
         Icon(icon, contentDescription = null, tint = if (alert) BrOrange else content, modifier = Modifier.size(14.dp))
         Spacer(Modifier.width(3.dp))
         Text(
-            if (alert) "$label $count" else label,
+            label,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = if (alert) FontWeight.Bold else FontWeight.Medium,
             color = content,
             maxLines = 1,
             overflow = TextOverflow.Clip,
         )
+        if (alert) {
+            Spacer(Modifier.width(4.dp))
+            // Bolinha com cores invertidas: fundo escuro, número âmbar.
+            Box(
+                modifier = Modifier.size(18.dp).clip(CircleShape).background(Color(0xFF412402)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "$count",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    fontWeight = FontWeight.Bold,
+                    color = BrYellow,
+                    maxLines = 1,
+                    overflow = TextOverflow.Clip,
+                )
+            }
+        }
     }
 }
 
@@ -2105,21 +2123,22 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (
                             // pra manter a ordem consistente nas duas
                             // plataformas. Cada pedaço só entra se a tabela
                             // daquele evento realmente tiver o campo.
-                            Text(
-                                buildString {
-                                    append(e.tableLabel)
-                                    if (!e.operacao.isNullOrBlank()) append(" · ${e.operacao}")
-                                    if (!e.item.isNullOrBlank()) append(" · ${e.item}")
-                                    if (!e.qtde.isNullOrBlank()) append(" · ${e.qtde}")
-                                    if (!e.status.isNullOrBlank()) append(" · ${e.status}")
-                                    append(" · ${e.type}")
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Medium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Clip,
-                                modifier = Modifier.weight(1f).padding(end = 8.dp).basicMarquee(),
-                            )
+                            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                Text(
+                                    buildString {
+                                        append(e.tableLabel)
+                                        if (!e.operacao.isNullOrBlank()) append(" · ${e.operacao}")
+                                        if (!e.item.isNullOrBlank()) append(" · ${e.item}")
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                                Text(
+                                    listOfNotNull(e.qtde, e.status, e.type).filter { it.isNotBlank() }.joinToString(" · "),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                             Text(formatEventTime(e.at), style = MaterialTheme.typography.labelSmall, maxLines = 1)
                         }
                     }

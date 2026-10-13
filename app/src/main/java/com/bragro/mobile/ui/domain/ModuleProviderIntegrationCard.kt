@@ -307,7 +307,7 @@ fun ModuleProviderIntegrationCard(domainId: String) {
                 "Cimbria", "Kepler Weber", "Silos Chapecó", "Pedrotti", "Fockink",
                 "API genérica (URL + token)",
             ),
-            descricao = "Silos cilíndricos e armazenagem de grãos. Em \"API genérica\", informe na chave: https://sua-api.com/rota|SEU_TOKEN (teste real). Demais provedores ficam Pendente até haver parceria/SDK do fabricante.",
+            descricao = "Silos e armazenagem de grãos. Em \"API genérica\", informe na chave: https://sua-api.com/rota|SEU_TOKEN (teste real). Demais provedores ficam Pendente até haver parceria/SDK do fabricante.",
             integration = integration,
             busy = busy,
             syncMessage = message,

@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.runtime.remember
 import android.app.Application
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -220,7 +221,7 @@ fun BankImportScreen(onBack: () -> Unit, viewModel: BankImportViewModel = viewMo
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary) }
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )
@@ -253,8 +254,11 @@ fun BankImportScreen(onBack: () -> Unit, viewModel: BankImportViewModel = viewMo
             }
 
             item {
+                var formAberto by remember { mutableStateOf(true) }
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        com.bragro.mobile.ui.domain.TituloRecolhivel("Dados do extrato", formAberto) { formAberto = !formAberto }
+                        if (formAberto) {
                         OutlinedTextField(
                             value = viewModel.banco,
                             onValueChange = { viewModel.banco = it },
@@ -282,6 +286,7 @@ fun BankImportScreen(onBack: () -> Unit, viewModel: BankImportViewModel = viewMo
                         }
                     }
                 }
+}
             }
 
             if (rows.isNotEmpty()) {

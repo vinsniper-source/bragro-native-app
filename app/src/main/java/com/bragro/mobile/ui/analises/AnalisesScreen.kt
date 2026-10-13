@@ -456,9 +456,10 @@ private fun ObjetoCard(obj: JsonObject) {
 
 @Composable
 private fun SecaoAnalise(chave: String, valor: JsonElement) {
+    var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
     Column(modifier = Modifier.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(tituloSecao(chave), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        when (valor) {
+        com.bragro.mobile.ui.domain.TituloRecolhivel(tituloSecao(chave), aberto) { aberto = !aberto }
+        if (aberto) when (valor) {
             is JsonArray -> {
                 if (valor.isEmpty()) {
                     Text("Sem dados.", style = MaterialTheme.typography.bodySmall)
@@ -854,9 +855,7 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
-                        }
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
                 // Nuvem/Imprimir no canto superior direito -- mesmo padrão

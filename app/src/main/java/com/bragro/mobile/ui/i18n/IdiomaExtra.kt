@@ -579,7 +579,7 @@ internal object IdiomaExtra {
         "Acesso automático via prestadora de serviço" to "Acceso automático vía proveedor de servicio",
         "Provedores de armazenagem (sensores, fabricantes, API genérica)" to "Proveedores de almacenamiento (sensores, fabricantes, API genérica)",
         "API genérica (URL + token)" to "API genérica (URL + token)",
-        "Silos cilíndricos — armazenagem de grãos" to "Silos cilíndricos — almacenamiento de granos",
+        "Silos — armazenagem de grãos" to "Silos — almacenamiento de granos",
         "Eficiência de Frota (L/h)" to "Eficiencia de Flota (L/h)",
         "Nunca sincronizado automaticamente -- dados lançados manualmente." to "Nunca sincronizado automáticamente -- datos registrados manualmente.",
         "Ainda não validada pelo provedor." to "Aún no validada por el proveedor.",

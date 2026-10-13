@@ -97,7 +97,14 @@ import kotlinx.serialization.json.jsonPrimitive
 // 13ª exceção de schema). Decisão tomada aqui (ver relatório): não
 // pré-popular fotos dos valores já cadastrados, só upload manual daqui pra
 // frente.
-private val FOTO_CATEGORIES = setOf("itens_estoque", "frotas", "marcas", "racas_pecuaria", "oficinas", "locais")
+private val FOTO_CATEGORIES = setOf(
+    "itens_estoque", "frotas", "marcas", "racas_pecuaria", "oficinas", "locais",
+    "culturas", "produtos_prescricao", "combustiveis_lubrificantes", "colaboradores", "funcoes",
+    "itens_epi", "itens_escritorio", "itens_limpeza", "seguradoras", "bancos", "itens_receituario",
+)
+private val FOTO_PREFIXOS = listOf("itens_estoque_", "combustiveis_lubrificantes_", "tipos_patrimonio_")
+private fun categoriaTemFoto(category: String): Boolean =
+    category in FOTO_CATEGORIES || FOTO_PREFIXOS.any { category.startsWith(it) }
 
 class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = BaseDeDadosRepository(app)
@@ -307,7 +314,7 @@ fun BaseDeDadosScreen(
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary) }
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )
@@ -644,6 +651,8 @@ private fun FarmsCard(
             // ver MEMORY.md) -- pedido do usuário: "que apareça no bloco
             // principal esta informação".
             var situacaoTerraText by remember(id) { mutableStateOf(f["situacaoTerra"]?.jsonPrimitive?.contentOrNull ?: "") }
+            // Recolher por bloco de fazenda (pedido: botão de recolher em cada bloco).
+            var blocoAberto by remember(id) { mutableStateOf(true) }
             // Bloco individual por fazenda -- pedido do usuário ("divida
             // cada fazenda em um bloco e dentro do bloco individual separe
             // os campos, coloque todos os campos em apenas duas linhas"):
@@ -683,7 +692,14 @@ private fun FarmsCard(
                         IconButton(onClick = { onDelete(id) }, enabled = !busy) {
                             Icon(Icons.Filled.Delete, contentDescription = "Excluir fazenda")
                         }
+                        IconButton(onClick = { blocoAberto = !blocoAberto }) {
+                            Icon(
+                                if (blocoAberto) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                contentDescription = if (blocoAberto) "Recolher" else "Expandir",
+                            )
+                        }
                     }
+                    if (blocoAberto) {
                     // 4 linhas de 2 campos cada (em vez de 2 linhas de 4) --
                     // achado pela análise do screenshot do usuário
                     // ("entendeu?", Cultura 1/Cultura quebrando letra por
@@ -714,7 +730,7 @@ private fun FarmsCard(
                         OutlinedTextField(
                             value = areaText,
                             onValueChange = { areaText = it },
-                            label = { Text("TOTAL (ha)", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            label = { Text("TOTAL (hectares)", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             textStyle = MaterialTheme.typography.bodySmall,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             singleLine = true,
@@ -743,7 +759,7 @@ private fun FarmsCard(
                         OutlinedTextField(
                             value = cultura1HaText,
                             onValueChange = { cultura1HaText = it },
-                            label = { Text("ha", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            label = { Text("Hectares", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             textStyle = MaterialTheme.typography.bodySmall,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             singleLine = true,
@@ -765,7 +781,7 @@ private fun FarmsCard(
                         OutlinedTextField(
                             value = cultura2HaText,
                             onValueChange = { cultura2HaText = it },
-                            label = { Text("ha", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            label = { Text("Hectares", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             textStyle = MaterialTheme.typography.bodySmall,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             singleLine = true,
@@ -785,7 +801,7 @@ private fun FarmsCard(
                         OutlinedTextField(
                             value = locationText,
                             onValueChange = { locationText = it },
-                            label = { Text("lat, lon", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            label = { Text("latitude, longitude", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             textStyle = MaterialTheme.typography.bodySmall,
                             singleLine = true,
                             modifier = Modifier.weight(1f),
@@ -849,6 +865,7 @@ private fun FarmsCard(
                             Icon(Icons.Filled.Check, contentDescription = "Salvar área")
                         }
                     }
+                    }
                 }
             }
         }
@@ -882,7 +899,7 @@ private fun FarmsCard(
                 )
                 OutlinedTextField(
                     value = newArea, onValueChange = { newArea = it },
-                    label = { Text("TOTAL (ha)", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    label = { Text("TOTAL (hectares)", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     textStyle = MaterialTheme.typography.bodySmall,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.weight(1f),
                     colors = appFieldColors(),
@@ -900,7 +917,7 @@ private fun FarmsCard(
                 )
                 OutlinedTextField(
                     value = newCultura1Ha, onValueChange = { newCultura1Ha = it },
-                    label = { Text("ha", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    label = { Text("Hectares", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     textStyle = MaterialTheme.typography.bodySmall,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.weight(1f),
                     colors = appFieldColors(),
@@ -913,7 +930,7 @@ private fun FarmsCard(
                 )
                 OutlinedTextField(
                     value = newCultura2Ha, onValueChange = { newCultura2Ha = it },
-                    label = { Text("ha", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    label = { Text("Hectares", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     textStyle = MaterialTheme.typography.bodySmall,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.weight(1f),
                     colors = appFieldColors(),
@@ -929,7 +946,7 @@ private fun FarmsCard(
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
                 OutlinedTextField(
                     value = newLocation, onValueChange = { newLocation = it },
-                    label = { Text("lat, lon", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    label = { Text("latitude, longitude", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     textStyle = MaterialTheme.typography.bodySmall,
                     singleLine = true, modifier = Modifier.weight(1f),
                     colors = appFieldColors(),
@@ -1019,7 +1036,7 @@ private fun SectorCard(
             val category = cat["category"]?.jsonPrimitive?.contentOrNull ?: return@forEach
             val values = cat["values"]?.jsonArray
             var newValue by remember(category) { mutableStateOf("") }
-            val temFoto = category in FOTO_CATEGORIES
+            val temFoto = categoriaTemFoto(category)
 
             Text(category, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp))
             values?.forEach { vEl ->

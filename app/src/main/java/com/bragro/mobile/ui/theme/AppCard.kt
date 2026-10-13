@@ -1,6 +1,10 @@
 package com.bragro.mobile.ui.theme
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.CardColors
@@ -74,9 +78,24 @@ fun thinGreenBorder(): BorderStroke = BorderStroke(1.dp, cardBorderColor())
  * origem. */
 @Composable
 private fun greenShadow(shape: Shape): Modifier {
-    val green = MaterialTheme.colorScheme.primary
-    return Modifier.shadow(elevation = 6.dp, shape = shape, ambientColor = green, spotColor = green)
+    // Modelo único (pedido do usuário): borda finíssima, SEM sombra.
+    return Modifier
 }
+
+/** Bloco/campo padrão do app (referência: card "Acesso automático via
+ * prestadora de serviço" do Drone): borda verde fina, preenchimento claro e
+ * só uma sombra leve -- sem camada cinza por trás. Substitui os scrims
+ * onSurface a 12% dos ItemFieldBlock/FieldBlock/CalcCard. */
+@Composable
+fun StandardFieldBlock(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    // Modelo único: o próprio campo (appFieldColors) é o bloco -- borda
+    // finíssima + fundo claro. Este wrapper não desenha mais nada por trás.
+    androidx.compose.foundation.layout.Box(modifier = modifier) { content() }
+}
+
+/** true dentro de StandardFieldBlock: o campo interno fica sem borda/preenchimento
+ * próprios (o bloco já é a única camada visível -- sem "dupla camada"). */
+val LocalInStandardBlock = androidx.compose.runtime.compositionLocalOf { false }
 
 @Composable
 fun Card(
@@ -129,17 +148,21 @@ fun Card(
  * Cards, ver Theme.kt) e borda transparente nos dois estados -- quem
  * demarca o campo agora é só o preenchimento, igual um bloco. */
 @Composable
-fun appFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
+fun appFieldColors(): TextFieldColors {
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val fill = if (dark) MaterialTheme.colorScheme.surface else Color(0xFFEEF1EE)
+    return OutlinedTextFieldDefaults.colors(
     focusedBorderColor = MaterialTheme.colorScheme.primary,
     unfocusedBorderColor = cardBorderColor(),
     disabledBorderColor = cardBorderColor(),
-    focusedContainerColor = MaterialTheme.colorScheme.surface,
-    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-    disabledContainerColor = MaterialTheme.colorScheme.surface,
+    focusedContainerColor = fill,
+    unfocusedContainerColor = fill,
+    disabledContainerColor = fill,
     focusedLabelColor = MaterialTheme.colorScheme.primary,
     cursorColor = MaterialTheme.colorScheme.primary,
     focusedTrailingIconColor = MaterialTheme.colorScheme.primary,
-)
+    )
+}
 
 /** Dropdown pesquisável e EDITÁVEL, compartilhado por todo o app -- pedido
  * real do usuário ("todos os campos com lista suspensa... quando seleciono

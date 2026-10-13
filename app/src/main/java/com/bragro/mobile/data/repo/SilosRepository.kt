@@ -85,4 +85,7 @@ class SilosRepository(context: Context) {
 
     suspend fun estoque(siloId: String? = null, dias: Int = 30): SiloResponse =
         call({ a, r -> SiloRequest(a, r, action = "estoque", siloId = siloId, dias = dias) }, "Falha ao calcular estoque.")
+
+    suspend fun listarLeituras(siloId: String, dias: Int = 60): SiloResponse =
+        call({ a, r -> SiloRequest(a, r, action = "list_leituras", siloId = siloId, dias = dias) }, "Falha ao listar leituras.")
 }

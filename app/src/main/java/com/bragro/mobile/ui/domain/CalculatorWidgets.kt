@@ -30,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -132,8 +133,7 @@ fun CalcCard(icon: String, title: String, content: @Composable () -> Unit) {
     // contraste "campo branco sobre bloco verde" fica igual ao resto do app.
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
-        border = BorderStroke(0.dp, Color.Transparent),
+        colors = CardDefaults.cardColors(containerColor = if (MaterialTheme.colorScheme.background.luminance() < 0.5f) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else Color(0xFFEEF1EE)),
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("$icon $title", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)

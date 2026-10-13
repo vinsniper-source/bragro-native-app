@@ -271,7 +271,7 @@ private val BOTTOM_TABS = listOf(
         items = listOf(
             SectorTarget.Domain("estoque", "Estoque"),
             SectorTarget.Special("reconciliacaoestoque", "Reconciliação Físico x Fiscal"),
-            SectorTarget.Special("silos", "Silos cilíndricos"),
+            SectorTarget.Special("silos", "Silos"),
         ),
     ),
     // Ex-aba "RH" (2 itens soltos, sem category) -- virou 2 abas de acesso
@@ -318,12 +318,6 @@ private val OWNER_BOTTOM_TABS = listOf(
             SectorTarget.Domain("planejamentosafra", "Planejamento de Safra", category = "Produção"),
             SectorTarget.Domain("colheita", "Colheita", category = "Produção"),
             SectorTarget.Domain("romaneios", "Romaneios", category = "Produção"),
-            // Pastagem (Módulo de Suplementação e Pastagem, gap analysis do
-            // usuário) -- dono não tem vaga própria na barra (as 6 já estão
-            // ocupadas, ver comentário de OWNER_BOTTOM_TABS acima), entra
-            // dentro do dropdown Safra > Produção junto dos demais módulos
-            // de campo.
-            SectorTarget.Domain("pastagem", "Pastagem", category = "Produção"),
             SectorTarget.Domain("pragas", "Pragas", category = "Sanidade"),
             SectorTarget.Domain("receituarios", "Receituários", category = "Sanidade"),
             SectorTarget.Domain("clima", "Clima", category = "Monitoramento"),
@@ -365,7 +359,7 @@ private val OWNER_BOTTOM_TABS = listOf(
             SectorTarget.Domain("estoque", "Estoque"),
             SectorTarget.Special("controleinsumos", "Controle de Insumos"),
             SectorTarget.Special("reconciliacaoestoque", "Reconciliação Físico x Fiscal"),
-            SectorTarget.Special("silos", "Silos cilíndricos"),
+            SectorTarget.Special("silos", "Silos"),
         ),
     ),
     BottomTab(
@@ -381,7 +375,13 @@ private val OWNER_BOTTOM_TABS = listOf(
     // Acesso direto -- ocupa a vaga que era do menu "Módulos" (ver comentário
     // no topo de OWNER_BOTTOM_TABS). Mesmo critério de "Frota" acima (domínio
     // genérico simples, sem dropdown).
-    BottomTab("pecuaria", "Pecuária", Icons.Filled.Pets, directDomainId = "pecuaria"),
+    BottomTab(
+        "pecuaria", "Pecuária", Icons.Filled.Pets,
+        items = listOf(
+            SectorTarget.Domain("pecuaria", "Pecuária"),
+            SectorTarget.Domain("pastagem", "Pastagem"),
+        ),
+    ),
 )
 
 /** As 3 telas administrativas (Configurações/Base de Dados/Acessos) agora são

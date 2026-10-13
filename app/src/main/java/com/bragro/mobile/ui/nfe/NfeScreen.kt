@@ -445,9 +445,7 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
             TopAppBar(
                 title = { Text("NF-e", color = MaterialTheme.colorScheme.primary) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.primary)
-                    }
+                    com.bragro.mobile.ui.domain.HomeNavButton()
                 },
                 actions = {
                     // "Copiar última nota" (achado de auditoria, paridade
@@ -501,7 +499,6 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
                 onClick = { copiaOrigem = null; showNovaNota = true },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.padding(bottom = 64.dp),
             ) {
                 Icon(Icons.Filled.Add, contentDescription = "Nova NF-e")
             }

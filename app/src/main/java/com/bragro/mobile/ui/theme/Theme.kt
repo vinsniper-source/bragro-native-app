@@ -115,6 +115,15 @@ private val LightColors = lightColorScheme(
     // fundo verde da página, sem precisar trazer a borda de volta.
     surface = Color(0xFFEFF1EE),
     surfaceVariant = Color(0xFFEFF1EE),
+    // Janelas (AlertDialog), menus suspensos e campos usam estes tokens --
+    // sem defini-los ficavam no cinza/roxo padrão do Material3.
+    surfaceContainerLowest = Color(0xFFEFF1EE),
+    surfaceContainerLow = Color(0xFFEFF1EE),
+    surfaceContainer = Color(0xFFEFF1EE),
+    surfaceContainerHigh = Color(0xFFEFF1EE),
+    surfaceContainerHighest = Color(0xFFEFF1EE),
+    surfaceDim = Color(0xFFEFF1EE),
+    surfaceBright = Color(0xFFEFF1EE),
     outline = Color(0xFF4A5C57),
     outlineVariant = Color(0xFFC3D0CB),
 )
@@ -142,6 +151,15 @@ private val DarkColors = darkColorScheme(
     // borda e com a cor igual ao fundo.
     surface = Color(0xFF434B40),
     surfaceVariant = Color(0xFF434B40),
+    // Janelas (AlertDialog), menus suspensos e campos usam estes tokens --
+    // sem defini-los ficavam no cinza/roxo padrão do Material3.
+    surfaceContainerLowest = Color(0xFF434B40),
+    surfaceContainerLow = Color(0xFF434B40),
+    surfaceContainer = Color(0xFF434B40),
+    surfaceContainerHigh = Color(0xFF434B40),
+    surfaceContainerHighest = Color(0xFF434B40),
+    surfaceDim = Color(0xFF434B40),
+    surfaceBright = Color(0xFF434B40),
     outline = Color(0xFF7A9186),
     outlineVariant = Color(0xFF3F4A46),
 )
@@ -164,6 +182,15 @@ private val ArLightColors = lightColorScheme(
     background = Color(0xFFD6E8F7),
     surface = Color(0xFFFFFFFF),
     surfaceVariant = Color(0xFFF1F7FC),
+    // Janelas (AlertDialog), menus suspensos e campos usam estes tokens --
+    // sem defini-los ficavam no cinza/roxo padrão do Material3.
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFFFFFFF),
+    surfaceContainer = Color(0xFFFFFFFF),
+    surfaceContainerHigh = Color(0xFFFFFFFF),
+    surfaceContainerHighest = Color(0xFFFFFFFF),
+    surfaceDim = Color(0xFFFFFFFF),
+    surfaceBright = Color(0xFFFFFFFF),
     outline = ArCeleste,
     outlineVariant = Color(0xFFBBD6EE),
 )
@@ -180,6 +207,15 @@ private val ArDarkColors = darkColorScheme(
     background = Color(0xFF16273A),
     surface = Color(0xFF223850),
     surfaceVariant = Color(0xFF223850),
+    // Janelas (AlertDialog), menus suspensos e campos usam estes tokens --
+    // sem defini-los ficavam no cinza/roxo padrão do Material3.
+    surfaceContainerLowest = Color(0xFF223850),
+    surfaceContainerLow = Color(0xFF223850),
+    surfaceContainer = Color(0xFF223850),
+    surfaceContainerHigh = Color(0xFF223850),
+    surfaceContainerHighest = Color(0xFF223850),
+    surfaceDim = Color(0xFF223850),
+    surfaceBright = Color(0xFF223850),
     outline = Color(0xFF5E86AD),
     outlineVariant = Color(0xFF2E4A66),
 )
