@@ -75,6 +75,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Storage
@@ -674,7 +675,7 @@ fun HomeScreen(
                     val optionalIconCount = (if (canManage) 2 else 0) +
                         (if (home?.showConfiguracoesIcon == true) 1 else 0) +
                         (if (home?.showBaseDeDadosIcon == true) 1 else 0) +
-                        2 // notificações + tema, sempre presentes
+                        3 // notificações + tema + busca, sempre presentes
                     val estimatedIconsWidth = (optionalIconCount * 48).dp + 44.dp + 40.dp + 8.dp
                     val estimatedLogoWidth = 64.dp
                     val headerFits = estimatedLogoWidth + estimatedIconsWidth <= maxWidth
@@ -776,6 +777,19 @@ fun HomeScreen(
                     // que o backend libera (showConfiguracoesIcon já exclui o
                     // OWNER/ADMIN, que agora acessam a tela completa pelo
                     // ícone "Módulos" logo acima).
+                    run {
+                        var searchOpen by remember { mutableStateOf(false) }
+                        IconButton(onClick = { searchOpen = true }) {
+                            Icon(Icons.Filled.Search, contentDescription = "Buscar módulo")
+                        }
+                        if (searchOpen) {
+                            ModuleSearchDialog(
+                                allowedModules = home?.allowedModules.orEmpty(),
+                                onOpenDomain = onOpenDomain,
+                                onDismiss = { searchOpen = false },
+                            )
+                        }
+                    }
                     if (home?.showConfiguracoesIcon == true) {
                         var configMenuOpen by remember { mutableStateOf(false) }
                         var iosStepsOpen by remember { mutableStateOf(false) }

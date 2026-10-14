@@ -52,6 +52,9 @@ import com.bragro.mobile.data.local.FarmEntity
 import com.bragro.mobile.data.model.NfeImportedInvoiceData
 import com.bragro.mobile.data.model.NfeItemData
 import com.bragro.mobile.data.model.NfePreviewData
+import com.bragro.mobile.data.model.OcrFotoNota
+import com.bragro.mobile.data.model.OcrFotoNotaItem
+import com.bragro.mobile.data.repo.OcrFotoRepository
 import com.bragro.mobile.data.repo.ConfigRepository
 import com.bragro.mobile.data.repo.NfeImportRepository
 import kotlinx.coroutines.launch
@@ -106,6 +109,7 @@ class NfeImportViewModel(app: Application) : AndroidViewModel(app) {
      * site espera de file.text() no navegador) e ja dispara a
      * pre-visualizacao. */
     fun onFileSelected(uri: Uri) {
+        notaPapel = null
         errorMessage.value = null
         preview.value = null
         importedInvoice.value = null
@@ -149,8 +153,33 @@ class NfeImportViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // Nota em PAPEL lida por foto (IA) -- paridade com o site (Task #892/#894).
+    // Quando preenchida, a confirmação usa /api/mobile/ocr-foto (mesma
+    // confirmFotoNfImportAction do site) em vez do XML.
+    private var notaPapel: OcrFotoNota? = null
+
+    suspend fun lerNotaPapel(fotoUrl: String): String? {
+        errorMessage.value = null
+        importedInvoice.value = null
+        val r = OcrFotoRepository(getApplication()).lerNotaPapel(fotoUrl)
+        val p = r.preview
+        if (!r.ok || p == null) return r.mensagem ?: r.error ?: "Não consegui ler a nota."
+        notaPapel = OcrFotoNota(
+            numero = p.numero, serie = p.serie, dataEmissao = p.dataEmissao,
+            emitenteNome = p.emitenteNome, emitenteDocumento = p.emitenteDocumento, valorTotal = p.valorTotal,
+            items = p.items.map { OcrFotoNotaItem(it.descricao, it.quantidade, it.unidade, it.valorUnitario, it.valorTotal) },
+        )
+        xmlRaw.value = null
+        fileName.value = "Nota em papel (foto)"
+        preview.value = p
+        if (selectedFarm.value == null) selectedFarm.value = farms.value.firstOrNull()?.name
+        return r.mensagem
+    }
+
     fun confirmImport() {
-        val xml = xmlRaw.value ?: return
+        val xml = xmlRaw.value
+        val nota = notaPapel
+        if (xml == null && nota == null) return
         val fazenda = selectedFarm.value
         if (fazenda.isNullOrBlank()) {
             errorMessage.value = "Escolha a fazenda de destino antes de confirmar."
@@ -159,7 +188,14 @@ class NfeImportViewModel(app: Application) : AndroidViewModel(app) {
         importing.value = true
         errorMessage.value = null
         viewModelScope.launch {
-            when (val result = repository.confirmImport(xml, fazenda)) {
+            if (nota != null) {
+                val r = OcrFotoRepository(getApplication()).confirmarNotaPapel(nota, fazenda)
+                if (r.ok && r.invoice != null) importedInvoice.value = r.invoice
+                else errorMessage.value = r.error ?: r.mensagem ?: "Não foi possível importar a nota."
+                importing.value = false
+                return@launch
+            }
+            when (val result = repository.confirmImport(xml!!, fazenda)) {
                 is NfeImportRepository.Result.Success -> importedInvoice.value = result.data
                 is NfeImportRepository.Result.Error -> errorMessage.value = result.message
             }
@@ -170,6 +206,7 @@ class NfeImportViewModel(app: Application) : AndroidViewModel(app) {
     /** Limpa tudo pra importar outro arquivo (depois de um sucesso ou pra
      * tentar de novo depois de um erro). */
     fun reset() {
+        notaPapel = null
         fileName.value = null
         xmlRaw.value = null
         preview.value = null
@@ -271,6 +308,13 @@ fun NfeImportScreen(onBack: () -> Unit, viewModel: NfeImportViewModel = viewMode
             item {
                 OutlinedButton(onClick = { filePicker.launch("*/*") }, modifier = Modifier.fillMaxWidth()) {
                     Text(fileName ?: "Selecionar arquivo XML")
+                }
+            }
+            // Nota em papel (sem XML) -- IA lê a foto e monta a mesma
+            // pré-visualização; nada é gravado até confirmar (paridade site).
+            item {
+                com.bragro.mobile.ui.domain.OcrFotoButton(label = "Ler nota em papel por foto (IA)") { url ->
+                    viewModel.lerNotaPapel(url)
                 }
             }
 

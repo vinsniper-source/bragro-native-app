@@ -3,6 +3,14 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.53] - 2026-10-13
+- Preencher com foto (IA): botão de câmera nos formulários de Estoque/Controle de Insumos, Cotações de Fornecedores, Contratos, Inventário, Frota, RH, Receituários e Pecuária; no cadastro de fazenda (Base de Dados); e leitura de NF-e/NFS-e em papel (sem XML) na importação de notas. Os campos vêm pré-preenchidos para conferência -- nada é gravado sozinho.
+- Certificado digital (A1/A3, emissor, validade) agora também em NF-e e NFS-e (mesmo certificado do Livro Caixa).
+- Correção: botão de câmera e conteúdo da tela de NFS-e.
+- Cotações de Fornecedores (multi-item): botão "Preencher com foto da proposta (IA)".
+- FieldView: desenho de talhão direto no mapa (toque nos pontos, Desfazer/Concluir) e confirmação de nome/fazenda.
+- Busca de módulos (lupa no topo da Home), respeitando as permissões.
+
 ## [1.3.52] - 2026-10-13
 - Barra oval Dados/Operações/Arquivos: a aba fica amarela (selecionada ou não) quando um ícone dela tem aviso (Filtros em Dados, Revisar em Operações) -- em todos os módulos, inclusive Dados e Financeiro. Bolinhas/contagens dos ícones inalteradas.
 - Janelas (diálogos) no padrão do Abastecimento rápido: janela em verde-acinzentado (claro DCE4DE / escuro 4B5A4E) e campos um degrau diferente (claro EFF1EE / escuro 3E4A3F) com borda verde, em todas as janelas do app.

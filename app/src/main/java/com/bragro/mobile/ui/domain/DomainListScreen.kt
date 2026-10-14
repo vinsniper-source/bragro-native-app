@@ -1199,6 +1199,11 @@ fun DomainListScreen(
                     // Mesma barra oval alternando categorias -- pedido do
                     // usuário.
                     ModuleCategoryTabs(listOf(dadosBlockCobrancas, operacoesBlockCobrancas, arquivosBlockCobrancas), modifier = Modifier.fillMaxWidth())
+                    // Certificado digital da organização (mesmo do NF-e/Livro
+                    // Caixa) -- Task #405, só na aba NFS-e.
+                    if (domainId == "nfse") {
+                        com.bragro.mobile.ui.nfe.CertificadoDigitalCard(modifier = Modifier.padding(top = 8.dp))
+                    }
                 } else {
                 // EqualWidthBlockRow (ui/domain/ModuleIconRow.kt) -- mesmo
                 // ajuste aplicado nos blocos Dados/Operações/Arquivos dos

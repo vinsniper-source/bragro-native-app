@@ -241,6 +241,29 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         grupos[gi].propostas.add(PropostaLinha())
     }
 
+    /** "Preencher com foto (IA)": lê a proposta do fornecedor e preenche o
+     * primeiro item/proposta (ou o primeiro ainda vazio). Só pré-preenche. */
+    suspend fun aplicarOcrFoto(fotoUrl: String): String? {
+        val r = com.bragro.mobile.data.repo.OcrFotoRepository(getApplication()).lerGenerico("cotacoesfornecedores", fotoUrl)
+        val c = r.campos
+        if (!r.ok || c.isNullOrEmpty()) return r.mensagem ?: r.error ?: "Não consegui ler nenhum campo desta foto."
+        fun v(k: String) = c[k]?.takeIf { it.isNotBlank() }
+        val g = grupos.firstOrNull { it.item.isBlank() } ?: GrupoLinha().also { grupos.add(it) }
+        v("data")?.let { data = com.bragro.mobile.ui.domain.isoDateToBr(com.bragro.mobile.ui.domain.isoDateOnly(it)) }
+        v("categoria")?.let { g.categoria = it }
+        v("item")?.let { g.item = it }
+        v("quantidade")?.let { g.quantidade = it }
+        v("unidade")?.let { g.unidade = it }
+        val p = g.propostas.first()
+        v("fornecedor")?.let { p.fornecedor = it }
+        v("precoUnitario")?.let { p.precoUnitario = it }
+        v("prazoEntregaDias")?.let { p.prazoEntregaDias = it }
+        v("condicaoPagamento")?.let { p.condicaoPagamento = it }
+        v("validadeProposta")?.let { p.validadeProposta = com.bragro.mobile.ui.domain.isoDateToBr(com.bragro.mobile.ui.domain.isoDateOnly(it)) }
+        v("observacoes")?.let { observacoes = it }
+        return r.mensagem ?: "${c.size} campo(s) lido(s) -- confira antes de salvar."
+    }
+
     fun removeProposta(gi: Int, pi: Int) {
         val propostas = grupos[gi].propostas
         if (propostas.size > 1) propostas.removeAt(pi)
@@ -660,6 +683,9 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                     "Descreva cada item que está cotando uma vez e lance o preço de cada fornecedor que cotou ele -- dá pra comparar quantos fornecedores quiser por item, e adicionar mais de um item na mesma submissão.",
                     style = MaterialTheme.typography.bodySmall,
                 )
+            }
+            item {
+                com.bragro.mobile.ui.domain.OcrFotoButton(label = "Preencher com foto da proposta (IA)") { url -> viewModel.aplicarOcrFoto(url) }
             }
             if (errorMessage != null) {
                 item { Text(errorMessage ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }

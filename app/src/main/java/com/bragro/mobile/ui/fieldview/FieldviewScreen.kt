@@ -560,7 +560,11 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                 else -> when (tab) {
                     0 -> TalhaoStatusList(data!!.talhaoStatus)
                     1 -> MaquinaStatusList(data!!.maquinaStatus)
-                    else -> FazendasKmlTab(boundaries = data!!.boundaries, farms = farms)
+                    else -> FazendasKmlTab(
+                        boundaries = data!!.boundaries,
+                        farms = farms,
+                        onPolygonDrawn = { poly -> pendingPolygons = listOf(poly); pendingIndex = 0 },
+                    )
                 }
             }
         }
@@ -765,14 +769,48 @@ private fun BoundariesList(boundaries: List<FieldBoundaryDto>, modifier: Modifie
 private fun FazendasKmlTab(
     boundaries: List<FieldBoundaryDto>,
     farms: List<FarmEntity>,
+    onPolygonDrawn: (ParsedPolygon) -> Unit = {},
 ) {
+    // Desenho direto no mapa (paridade com a ferramenta de polígono do site,
+    // Task #832): toque no mapa adiciona vértices; "Concluir" entrega o
+    // polígono pro mesmo diálogo de confirmação do KML (nome + fazenda).
+    var drawing by remember { mutableStateOf(false) }
+    var draft by remember { mutableStateOf<List<GeoPoint>>(emptyList()) }
     Column(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (!drawing) {
+                OutlinedButton(onClick = { drawing = true; draft = emptyList() }) { Text("Desenhar talhão no mapa") }
+            } else {
+                Text("${draft.size} pontos", style = MaterialTheme.typography.labelSmall, modifier = Modifier.weight(1f))
+                TextButton(onClick = { draft = draft.dropLast(1) }, enabled = draft.isNotEmpty()) { Text("Desfazer") }
+                TextButton(onClick = { drawing = false; draft = emptyList() }) { Text("Cancelar") }
+                Button(
+                    enabled = draft.size >= 3,
+                    onClick = {
+                        onPolygonDrawn(ParsedPolygon(null, draft.map { it.latitude to it.longitude }))
+                        drawing = false
+                        draft = emptyList()
+                    },
+                ) { Text("Concluir") }
+            }
+        }
+        if (drawing) {
+            Text(
+                "Toque no mapa para marcar os vértices do talhão (mínimo 3).",
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+        }
         // Botão "Importar KML/KMZ" que existia aqui foi promovido pra cima
         // (fileira comum acima das abas, ver FieldviewScreen) -- fica
         // visível tanto em Talhões quanto em Fazendas/KML agora, sem
         // duplicar nesta aba.
         FarmMapLinksRow(boundaries, farms)
-        BoundariesMap(boundaries)
+        BoundariesMap(boundaries, drawing = drawing, draft = draft, onTap = { draft = draft + it })
         BoundariesList(boundaries, modifier = Modifier.weight(1f))
     }
 }
@@ -849,8 +887,14 @@ private fun FarmMapLinksRow(boundaries: List<FieldBoundaryDto>, farms: List<Farm
  * lista de talhões de uma organização é pequena (poucas dezenas no
  * máximo) -- não vale a complexidade. */
 @Composable
-private fun BoundariesMap(boundaries: List<FieldBoundaryDto>) {
+private fun BoundariesMap(
+    boundaries: List<FieldBoundaryDto>,
+    drawing: Boolean = false,
+    draft: List<GeoPoint> = emptyList(),
+    onTap: (GeoPoint) -> Unit = {},
+) {
     val strokeColor = MaterialTheme.colorScheme.primary.toArgb()
+    val onTapState = androidx.compose.runtime.rememberUpdatedState(onTap)
     AndroidView(
         modifier = Modifier.fillMaxWidth().height(280.dp).padding(horizontal = 16.dp, vertical = 8.dp),
         factory = { ctx ->
@@ -878,7 +922,28 @@ private fun BoundariesMap(boundaries: List<FieldBoundaryDto>) {
                     allPoints.addAll(points)
                 }
             }
-            if (allPoints.isNotEmpty()) {
+            if (draft.isNotEmpty()) {
+                val d = OsmPolygon(mv)
+                d.setPoints(if (draft.size >= 3) draft + draft.first() else draft)
+                d.setStrokeColor(0xFFE65100.toInt())
+                d.setStrokeWidth(4f)
+                d.setFillColor(if (draft.size >= 3) 0x33E65100 else 0)
+                mv.overlays.add(d)
+            }
+            if (drawing) {
+                mv.overlays.add(
+                    org.osmdroid.views.overlay.MapEventsOverlay(object : org.osmdroid.events.MapEventsReceiver {
+                        override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean {
+                            if (p != null) onTapState.value(GeoPoint(p.latitude, p.longitude))
+                            return true
+                        }
+                        override fun longPressHelper(p: GeoPoint?): Boolean = false
+                    }),
+                )
+            }
+            // Só recentraliza no 1º contorno fora do modo desenho (não "pula"
+            // o mapa a cada vértice tocado).
+            if (!drawing && draft.isEmpty() && allPoints.isNotEmpty()) {
                 mv.controller.setCenter(allPoints.first())
             }
             mv.invalidate()

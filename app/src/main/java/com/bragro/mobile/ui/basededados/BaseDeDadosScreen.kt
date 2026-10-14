@@ -879,6 +879,24 @@ private fun FarmsCard(
         // da tela em vez de uma largura fixa que não cabe em aparelhos
         // estreitos.
         Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            // "Preencher com foto (IA)" -- paridade com o cadastro de fazenda
+            // do site (Task #895): lê CCIR/CAR/matrícula/escritura e
+            // pré-preenche Nome, Área e coordenadas; usuário confere antes de
+            // clicar em Adicionar.
+            val ocrContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
+            com.bragro.mobile.ui.domain.OcrFotoButton(
+                modifier = Modifier.padding(bottom = 8.dp),
+                label = "Preencher com foto do documento (IA)",
+            ) { url ->
+                val r = com.bragro.mobile.data.repo.OcrFotoRepository(ocrContext).lerFazenda(url)
+                val f = r.fazenda
+                if (r.ok && f != null) {
+                    f.name?.let { newName = it }
+                    f.areaHa?.let { newArea = it.toString() }
+                    if (f.latitude != null && f.longitude != null) newLocation = "${f.latitude}, ${f.longitude}"
+                }
+                r.mensagem ?: r.error
+            }
             OutlinedTextField(
                 value = newName, onValueChange = { newName = it }, label = { Text("Nova fazenda") },
                 modifier = Modifier.fillMaxWidth(), singleLine = true, colors = appFieldColors(),

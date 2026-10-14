@@ -1409,6 +1409,85 @@ data class PragaIaResponse(
     val error: String? = null,
 )
 
+// "Preencher com foto (IA)" genérico (site Task #889-895) -- ver rota
+// /api/mobile/ocr-foto. Uma única request/response atende os 4 usos
+// (generico, fazenda, nota_papel, nota_papel_confirmar).
+@Serializable
+data class OcrFotoNotaItem(
+    val descricao: String,
+    val quantidade: Double,
+    val unidade: String,
+    val valorUnitario: Double,
+    val valorTotal: Double,
+)
+
+@Serializable
+data class OcrFotoNota(
+    val numero: String,
+    val serie: String? = null,
+    val dataEmissao: String? = null,
+    val emitenteNome: String? = null,
+    val emitenteDocumento: String? = null,
+    val valorTotal: Double,
+    val items: List<OcrFotoNotaItem>,
+)
+
+@Serializable
+data class OcrFotoRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val tipo: String,
+    val domainId: String? = null,
+    val fotoUrl: String? = null,
+    val nota: OcrFotoNota? = null,
+    val fazendaDestino: String? = null,
+    val categoriaFinanceiro: String? = null,
+    val itemCategorias: List<String>? = null,
+)
+
+@Serializable
+data class OcrFotoFazenda(
+    val name: String? = null,
+    val areaHa: Double? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+)
+
+@Serializable
+data class OcrFotoResponse(
+    val ok: Boolean,
+    val status: String? = null,
+    val mensagem: String? = null,
+    val campos: Map<String, String>? = null,
+    val fazenda: OcrFotoFazenda? = null,
+    val preview: NfePreviewData? = null,
+    val invoice: NfeImportedInvoiceData? = null,
+    val error: String? = null,
+)
+
+// Certificado digital da organização (A1/A3 -- só metadado). Mesmos nomes de
+// campo da rota api/mobile/certificado-digital. Validade em yyyy-mm-dd.
+@Serializable
+data class CertificadoDigitalData(
+    val certificadoDigitalTipo: String? = null,
+    val certificadoDigitalEmissor: String? = null,
+    val certificadoDigitalValidade: String? = null,
+)
+
+@Serializable
+data class CertificadoDigitalRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val save: CertificadoDigitalData? = null,
+)
+
+@Serializable
+data class CertificadoDigitalResponse(
+    val ok: Boolean,
+    val config: CertificadoDigitalData? = null,
+    val error: String? = null,
+)
+
 @Serializable
 data class CotacaoMultiItemItemData(
     val categoria: String = "",

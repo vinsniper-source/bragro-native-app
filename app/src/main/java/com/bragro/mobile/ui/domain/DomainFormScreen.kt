@@ -275,6 +275,25 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** "Preencher com foto (IA)" -- paridade com o botão do site (Task
+     * #889-893, generic-ocr.ts). Lê a foto no servidor e pré-preenche os campos
+     * que a IA conseguiu ler; o usuário confere antes de salvar (nada é
+     * gravado sozinho). Devolve a mensagem de status pro botão mostrar. */
+    suspend fun aplicarOcrFoto(fotoUrl: String): String? {
+        val domainId = currentDomainId ?: return null
+        val r = com.bragro.mobile.data.repo.OcrFotoRepository(getApplication()).lerGenerico(domainId, fotoUrl)
+        val campos = r.campos
+        if (!r.ok || campos.isNullOrEmpty()) return r.mensagem ?: r.error ?: "Não consegui ler nenhum campo desta foto."
+        val cols = config.value?.columns.orEmpty().associateBy { it.key }
+        for ((k, v) in campos) {
+            val col = cols[k] ?: continue
+            if (col.computed || v.isBlank()) continue
+            fields[k] = if (col.type == "date") isoDateToBr(isoDateOnly(v)) else v
+            if (k in missingFields.value) missingFields.value = missingFields.value - k
+        }
+        return r.mensagem ?: "${campos.size} campo(s) lido(s) -- confira antes de salvar."
+    }
+
     fun setField(key: String, value: String) {
         fields[key] = value
         // Campos que dependem deste (dependsOn, ver ColumnConfig em
@@ -489,6 +508,13 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
  * Os campos "computed" (calculados pelo servidor -- rateio, vencimento,
  * numeracao de O.S. etc.) nao aparecem aqui: so existem depois da
  * sincronizacao, quando o servidor devolve o registro definitivo. */
+/** Domínios com `ocrFoto` em registry.ts (site) -- botão "Preencher com foto
+ * (IA)" no formulário. Mantém em sincronia com o registry do site. */
+private val OCR_FOTO_DOMAINS = setOf(
+    "estoque", "cotacoesfornecedores", "contratos", "inventario",
+    "frota", "rh", "receituarios", "pecuaria",
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DomainFormScreen(
@@ -649,6 +675,12 @@ fun DomainFormScreen(
             // ícone de copiar (TopAppBar) também não precisa mais de legenda
             // -- é auto-explicativo (ícone de copiar + tooltip/contentDescription
             // "Copiar último lançamento").
+
+            // "Preencher com foto (IA)" -- só em lançamento NOVO dos módulos
+            // que declaram `ocrFoto` no registry.ts do site (paridade).
+            if (recordId == null && domainId in OCR_FOTO_DOMAINS) {
+                OcrFotoButton(modifier = Modifier.padding(bottom = 12.dp)) { url -> viewModel.aplicarOcrFoto(url) }
+            }
 
             // Mostra TODAS as colunas na ordem natural do domínio (mesma
             // ordem de cfg.columns, que já reflete a ordem da operação em

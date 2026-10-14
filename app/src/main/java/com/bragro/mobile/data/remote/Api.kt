@@ -373,6 +373,13 @@ interface MobileApi {
     @POST("api/mobile/pragas-ia")
     suspend fun pragaIa(@Body body: PragaIaRequest): Response<PragaIaResponse>
 
+    // "Preencher com foto (IA)" genérico -- ver OcrFotoRequest (Models.kt).
+    @POST("api/mobile/ocr-foto")
+    suspend fun ocrFoto(@Body body: com.bragro.mobile.data.model.OcrFotoRequest): Response<com.bragro.mobile.data.model.OcrFotoResponse>
+
+    @POST("api/mobile/certificado-digital")
+    suspend fun certificadoDigital(@Body body: com.bragro.mobile.data.model.CertificadoDigitalRequest): Response<com.bragro.mobile.data.model.CertificadoDigitalResponse>
+
     // Inverso do multi-item acima -- pedido do usuario ("Cotações
     // Fornecedores: múltiplos fornecedores por operação", task #404): 1
     // item, N propostas de fornecedores diferentes na mesma submissão.

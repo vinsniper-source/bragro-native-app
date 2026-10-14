@@ -505,6 +505,7 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
         },
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            CertificadoDigitalCard(modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp))
             if (mensagemEmissao != null) {
                 Surface(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f), modifier = Modifier.fillMaxWidth()) {
                     Row(modifier = Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween) {

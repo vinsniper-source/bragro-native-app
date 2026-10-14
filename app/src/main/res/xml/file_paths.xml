@@ -19,6 +19,7 @@
          abre", Novo Orçamento). -->
     <cache-path name="orcamento_fotos" path="orcamento/" />
     <cache-path name="pragas_fotos" path="pragas/" />
+    <cache-path name="ocr_fotos" path="ocr/" />
     <cache-path name="frota_qr" path="frota_qr/" />
     <!-- Backup completo (JSON) e exportações CSV: salvos temporariamente
          aqui antes de abrir o Intent de compartilhamento (ver HomeScreen.kt
