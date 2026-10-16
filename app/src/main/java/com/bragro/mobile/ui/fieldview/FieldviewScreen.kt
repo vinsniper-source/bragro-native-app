@@ -10,6 +10,9 @@ import java.util.Locale
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -409,6 +412,8 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
     // Diálogo de lançamento MANUAL de talhão (sem KML/KMZ) -- pedido do
     // usuário. Aberto pelo botão "+" nas abas Talhões e Fazendas/KML.
     var manualDialogOpen by remember { mutableStateOf(false) }
+    var listaAberta by remember { mutableStateOf(false) }
+    var prestadoraAberta by remember { mutableIntStateOf(0) }
 
     val kmlPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         if (uri != null) {
@@ -450,108 +455,54 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
             )
         },
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            Text(
-                "Talhões, contornos (mapa) e status de safra/máquinas -- importe o contorno direto de um KML/KMZ na aba Fazendas/KML.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Padrão v7: Painel de monitoramento + Ações; o resto (prestadora,
+            // NDVI, abas) virou ícone em Ações ou janela.
+            val talhoes = data?.talhaoStatus.orEmpty()
+            val boundaries = data?.boundaries.orEmpty()
+            fun cultura(o: JsonObject) = (o["cultura"] as? kotlinx.serialization.json.JsonPrimitive)?.content.orEmpty().uppercase()
+            val comContorno = boundaries.count { b -> b.geojson != null && b.geojson.toString() !in setOf("{}", "null") }
+            com.bragro.mobile.ui.domain.PainelMonitoramento(
+                com.bragro.mobile.ui.domain.PainelModulo(
+                    titulo = "Talhões e Mapas",
+                    subtitulo = "${talhoes.size} talhões · ${farms.size} fazendas",
+                    kpis = listOf(
+                        com.bragro.mobile.ui.domain.PainelKpi("Talhões", talhoes.size.toDouble(), "numero", null, "com lançamentos", "Talhões"),
+                        com.bragro.mobile.ui.domain.PainelKpi("Com contorno", comContorno.toDouble(), "numero", null, "aparecem no mapa", "Mapa"),
+                        com.bragro.mobile.ui.domain.PainelKpi("Soja", talhoes.count { cultura(it).contains("SOJA") }.toDouble(), "numero", null, "talhões", "Talhões"),
+                        com.bragro.mobile.ui.domain.PainelKpi("Cana", talhoes.count { cultura(it).contains("CANA") }.toDouble(), "numero", null, "talhões", "Talhões"),
+                        com.bragro.mobile.ui.domain.PainelKpi("Máquinas", data?.maquinaStatus.orEmpty().size.toDouble(), "numero", null, "com lançamentos", "Máquinas"),
+                    ),
+                    barras = emptyList(),
+                ),
+                onKpi = { k -> tab = when (k.destino) { "Máquinas" -> 1; "Mapa" -> 2; else -> 0 }; listaAberta = true },
             )
-            // Card "Acesso automático via prestadora de serviço" (Task
-            // #341/#54) -- mesma posição/UX do site (topo da tela, acima das
-            // abas, ver fieldview-client.tsx), única peça que ainda faltava
-            // no mobile (a credencial já era 100% funcional no site).
-            ProviderIntegrationCard(
-                providers = listOf("Climate FieldView", "John Deere Operations Center", "Outro", "Trimble Ag Software"),
-                // Título distinto do card NDVI abaixo -- pedido do usuário
-                // ("coloque um titulo no bloco pra diferenciar um do outro
-                // pq parece que está em duplicidade até abrir o bloco").
-                titulo = "Acesso automático via prestadora (talhões/KML)",
-                // Aviso resumido -- pedido do usuário ("resuma os avisos").
-                descricao = "Hoje os limites de talhão são importados manualmente por KML/KMZ. Credencial salva com segurança abaixo.",
-                integration = integration,
-                busy = integrationBusy,
-                syncMessage = integrationMessage,
-                onSave = { provedor, apiKey -> viewModel.saveIntegration(provedor, apiKey) },
-                onDisconnect = { viewModel.disconnectIntegration() },
-                onSync = { viewModel.syncIntegration() },
-                modifier = Modifier.padding(horizontal = 16.dp),
-            )
-            // NDVI via satélite (Task #653, gap analysis eixo BI) -- mesmo
-            // card, segundo provedor (imagens de satélite em vez de
-            // prestadora de FieldView), ver segundo ProviderIntegrationCard
-            // em fieldview-client.tsx no site.
-            ProviderIntegrationCard(
-                providers = listOf("Sentinel Hub", "Planet", "EOS Data Analytics", "Outro"),
-                titulo = "Acesso automático via satélite (NDVI)",
-                descricao = "NDVI por talhão ainda não está disponível -- depende de assinatura com um provedor de imagens de satélite. Credencial salva com segurança abaixo (Sentinel Hub: informe CLIENT_ID|CLIENT_SECRET; Planet: chave de API).",
-                integration = ndviIntegration,
-                busy = ndviIntegrationBusy,
-                syncMessage = ndviIntegrationMessage,
-                onSave = { provedor, apiKey -> viewModel.saveNdviIntegration(provedor, apiKey) },
-                onDisconnect = { viewModel.disconnectNdviIntegration() },
-                onSync = { viewModel.syncNdviIntegration() },
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-            // Espaço maior entre o card "Acesso automático" e as abas
-            // Talhões/Máquinas/Fazendas -- pedido do usuário ("dê um espaço
-            // maior entre o bloco acesso automático do bloco talhões
-            // máquinas fazendas"): antes o TabRow vinha colado direto embaixo
-            // do card, sem nenhum respiro.
-            Spacer(modifier = Modifier.height(20.dp))
-            // Ícone em cada aba (Eco/DirectionsCar/Map, mesmos já usados no
-            // conteudo de cada uma abaixo) -- pedido do usuário ("outros
-            // tantos ícones"), TabRow antes só tinha texto.
-            val tabIcons = listOf(Icons.Filled.Eco, Icons.Filled.DirectionsCar, Icons.Filled.Map)
-            TabRow(selectedTabIndex = tab) {
-                tabs.forEachIndexed { i, label ->
-                    Tab(
-                        selected = tab == i,
-                        onClick = { tab = i },
-                        text = { Text(label) },
-                        icon = { Icon(tabIcons[i], contentDescription = null) },
-                    )
+            com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
+                Column(Modifier.fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth()) {
+                        val tabIcons = listOf(Icons.Filled.Eco, Icons.Filled.DirectionsCar, Icons.Filled.Map)
+                        tabs.forEachIndexed { i, label ->
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = tabIcons[i], label = if (i == 2) "Mapa/KML" else label, active = tab == i, onClick = { tab = i; listaAberta = true })
+                        }
+                    }
+                    com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth()) {
+                        com.bragro.mobile.ui.domain.LabeledIconButton(
+                            icon = Icons.Filled.UploadFile, label = "KML/KMZ", loading = importing,
+                            onClick = { kmlPicker.launch(arrayOf("application/vnd.google-earth.kml+xml", "application/vnd.google-earth.kmz", "application/octet-stream", "*/*")) },
+                        )
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.EditLocationAlt, label = "+ Talhão", onClick = { manualDialogOpen = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Bolt, label = "Prestadora", active = integration != null, onClick = { prestadoraAberta = 1 })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Public, label = "NDVI", active = ndviIntegration != null, onClick = { prestadoraAberta = 2 })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Layers, label = "Prescrição", onClick = onOpenPrescricao)
+                    }
                 }
             }
-            // Botão único "Importar KML/KMZ" nas 3 abas -- pedido do usuário
-            // ("o botão importar kml tem que servir também para máquinas e
-            // mapas, retire o botão importar máquinas"): antes só Talhões/
-            // Fazendas-KML tinham este botão e Máquinas tinha um botão
-            // separado ("+ Lançar máquina manualmente (Frota)"), removido
-            // agora.
-            //
-            // "Lançar talhão manualmente" (Task #201, auditoria de paridade
-            // com o site): o diálogo (ManualBoundaryDialog), o estado
-            // (manualDialogOpen) e a chamada de API (viewModel.manualBoundary)
-            // já existiam prontos e corretos, mas sem NENHUM botão que
-            // abrisse o diálogo -- feature morta, igual ao "Lançar talhão
-            // manualmente" do site (fieldview-client.tsx), que o app nunca
-            // teve gatilho. Corrigido aqui.
-            Row(
-                // Espaço maior entre os dois botões -- pedido do usuário
-                // ("dê um espaço maior também para importar kml e lançar
-                // talhão"): 8.dp ficava os dois quase colados/cortando o 2º
-                // rótulo na tela.
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
-            ) {
-                OutlinedButton(
-                    onClick = { kmlPicker.launch(arrayOf("application/vnd.google-earth.kml+xml", "application/vnd.google-earth.kmz", "application/octet-stream", "*/*")) },
-                    enabled = !importing,
-                ) {
-                    Icon(Icons.Filled.UploadFile, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                    Text(if (importing) "Importando..." else "Importar KML/KMZ")
-                }
-                OutlinedButton(onClick = { manualDialogOpen = true }, enabled = !importing) {
-                    Icon(Icons.Filled.EditLocationAlt, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                    // Encurtado de "Lançar talhão manualmente" pra "Lançar
-                    // talhão" -- pedido do usuário. O diálogo que abre
-                    // (título "Lançar talhão manualmente" logo abaixo)
-                    // continua com o nome completo, já que ali o contexto
-                    // "manualmente" ainda esclarece a ação.
-                    Text("Lançar talhão")
-                }
-            }
+            com.bragro.mobile.ui.domain.CabecalhoLancamentos(
+                total = when (tab) { 0 -> talhoes.size; 1 -> data?.maquinaStatus.orEmpty().size; else -> boundaries.size },
+                aberto = listaAberta,
+                titulo = tabs[tab],
+            ) { listaAberta = !listaAberta }
+            if (listaAberta) Box(Modifier.weight(1f).fillMaxWidth()) {
             when {
                 loading -> Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator(modifier = Modifier.padding(top = 24.dp))
@@ -567,7 +518,43 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                     )
                 }
             }
+            }
         }
+    }
+
+    if (prestadoraAberta != 0) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { prestadoraAberta = 0 },
+            modifier = Modifier.fillMaxWidth(0.96f),
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            title = { Text(if (prestadoraAberta == 1) "Prestadora (talhões/KML)" else "Satélite (NDVI)") },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    if (prestadoraAberta == 1) ProviderIntegrationCard(
+                        providers = listOf("Climate FieldView", "John Deere Operations Center", "Outro", "Trimble Ag Software"),
+                        titulo = "Acesso automático via prestadora (talhões/KML)",
+                        descricao = "Hoje os limites de talhão são importados manualmente por KML/KMZ. Credencial salva com segurança abaixo.",
+                        integration = integration,
+                        busy = integrationBusy,
+                        syncMessage = integrationMessage,
+                        onSave = { provedor, apiKey -> viewModel.saveIntegration(provedor, apiKey) },
+                        onDisconnect = { viewModel.disconnectIntegration() },
+                        onSync = { viewModel.syncIntegration() },
+                    ) else ProviderIntegrationCard(
+                        providers = listOf("Sentinel Hub", "Planet", "EOS Data Analytics", "Outro"),
+                        titulo = "Acesso automático via satélite (NDVI)",
+                        descricao = "NDVI por talhão depende de assinatura com um provedor de imagens de satélite. Credencial salva com segurança abaixo (Sentinel Hub: CLIENT_ID|CLIENT_SECRET; Planet: chave de API).",
+                        integration = ndviIntegration,
+                        busy = ndviIntegrationBusy,
+                        syncMessage = ndviIntegrationMessage,
+                        onSave = { provedor, apiKey -> viewModel.saveNdviIntegration(provedor, apiKey) },
+                        onDisconnect = { viewModel.disconnectNdviIntegration() },
+                        onSync = { viewModel.syncNdviIntegration() },
+                    )
+                }
+            },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { prestadoraAberta = 0 }) { Text("Fechar") } },
+        )
     }
 
     if (manualDialogOpen) {
@@ -622,7 +609,7 @@ private fun TalhaoStatusList(rows: List<JsonObject>) {
             // 3 coloque setinha nos blocos"): mesmo padrão ExpandLess/
             // ExpandMore já usado nos cards de lançamento (DomainListScreen.kt),
             // que faltava nestes 2 blocos (Talhão/Máquina).
-            var open by remember { mutableStateOf(true) }
+            var open by remember { mutableStateOf(false) }
             Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     // Ícone + rótulo -- pedido do usuário ("acho que todo o
@@ -671,7 +658,7 @@ private fun MaquinaStatusList(rows: List<JsonObject>) {
             // 3 coloque setinha nos blocos"): mesmo padrão ExpandLess/
             // ExpandMore já usado nos cards de lançamento (DomainListScreen.kt),
             // que faltava neste bloco (Máquina não tinha nenhuma).
-            var open by remember { mutableStateOf(true) }
+            var open by remember { mutableStateOf(false) }
             Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     // Ícone SEM rótulo -- achado da auditoria (usuário:

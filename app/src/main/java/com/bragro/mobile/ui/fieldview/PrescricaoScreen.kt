@@ -31,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material.icons.filled.Info
 import com.bragro.mobile.ui.i18n.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -259,6 +260,20 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
     val exportandoId by viewModel.exportandoId
     var expandidoId by remember { mutableStateOf<String?>(null) }
     var erroExportacao by remember { mutableStateOf<String?>(null) }
+    var lancAberto by remember { mutableStateOf(false) }
+    var infoAberto by remember { mutableStateOf(false) }
+    val imprimir: () -> Unit = {
+        val headers = listOf("Nome", "Produto", "Safra", "Cultura", "Talhão", "Taxa mín.", "Taxa média", "Taxa máx.")
+        val rows = prescricoes.map {
+            listOf(
+                it.nome, it.produto ?: "", it.safra ?: "", it.cultura ?: "", it.talhao ?: "",
+                it.taxaMin?.let { v -> "%.2f".format(v) } ?: "",
+                it.taxaMedia?.let { v -> "%.2f".format(v) } ?: "",
+                it.taxaMax?.let { v -> "%.2f".format(v) } ?: "",
+            )
+        }
+        HtmlPrinter.printSimpleTable(context, "Prescrição / Taxa Variável", headers, rows)
+    }
 
     Scaffold(
         topBar = {
@@ -316,20 +331,7 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                 },
             )
         },
-        // FAB "Nova Prescrição" (Task #651) -- pedido do usuário ("crie no
-        // native como foi criado na plataforma"): antes só o site criava.
-        floatingActionButton = {
-            // Altura padrão (tela sem BottomNavBar) + fundo verde do título --
-            // pedido do usuário ("suba o botão + de Prescrição na altura
-            // padrão dos outros botões + do app... fundo verde do título").
-            androidx.compose.material3.FloatingActionButton(
-                onClick = onNovo,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = "Nova prescrição")
-            }
-        },
+        // Botão flutuante removido -- "+ Nova" fica no bloco Ações (padrão v7).
     ) { padding ->
         if (carregando) {
             Column(modifier = Modifier.fillMaxSize().padding(padding), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
@@ -343,19 +345,43 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
             }
             return@Scaffold
         }
-        if (prescricoes.isEmpty()) {
-            Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Nenhuma prescrição de taxa variável salva ainda -- toque em + pra importar um ISO-XML, ou crie pelo site (SHP/ISO-XML).", style = MaterialTheme.typography.bodyMedium)
-            }
-            return@Scaffold
-        }
-
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            items(prescricoes) { p ->
+            item(key = "painel") {
+                com.bragro.mobile.ui.domain.PainelMonitoramento(
+                    com.bragro.mobile.ui.domain.PainelModulo(
+                        titulo = "Prescrição / Taxa variável",
+                        subtitulo = "${prescricoes.size} prescrição(ões) salvas",
+                        kpis = listOf(
+                            com.bragro.mobile.ui.domain.PainelKpi("Prescrições", prescricoes.size.toDouble(), "numero", null, "mapas salvos", "Lançamentos"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Produtos", prescricoes.mapNotNull { it.produto?.takeIf { s -> s.isNotBlank() } }.toSet().size.toDouble(), "numero", null, "diferentes", "Lançamentos"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Em SHP", prescricoes.count { it.origemTipo == "SHP" }.toDouble(), "numero", null, "importadas de .zip", "Lançamentos"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Em ISO-XML", prescricoes.count { it.origemTipo == "ISO_XML" }.toDouble(), "numero", null, "TASKDATA.XML", "Lançamentos"),
+                        ),
+                        barras = emptyList(),
+                    ),
+                    onKpi = { lancAberto = true },
+                )
+            }
+            item(key = "acoes") {
+                com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
+                    com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Add, label = "+ Nova", onClick = onNovo)
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Info, label = "Formatos", onClick = { infoAberto = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = imprimir)
+                    }
+                }
+            }
+            item(key = "lanc-header") {
+                com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = prescricoes.size, aberto = lancAberto, titulo = "Prescrições") { lancAberto = !lancAberto }
+            }
+            if (prescricoes.isEmpty()) item {
+                Text("Nenhuma prescrição de taxa variável salva ainda -- toque em + Nova pra importar um ISO-XML, ou crie pelo site (SHP/ISO-XML).", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 16.dp))
+            }
+            if (lancAberto) items(prescricoes) { p ->
                 PrescricaoCard(
                     p = p,
                     expandido = expandidoId == p.id,
@@ -376,6 +402,15 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                 )
             }
         }
+    }
+
+    if (infoAberto) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { infoAberto = false },
+            title = { Text("Formatos suportados") },
+            text = { Text("ISO-XML (TASKDATA.XML) pelo app ou pelo site; Shapefile (.zip com .shp/.dbf) pelo site. Exporta em SHP e ISO-XML pelos ícones de cada prescrição.") },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { infoAberto = false }) { Text("Ok") } },
+        )
     }
 
     if (erroExportacao != null) {

@@ -15,6 +15,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.background
+import androidx.compose.material.icons.filled.ViewList
+import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -120,6 +123,21 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
     val totalItensComDivergencia by viewModel.totalItensComDivergencia
     val offline by viewModel.offline
     var soDivergencia by remember { mutableStateOf(true) }
+    var fCategoria by remember { mutableStateOf<String?>(null) }
+    var catMenu by remember { mutableStateOf(false) }
+    var listaAberta by remember { mutableStateOf(false) }
+    val imprimir: () -> Unit = {
+        val headers = listOf("Item", "Categoria", "Saldo Fiscal", "Saldo Real", "Diferença")
+        val rows = itens.map {
+            listOf(
+                it.item, it.categoria ?: "",
+                "${formatoNumero(it.saldoFiscal)}${it.unidade?.let { u -> " $u" } ?: ""}",
+                "${formatoNumero(it.saldoFisico)}${it.unidade?.let { u -> " $u" } ?: ""}",
+                "${formatoNumero(it.diferenca)}${it.unidade?.let { u -> " $u" } ?: ""}",
+            )
+        }
+        HtmlPrinter.printSimpleTable(context, "Reconciliação Físico x Fiscal", headers, rows)
+    }
 
     Scaffold(
         topBar = {
@@ -145,20 +163,6 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Row {
-                            IconButton(onClick = {
-                                val headers = listOf("Item", "Categoria", "Saldo Fiscal", "Saldo Real", "Diferença")
-                                val rows = itens.map {
-                                    listOf(
-                                        it.item, it.categoria ?: "",
-                                        "${formatoNumero(it.saldoFiscal)}${it.unidade?.let { u -> " $u" } ?: ""}",
-                                        "${formatoNumero(it.saldoFisico)}${it.unidade?.let { u -> " $u" } ?: ""}",
-                                        "${formatoNumero(it.diferenca)}${it.unidade?.let { u -> " $u" } ?: ""}",
-                                    )
-                                }
-                                HtmlPrinter.printSimpleTable(context, "Reconciliação Físico x Fiscal", headers, rows)
-                            }) {
-                                Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
-                            }
                             IconButton(onClick = {
                                 val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
@@ -188,42 +192,63 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
             return@Scaffold
         }
 
-        val visiveis = if (soDivergencia) itens.filter { kotlin.math.abs(it.diferenca) > TOLERANCIA } else itens
+        val divergentes = itens.filter { kotlin.math.abs(it.diferenca) > TOLERANCIA }
+        val visiveis = (if (soDivergencia) divergentes else itens).filter { fCategoria == null || it.categoria == fCategoria }
+        val categorias = itens.mapNotNull { it.categoria?.takeIf { c -> c.isNotBlank() } }.distinct().sorted()
+        val maior = divergentes.maxByOrNull { kotlin.math.abs(it.diferenca) }
+        fun contaOrigem(o: String) = itens.count { i -> i.origensNaoFiscais.any { it.origem.uppercase().contains(o) } }
 
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            item {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(
-                                if (totalItensComDivergencia > 0) Icons.Filled.Warning else Icons.Filled.CheckCircle,
-                                contentDescription = null,
-                                tint = if (totalItensComDivergencia > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                            )
-                            Column {
-                                Text(
-                                    "$totalItensComDivergencia ${if (totalItensComDivergencia == 1) "item com diferença" else "itens com diferença"}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
-                                Text("de ${itens.size} com movimento registrado", style = MaterialTheme.typography.labelSmall)
+            item(key = "painel") {
+                val conferidos = itens.size - divergentes.size
+                com.bragro.mobile.ui.domain.PainelMonitoramento(
+                    com.bragro.mobile.ui.domain.PainelModulo(
+                        titulo = "Reconciliação físico x fiscal",
+                        subtitulo = "${itens.size} itens com movimento · ${divergentes.size} com diferença",
+                        kpis = listOf(
+                            com.bragro.mobile.ui.domain.PainelKpi("Com movimento", itens.size.toDouble(), "numero", null, "todas as origens", "Todos"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Com diferença", divergentes.size.toDouble(), "numero", null, "sem nota por trás", "Divergências", tom = if (divergentes.isNotEmpty()) "acima" else null),
+                            com.bragro.mobile.ui.domain.PainelKpi("Maior diferença", maior?.let { kotlin.math.abs(it.diferenca) } ?: 0.0, "numero", maior?.unidade, maior?.item ?: "nenhuma", "Divergências"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Sem nota (manual)", contaOrigem("MANUAL").toDouble(), "numero", null, "origem manual", "Todos"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Ajustes", contaOrigem("AJUSTE").toDouble(), "numero", null, "origem ajuste", "Todos"),
+                        ),
+                        barras = if (itens.isEmpty()) emptyList() else listOf(
+                            com.bragro.mobile.ui.domain.PainelBarra("Conferidos", Math.round(conferidos * 1000.0 / itens.size) / 10.0, "$conferidos/${itens.size}"),
+                        ),
+                    ),
+                    onKpi = { k -> soDivergencia = k.destino == "Divergências"; listaAberta = true },
+                )
+            }
+            item(key = "acoes") {
+                com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
+                    com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Warning, label = "Divergências", active = soDivergencia, onClick = { soDivergencia = true; listaAberta = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.ViewList, label = "Todos", active = !soDivergencia, onClick = { soDivergencia = false; listaAberta = true })
+                        androidx.compose.foundation.layout.Box {
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.FilterAlt, label = fCategoria ?: "Categoria", active = fCategoria != null, onClick = { catMenu = true })
+                            androidx.compose.material3.DropdownMenu(expanded = catMenu, onDismissRequest = { catMenu = false }) {
+                                androidx.compose.material3.DropdownMenuItem(text = { Text("Todas") }, onClick = { fCategoria = null; catMenu = false })
+                                categorias.forEach { c ->
+                                    androidx.compose.material3.DropdownMenuItem(text = { Text(c) }, onClick = { fCategoria = c; catMenu = false; listaAberta = true })
+                                }
                             }
                         }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Só divergências", style = MaterialTheme.typography.labelSmall)
-                            Switch(checked = soDivergencia, onCheckedChange = { soDivergencia = it })
-                        }
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = imprimir)
                     }
                 }
             }
-            if (visiveis.isEmpty()) {
+            item(key = "lista-header") {
+                com.bragro.mobile.ui.domain.CabecalhoLancamentos(
+                    total = visiveis.size,
+                    aberto = listaAberta,
+                    titulo = if (soDivergencia) "Itens com diferença" else "Itens",
+                ) { listaAberta = !listaAberta }
+            }
+            if (listaAberta && visiveis.isEmpty()) {
                 item {
                     Text(
                         if (soDivergencia) "Nenhuma divergência encontrada -- todo o estoque com nota fiscal bate com o físico."
@@ -233,7 +258,7 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                     )
                 }
             }
-            items(visiveis) { i -> ReconciliacaoItemCard(i) }
+            if (listaAberta) items(visiveis) { i -> ReconciliacaoItemCard(i) }
         }
     }
 }
@@ -241,39 +266,40 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
 @Composable
 private fun ReconciliacaoItemCard(i: ReconciliacaoEstoqueItemData) {
     val divergente = kotlin.math.abs(i.diferenca) > TOLERANCIA
-    val corDiferenca = if (divergente) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-    var aberto by remember { mutableStateOf(true) }
+    val cor = if (divergente) com.bragro.mobile.ui.domain.corAtencao() else com.bragro.mobile.ui.domain.corSucesso()
+    val un = i.unidade?.let { " $it" } ?: ""
+    var aberto by remember { mutableStateOf(false) }
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(modifier = Modifier.fillMaxWidth().clickable { aberto = !aberto }, horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(modifier = Modifier.fillMaxWidth().clickable { aberto = !aberto }, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(i.item, style = MaterialTheme.typography.bodyLarge)
-                    if (!i.categoria.isNullOrBlank()) Text(i.categoria, style = MaterialTheme.typography.labelSmall)
+                    Text(i.item, style = MaterialTheme.typography.bodyLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (!i.categoria.isNullOrBlank()) Text(i.categoria, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+                Text(
+                    if (divergente) (if (i.diferenca > 0) "+" else "") + formatoNumero(i.diferenca) + un else "confere",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
+                    color = cor,
+                    modifier = Modifier.background(cor.copy(alpha = 0.15f), androidx.compose.foundation.shape.RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 2.dp),
+                )
                 Icon(if (aberto) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (aberto) "Recolher" else "Expandir")
             }
             if (aberto) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
-                    Text("Saldo Fiscal", style = MaterialTheme.typography.labelSmall)
-                    Text("${formatoNumero(i.saldoFiscal)}${i.unidade?.let { " $it" } ?: ""}", style = MaterialTheme.typography.bodyMedium)
+                @Composable
+                fun linha(rotulo: String, valor: String, c: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(rotulo, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(valor, style = MaterialTheme.typography.bodySmall, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, color = c)
+                    }
                 }
-                Column {
-                    Text("Saldo Real", style = MaterialTheme.typography.labelSmall)
-                    Text("${formatoNumero(i.saldoFisico)}${i.unidade?.let { " $it" } ?: ""}", style = MaterialTheme.typography.bodyMedium)
+                linha("Saldo fiscal", formatoNumero(i.saldoFiscal) + un)
+                linha("Saldo real", formatoNumero(i.saldoFisico) + un)
+                linha("Diferença", formatoNumero(i.diferenca) + un, cor)
+                if (i.origensNaoFiscais.isNotEmpty()) {
+                    linha("Sem nota", i.origensNaoFiscais.joinToString(" · ") { "${it.origem.lowercase()} ${formatoNumero(it.liquido)}" })
                 }
-                Column {
-                    Text("Diferença", style = MaterialTheme.typography.labelSmall)
-                    Text("${formatoNumero(i.diferenca)}${i.unidade?.let { " $it" } ?: ""}", style = MaterialTheme.typography.bodyMedium, color = corDiferenca)
-                }
-            }
-            if (i.origensNaoFiscais.isNotEmpty()) {
-                Text(
-                    i.origensNaoFiscais.joinToString("  •  ") { "${it.origem}: ${formatoNumero(it.liquido)}" },
-                    style = MaterialTheme.typography.labelSmall,
-                )
             }
         }
     }
-}
 }

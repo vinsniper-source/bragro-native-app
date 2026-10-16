@@ -284,7 +284,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            if (records.isNotEmpty()) {
+            run {
                 item(key = "painel") {
                     val fotosVideos = (porTipo["FOTO_AEREA"] ?: 0) + (porTipo["VIDEO"] ?: 0)
                     com.bragro.mobile.ui.domain.PainelMonitoramento(

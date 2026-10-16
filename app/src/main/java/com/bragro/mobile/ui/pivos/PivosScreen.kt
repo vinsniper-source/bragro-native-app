@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -245,9 +247,10 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
     val busy by viewModel.busy
     val error by viewModel.errorMessage
     var showNovo by remember { mutableStateOf(false) }
-    var balancoOpen by remember { mutableStateOf(true) }
-    var graficosOpen by remember { mutableStateOf(true) }
-    var pivosOpen by remember { mutableStateOf(true) }
+    var balancoOpen by remember { mutableStateOf(false) }
+    var graficosOpen by remember { mutableStateOf(false) }
+    var pivosOpen by remember { mutableStateOf(false) }
+    var prestadoraAberta by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<PivoData?>(null) }
     var telemetriaPivo by remember { mutableStateOf<PivoData?>(null) }
     var controlePivo by remember { mutableStateOf<PivoData?>(null) }
@@ -273,34 +276,54 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                 },
             )
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { editing = null; showNovo = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ) {
-                Icon(Icons.Filled.WaterDrop, contentDescription = "Novo pivô")
-            }
-        },
+        // Botão flutuante removido -- "+ Pivô" fica em Ações (padrão v7).
     ) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp),
+            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 12.dp),
+            contentPadding = PaddingValues(top = 8.dp, bottom = 40.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            item(key = "intro") {
-                Text(
-                    "Cadastro, telemetria (lâmina + pluviômetro) e controle de pivôs lançados manualmente. Sincronização automática com o fabricante depende de parceria -- ver card abaixo.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 12.dp),
+            item(key = "painel") {
+                val ligados = pivos.count { it.status == "RUNNING_WATER" || it.status == "RUNNING_DRY" }
+                val areaHa = pivos.sumOf { p -> p.raioM?.let { Math.PI * it * it / 10000 } ?: 0.0 }
+                val lamina = balanco.sumOf { it.laminaMm }
+                val chuva = balanco.sumOf { it.chuvaMm + it.chuvaClimaMm }
+                val diasIrr = balanco.count { it.laminaMm > 0 }
+                com.bragro.mobile.ui.domain.PainelMonitoramento(
+                    com.bragro.mobile.ui.domain.PainelModulo(
+                        titulo = "Pivôs · últimos 30 dias",
+                        subtitulo = "${pivos.size} pivô(s) · ${pivos.mapNotNull { it.farmId }.toSet().size} fazenda(s)",
+                        kpis = listOf(
+                            com.bragro.mobile.ui.domain.PainelKpi("Pivôs", pivos.size.toDouble(), "numero", null, "$ligados ligado(s) agora", "Pivôs"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Área irrigada", Math.round(areaHa).toDouble(), "numero", "ha", "pelo raio", "Pivôs"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Lâmina", Math.round(lamina).toDouble(), "numero", "mm", "30 dias", "Balanço"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Chuva", Math.round(chuva).toDouble(), "numero", "mm", "pluviômetro + Clima", "Balanço"),
+                        ),
+                        barras = if (pivos.isEmpty()) emptyList() else listOf(
+                            com.bragro.mobile.ui.domain.PainelBarra("Pivôs ligados", Math.round(ligados * 100.0 / pivos.size).toDouble(), "$ligados/${pivos.size}"),
+                            com.bragro.mobile.ui.domain.PainelBarra("Dias c/ irrigação", if (balanco.isEmpty()) 0.0 else Math.round(diasIrr * 100.0 / balanco.size).toDouble(), "$diasIrr/${balanco.size}", neutra = true),
+                        ),
+                    ),
+                    onKpi = { k -> if (k.destino == "Balanço") balancoOpen = true else pivosOpen = true },
                 )
             }
+            item(key = "acoes") {
+                com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
+                    com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Opacity, label = "Balanço", active = balancoOpen, onClick = { balancoOpen = !balancoOpen })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.BarChart, label = "Gráficos", onClick = { graficosOpen = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Bolt, label = "Prestadora", onClick = { prestadoraAberta = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.WaterDrop, label = "+ Pivô", onClick = { editing = null; showNovo = true })
+                    }
+                }
+            }
             // Balanço Hídrico -- lâmina aplicada + chuva (pluviômetro) por dia.
-            item(key = "balanco") {
-                Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+            item(key = "balanco-header") {
+                com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = 0, aberto = balancoOpen, titulo = "Balanço hídrico", rotulo = "30 dias") { balancoOpen = !balancoOpen }
+            }
+            if (balancoOpen) item(key = "balanco") {
+                Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(12.dp)) {
-                        SecaoCabecalho("Balanço Hídrico (30 dias)", balancoOpen) { balancoOpen = !balancoOpen }
-                        if (balancoOpen) Spacer(Modifier.height(8.dp))
                         if (!balancoOpen) {
                         } else if (balanco.isEmpty()) {
                             Text("Sem lançamentos de telemetria no período.", style = MaterialTheme.typography.bodySmall)
@@ -318,24 +341,8 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                     }
                 }
             }
-            // Painel de gráficos do módulo (mesmo ModuleChartsPanel do site, aberto por padrão).
-            item(key = "graficos") {
-                Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        SecaoCabecalho("Gráficos", graficosOpen) { graficosOpen = !graficosOpen }
-                        if (graficosOpen) {
-                            Spacer(Modifier.height(8.dp))
-                            ModuleChartsCard(domainId = "pivos", showHeader = false)
-                        }
-                    }
-                }
-            }
             item(key = "pivos_cab") {
-                Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        SecaoCabecalho("Pivôs cadastrados (${pivos.size})", pivosOpen) { pivosOpen = !pivosOpen }
-                    }
-                }
+                com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = pivos.size, aberto = pivosOpen, titulo = "Pivôs") { pivosOpen = !pivosOpen }
             }
             when {
                 !pivosOpen -> {}
@@ -379,11 +386,28 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                     )
                 }
             }
-            item(key = "integracao") {
-                Spacer(Modifier.height(8.dp))
-                ModuleProviderIntegrationCard(domainId = "pivos")
-            }
         }
+    }
+
+    if (graficosOpen) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { graficosOpen = false },
+            modifier = Modifier.fillMaxWidth(0.96f),
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            title = { Text("Gráficos") },
+            text = { Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) { ModuleChartsCard(domainId = "pivos", showHeader = false) } },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { graficosOpen = false }) { Text("Fechar") } },
+        )
+    }
+    if (prestadoraAberta) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { prestadoraAberta = false },
+            modifier = Modifier.fillMaxWidth(0.96f),
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            title = { Text("Sincronização com o fabricante") },
+            text = { Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) { ModuleProviderIntegrationCard(domainId = "pivos") } },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { prestadoraAberta = false }) { Text("Fechar") } },
+        )
     }
 
     if (showNovo) {

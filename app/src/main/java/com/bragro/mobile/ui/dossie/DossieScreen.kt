@@ -1,5 +1,14 @@
 package com.bragro.mobile.ui.dossie
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ChevronLeft
 import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -361,33 +370,55 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
             item(key = "acoes") {
                 com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
                     Column(modifier = Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        // Tudo dentro da largura da tela (pedido do usuário):
-                        // Ano + Imprimir dividem a linha; os atalhos quebram linha.
+                        // Layout v7: "EXERCÍCIO  ‹ 2026 ›  [PDF]" numa linha e os
+                        // atalhos das seções numa grade de 3, tudo dentro da tela.
+                        val anoAtual = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+                        val borda = MaterialTheme.colorScheme.outline
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            AnoDropdown(ano) { viewModel.setAno(it) }
-                            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-                                com.bragro.mobile.ui.domain.LabeledIconButton(
-                                    icon = Icons.Filled.Print,
-                                    label = "Imprimir",
-                                    onClick = { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(d, ano)) },
-                                )
+                            Text("EXERCÍCIO", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                            Row(
+                                modifier = Modifier.clip(RoundedCornerShape(10.dp)).border(1.dp, borda, RoundedCornerShape(10.dp)),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                androidx.compose.material3.IconButton(onClick = { viewModel.setAno(ano - 1) }, enabled = ano > anoAtual - 9, modifier = Modifier.size(36.dp)) {
+                                    Icon(Icons.Filled.ChevronLeft, contentDescription = "Ano anterior")
+                                }
+                                Text(ano.toString(), fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.padding(horizontal = 6.dp))
+                                androidx.compose.material3.IconButton(onClick = { viewModel.setAno(ano + 1) }, enabled = ano < anoAtual, modifier = Modifier.size(36.dp)) {
+                                    Icon(Icons.Filled.ChevronRight, contentDescription = "Próximo ano")
+                                }
+                            }
+                            androidx.compose.material3.OutlinedButton(
+                                onClick = { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(d, ano)) },
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.height(36.dp),
+                            ) {
+                                Icon(Icons.Filled.Print, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Text(" PDF", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
                             }
                         }
-                        androidx.compose.foundation.layout.FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            listOf(
-                                "resumo" to "Resumo", "fazendas" to "Por fazenda", "caixa" to "Livro Caixa",
-                                "contratos" to "Contratos", "patrimonio" to "Patrimônio",
-                            ).filter { indiceSecao.containsKey(it.first) }.forEach { (id, rotulo) ->
-                                androidx.compose.material3.AssistChip(
-                                    onClick = {
-                                        abertas[id] = true
-                                        indiceSecao[id]?.let { i -> scope.launch { listState.animateScrollToItem(i) } }
-                                    },
-                                    label = { Text(rotulo, maxLines = 1) },
-                                )
+                        val atalhos = listOf(
+                            "resumo" to "Resumo", "fazendas" to "Por fazenda", "caixa" to "Livro Caixa",
+                            "contratos" to "Contratos", "patrimonio" to "Patrimônio",
+                        ).filter { indiceSecao.containsKey(it.first) } + listOf("topo" to "Topo ↑")
+                        atalhos.chunked(3).forEach { linha ->
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                linha.forEach { (id, rotulo) ->
+                                    Box(
+                                        modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
+                                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                                            .clickable {
+                                                if (id == "topo") scope.launch { listState.animateScrollToItem(0) }
+                                                else {
+                                                    abertas[id] = true
+                                                    indiceSecao[id]?.let { i -> scope.launch { listState.animateScrollToItem(i) } }
+                                                }
+                                            }
+                                            .padding(vertical = 8.dp),
+                                        contentAlignment = Alignment.Center,
+                                    ) { Text(rotulo, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1) }
+                                }
+                                repeat(3 - linha.size) { Spacer(Modifier.weight(1f)) }
                             }
                         }
                     }

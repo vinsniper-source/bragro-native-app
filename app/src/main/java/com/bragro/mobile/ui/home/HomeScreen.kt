@@ -777,19 +777,7 @@ fun HomeScreen(
                     // que o backend libera (showConfiguracoesIcon já exclui o
                     // OWNER/ADMIN, que agora acessam a tela completa pelo
                     // ícone "Módulos" logo acima).
-                    run {
-                        var searchOpen by remember { mutableStateOf(false) }
-                        IconButton(onClick = { searchOpen = true }) {
-                            Icon(Icons.Filled.Search, contentDescription = "Buscar módulo")
-                        }
-                        if (searchOpen) {
-                            ModuleSearchDialog(
-                                allowedModules = home?.allowedModules.orEmpty(),
-                                onOpenDomain = onOpenDomain,
-                                onDismiss = { searchOpen = false },
-                            )
-                        }
-                    }
+                    // Lupa global removida (pedido do usuário, v7).
                     if (home?.showConfiguracoesIcon == true) {
                         var configMenuOpen by remember { mutableStateOf(false) }
                         var iosStepsOpen by remember { mutableStateOf(false) }
@@ -909,8 +897,10 @@ fun HomeScreen(
                             )
                         }
                     }
-                    ThemeToggle()
                     } // fecha Row de rolagem horizontal do cluster de ícones OPCIONAIS
+                    // Tema num botão só, sempre visível (fora da rolagem):
+                    // cada toque alterna Automático -> Claro -> Escuro.
+                    ThemeToggle()
                     // Conta -- SEMPRE visível, fora da área rolável (ver
                     // comentário no Row rolável acima).
                     Box {

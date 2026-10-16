@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -437,6 +439,8 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
     // mensagem de erro própria (sucesso não precisa de mensagem: o próprio
     // menu "Compartilhar" já confirma visualmente que o .zip foi gerado).
     var showXmlLote by remember { mutableStateOf(false) }
+    var showCertificado by remember { mutableStateOf(false) }
+    var lancAberto by remember { mutableStateOf(false) }
     var erroXmlLote by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
 
@@ -447,65 +451,11 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
                 navigationIcon = {
                     com.bragro.mobile.ui.domain.HomeNavButton()
                 },
-                actions = {
-                    // "Copiar última nota" (achado de auditoria, paridade
-                    // com o botão homônimo de nfe-client.tsx no site) --
-                    // reaproveita o MESMO diálogo "Nova NF-e", só que
-                    // pré-preenchido com a nota mais recente (invoices já
-                    // vem ordenado por criadoEm desc do servidor, igual o
-                    // invoices[0] do site). Sempre visível, só inerte sem
-                    // nenhuma nota lançada ainda (mesmo critério do ícone
-                    // Copiar do motor genérico de domínios).
-                    val ultimaNota = invoices.firstOrNull()
-                    IconButton(onClick = { copiaOrigem = ultimaNota; showNovaNota = true }, enabled = ultimaNota != null) {
-                        Icon(
-                            Icons.Filled.ContentCopy,
-                            contentDescription = "Copiar última nota",
-                            tint = if (ultimaNota != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                        )
-                    }
-                    // Alternância Linhas/Blocos (achado de auditoria,
-                    // paridade com o toggle "mobileView" de nfe-client.tsx
-                    // no site) -- ícone mostra o modo PRA ONDE o toque vai
-                    // trocar, mesmo critério do botão Expandir/Recolher e do
-                    // toggle Tabela/Bloco do motor genérico de domínios.
-                    IconButton(onClick = { viewMode = if (viewMode == NfeViewMode.BLOCOS) NfeViewMode.LINHAS else NfeViewMode.BLOCOS }) {
-                        Icon(
-                            if (viewMode == NfeViewMode.BLOCOS) Icons.Filled.ViewList else Icons.Filled.ViewAgenda,
-                            contentDescription = if (viewMode == NfeViewMode.BLOCOS) "Ver em linhas" else "Ver em blocos",
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                    // Repositório de XML -- download em lote (recebidas e
-                    // enviadas), mesmo botão "Baixar XMLs (lote)" do site,
-                    // já usado pelo papel CONTADOR.
-                    IconButton(onClick = { showXmlLote = true }) {
-                        Icon(Icons.Filled.FolderZip, contentDescription = "Baixar XMLs (lote)", tint = MaterialTheme.colorScheme.primary)
-                    }
-                },
             )
         },
-        floatingActionButton = {
-            // Subido pra altura padrão do botão + dos demais módulos --
-            // pedido do usuário ("suba o botão adicionar na mesma altura
-            // dos outros módulos"): esta tela não tem BottomNavBar (é uma
-            // tela "cheia", fora da barra inferior principal), então o FAB
-            // encostava bem mais embaixo que nos módulos genéricos (onde a
-            // barra inferior empurra o FAB pra cima). Padding compensa essa
-            // diferença sem precisar adicionar uma barra aqui. Cores
-            // padronizadas (fundo verde cheio + ícone branco), igual aos
-            // demais botões + do app.
-            FloatingActionButton(
-                onClick = { copiaOrigem = null; showNovaNota = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = "Nova NF-e")
-            }
-        },
+        // Ícones do topo e botão flutuante foram para o bloco Ações (padrão v7).
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            CertificadoDigitalCard(modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp))
             if (mensagemEmissao != null) {
                 Surface(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f), modifier = Modifier.fillMaxWidth()) {
                     Row(modifier = Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -522,47 +472,92 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedButton(onClick = { viewModel.carregar() }) { Text("Tentar novamente") }
                 }
-            } else if (invoices.isEmpty()) {
-                Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Nenhuma nota fiscal lançada ainda.", style = MaterialTheme.typography.bodyMedium)
-                }
-            } else if (viewMode == NfeViewMode.BLOCOS) {
+            } else {
+                val totalValor = invoices.sumOf { it.valorTotal }
+                val nEntrada = invoices.count { (it.tipo ?: "ENTRADA").uppercase() == "ENTRADA" }
+                val nSaida = invoices.size - nEntrada
+                val nAutorizadas = invoices.count { it.statusSefaz.orEmpty().uppercase().contains("AUTORIZ") }
+                val ultimaNota = invoices.firstOrNull()
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    items(invoices, key = { it.id }) { inv ->
-                        InvoiceCard(
-                            inv = inv,
-                            pendingAction = pendingAction,
-                            onEmitir = {
-                                viewModel.emitir(inv.id) { mensagem, _ -> mensagemEmissao = mensagem }
-                            },
-                            onExcluir = { confirmarExclusao = inv },
+                    item(key = "painel") {
+                        com.bragro.mobile.ui.domain.PainelMonitoramento(
+                            com.bragro.mobile.ui.domain.PainelModulo(
+                                titulo = "NF-e",
+                                subtitulo = "${invoices.size} notas · ${formatoMoeda(totalValor)}",
+                                kpis = listOf(
+                                    com.bragro.mobile.ui.domain.PainelKpi("Notas", invoices.size.toDouble(), "numero", null, "registradas", "Lançamentos"),
+                                    com.bragro.mobile.ui.domain.PainelKpi("Valor total", totalValor, "moeda", null, "soma das notas", "Lançamentos"),
+                                    com.bragro.mobile.ui.domain.PainelKpi("Entradas", nEntrada.toDouble(), "numero", null, "compras", "Lançamentos"),
+                                    com.bragro.mobile.ui.domain.PainelKpi("Saídas", nSaida.toDouble(), "numero", null, "$nAutorizadas autorizadas", "Lançamentos"),
+                                ),
+                                barras = emptyList(),
+                            ),
+                            onKpi = { lancAberto = true },
                         )
                     }
-                }
-            } else {
-                // Vista "Linhas" (achado de auditoria, paridade com
-                // mobileView === "linhas" de nfe-client.tsx no site) -- uma
-                // linha compacta por nota, separadas por um HorizontalDivider
-                // em vez do espaçamento largo entre cards da vista Blocos.
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(invoices, key = { it.id }) { inv ->
-                        InvoiceRow(
-                            inv = inv,
-                            pendingAction = pendingAction,
-                            onEmitir = {
-                                viewModel.emitir(inv.id) { mensagem, _ -> mensagemEmissao = mensagem }
-                            },
-                            onExcluir = { confirmarExclusao = inv },
-                        )
-                        HorizontalDivider()
+                    item(key = "acoes") {
+                        com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
+                            com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Add, label = "+ Nota", onClick = { copiaOrigem = null; showNovaNota = true })
+                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.ContentCopy, label = "Copiar", onClick = { if (ultimaNota != null) { copiaOrigem = ultimaNota; showNovaNota = true } })
+                                com.bragro.mobile.ui.domain.LabeledIconButton(
+                                    icon = if (viewMode == NfeViewMode.BLOCOS) Icons.Filled.ViewList else Icons.Filled.ViewAgenda,
+                                    label = if (viewMode == NfeViewMode.BLOCOS) "Linhas" else "Blocos",
+                                    onClick = { viewMode = if (viewMode == NfeViewMode.BLOCOS) NfeViewMode.LINHAS else NfeViewMode.BLOCOS; lancAberto = true },
+                                )
+                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.FolderZip, label = "XML lote", onClick = { showXmlLote = true })
+                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.VerifiedUser, label = "Certificado", onClick = { showCertificado = true })
+                            }
+                        }
+                    }
+                    item(key = "lanc-header") {
+                        com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = invoices.size, aberto = lancAberto, titulo = "Notas") { lancAberto = !lancAberto }
+                    }
+                    if (invoices.isEmpty()) item {
+                        Text("Nenhuma nota fiscal lançada ainda.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 16.dp))
+                    }
+                    if (lancAberto) items(invoices, key = { it.id }) { inv ->
+                        if (viewMode == NfeViewMode.BLOCOS) {
+                            InvoiceCard(
+                                inv = inv,
+                                pendingAction = pendingAction,
+                                onEmitir = { viewModel.emitir(inv.id) { mensagem, _ -> mensagemEmissao = mensagem } },
+                                onExcluir = { confirmarExclusao = inv },
+                            )
+                        } else {
+                            Column {
+                                InvoiceRow(
+                                    inv = inv,
+                                    pendingAction = pendingAction,
+                                    onEmitir = { viewModel.emitir(inv.id) { mensagem, _ -> mensagemEmissao = mensagem } },
+                                    onExcluir = { confirmarExclusao = inv },
+                                )
+                                HorizontalDivider()
+                            }
+                        }
                     }
                 }
             }
         }
+    }
+
+    if (showCertificado) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showCertificado = false },
+            modifier = Modifier.fillMaxWidth(0.96f),
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            title = { Text("Certificado digital") },
+            text = {
+                Column(modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+                    CertificadoDigitalCard()
+                }
+            },
+            confirmButton = { TextButton(onClick = { showCertificado = false }) { Text("Fechar") } },
+        )
     }
 
     if (showNovaNota) {

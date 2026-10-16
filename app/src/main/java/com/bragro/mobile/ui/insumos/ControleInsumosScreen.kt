@@ -75,6 +75,12 @@ import com.bragro.mobile.ui.domain.BarSeries
 import com.bragro.mobile.ui.domain.EqualWidthBlockRow
 import com.bragro.mobile.ui.domain.FarmSelectorButton
 import com.bragro.mobile.ui.domain.LabeledIconButton
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.RadioButtonChecked
+import androidx.compose.material.icons.filled.FilterAltOff
+import androidx.compose.material.icons.filled.FilterAlt
 import com.bragro.mobile.ui.domain.SimpleBarChart
 import com.bragro.mobile.ui.domain.exportXlsx
 import com.bragro.mobile.ui.print.HtmlPrinter
@@ -364,9 +370,15 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
     val loading by viewModel.loading
     val offline by viewModel.offline
     val context = LocalContext.current
-    var contentExpanded by remember { mutableStateOf(false) }
     var categoriaAberta by remember { mutableStateOf<String?>(null) }
+    var fCat by remember { mutableStateOf<String?>(null) }
+    var fSit by remember { mutableStateOf<String?>(null) }
+    var fEst by remember { mutableStateOf<String?>(null) }
+    var menuAberto by remember { mutableStateOf<String?>(null) }
+    var saldoAberto by remember { mutableStateOf(false) }
+    var listaAberta by remember { mutableStateOf(false) }
     var controleInternoAberto by remember { mutableStateOf(false) }
+    var criticosAbertos by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -389,11 +401,6 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                         Row {
                             // Fazenda removida / Imprimir antes da Nuvem --
                             // pedido do usuário.
-                            if (data?.situacaoConsolidada != null) {
-                                IconButton(onClick = { HtmlPrinter.printList(context, insumosExportConfig(), insumosExportRecords(data!!)) }) {
-                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
-                                }
-                            }
                             IconButton(onClick = {
                                 val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
@@ -444,13 +451,30 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                 }
             }
             item(key = "insumos-icon-row") {
-                val dadosBlock = InsumosBlockSpec("Dados") {
-                    if (temDados) {
+                @Composable
+                fun filtro(chave: String, rotulo: String, icone: androidx.compose.ui.graphics.vector.ImageVector, valor: String?, opcoes: List<Pair<String, String>>, set: (String?) -> Unit) {
+                    Box {
                         LabeledIconButton(
-                            icon = if (contentExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
-                            label = if (contentExpanded) "Recolher" else "Expandir",
-                            onClick = { contentExpanded = !contentExpanded },
+                            icon = icone,
+                            label = valor?.let { v -> opcoes.firstOrNull { it.first == v }?.second } ?: rotulo,
+                            active = valor != null,
+                            onClick = { menuAberto = chave },
                         )
+                        androidx.compose.material3.DropdownMenu(expanded = menuAberto == chave, onDismissRequest = { menuAberto = null }) {
+                            androidx.compose.material3.DropdownMenuItem(text = { Text("Todos") }, onClick = { set(null); menuAberto = null })
+                            opcoes.forEach { (v, l) ->
+                                androidx.compose.material3.DropdownMenuItem(text = { Text((if (v == valor) "✓ " else "") + l) }, onClick = { set(v); menuAberto = null; listaAberta = true })
+                            }
+                        }
+                    }
+                }
+                val dadosBlock = InsumosBlockSpec("Dados") {
+                    filtro("cat", "Categoria", Icons.Filled.FilterAlt, fCat, listOf("SAFRA" to "Safra", "FROTA" to "Frota", "ADM" to "ADM")) { fCat = it }
+                    filtro("sit", "Situação", Icons.Filled.RadioButtonChecked, fSit, listOf("FALTA" to "Falta", "EM_USO" to "Em uso", "EM_TRANSITO" to "Em trânsito", "OK" to "OK")) { fSit = it }
+                    filtro("est", "Estoque", Icons.Filled.Inventory2, fEst, listOf("CRITICO" to "Crítico", "ATENCAO" to "Atenção", "OK" to "OK")) { fEst = it }
+                    LabeledIconButton(icon = Icons.Filled.BarChart, label = "Saldo", active = saldoAberto, onClick = { saldoAberto = !saldoAberto })
+                    if (fCat != null || fSit != null || fEst != null) {
+                        LabeledIconButton(icon = Icons.Filled.FilterAltOff, label = "Limpar", onClick = { fCat = null; fSit = null; fEst = null })
                     }
                 }
                 val operacoesBlock = InsumosBlockSpec("Operações") {
@@ -468,6 +492,11 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                             label = "PDF",
                             onClick = { HtmlPrinter.exportPdfDirect(context, insumosExportConfig(), insumosExportRecords(d!!)) },
                         )
+                        LabeledIconButton(
+                            icon = Icons.Filled.Print,
+                            label = "Imprimir",
+                            onClick = { HtmlPrinter.printList(context, insumosExportConfig(), insumosExportRecords(d!!)) },
+                        )
                     }
                 }
                 com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
@@ -479,130 +508,73 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
             }
             if (d == null) {
                 item { Text(if (loading) "Carregando..." else "Sem dados ainda. Conecte-se à internet e atualize.") }
-            } else if (contentExpanded) {
+            } else {
                 val sit = d.situacaoConsolidada
-                if (sit != null) {
-                    item {
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
-                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                com.bragro.mobile.ui.domain.TituloRecolhivel("Resumo", aberto) { aberto = !aberto }
-                                if (aberto) {
-                                Row { Text("Itens únicos: "); Text(sit.itensUnicos.toString(), fontWeight = FontWeight.Bold) }
-                                Row { Text("Total pedido: "); Text(fmtNum(sit.totalPedido), fontWeight = FontWeight.Bold) }
-                                Row { Text("Total em estoque: "); Text(fmtNum(sit.totalEmEstoque), fontWeight = FontWeight.Bold) }
-                                Row { Text("Total aplicado: "); Text(fmtNum(sit.totalAplicado), fontWeight = FontWeight.Bold) }
-                                if (sit.itensAtencao > 0) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Filled.WarningAmber, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
-                                        Text(" ${sit.itensAtencao} item(ns) em falta", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                            }
-}
-                        }
-                    }
+                val estoquePorItem = d.itensCriticos.associate { it.item.trim().uppercase() to it.status }
+                fun passaEstoque(nome: String): Boolean {
+                    val st = estoquePorItem[nome.trim().uppercase()] ?: "OK"
+                    return fEst == null || st == fEst
                 }
+                val categorias = CATEGORIAS_ORDEM.filter { fCat == null || it == fCat }.associateWith { cat ->
+                    sit?.porCategoria?.get(cat).orEmpty().filter { (fSit == null || it.status == fSit) && passaEstoque(it.item) }
+                }
+                val criticosFiltrados = d.itensCriticos.filter { fEst == null || it.status == fEst }
+                val totalLista = categorias.values.sumOf { it.size }
                 if (d.saldoTop10.isNotEmpty()) {
-                    item {
+                    item(key = "saldo-header") {
+                        com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = d.saldoTop10.size, aberto = saldoAberto, titulo = "Saldo por item", rotulo = "top ${d.saldoTop10.size}") { saldoAberto = !saldoAberto }
+                    }
+                    if (saldoAberto) item(key = "saldo") {
                         Card(modifier = Modifier.fillMaxWidth()) {
-                            var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                com.bragro.mobile.ui.domain.TituloRecolhivel("Saldo por item (top 10)", aberto) { aberto = !aberto }
-                                if (aberto) {
-                                Spacer(modifier = Modifier.height(6.dp))
-                                SimpleBarChart(
-                                    categories = d.saldoTop10.map { it.item },
-                                    series = listOf(BarSeries("Saldo", d.saldoTop10.map { it.saldo }, MaterialTheme.colorScheme.primary)),
-                                    isMoney = false,
-                                )
+                            Column(Modifier.padding(12.dp)) {
+                                com.bragro.mobile.ui.domain.BarrasHorizontais(d.saldoTop10.map { it.item to it.saldo }) { fmtNum(it) }
                             }
-}
                         }
                     }
                 }
-                if (sit != null) {
-                    item {
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                com.bragro.mobile.ui.domain.TituloRecolhivel("Situação consolidada por item", aberto) { aberto = !aberto }
-                                if (aberto) {
-                                Text(
-                                    "Cruza Pedido → Entrega → Estoque → Aplicação por item. Toque numa categoria para expandir.",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                val algumItem = CATEGORIAS_ORDEM.any { sit.porCategoria[it]?.isNotEmpty() == true }
-                                if (!algumItem) {
-                                    Text(
-                                        "Nenhum item lançado ainda em Pedidos, Safra, Frota ou Controle Interno.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        modifier = Modifier.padding(vertical = 8.dp),
+                item(key = "itens-header") {
+                    com.bragro.mobile.ui.domain.CabecalhoLancamentos(
+                        total = totalLista,
+                        aberto = listaAberta,
+                        titulo = "Itens",
+                        extra = if (fCat != null || fSit != null || fEst != null) "filtrado" else null,
+                    ) { listaAberta = !listaAberta }
+                }
+                if (listaAberta) {
+                    if (totalLista == 0) item {
+                        Text("Nenhum item com esses filtros.", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 8.dp))
+                    }
+                    categorias.forEach { (cat, itens) ->
+                        if (itens.isNotEmpty()) item(key = "cat-$cat") {
+                            Card(modifier = Modifier.fillMaxWidth()) {
+                                Column(Modifier.padding(horizontal = 8.dp)) {
+                                    CategoriaBlock(
+                                        categoria = cat,
+                                        itens = itens,
+                                        aberto = categoriaAberta == cat,
+                                        onToggle = { categoriaAberta = if (categoriaAberta == cat) null else cat },
                                     )
-                                } else {
-                                    CATEGORIAS_ORDEM.forEach { cat ->
-                                        val itens = sit.porCategoria[cat].orEmpty()
-                                        if (itens.isNotEmpty()) {
-                                            CategoriaBlock(
-                                                categoria = cat,
-                                                itens = itens,
-                                                aberto = categoriaAberta == cat,
-                                                onToggle = { categoriaAberta = if (categoriaAberta == cat) null else cat },
-                                            )
-                                        }
-                                    }
                                 }
                             }
-}
                         }
                     }
                 }
-                if (d.itensCriticos.isNotEmpty()) {
-                    item {
-                        Text(
-                            "Itens críticos (${d.itensCriticos.size})",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(top = 4.dp),
-                        )
+                if (criticosFiltrados.isNotEmpty()) {
+                    item(key = "criticos-header") {
+                        com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = criticosFiltrados.size, aberto = criticosAbertos, titulo = "Abaixo do mínimo") { criticosAbertos = !criticosAbertos }
                     }
-                    items(d.itensCriticos, key = { it.item }) { i ->
+                    if (criticosAbertos) items(criticosFiltrados, key = { "crit-" + it.item }) { i ->
                         ItemCriticoCard(i, onPedidoRapido = { onPedidoRapido(i.item) })
                     }
                 }
                 if (d.arvoreControleInterno.isNotEmpty()) {
-                    item {
+                    item(key = "ci-header") {
+                        com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = d.arvoreControleInterno.size, aberto = controleInternoAberto, titulo = "Controle interno", rotulo = "EPI, uniforme, ferramenta") { controleInternoAberto = !controleInternoAberto }
+                    }
+                    if (controleInternoAberto) item(key = "ci") {
                         Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable(onClick = { controleInternoAberto = !controleInternoAberto })
-                                    .padding(12.dp),
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                                    Icon(
-                                        if (controleInternoAberto) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                    Text(
-                                        "Controle Interno (EPI, uniforme, ferramenta...)",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.weight(1f).padding(start = 4.dp),
-                                    )
-                                }
-                                if (controleInternoAberto) {
-                                    HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-                                    Column(modifier = Modifier.padding(start = 4.dp)) {
-                                        d.arvoreControleInterno.forEach { ramo -> RamoNode(ramo, 0) }
-                                    }
-                                }
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                d.arvoreControleInterno.forEach { ramo -> RamoNode(ramo, 0) }
                             }
                         }
                     }

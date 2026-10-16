@@ -3,6 +3,16 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.58] - 2026-10-16
+- Painel de monitoramento + Ações também em Análises, Cobranças, Drone, Prescrição, Talhões e Mapas, NF-e, Pecuária e Pastagem (o painel aparece mesmo sem lançamentos, zerado).
+- Janelas e listas suspensas sem fundo verde: brancas (escuro: cinza-grafite), como na plataforma.
+- Silos e Pivôs com o mesmo painel da plataforma; botão flutuante saiu ("+ Silo"/"+ Pivô" em Ações); prestadora/fabricante e gráficos abrem em janela; estoque, balanço hídrico e listas recolhidos.
+- Controle de Insumos: filtros Categoria / Situação / Estoque em Ações (igual à plataforma), "Saldo por item" em barras deitadas com o nome do item à esquerda, itens e controle interno recolhidos.
+- Reconciliação físico x fiscal: painel, Ações (Só divergências / Todos / Categoria / Imprimir) e cartões recolhidos com a diferença em destaque (laranja diverge, verde confere).
+- Operações: painel da fazenda separado das atividades por uma divisória "ATIVIDADES".
+- Dossiê: exercício com setas ‹ ano › e botão PDF na mesma linha; atalhos das seções numa grade de 3.
+- Início: lupa global removida; botão de tema (Automático / Claro / Escuro) sempre visível.
+
 ## [1.3.57] - 2026-10-16
 - Correção de travamento (fechava o app ao abrir a lista de lançamentos agrupados -- ArrayIndexOutOfBoundsException, Sentry SISTEMA-AGRO-BRA-M): o cartão do grupo agora é um item próprio da lista.
 - Painel: valores completos com centavos (R$ 00.000,00) em uma linha só -- a fonte diminui até caber; cada cartão tem só 3 linhas.

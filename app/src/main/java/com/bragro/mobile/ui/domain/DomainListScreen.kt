@@ -912,7 +912,7 @@ fun DomainListScreen(
             // (module-panel.ts) com os registros já carregados; tocar num
             // indicador filtra a lista e rola até os lançamentos.
             val painelBase = calcularPainelModulo(domainId, cfg.label, cfg.columns, records)
-            if (painelBase != null && domainId != "nfse" && domainId != "cobrancas") {
+            if (painelBase != null) {
                 item(key = "painel") {
                     val extra = barraFiltroAtivo(records, kpiFiltroAtivo)
                     val painel = if (extra != null) painelBase.copy(barras = (listOf(extra) + painelBase.barras).take(2)) else painelBase

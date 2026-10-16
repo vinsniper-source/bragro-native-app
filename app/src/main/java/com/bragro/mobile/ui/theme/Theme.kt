@@ -351,7 +351,12 @@ fun BRAgroTheme(content: @Composable () -> Unit) {
     }
     // Fonte Geist em todo o app -- pedido do usuario ("implemente a fonte
     // Geist no app"), ver ui/theme/Type.kt (AppTypography/GeistFontFamily).
-    MaterialTheme(colorScheme = colors, typography = AppTypography) {
+    // surfaceTint = a própria surface: o Material 3 (1.2.1) pinta janelas
+    // (AlertDialog), menus suspensos e o DatePicker misturando a cor
+    // primária (verde) por cima da surface conforme a elevação -- era o
+    // "fundo verde das listas suspensas e janelas". Agora ficam brancas
+    // (escuro: cinza-grafite), iguais à plataforma.
+    MaterialTheme(colorScheme = colors.copy(surfaceTint = colors.surface), typography = AppTypography) {
         androidx.compose.foundation.layout.Box(modifier = androidx.compose.ui.Modifier) {
             content()
             if (ar) {

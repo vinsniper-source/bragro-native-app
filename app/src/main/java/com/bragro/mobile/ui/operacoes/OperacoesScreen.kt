@@ -339,7 +339,7 @@ private fun OperacaoCard(
     var revisao by remember(op.chave) { mutableStateOf("Todas") }
     val cardsFechados = remember(op.chave) { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
     val osAbertas = remember(op.chave) { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
-    var blocoAberto by remember { mutableStateOf(true) }
+    var blocoAberto by remember(op.chave) { mutableStateOf(false) }
 
     val atividades = op.timeline.map { it.operacao }.distinct()
     fun grupoDe(a: String): String = op.timeline.firstOrNull { it.operacao == a }?.grupo ?: "Outras"
@@ -356,41 +356,29 @@ private fun OperacaoCard(
         }
         .filter { it.second.isNotEmpty() }
 
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(op.local, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
-                    Text(
-                        "${op.cultura} · ${op.safra} · ${op.talhoes.size} talh${if (op.talhoes.size == 1) "ão" else "ões"} · ${atividades.size} atividades",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                    )
-                }
-                IconButton(onClick = { blocoAberto = !blocoAberto }, modifier = Modifier.size(24.dp)) {
-                    Icon(if (blocoAberto) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-
-            // Indicadores (2 por linha, sem rolagem lateral)
-            val kpis = listOf(
-                Triple("Área total", op.areaTotal?.let { "${fmtNum0(it)} ha" } ?: "—", op.talhoes.joinToString(" · ") { "T${it.talhao} ${fmtNum0(it.hectare)}" }),
-                Triple("O.S. finalizadas", "${op.osConcluidas}/${op.osTotal}", "${op.progressoPct}% concluído"),
-                Triple("Custo realizado", fmtMoney(op.realizadoTotal), "Orçado ${fmtMoney(op.planejadoTotal)}"),
-                Triple("Desvio x orçado", op.variacaoMedia?.let { fmtPct(it) } ?: "—", op.custoHaFazenda?.let { "Custo/ha ${fmtMoney(it)}" } ?: ""),
+    // Layout v7: o monitoramento da fazenda fica num bloco próprio (borda
+    // verde, cartões 3 por linha) e as atividades vêm abaixo, depois de uma
+    // divisória "ATIVIDADES" -- antes tudo ficava dentro do mesmo cartão.
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            com.bragro.mobile.ui.domain.PainelMonitoramento(
+                com.bragro.mobile.ui.domain.PainelModulo(
+                    titulo = op.local,
+                    subtitulo = "${op.cultura} · ${op.safra} · ${op.talhoes.size} talh${if (op.talhoes.size == 1) "ão" else "ões"}",
+                    kpis = listOfNotNull(
+                        com.bragro.mobile.ui.domain.PainelKpi("Área total", op.areaTotal ?: 0.0, "numero", "ha", op.talhoes.joinToString(" · ") { "T${it.talhao}" }.ifBlank { "—" }, "Atividades"),
+                        com.bragro.mobile.ui.domain.PainelKpi("Realizado", op.realizadoTotal, "moeda", null, "orçado ${fmtMoney(op.planejadoTotal)}", "Atividades"),
+                        op.custoHaFazenda?.let { com.bragro.mobile.ui.domain.PainelKpi("Custo/ha", it, "moeda", null, op.areaTotal?.let { a -> "${fmtNum0(a)} ha" } ?: "fazenda", "Atividades") },
+                        com.bragro.mobile.ui.domain.PainelKpi(
+                            "Desvio x orçado", op.variacaoMedia ?: 0.0, "pct", null, "média das atividades", "Atividades",
+                            tom = op.variacaoMedia?.let { if (it > ACIMA_LIMITE) "acima" else "abaixo" },
+                        ),
+                        com.bragro.mobile.ui.domain.PainelKpi("Atividades", atividades.size.toDouble(), "numero", null, "${op.timeline.size} lançamentos", "Atividades"),
+                    ),
+                    barras = listOf(com.bragro.mobile.ui.domain.PainelBarra("O.S. finalizadas", op.progressoPct.toDouble(), "${op.osConcluidas}/${op.osTotal}")),
+                ),
+                onKpi = { blocoAberto = true },
             )
-            kpis.chunked(2).forEach { par ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    par.forEach { (l, v, s) ->
-                        KpiBox(
-                            l, v, s,
-                            cor = null,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
-            }
+            com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = atividades.size, aberto = blocoAberto, titulo = "Atividades") { blocoAberto = !blocoAberto }
 
             if (blocoAberto) {
                 // Filtros em listas suspensas
@@ -614,7 +602,6 @@ private fun OperacaoCard(
                     )
                 }
             }
-        }
     }
 }
 

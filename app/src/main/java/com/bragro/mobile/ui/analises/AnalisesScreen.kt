@@ -897,6 +897,30 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
             contentPadding = PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            if (data != null) item(key = "painel") {
+                val pvr = data.arrOf("planejadoVsRealizado")
+                val orcado = pvr.sumOf { it.numOf("orcado") }
+                val realizado = pvr.sumOf { it.numOf("realizadoSafra") }
+                val pago = pvr.sumOf { it.numOf("pagoFinanceiro") }
+                val margens = data.arrOf("margemPorSaca").mapNotNull { it.numOrNullOf("margemPorSaca") }
+                val prods = data.arrOf("climaVsProdutividade").mapNotNull { it.numOrNullOf("produtividadeMedia")?.takeIf { v -> v > 0 } }
+                val pctReal = if (orcado > 0) Math.round(realizado / orcado * 1000) / 10.0 else 0.0
+                com.bragro.mobile.ui.domain.PainelMonitoramento(
+                    com.bragro.mobile.ui.domain.PainelModulo(
+                        titulo = "Análises" + (safra?.let { " · Safra $it" } ?: ""),
+                        subtitulo = "${data.entries.size} cruzamentos" + (cultura?.let { " · $it" } ?: ""),
+                        kpis = listOf(
+                            com.bragro.mobile.ui.domain.PainelKpi("Orçado", orcado, "moeda", null, "planejamento", "Gráficos"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Realizado", realizado, "moeda", null, "safra", "Gráficos", tom = if (orcado > 0 && realizado > orcado) "acima" else null),
+                            com.bragro.mobile.ui.domain.PainelKpi("Pago", pago, "moeda", null, "financeiro", "Gráficos"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Margem/saca", if (margens.isEmpty()) 0.0 else margens.average(), "moeda", null, "média", "Gráficos"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Produtividade", if (prods.isEmpty()) 0.0 else Math.round(prods.average() * 10) / 10.0, "numero", "sc/ha", "média", "Gráficos"),
+                        ),
+                        barras = listOf(com.bragro.mobile.ui.domain.PainelBarra("Realizado x orçado", pctReal, "do orçado")),
+                    ),
+                    onKpi = { graficosOpen = true },
+                )
+            }
             item(key = "analises-icon-row") { com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") { Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
                 val dadosBlock = AnalisesBlockSpec("Dados", vertical = false) {
                     // Gráficos saíram do meio da tela -- agora abrem numa

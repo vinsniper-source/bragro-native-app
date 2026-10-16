@@ -120,7 +120,16 @@ fun calcularPainelModulo(
     columns: List<ColumnConfig>,
     records: List<Map<String, String?>>,
 ): PainelModulo? {
-    if (records.isEmpty()) return null
+    // Sem lançamentos: o painel aparece mesmo assim, zerado (padrão v7 --
+    // todo módulo abre com Painel + Ações).
+    if (records.isEmpty()) return PainelModulo(
+        titulo = label,
+        subtitulo = "nenhum lançamento ainda",
+        kpis = listOf(PainelKpi("Lançamentos", 0.0, "numero", null, "no total", "Lançamentos")) +
+            (columns.firstOrNull { !it.computed && it.type == "number" && it.money }?.let { listOf(PainelKpi(it.label, 0.0, "moeda", null, "no total", "Lançamentos")) } ?: emptyList()) +
+            (if (columns.any { it.key == "status" }) listOf(PainelKpi("Pendentes", 0.0, "numero", null, "nenhum", "Lançamentos")) else emptyList()),
+        barras = emptyList(),
+    )
     val tem = { k: String -> columns.any { it.key == k } }
     val medidaKey = MEDIDA_PREFERIDA[domainId]?.takeIf { tem(it) }
         ?: columns.firstOrNull { !it.computed && it.type == "number" && it.money }?.key
@@ -625,5 +634,28 @@ fun CartaoGrupo(
             }
         }
         Icon(Icons.Filled.ExpandMore, contentDescription = if (aberto) "Recolher grupo" else "Ver lançamentos do grupo", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.rotate(if (aberto) 180f else 0f))
+    }
+}
+
+/**
+ * Barras horizontais com o nome de cada item à esquerda (um embaixo do
+ * outro) e o valor à direita -- "Saldo por item" do Controle de Insumos
+ * (pedido do usuário: nome do item na vertical, do lado esquerdo da barra).
+ */
+@Composable
+fun BarrasHorizontais(itens: List<Pair<String, Double>>, formatar: (Double) -> String) {
+    val max = itens.maxOfOrNull { kotlin.math.abs(it.second) }?.takeIf { it > 0 } ?: 1.0
+    val primary = MaterialTheme.colorScheme.primary
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        itens.forEach { (nome, v) ->
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(nome, fontSize = 11.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.width(110.dp))
+                Box(Modifier.weight(1f).height(12.dp)) {
+                    val fr = (kotlin.math.abs(v) / max).coerceIn(0.02, 1.0).toFloat()
+                    Box(Modifier.fillMaxWidth(fr).height(12.dp).clip(RoundedCornerShape(3.dp)).background(if (v < 0) corAtencao() else primary))
+                }
+                Text(formatar(v), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            }
+        }
     }
 }

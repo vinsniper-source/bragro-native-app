@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.filled.ViewList
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -239,6 +242,9 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
     var editing by remember { mutableStateOf<SiloData?>(null) }
     var leituraSilo by remember { mutableStateOf<SiloData?>(null) }
     var historicoSilo by remember { mutableStateOf<SiloData?>(null) }
+    var estoqueAberto by remember { mutableStateOf(false) }
+    var silosAbertos by remember { mutableStateOf(false) }
+    var prestadoraAberta by remember { mutableStateOf(false) }
     val filtroSilo by viewModel.filtroSiloId
     val leituras by viewModel.leituras
     val leiturasLoading by viewModel.leiturasLoading
@@ -260,66 +266,54 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                 },
             )
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { editing = null; showForm = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ) {
-                Icon(Icons.Filled.Storage, contentDescription = "Novo silo")
-            }
-        },
+        // Botão flutuante removido -- "+ Silo" fica em Ações (padrão v7).
     ) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp),
+            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 12.dp),
+            contentPadding = PaddingValues(top = 8.dp, bottom = 40.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            item(key = "intro") {
-                Text(
-                    "Cadastro de silos e leituras de nível, temperatura e umidade lançadas manualmente. Leitura automática depende de parceria com o provedor -- ver card abaixo.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 12.dp),
-                )
-            }
             if (error != null && !showForm && leituraSilo == null) {
                 item(key = "erro") {
                     Text(error ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
             }
-            items(silos.filter { it.nivelCritico }, key = { "c-" + it.id }) { s ->
-                AlertaBanner(
-                    "Nível crítico: ${s.nome} está com ${(s.estimadoPct ?: s.nivelAtualPct ?: 0.0).toInt()}% (limite ${s.nivelCriticoLimitePct.toInt()}%).",
-                    critico = true,
-                )
-            }
-            items(silos.filter { it.leituraAtrasada }, key = { "a-" + it.id }) { s ->
-                AlertaBanner(
-                    "Leitura pendente: ${s.nome} " +
-                        (s.diasSemLeitura?.let { "sem registro há $it dias" } ?: "ainda não tem leitura registrada") +
-                        " (lembrete a cada ${s.lembreteDias}).",
-                    critico = false,
-                )
-            }
-            item(key = "kpis") {
-                val ativos = silos.size
+            item(key = "painel") {
                 val capTotal = silos.sumOf { it.capacidadeT ?: 0.0 }
                 val armazenado = silos.sumOf { (it.capacidadeT ?: 0.0) * ((it.estimadoPct ?: it.nivelAtualPct ?: 0.0) / 100.0) }
                 val emAlerta = silos.count { it.status == "ALERTA" || it.status == "CRITICO" }
+                val criticos = silos.count { it.nivelCritico }
                 val pendentes = silos.count { it.leituraAtrasada }
-                val br = Locale("pt", "BR")
-                Column(Modifier.padding(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        KpiBox("Silos ativos", ativos.toString(), Modifier.weight(1f))
-                        KpiBox("Armazenado / capacidade", "%,.0f / %,.0f t".format(br, armazenado, capTotal), Modifier.weight(1f))
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        KpiBox("Silos em atenção/crítico", emAlerta.toString(), Modifier.weight(1f), destaque = emAlerta > 0)
-                        KpiBox("Leitura pendente", pendentes.toString(), Modifier.weight(1f), destaque = pendentes > 0)
+                val produtos = silos.mapNotNull { it.produto?.lowercase()?.takeIf { p -> p.isNotBlank() } }.toSet().joinToString(", ").ifBlank { "—" }
+                com.bragro.mobile.ui.domain.PainelMonitoramento(
+                    com.bragro.mobile.ui.domain.PainelModulo(
+                        titulo = "Silos · armazenagem",
+                        subtitulo = "${silos.size} silo(s) · ${silos.mapNotNull { it.farmId }.toSet().size} fazenda(s)",
+                        kpis = listOf(
+                            com.bragro.mobile.ui.domain.PainelKpi("Silos ativos", silos.size.toDouble(), "numero", null, produtos, "Silos"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Armazenado", Math.round(armazenado).toDouble(), "numero", "t", "de ${Math.round(capTotal)} t", "Estoque"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Atenção/crítico", emAlerta.toDouble(), "numero", null, if (criticos > 0) "$criticos abaixo do limite" else "nenhum crítico", "Silos", tom = if (emAlerta > 0) "acima" else null),
+                            com.bragro.mobile.ui.domain.PainelKpi("Leitura pendente", pendentes.toDouble(), "numero", null, "lembrete", "Silos", tom = if (pendentes > 0) "acima" else null),
+                        ),
+                        barras = if (capTotal > 0) listOf(com.bragro.mobile.ui.domain.PainelBarra("Ocupação", Math.round(armazenado / capTotal * 100).toDouble(), "${Math.round(armazenado)}/${Math.round(capTotal)} t", neutra = true)) else emptyList(),
+                    ),
+                    onKpi = { k -> if (k.destino == "Estoque") estoqueAberto = true else silosAbertos = true },
+                )
+            }
+            item(key = "acoes") {
+                com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
+                    com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.BarChart, label = "Estoque", active = estoqueAberto, onClick = { estoqueAberto = !estoqueAberto })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.ViewList, label = "Silos", active = silosAbertos, onClick = { silosAbertos = !silosAbertos })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Bolt, label = "Prestadora", onClick = { prestadoraAberta = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Storage, label = "+ Silo", onClick = { editing = null; showForm = true })
                     }
                 }
             }
-            item(key = "estoque") {
+            item(key = "estoque-header") {
+                com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = 0, aberto = estoqueAberto, titulo = "Estoque por silo", rotulo = "30 dias") { estoqueAberto = !estoqueAberto }
+            }
+            if (estoqueAberto) item(key = "estoque") {
                 Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text("Estoque armazenado (t, 30 dias)", style = MaterialTheme.typography.titleSmall)
@@ -344,7 +338,26 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                     }
                 }
             }
-            when {
+            item(key = "silos-header") {
+                com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = silos.size, aberto = silosAbertos, titulo = "Silos") { silosAbertos = !silosAbertos }
+            }
+            if (silosAbertos) {
+                items(silos.filter { it.nivelCritico }, key = { "c-" + it.id }) { s ->
+                    AlertaBanner(
+                        "Nível crítico: ${s.nome} está com ${(s.estimadoPct ?: s.nivelAtualPct ?: 0.0).toInt()}% (limite ${s.nivelCriticoLimitePct.toInt()}%).",
+                        critico = true,
+                    )
+                }
+                items(silos.filter { it.leituraAtrasada }, key = { "a-" + it.id }) { s ->
+                    AlertaBanner(
+                        "Leitura pendente: ${s.nome} " +
+                            (s.diasSemLeitura?.let { "sem registro há $it dias" } ?: "ainda não tem leitura registrada") +
+                            " (lembrete a cada ${s.lembreteDias}).",
+                        critico = false,
+                    )
+                }
+            }
+            if (silosAbertos) when {
                 loading -> item(key = "loading") {
                     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                         CircularProgressIndicator(modifier = Modifier.padding(top = 24.dp))
@@ -383,11 +396,18 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                     )
                 }
             }
-            item(key = "integracao") {
-                Spacer(Modifier.height(8.dp))
-                ModuleProviderIntegrationCard(domainId = "estoque")
-            }
         }
+    }
+
+    if (prestadoraAberta) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { prestadoraAberta = false },
+            modifier = Modifier.fillMaxWidth(0.96f),
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            title = { Text("Leitura automática (prestadora)") },
+            text = { Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) { ModuleProviderIntegrationCard(domainId = "estoque") } },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { prestadoraAberta = false }) { Text("Fechar") } },
+        )
     }
 
     if (showForm) {
