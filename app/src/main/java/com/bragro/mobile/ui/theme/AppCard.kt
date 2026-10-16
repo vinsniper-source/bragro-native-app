@@ -109,6 +109,18 @@ fun formBlockColor(): Color {
     return androidx.compose.ui.graphics.lerp(bg, Color.Black, if (dark) 0.35f else 0.07f)
 }
 
+/** true dentro do bloco de itens / bloco de campos (v15): o bloco fica com
+ * a cor do campo (surface) e os campos com a cor do fundo da tela --
+ * padrão tirado do Financeiro, valendo pra todo o app. */
+val LocalBlocoItens = androidx.compose.runtime.compositionLocalOf { false }
+
+/** Fundo dos campos dentro do bloco de itens (cor do fundo da tela). */
+@Composable
+fun campoNoBlocoColor(): Color {
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    return if (dark) Color(0xFF0E100F) else Color(0xFFF0F2F1)
+}
+
 /** Card de bloco com campos dentro (itens de Pedido/Cotação/Orçamento etc.). */
 @Composable
 fun FormBlockCard(
@@ -117,8 +129,8 @@ fun FormBlockCard(
 ) {
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = formBlockColor()),
-        content = content,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        content = { androidx.compose.runtime.CompositionLocalProvider(LocalBlocoItens provides true) { content() } },
     )
 }
 
@@ -189,7 +201,7 @@ fun Card(
 fun appFieldColors(): TextFieldColors {
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     // Campo igual ao da plataforma: fundo da página dentro do cartão + borda cinza.
-    val fill = if (dark) Color(0xFF0E100F) else Color(0xFFFFFFFF)
+    val fill = if (LocalBlocoItens.current) campoNoBlocoColor() else if (dark) Color(0xFF0E100F) else Color(0xFFFFFFFF)
     return OutlinedTextFieldDefaults.colors(
     focusedBorderColor = MaterialTheme.colorScheme.primary,
     unfocusedBorderColor = cardBorderColor(),

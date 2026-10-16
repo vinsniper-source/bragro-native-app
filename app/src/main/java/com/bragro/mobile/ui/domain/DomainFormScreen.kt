@@ -1052,9 +1052,9 @@ private fun greenFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = MaterialTheme.colorScheme.primary,
     unfocusedBorderColor = com.bragro.mobile.ui.theme.cardBorderColor(),
     disabledBorderColor = com.bragro.mobile.ui.theme.cardBorderColor(),
-    focusedContainerColor = MaterialTheme.colorScheme.surface,
-    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-    disabledContainerColor = MaterialTheme.colorScheme.surface,
+    focusedContainerColor = if (com.bragro.mobile.ui.theme.LocalBlocoItens.current) com.bragro.mobile.ui.theme.campoNoBlocoColor() else MaterialTheme.colorScheme.surface,
+    unfocusedContainerColor = if (com.bragro.mobile.ui.theme.LocalBlocoItens.current) com.bragro.mobile.ui.theme.campoNoBlocoColor() else MaterialTheme.colorScheme.surface,
+    disabledContainerColor = if (com.bragro.mobile.ui.theme.LocalBlocoItens.current) com.bragro.mobile.ui.theme.campoNoBlocoColor() else MaterialTheme.colorScheme.surface,
     focusedLabelColor = MaterialTheme.colorScheme.primary,
     cursorColor = MaterialTheme.colorScheme.primary,
     focusedTrailingIconColor = MaterialTheme.colorScheme.primary,
@@ -1488,6 +1488,8 @@ private fun ItensExtrasSection(
                                 singleLine = true,
                                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
                                 colors = greenFieldColors(),
+                                // v15: quantidade no meio, valor à direita.
+                                textStyle = androidx.compose.material3.LocalTextStyle.current.copy(textAlign = if (porChave[k]?.money == true || k.contains("unit", true) || k.contains("valor", true) || k.contains("preco", true)) androidx.compose.ui.text.style.TextAlign.End else androidx.compose.ui.text.style.TextAlign.Center),
                                 modifier = Modifier.weight(1f),
                             )
                         }

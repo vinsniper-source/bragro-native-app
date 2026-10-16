@@ -24,16 +24,16 @@ class GlobalFieldSelection(private val prefsName: String, private val prefsKey: 
     val selected = mutableStateOf<String?>(null)
 
     /** Idempotente, seguro chamar toda vez que uma tela monta. */
+    // v15: a escolha vale só enquanto o app está aberto -- toda abertura
+    // começa em "Todas" (antes ficava gravada no aparelho para sempre).
+    private var limpo = false
     fun load(context: Context) {
-        val prefs = context.applicationContext.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
-        selected.value = prefs.getString(prefsKey, null)
+        if (limpo) return
+        limpo = true
+        context.applicationContext.getSharedPreferences(prefsName, Context.MODE_PRIVATE).edit().remove(prefsKey).apply()
     }
 
     fun choose(context: Context, value: String?) {
-        val prefs = context.applicationContext.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
-        prefs.edit().apply {
-            if (value.isNullOrBlank()) remove(prefsKey) else putString(prefsKey, value)
-        }.apply()
         selected.value = value?.takeIf { it.isNotBlank() }
     }
 

@@ -433,7 +433,7 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
             item(key = "insumos-icon-row") {
                 @Composable
                 fun filtro(chave: String, rotulo: String, icone: androidx.compose.ui.graphics.vector.ImageVector, valor: String?, opcoes: List<Pair<String, String>>, set: (String?) -> Unit) {
-                    Box {
+                    Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
                         LabeledIconButton(
                             icon = icone,
                             label = valor?.let { v -> opcoes.firstOrNull { it.first == v }?.second } ?: rotulo,

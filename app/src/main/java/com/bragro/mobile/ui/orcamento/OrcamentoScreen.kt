@@ -441,7 +441,7 @@ private fun OrcamentoLinhaCard(
 ) {
     // Mesmo fundo dos outros campos (v9): cartão branco com borda fina, sem o
     // fundo cinza mais escuro do bloco de itens.
-    com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+    com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             ItemFieldBlock {
                 OutlinedTextField(
@@ -468,6 +468,7 @@ private fun OrcamentoLinhaCard(
                         value = linha.quantidade,
                         onValueChange = { linha.quantidade = it },
                         label = { Text("Quantidade *") },
+                        textStyle = androidx.compose.material3.LocalTextStyle.current.copy(textAlign = androidx.compose.ui.text.style.TextAlign.Center),
                         placeholder = { Text("0") },
                         modifier = Modifier.fillMaxWidth(),
                         colors = appFieldColors(),
@@ -479,6 +480,7 @@ private fun OrcamentoLinhaCard(
                     value = linha.valorUnitario,
                     onValueChange = { linha.valorUnitario = it },
                     label = { Text("Valor unitário") },
+                        textStyle = androidx.compose.material3.LocalTextStyle.current.copy(textAlign = androidx.compose.ui.text.style.TextAlign.End),
                     placeholder = { Text("0,00") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = appFieldColors(),

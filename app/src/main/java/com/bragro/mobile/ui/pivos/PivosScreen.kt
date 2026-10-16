@@ -327,7 +327,7 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                     // v14: abas Dados / Operações / Arquivos, iguais aos outros módulos.
                     com.bragro.mobile.ui.domain.AcoesEmAbas(
                         dados = {
-                            Box {
+                            Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
                                 com.bragro.mobile.ui.domain.LabeledIconButton(
                                     icon = Icons.Filled.FilterAlt,
                                     label = pivos.firstOrNull { it.id == filtroPivo }?.nome ?: "Pivô",

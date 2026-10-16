@@ -541,30 +541,34 @@ fun PainelMonitoramento(
     }
 }
 
-/** Barra virou cartão: rótulo, percentual e barrinha com o detalhe. */
+/** Barra virou cartão (v15): nome à esquerda, quantidade/detalhe com a
+ * barrinha no meio, percentual à direita. Borda cinza. */
 @Composable
 fun BarraTile(b: PainelBarra, modifier: Modifier = Modifier) {
-    val primary = MaterialTheme.colorScheme.primary
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(10.dp))
             .background(kpiVerdeFundo())
-            .border(1.dp, primary.copy(alpha = 0.30f), RoundedCornerShape(10.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(10.dp))
             .padding(horizontal = 8.dp, vertical = 7.dp),
         verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
-        Text(b.label, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(fmtPct(b.pct), fontSize = 14.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(b.label, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth())
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally)) {
             Text(b.detalhe, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
             val fracao = (b.pct / 100.0).coerceIn(0.02, 1.0).toFloat()
-            Box(Modifier.weight(1f).height(5.dp).clip(RoundedCornerShape(3.dp)).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f))) {
+            Box(Modifier.width(34.dp).height(5.dp).clip(RoundedCornerShape(3.dp)).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f))) {
                 Box(Modifier.fillMaxWidth(fracao).height(5.dp).background(if (b.neutra) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f) else corProgressoBarra(b.pct)))
             }
+        }
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+            Text(fmtPct(b.pct), fontSize = 14.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
 
+/** Cartão do painel (v15): nome à esquerda, quantidade/complemento no meio,
+ * valor à direita. Borda cinza (o cartão ativo fica com borda verde). */
 @Composable
 fun KpiTile(k: PainelKpi, ativo: Boolean = false, onClick: (() -> Unit)? = null, modifier: Modifier = Modifier) {
     val primary = MaterialTheme.colorScheme.primary
@@ -577,14 +581,14 @@ fun KpiTile(k: PainelKpi, ativo: Boolean = false, onClick: (() -> Unit)? = null,
         modifier = modifier
             .clip(RoundedCornerShape(10.dp))
             .background(kpiVerdeFundo())
-            .border(if (ativo) 2.dp else 1.dp, if (ativo) primary else primary.copy(alpha = 0.30f), RoundedCornerShape(10.dp))
+            .border(if (ativo) 2.dp else 1.dp, if (ativo) primary else MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(10.dp))
             .let { if (onClick != null) it.clickable { onClick() } else it }
             .padding(horizontal = 8.dp, vertical = 7.dp),
         verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
-        Text(k.label, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        ValorUmaLinha(fmtKpi(k), cor)
-        Text(k.sub, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(k.label, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth())
+        Text(k.sub, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth())
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) { ValorUmaLinha(fmtKpi(k), cor) }
     }
 }
 

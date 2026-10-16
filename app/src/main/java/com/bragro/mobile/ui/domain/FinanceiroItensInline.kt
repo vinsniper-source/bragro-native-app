@@ -294,6 +294,7 @@ private fun ItemNotaLinhaRow(
                     value = linha.quantidade,
                     onValueChange = { linha.quantidade = it },
                     label = { Text("Quantidade *") },
+                        textStyle = androidx.compose.material3.LocalTextStyle.current.copy(textAlign = androidx.compose.ui.text.style.TextAlign.Center),
                     placeholder = { Text("0") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = appFieldColors(),
@@ -341,7 +342,8 @@ fun FinanceiroItensInlineSection(
     // blocos de fora e de dentro ficam com o mesmo fundo.
     val sectionShape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp)
     val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val sectionBg = com.bragro.mobile.ui.theme.formBlockColor()
+    val sectionBg = MaterialTheme.colorScheme.surface
+    androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.theme.LocalBlocoItens provides true) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -411,5 +413,6 @@ fun FinanceiroItensInlineSection(
                 Text(if (n > 0) "Lançar $n item(ns)" else "Lançar itens")
             }
         }
+    }
     }
 }

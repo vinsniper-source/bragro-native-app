@@ -32,16 +32,16 @@ object FarmSelection {
     /** Chamada uma vez (ex.: ao entrar em Início ou na lista de um modulo)
      * pra carregar a selecao persistida -- idempotente, seguro chamar toda
      * vez que uma tela monta. */
+    // v15: a fazenda escolhida vale só enquanto o app está aberto -- toda
+    // abertura começa em "Todas as fazendas".
+    private var limpo = false
     fun load(context: Context) {
-        val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        selected.value = prefs.getString(KEY_SELECTED, null)
+        if (limpo) return
+        limpo = true
+        context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(KEY_SELECTED).apply()
     }
 
     fun choose(context: Context, farmName: String?) {
-        val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        prefs.edit().apply {
-            if (farmName.isNullOrBlank()) remove(KEY_SELECTED) else putString(KEY_SELECTED, farmName)
-        }.apply()
         selected.value = farmName?.takeIf { it.isNotBlank() }
     }
 

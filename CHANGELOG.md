@@ -3,6 +3,13 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.63] - 2026-10-16
+- Ao abrir o app os filtros começam limpos: não volta mais pré-selecionada a última fazenda/safra/cultura (ex.: Santa Clara · Safrinha · Sorgo).
+- Regra nome à esquerda, quantidade no meio e valor à direita nos cartões do painel, nas tabelas e nos campos de itens.
+- Bordas cinza em todo o app (cartões do painel só ficam verdes quando ativos).
+- Blocos "Itens" (Financeiro, Pedidos, Cotações, Orçamentos e formulários com vários itens) com cores invertidas: bloco branco e campos em cinza claro.
+- Botão de filtro centralizado em Drone (Dados), Pivôs, Reconciliação e Controle de Insumos.
+
 ## [1.3.62] - 2026-10-16
 - Divisória LANÇAMENTOS (e as demais) com a linha indo do número até a setinha, encostada na margem; linha um pouco mais grossa.
 - Drone, Pivôs, Talhões e Mapas, Prescrição, NF-e, Silos e Reconciliação com as abas Dados / Operações / Arquivos, iguais aos outros módulos (ícones centralizados; Arquivos com Excel e Imprimir/PDF).

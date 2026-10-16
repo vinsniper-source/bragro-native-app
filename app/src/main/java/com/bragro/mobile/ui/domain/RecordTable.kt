@@ -60,6 +60,13 @@ private fun Modifier.bottomDivider(color: Color): Modifier = drawBehind {
 private val TABLE_CELL_WIDTH = 130.dp
 private val TABLE_ACTIONS_WIDTH = 100.dp
 
+/** v15: texto à esquerda, quantidade no meio, dinheiro à direita. */
+private fun alinhamentoColuna(col: ColumnConfig): Alignment = when {
+    col.money -> Alignment.CenterEnd
+    col.type == "number" -> Alignment.Center
+    else -> Alignment.CenterStart
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RecordTableHeader(columns: List<ColumnConfig>, hScroll: ScrollState, showActions: Boolean = true) {
@@ -85,7 +92,7 @@ fun RecordTableHeader(columns: List<ColumnConfig>, hScroll: ScrollState, showAct
                     .background(headerBg)
                     .bottomDivider(dividerColor)
                     .padding(horizontal = 8.dp, vertical = 10.dp),
-                contentAlignment = Alignment.CenterStart,
+                contentAlignment = alinhamentoColuna(col),
             ) {
                 Text(
                     col.label,
@@ -155,7 +162,7 @@ fun RecordTableRow(
                     .background(rowBg)
                     .bottomDivider(dividerColor)
                     .padding(horizontal = 8.dp, vertical = 10.dp),
-                contentAlignment = Alignment.CenterStart,
+                contentAlignment = alinhamentoColuna(col),
             ) {
                 RecordTableCellValue(col, record[col.key] ?: "", record, domainId)
             }
