@@ -555,6 +555,10 @@ data class MultiItemCfg(
     val chaveItem: String get() = sel.firstOrNull { it.first == "item" }?.first ?: sel.first().first
 }
 
+/** v16 -- módulos com a seção Itens inteira invertida (espelho de
+ * ITENS_INVERTIDOS em record-form.tsx). */
+val ITENS_INVERTIDOS = setOf("pedidos", "cotacoes", "safra", "orcamentos", "frota", "controleinterno", "financeiro")
+
 val MULTI_ITEM_FORM: Map<String, MultiItemCfg> = mapOf(
     "safra" to MultiItemCfg(
         sel = listOf("categoria" to "Categoria", "subcategoriaVariedade" to "Subcategoria", "item" to "Item / insumo", "unidade" to "Unidade"),
@@ -793,6 +797,9 @@ fun DomainFormScreen(
             val multi = if (recordId == null) MULTI_ITEM_FORM[domainId] else null
             grupos.forEach { (g, campos) ->
                 SecaoFormHeader(g.second, g.third)
+                // v16 -- seção "Itens" inteira (1º item + extras) com cores
+                // invertidas: bloco branco, campos em cinza claro.
+                val camposDaSecao: @Composable () -> Unit = {
                 campos.forEach { col ->
                     FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                     androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
@@ -813,6 +820,15 @@ fun DomainFormScreen(
                         )
                         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
                     }
+                }
+                }
+                if (g.first == "itens" && domainId in ITENS_INVERTIDOS) {
+                    com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(start = 10.dp, end = 10.dp, top = 10.dp)) { camposDaSecao() }
+                    }
+                    androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
+                } else {
+                    camposDaSecao()
                 }
                 if (g.first == "itens" && multi != null) {
                     ItensExtrasSection(domainId, multi, cfg.columns, lookups, viewModel)

@@ -3,6 +3,11 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.64] - 2026-10-16
+- Cartões do painel: nome e detalhe (texto com número) à esquerda; só o resultado à direita.
+- Seção "Itens" inteira (1º item e extras) com cores invertidas -- bloco branco, campos em cinza claro -- em Pedidos, Cotações, Safra, Orçamentos, Frota, Controle interno e Financeiro.
+- Monitor em tempo real com colunas: lançamento à esquerda (fazenda/talhão embaixo), Quantidade no meio e Qualidade à direita (umidade e impureza em Colheita/Romaneios; "✓ completo" ou "⚠ n pendências" nos demais).
+
 ## [1.3.63] - 2026-10-16
 - Ao abrir o app os filtros começam limpos: não volta mais pré-selecionada a última fazenda/safra/cultura (ex.: Santa Clara · Safrinha · Sorgo).
 - Regra nome à esquerda, quantidade no meio e valor à direita nos cartões do painel, nas tabelas e nos campos de itens.

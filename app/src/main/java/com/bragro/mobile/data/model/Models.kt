@@ -269,6 +269,16 @@ data class ActivityEventData(
     val qtde: String? = null,
     val type: String, // "criado" | "atualizado"
     val at: String,
+    // v16 -- fazenda/talhão/placa (linha de baixo) e Qualidade (umidade e
+    // impureza em Colheita/Romaneios; conferência do cadastro nos demais).
+    val local: String? = null,
+    val qualidade: QualidadeEventoData? = null,
+)
+
+@Serializable
+data class QualidadeEventoData(
+    val texto: String,
+    val tom: String = "neutro", // "ok" | "aviso" | "neutro"
 )
 
 @Serializable

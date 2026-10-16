@@ -2127,7 +2127,10 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (
                             // pra manter a ordem consistente nas duas
                             // plataformas. Cada pedaço só entra se a tabela
                             // daquele evento realmente tiver o campo.
-                            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                            // v16 -- nome à esquerda (fazenda embaixo),
+                            // Quantidade no meio, Qualidade à direita e a
+                            // hora embaixo da qualidade.
+                            Column(modifier = Modifier.weight(1.5f).padding(end = 6.dp)) {
                                 Text(
                                     buildString {
                                         append(e.tableLabel)
@@ -2136,14 +2139,34 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (
                                     },
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Medium,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                                 )
-                                Text(
-                                    listOfNotNull(e.qtde, e.status, e.type).filter { it.isNotBlank() }.joinToString(" · "),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
+                                val sub = listOfNotNull(e.local, e.status, e.type).filter { it.isNotBlank() }.joinToString(" · ")
+                                if (sub.isNotBlank()) Text(sub, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                             }
-                            Text(formatEventTime(e.at), style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                            Text(
+                                e.qtde ?: "—",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.SemiBold,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                maxLines = 1,
+                                modifier = Modifier.weight(0.9f),
+                            )
+                            Column(modifier = Modifier.weight(1.1f), horizontalAlignment = Alignment.End) {
+                                val q = e.qualidade
+                                if (q == null) {
+                                    Text("—", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                } else {
+                                    val cor = when (q.tom) {
+                                        "ok" -> MaterialTheme.colorScheme.primary
+                                        "aviso" -> androidx.compose.ui.graphics.Color(0xFFC2611F)
+                                        else -> MaterialTheme.colorScheme.onSurface
+                                    }
+                                    Text(q.texto, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = cor, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.End)
+                                }
+                                Text(formatEventTime(e.at), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                            }
                         }
                     }
                 }

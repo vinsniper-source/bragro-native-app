@@ -554,7 +554,7 @@ fun BarraTile(b: PainelBarra, modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
         Text(b.label, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth())
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(b.detalhe, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
             val fracao = (b.pct / 100.0).coerceIn(0.02, 1.0).toFloat()
             Box(Modifier.width(34.dp).height(5.dp).clip(RoundedCornerShape(3.dp)).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f))) {
@@ -587,7 +587,7 @@ fun KpiTile(k: PainelKpi, ativo: Boolean = false, onClick: (() -> Unit)? = null,
         verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
         Text(k.label, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth())
-        Text(k.sub, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth())
+        Text(k.sub, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth())
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) { ValorUmaLinha(fmtKpi(k), cor) }
     }
 }
