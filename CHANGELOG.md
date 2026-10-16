@@ -3,6 +3,25 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.55] - 2026-10-15
+- Painel de monitoramento no topo dos módulos (mesmo da plataforma): até 5 indicadores em 2 colunas (verde-claro) e 2 barras de progresso. Tocar num indicador filtra a lista (fazenda, categoria, status pendente, safra atual), mostra a barra "Filtro ativo" e rola até os lançamentos; tocar de novo desfaz. Financeiro com Despesa, Pago, A vencer, Vencidas e Receita (cada um abre a visão certa); Clima com chuva acumulada, dias com chuva e temperaturas.
+- Faixa "AÇÕES" (título preto/branco, linha e setinha no mesmo tom, borda verde) em volta da barra Dados/Operações/Arquivos, recolhível -- em todos os módulos, Financeiro, DRE, Análises, Livro Caixa, Controle de Insumos e Orçamentos.
+- Divisória "LANÇAMENTOS n" com setinha antes da lista (mostra/esconde os lançamentos).
+- Cards unificados por atividade: lançamentos da mesma operação/categoria/talhão viram um cartão de grupo com a quantidade, onde e o total; tocar abre os lançamentos do grupo (Safra por operação, Estoque por categoria, Pecuária por operação, Pragas/Clima por talhão etc.).
+- Gráficos abrem numa janela (não empurram mais a lista).
+- DRE: painel (custo total, /ha, /sc, /ton, margem), Gráficos na janela, "Resultado por fazenda" em divisória e cartões com selo LUCRO/PREJUÍZO e margem em destaque.
+- Dossiê Bancário: painel, Ações (Ano, Imprimir/PDF e atalhos para cada seção) e seções em divisórias recolhíveis; fazendas com selo LUCRO/PREJUÍZO.
+- Drone: painel (voos, área coberta, NDVI, ortomosaicos, fotos e vídeos), Ações (Tipo, Prestadora em janela, + Voo), lista em LANÇAMENTOS e "Abrir arquivo" no card.
+- Análises: bloco Gráficos saiu da tela e virou botão em Ações (abre numa janela); seções em "INDICADORES".
+- Livro Caixa: painel (entradas, saídas, saldo, contas) no lugar do card Totais; Extrato em divisória.
+- Nada vermelho no app: cor de erro/excluir/vencido trocada por laranja nos temas claro e escuro (e no Canvas do Início).
+- "Recalcular vcto" no lugar de "Recalcular Vencimentos".
+
+## [1.3.54] - 2026-10-14
+- Operações: bloco por fazenda com filtros e cartões por atividade (dados calculados no servidor).
+- Fontes em preto e branco, só status com cor (Financeiro, Livro Caixa, badges de operação).
+- Verde das barras de progresso mais fechado no modo escuro.
+
 ## [1.3.53] - 2026-10-13
 - Preencher com foto (IA): botão de câmera nos formulários de Estoque/Controle de Insumos, Cotações de Fornecedores, Contratos, Inventário, Frota, RH, Receituários e Pecuária; no cadastro de fazenda (Base de Dados); e leitura de NF-e/NFS-e em papel (sem XML) na importação de notas. Os campos vêm pré-preenchidos para conferência -- nada é gravado sozinho.
 - Certificado digital (A1/A3, emissor, validade) agora também em NF-e e NFS-e (mesmo certificado do Livro Caixa).

@@ -591,7 +591,9 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                     onClick = { HtmlPrinter.printSimpleTable(context, "Orçamentos", headers, rows) },
                 )
             }
-            ModuleCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp))
+            com.bragro.mobile.ui.domain.BlocoComFaixa("Ações", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
+                ModuleCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth().padding(8.dp))
+            }
             Text(
                 "${filtered.size} orçamento(s)${if (filtered.size != orcamentos.size) " de ${orcamentos.size}" else ""}. Pendente NF aguarda a nota mãe pra conciliação.",
                 style = MaterialTheme.typography.bodySmall,

@@ -16,6 +16,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.border
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -58,6 +62,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
@@ -100,7 +105,12 @@ class OperacoesViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var temCache = mutableStateOf(false)
         private set
-    var janela = mutableStateOf(90)
+    // 0 = safra inteira (padrão desde a rodada "um bloco por fazenda").
+    var janela = mutableStateOf(0)
+        private set
+    // Lançamentos revisados nesta sessão -- o botão Revisar continua
+    // habilitado (pedido do usuário), só muda o rótulo pra "Revisada".
+    var revisados = mutableStateOf<Set<String>>(emptySet())
         private set
 
     init {
@@ -118,11 +128,12 @@ class OperacoesViewModel(app: Application) : AndroidViewModel(app) {
         refresh()
     }
 
-    fun marcarRevisado(recordId: String) {
+    fun marcarRevisado(recordId: String, dominio: String = "safra") {
         // Otimista: some o selo na hora; refresh confirma com o servidor.
         pendingIds.value = pendingIds.value - recordId
+        revisados.value = revisados.value + recordId
         viewModelScope.launch {
-            repository.marcarRevisado(recordId)
+            repository.marcarRevisado(recordId, dominio)
             loading.value = false
             refresh()
         }
@@ -146,7 +157,7 @@ class OperacoesViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
-private val JANELAS = listOf(30, 60, 90, 180)
+private val JANELAS = listOf(0, 30, 60, 90, 180)
 private val PT_BR = Locale("pt", "BR")
 private fun fmtMoney(v: Double): String = NumberFormat.getCurrencyInstance(PT_BR).format(v)
 private fun fmtNum(v: Double): String = NumberFormat.getNumberInstance(PT_BR).apply { maximumFractionDigits = 2 }.format(v)
@@ -202,10 +213,14 @@ private fun EstagioChip(estagio: String) {
 @Composable
 private fun OperacaoProgressBar(pct: Double, concluida: Boolean, atrasada: Boolean) {
     val fracao = (pct / 100.0).coerceIn(0.0, 1.0).toFloat()
+    // Verde mais fechado no modo escuro (pedido do usuário: trocar a
+    // tonalidade do verde da barra de progresso no modo escuro).
+    val escuro = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val verde = if (escuro) androidx.compose.ui.graphics.Color(0xFF2F6B4A) else MaterialTheme.colorScheme.primary
     val cor = when {
-        concluida -> MaterialTheme.colorScheme.primary
+        concluida -> verde
         atrasada -> MaterialTheme.colorScheme.error
-        else -> MaterialTheme.colorScheme.secondary
+        else -> if (escuro) verde else MaterialTheme.colorScheme.secondary
     }
     Box(modifier = Modifier.fillMaxWidth().height(6.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(3.dp))) {
         Box(modifier = Modifier.fillMaxWidth(fracao).height(6.dp).background(cor, RoundedCornerShape(3.dp)))
@@ -226,6 +241,7 @@ private fun AreaProgressBar(pct: Int) {
     val cor = when {
         pct > 100 -> MaterialTheme.colorScheme.error
         pct >= 90 -> MaterialTheme.colorScheme.tertiary
+        MaterialTheme.colorScheme.background.luminance() < 0.5f -> androidx.compose.ui.graphics.Color(0xFF2F6B4A)
         else -> MaterialTheme.colorScheme.secondary
     }
     Box(modifier = Modifier.fillMaxWidth().height(6.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(3.dp))) {
@@ -233,195 +249,349 @@ private fun AreaProgressBar(pct: Int) {
     }
 }
 
+// Bloco por fazenda -- layout aprovado no mockup (réplica do site,
+// components/domain/operacao-card.tsx): 1 card por ATIVIDADE com todas as
+// O.S. dentro (setinhas para recolher o card e cada O.S.), cards um abaixo
+// do outro (sem rolagem lateral), filtros em listas suspensas (Etapa,
+// Atividade, Talhão, Revisão), responsável/função/frota em destaque em cada
+// card e em cada O.S., e "Revisar e editar" abrindo o formulário de edição
+// do lançamento (mesma rota de edição do módulo) e marcando como revisada.
+// Números (área utilizada, % da fazenda, custo/ha) vêm prontos do servidor.
+private val GRUPOS_ATIVIDADE = listOf(
+    "Análise de solo", "Preparo do solo", "Dessecação", "Adubação de base", "Tratamento de sementes",
+    "Plantio", "Cobertura", "Tratos culturais", "Monitoramento", "Pulverização", "Controle de pragas",
+    "Aplicação foliar", "Ponto de maturação", "Colheita", "Outras",
+)
+private val NOME_ATIVIDADE = mapOf(
+    "AMOSTRAGEM SOLO" to "Amostragem e análise de solo",
+    "AMOSTRAGEM" to "Ponto de maturação (amostragem)",
+    "TRAT. SEMENTES" to "Tratamento de sementes",
+    "TRATAMENTO" to "Tratamento de sulco",
+    "MONITOR. PRAGAS" to "Monitoramento de pragas",
+)
+private fun tituloAtividade(op: String): String = NOME_ATIVIDADE[op] ?: (op.take(1) + op.drop(1).lowercase(PT_BR))
+private const val ACIMA_LIMITE = 0.05
+
+private fun fmtNum1(v: Double): String = NumberFormat.getNumberInstance(PT_BR).apply { minimumFractionDigits = 1; maximumFractionDigits = 1 }.format(v)
+private fun fmtNum0(v: Double): String = NumberFormat.getNumberInstance(PT_BR).apply { maximumFractionDigits = 0 }.format(v)
+private fun fmtPct(v: Double): String = (if (v > 0) "+" else "") + fmtNum1(v) + "%"
+
+@Composable
+private fun FiltroLista(label: String, valor: String, opcoes: List<Pair<String, String>>, onSelect: (String) -> Unit, modifier: Modifier = Modifier) {
+    var aberto by remember { mutableStateOf(false) }
+    Column(modifier = modifier) {
+        Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Box {
+            androidx.compose.material3.OutlinedButton(
+                onClick = { aberto = true },
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(8.dp),
+            ) {
+                Text(opcoes.firstOrNull { it.first == valor }?.second ?: valor, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                Icon(Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.size(16.dp))
+            }
+            androidx.compose.material3.DropdownMenu(expanded = aberto, onDismissRequest = { aberto = false }) {
+                opcoes.forEach { (v, l) ->
+                    androidx.compose.material3.DropdownMenuItem(
+                        text = { Text(l, style = MaterialTheme.typography.bodySmall, fontWeight = if (v == valor) FontWeight.Bold else FontWeight.Normal) },
+                        onClick = { onSelect(v); aberto = false },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun KpiBox(label: String, valor: String, sub: String? = null, cor: androidx.compose.ui.graphics.Color? = null, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+    ) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+        Text(valor, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = cor ?: MaterialTheme.colorScheme.onSurface, maxLines = 1)
+        if (sub != null) Text(sub, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+    }
+}
+
+@Composable
+private fun LinhaCampo(l: String, v: String, cor: androidx.compose.ui.graphics.Color? = null) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(l, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(v, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = cor ?: MaterialTheme.colorScheme.onSurface)
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun OperacaoCard(
     op: OperacaoAgrupadaData,
-    onEditRecord: (String, String) -> Unit,
-    // "setinha nas atividades recolher e expandir tudo" -- pedido do
-    // usuário (imagem 2): antes só existia a setinha POR atividade
-    // (osExpanded local, ver comentário mais abaixo), sem um jeito de
-    // recolher/expandir todas de uma vez. O estado de cada atividade agora
-    // mora num mapa compartilhado (activityOverrides, em OperacoesScreen),
-    // com atividadesExpandidasPadrao como valor-padrão quando a atividade
-    // ainda não foi tocada individualmente -- assim o botão global
-    // "recolher/expandir tudo" no topo consegue afetar todas de uma vez,
-    // sem perder a possibilidade de abrir/fechar uma atividade específica.
-    atividadesExpandidasPadrao: Boolean,
-    activityOverrides: androidx.compose.runtime.snapshots.SnapshotStateMap<String, Boolean>,
     pendingIds: Set<String> = emptySet(),
-    onReview: (String) -> Unit = {},
+    revisados: Set<String> = emptySet(),
+    onReview: (String, String) -> Unit = { _, _ -> },
+    onEditRecord: (String, String) -> Unit = { _, _ -> },
 ) {
-    var abrirFinanceiro by remember { mutableStateOf(false) }
-    var abrirEstoque by remember { mutableStateOf(false) }
+    var etapa by remember(op.chave) { mutableStateOf("Todas") }
+    var atividade by remember(op.chave) { mutableStateOf("Todas") }
+    var talhao by remember(op.chave) { mutableStateOf("Todos") }
+    var revisao by remember(op.chave) { mutableStateOf("Todas") }
+    val cardsFechados = remember(op.chave) { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
+    val osAbertas = remember(op.chave) { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
+    var blocoAberto by remember { mutableStateOf(true) }
 
-    // Progresso OPERACIONAL (O.S. concluídas/totais), não mais tempo
-    // decorrido -- varredura de auditoria, pedido do usuário ("a
-    // porcentagem está em 650%... a barra continua contando o tempo
-    // decorrido mesmo após a conclusão das tarefas"). Já vem pronto de
-    // OperacaoAgrupadaData (osTotal/osConcluidas/progressoPct/concluida/
-    // atrasada), calculado no servidor -- ver comentário no Models.kt.
+    val atividades = op.timeline.map { it.operacao }.distinct()
+    fun grupoDe(a: String): String = op.timeline.firstOrNull { it.operacao == a }?.grupo ?: "Outras"
+    val etapas = (GRUPOS_ATIVIDADE + atividades.map { grupoDe(it) }).distinct().filter { g -> atividades.any { grupoDe(it) == g } }
 
-    val variacaoCor = when {
-        op.variacaoMedia == null -> MaterialTheme.colorScheme.onSurfaceVariant
-        abs(op.variacaoMedia) <= 5 -> MaterialTheme.colorScheme.primary
-        abs(op.variacaoMedia) <= 20 -> MaterialTheme.colorScheme.secondary
-        else -> MaterialTheme.colorScheme.error
-    }
-
-    // Seta de recolher DESTE card (canto superior direito do bloco) --
-    // pedido do usuário ("realoque a seta pro canto superior direito do
-    // bloco"): antes só existia a seta GLOBAL no TopAppBar (recolhe/expande
-    // a tela inteira de uma vez); esta aqui recolhe só ESTE card individual,
-    // escondendo progresso/financeiro/estoque/linha do tempo e deixando só
-    // o cabeçalho (cultura/safra/local/status) visível.
-    var cardExpanded by remember { mutableStateOf(true) }
+    val cards = atividades
+        .filter { (etapa == "Todas" || grupoDe(it) == etapa) && (atividade == "Todas" || it == atividade) }
+        .map { a ->
+            a to op.timeline.filter { ev ->
+                ev.operacao == a &&
+                    (talhao == "Todos" || ev.talhao == talhao) &&
+                    (revisao == "Todas" || (revisao == "Revisadas") == (ev.id in revisados))
+            }
+        }
+        .filter { it.second.isNotEmpty() }
 
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment = Alignment.Top) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
+                    Text(op.local, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
                     Text(
-                        "${op.cultura} · ${op.safra}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Clip,
-                        modifier = Modifier.basicMarquee(),
-                    )
-                    Text(
-                        op.local + (op.hectare?.let { " — ${fmtNum(it)} ha" } ?: ""),
+                        "${op.cultura} · ${op.safra} · ${op.talhoes.size} talh${if (op.talhoes.size == 1) "ão" else "ões"} · ${atividades.size} atividades",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
-                        overflow = TextOverflow.Clip,
-                        modifier = Modifier.basicMarquee(),
                     )
                 }
-                Column(horizontalAlignment = Alignment.End) {
-                    EstagioChip(op.estagio)
-                    if (op.concluida) {
-                        Spacer(modifier = Modifier.height(2.dp))
-                        com.bragro.mobile.ui.domain.StatusBadge("FINALIZADO")
-                    } else if (op.atrasada) {
-                        Spacer(modifier = Modifier.height(2.dp))
-                        com.bragro.mobile.ui.domain.StatusBadge("ATRASADO")
-                    }
-                }
-                IconButton(onClick = { cardExpanded = !cardExpanded }, modifier = Modifier.size(24.dp)) {
-                    Icon(
-                        if (cardExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                        contentDescription = if (cardExpanded) "Recolher card" else "Expandir card",
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
+                IconButton(onClick = { blocoAberto = !blocoAberto }, modifier = Modifier.size(24.dp)) {
+                    Icon(if (blocoAberto) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
-            if (cardExpanded) {
-
-            if (op.osTotal > 0) {
-                Column {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Progresso (O.S. concluídas)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("${op.osConcluidas}/${op.osTotal} O.S.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    Spacer(modifier = Modifier.height(2.dp))
-                    OperacaoProgressBar(pct = op.progressoPct.toDouble(), concluida = op.concluida, atrasada = op.atrasada)
-                    Text("${op.progressoPct}%", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 2.dp))
-                }
-            }
-
-            if (op.areaTotal != null && op.areaPct != null) {
-                Column {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Área utilizada", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(
-                            "${op.hectare?.let { fmtNum(it) } ?: "—"} / ${fmtNum(op.areaTotal)} ha",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            // Indicadores (2 por linha, sem rolagem lateral)
+            val kpis = listOf(
+                Triple("Área total", op.areaTotal?.let { "${fmtNum0(it)} ha" } ?: "—", op.talhoes.joinToString(" · ") { "T${it.talhao} ${fmtNum0(it.hectare)}" }),
+                Triple("O.S. finalizadas", "${op.osConcluidas}/${op.osTotal}", "${op.progressoPct}% concluído"),
+                Triple("Custo realizado", fmtMoney(op.realizadoTotal), "Orçado ${fmtMoney(op.planejadoTotal)}"),
+                Triple("Desvio x orçado", op.variacaoMedia?.let { fmtPct(it) } ?: "—", op.custoHaFazenda?.let { "Custo/ha ${fmtMoney(it)}" } ?: ""),
+            )
+            kpis.chunked(2).forEach { par ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    par.forEach { (l, v, s) ->
+                        KpiBox(
+                            l, v, s,
+                            cor = null,
+                            modifier = Modifier.weight(1f),
                         )
                     }
-                    Spacer(modifier = Modifier.height(2.dp))
-                    AreaProgressBar(pct = op.areaPct)
-                    Text("${op.areaPct}%", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 2.dp))
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Column {
-                    Text("Realizado", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(fmtMoney(op.realizadoTotal), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+            if (blocoAberto) {
+                // Filtros em listas suspensas
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FiltroLista(
+                        "Etapa", etapa,
+                        listOf("Todas" to "Todas as etapas") + etapas.map { g -> g to "$g (${atividades.count { grupoDe(it) == g }})" },
+                        { etapa = it; atividade = "Todas" },
+                        Modifier.weight(1f),
+                    )
+                    FiltroLista(
+                        "Atividade", atividade,
+                        listOf("Todas" to "Todas as atividades") + atividades.filter { etapa == "Todas" || grupoDe(it) == etapa }
+                            .map { a -> a to "${tituloAtividade(a)} (${op.timeline.count { it.operacao == a }})" },
+                        { atividade = it },
+                        Modifier.weight(1f),
+                    )
                 }
-                Column {
-                    Text("Planejado", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(fmtMoney(op.planejadoTotal), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FiltroLista(
+                        "Talhão", talhao,
+                        listOf("Todos" to "Todos os talhões") + op.talhoes.map { it.talhao to "Talhão ${it.talhao} · ${fmtNum0(it.hectare)} ha" },
+                        { talhao = it },
+                        Modifier.weight(1f),
+                    )
+                    FiltroLista(
+                        "Revisão", revisao,
+                        listOf("Todas" to "Todas as O.S.", "Pendentes" to "Pendentes de revisão", "Revisadas" to "Revisadas"),
+                        { revisao = it },
+                        Modifier.weight(1f),
+                    )
                 }
-                if (op.variacaoMedia != null) {
-                    Column {
-                        Text("Variação", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("${fmtNum(op.variacaoMedia)}%", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = variacaoCor)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    androidx.compose.material3.TextButton(onClick = { etapa = "Todas"; atividade = "Todas"; talhao = "Todos"; revisao = "Todas" }) {
+                        Text("Limpar filtros", style = MaterialTheme.typography.labelSmall)
+                    }
+                    androidx.compose.material3.TextButton(onClick = { cardsFechados.clear(); op.timeline.forEach { osAbertas[it.id] = true } }) {
+                        Text("▾ Abrir todas", style = MaterialTheme.typography.labelSmall)
+                    }
+                    androidx.compose.material3.TextButton(onClick = { atividades.forEach { cardsFechados[it] = true }; osAbertas.clear() }) {
+                        Text("▴ Recolher tudo", style = MaterialTheme.typography.labelSmall)
                     }
                 }
-            }
 
-            if (op.financeiroTotal > 0 || op.estoqueConsumido.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (op.financeiroTotal > 0) {
+                if (cards.isEmpty()) {
+                    Text("Nenhuma O.S. para os filtros escolhidos.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+
+                // Um card por atividade, um abaixo do outro
+                cards.forEach { (a, lista) ->
+                    val aberto = cardsFechados[a] != true
+                    val colheita = lista.first().tipo == "colheita"
+                    val area = lista.groupBy { it.talhao ?: it.id }.values.sumOf { g -> g.maxOf { it.hectare ?: 0.0 } }
+                    val custo = lista.sumOf { it.realizado }
+                    val orcado = lista.sumOf { it.planejado }
+                    val desvio = if (orcado > 0) (custo - orcado) / orcado * 100 else 0.0
+                    val producao = lista.sumOf { it.producao ?: 0.0 }
+                    val un = lista.first().unidadeProducao ?: ""
+                    val nOS = lista.mapNotNull { it.os }.distinct().size
+                    val equipe = lista.map { Triple(it.responsavel ?: "Não lançado", it.funcao ?: "—", it.frota ?: "Não lançada") }.distinctBy { it.first + it.third }
+                    val ordem = (atividades.indexOf(a) + 1).toString().padStart(2, '0')
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
+                    ) {
                         Column(
-                            modifier = Modifier.fillMaxWidth().clickable { abrirFinanceiro = !abrirFinanceiro },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                                .clickable { cardsFechados[a] = aberto }
+                                .padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.Wallet, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    "  Financeiro vinculado: ${fmtMoney(op.financeiroTotal)}",
+                                    "$ordem · ${grupoDe(a).uppercase()}",
                                     style = MaterialTheme.typography.labelSmall,
-                                    modifier = Modifier.weight(1f).basicMarquee(),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Clip,
-                                )
-                                Text(
-                                    "${op.financeiroDetalhe.size} lanç.",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f),
                                 )
-                                Icon(
-                                    Icons.Filled.ExpandMore,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp).rotate(if (abrirFinanceiro) 180f else 0f),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                )
+                                Icon(if (aberto) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (aberto) "Recolher" else "Abrir", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            if (abrirFinanceiro) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(start = 20.dp, top = 4.dp)
-                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
-                                        .padding(8.dp),
-                                ) {
-                                    op.financeiroDetalhe.forEach { f ->
-                                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                            Text(tituloAtividade(a), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                            Text(
+                                (if (colheita) "${lista.size} colheita(s)" else "${lista.size} lançamento(s) · $nOS O.S.") +
+                                    " · ${fmtDataCurta(lista.first().data)} a ${fmtDataCurta(lista.last().dataFim ?: lista.last().data)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            // Responsável, função e frota em destaque
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
+                                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                equipe.forEach { (nome, func, frota) ->
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Filled.Person, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(" $nome", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                    }
+                                    Text("$func · 🚜 $frota", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                KpiBox("Área", "${fmtNum0(area)} ha", modifier = Modifier.weight(1f))
+                                KpiBox(if (colheita) "Produção" else "Custo", if (colheita) "${fmtNum0(producao)} $un" else fmtMoney(custo), modifier = Modifier.weight(1f))
+                            }
+                            KpiBox(
+                                if (colheita) "Produtividade" else "Custo/ha (área utilizada)",
+                                if (colheita) "${fmtNum1(if (area > 0) producao / area else 0.0)} $un/ha" else fmtMoney(if (area > 0) custo / area else 0.0),
+                                if (!colheita && orcado > 0) "Desvio ${if (abs(desvio) <= ACIMA_LIMITE) "dentro do orçado" else fmtPct(desvio)}" else null,
+                                null,
+                                Modifier.fillMaxWidth(),
+                            )
+                        }
+                        if (aberto) {
+                            lista.forEach { ev ->
+                                val osAberta = osAbertas[ev.id] == true
+                                val revisado = ev.id in revisados
+                                val pendente = ev.id in pendingIds && !revisado
+                                val dominio = if (ev.tipo == "colheita") "colheita" else "safra"
+                                androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                Column(modifier = Modifier.fillMaxWidth().clickable { osAbertas[ev.id] = !osAberta }.padding(horizontal = 10.dp, vertical = 8.dp)) {
+                                    Row(verticalAlignment = Alignment.Top) {
+                                        Icon(if (osAberta) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
                                             Text(
-                                                "${fmtDataCurta(f.data)} · ${f.categoria}${f.subcategoria?.let { " / $it" } ?: ""}${f.entidade?.let { " — $it" } ?: ""}",
+                                                (if (ev.tipo == "colheita") "Colheita" else "O.S. ${ev.os ?: "—"}") + " · " + (ev.talhao?.let { "Talhão $it" } ?: "Sem talhão"),
+                                                style = MaterialTheme.typography.labelLarge,
+                                                fontWeight = FontWeight.Bold,
+                                            )
+                                            Text(
+                                                "${fmtDataCurta(ev.data)}${ev.dataFim?.let { if (it.take(10) != ev.data.take(10)) " a ${fmtDataCurta(it)}" else "" } ?: ""} · ${ev.hectare?.let { "${fmtNum0(it)} ha" } ?: "—"}" +
+                                                    if (ev.tipo != "colheita") " · ${fmtMoney(ev.realizado)}" else "",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Clip,
-                                                modifier = Modifier.weight(1f).basicMarquee(),
                                             )
-                                            Text(fmtMoney(f.valor), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                                            // Icone de editar por linha, direto pro registro certo em
-                                            // Financeiro -- pedido do usuario ("preciso que abra a
-                                            // janela para editar e salvar, aplique tambem essas opcoes
-                                            // no native app"). Mesmo destino (rota domain/{id}/edit/
-                                            // {recordId}) ja usado por Copiar ultimo lancamento/Base de
-                                            // Dados -- so nao existia ainda um jeito de chegar num
-                                            // registro ESPECIFICO a partir do card de Operacao (so tinha
-                                            // "Ver em Safra" generico, ver comentario mais abaixo).
-                                            IconButton(onClick = { onEditRecord("financeiro", f.id) }, modifier = Modifier.size(24.dp)) {
-                                                Icon(Icons.Filled.Edit, contentDescription = "Editar em Financeiro", modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text(
+                                                "👤 ${ev.responsavel ?: "Não lançado"} · ${ev.funcao ?: "—"} · 🚜 ${ev.frota ?: "Não lançada"}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                maxLines = 2,
+                                            )
+                                        }
+                                        Column(horizontalAlignment = Alignment.End) {
+                                            com.bragro.mobile.ui.domain.StatusBadge(ev.situacao)
+                                            if (revisado) Text("✓ Revisada", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            else if (pendente) Text("Pendente", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                    }
+                                    if (osAberta) {
+                                        Column(
+                                            modifier = Modifier.fillMaxWidth().padding(start = 20.dp, top = 6.dp),
+                                            verticalArrangement = Arrangement.spacedBy(3.dp),
+                                        ) {
+                                            if (ev.tipo == "colheita") {
+                                                LinhaCampo("Área colhida", ev.hectare?.let { "${fmtNum0(it)} ha" } ?: "—")
+                                                LinhaCampo("% da fazenda", ev.pctFazenda?.let { "${fmtNum1(it)}%" } ?: "—")
+                                                LinhaCampo("Produção", ev.producao?.let { "${fmtNum0(it)} ${ev.unidadeProducao ?: ""}" } ?: "—")
+                                                LinhaCampo("Produtividade", ev.produtividade?.let { "${fmtNum1(it)} ${ev.unidadeProducao ?: ""}/ha" } ?: "—")
+                                            } else {
+                                                val acima = (ev.variacaoPct ?: 0.0) > ACIMA_LIMITE
+                                                LinhaCampo("Item", ev.item ?: "—")
+                                                LinhaCampo("Quantidade", ev.qtd?.let { "${fmtNum(it)} ${ev.unidade ?: ""}" } ?: "—")
+                                                LinhaCampo("Área utilizada", (ev.hectare?.let { "${fmtNum0(it)} ha" } ?: "—") + (ev.pctFazenda?.let { " · ${fmtNum1(it)}%" } ?: ""))
+                                                LinhaCampo("Dose/ha", ev.dosePorHa?.let { "${fmtNum(it)} ${ev.unidade ?: ""}/ha" } ?: "—")
+                                                LinhaCampo("Custo", fmtMoney(ev.realizado))
+                                                LinhaCampo("Custo/ha", ev.custoHa?.let { fmtMoney(it) } ?: "—")
+                                                LinhaCampo("Orçado", fmtMoney(ev.planejado))
+                                                LinhaCampo(
+                                                    "Desvio",
+                                                    ev.variacaoPct?.let { if (abs(it) <= ACIMA_LIMITE) "Dentro" else fmtPct(it) } ?: "—",
+                                                    null,
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            // "Revisar também com a função editar": marca como
+                                            // revisada e abre o formulário de edição do lançamento.
+                                            androidx.compose.material3.Button(
+                                                onClick = {
+                                                    onReview(ev.id, dominio)
+                                                    onEditRecord(dominio, ev.id)
+                                                },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = if (revisado) {
+                                                    androidx.compose.material3.ButtonDefaults.buttonColors(
+                                                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    )
+                                                } else {
+                                                    androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurface)
+                                                },
+                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                            ) {
+                                                Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(14.dp))
+                                                Text(if (revisado) " Revisada · revisar e editar de novo" else " Revisar e editar", style = MaterialTheme.typography.labelMedium)
                                             }
                                         }
                                     }
@@ -429,152 +599,21 @@ private fun OperacaoCard(
                             }
                         }
                     }
-                    if (op.estoqueConsumido.isNotEmpty()) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth().clickable { abrirEstoque = !abrirEstoque },
-                        ) {
-                            Row(verticalAlignment = Alignment.Top) {
-                                Icon(Icons.Filled.Inventory2, contentDescription = null, modifier = Modifier.size(14.dp).padding(top = 2.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                val resumo = op.estoqueConsumido.take(3).joinToString(", ") { "${it.item} (${fmtNum(it.qtd)}${it.unidade?.let { u -> " $u" } ?: ""})" } +
-                                    if (op.estoqueConsumido.size > 3) " +${op.estoqueConsumido.size - 3}" else ""
-                                Text(
-                                    "  Estoque baixado: $resumo",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    modifier = Modifier.weight(1f),
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                                Text(
-                                    "${op.estoqueConsumido.size} it.",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                                Icon(
-                                    Icons.Filled.ExpandMore,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp).rotate(if (abrirEstoque) 180f else 0f),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                            if (abrirEstoque) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(start = 20.dp, top = 4.dp)
-                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
-                                        .padding(8.dp),
-                                ) {
-                                    op.estoqueConsumido.forEach { e ->
-                                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-                                            Text(e.item, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-                                            Text("${fmtNum(e.qtd)}${e.unidade?.let { " $it" } ?: ""}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                }
+
+                // Financeiro e estoque da fazenda
+                if (op.financeiroTotal > 0) {
+                    Text("Financeiro vinculado: ${fmtMoney(op.financeiroTotal)} · ${op.financeiroDetalhe.size} lanç.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (op.estoqueConsumido.isNotEmpty()) {
+                    Text(
+                        "Estoque baixado: " + op.estoqueConsumido.take(4).joinToString(", ") { "${it.item} (${fmtNum(it.qtd)}${it.unidade?.let { u -> " $u" } ?: ""})" } +
+                            if (op.estoqueConsumido.size > 4) " +${op.estoqueConsumido.size - 4}" else "",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
-
-            if (op.timeline.isNotEmpty()) {
-                Column {
-                    op.timeline.takeLast(6).forEachIndexed { idx, ev ->
-                        // Setinha ao lado do ícone editar -- pedido do usuário
-                        // ("coloque em cada atividade do lado do icone editar
-                        // a setinha"): recolhe/expande os detalhes dessa O.S.
-                        // específica, mesmo padrão ExpandLess/ExpandMore usado
-                        // nos cards de lançamento (DomainListScreen.kt). O
-                        // estado agora vem do mapa compartilhado
-                        // (activityOverrides) em vez de remember local, pra
-                        // dar pro botão global "recolher/expandir tudo"
-                        // (TopAppBar) controlar todas de uma vez -- pedido do
-                        // usuário (imagem 2: "setinha nas atividades recolher
-                        // e expandir tudo").
-                        val activityKey = "${op.chave}|$idx"
-                        val osExpanded = activityOverrides[activityKey] ?: atividadesExpandidasPadrao
-                        fun toggleOsExpanded() { activityOverrides[activityKey] = !osExpanded }
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 3.dp)) {
-                            Column(modifier = Modifier.weight(1f).clickable { toggleOsExpanded() }) {
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                                    Icon(Icons.Filled.CalendarMonth, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text(
-                                        " ${fmtDataCurta(ev.data)}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                    )
-                                    if (!ev.responsavel.isNullOrBlank()) {
-                                        Icon(Icons.Filled.Person, contentDescription = null, modifier = Modifier.size(12.dp).padding(start = 4.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text(
-                                            " ${ev.responsavel}",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Clip,
-                                            modifier = Modifier.weight(1f, fill = false).basicMarquee(),
-                                        )
-                                    }
-                                }
-                            }
-                            IconButton(onClick = { toggleOsExpanded() }, modifier = Modifier.size(24.dp)) {
-                                Icon(
-                                    if (osExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                    contentDescription = if (osExpanded) "Recolher" else "Expandir",
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            // Icone de editar por linha, direto pro registro certo em
-                            // Safra -- antes so existia o link generico "Ver em Safra"
-                            // no rodape do card (removido, ver comentario abaixo),
-                            // que abria a lista inteira do modulo sem apontar pra
-                            // nenhum lancamento especifico. Mesmo padrao ja aplicado
-                            // no site (operacao-card.tsx, "?editId="), so que aqui
-                            // navega direto pra rota domain/{id}/edit/{recordId} que
-                            // ja existia no app (usada por Copiar ultimo lancamento).
-                            // Revisar: confirma o lançamento importado (some o selo
-                            // "Pendente de revisão"). Só aparece se pendente.
-                            if (ev.id in pendingIds) {
-                                androidx.compose.material3.TextButton(
-                                    onClick = { onReview(ev.id) },
-                                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
-                                    modifier = Modifier.height(24.dp),
-                                ) {
-                                    Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(14.dp))
-                                    Text(" Revisar", style = MaterialTheme.typography.labelSmall)
-                                }
-                            }
-                            IconButton(onClick = { onEditRecord("safra", ev.id) }, modifier = Modifier.size(24.dp)) {
-                                Icon(Icons.Filled.Edit, contentDescription = "Editar em Safra", modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                        if (osExpanded) {
-                            // "quando clicadas precisa aparecer todas as
-                            // informações do formulário, não só 2 ou 3 linhas,
-                            // mas todo o formulário expandido" -- pedido do
-                            // usuário (imagem 1): antes só mostrava o nome da
-                            // operação (1 linha truncada por marquee). Agora
-                            // busca o registro completo no cache local
-                            // (RecordRepository, mesmo dado offline-first usado
-                            // em todo o app) e lista TODOS os campos
-                            // preenchidos desse lançamento específico de Safra,
-                            // fora da coluna com peso/marquee (que trunca a 1
-                            // linha) pra caber o texto inteiro.
-                            OperacaoDetalheCompleto(ev.id)
-                        }
-                    }
-                }
-            }
-
-            // Link generico "Ver em Safra →" REMOVIDO -- pedido do usuario
-            // ("preciso que abra a janela para editar e salvar" em vez de um
-            // link generico pro modulo inteiro): cada linha (Safra acima,
-            // Financeiro mais acima) agora tem seu proprio icone de editar
-            // apontando pro registro exato, entao o link generico ficou
-            // redundante (mesma decisao ja tomada no site).
-            } // fecha if (cardExpanded)
         }
     }
 }
@@ -588,7 +627,7 @@ private fun OperacaoCard(
 // pra essa O.S. existir no timeline, e a essa altura o registro já está no
 // Room (refreshFromServer do próprio módulo Safra).
 @Composable
-private fun OperacaoDetalheCompleto(recordId: String) {
+private fun OperacaoDetalheCompleto(recordId: String, dominio: String = "safra") {
     val context = androidx.compose.ui.platform.LocalContext.current
     // Guarda a ColumnConfig inteira (não só label+valor cru) -- necessário
     // pra formatar cada campo com a MESMA lógica usada no resto do app
@@ -603,8 +642,8 @@ private fun OperacaoDetalheCompleto(recordId: String) {
     androidx.compose.runtime.LaunchedEffect(recordId) {
         val recordRepo = com.bragro.mobile.data.repo.RecordRepository(context)
         val configRepo = com.bragro.mobile.data.repo.ConfigRepository(context)
-        val valores = recordRepo.getRecord("safra", recordId)
-        val config = configRepo.domainConfig("safra")
+        val valores = recordRepo.getRecord(dominio, recordId)
+        val config = configRepo.domainConfig(dominio)
         if (valores != null && config != null) {
             valoresMap = valores
             campos = config.columns.filter { col -> !valores[col.key].isNullOrBlank() }
@@ -673,6 +712,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
     val operacoes by viewModel.operacoes
     val loading by viewModel.loading
     val pendingIds by viewModel.pendingIds
+    val revisados by viewModel.revisados
     val offline by viewModel.offline
     val temCache by viewModel.temCache
     val janela by viewModel.janela
@@ -697,8 +737,6 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
     // overrides é limpo a cada toggle global pra que o novo valor padrão
     // valha pra todo mundo, inclusive atividades que o usuário já tinha
     // mexido manualmente antes.
-    var atividadesExpandidasPadrao by remember { mutableStateOf(true) }
-    val activityOverrides = remember { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
 
     Scaffold(
         topBar = {
@@ -767,7 +805,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
             item(key = "operacoes-header") {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "Cada card é uma operação de safra (Safra + Cultura + Local) com a linha do tempo de tudo que foi lançado nela.",
+                        "Um bloco por fazenda com todas as atividades, do preparo do solo à colheita. Deslize os lançamentos para o lado.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -785,7 +823,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                                     activeContentColor = MaterialTheme.colorScheme.onPrimary,
                                     inactiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                                 ),
-                                label = { Text("${d}d", maxLines = 1) },
+                                label = { Text(if (d == 0) "Safra" else "${d}d", maxLines = 1) },
                             )
                         }
                     }
@@ -811,11 +849,10 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                     items(operacoes, key = { it.chave }) { op ->
                         OperacaoCard(
                             op,
-                            onEditRecord = onEditRecord,
-                            atividadesExpandidasPadrao = atividadesExpandidasPadrao,
-                            activityOverrides = activityOverrides,
                             pendingIds = pendingIds,
-                            onReview = { viewModel.marcarRevisado(it) },
+                            revisados = revisados,
+                            onReview = { id, dominio -> viewModel.marcarRevisado(id, dominio) },
+                            onEditRecord = onEditRecord,
                         )
                     }
                 }

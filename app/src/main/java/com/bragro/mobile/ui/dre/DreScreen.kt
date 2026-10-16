@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -308,7 +311,7 @@ private fun CategoriaBarRow(item: DreCategoriaData, maxValor: Double) {
                 modifier = Modifier
                     .fillMaxWidth(fracao)
                     .height(8.dp)
-                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp)),
+                    .background(com.bragro.mobile.ui.domain.progressGreen(), RoundedCornerShape(4.dp)),
             )
         }
     }
@@ -408,7 +411,22 @@ private fun FarmCard(f: DreFazendaData, arvore: List<DreRamoItemData>, expanded:
             Row(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(f.farmName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("${"%,.0f".format(java.util.Locale("pt", "BR"), f.areaHa)} ha", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+                // Selo LUCRO/PREJUÍZO (padrão da plataforma) -- verde/laranja, nunca vermelho.
+                val lucro = f.margem >= 0
+                val corSelo = if (lucro) com.bragro.mobile.ui.domain.corSucesso() else com.bragro.mobile.ui.domain.corAtencao()
+                Text(
+                    if (lucro) "LUCRO" else "PREJUÍZO",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = corSelo,
+                    modifier = Modifier
+                        .padding(end = 6.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(corSelo.copy(alpha = 0.15f))
+                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                )
                 if (arvore.isNotEmpty()) {
                     IconButton(onClick = onToggle, modifier = Modifier.size(24.dp)) {
                         Icon(
@@ -428,7 +446,16 @@ private fun FarmCard(f: DreFazendaData, arvore: List<DreRamoItemData>, expanded:
                 Row { Text("Custo/ton: "); Text(formatMoneyBrl(f.custoPorTon), fontWeight = FontWeight.Bold) }
             }
             Row { Text("Receita total: "); Text(formatMoneyBrl(f.receitaTotal), fontWeight = FontWeight.Bold) }
-            Row { Text("Margem: "); Text(formatMoneyBrl(f.margem), fontWeight = FontWeight.Bold) }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Margem", modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    formatMoneyBrl(f.margem),
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (f.margem >= 0) com.bragro.mobile.ui.domain.corSucesso() else com.bragro.mobile.ui.domain.corAtencao(),
+                )
+            }
             if (expanded && arvore.isNotEmpty()) {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
                 Text("Detalhamento de custos", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
@@ -461,7 +488,6 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
     // FECHADO -- pedido do usuário ("sempre aparecer a tela vazia, só
     // expandir quando clicar no ícone"), mesmo critério já usado em
     // allExpanded nos módulos genéricos.
-    var contentExpanded by remember { mutableStateOf(false) }
     // Tabela/Coluna -- mesmo botão único (achado de auditoria, pedido do
     // usuário: "coloque em todos os módulos"). Fazendas em DRE são dados
     // COMPUTADOS por fazenda (DreFazendaData), sem um registro único por
@@ -477,6 +503,9 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
     // gap de paridade (Task #620: o app nunca teve esse gráfico, só as
     // linhas de texto Custo/ha e Custo/sc dentro do card de cada fazenda).
     var unidadeCusto by remember { mutableStateOf("ha") }
+    var graficosOpen by remember { mutableStateOf(false) }
+    // Fechado ao abrir (mesmo critério do app: "tela vazia, expandir ao tocar"); o painel já resume.
+    var resultadoOpen by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -529,8 +558,47 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
             contentPadding = PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item(key = "dre-icon-row") {
+            // Painel de monitoramento (padrão da plataforma).
+            if (data != null && data.porFazenda.isNotEmpty()) {
+                item(key = "painel") {
+                    val t = data.totais
+                    val positivas = data.porFazenda.count { it.margem >= 0 }
+                    val kpis = buildList {
+                        add(com.bragro.mobile.ui.domain.PainelKpi("Custo total", t.custoTotal, "moeda", null, "Financeiro + Frota + Safra", "DRE"))
+                        add(com.bragro.mobile.ui.domain.PainelKpi("Custo / ha", t.custoPorHa, "moeda", null, "${"%,.0f".format(java.util.Locale("pt", "BR"), t.areaHa)} ha", "DRE"))
+                        t.custoPorSc?.let { add(com.bragro.mobile.ui.domain.PainelKpi("Custo / sc", it, "moeda", null, "grãos (sc 60 kg)", "DRE")) }
+                        t.custoPorTon?.let { add(com.bragro.mobile.ui.domain.PainelKpi("Custo / ton", it, "moeda", null, "cana e outras em t", "DRE")) }
+                        add(
+                            com.bragro.mobile.ui.domain.PainelKpi(
+                                "Margem", t.margem, "moeda", null,
+                                if (t.receitaTotal != 0.0) com.bragro.mobile.ui.domain.fmtPct(Math.round(t.margem / t.receitaTotal * 1000) / 10.0) + " da receita" else "sem receita",
+                                "DRE", tom = if (t.margem >= 0) "abaixo" else "acima",
+                            ),
+                        )
+                    }
+                    val barras = buildList {
+                        if (t.receitaTotal > 0) add(com.bragro.mobile.ui.domain.PainelBarra("Margem sobre a receita", maxOf(0.0, Math.round(t.margem / t.receitaTotal * 100).toDouble()), "${formatMoneyBrl(t.margem)} / ${formatMoneyBrl(t.receitaTotal)}"))
+                        add(com.bragro.mobile.ui.domain.PainelBarra("Fazendas com margem positiva", Math.round(positivas * 100.0 / data.porFazenda.size).toDouble(), "$positivas/${data.porFazenda.size}"))
+                    }
+                    com.bragro.mobile.ui.domain.PainelMonitoramento(
+                        com.bragro.mobile.ui.domain.PainelModulo(
+                            titulo = "DRE · " + (safra?.let { "Safra $it" } ?: "todas as safras") + (cultura?.let { " · $it" } ?: ""),
+                            subtitulo = "${data.porFazenda.size} fazenda${if (data.porFazenda.size == 1) "" else "s"} · ${"%,.0f".format(java.util.Locale("pt", "BR"), t.areaHa)} ha",
+                            kpis = kpis.take(5),
+                            barras = barras,
+                        ),
+                    )
+                }
+            }
+            item(key = "dre-icon-row") { com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") { Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
                 val dadosBlock = DreBlockSpec("Dados", vertical = false) {
+                    if (temRegistros) {
+                        LabeledIconButton(
+                            icon = Icons.Filled.BarChart,
+                            label = "Gráficos",
+                            onClick = { graficosOpen = true },
+                        )
+                    }
                     LabeledIconButton(
                         icon = Icons.Filled.FilterAlt,
                         label = "Filtros",
@@ -552,9 +620,9 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                     // quando há dados.
                     if (temRegistros) {
                         LabeledIconButton(
-                            icon = if (contentExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
-                            label = if (contentExpanded) "Recolher" else "Expandir",
-                            onClick = { contentExpanded = !contentExpanded },
+                            icon = if (resultadoOpen) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                            label = if (resultadoOpen) "Recolher" else "Expandir",
+                            onClick = { resultadoOpen = !resultadoOpen },
                         )
                         LabeledIconButton(
                             icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
@@ -593,7 +661,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                 // mesmo padrão... da aba lançamentos com a barra oval e as
                 // categorias os ícones no topo").
                 DreCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth())
-            }
+            } } }
             if (filtrosOpen) {
                 item {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -623,86 +691,24 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                 items(dreExportRecords(data), key = { it["farmName"] ?: it.hashCode().toString() }) { row ->
                     RecordTableRow(columns = DRE_EXPORT_COLUMNS, record = row, domainId = "", hScroll = tableHScroll)
                 }
-            } else if (contentExpanded) {
-                item {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
-                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            com.bragro.mobile.ui.domain.TituloRecolhivel("Totais", aberto) { aberto = !aberto }
-                            if (aberto) {
-                            Row { Text("Custo total: "); Text(formatMoneyBrl(data.totais.custoTotal), fontWeight = FontWeight.Bold) }
-                            Row { Text("Custo/ha: "); Text(formatMoneyBrl(data.totais.custoPorHa), fontWeight = FontWeight.Bold) }
-                            if (data.totais.custoPorSc != null) {
-                                Row { Text("Custo/sc: "); Text(formatMoneyBrl(data.totais.custoPorSc), fontWeight = FontWeight.Bold) }
-                            }
-                            if (data.totais.custoPorTon != null) {
-                                Row { Text("Custo/ton: "); Text(formatMoneyBrl(data.totais.custoPorTon), fontWeight = FontWeight.Bold) }
-                            }
-                            Row { Text("Receita total: "); Text(formatMoneyBrl(data.totais.receitaTotal), fontWeight = FontWeight.Bold) }
-                            Row { Text("Margem: "); Text(formatMoneyBrl(data.totais.margem), fontWeight = FontWeight.Bold) }
-                        }
-}
-                    }
+            } else {
+                // "Resultado por fazenda" -- divisória com setinha (padrão da
+                // plataforma), aberta por padrão; Totais estão no painel acima.
+                item(key = "resultado-header") {
+                    com.bragro.mobile.ui.domain.CabecalhoLancamentos(
+                        total = data.porFazenda.size,
+                        aberto = resultadoOpen,
+                        titulo = "Resultado por fazenda",
+                    ) { resultadoOpen = !resultadoOpen }
                 }
-                // Gráfico "Custo por Fazenda" com alternância ha/sc/ton --
-                // gap de paridade com o site (Task #620: dre-client.tsx já
-                // tinha esse gráfico + UnidadeToggleGroup há um tempo, o app
-                // só mostrava as linhas de texto Custo/ha e Custo/sc dentro
-                // de cada card de fazenda, sem gráfico nenhum). Reaproveita
-                // SimpleBarChart (mesma réplica leve de BarChart usada nos
-                // outros módulos, sem lib nova) -- "sc"/"ton" só entram nas
-                // opções quando ALGUMA fazenda tem o dado correspondente
-                // (mesmo critério de temAlgumaSaca/temAlgumTon do site).
-                if (data.porFazenda.isNotEmpty()) {
-                    item {
-                        val temAlgumaSaca = data.porFazenda.any { it.custoPorSc != null }
-                        val temAlgumTon = data.porFazenda.any { it.custoPorTon != null }
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text(
-                                    when (unidadeCusto) {
-                                        "sc" -> "Custo/sc por Fazenda"
-                                        "ton" -> "Custo/ton por Fazenda"
-                                        else -> "Custo/ha por Fazenda"
-                                    },
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                                if (temAlgumaSaca || temAlgumTon) {
-                                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                                        val opcoes = buildList {
-                                            add("ha" to "ha")
-                                            if (temAlgumaSaca) add("sc" to "sc")
-                                            if (temAlgumTon) add("ton" to "ton")
-                                        }
-                                        opcoes.forEachIndexed { index, (v, label) ->
-                                            SegmentedButton(
-                                                selected = unidadeCusto == v,
-                                                onClick = { unidadeCusto = v },
-                                                shape = SegmentedButtonDefaults.itemShape(index = index, count = opcoes.size),
-                                            ) {
-                                                Text(label, style = MaterialTheme.typography.labelSmall)
-                                            }
-                                        }
-                                    }
-                                }
-                                val categorias = when (unidadeCusto) {
-                                    "sc" -> data.porFazenda.filter { it.custoPorSc != null }.map { it.farmName }
-                                    "ton" -> data.porFazenda.filter { it.custoPorTon != null }.map { it.farmName }
-                                    else -> data.porFazenda.map { it.farmName }
-                                }
-                                val valores = when (unidadeCusto) {
-                                    "sc" -> data.porFazenda.mapNotNull { it.custoPorSc }
-                                    "ton" -> data.porFazenda.mapNotNull { it.custoPorTon }
-                                    else -> data.porFazenda.map { it.custoPorHa }
-                                }
-                                SimpleBarChart(
-                                    categories = categorias,
-                                    series = listOf(BarSeries("Custo", valores, defaultSeriesColor(0))),
-                                    isMoney = true,
-                                )
-                            }
-                        }
+                if (resultadoOpen) {
+                    items(data.porFazenda, key = { it.farmId }) { f ->
+                        FarmCard(
+                            f = f,
+                            arvore = data.arvores[f.farmId].orEmpty(),
+                            expanded = f.farmId in expandedFarmIds,
+                            onToggle = { viewModel.toggleFarm(f.farmId) },
+                        )
                     }
                 }
                 // Painel de Indicadores Zootécnicos (Pecuária/Pastagem) --
@@ -774,8 +780,70 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                         }
                     }
                 }
-                if (data.composicaoPorCategoria.isNotEmpty()) {
-                    item {
+            }
+        }
+        if (graficosOpen && data != null) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { graficosOpen = false },
+                modifier = Modifier.fillMaxWidth(0.96f),
+                properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+                title = { Text("Gráficos · DRE") },
+                text = {
+                    Column(
+                        modifier = Modifier.heightIn(max = 560.dp).verticalScroll(androidx.compose.foundation.rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        if (data.porFazenda.isNotEmpty()) {
+                        val temAlgumaSaca = data.porFazenda.any { it.custoPorSc != null }
+                        val temAlgumTon = data.porFazenda.any { it.custoPorTon != null }
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(
+                                    when (unidadeCusto) {
+                                        "sc" -> "Custo/sc por Fazenda"
+                                        "ton" -> "Custo/ton por Fazenda"
+                                        else -> "Custo/ha por Fazenda"
+                                    },
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                                if (temAlgumaSaca || temAlgumTon) {
+                                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                                        val opcoes = buildList {
+                                            add("ha" to "ha")
+                                            if (temAlgumaSaca) add("sc" to "sc")
+                                            if (temAlgumTon) add("ton" to "ton")
+                                        }
+                                        opcoes.forEachIndexed { index, (v, label) ->
+                                            SegmentedButton(
+                                                selected = unidadeCusto == v,
+                                                onClick = { unidadeCusto = v },
+                                                shape = SegmentedButtonDefaults.itemShape(index = index, count = opcoes.size),
+                                            ) {
+                                                Text(label, style = MaterialTheme.typography.labelSmall)
+                                            }
+                                        }
+                                    }
+                                }
+                                val categorias = when (unidadeCusto) {
+                                    "sc" -> data.porFazenda.filter { it.custoPorSc != null }.map { it.farmName }
+                                    "ton" -> data.porFazenda.filter { it.custoPorTon != null }.map { it.farmName }
+                                    else -> data.porFazenda.map { it.farmName }
+                                }
+                                val valores = when (unidadeCusto) {
+                                    "sc" -> data.porFazenda.mapNotNull { it.custoPorSc }
+                                    "ton" -> data.porFazenda.mapNotNull { it.custoPorTon }
+                                    else -> data.porFazenda.map { it.custoPorHa }
+                                }
+                                SimpleBarChart(
+                                    categories = categorias,
+                                    series = listOf(BarSeries("Custo", valores, defaultSeriesColor(0))),
+                                    isMoney = true,
+                                )
+                            }
+                        }
+                        }
+                        if (data.composicaoPorCategoria.isNotEmpty()) {
                         Card(modifier = Modifier.fillMaxWidth()) {
                             var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
                             Column(modifier = Modifier.padding(12.dp)) {
@@ -788,17 +856,11 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                             }
 }
                         }
+                        }
                     }
-                }
-                items(data.porFazenda, key = { it.farmId }) { f ->
-                    FarmCard(
-                        f = f,
-                        arvore = data.arvores[f.farmId].orEmpty(),
-                        expanded = f.farmId in expandedFarmIds,
-                        onToggle = { viewModel.toggleFarm(f.farmId) },
-                    )
-                }
-            }
+                },
+                confirmButton = { androidx.compose.material3.TextButton(onClick = { graficosOpen = false }) { Text("Fechar") } },
+            )
         }
     }
 }

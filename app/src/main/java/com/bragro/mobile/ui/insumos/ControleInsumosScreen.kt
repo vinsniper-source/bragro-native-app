@@ -440,7 +440,9 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                         )
                     }
                 }
-                InsumosCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth())
+                com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
+                    InsumosCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth().padding(8.dp))
+                }
             }
             if (offline) {
                 item { Text(NetworkStatus.failureMessage(context), style = MaterialTheme.typography.bodySmall) }

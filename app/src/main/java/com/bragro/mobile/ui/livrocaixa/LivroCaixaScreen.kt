@@ -403,8 +403,8 @@ private fun LancamentoRow(l: LivroCaixaLancamentoData) {
             }
         }
         Column(modifier = Modifier.weight(1f), horizontalAlignment = androidx.compose.ui.Alignment.End) {
-            if (l.entrada > 0) Text("+ ${formatMoneyBrl(l.entrada)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-            if (l.saida > 0) Text("- ${formatMoneyBrl(l.saida)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            if (l.entrada > 0) Text("+ ${formatMoneyBrl(l.entrada)}", style = MaterialTheme.typography.bodySmall)
+            if (l.saida > 0) Text("- ${formatMoneyBrl(l.saida)}", style = MaterialTheme.typography.bodySmall)
             Text(formatMoneyBrl(l.saldo), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
         }
     }
@@ -655,7 +655,31 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
             contentPadding = PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item(key = "livro-caixa-icon-row") {
+            // Painel de monitoramento (padrão da plataforma).
+            if (data != null && data.lancamentos.isNotEmpty()) {
+                item(key = "painel") {
+                    val nEnt = data.lancamentos.count { it.entrada > 0 }
+                    val nSai = data.lancamentos.count { it.saida > 0 }
+                    com.bragro.mobile.ui.domain.PainelMonitoramento(
+                        com.bragro.mobile.ui.domain.PainelModulo(
+                            titulo = "Livro Caixa · $ano",
+                            subtitulo = "${data.lancamentos.size} lançamento(s) · ${data.contas.size} conta(s)" + (banco?.let { " · $it" } ?: ""),
+                            kpis = listOf(
+                                com.bragro.mobile.ui.domain.PainelKpi("Entradas", data.totalEntradas, "moeda", null, "$nEnt lançamento(s)", "Extrato"),
+                                com.bragro.mobile.ui.domain.PainelKpi("Saídas", data.totalSaidas, "moeda", null, "$nSai lançamento(s)", "Extrato"),
+                                com.bragro.mobile.ui.domain.PainelKpi("Saldo do ano", data.saldoFinal, "moeda", null, "saldo inicial ${formatMoneyBrl(data.saldoInicial)}", "Extrato", tom = if (data.saldoFinal >= 0) "abaixo" else "acima"),
+                                com.bragro.mobile.ui.domain.PainelKpi("Contas", data.contas.size.toDouble(), "numero", null, "bancos com movimento", "Resumo por conta"),
+                            ),
+                            barras = listOfNotNull(
+                                data.totalEntradas.takeIf { it > 0 }?.let {
+                                    com.bragro.mobile.ui.domain.PainelBarra("Saídas sobre as entradas", Math.round(data.totalSaidas / it * 1000) / 10.0, "${formatMoneyBrl(data.totalSaidas)} / ${formatMoneyBrl(it)}", neutra = true)
+                                },
+                            ),
+                        ),
+                    )
+                }
+            }
+            item(key = "livro-caixa-icon-row") { com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") { Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
                 val dadosBlock = LivroCaixaBlockSpec("Dados") {
                     LabeledIconButton(
                         icon = Icons.Filled.FilterAlt,
@@ -710,7 +734,7 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                     }
                 }
                 LivroCaixaCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth())
-            }
+            } } }
             if (filtrosOpen) {
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -744,19 +768,7 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                     RecordTableRow(columns = LIVRO_CAIXA_EXPORT_COLUMNS, record = row, domainId = "", hScroll = tableHScroll)
                 }
             } else if (contentExpanded) {
-                item {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
-                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            com.bragro.mobile.ui.domain.TituloRecolhivel("Totais de $ano", aberto) { aberto = !aberto }
-                            if (aberto) {
-                            Row { Text("Entradas: "); Text(formatMoneyBrl(data.totalEntradas), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
-                            Row { Text("Saídas: "); Text(formatMoneyBrl(data.totalSaidas), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error) }
-                            Row { Text("Saldo final: "); Text(formatMoneyBrl(data.saldoFinal), fontWeight = FontWeight.Bold) }
-                        }
-}
-                    }
-                }
+                // "Totais" saiu daqui -- já estão no Painel de monitoramento.
                 if (data.contas.isNotEmpty()) {
                     item {
                         Card(modifier = Modifier.fillMaxWidth()) {
@@ -817,9 +829,8 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                     item { ResumoMensalCard(data.porMes) }
                 }
                 item {
-                    Box(modifier = Modifier.padding(top = 4.dp)) {
-                        com.bragro.mobile.ui.domain.TituloRecolhivel("Extrato (${data.lancamentos.size})", extratoAberto) { extratoAberto = !extratoAberto }
-                    }
+                    // Divisória "EXTRATO n" (padrão LANÇAMENTOS da plataforma).
+                    com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = data.lancamentos.size, aberto = extratoAberto, titulo = "Extrato") { extratoAberto = !extratoAberto }
                 }
                 if (extratoAberto) items(data.lancamentos, key = { it.id }) { l -> LancamentoRow(l) }
             }

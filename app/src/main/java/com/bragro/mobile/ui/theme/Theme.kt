@@ -85,6 +85,11 @@ val BrBlueTertiaryDark = Color(0xFF7FAEEA)
 // fundo é só a borda fina verde (ver AppCard.kt/cardBorderColor, que usa
 // MaterialTheme.colorScheme.primary = BrGreen).
 private val LightColors = lightColorScheme(
+    // Nada vermelho no app (pedido do usuário): "erro"/excluir/vencido em laranja.
+    error = Color(0xFFC2611F),
+    onError = Color(0xFFFFFFFF),
+    errorContainer = Color(0xFFFBE3CF),
+    onErrorContainer = Color(0xFF5A2A00),
     // Verde mais escuro/saturado no claro -- pedido do usuário ("aumente o
     // contraste... use um verde mais profundo, tom folha/esmeralda
     // fechado"), em vez do BrGreen puro (mais claro, perdia contraste no
@@ -132,6 +137,11 @@ private val LightColors = lightColorScheme(
 )
 
 private val DarkColors = darkColorScheme(
+    // Nada vermelho no app (pedido do usuário): "erro"/excluir/vencido em laranja.
+    error = Color(0xFFE5A35A),
+    onError = Color(0xFF3A1D00),
+    errorContainer = Color(0xFF5A3A1C),
+    onErrorContainer = Color(0xFFFFDDB8),
     // Verde mais suave/acinzentado no escuro -- pedido do usuário
     // ("reduza a saturação... prefira tons de verde mais pastel,
     // acinzentados... sem poluir a tela"), em vez do BrGreen puro (mais
@@ -176,6 +186,11 @@ val ArCeleste = Color(0xFF74ACDF)
 val ArSol = Color(0xFFF6B40E)
 
 private val ArLightColors = lightColorScheme(
+    // Nada vermelho no app (pedido do usuário): "erro"/excluir/vencido em laranja.
+    error = Color(0xFFC2611F),
+    onError = Color(0xFFFFFFFF),
+    errorContainer = Color(0xFFFBE3CF),
+    onErrorContainer = Color(0xFF5A2A00),
     primary = Color(0xFF1F5F99),
     onPrimary = Color(0xFFFFFFFF),
     primaryContainer = Color(0xFFD3E6F7),
@@ -201,6 +216,11 @@ private val ArLightColors = lightColorScheme(
 )
 
 private val ArDarkColors = darkColorScheme(
+    // Nada vermelho no app (pedido do usuário): "erro"/excluir/vencido em laranja.
+    error = Color(0xFFE5A35A),
+    onError = Color(0xFF3A1D00),
+    errorContainer = Color(0xFF5A3A1C),
+    onErrorContainer = Color(0xFFFFDDB8),
     primary = Color(0xFF8DBDE8),
     onPrimary = Color(0xFF0A2238),
     primaryContainer = Color(0xFF1F3F5C),

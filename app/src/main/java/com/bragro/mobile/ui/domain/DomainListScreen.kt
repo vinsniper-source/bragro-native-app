@@ -438,6 +438,14 @@ fun DomainListScreen(
     // ícones"). Tudo começa fechado; tocar o ícone na fileira revela o
     // bloco correspondente.
     val expandedBlocks = remember(domainId) { mutableStateMapOf<String, Boolean>() }
+    // Painel de monitoramento (espelho da plataforma): indicador tocado fica
+    // destacado e aplica o filtro dele na lista; Gráficos abrem numa janela.
+    var kpiAtivo by remember(domainId) { mutableStateOf<String?>(null) }
+    var kpiFiltroAtivo by remember(domainId) { mutableStateOf<Map<String, String>>(emptyMap()) }
+    val gruposAbertos = remember(domainId) { mutableStateMapOf<String, Boolean>() }
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val lancTail = remember { intArrayOf(0) }
     // Título FIXO com o nome do setor/módulo -- pedido do usuário ("agora
     // que os ícones estão tendo rótulos, pode deixar fixo o nome do setor
     // ao invés de alterar para parecer o nome do ícone no título"): antes
@@ -770,6 +778,7 @@ fun DomainListScreen(
             financeiroGroups.values.associateBy { it.first() }
         }
         LazyColumn(
+            state = listState,
             contentPadding = PaddingValues(12.dp, padding.calculateTopPadding() + 4.dp, 12.dp, 80.dp),
             // Sem isso os blocos (Gráficos, Calculadoras, Recalcular Área,
             // Período, cards de lançamento) ficavam grudados um no outro --
@@ -899,7 +908,43 @@ fun DomainListScreen(
             // confirmada por imagem pra cada módulo (ver PER_MODULE_BLOCK_DOMAINS
             // abaixo).
             val useCustomBlocks = domainId in PER_MODULE_BLOCK_DOMAINS
-            item(key = "module-icon-row") {
+            // Painel de monitoramento -- mesmo cálculo da plataforma
+            // (module-panel.ts) com os registros já carregados; tocar num
+            // indicador filtra a lista e rola até os lançamentos.
+            val painelBase = calcularPainelModulo(domainId, cfg.label, cfg.columns, records)
+            if (painelBase != null && domainId != "nfse" && domainId != "cobrancas") {
+                item(key = "painel") {
+                    val extra = barraFiltroAtivo(records, kpiFiltroAtivo)
+                    val painel = if (extra != null) painelBase.copy(barras = (listOf(extra) + painelBase.barras).take(2)) else painelBase
+                    PainelMonitoramento(
+                        painel = painel,
+                        kpiAtivo = kpiAtivo,
+                        onKpi = { k ->
+                            // Desfaz o filtro do indicador anterior, sem mexer
+                            // na fazenda/safra escolhidas no topo do app.
+                            kpiFiltroAtivo.forEach { (key, v) ->
+                                val global = (key == "safra" && globalSafraSelected == v) || (key == globalFarmField && globalFarmSelected == v)
+                                if (!global) columnFilters.remove(key)
+                            }
+                            if (kpiAtivo == k.label) {
+                                kpiAtivo = null
+                                kpiFiltroAtivo = emptyMap()
+                            } else {
+                                kpiAtivo = k.label
+                                kpiFiltroAtivo = k.filtro
+                                k.filtro.forEach { (key, value) -> if (cfg.columns.any { it.key == key }) columnFilters[key] = value }
+                                allExpanded = true
+                                scope.launch {
+                                    kotlinx.coroutines.delay(150)
+                                    val alvo = listState.layoutInfo.totalItemsCount - lancTail[0] - 1
+                                    if (alvo >= 0) listState.animateScrollToItem(alvo)
+                                }
+                            }
+                        },
+                    )
+                }
+            }
+            item(key = "module-icon-row") { BlocoComFaixa("Ações") { Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
                 // Revisar: linha própria na aba Operações, filtra os lançamentos
                 // importados ainda não conferidos (abrir um lançamento o confirma).
                 val revisarFooter: (@Composable () -> Unit)? = {
@@ -1313,10 +1358,9 @@ fun DomainListScreen(
                     // (ver actions do Scaffold acima), pedido do usuário.
                 }
                 }
-            }
-            if (expandedBlocks["charts"] == true) {
-                item(key = "charts") { ModuleChartsCard(domainId, showHeader = false) }
-            }
+            } } }
+            // Gráficos: abrem numa janela (igual à plataforma), em vez de
+            // empurrar a lista pra baixo.
             if (showCalc && expandedBlocks["calculators"] == true) {
                 item(key = "calculators") { CalculatorsCard(domainId, showHeader = false) }
             }
@@ -1379,6 +1423,21 @@ fun DomainListScreen(
                     )
                 }
             }
+            // Divisória "LANÇAMENTOS n" com setinha (mesma da plataforma) --
+            // a setinha mostra/esconde a lista (antes só pelo ícone Expandir).
+            item(key = "lanc-header") {
+                CabecalhoLancamentos(
+                    total = filteredRecords.size,
+                    aberto = allExpanded,
+                    extra = if (filteredRecords.size != records.size) "de ${records.size}" else null,
+                ) { allExpanded = !allExpanded; cardOverrides.clear() }
+            }
+            lancTail[0] = when {
+                filteredRecords.isEmpty() -> 1
+                !allExpanded -> 0
+                tableView && cfg.columns.any { !it.hideInTable && visibleKeys.contains(it.key) } -> filteredRecords.size + 1
+                else -> filteredRecords.size
+            }
             if (filteredRecords.isEmpty()) {
                 item(key = "empty") {
                     val msg = if (records.isEmpty()) "Nenhum lançamento ainda. Toque em + para adicionar." else "Nenhum lançamento neste período."
@@ -1401,10 +1460,56 @@ fun DomainListScreen(
                         RecordTableHeader(tableColumns, tableHScroll)
                     }
                 }
-                itemsIndexed(filteredRecords, key = { _, it -> it["id"] ?: it.hashCode().toString() }) { idx, record ->
+                // Cards unificados por atividade (chaveAtividade da
+                // plataforma) -- só na vista Bloco; Tabela segue linha a linha.
+                val agrupar = !tableView && domainId != "financeiro" && domainId != "pedidos"
+                val chaves = if (agrupar) filteredRecords.map { chaveAtividade(domainId, it) } else emptyList()
+                val listaCards = if (agrupar && chaves.any { it != null }) {
+                    val ordem = LinkedHashMap<String, MutableList<Int>>()
+                    chaves.forEachIndexed { i, c -> ordem.getOrPut(c ?: "\u0000$i") { mutableListOf() }.add(i) }
+                    ordem.values.flatten().map { filteredRecords[it] }
+                } else filteredRecords
+                val chavesFull = if (agrupar) listaCards.map { chaveAtividade(domainId, it) } else emptyList()
+                val tamanhoGrupo = chavesFull.filterNotNull().groupingBy { it }.eachCount()
+                // Grupo fechado = só o 1º lançamento entra na lista (desenha o
+                // cartão do grupo); assim não sobram itens vazios com espaço.
+                val listaVisivel = if (!agrupar) listaCards else listaCards.filterIndexed { i, _ ->
+                    val c = chavesFull[i]
+                    c == null || (tamanhoGrupo[c] ?: 0) <= 1 || gruposAbertos[c] == true || i == 0 || chavesFull[i - 1] != c
+                }
+                val chavesCards = if (agrupar) listaVisivel.map { chaveAtividade(domainId, it) } else emptyList()
+                lancTail[0] = listaVisivel.size + if (tableView && tableColumns.isNotEmpty()) 1 else 0
+                val medidaGrupo = medidaDoModulo(domainId, cfg.columns)
+                itemsIndexed(listaVisivel, key = { _, it -> it["id"] ?: it.hashCode().toString() }) { idx, record ->
+                  Column(modifier = Modifier.fillMaxWidth()) {
+                    val chaveGrupo = chavesCards.getOrNull(idx)
+                    val qtdGrupo = chaveGrupo?.let { tamanhoGrupo[it] } ?: 0
+                    if (chaveGrupo != null && qtdGrupo > 1) {
+                        val abertoGrupo = gruposAbertos[chaveGrupo] == true
+                        if (idx == 0 || chavesCards[idx - 1] != chaveGrupo) {
+                            val doGrupo = listaCards.filterIndexed { i, _ -> chavesFull[i] == chaveGrupo }
+                            val onde = listOf("local", "fazenda", "talhao").firstNotNullOfOrNull { k ->
+                                doGrupo.mapNotNull { it[k]?.takeIf { v -> v.isNotBlank() } }.distinct().takeIf { it.isNotEmpty() }
+                            }?.let { l -> l.take(2).joinToString(", ") + if (l.size > 2) " +${l.size - 2}" else "" }
+                            val total = medidaGrupo?.let { m ->
+                                val soma = doGrupo.sumOf { painelNum(it[m.key]) }
+                                if (soma == 0.0) null else if (m.money) fmtMoeda(soma) else java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 1 }.format(soma)
+                            }
+                            CartaoGrupo(
+                                titulo = tituloChave(chaveGrupo),
+                                qtd = qtdGrupo,
+                                onde = onde,
+                                total = total,
+                                totalRotulo = medidaGrupo?.label,
+                                aberto = abertoGrupo,
+                                onToggle = { gruposAbertos[chaveGrupo] = !abertoGrupo },
+                            )
+                        }
+                        if (!abertoGrupo) return@itemsIndexed
+                    }
                     val recordId = record["id"]
                     val isLastOfGroup = isPedidos && run {
-                        val next = filteredRecords.getOrNull(idx + 1)
+                        val next = listaVisivel.getOrNull(idx + 1)
                         next == null || next["noPedido"] != record["noPedido"] || next["item"] != record["item"]
                     }
                     // Mostra TODAS as colunas visíveis (não só as 4
@@ -1561,6 +1666,7 @@ fun DomainListScreen(
                             }
                         }
                     }
+                  }
                 }
             }
         }
@@ -1636,6 +1742,21 @@ fun DomainListScreen(
             confirmButton = {
                 TextButton(onClick = { recordBeingViewed = null }) { Text("Fechar") }
             },
+        )
+    }
+
+    if (expandedBlocks["charts"] == true) {
+        AlertDialog(
+            onDismissRequest = { expandedBlocks["charts"] = false },
+            modifier = Modifier.fillMaxWidth(0.96f),
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            title = { Text("Gráficos · ${config?.label ?: domainId}") },
+            text = {
+                Column(modifier = Modifier.heightIn(max = 560.dp).verticalScroll(rememberScrollState())) {
+                    ModuleChartsCard(domainId, showHeader = false)
+                }
+            },
+            confirmButton = { TextButton(onClick = { expandedBlocks["charts"] = false }) { Text("Fechar") } },
         )
     }
 
@@ -1953,9 +2074,7 @@ private fun RecordFieldPlain(
         // Verde (receita) / laranja-âmbar (despesa) só nas colunas Bruto/
         // Liquido do Financeiro -- pedido do usuário sobre a cor da fonte dos
         // valores (mesmo critério de FinanceiroFieldLine/RecordTable).
-        val moneyColor = if (domainId == "financeiro" && (col.key == "bruto" || col.key == "liquido")) {
-            if (isReceitaOp(record["operacao"])) MaterialTheme.colorScheme.primary else com.bragro.mobile.ui.theme.BrOrange
-        } else if (isVencidoCampo(col.key, record[col.key], record["status"])) {
+        val moneyColor = if (isVencidoCampo(col.key, record[col.key], record["status"])) {
             MaterialTheme.colorScheme.error
         } else null
         // Negrito só no valor preenchido, cabeçalho fica normal/mais claro --

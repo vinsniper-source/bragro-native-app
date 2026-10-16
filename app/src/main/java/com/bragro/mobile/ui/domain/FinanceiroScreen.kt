@@ -527,7 +527,7 @@ fun FinanceiroScreen(
                         // do usuario ("substitua icones que estejam iguais
                         // mas com funcoes diferentes").
                         ModuleIconButton(
-                            ModuleIconItem("recalcular-vencimentos", Icons.Filled.Autorenew, "Recalcular", active = expandedBlocks["recalcular-vencimentos"] == true),
+                            ModuleIconItem("recalcular-vencimentos", Icons.Filled.Autorenew, "Recalcular vcto", active = expandedBlocks["recalcular-vencimentos"] == true),
                         ) { expandedBlocks["recalcular-vencimentos"] = expandedBlocks["recalcular-vencimentos"] != true }
                     }
                     PeriodoDropdown(
@@ -597,10 +597,13 @@ fun FinanceiroScreen(
             // categorias, mostre apenas os ícones de cada categoria"), mesmo
             // padrão aplicado nos demais módulos (DomainListScreen.kt/
             // ModuleCategoryTabs).
-            FinanceiroCategoryTabs(
-                listOf(dadosBlock, operacoesBlock, arquivosBlock),
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-            )
+            // Faixa "AÇÕES" (padrão da plataforma), recolhível.
+            BlocoComFaixa("Ações", modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+                FinanceiroCategoryTabs(
+                    listOf(dadosBlock, operacoesBlock, arquivosBlock),
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                )
+            }
 
             when {
                 cfg == null -> {
@@ -650,8 +653,22 @@ fun FinanceiroScreen(
                             // Calculadoras/Recalcular Vencimentos") -- e só
                             // quando o ícone correspondente na fileira acima
                             // está aberto (ver Card com FlowRow acima).
-                            if (!isQuickView && expandedBlocks["charts"] == true) {
-                                item(key = "charts") { ModuleChartsCard("financeiro", showHeader = false) }
+                            // Painel de monitoramento (mesmo da plataforma) -- só na
+                            // visão Lançamentos; cada indicador abre a visão certa.
+                            if (!isQuickView && cfg != null) {
+                                val painelFin = calcularPainelModulo("financeiro", "Financeiro", cfg.columns, allRecords)
+                                if (painelFin != null) {
+                                    item(key = "painel") {
+                                        PainelMonitoramento(painelFin, onKpi = { k ->
+                                            when (k.destino) {
+                                                "Contas a pagar" -> view = FinanceiroView.PAGAR
+                                                "Contas a receber" -> view = FinanceiroView.RECEBER
+                                                "Já pago/recebido" -> view = FinanceiroView.CONCILIADO
+                                                else -> allExpanded = true
+                                            }
+                                        })
+                                    }
+                                }
                             }
                             if (!isQuickView && expandedBlocks["calculators"] == true) {
                                 item(key = "calculators") { CalculatorsCard("financeiro", showHeader = false) }
@@ -663,6 +680,13 @@ fun FinanceiroScreen(
                             // financeiroGroupByStartIndex: declarados acima, antes do
                             // LazyColumn (precisam de contexto @Composable pro remember;
                             // disponíveis aqui por closure).
+                            item(key = "lanc-header") {
+                                CabecalhoLancamentos(
+                                    total = filtered.size,
+                                    aberto = allExpanded,
+                                    titulo = if (isQuickView) view.label else "Lançamentos",
+                                ) { allExpanded = !allExpanded; cardOverrides.clear() }
+                            }
                             if (allExpanded) {
                             if (tableView && cols.isNotEmpty()) {
                                 item(key = "table-header") { RecordTableHeader(cols, tableHScroll) }
@@ -780,6 +804,22 @@ fun FinanceiroScreen(
         }
     }
 
+    // Gráficos abrem numa janela (padrão da plataforma).
+    if (!isQuickView && expandedBlocks["charts"] == true) {
+        AlertDialog(
+            onDismissRequest = { expandedBlocks["charts"] = false },
+            modifier = Modifier.fillMaxWidth(0.96f),
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            title = { Text("Gráficos · Financeiro") },
+            text = {
+                Column(modifier = Modifier.heightIn(max = 560.dp).verticalScroll(rememberScrollState())) {
+                    ModuleChartsCard("financeiro", showHeader = false)
+                }
+            },
+            confirmButton = { TextButton(onClick = { expandedBlocks["charts"] = false }) { Text("Fechar") } },
+        )
+    }
+
     if (recordPendingDelete != null) {
         AlertDialog(
             onDismissRequest = { recordPendingDelete = null },
@@ -865,16 +905,14 @@ private fun FinanceiroFieldLine(col: com.bragro.mobile.data.model.ColumnConfig, 
             // Bruto/Liquido (valores de receita/despesa) ganham prioridade
             // sobre o negrito azul do vcto -- pedido do usuário sobre a cor
             // da fonte dos valores.
-            val moneyColor = if (col.key == "bruto" || col.key == "liquido") {
-                if (isReceitaOp(operacao)) MaterialTheme.colorScheme.primary else com.bragro.mobile.ui.theme.BrOrange
-            } else null
+            val moneyColor: Color? = null
             Text(
                 buildAnnotatedString {
                     withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) { append("${col.label}: ") }
                     withStyle(
                         SpanStyle(
                             fontWeight = FontWeight.Bold,
-                            color = moneyColor ?: if (isFinanceiroBoldColumn(col.key)) MaterialTheme.colorScheme.primary else Color.Unspecified,
+                            color = moneyColor ?: Color.Unspecified,
                         ),
                     ) { append(displayValue) }
                 },
@@ -1365,8 +1403,8 @@ private fun FluxoCard(row: FluxoRow, onClick: () -> Unit) {
                 // despesa? -> Verde (receita) / Laranja ou âmbar (despesa)").
                 // "Entrada" já era colorScheme.primary (verde, adapta tema);
                 // "Saída" trocou de colorScheme.error (vermelho) pra BrOrange.
-                if (row.entrada > 0) Text("Entrada: ${formatMoneyValue(row.entrada.toString())}", color = MaterialTheme.colorScheme.primary)
-                if (row.saida > 0) Text("Saída: ${formatMoneyValue(row.saida.toString())}", color = com.bragro.mobile.ui.theme.BrOrange)
+                if (row.entrada > 0) Text("Entrada: ${formatMoneyValue(row.entrada.toString())}")
+                if (row.saida > 0) Text("Saída: ${formatMoneyValue(row.saida.toString())}")
             }
             Text("Saldo acumulado: ${formatMoneyValue(row.saldoAcumulado.toString())}", fontWeight = FontWeight.Bold)
         }

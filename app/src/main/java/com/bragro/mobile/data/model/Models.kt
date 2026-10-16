@@ -1666,6 +1666,34 @@ data class OperacaoTimelineItemData(
     val operacao: String,
     val responsavel: String? = null,
     val os: String? = null,
+    // Bloco por fazenda (filtros + cartões lado a lado) -- tudo calculado no
+    // servidor (getOperacoes). Defaults pra continuar lendo respostas antigas.
+    val tipo: String = "safra",
+    val grupo: String = "Outras",
+    val situacao: String = "ANDAMENTO",
+    val dataFim: String? = null,
+    val talhao: String? = null,
+    val hectare: Double? = null,
+    val pctFazenda: Double? = null,
+    val item: String? = null,
+    val qtd: Double? = null,
+    val unidade: String? = null,
+    val dosePorHa: Double? = null,
+    val realizado: Double = 0.0,
+    val planejado: Double = 0.0,
+    val custoHa: Double? = null,
+    val variacaoPct: Double? = null,
+    val produtividade: Double? = null,
+    val producao: Double? = null,
+    val unidadeProducao: String? = null,
+    val funcao: String? = null,
+    val frota: String? = null,
+)
+
+@Serializable
+data class OperacaoTalhaoData(
+    val talhao: String,
+    val hectare: Double,
 )
 
 @Serializable
@@ -1718,6 +1746,8 @@ data class OperacaoAgrupadaData(
     val realizadoTotal: Double,
     val planejadoTotal: Double,
     val variacaoMedia: Double? = null,
+    val custoHaFazenda: Double? = null,
+    val talhoes: List<OperacaoTalhaoData> = emptyList(),
     val timeline: List<OperacaoTimelineItemData> = emptyList(),
     val financeiroTotal: Double,
     val financeiroDetalhe: List<OperacaoFinanceiroItemData> = emptyList(),

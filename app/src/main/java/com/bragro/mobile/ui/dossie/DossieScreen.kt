@@ -2,6 +2,9 @@ package com.bragro.mobile.ui.dossie
 
 import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -300,85 +303,182 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
         val livroCaixa = d.livroCaixa
         val patrimonio = d.patrimonio
 
+        // Seções em divisórias (padrão da plataforma), recolhíveis; o botão
+        // "Seções" em Ações rola direto pra cada uma.
+        val abertas = remember { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
+        fun aberta(id: String) = abertas[id] != false
+        val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+        val scope = androidx.compose.runtime.rememberCoroutineScope()
+        val indiceSecao = remember { mutableMapOf<String, Int>() }
+        val fazPositivas = dre?.porFazenda?.count { it.margem >= 0 } ?: 0
+
         LazyColumn(
+            state = listState,
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            item {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "Relatório único pra anexar num pedido de crédito rural ou apresentar a um investidor.",
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.weight(1f).padding(end = 8.dp),
-                    )
-                    AnoDropdown(ano) { viewModel.setAno(it) }
-                }
-            }
-
-            // Resumo Executivo
-            if (dre != null) {
-                item {
-                    SecaoCard(titulo = "Resumo Executivo") {
-                        LinhaResumo("Área total", formatArea(dre.totais.areaHa))
-                        LinhaResumo("Receita total", formatMoneyBrl(dre.totais.receitaTotal))
-                        LinhaResumo("Custo total", formatMoneyBrl(dre.totais.custoTotal))
-                        LinhaResumo("Margem", formatMoneyBrl(dre.totais.margem), destaquePositivo = dre.totais.margem >= 0)
-                        LinhaResumo("Custo/ha", formatMoneyBrl(dre.totais.custoPorHa))
-                    }
-                }
-
-                // DRE por fazenda
-                item { Text("Resultado por Fazenda (DRE)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold) }
-                if (dre.porFazenda.isEmpty()) {
-                    item { Text("Nenhuma fazenda cadastrada.", style = MaterialTheme.typography.bodyMedium) }
-                } else {
-                    items(dre.porFazenda) { f -> FazendaDreCard(f) }
-                }
-            }
-
-            // Livro Caixa
-            if (livroCaixa != null) {
-                item {
-                    SecaoCard(titulo = "Livro Caixa -- $ano") {
-                        LinhaResumo("Entradas", formatMoneyBrl(livroCaixa.totalEntradas), destaquePositivo = true)
-                        LinhaResumo("Saídas", formatMoneyBrl(livroCaixa.totalSaidas), destaquePositivo = false)
-                        LinhaResumo("Saldo do ano", formatMoneyBrl(livroCaixa.saldoFinal), destaquePositivo = livroCaixa.saldoFinal >= 0)
-                    }
-                }
-            }
-
-            // Contratos ativos
+            var n = 0
             item {
                 Text(
-                    "Contratos Ativos -- ${d.contratosAtivos.size} contrato(s), total ${formatMoneyBrl(d.contratosValorTotal)}",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
+                    "Relatório único pra anexar num pedido de crédito rural ou apresentar a um investidor — junta DRE, Livro Caixa, Contratos ativos e Patrimônio.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            if (d.contratosAtivos.isEmpty()) {
-                item { Text("Nenhum contrato ativo cadastrado.", style = MaterialTheme.typography.bodyMedium) }
-            } else {
-                items(d.contratosAtivos) { c -> ContratoCard(c) }
+            n++
+            if (dre != null) {
+                item(key = "painel") {
+                    com.bragro.mobile.ui.domain.PainelMonitoramento(
+                        com.bragro.mobile.ui.domain.PainelModulo(
+                            titulo = "Dossiê · exercício $ano",
+                            subtitulo = "${dre.porFazenda.size} fazenda(s) · ${d.contratosAtivos.size} contrato(s) ativo(s)",
+                            kpis = listOf(
+                                com.bragro.mobile.ui.domain.PainelKpi("Área total", dre.totais.areaHa, "numero", "ha", "${dre.porFazenda.size} fazenda(s)", "Por fazenda"),
+                                com.bragro.mobile.ui.domain.PainelKpi("Receita total", dre.totais.receitaTotal, "moeda", null, "mesma base do DRE", "Resumo"),
+                                com.bragro.mobile.ui.domain.PainelKpi("Custo total", dre.totais.custoTotal, "moeda", null, "Financeiro + Frota + Safra", "Resumo"),
+                                com.bragro.mobile.ui.domain.PainelKpi(
+                                    "Margem", dre.totais.margem, "moeda", null,
+                                    if (dre.totais.receitaTotal != 0.0) com.bragro.mobile.ui.domain.fmtPct(Math.round(dre.totais.margem / dre.totais.receitaTotal * 1000) / 10.0) + " da receita" else "sem receita",
+                                    "Por fazenda", tom = if (dre.totais.margem >= 0) "abaixo" else "acima",
+                                ),
+                                com.bragro.mobile.ui.domain.PainelKpi("Custo / ha", dre.totais.custoPorHa, "moeda", null, formatArea(dre.totais.areaHa), "Resumo"),
+                            ),
+                            barras = listOfNotNull(
+                                livroCaixa?.takeIf { it.totalEntradas > 0 }?.let {
+                                    com.bragro.mobile.ui.domain.PainelBarra("Saldo do Livro Caixa sobre as entradas", maxOf(0.0, Math.round(it.saldoFinal / it.totalEntradas * 100).toDouble()), "${formatMoneyBrl(it.saldoFinal)} / ${formatMoneyBrl(it.totalEntradas)}")
+                                },
+                                dre.porFazenda.takeIf { it.isNotEmpty() }?.let {
+                                    com.bragro.mobile.ui.domain.PainelBarra("Fazendas com margem positiva", Math.round(fazPositivas * 100.0 / it.size).toDouble(), "$fazPositivas/${it.size}")
+                                },
+                            ),
+                        ),
+                    )
+                }
+                n++
             }
-
-            // Patrimônio
-            if (patrimonio != null) {
-                item {
-                    SecaoCard(titulo = "Patrimônio (Ativos) -- ${patrimonio.totalItens} item(ns)") {
-                        LinhaResumo("Valor de aquisição (total)", formatMoneyBrl(patrimonio.valorAquisicaoTotal))
-                        LinhaResumo("Depreciação acumulada", formatMoneyBrl(patrimonio.deprecAcumTotal))
-                        LinhaResumo("Valor contábil (atual)", formatMoneyBrl(patrimonio.valorContabilTotal), destaquePositivo = true)
+            item(key = "acoes") {
+                com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
+                    Column(modifier = Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            AnoDropdown(ano) { viewModel.setAno(it) }
+                            com.bragro.mobile.ui.domain.LabeledIconButton(
+                                icon = Icons.Filled.Print,
+                                label = "Imprimir / PDF",
+                                onClick = { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(d, ano)) },
+                            )
+                        }
+                        // Visão: atalhos pra cada seção.
+                        Row(
+                            modifier = Modifier.fillMaxWidth().horizontalScroll(androidx.compose.foundation.rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            listOf(
+                                "resumo" to "Resumo", "fazendas" to "Por fazenda", "caixa" to "Livro Caixa",
+                                "contratos" to "Contratos", "patrimonio" to "Patrimônio",
+                            ).filter { indiceSecao.containsKey(it.first) }.forEach { (id, rotulo) ->
+                                androidx.compose.material3.AssistChip(
+                                    onClick = {
+                                        abertas[id] = true
+                                        indiceSecao[id]?.let { i -> scope.launch { listState.animateScrollToItem(i) } }
+                                    },
+                                    label = { Text(rotulo) },
+                                )
+                            }
+                        }
                     }
                 }
-                if (patrimonio.principais.isNotEmpty()) {
-                    items(patrimonio.principais) { p -> PatrimonioItemCard(p) }
-                    if (patrimonio.totalItens > patrimonio.principais.size) {
-                        item {
-                            Text(
-                                "Mostrando os ${patrimonio.principais.size} itens de maior valor contábil. Lista completa em Inventário (Ativos).",
-                                style = MaterialTheme.typography.labelSmall,
-                            )
+            }
+            n++
+
+            if (dre != null) {
+                indiceSecao["resumo"] = n
+                item(key = "sec-resumo") { Secao("Resumo executivo", aberta("resumo")) { abertas["resumo"] = !aberta("resumo") } }
+                n++
+                if (aberta("resumo")) {
+                    item {
+                        SecaoCard(titulo = null) {
+                            LinhaResumo("Área total", formatArea(dre.totais.areaHa))
+                            LinhaResumo("Receita total", formatMoneyBrl(dre.totais.receitaTotal))
+                            LinhaResumo("Custo total", formatMoneyBrl(dre.totais.custoTotal))
+                            LinhaResumo("Margem", formatMoneyBrl(dre.totais.margem), destaquePositivo = dre.totais.margem >= 0)
+                            LinhaResumo("Custo/ha", formatMoneyBrl(dre.totais.custoPorHa))
+                        }
+                    }
+                    n++
+                }
+
+                indiceSecao["fazendas"] = n
+                item(key = "sec-fazendas") { Secao("Resultado por fazenda", aberta("fazendas"), "${dre.porFazenda.size}") { abertas["fazendas"] = !aberta("fazendas") } }
+                n++
+                if (aberta("fazendas")) {
+                    if (dre.porFazenda.isEmpty()) {
+                        item { Text("Nenhuma fazenda cadastrada.", style = MaterialTheme.typography.bodyMedium) }
+                        n++
+                    } else {
+                        items(dre.porFazenda) { f -> FazendaDreCard(f) }
+                        n += dre.porFazenda.size
+                    }
+                }
+            }
+
+            if (livroCaixa != null) {
+                indiceSecao["caixa"] = n
+                item(key = "sec-caixa") { Secao("Livro Caixa · $ano", aberta("caixa"), "regime de caixa") { abertas["caixa"] = !aberta("caixa") } }
+                n++
+                if (aberta("caixa")) {
+                    item {
+                        SecaoCard(titulo = null) {
+                            LinhaResumo("Entradas", formatMoneyBrl(livroCaixa.totalEntradas), destaquePositivo = true)
+                            LinhaResumo("Saídas", formatMoneyBrl(livroCaixa.totalSaidas), destaquePositivo = false)
+                            LinhaResumo("Saldo do ano", formatMoneyBrl(livroCaixa.saldoFinal), destaquePositivo = livroCaixa.saldoFinal >= 0)
+                        }
+                    }
+                    n++
+                }
+            }
+
+            indiceSecao["contratos"] = n
+            item(key = "sec-contratos") {
+                Secao("Contratos ativos", aberta("contratos"), "${d.contratosAtivos.size} · ${formatMoneyBrl(d.contratosValorTotal)}") { abertas["contratos"] = !aberta("contratos") }
+            }
+            n++
+            if (aberta("contratos")) {
+                if (d.contratosAtivos.isEmpty()) {
+                    item { Text("Nenhum contrato ativo cadastrado.", style = MaterialTheme.typography.bodyMedium) }
+                    n++
+                } else {
+                    items(d.contratosAtivos) { c -> ContratoCard(c) }
+                    n += d.contratosAtivos.size
+                }
+            }
+
+            if (patrimonio != null) {
+                indiceSecao["patrimonio"] = n
+                item(key = "sec-patrimonio") {
+                    Secao("Patrimônio (ativos)", aberta("patrimonio"), "${patrimonio.totalItens} item(ns)") { abertas["patrimonio"] = !aberta("patrimonio") }
+                }
+                n++
+                if (aberta("patrimonio")) {
+                    item {
+                        SecaoCard(titulo = null) {
+                            LinhaResumo("Valor de aquisição (total)", formatMoneyBrl(patrimonio.valorAquisicaoTotal))
+                            LinhaResumo("Depreciação acumulada", formatMoneyBrl(patrimonio.deprecAcumTotal))
+                            LinhaResumo("Valor contábil (atual)", formatMoneyBrl(patrimonio.valorContabilTotal), destaquePositivo = true)
+                        }
+                    }
+                    n++
+                    if (patrimonio.principais.isNotEmpty()) {
+                        items(patrimonio.principais) { p -> PatrimonioItemCard(p) }
+                        n += patrimonio.principais.size
+                        if (patrimonio.totalItens > patrimonio.principais.size) {
+                            item {
+                                Text(
+                                    "Mostrando os ${patrimonio.principais.size} itens de maior valor contábil. Lista completa em Inventário (Ativos).",
+                                    style = MaterialTheme.typography.labelSmall,
+                                )
+                            }
+                            n++
                         }
                     }
                 }
@@ -387,14 +487,20 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
     }
 }
 
+/** Divisória de seção "TÍTULO  extra ——— v" (mesma do LANÇAMENTOS). */
 @Composable
-private fun SecaoCard(titulo: String, conteudo: @Composable () -> Unit) {
+private fun Secao(titulo: String, aberta: Boolean, extra: String? = null, onToggle: () -> Unit) {
+    com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = 0, aberto = aberta, titulo = titulo, rotulo = extra ?: "", onToggle = onToggle)
+}
+
+@Composable
+private fun SecaoCard(titulo: String?, conteudo: @Composable () -> Unit) {
     var aberto by remember { mutableStateOf(true) }
     com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            com.bragro.mobile.ui.domain.TituloRecolhivel(titulo, aberto) { aberto = !aberto }
-            if (aberto) {
-                HorizontalDivider()
+            if (titulo != null) com.bragro.mobile.ui.domain.TituloRecolhivel(titulo, aberto) { aberto = !aberto }
+            if (aberto || titulo == null) {
+                if (titulo != null) HorizontalDivider()
                 conteudo()
             }
         }
@@ -404,8 +510,8 @@ private fun SecaoCard(titulo: String, conteudo: @Composable () -> Unit) {
 @Composable
 private fun LinhaResumo(label: String, valor: String, destaquePositivo: Boolean? = null) {
     val cor = when (destaquePositivo) {
-        true -> MaterialTheme.colorScheme.primary
-        false -> MaterialTheme.colorScheme.error
+        true -> com.bragro.mobile.ui.domain.corSucesso()
+        false -> com.bragro.mobile.ui.domain.corAtencao()
         null -> MaterialTheme.colorScheme.onSurface
     }
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -418,7 +524,22 @@ private fun LinhaResumo(label: String, valor: String, destaquePositivo: Boolean?
 private fun FazendaDreCard(f: DossieDreFazendaData) {
     com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(f.farmName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+            val lucro = f.margem >= 0
+            val corSelo = if (lucro) com.bragro.mobile.ui.domain.corSucesso() else com.bragro.mobile.ui.domain.corAtencao()
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(f.farmName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                // Selo LUCRO/PREJUÍZO (padrão da plataforma).
+                Text(
+                    if (lucro) "LUCRO" else "PREJUÍZO",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = corSelo,
+                    modifier = Modifier
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
+                        .background(corSelo.copy(alpha = 0.15f))
+                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                )
+            }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column { Text("Área", style = MaterialTheme.typography.labelSmall); Text(formatArea(f.areaHa), style = MaterialTheme.typography.bodyMedium) }
                 Column { Text("Custo", style = MaterialTheme.typography.labelSmall); Text(formatMoneyBrl(f.custoTotal), style = MaterialTheme.typography.bodyMedium) }
@@ -428,7 +549,8 @@ private fun FazendaDreCard(f: DossieDreFazendaData) {
                     Text(
                         formatMoneyBrl(f.margem),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (f.margem >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold,
+                        color = corSelo,
                     )
                 }
             }

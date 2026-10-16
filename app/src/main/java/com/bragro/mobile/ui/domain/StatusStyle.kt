@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Spacer
@@ -365,8 +366,10 @@ fun OperacaoBadge(value: String, isReceita: Boolean) {
         Text(value, style = MaterialTheme.typography.bodyMedium)
         return
     }
-    val bg = if (isReceita) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.secondaryContainer
-    val fg = if (isReceita) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSecondaryContainer
+    // Neutro (preto/branco) -- pedido do usuário: "fontes preto e branco,
+    // apenas os status com cores".
+    val bg = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+    val fg = MaterialTheme.colorScheme.onSurface
     Text(
         value,
         style = MaterialTheme.typography.labelMedium,
@@ -541,7 +544,7 @@ fun domainProgressCellInfo(domainId: String, key: String, record: Map<String, St
 fun DomainProgressCell(colLabel: String, info: DomainProgressInfo) {
     val fracao = (info.value / 100.0).coerceIn(0.0, 1.0).toFloat()
     val cor = when (info.barTone) {
-        BarTone.GOOD -> MaterialTheme.colorScheme.primary
+        BarTone.GOOD -> progressGreen()
         BarTone.WARN -> MaterialTheme.colorScheme.tertiary
         BarTone.BAD -> MaterialTheme.colorScheme.error
         BarTone.NEUTRAL -> MaterialTheme.colorScheme.secondary
@@ -565,4 +568,14 @@ fun DomainProgressCell(colLabel: String, info: DomainProgressInfo) {
             Box(modifier = Modifier.fillMaxWidth(fracao).height(5.dp).background(cor, RoundedCornerShape(3.dp)))
         }
     }
+}
+
+
+/** Verde das barras de progresso -- no modo escuro usa um verde mais fechado
+ * (0xFF2F6B4A), pedido do usuário ("troque a tonalidade do verde no modo
+ * escuro da barra de progresso"). Espelha .dark .progress-fill (globals.css). */
+@Composable
+fun progressGreen(): androidx.compose.ui.graphics.Color {
+    val cs = MaterialTheme.colorScheme
+    return if (cs.background.luminance() < 0.5f) androidx.compose.ui.graphics.Color(0xFF2F6B4A) else cs.primary
 }

@@ -33,10 +33,10 @@ class OperacoesRepository(context: Context) {
         json.decodeFromString(OperacoesResponse.serializer(), entity.dataJson).pendingIds
 
     /** Marca o lançamento de Safra como revisado (action "mark-reviewed"). */
-    suspend fun marcarRevisado(recordId: String): Boolean {
+    suspend fun marcarRevisado(recordId: String, dominio: String = "safra"): Boolean {
         val tokens = tokenStore.current() ?: return false
         var (accessToken, refreshToken) = tokens
-        fun build(token: String) = ModuleActionRequest(token, refreshToken, "mark-reviewed", domainId = "safra", id = recordId)
+        fun build(token: String) = ModuleActionRequest(token, refreshToken, "mark-reviewed", domainId = dominio, id = recordId)
         return try {
             var response = NetworkModule.mobileApi.moduleActions(build(accessToken))
             if (response.code() == 401) {

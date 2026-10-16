@@ -114,7 +114,7 @@ fun RecalcularVencimentosButton(viewModel: ModuleActionButtonViewModel = viewMod
             // ação direto, sem precisar de outro toque.
             LaunchedEffect(Unit) { viewModel.run("recalcular-vencimentos", "Vencimentos recalculados com sucesso.") }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Recalcular Vencimentos", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                Text("Recalcular vcto", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                 if (running) CircularProgressIndicator(modifier = Modifier.padding(2.dp).size(18.dp))
             }
         }

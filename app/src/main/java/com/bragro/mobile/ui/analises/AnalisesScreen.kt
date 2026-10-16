@@ -76,6 +76,9 @@ import com.bragro.mobile.ui.domain.EqualWidthBlockRow
 import com.bragro.mobile.ui.domain.FarmSelectorButton
 import com.bragro.mobile.ui.domain.LabeledIconButton
 import com.bragro.mobile.ui.domain.SimpleBarChart
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.BarChart
 import com.bragro.mobile.ui.domain.defaultSeriesColor
 import com.bragro.mobile.ui.domain.RecordTableHeader
 import com.bragro.mobile.ui.domain.RecordTableRow
@@ -562,8 +565,9 @@ private enum class AnalisesAba(val titulo: String) {
  * espelhando as 4 do site. */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-private fun AnalisesGraficosBlock(data: JsonObject) {
-    var open by remember { mutableStateOf(false) }
+private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
+    // naJanela: aberto pela barra Ações (Exibir > Gráficos), igual à plataforma.
+    var open by remember { mutableStateOf(naJanela) }
     var aba by remember { mutableStateOf(AnalisesAba.FINANCEIRO) }
     // Alternar Custo/ha <-> Custo/saca no gráfico "Custo/ha por Fazenda" --
     // mesmo botão do site (UnidadeToggleButton), usando a Produtividade
@@ -605,7 +609,7 @@ private fun AnalisesGraficosBlock(data: JsonObject) {
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column {
-            Row(
+            if (!naJanela) Row(
                 modifier = Modifier.fillMaxWidth().clickable { open = !open }.padding(12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
@@ -835,6 +839,7 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
     // FECHADO -- pedido do usuário ("sempre aparecer a tela vazia, só
     // expandir quando clicar no ícone").
     var contentExpanded by remember { mutableStateOf(false) }
+    var graficosOpen by remember { mutableStateOf(false) }
     // Tabela/Coluna -- mesmo botão único (achado de auditoria, pedido do
     // usuário: "coloque em todos os módulos"). Análises não tem um registro
     // único por trás (é um JSON genérico com 15 cruzamentos diferentes), a
@@ -892,8 +897,17 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
             contentPadding = PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            item(key = "analises-icon-row") {
+            item(key = "analises-icon-row") { com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") { Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
                 val dadosBlock = AnalisesBlockSpec("Dados", vertical = false) {
+                    // Gráficos saíram do meio da tela -- agora abrem numa
+                    // janela por aqui (padrão da plataforma).
+                    if (temRegistros) {
+                        LabeledIconButton(
+                            icon = Icons.Filled.BarChart,
+                            label = "Gráficos",
+                            onClick = { graficosOpen = true },
+                        )
+                    }
                     LabeledIconButton(
                         icon = Icons.Filled.FilterAlt,
                         label = "Filtros",
@@ -949,7 +963,7 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                 // ("aplique o mesmo padrão... da aba lançamentos com a
                 // barra oval e as categorias os ícones no topo").
                 AnalisesCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth())
-            }
+            } } }
             if (filtrosOpen) {
                 item {
                     // Cultura ao lado de Safra, mesma linha, blocos separados --
@@ -984,16 +998,35 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                 items(linhas.size, key = { linhas[it].hashCode() }) { i ->
                     RecordTableRow(columns = ANALISES_EXPORT_COLUMNS, record = linhas[i], domainId = "", hScroll = tableHScroll)
                 }
-            } else if (contentExpanded) {
-                item(key = "analises-graficos") { AnalisesGraficosBlock(data) }
-                item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
-                data.entries.forEachIndexed { index, (chave, valor) ->
+            } else {
+                item(key = "lanc-header") {
+                    com.bragro.mobile.ui.domain.CabecalhoLancamentos(
+                        total = data.entries.size,
+                        aberto = contentExpanded,
+                        titulo = "Indicadores",
+                    ) { contentExpanded = !contentExpanded }
+                }
+                if (contentExpanded) data.entries.forEachIndexed { index, (chave, valor) ->
                     item(key = chave) { SecaoAnalise(chave, valor) }
                     if (index < data.entries.size - 1) {
                         item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
                     }
                 }
             }
+        }
+        if (graficosOpen && data != null) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { graficosOpen = false },
+                modifier = Modifier.fillMaxWidth(0.96f),
+                properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+                title = { Text("Gráficos · Análises") },
+                text = {
+                    Column(modifier = Modifier.heightIn(max = 600.dp).verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+                        AnalisesGraficosBlock(data, naJanela = true)
+                    }
+                },
+                confirmButton = { androidx.compose.material3.TextButton(onClick = { graficosOpen = false }) { Text("Fechar") } },
+            )
         }
     }
 }

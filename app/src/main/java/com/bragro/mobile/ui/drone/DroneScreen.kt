@@ -5,6 +5,10 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -224,6 +228,10 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
     val integrationBusy by viewModel.integrationBusy
     val integrationMessage by viewModel.integrationMessage
     var showNovo by remember { mutableStateOf(false) }
+    var showPrestadora by remember { mutableStateOf(false) }
+    var tipoFiltro by remember { mutableStateOf<String?>(null) }
+    var tipoMenu by remember { mutableStateOf(false) }
+    var lancAberto by remember { mutableStateOf(true) }
     val context = LocalContext.current
 
     Scaffold(
@@ -272,38 +280,124 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
             }
         },
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
-            Text(
-                "Registro de voos e capturas (foto, NDVI, ortomosaico, vídeo). Arquivos ficam no Supabase Storage (até 50MB).",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 12.dp),
-            )
-            // Card "Acesso automático via prestadora de serviço" (Task
-            // #341/#54) -- mesma posição/UX do site (topo da tela, ver
-            // drone-client.tsx), única peça que ainda faltava no mobile.
-            ProviderIntegrationCard(
-                providers = listOf("DJI Cloud", "DJI Terra", "Outro", "Pix4Dfields", "XAG One"),
-                // Aviso resumido -- pedido do usuário ("resuma os avisos").
-                descricao = "Hoje os voos são registrados manualmente com upload de arquivo. Credencial salva com segurança abaixo.",
-                integration = integration,
-                busy = integrationBusy,
-                syncMessage = integrationMessage,
-                onSave = { provedor, apiKey -> viewModel.saveIntegration(provedor, apiKey) },
-                onDisconnect = { viewModel.disconnectIntegration() },
-                onSync = { viewModel.syncIntegration() },
-                modifier = Modifier.padding(bottom = 4.dp),
-            )
-            when {
-                loading -> Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(modifier = Modifier.padding(top = 24.dp))
-                }
-                records.isEmpty() -> Text("Nenhum registro ainda. Toque no botão para adicionar.", modifier = Modifier.padding(vertical = 24.dp))
-                else -> LazyColumn(contentPadding = PaddingValues(bottom = 80.dp)) {
-                    items(records, key = { it.id }) { record -> DroneRecordCard(record) }
+        // Padrão da plataforma: Painel de monitoramento + Ações (Tipo,
+        // Prestadora, + Voo) + LANÇAMENTOS em cards. A prestadora abre numa
+        // janela (antes ocupava o topo da tela).
+        val filtrados = if (tipoFiltro == null) records else records.filter { it.tipoCaptura == tipoFiltro }
+        val area = records.sumOf { it.areaCoberta ?: 0.0 }
+        val porTipo = records.groupingBy { it.tipoCaptura }.eachCount()
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(12.dp, 4.dp, 12.dp, 80.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            item {
+                Text(
+                    "Registro de voos e capturas (foto, NDVI, ortomosaico, vídeo). Arquivos ficam no Supabase Storage (até 50MB).",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (records.isNotEmpty()) {
+                item(key = "painel") {
+                    val fotosVideos = (porTipo["FOTO_AEREA"] ?: 0) + (porTipo["VIDEO"] ?: 0)
+                    com.bragro.mobile.ui.domain.PainelMonitoramento(
+                        com.bragro.mobile.ui.domain.PainelModulo(
+                            titulo = "Drone",
+                            subtitulo = "${records.size} voo(s) · ${records.mapNotNull { it.talhao?.takeIf { t -> t.isNotBlank() } }.toSet().size} talhão(ões)",
+                            kpis = listOf(
+                                com.bragro.mobile.ui.domain.PainelKpi("Voos", records.size.toDouble(), "numero", null, "registrados", "Lançamentos"),
+                                com.bragro.mobile.ui.domain.PainelKpi("Área coberta", area, "numero", "ha", "soma dos voos", "Lançamentos"),
+                                com.bragro.mobile.ui.domain.PainelKpi("NDVI", (porTipo["NDVI_MULTIESPECTRAL"] ?: 0).toDouble(), "numero", null, "multiespectral", "Ver NDVI"),
+                                com.bragro.mobile.ui.domain.PainelKpi("Ortomosaicos", (porTipo["MAPEAMENTO_ORTOMOSAICO"] ?: 0).toDouble(), "numero", null, "mapeamentos", "Ver ortomosaicos"),
+                                com.bragro.mobile.ui.domain.PainelKpi("Fotos e vídeos", fotosVideos.toDouble(), "numero", null, "capturas", "Lançamentos"),
+                            ),
+                            barras = emptyList(),
+                        ),
+                        kpiAtivo = when (tipoFiltro) {
+                            "NDVI_MULTIESPECTRAL" -> "NDVI"
+                            "MAPEAMENTO_ORTOMOSAICO" -> "Ortomosaicos"
+                            else -> null
+                        },
+                        onKpi = { k ->
+                            tipoFiltro = when (k.label) {
+                                "NDVI" -> if (tipoFiltro == "NDVI_MULTIESPECTRAL") null else "NDVI_MULTIESPECTRAL"
+                                "Ortomosaicos" -> if (tipoFiltro == "MAPEAMENTO_ORTOMOSAICO") null else "MAPEAMENTO_ORTOMOSAICO"
+                                else -> null
+                            }
+                            lancAberto = true
+                        },
+                    )
                 }
             }
+            item(key = "acoes") {
+                com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
+                    com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                        Box {
+                            com.bragro.mobile.ui.domain.LabeledIconButton(
+                                icon = Icons.Filled.FilterAlt,
+                                label = tipoFiltro?.let { t -> TIPOS_CAPTURA.firstOrNull { it.first == t }?.second } ?: "Tipo",
+                                active = tipoFiltro != null,
+                                onClick = { tipoMenu = true },
+                            )
+                            androidx.compose.material3.DropdownMenu(expanded = tipoMenu, onDismissRequest = { tipoMenu = false }) {
+                                androidx.compose.material3.DropdownMenuItem(text = { Text("Todos os tipos") }, onClick = { tipoFiltro = null; tipoMenu = false })
+                                TIPOS_CAPTURA.forEach { (v, rotulo) ->
+                                    androidx.compose.material3.DropdownMenuItem(text = { Text(rotulo) }, onClick = { tipoFiltro = v; tipoMenu = false; lancAberto = true })
+                                }
+                            }
+                        }
+                        com.bragro.mobile.ui.domain.LabeledIconButton(
+                            icon = Icons.Filled.Bolt,
+                            label = "Prestadora",
+                            active = integration != null,
+                            onClick = { showPrestadora = true },
+                        )
+                        com.bragro.mobile.ui.domain.LabeledIconButton(
+                            icon = Icons.Filled.FlightTakeoff,
+                            label = "+ Voo",
+                            onClick = { showNovo = true },
+                        )
+                    }
+                }
+            }
+            item(key = "lanc-header") {
+                com.bragro.mobile.ui.domain.CabecalhoLancamentos(
+                    total = filtrados.size,
+                    aberto = lancAberto,
+                    extra = if (filtrados.size != records.size) "de ${records.size}" else null,
+                ) { lancAberto = !lancAberto }
+            }
+            when {
+                loading -> item { CircularProgressIndicator(modifier = Modifier.padding(top = 24.dp)) }
+                records.isEmpty() -> item { Text("Nenhum registro ainda. Toque em + Voo para adicionar.", modifier = Modifier.padding(vertical = 24.dp)) }
+                lancAberto -> items(filtrados, key = { it.id }) { record -> DroneRecordCard(record) }
+            }
         }
+    }
+
+    if (showPrestadora) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showPrestadora = false },
+            modifier = Modifier.fillMaxWidth(0.96f),
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            title = { Text("Prestadora de serviço") },
+            text = {
+                Column(modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+                    ProviderIntegrationCard(
+                        providers = listOf("DJI Cloud", "DJI Terra", "Outro", "Pix4Dfields", "XAG One"),
+                        descricao = "Hoje os voos são registrados manualmente com upload de arquivo. Credencial salva com segurança abaixo.",
+                        integration = integration,
+                        busy = integrationBusy,
+                        syncMessage = integrationMessage,
+                        onSave = { provedor, apiKey -> viewModel.saveIntegration(provedor, apiKey) },
+                        onDisconnect = { viewModel.disconnectIntegration() },
+                        onSync = { viewModel.syncIntegration() },
+                    )
+                }
+            },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { showPrestadora = false }) { Text("Fechar") } },
+        )
     }
 
     if (showNovo) {
@@ -350,6 +444,17 @@ private fun DroneRecordCard(record: DroneRecordDto) {
             record.altitude?.let { Text("Altitude: $it m", style = MaterialTheme.typography.bodySmall) }
             record.areaCoberta?.let { Text("Área coberta: $it ha", style = MaterialTheme.typography.bodySmall) }
             record.observacoes?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+            // "Abrir arquivo" (igual ao card da plataforma).
+            record.publicUrl?.takeIf { it.isNotBlank() }?.let { url ->
+                val ctx = LocalContext.current
+                androidx.compose.material3.TextButton(
+                    onClick = { runCatching { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))) } },
+                    contentPadding = PaddingValues(0.dp),
+                ) {
+                    Icon(Icons.Filled.OpenInNew, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                    Text("Abrir arquivo")
+                }
+            }
         }
     }
 }

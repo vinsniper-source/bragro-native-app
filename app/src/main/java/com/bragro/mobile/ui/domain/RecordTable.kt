@@ -211,9 +211,7 @@ private fun RecordTableCellValue(col: ColumnConfig, value: String, record: Map<S
             // Verde (receita) / laranja-âmbar (despesa) só nas colunas Bruto/
             // Liquido do Financeiro -- pedido do usuário sobre a cor da fonte
             // dos valores (mesmo critério de FinanceiroFieldLine).
-            val moneyColor = if (domainId == "financeiro" && (col.key == "bruto" || col.key == "liquido")) {
-                if (isReceitaOp(record["operacao"])) MaterialTheme.colorScheme.primary else com.bragro.mobile.ui.theme.BrOrange
-            } else null
+            val moneyColor: Color? = null
             Text(
                 displayValue,
                 style = MaterialTheme.typography.bodySmall,

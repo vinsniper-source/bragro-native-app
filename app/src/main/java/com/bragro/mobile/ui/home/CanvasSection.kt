@@ -71,7 +71,7 @@ import java.util.Locale
 private fun statusColor(status: String): Color = when (status) {
     "ok" -> MaterialTheme.colorScheme.primary
     "alerta" -> BrYellow
-    "risco" -> Color(0xFFD32F2F)
+    "risco" -> com.bragro.mobile.ui.theme.BrOrange
     else -> Color(0xFF9E9E9E) // "semdado"
 }
 
@@ -461,7 +461,7 @@ fun CanvasCirclesRow(
                                 seta,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = if (f.tendencia == "melhorando") MaterialTheme.colorScheme.primary else Color(0xFFD32F2F),
+                                color = if (f.tendencia == "melhorando") MaterialTheme.colorScheme.primary else com.bragro.mobile.ui.theme.BrOrange,
                             )
                         }
                     }
@@ -560,7 +560,7 @@ fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
                             fontWeight = FontWeight.Medium,
                             color = when (fazenda.tendencia) {
                                 "melhorando" -> MaterialTheme.colorScheme.primary
-                                "piorando" -> Color(0xFFD32F2F)
+                                "piorando" -> com.bragro.mobile.ui.theme.BrOrange
                                 else -> MaterialTheme.colorScheme.onSurfaceVariant
                             },
                             modifier = Modifier.padding(top = 2.dp),
