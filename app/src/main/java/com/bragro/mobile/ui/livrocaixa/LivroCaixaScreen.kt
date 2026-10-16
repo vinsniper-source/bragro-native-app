@@ -354,30 +354,8 @@ private fun LivroCaixaCategoryTabs(blocks: List<LivroCaixaBlockSpec>, modifier: 
     var selected by remember { mutableStateOf(0) }
     val safeSelected = selected.coerceIn(0, blocks.size - 1)
     Column(modifier = modifier) {
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            blocks.forEachIndexed { index, block ->
-                SegmentedButton(
-                    selected = safeSelected == index,
-                    onClick = { selected = index },
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = blocks.size),
-                    colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = MaterialTheme.colorScheme.primary,
-                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
-                        inactiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                    ),
-                    label = {
-                        Text(
-                            block.title,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Clip,
-                            modifier = Modifier.basicMarquee(),
-                        )
-                    },
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
+        com.bragro.mobile.ui.domain.AbasEncaixadas(blocks.map { it.title }, safeSelected, onSelect = { selected = it })
+        Spacer(modifier = Modifier.height(4.dp))
         // EqualWidthBlockRow (ui/domain/ModuleIconRow.kt) -- achado de
         // auditoria: células de mesma largura, borda vertical entre elas,
         // numa linha só (ellipsis se não couber), em vez do FlowRow antigo.
@@ -679,7 +657,7 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                     )
                 }
             }
-            item(key = "livro-caixa-icon-row") { com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") { Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+            item(key = "livro-caixa-icon-row") { com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") { Column(modifier = Modifier.fillMaxWidth()) {
                 val dadosBlock = LivroCaixaBlockSpec("Dados") {
                     LabeledIconButton(
                         icon = Icons.Filled.FilterAlt,

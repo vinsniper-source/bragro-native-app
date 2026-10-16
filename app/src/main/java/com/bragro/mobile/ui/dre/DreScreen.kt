@@ -365,30 +365,8 @@ private fun DreCategoryTabs(blocks: List<DreBlockSpec>, modifier: Modifier = Mod
     var selected by remember { mutableStateOf(0) }
     val safeSelected = selected.coerceIn(0, blocks.size - 1)
     Column(modifier = modifier) {
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            blocks.forEachIndexed { index, block ->
-                SegmentedButton(
-                    selected = safeSelected == index,
-                    onClick = { selected = index },
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = blocks.size),
-                    colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = MaterialTheme.colorScheme.primary,
-                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
-                        inactiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                    ),
-                    label = {
-                        Text(
-                            block.title,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Clip,
-                            modifier = Modifier.basicMarquee(),
-                        )
-                    },
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
+        com.bragro.mobile.ui.domain.AbasEncaixadas(blocks.map { it.title }, safeSelected, onSelect = { selected = it })
+        Spacer(modifier = Modifier.height(4.dp))
         val active = blocks[safeSelected]
         if (active.vertical) {
             Column(
@@ -590,7 +568,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                     )
                 }
             }
-            item(key = "dre-icon-row") { com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") { Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+            item(key = "dre-icon-row") { com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") { Column(modifier = Modifier.fillMaxWidth()) {
                 val dadosBlock = DreBlockSpec("Dados", vertical = false) {
                     if (temRegistros) {
                         LabeledIconButton(

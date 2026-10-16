@@ -3,6 +3,15 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.59] - 2026-10-16
+- Ações em todos os módulos no modelo "abas encaixadas": uma caixa só com borda cinza fina e cantos iguais aos cartões; abas Dados / Operações / Arquivos no topo (ativa com sublinhado verde) e ícones soltos e centralizados embaixo, sem a borda verde.
+- Painel de monitoramento com borda verde fina (1px) e recolhido ao abrir em todos os módulos.
+- Pivôs igual à plataforma: Ações em grupos (Consultar: Pivô · Ferramentas: Atualizar, Fabricante · Exibir: Balanço · Lançar: + Pivô) e cartão com anel do ângulo, Lâmina / Pressão / Sentido e Ligar/Desligar · Telemetria · Controle · Editar · Arquivar (histórico tocando no anel).
+- Operações abre totalmente recolhido.
+- Dossiê: "Ano-Calendário / Exercício" com duas listas lado a lado (uma ajusta a outra), sem o botão Topo; seções recolhidas ao abrir; Patrimônio (ativos) recolhe resumo e itens juntos.
+- Controle de Insumos: Controle interno (EPI, uniforme, ferramenta) virou o ícone "EPI" em Ações, abrindo numa janela.
+- Orçamentos: painel aparece mesmo sem orçamentos; itens do formulário no mesmo fundo branco dos campos.
+
 ## [1.3.58] - 2026-10-16
 - Painel de monitoramento + Ações também em Análises, Cobranças, Drone, Prescrição, Talhões e Mapas, NF-e, Pecuária e Pastagem (o painel aparece mesmo sem lançamentos, zerado).
 - Janelas e listas suspensas sem fundo verde: brancas (escuro: cinza-grafite), como na plataforma.

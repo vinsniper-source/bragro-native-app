@@ -75,6 +75,8 @@ import com.bragro.mobile.ui.domain.BarSeries
 import com.bragro.mobile.ui.domain.EqualWidthBlockRow
 import com.bragro.mobile.ui.domain.FarmSelectorButton
 import com.bragro.mobile.ui.domain.LabeledIconButton
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Inventory2
@@ -333,30 +335,8 @@ private fun InsumosCategoryTabs(blocks: List<InsumosBlockSpec>, modifier: Modifi
     var selected by remember { mutableStateOf(0) }
     val safeSelected = selected.coerceIn(0, blocks.size - 1)
     Column(modifier = modifier) {
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            blocks.forEachIndexed { index, block ->
-                SegmentedButton(
-                    selected = safeSelected == index,
-                    onClick = { selected = index },
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = blocks.size),
-                    colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = MaterialTheme.colorScheme.primary,
-                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
-                        inactiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                    ),
-                    label = {
-                        Text(
-                            block.title,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Clip,
-                            modifier = Modifier.basicMarquee(),
-                        )
-                    },
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
+        com.bragro.mobile.ui.domain.AbasEncaixadas(blocks.map { it.title }, safeSelected, onSelect = { selected = it })
+        Spacer(modifier = Modifier.height(4.dp))
         // EqualWidthBlockRow (ui/domain/ModuleIconRow.kt) -- mesmo
         // ajuste aplicado nas demais telas de categoria do app.
         EqualWidthBlockRow { blocks[safeSelected].content() }
@@ -473,6 +453,9 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                     filtro("sit", "Situação", Icons.Filled.RadioButtonChecked, fSit, listOf("FALTA" to "Falta", "EM_USO" to "Em uso", "EM_TRANSITO" to "Em trânsito", "OK" to "OK")) { fSit = it }
                     filtro("est", "Estoque", Icons.Filled.Inventory2, fEst, listOf("CRITICO" to "Crítico", "ATENCAO" to "Atenção", "OK" to "OK")) { fEst = it }
                     LabeledIconButton(icon = Icons.Filled.BarChart, label = "Saldo", active = saldoAberto, onClick = { saldoAberto = !saldoAberto })
+                    if (d?.arvoreControleInterno?.isNotEmpty() == true) {
+                        LabeledIconButton(icon = Icons.Filled.HealthAndSafety, label = "EPI", onClick = { controleInternoAberto = true })
+                    }
                     if (fCat != null || fSit != null || fEst != null) {
                         LabeledIconButton(icon = Icons.Filled.FilterAltOff, label = "Limpar", onClick = { fCat = null; fSit = null; fEst = null })
                     }
@@ -500,7 +483,7 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                     }
                 }
                 com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
-                    InsumosCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth().padding(8.dp))
+                    InsumosCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth())
                 }
             }
             if (offline) {
@@ -567,19 +550,23 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                         ItemCriticoCard(i, onPedidoRapido = { onPedidoRapido(i.item) })
                     }
                 }
-                if (d.arvoreControleInterno.isNotEmpty()) {
-                    item(key = "ci-header") {
-                        com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = d.arvoreControleInterno.size, aberto = controleInternoAberto, titulo = "Controle interno", rotulo = "EPI, uniforme, ferramenta") { controleInternoAberto = !controleInternoAberto }
-                    }
-                    if (controleInternoAberto) item(key = "ci") {
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                d.arvoreControleInterno.forEach { ramo -> RamoNode(ramo, 0) }
-                            }
-                        }
-                    }
-                }
             }
         }
+    }
+    if (controleInternoAberto && data?.arvoreControleInterno?.isNotEmpty() == true) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { controleInternoAberto = false },
+            modifier = Modifier.fillMaxWidth(0.96f),
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            title = { Text("Controle interno (EPI, uniforme, ferramenta)") },
+            text = {
+                Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+                    Text("Consumo por categoria -- não é alocado a uma fazenda/talhão.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(6.dp))
+                    data!!.arvoreControleInterno.forEach { ramo -> RamoNode(ramo, 0) }
+                }
+            },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { controleInternoAberto = false }) { Text("Fechar") } },
+        )
     }
 }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -349,9 +350,10 @@ fun corProgressoBarra(pct: Double): Color = when {
 fun kpiVerdeFundo(): Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f).compositeOver(MaterialTheme.colorScheme.surface)
 
 /**
- * Bloco de borda verde (Ações etc.) -- mockup v5: sem a faixa de título; a
- * setinha de recolher fica no fim, à direita do conteúdo. Recolhido, mostra
- * só o nome do bloco e a setinha.
+ * Bloco Ações -- v10 "abas encaixadas": uma caixa só, borda cinza fina e
+ * cantos de 12dp (iguais aos cartões); as abas (AbasEncaixadas) ficam no
+ * topo e os ícones soltos e centralizados embaixo. Sem borda verde e sem
+ * setinha (Ações fica sempre à mostra).
  */
 @Composable
 fun BlocoComFaixa(
@@ -360,23 +362,51 @@ fun BlocoComFaixa(
     inicialAberto: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    var aberto by rememberSaveable(titulo) { mutableStateOf(inicialAberto) }
-    Row(
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surface),
-        verticalAlignment = Alignment.Top,
     ) {
-        Box(modifier = Modifier.weight(1f)) {
-            if (aberto) content() else Text(
-                Idioma.tr(titulo).uppercase(),
-                fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp,
-                modifier = Modifier.clickable { aberto = true }.padding(horizontal = 14.dp, vertical = 10.dp),
-            )
+        androidx.compose.runtime.CompositionLocalProvider(LocalAcoesEncaixadas provides true) { content() }
+    }
+}
+
+/**
+ * Abas Dados/Operações/Arquivos encaixadas no topo do bloco Ações (v10 A):
+ * faixa cinza clara, divisórias finas; a aba ativa fica branca com texto
+ * verde e sublinhado verde. Aba com aviso (badge) ganha o amarelo de sempre.
+ */
+@Composable
+fun AbasEncaixadas(titulos: List<String>, selecionada: Int, avisos: List<Int> = emptyList(), onSelect: (Int) -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    val faixa = cs.onSurface.copy(alpha = 0.05f).compositeOver(cs.surface)
+    Column(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth().background(faixa)) {
+            titulos.forEachIndexed { i, t ->
+                if (i > 0) Box(Modifier.width(1.dp).height(34.dp).background(cs.outlineVariant))
+                val ativa = i == selecionada
+                val aviso = (avisos.getOrNull(i) ?: 0) > 0
+                Box(
+                    modifier = Modifier.weight(1f).height(34.dp)
+                        .background(if (aviso) com.bragro.mobile.ui.theme.BrYellow.copy(alpha = if (ativa) 1f else 0.55f) else if (ativa) cs.surface else Color.Transparent)
+                        .clickable { onSelect(i) }
+                        .drawWithContent {
+                            drawContent()
+                            if (ativa) drawRect(cs.primary, topLeft = androidx.compose.ui.geometry.Offset(0f, size.height - 2.dp.toPx()), size = androidx.compose.ui.geometry.Size(size.width, 2.dp.toPx()))
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        Idioma.tr(t), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        fontWeight = if (ativa) FontWeight.ExtraBold else FontWeight.SemiBold,
+                        color = if (aviso) Color(0xFF1A1A1A) else if (ativa) cs.primary else cs.onSurfaceVariant,
+                    )
+                }
+            }
         }
-        SetaRecolher(aberto, Modifier.padding(top = 8.dp, end = 6.dp)) { aberto = !aberto }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(cs.outlineVariant))
     }
 }
 
@@ -452,13 +482,13 @@ fun PainelMonitoramento(
     kpiAtivo: String? = null,
     onKpi: ((PainelKpi) -> Unit)? = null,
 ) {
-    var aberto by rememberSaveable(painel.titulo) { mutableStateOf(true) }
+    var aberto by rememberSaveable(painel.titulo) { mutableStateOf(false) }
     val cartoes: List<Any> = (painel.kpis.take(2) + painel.barras + painel.kpis.drop(2)).take(6)
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surface),
     ) {
         Row(
@@ -655,6 +685,25 @@ fun BarrasHorizontais(itens: List<Pair<String, Double>>, formatar: (Double) -> S
                     Box(Modifier.fillMaxWidth(fr).height(12.dp).clip(RoundedCornerShape(3.dp)).background(if (v < 0) corAtencao() else primary))
                 }
                 Text(formatar(v), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            }
+        }
+    }
+}
+
+/**
+ * Ações em grupos com legenda (CONSULTAR / FERRAMENTAS / EXIBIR / LANÇAR),
+ * como a barra da plataforma -- cada grupo divide a largura igualmente,
+ * separado por um fio; ícones centralizados.
+ */
+@Composable
+fun LinhaGruposAcoes(grupos: List<Pair<String, @Composable () -> Unit>>) {
+    val linha = MaterialTheme.colorScheme.outlineVariant
+    Row(Modifier.fillMaxWidth().height(androidx.compose.foundation.layout.IntrinsicSize.Min)) {
+        grupos.forEachIndexed { i, (titulo, conteudo) ->
+            if (i > 0) Box(Modifier.width(1.dp).fillMaxHeight().background(linha))
+            Column(Modifier.weight(1f).padding(top = 6.dp, bottom = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(Idioma.tr(titulo).uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) { conteudo() }
             }
         }
     }

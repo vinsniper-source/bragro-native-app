@@ -439,7 +439,9 @@ private fun OrcamentoLinhaCard(
     showRemove: Boolean,
     onRemove: () -> Unit,
 ) {
-    com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
+    // Mesmo fundo dos outros campos (v9): cartão branco com borda fina, sem o
+    // fundo cinza mais escuro do bloco de itens.
+    com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             ItemFieldBlock {
                 OutlinedTextField(

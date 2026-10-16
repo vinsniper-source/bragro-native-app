@@ -249,7 +249,7 @@ fun ModuleIconRow(items: List<ModuleIconItem>, onClick: (String) -> Unit) {
     if (items.isEmpty()) return
     FlowRow(
         modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         items.forEach { item -> ModuleIconButton(item) { onClick(item.key) } }
@@ -301,6 +301,9 @@ fun EqualWidthBlockRow(modifier: Modifier = Modifier, drawBackground: Boolean = 
     // anterior do usuário): sem essa opção, o fundo opaco "surface" daqui
     // cobriria o verde do Card pai. Continua desenhando borda/divisórias
     // normalmente, só pula o preenchimento de fundo.
+    // Dentro do bloco Ações (v10 "abas encaixadas") os ícones ficam soltos,
+    // sem fundo, borda nem divisórias -- só centralizados em células iguais.
+    val solto = LocalAcoesEncaixadas.current
     val blockBg = MaterialTheme.colorScheme.surface
     val dividerColor = darkerBorderColor(blockBg)
     // Contagem de células só é conhecida durante a medição (measurables.size
@@ -312,9 +315,10 @@ fun EqualWidthBlockRow(modifier: Modifier = Modifier, drawBackground: Boolean = 
         content = content,
         modifier = modifier
             .fillMaxWidth()
-            .then(if (drawBackground) Modifier.background(blockBg) else Modifier)
-            .border(1.dp, dividerColor)
+            .then(if (drawBackground && !solto) Modifier.background(blockBg) else Modifier)
+            .then(if (solto) Modifier else Modifier.border(1.dp, dividerColor))
             .drawBehind {
+                if (solto) return@drawBehind
                 val n = itemCount.intValue
                 if (n > 1) {
                     val itemWidthPx = size.width / n
@@ -356,3 +360,7 @@ fun EqualWidthBlockRow(modifier: Modifier = Modifier, drawBackground: Boolean = 
         }
     }
 }
+
+
+/** true dentro do bloco Ações -- ver BlocoComFaixa/EqualWidthBlockRow. */
+val LocalAcoesEncaixadas = androidx.compose.runtime.staticCompositionLocalOf { false }

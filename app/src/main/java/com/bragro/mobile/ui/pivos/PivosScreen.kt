@@ -1,5 +1,14 @@
 package com.bragro.mobile.ui.pivos
 
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
+import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.FilterAlt
 import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -251,6 +260,8 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
     var graficosOpen by remember { mutableStateOf(false) }
     var pivosOpen by remember { mutableStateOf(false) }
     var prestadoraAberta by remember { mutableStateOf(false) }
+    var filtroPivo by remember { mutableStateOf<String?>(null) }
+    var filtroMenu by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<PivoData?>(null) }
     var telemetriaPivo by remember { mutableStateOf<PivoData?>(null) }
     var controlePivo by remember { mutableStateOf<PivoData?>(null) }
@@ -309,12 +320,39 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
             }
             item(key = "acoes") {
                 com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
-                    com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Opacity, label = "Balanço", active = balancoOpen, onClick = { balancoOpen = !balancoOpen })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.BarChart, label = "Gráficos", onClick = { graficosOpen = true })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Bolt, label = "Prestadora", onClick = { prestadoraAberta = true })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.WaterDrop, label = "+ Pivô", onClick = { editing = null; showNovo = true })
-                    }
+                    // Mesmos grupos da plataforma (pivos-client.tsx).
+                    com.bragro.mobile.ui.domain.LinhaGruposAcoes(listOf(
+                        "Consultar" to {
+                            Box {
+                                com.bragro.mobile.ui.domain.LabeledIconButton(
+                                    icon = Icons.Filled.FilterAlt,
+                                    label = pivos.firstOrNull { it.id == filtroPivo }?.nome ?: "Pivô",
+                                    active = filtroPivo != null,
+                                    onClick = { filtroMenu = true },
+                                )
+                                androidx.compose.material3.DropdownMenu(expanded = filtroMenu, onDismissRequest = { filtroMenu = false }) {
+                                    androidx.compose.material3.DropdownMenuItem(text = { Text("Todos os pivôs") }, onClick = { filtroPivo = null; filtroMenu = false; viewModel.refreshBalanco(null) })
+                                    pivos.forEach { p ->
+                                        androidx.compose.material3.DropdownMenuItem(text = { Text((if (p.id == filtroPivo) "✓ " else "") + p.nome) }, onClick = { filtroPivo = p.id; filtroMenu = false; balancoOpen = true; viewModel.refreshBalanco(p.id) })
+                                    }
+                                }
+                            }
+                        },
+                        "Ferramentas" to {
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.load() })
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Bolt, label = "Fabricante", onClick = { prestadoraAberta = true })
+                        },
+                        "Exibir" to {
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Opacity, label = "Balanço", active = balancoOpen, onClick = { balancoOpen = !balancoOpen })
+                        },
+                        "Lançar" to {
+                            androidx.compose.material3.Button(
+                                onClick = { editing = null; showNovo = true },
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                modifier = Modifier.padding(vertical = 6.dp).height(32.dp),
+                            ) { Text("+ Pivô", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) }
+                        },
+                    ))
                 }
             }
             // Balanço Hídrico -- lâmina aplicada + chuva (pluviômetro) por dia.
@@ -500,48 +538,74 @@ private fun PivoCard(
     onDesligar: () -> Unit,
     busy: Boolean,
 ) {
+    // Mesmo cartão da plataforma (pivos-client.tsx): fazenda · marca, nome,
+    // selo de status, anel com o ângulo, Lâmina / Pressão / Sentido e a
+    // barra Ligar/Desligar · Telemetria · Controle · Editar · Arquivar.
+    val cs = MaterialTheme.colorScheme
     val ligado = pivo.status == "RUNNING_WATER" || pivo.status == "RUNNING_DRY"
-    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.WaterDrop, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
-                Text(pivo.nome, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                Badge { Text(statusLabel(pivo.status)) }
+    val corStatus = if (ligado) com.bragro.mobile.ui.domain.corSucesso() else if (pivo.status == "STOPPED") cs.onSurfaceVariant else com.bragro.mobile.ui.domain.corAtencao()
+    val ang = (pivo.anguloAtual ?: 0.0).coerceIn(0.0, 360.0).toFloat()
+    val verde = com.bragro.mobile.ui.domain.corSucesso()
+    val trilho = cs.onSurface.copy(alpha = 0.10f)
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column {
+            Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                    Column(Modifier.weight(1f)) {
+                        Text("${farmNome ?: "Sem fazenda"} · ${pivo.marca}".uppercase(), fontSize = 10.sp, letterSpacing = 0.6.sp, color = cs.onSurfaceVariant, maxLines = 1)
+                        Text(pivo.nome, fontSize = 15.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                    }
+                    Text(
+                        statusLabel(pivo.status).uppercase(), fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, color = corStatus,
+                        modifier = Modifier.background(corStatus.copy(alpha = 0.15f), androidx.compose.foundation.shape.RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 2.dp),
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(Modifier.size(60.dp).clickable { onHistorico() }, contentAlignment = Alignment.Center) {
+                        androidx.compose.foundation.Canvas(Modifier.size(60.dp)) {
+                            val st = androidx.compose.ui.graphics.drawscope.Stroke(width = 7.dp.toPx())
+                            drawArc(trilho, 0f, 360f, false, style = st)
+                            drawArc(verde, -90f, ang, false, style = st)
+                        }
+                        Text(pivo.anguloAtual?.let { "${it.toInt()}°" } ?: "—", fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                    }
+                    Row(Modifier.weight(1f)) {
+                        listOf(
+                            "Lâmina" to (pivo.laminaAtualMm?.let { "%.1f mm".format(Locale("pt", "BR"), it) } ?: "—"),
+                            "Pressão" to (pivo.pressaoPsi?.let { "${it.toInt()} psi" } ?: "—"),
+                            "Sentido" to (SENTIDO_OPTIONS.firstOrNull { it.first == pivo.sentido }?.second ?: "—"),
+                        ).forEach { (l, v) ->
+                            Column(Modifier.weight(1f)) {
+                                Text(l, fontSize = 10.5.sp, color = cs.onSurfaceVariant)
+                                Text(v, fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, maxLines = 1)
+                            }
+                        }
+                    }
+                }
+                Text(
+                    (pivo.raioM?.let { "Raio ${it.toInt()} m · ${"%.1f".format(Locale("pt", "BR"), Math.PI * it * it / 10000)} ha · " } ?: "") +
+                        (pivo.ultimaSincronizacaoEm?.let { "atualizado em $it" } ?: "lançado manualmente") + " · toque no anel p/ histórico",
+                    fontSize = 10.5.sp, color = cs.onSurfaceVariant,
+                )
             }
-            Text(farmNome ?: "Sem fazenda vinculada", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(pivo.marca, style = MaterialTheme.typography.bodySmall)
-            Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.RotateRight, contentDescription = null, modifier = Modifier.height(14.dp))
-                    Text(" ${pivo.anguloAtual?.let { "${it.toInt()}°" } ?: "—"}", style = MaterialTheme.typography.labelSmall)
+            Box(Modifier.fillMaxWidth().height(1.dp).background(cs.outlineVariant))
+            Row(Modifier.fillMaxWidth().padding(4.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                @Composable
+                fun botao(icone: androidx.compose.ui.graphics.vector.ImageVector, rotulo: String, fundo: androidx.compose.ui.graphics.Color, cor: androidx.compose.ui.graphics.Color, acao: () -> Unit, mod: Modifier) {
+                    Column(
+                        mod.clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp)).background(fundo).clickable(enabled = !busy) { acao() }.padding(vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Icon(icone, contentDescription = null, tint = cor, modifier = Modifier.size(17.dp))
+                        Text(rotulo, fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = cor, maxLines = 1)
+                    }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Opacity, contentDescription = null, modifier = Modifier.height(14.dp))
-                    Text(" ${pivo.laminaAtualMm?.let { "${it} mm" } ?: "—"}", style = MaterialTheme.typography.labelSmall)
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Speed, contentDescription = null, modifier = Modifier.height(14.dp))
-                    Text(" ${pivo.pressaoPsi?.let { "${it.toInt()} psi" } ?: "—"}", style = MaterialTheme.typography.labelSmall)
-                }
-            }
-            Text(
-                pivo.ultimaSincronizacaoEm?.let { "Última sincronização: $it" } ?: "Nunca sincronizado automaticamente -- dados lançados manualmente.",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-            Button(
-                onClick = if (ligado) onDesligar else onLigar,
-                enabled = !busy,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            ) { Text(if (ligado) "Desligar agora" else "Ligar agora") }
-            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                val pad = androidx.compose.foundation.layout.PaddingValues(horizontal = 2.dp, vertical = 8.dp)
-                OutlinedButton(onClick = onEdit, modifier = Modifier.weight(1f), contentPadding = pad) { Text("Editar", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) }
-                OutlinedButton(onClick = onTelemetria, modifier = Modifier.weight(1.3f), contentPadding = pad) { Text("Telemetria", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) }
-                OutlinedButton(onClick = onControle, modifier = Modifier.weight(1.1f), contentPadding = pad) { Text("Controle", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) }
-                OutlinedButton(onClick = onHistorico, modifier = Modifier.weight(1.2f), contentPadding = pad) { Text("Histórico", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) }
-                IconButton(onClick = onArchive, modifier = Modifier.size(36.dp)) { Icon(Icons.Filled.Power, contentDescription = "Arquivar") }
+                if (ligado) botao(Icons.Filled.Stop, "Desligar", com.bragro.mobile.ui.domain.corAtencao().copy(alpha = 0.15f), com.bragro.mobile.ui.domain.corAtencao(), onDesligar, Modifier.weight(1f))
+                else botao(Icons.Filled.PlayArrow, "Ligar", cs.primary, cs.onPrimary, onLigar, Modifier.weight(1f))
+                botao(Icons.Filled.Opacity, "Telemetria", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onTelemetria, Modifier.weight(1f))
+                botao(Icons.Filled.Speed, "Controle", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onControle, Modifier.weight(1f))
+                botao(Icons.Filled.Edit, "Editar", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onEdit, Modifier.weight(1f))
+                botao(Icons.Filled.Archive, "Arquivar", androidx.compose.ui.graphics.Color.Transparent, com.bragro.mobile.ui.domain.corAtencao(), onArchive, Modifier.weight(1f))
             }
         }
     }

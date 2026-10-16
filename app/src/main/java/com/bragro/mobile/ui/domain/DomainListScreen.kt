@@ -944,7 +944,7 @@ fun DomainListScreen(
                     )
                 }
             }
-            item(key = "module-icon-row") { BlocoComFaixa("Ações") { Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+            item(key = "module-icon-row") { BlocoComFaixa("Ações") { Column(modifier = Modifier.fillMaxWidth()) {
                 // Revisar: linha própria na aba Operações, filtra os lançamentos
                 // importados ainda não conferidos (abrir um lançamento o confirma).
                 val revisarFooter: (@Composable () -> Unit)? = {
@@ -1931,43 +1931,8 @@ fun ModuleCategoryTabs(blocks: List<ModuleBlockSpec>, modifier: Modifier = Modif
     // NFS-e), então o número de blocos pode variar entre recomposições.
     val safeSelected = selected.coerceIn(0, blocks.size - 1)
     Column(modifier = modifier) {
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            blocks.forEachIndexed { index, block ->
-                SegmentedButton(
-                    selected = safeSelected == index,
-                    onClick = { selected = index },
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = blocks.size),
-                    // Fundo verde (mesma cor do ícone fazenda/primary) --
-                    // pedido do usuário ("nos módulos lançamentos coloque
-                    // também a cor de fundo dos blocos das categorias a
-                    // mesma cor do ícone fazenda"), aplicado a todos os
-                    // módulos que usam esse padrão (não só Financeiro).
-                    // Aba com aviso (ícone com contagem dentro dela) fica
-                    // amarela, selecionada ou não.
-                    colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = if (block.badgeCount > 0) BrYellow else MaterialTheme.colorScheme.primary,
-                        activeContentColor = if (block.badgeCount > 0) androidx.compose.ui.graphics.Color(0xFF1A1A1A) else MaterialTheme.colorScheme.onPrimary,
-                        inactiveContainerColor = if (block.badgeCount > 0) BrYellow.copy(alpha = 0.55f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                        inactiveContentColor = if (block.badgeCount > 0) androidx.compose.ui.graphics.Color(0xFF4D3C00) else MaterialTheme.colorScheme.onSurface,
-                    ),
-                    // maxLines/ellipsis -- achado de auditoria (nomes de
-                    // categoria mais longos, ex. módulos com blocos
-                    // renomeados, podiam quebrar linha dentro do
-                    // SegmentedButton e desalinhar a altura dos 3 blocos,
-                    // que precisam ficar com a MESMA medida entre eles).
-                    label = {
-                        Text(
-                            block.title,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Clip,
-                            modifier = Modifier.basicMarquee(),
-                        )
-                    },
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
+        com.bragro.mobile.ui.domain.AbasEncaixadas(blocks.map { it.title }, safeSelected, avisos = blocks.map { it.badgeCount }, onSelect = { selected = it })
+        Spacer(modifier = Modifier.height(4.dp))
         val active = blocks[safeSelected]
         if (active.vertical) {
             // Mesmo ajuste do ModuleCategoryBlock acima -- sem Card externo.

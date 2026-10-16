@@ -316,7 +316,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
         // Seções em divisórias (padrão da plataforma), recolhíveis; o botão
         // "Seções" em Ações rola direto pra cada uma.
         val abertas = remember { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
-        fun aberta(id: String) = abertas[id] != false
+        fun aberta(id: String) = abertas[id] == true
         val listState = androidx.compose.foundation.lazy.rememberLazyListState()
         val scope = androidx.compose.runtime.rememberCoroutineScope()
         val indiceSecao = remember { mutableMapOf<String, Int>() }
@@ -370,28 +370,32 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
             item(key = "acoes") {
                 com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
                     Column(modifier = Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        // Layout v7: "EXERCÍCIO  ‹ 2026 ›  [PDF]" numa linha e os
-                        // atalhos das seções numa grade de 3, tudo dentro da tela.
+                        // v9: "Ano-Calendário / Exercício" com duas listas lado a lado
+                        // (exercício = ano-calendário + 1; mudar uma ajusta a outra).
                         val anoAtual = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
-                        val borda = MaterialTheme.colorScheme.outline
+                        val anos = (anoAtual downTo anoAtual - 9).toList()
+                        Text("ANO-CALENDÁRIO / EXERCÍCIO", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("EXERCÍCIO", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-                            Row(
-                                modifier = Modifier.clip(RoundedCornerShape(10.dp)).border(1.dp, borda, RoundedCornerShape(10.dp)),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                androidx.compose.material3.IconButton(onClick = { viewModel.setAno(ano - 1) }, enabled = ano > anoAtual - 9, modifier = Modifier.size(36.dp)) {
-                                    Icon(Icons.Filled.ChevronLeft, contentDescription = "Ano anterior")
-                                }
-                                Text(ano.toString(), fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.padding(horizontal = 6.dp))
-                                androidx.compose.material3.IconButton(onClick = { viewModel.setAno(ano + 1) }, enabled = ano < anoAtual, modifier = Modifier.size(36.dp)) {
-                                    Icon(Icons.Filled.ChevronRight, contentDescription = "Próximo ano")
-                                }
-                            }
+                            SearchableDropdownField(
+                                value = ano.toString(),
+                                label = "Ano-calendário",
+                                options = remember(anos) { anos.map { it.toString() to it.toString() } },
+                                onSelect = { picked -> picked.toIntOrNull()?.let { viewModel.setAno(it) } },
+                                modifier = Modifier.weight(1f),
+                                emptyOptionLabel = null,
+                            )
+                            SearchableDropdownField(
+                                value = (ano + 1).toString(),
+                                label = "Exercício",
+                                options = remember(anos) { anos.map { (it + 1).toString() to (it + 1).toString() } },
+                                onSelect = { picked -> picked.toIntOrNull()?.let { viewModel.setAno(it - 1) } },
+                                modifier = Modifier.weight(1f),
+                                emptyOptionLabel = null,
+                            )
                             androidx.compose.material3.OutlinedButton(
                                 onClick = { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(d, ano)) },
                                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                                modifier = Modifier.height(36.dp),
+                                modifier = Modifier.height(40.dp),
                             ) {
                                 Icon(Icons.Filled.Print, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Text(" PDF", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
@@ -400,7 +404,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                         val atalhos = listOf(
                             "resumo" to "Resumo", "fazendas" to "Por fazenda", "caixa" to "Livro Caixa",
                             "contratos" to "Contratos", "patrimonio" to "Patrimônio",
-                        ).filter { indiceSecao.containsKey(it.first) } + listOf("topo" to "Topo ↑")
+                        ).filter { indiceSecao.containsKey(it.first) }
                         atalhos.chunked(3).forEach { linha ->
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 linha.forEach { (id, rotulo) ->
@@ -408,11 +412,8 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                                         modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
                                             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
                                             .clickable {
-                                                if (id == "topo") scope.launch { listState.animateScrollToItem(0) }
-                                                else {
-                                                    abertas[id] = true
-                                                    indiceSecao[id]?.let { i -> scope.launch { listState.animateScrollToItem(i) } }
-                                                }
+                                                abertas[id] = true
+                                                indiceSecao[id]?.let { i -> scope.launch { listState.animateScrollToItem(i) } }
                                             }
                                             .padding(vertical = 8.dp),
                                         contentAlignment = Alignment.Center,
@@ -495,27 +496,26 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                 }
                 n++
                 if (aberta("patrimonio")) {
-                    item {
+                    // Resumo + itens num cartão só (item único da lista): ao
+                    // recolher a seção some tudo junto, sem itens soltos.
+                    item(key = "patrimonio-corpo") {
                         SecaoCard(titulo = null) {
                             LinhaResumo("Valor de aquisição (total)", formatMoneyBrl(patrimonio.valorAquisicaoTotal))
                             LinhaResumo("Depreciação acumulada", formatMoneyBrl(patrimonio.deprecAcumTotal))
                             LinhaResumo("Valor contábil (atual)", formatMoneyBrl(patrimonio.valorContabilTotal), destaquePositivo = true)
+                            if (patrimonio.principais.isNotEmpty()) {
+                                HorizontalDivider()
+                                patrimonio.principais.forEach { p -> PatrimonioItemLinha(p) }
+                                if (patrimonio.totalItens > patrimonio.principais.size) {
+                                    Text(
+                                        "Mostrando os ${patrimonio.principais.size} itens de maior valor contábil. Lista completa em Inventário (Ativos).",
+                                        style = MaterialTheme.typography.labelSmall,
+                                    )
+                                }
+                            }
                         }
                     }
                     n++
-                    if (patrimonio.principais.isNotEmpty()) {
-                        items(patrimonio.principais) { p -> PatrimonioItemCard(p) }
-                        n += patrimonio.principais.size
-                        if (patrimonio.totalItens > patrimonio.principais.size) {
-                            item {
-                                Text(
-                                    "Mostrando os ${patrimonio.principais.size} itens de maior valor contábil. Lista completa em Inventário (Ativos).",
-                                    style = MaterialTheme.typography.labelSmall,
-                                )
-                            }
-                            n++
-                        }
-                    }
                 }
             }
         }
@@ -610,6 +610,17 @@ private fun ContratoCard(c: DossieContratoData) {
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun PatrimonioItemLinha(p: DossiePatrimonioItemData) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(p.descricao, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            if (!p.categoria.isNullOrBlank()) Text(p.categoria, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Text(formatMoneyBrl(p.valorContabil), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
     }
 }
 

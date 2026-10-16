@@ -619,7 +619,7 @@ fun FinanceiroScreen(
             BlocoComFaixa("Ações", modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
                 FinanceiroCategoryTabs(
                     listOf(dadosBlock, operacoesBlock, arquivosBlock),
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
 
@@ -1186,38 +1186,8 @@ private fun FinanceiroCategoryTabs(blocks: List<FinBlockSpec>, modifier: Modifie
     var selected by remember { mutableStateOf(0) }
     val safeSelected = selected.coerceIn(0, blocks.size - 1)
     Column(modifier = modifier) {
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            blocks.forEachIndexed { index, block ->
-                SegmentedButton(
-                    selected = safeSelected == index,
-                    onClick = { selected = index },
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = blocks.size),
-                    // Fundo verde (mesma cor do ícone fazenda/primary) --
-                    // pedido do usuário ("coloque também a cor de fundo dos
-                    // blocos das categorias a mesma cor do ícone fazenda").
-                    colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = if (block.badgeCount > 0) com.bragro.mobile.ui.theme.BrYellow else MaterialTheme.colorScheme.primary,
-                        activeContentColor = if (block.badgeCount > 0) androidx.compose.ui.graphics.Color(0xFF1A1A1A) else MaterialTheme.colorScheme.onPrimary,
-                        inactiveContainerColor = if (block.badgeCount > 0) com.bragro.mobile.ui.theme.BrYellow.copy(alpha = 0.55f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                        inactiveContentColor = if (block.badgeCount > 0) androidx.compose.ui.graphics.Color(0xFF4D3C00) else MaterialTheme.colorScheme.onSurface,
-                    ),
-                    // maxLines/ellipsis -- achado de auditoria (mesma razão
-                    // do ModuleCategoryTabs em DomainListScreen.kt: título
-                    // longo quebrando linha desalinha a altura dos 3
-                    // blocos).
-                    label = {
-                        Text(
-                            block.title,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Clip,
-                            modifier = Modifier.basicMarquee(),
-                        )
-                    },
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
+        com.bragro.mobile.ui.domain.AbasEncaixadas(blocks.map { it.title }, safeSelected, avisos = blocks.map { it.badgeCount }, onSelect = { selected = it })
+        Spacer(modifier = Modifier.height(4.dp))
         val active = blocks[safeSelected]
         if (active.vertical) {
             // Sem Card "por fora" -- pedido do usuário ("retire as bordas

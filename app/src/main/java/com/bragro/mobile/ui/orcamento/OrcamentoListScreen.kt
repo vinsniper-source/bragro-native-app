@@ -592,7 +592,7 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                 )
             }
             // Painel de monitoramento (mesmo da plataforma), antes de Ações.
-            if (orcamentos.isNotEmpty()) {
+            run {
                 val pendentesNf = orcamentos.count { it.status != "FATURADO" }
                 val autorizados = orcamentos.count { !it.autorizadoPorNome.isNullOrBlank() }
                 com.bragro.mobile.ui.domain.PainelMonitoramento(
@@ -605,7 +605,7 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                             com.bragro.mobile.ui.domain.PainelKpi("Pendente NF", pendentesNf.toDouble(), "numero", null, "aguardam a nota mãe", "Lançamentos"),
                             com.bragro.mobile.ui.domain.PainelKpi("Autorizados", autorizados.toDouble(), "numero", null, "de ${orcamentos.size}", "Lançamentos"),
                         ),
-                        barras = listOf(
+                        barras = if (orcamentos.isEmpty()) emptyList() else listOf(
                             com.bragro.mobile.ui.domain.PainelBarra("Faturados", Math.round((orcamentos.size - pendentesNf) * 100.0 / orcamentos.size).toDouble(), "${orcamentos.size - pendentesNf}/${orcamentos.size}"),
                         ),
                     ),
@@ -613,7 +613,7 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                 )
             }
             com.bragro.mobile.ui.domain.BlocoComFaixa("Ações", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
-                ModuleCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth().padding(8.dp))
+                ModuleCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth())
             }
             Text(
                 "${filtered.size} orçamento(s)${if (filtered.size != orcamentos.size) " de ${orcamentos.size}" else ""}. Pendente NF aguarda a nota mãe pra conciliação.",
