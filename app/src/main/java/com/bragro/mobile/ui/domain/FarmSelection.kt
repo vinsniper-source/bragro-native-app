@@ -57,11 +57,25 @@ object FarmSelection {
     // usam "fazenda". Mantido em duplicata proposital (app nativo nao
     // importa codigo do site): se um dominio novo farm-linked for adicionado
     // no site, precisa ser espelhado aqui tambem.
-    private val FARM_LINKED_DOMAINS = setOf("safra", "frota", "financeiro", "colheita", "planejamentosafra", "pragas", "clima")
+    private val FARM_LINKED_DOMAINS = setOf("safra", "frota", "financeiro", "colheita", "planejamentosafra", "pragas", "clima", "pecuaria", "pastagem", "maodeobra")
     private val FARM_LINKED_FIELD = mapOf("pragas" to "fazenda", "clima" to "fazenda")
 
     /** Nome da coluna a filtrar pelo dominio, ou null se o dominio nao for
      * farm-linked (nao mostra nem aplica o filtro global nele). */
     fun farmFieldFor(domainId: String): String? =
         if (FARM_LINKED_DOMAINS.contains(domainId)) (FARM_LINKED_FIELD[domainId] ?: "local") else null
+
+    /** Lançamentos só da fazenda escolhida no topo (painel, conferência e
+     * gráficos -- v14); sem fazenda escolhida devolve tudo. */
+    fun filtrar(records: List<Map<String, String?>>, campo: String?): List<Map<String, String?>> {
+        val sel = selected.value ?: return records
+        if (campo == null) return records
+        val alvo = normalizarTexto(sel)
+        return records.filter { normalizarTexto(it[campo].orEmpty()) == alvo }
+    }
+
+    /** Nome curto pra etiqueta do painel ("FAZENDA SANTA FÉ" -> "Santa Fé"). */
+    fun rotuloCurto(): String? = selected.value?.let { n ->
+        n.replace(Regex("^(FAZENDA|FAZ\\.?)\\s+", RegexOption.IGNORE_CASE), "").lowercase().split(" ").joinToString(" ") { w -> w.replaceFirstChar { it.titlecase() } }
+    }
 }

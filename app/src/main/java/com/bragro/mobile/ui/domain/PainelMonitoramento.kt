@@ -14,9 +14,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.GridOn
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.NorthEast
 import androidx.compose.material.icons.filled.Agriculture
 import androidx.compose.material3.HorizontalDivider
@@ -445,7 +448,7 @@ fun FaixaTitulo(titulo: String, aberto: Boolean, extra: String? = null, onToggle
     ) {
         Text(Idioma.tr(titulo).uppercase(), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp, color = fg)
         if (extra != null) Text(extra, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-        Box(Modifier.weight(1f).height(1.dp).background(fg.copy(alpha = 0.22f)))
+        Box(Modifier.weight(1f).height(1.5.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)))
         Box(
             modifier = Modifier.size(24.dp).border(1.dp, fg.copy(alpha = 0.35f), RoundedCornerShape(6.dp)),
             contentAlignment = Alignment.Center,
@@ -468,9 +471,11 @@ fun CabecalhoLancamentos(total: Int, aberto: Boolean, extra: String? = null, tit
         Text(
             rotulo ?: (NumberFormat.getIntegerInstance(Locale("pt", "BR")).format(total) + (extra?.let { " · $it" } ?: "")),
             fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 160.dp),
         )
-        Box(Modifier.weight(1f).height(1.dp).background(MaterialTheme.colorScheme.outlineVariant))
+        // v14: a linha vai do número até a setinha (encostada na margem),
+        // um pouco mais grossa e num cinza um tom mais escuro.
+        Box(Modifier.weight(1f).height(1.5.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)))
         Box(
             modifier = Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surface)
                 .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp)),
@@ -659,21 +664,24 @@ fun CartaoGrupo(
             .padding(vertical = 4.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, primary.copy(alpha = 0.45f), RoundedCornerShape(12.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
             .clickable { onToggle() }
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // v13: nome à esquerda, quantidade no meio, valor à direita. O valor
+        // tem largura fixa e a fonte diminui até caber -- nunca passa do card.
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(Idioma.tr(plural(qtd, "lançamento")).uppercase(), fontSize = 10.5.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(titulo, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            if (!onde.isNullOrBlank()) Text(onde, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(titulo, fontWeight = FontWeight.Bold, fontSize = 14.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (!onde.isNullOrBlank()) Text(onde, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        if (!total.isNullOrBlank()) {
-            Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(horizontal = 8.dp)) {
-                Text(total, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1)
-                if (!totalRotulo.isNullOrBlank()) Text(totalRotulo, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-            }
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(46.dp)) {
+            Text(qtd.toString(), fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1)
+            Text("lanç.", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+        }
+        Column(horizontalAlignment = Alignment.End, modifier = Modifier.width(104.dp).padding(end = 4.dp)) {
+            ValorUmaLinha(total ?: "—", MaterialTheme.colorScheme.onSurface, maxSp = 14f, minSp = 8.5f)
+            if (!totalRotulo.isNullOrBlank()) Text(totalRotulo, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Icon(Icons.Filled.ExpandMore, contentDescription = if (aberto) "Recolher grupo" else "Ver lançamentos do grupo", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.rotate(if (aberto) 180f else 0f))
     }
@@ -719,4 +727,51 @@ fun LinhaGruposAcoes(grupos: List<Pair<String, @Composable () -> Unit>>) {
             }
         }
     }
+}
+
+/**
+ * Ações em abas Dados / Operações / Arquivos (v14) -- mesmo padrão dos
+ * módulos de lançamento, para as telas próprias (Drone, Pivôs, Talhões e
+ * Mapas, Prescrição, NF-e, Silos, Reconciliação). Ícones de cada aba em
+ * células iguais e centralizadas.
+ */
+@Composable
+fun AcoesEmAbas(
+    dados: @Composable () -> Unit,
+    operacoes: @Composable () -> Unit,
+    arquivos: @Composable () -> Unit,
+) {
+    var aba by rememberSaveable { mutableStateOf(0) }
+    BlocoComFaixa("Ações") {
+        Column(Modifier.fillMaxWidth()) {
+            AbasEncaixadas(listOf("Dados", "Operações", "Arquivos"), aba, onSelect = { aba = it })
+            Spacer(Modifier.height(4.dp))
+            EqualWidthBlockRow(modifier = Modifier.fillMaxWidth()) {
+                when (aba) {
+                    0 -> dados()
+                    1 -> operacoes()
+                    else -> arquivos()
+                }
+            }
+        }
+    }
+}
+
+/** Ícones da aba Arquivos: Excel e Imprimir/PDF a partir de uma tabela simples. */
+@Composable
+fun ArquivosTabela(titulo: String, headers: List<String>, linhas: () -> List<List<String>>) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    LabeledIconButton(
+        icon = androidx.compose.material.icons.Icons.Filled.GridOn,
+        label = "Excel",
+        onClick = {
+            val nome = titulo.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-') + ".xlsx"
+            com.bragro.mobile.ui.util.shareBinaryFile(context, com.bragro.mobile.data.export.XlsxWriter.buildXlsx(headers, linhas()), nome)
+        },
+    )
+    LabeledIconButton(
+        icon = androidx.compose.material.icons.Icons.Filled.Print,
+        label = "Imprimir/PDF",
+        onClick = { com.bragro.mobile.ui.print.HtmlPrinter.printSimpleTable(context, titulo, headers, linhas()) },
+    )
 }

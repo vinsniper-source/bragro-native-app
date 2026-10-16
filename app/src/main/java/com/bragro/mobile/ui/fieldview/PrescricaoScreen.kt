@@ -1,5 +1,8 @@
 package com.bragro.mobile.ui.fieldview
 
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.filled.Refresh
 import android.app.Application
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
@@ -367,13 +370,32 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                 )
             }
             item(key = "acoes") {
-                com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
-                    com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Add, label = "+ Nova", onClick = onNovo)
+                com.bragro.mobile.ui.domain.AcoesEmAbas(
+                    dados = {
+                        com.bragro.mobile.ui.domain.LabeledIconButton(
+                            icon = if (lancAberto) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                            label = if (lancAberto) "Recolher" else "Expandir",
+                            onClick = { lancAberto = !lancAberto },
+                        )
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Info, label = "Formatos", onClick = { infoAberto = true })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = imprimir)
-                    }
-                }
+                    },
+                    operacoes = {
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Add, label = "+ Nova", onClick = onNovo)
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", onClick = { viewModel.carregar() })
+                    },
+                    arquivos = {
+                        com.bragro.mobile.ui.domain.ArquivosTabela("Prescrição / Taxa Variável", listOf("Nome", "Produto", "Safra", "Cultura", "Talhão", "Taxa mín.", "Taxa média", "Taxa máx.")) {
+                            prescricoes.map {
+                                listOf(
+                                    it.nome, it.produto ?: "", it.safra ?: "", it.cultura ?: "", it.talhao ?: "",
+                                    it.taxaMin?.let { v -> "%.2f".format(v) } ?: "",
+                                    it.taxaMedia?.let { v -> "%.2f".format(v) } ?: "",
+                                    it.taxaMax?.let { v -> "%.2f".format(v) } ?: "",
+                                )
+                            }
+                        }
+                    },
+                )
             }
             item(key = "lanc-header") {
                 com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = prescricoes.size, aberto = lancAberto, titulo = "Prescrições") { lancAberto = !lancAberto }

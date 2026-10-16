@@ -477,26 +477,30 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                 ),
                 onKpi = { k -> tab = when (k.destino) { "Máquinas" -> 1; "Mapa" -> 2; else -> 0 }; listaAberta = true },
             )
-            com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
-                Column(Modifier.fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth()) {
-                        val tabIcons = listOf(Icons.Filled.Eco, Icons.Filled.DirectionsCar, Icons.Filled.Map)
-                        tabs.forEachIndexed { i, label ->
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = tabIcons[i], label = if (i == 2) "Mapa/KML" else label, active = tab == i, onClick = { tab = i; listaAberta = true })
-                        }
+            // v14: abas Dados / Operações / Arquivos, iguais aos outros módulos.
+            com.bragro.mobile.ui.domain.AcoesEmAbas(
+                dados = {
+                    val tabIcons = listOf(Icons.Filled.Eco, Icons.Filled.DirectionsCar, Icons.Filled.Map)
+                    tabs.forEachIndexed { i, label ->
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = tabIcons[i], label = if (i == 2) "Mapa/KML" else label, active = tab == i && listaAberta, onClick = { tab = i; listaAberta = true })
                     }
-                    com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth()) {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(
-                            icon = Icons.Filled.UploadFile, label = "KML/KMZ", loading = importing,
-                            onClick = { kmlPicker.launch(arrayOf("application/vnd.google-earth.kml+xml", "application/vnd.google-earth.kmz", "application/octet-stream", "*/*")) },
-                        )
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.EditLocationAlt, label = "+ Talhão", onClick = { manualDialogOpen = true })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Bolt, label = "Prestadora", active = integration != null, onClick = { prestadoraAberta = 1 })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Public, label = "NDVI", active = ndviIntegration != null, onClick = { prestadoraAberta = 2 })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Layers, label = "Prescrição", onClick = onOpenPrescricao)
+                },
+                operacoes = {
+                    com.bragro.mobile.ui.domain.LabeledIconButton(
+                        icon = Icons.Filled.UploadFile, label = "KML/KMZ", loading = importing,
+                        onClick = { kmlPicker.launch(arrayOf("application/vnd.google-earth.kml+xml", "application/vnd.google-earth.kmz", "application/octet-stream", "*/*")) },
+                    )
+                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.EditLocationAlt, label = "+ Talhão", onClick = { manualDialogOpen = true })
+                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Bolt, label = "Prestadora", active = integration != null, onClick = { prestadoraAberta = 1 })
+                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Public, label = "NDVI", active = ndviIntegration != null, onClick = { prestadoraAberta = 2 })
+                },
+                arquivos = {
+                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Layers, label = "Prescrição", onClick = onOpenPrescricao)
+                    com.bragro.mobile.ui.domain.ArquivosTabela("Talhões e Mapas", listOf("Talhão", "Nome", "Área (ha)")) {
+                        boundaries.map { b -> listOf(b.talhao, b.nome.orEmpty(), b.areaHaCalc?.let { "%.2f".format(it) }.orEmpty()) }
                     }
-                }
-            }
+                },
+            )
             com.bragro.mobile.ui.domain.CabecalhoLancamentos(
                 total = when (tab) { 0 -> talhoes.size; 1 -> data?.maquinaStatus.orEmpty().size; else -> boundaries.size },
                 aberto = listaAberta,

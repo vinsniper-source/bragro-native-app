@@ -770,8 +770,10 @@ fun DomainListScreen(
         // vazio, fora da lista, grafia diferente ou números que não batem.
         val lookupsConf by viewModel.lookupsConferencia
         val fazConf by viewModel.fazendasConferencia
-        val problemasConf = remember(records, lookupsConf, fazConf, cfg) {
-            records.mapNotNull { r -> val p = conferirRegistro(cfg, r, lookupsConf, fazConf); val id = r["id"]; if (p.isEmpty() || id == null) null else id to p }.toMap()
+        // Só a fazenda escolhida no topo (v14) -- painel e conferência.
+        val recordsFaz = remember(records, globalFarmField, globalFarmSelected) { FarmSelection.filtrar(records, globalFarmField) }
+        val problemasConf = remember(recordsFaz, lookupsConf, fazConf, cfg) {
+            recordsFaz.mapNotNull { r -> val p = conferirRegistro(cfg, r, lookupsConf, fazConf); val id = r["id"]; if (p.isEmpty() || id == null) null else id to p }.toMap()
         }
         // Divisor tracejado entre lançamentos do MESMO Nº Pedido+Item, só em
         // Pedidos -- espelho de pedidoItemBoundary (data-table.tsx). Os
@@ -945,7 +947,8 @@ fun DomainListScreen(
             // Painel de monitoramento -- mesmo cálculo da plataforma
             // (module-panel.ts) com os registros já carregados; tocar num
             // indicador filtra a lista e rola até os lançamentos.
-            val painelBase = calcularPainelModulo(domainId, cfg.label, cfg.columns, records, pendentesConferencia = problemasConf.size)
+            val painelBase = calcularPainelModulo(domainId, cfg.label, cfg.columns, recordsFaz, pendentesConferencia = problemasConf.size)
+                ?.let { p -> if (globalFarmField != null && globalFarmSelected != null) p.copy(subtitulo = "⌂ ${FarmSelection.rotuloCurto()} · ${p.subtitulo}") else p }
             if (painelBase != null) {
                 item(key = "painel") {
                     val extra = barraFiltroAtivo(records, kpiFiltroAtivo)
@@ -981,7 +984,7 @@ fun DomainListScreen(
             }
             if (conferenciaAberta) item(key = "conferencia") {
                 ConferenciaCard(
-                    records = records,
+                    records = recordsFaz,
                     problemas = problemasConf,
                     onAplicar = { lista -> viewModel.aplicarCorrecoes(domainId, lista) },
                     onAbrir = { id -> onEditRecord(id) },

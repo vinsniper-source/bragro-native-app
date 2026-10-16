@@ -696,7 +696,12 @@ private fun OperacaoDetalheCompleto(recordId: String, dominio: String = "safra")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, viewModel: OperacoesViewModel = viewModel()) {
-    val operacoes by viewModel.operacoes
+    val operacoesTodas by viewModel.operacoes
+    // v14: só a fazenda escolhida no topo.
+    val farmSel = com.bragro.mobile.ui.domain.FarmSelection.selected.value
+    val operacoes = remember(operacoesTodas, farmSel) {
+        if (farmSel == null) operacoesTodas else operacoesTodas.filter { com.bragro.mobile.ui.domain.normalizarTexto(it.local) == com.bragro.mobile.ui.domain.normalizarTexto(farmSel) }
+    }
     val loading by viewModel.loading
     val pendingIds by viewModel.pendingIds
     val revisados by viewModel.revisados

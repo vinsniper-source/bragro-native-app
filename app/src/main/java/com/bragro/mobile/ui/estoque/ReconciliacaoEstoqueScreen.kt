@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.estoque
 
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.foundation.clickable
@@ -224,8 +225,8 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                 )
             }
             item(key = "acoes") {
-                com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
-                    com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                com.bragro.mobile.ui.domain.AcoesEmAbas(
+                    dados = {
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Warning, label = "Divergências", active = soDivergencia, onClick = { soDivergencia = true; listaAberta = true })
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.ViewList, label = "Todos", active = !soDivergencia, onClick = { soDivergencia = false; listaAberta = true })
                         androidx.compose.foundation.layout.Box {
@@ -237,9 +238,16 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                                 }
                             }
                         }
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = imprimir)
-                    }
-                }
+                    },
+                    operacoes = {
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", onClick = { viewModel.carregar() })
+                    },
+                    arquivos = {
+                        com.bragro.mobile.ui.domain.ArquivosTabela("Reconciliação Físico x Fiscal", listOf("Item", "Categoria", "Saldo Fiscal", "Saldo Real", "Diferença")) {
+                            itens.map { listOf(it.item, it.categoria ?: "", formatoNumero(it.saldoFiscal) + (it.unidade?.let { u -> " $u" } ?: ""), formatoNumero(it.saldoFisico) + (it.unidade?.let { u -> " $u" } ?: ""), formatoNumero(it.diferenca) + (it.unidade?.let { u -> " $u" } ?: "")) }
+                        }
+                    },
+                )
             }
             item(key = "lista-header") {
                 com.bragro.mobile.ui.domain.CabecalhoLancamentos(

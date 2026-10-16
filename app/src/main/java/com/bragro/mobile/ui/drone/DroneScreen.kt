@@ -1,5 +1,8 @@
 package com.bragro.mobile.ui.drone
 
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.filled.Refresh
 import android.app.Application
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -317,8 +320,9 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                 }
             }
             item(key = "acoes") {
-                com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
-                    com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                // v14: abas Dados / Operações / Arquivos, iguais aos outros módulos.
+                com.bragro.mobile.ui.domain.AcoesEmAbas(
+                    dados = {
                         Box {
                             com.bragro.mobile.ui.domain.LabeledIconButton(
                                 icon = Icons.Filled.FilterAlt,
@@ -334,18 +338,28 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                             }
                         }
                         com.bragro.mobile.ui.domain.LabeledIconButton(
-                            icon = Icons.Filled.Bolt,
-                            label = "Prestadora",
-                            active = integration != null,
-                            onClick = { showPrestadora = true },
+                            icon = if (lancAberto) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                            label = if (lancAberto) "Recolher" else "Expandir",
+                            onClick = { lancAberto = !lancAberto },
                         )
-                        com.bragro.mobile.ui.domain.LabeledIconButton(
-                            icon = Icons.Filled.FlightTakeoff,
-                            label = "+ Voo",
-                            onClick = { showNovo = true },
-                        )
-                    }
-                }
+                    },
+                    operacoes = {
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.FlightTakeoff, label = "+ Voo", onClick = { showNovo = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Bolt, label = "Prestadora", active = integration != null, onClick = { showPrestadora = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.load() })
+                    },
+                    arquivos = {
+                        com.bragro.mobile.ui.domain.ArquivosTabela("Drone", listOf("Data", "Talhão", "Tipo", "Piloto", "Altitude (m)", "Área (ha)", "Observações")) {
+                            filtrados.map { r ->
+                                listOf(
+                                    com.bragro.mobile.ui.domain.isoDateToBr(r.data.take(10)), r.talhao.orEmpty(),
+                                    TIPOS_CAPTURA.firstOrNull { it.first == r.tipoCaptura }?.second ?: r.tipoCaptura,
+                                    r.piloto.orEmpty(), r.altitude?.toString().orEmpty(), r.areaCoberta?.toString().orEmpty(), r.observacoes.orEmpty(),
+                                )
+                            }
+                        }
+                    },
+                )
             }
             item(key = "lanc-header") {
                 com.bragro.mobile.ui.domain.CabecalhoLancamentos(

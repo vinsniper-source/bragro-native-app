@@ -600,7 +600,11 @@ fun FinanceiroScreen(
             // Ordem da plataforma: primeiro o Painel de monitoramento (só na
             // visão Lançamentos; cada cartão abre a visão certa), depois Ações.
             if (!isQuickView && cfg != null) {
-                val painelFin = remember(allRecords, cfg) { calcularPainelModulo("financeiro", "Financeiro", cfg.columns, allRecords) }
+                val farmSel = FarmSelection.selected.value
+                val painelFin = remember(allRecords, cfg, farmSel) {
+                    calcularPainelModulo("financeiro", "Financeiro", cfg.columns, FarmSelection.filtrar(allRecords, "local"))
+                        ?.let { p -> if (farmSel != null) p.copy(subtitulo = "⌂ ${FarmSelection.rotuloCurto()} · ${p.subtitulo}") else p }
+                }
                 if (painelFin != null) {
                     PainelMonitoramento(
                         painelFin,

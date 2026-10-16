@@ -249,8 +249,13 @@ class PivosViewModel(app: Application) : AndroidViewModel(app) {
 @Composable
 fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
     LaunchedEffect(Unit) { viewModel.load() }
-    val pivos by viewModel.pivos
+    val pivosTodos by viewModel.pivos
+    val farmSel = com.bragro.mobile.ui.domain.FarmSelection.selected.value
     val farms by viewModel.farms
+    // v14: só a fazenda escolhida no topo.
+    val pivos = remember(pivosTodos, farms, farmSel) {
+        if (farmSel == null) pivosTodos else pivosTodos.filter { x -> farms.firstOrNull { it.id == x.farmId }?.name?.let { com.bragro.mobile.ui.domain.normalizarTexto(it) } == com.bragro.mobile.ui.domain.normalizarTexto(farmSel) }
+    }
     val balanco by viewModel.balanco
     val loading by viewModel.loading
     val busy by viewModel.busy
@@ -319,10 +324,9 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                 )
             }
             item(key = "acoes") {
-                com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
-                    // Mesmos grupos da plataforma (pivos-client.tsx).
-                    com.bragro.mobile.ui.domain.LinhaGruposAcoes(listOf(
-                        "Consultar" to {
+                    // v14: abas Dados / Operações / Arquivos, iguais aos outros módulos.
+                    com.bragro.mobile.ui.domain.AcoesEmAbas(
+                        dados = {
                             Box {
                                 com.bragro.mobile.ui.domain.LabeledIconButton(
                                     icon = Icons.Filled.FilterAlt,
@@ -337,23 +341,22 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                                     }
                                 }
                             }
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Opacity, label = "Balanço", active = balancoOpen, onClick = { balancoOpen = !balancoOpen })
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.BarChart, label = "Gráficos", onClick = { graficosOpen = true })
                         },
-                        "Ferramentas" to {
+                        operacoes = {
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.WaterDrop, label = "+ Pivô", onClick = { editing = null; showNovo = true })
                             com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.load() })
                             com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Bolt, label = "Fabricante", onClick = { prestadoraAberta = true })
                         },
-                        "Exibir" to {
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Opacity, label = "Balanço", active = balancoOpen, onClick = { balancoOpen = !balancoOpen })
+                        arquivos = {
+                            com.bragro.mobile.ui.domain.ArquivosTabela("Pivôs de Irrigação", listOf("Pivô", "Fazenda", "Marca", "Status", "Ângulo", "Lâmina (mm)", "Pressão (psi)", "Raio (m)")) {
+                                pivos.map { p ->
+                                    listOf(p.nome, farms.firstOrNull { it.id == p.farmId }?.name.orEmpty(), p.marca, statusLabel(p.status), p.anguloAtual?.toInt()?.toString().orEmpty(), p.laminaAtualMm?.toString().orEmpty(), p.pressaoPsi?.toInt()?.toString().orEmpty(), p.raioM?.toInt()?.toString().orEmpty())
+                                }
+                            }
                         },
-                        "Lançar" to {
-                            androidx.compose.material3.Button(
-                                onClick = { editing = null; showNovo = true },
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                                modifier = Modifier.padding(vertical = 6.dp).height(32.dp),
-                            ) { Text("+ Pivô", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) }
-                        },
-                    ))
-                }
+                    )
             }
             // Balanço Hídrico -- lâmina aplicada + chuva (pluviômetro) por dia.
             item(key = "balanco-header") {

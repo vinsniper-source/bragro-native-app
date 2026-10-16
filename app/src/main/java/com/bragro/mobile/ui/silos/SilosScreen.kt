@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.silos
 
+import androidx.compose.material.icons.filled.Refresh
 import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -232,8 +233,13 @@ class SilosViewModel(app: Application) : AndroidViewModel(app) {
 @Composable
 fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
     LaunchedEffect(Unit) { viewModel.load() }
-    val silos by viewModel.silos
+    val silosTodos by viewModel.silos
+    val farmSel = com.bragro.mobile.ui.domain.FarmSelection.selected.value
     val farms by viewModel.farms
+    // v14: só a fazenda escolhida no topo.
+    val silos = remember(silosTodos, farms, farmSel) {
+        if (farmSel == null) silosTodos else silosTodos.filter { x -> farms.firstOrNull { it.id == x.farmId }?.name?.let { com.bragro.mobile.ui.domain.normalizarTexto(it) } == com.bragro.mobile.ui.domain.normalizarTexto(farmSel) }
+    }
     val estoque by viewModel.estoque
     val loading by viewModel.loading
     val busy by viewModel.busy
@@ -301,14 +307,22 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                 )
             }
             item(key = "acoes") {
-                com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
-                    com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                com.bragro.mobile.ui.domain.AcoesEmAbas(
+                    dados = {
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.BarChart, label = "Estoque", active = estoqueAberto, onClick = { estoqueAberto = !estoqueAberto })
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.ViewList, label = "Silos", active = silosAbertos, onClick = { silosAbertos = !silosAbertos })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Bolt, label = "Prestadora", onClick = { prestadoraAberta = true })
+                    },
+                    operacoes = {
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Storage, label = "+ Silo", onClick = { editing = null; showForm = true })
-                    }
-                }
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.load() })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Bolt, label = "Prestadora", onClick = { prestadoraAberta = true })
+                    },
+                    arquivos = {
+                        com.bragro.mobile.ui.domain.ArquivosTabela("Silos", listOf("Silo", "Fazenda", "Produto", "Capacidade (t)", "Nível (%)", "Temperatura (°C)", "Umidade (%)", "Status")) {
+                            silos.map { x -> listOf(x.nome, farms.firstOrNull { it.id == x.farmId }?.name.orEmpty(), x.produto.orEmpty(), x.capacidadeT?.toString().orEmpty(), (x.estimadoPct ?: x.nivelAtualPct)?.toInt()?.toString().orEmpty(), x.temperaturaAtualC?.toString().orEmpty(), x.umidadeAtualPct?.toString().orEmpty(), statusLabel(x.status)) }
+                        }
+                    },
+                )
             }
             item(key = "estoque-header") {
                 com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = 0, aberto = estoqueAberto, titulo = "Estoque por silo", rotulo = "30 dias") { estoqueAberto = !estoqueAberto }

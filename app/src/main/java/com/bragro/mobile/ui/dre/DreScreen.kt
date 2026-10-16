@@ -527,7 +527,19 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
             )
         },
     ) { padding ->
-        val data = dre
+        // v14: com uma fazenda escolhida no topo, o DRE mostra só ela
+        // (cartão e totais do painel = os números daquela fazenda).
+        val farmSel = com.bragro.mobile.ui.domain.FarmSelection.selected.value
+        val data = dre?.let { d ->
+            val f = farmSel?.let { sel -> d.porFazenda.filter { com.bragro.mobile.ui.domain.normalizarTexto(it.farmName) == com.bragro.mobile.ui.domain.normalizarTexto(sel) } }
+            if (f == null || f.size != 1) d else {
+                val x = f[0]
+                d.copy(porFazenda = f, totais = com.bragro.mobile.data.model.DreTotais(
+                    areaHa = x.areaHa, custoTotal = x.custoTotal, custoPorHa = x.custoPorHa, receitaTotal = x.receitaTotal, margem = x.margem,
+                    totalSacas = x.totalSacas ?: 0.0, custoPorSc = x.custoPorSc, totalTon = x.totalTon ?: 0.0, custoPorTon = x.custoPorTon,
+                ))
+            }
+        }
         val allFarmIds = data?.porFazenda?.map { it.farmId }?.toSet().orEmpty()
         val allFarmsExpanded = allFarmIds.isNotEmpty() && expandedFarmIds.containsAll(allFarmIds)
         val temRegistros = data != null && data.porFazenda.isNotEmpty()

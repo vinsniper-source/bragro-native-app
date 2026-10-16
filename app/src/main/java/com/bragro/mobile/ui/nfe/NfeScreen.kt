@@ -1,5 +1,8 @@
 package com.bragro.mobile.ui.nfe
 
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.filled.Refresh
 import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -500,19 +503,32 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
                         )
                     }
                     item(key = "acoes") {
-                        com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
-                            com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Add, label = "+ Nota", onClick = { copiaOrigem = null; showNovaNota = true })
-                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.ContentCopy, label = "Copiar", onClick = { if (ultimaNota != null) { copiaOrigem = ultimaNota; showNovaNota = true } })
+                        com.bragro.mobile.ui.domain.AcoesEmAbas(
+                            dados = {
                                 com.bragro.mobile.ui.domain.LabeledIconButton(
                                     icon = if (viewMode == NfeViewMode.BLOCOS) Icons.Filled.ViewList else Icons.Filled.ViewAgenda,
                                     label = if (viewMode == NfeViewMode.BLOCOS) "Linhas" else "Blocos",
                                     onClick = { viewMode = if (viewMode == NfeViewMode.BLOCOS) NfeViewMode.LINHAS else NfeViewMode.BLOCOS; lancAberto = true },
                                 )
-                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.FolderZip, label = "XML lote", onClick = { showXmlLote = true })
+                                com.bragro.mobile.ui.domain.LabeledIconButton(
+                                    icon = if (lancAberto) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                                    label = if (lancAberto) "Recolher" else "Expandir",
+                                    onClick = { lancAberto = !lancAberto },
+                                )
+                            },
+                            operacoes = {
+                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Add, label = "+ Nota", onClick = { copiaOrigem = null; showNovaNota = true })
+                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.ContentCopy, label = "Copiar", onClick = { if (ultimaNota != null) { copiaOrigem = ultimaNota; showNovaNota = true } })
                                 com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.VerifiedUser, label = "Certificado", onClick = { showCertificado = true })
-                            }
-                        }
+                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", onClick = { viewModel.carregar() })
+                            },
+                            arquivos = {
+                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.FolderZip, label = "XML lote", onClick = { showXmlLote = true })
+                                com.bragro.mobile.ui.domain.ArquivosTabela("NF-e", listOf("Número", "Série", "Tipo", "Emitente", "Valor", "Emissão", "Status")) {
+                                    invoices.map { listOf(it.numero, it.serie.orEmpty(), it.tipo.orEmpty(), it.emitenteNome.orEmpty(), formatoMoeda(it.valorTotal), it.dataEmissao?.take(10)?.let { d -> com.bragro.mobile.ui.domain.isoDateToBr(d) }.orEmpty(), it.statusSefaz ?: it.status) }
+                                }
+                            },
+                        )
                     }
                     item(key = "lanc-header") {
                         com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = invoices.size, aberto = lancAberto, titulo = "Notas") { lancAberto = !lancAberto }

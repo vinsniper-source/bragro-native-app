@@ -3,6 +3,14 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.62] - 2026-10-16
+- Divisória LANÇAMENTOS (e as demais) com a linha indo do número até a setinha, encostada na margem; linha um pouco mais grossa.
+- Drone, Pivôs, Talhões e Mapas, Prescrição, NF-e, Silos e Reconciliação com as abas Dados / Operações / Arquivos, iguais aos outros módulos (ícones centralizados; Arquivos com Excel e Imprimir/PDF).
+- Fazenda escolhida no topo vale também para o Painel de monitoramento e a conferência (Pendentes) -- antes os números somavam as três fazendas --, e para Operações, DRE, Silos e Pivôs. Pecuária, Pastagem e Mão de obra passaram a respeitar a fazenda escolhida. Etiqueta "⌂ fazenda" no painel quando filtrado.
+
+## [1.3.61] - 2026-10-16
+- Cards de grupo das listas em três colunas: nome à esquerda (fazenda/talhão embaixo), quantidade de lançamentos no meio e valor à direita. O valor tem largura fixa e a fonte diminui até caber -- nunca passa da borda do card. Borda cinza fina.
+
 ## [1.3.60] - 2026-10-16
 - "Pendentes" do painel virou conferência de cadastro (não é mais status a pagar/andamento): conta os lançamentos com campo obrigatório vazio, valor fora da lista suspensa, grafia diferente da lista (minúscula, sem acento ou acento errado) e números que não batem (qtd × unitário ≠ total, data fim antes do início, hectare maior que a área da fazenda). Tocar no cartão abre a lista com a correção sugerida: "Aplicar" corrige um campo; "Corrigir todos" mostra tudo o que vai mudar e só grava depois de confirmar; "Abrir" leva ao lançamento.
 - Monitoramento e Ações com o mesmo fio cinza bem fino (sem borda verde).
