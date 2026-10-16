@@ -55,7 +55,8 @@ import androidx.compose.ui.unit.dp
 fun cardBorderColor(): androidx.compose.ui.graphics.Color {
     val primary = MaterialTheme.colorScheme.primary
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    return if (isDark) Color(0xFF3F6A4B) else Color(0xFF9CC7A7)
+    // Borda cinza neutra, igual à plataforma (--border).
+    return if (isDark) Color(0xFF383838) else Color(0xFFD4D4D4)
 }
 
 /** Borda fina (0,5dp) verde adaptável claro/escuro -- volta a pedido do
@@ -187,7 +188,8 @@ fun Card(
 @Composable
 fun appFieldColors(): TextFieldColors {
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val fill = if (dark) Color(0xFF3E4A3F) else Color(0xFFEFF1EE)
+    // Campo igual ao da plataforma: fundo da página dentro do cartão + borda cinza.
+    val fill = if (dark) Color(0xFF0E100F) else Color(0xFFFFFFFF)
     return OutlinedTextFieldDefaults.colors(
     focusedBorderColor = MaterialTheme.colorScheme.primary,
     unfocusedBorderColor = cardBorderColor(),

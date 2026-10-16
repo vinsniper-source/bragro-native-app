@@ -84,6 +84,9 @@ val BrBlueTertiaryDark = Color(0xFF7FAEEA)
 // blocos deixam de ter um tom de verde próprio; quem separa um bloco do
 // fundo é só a borda fina verde (ver AppCard.kt/cardBorderColor, que usa
 // MaterialTheme.colorScheme.primary = BrGreen).
+// Paleta igual à da plataforma (pedido do usuário: "aplique o mesmo fundo da
+// plataforma no app"): fundo F5F7F6/0E100F, cartões brancos/161917, bordas
+// cinza, verde da marca 006F23/40A35C.
 private val LightColors = lightColorScheme(
     // Nada vermelho no app (pedido do usuário): "erro"/excluir/vencido em laranja.
     error = Color(0xFFC2611F),
@@ -94,10 +97,10 @@ private val LightColors = lightColorScheme(
     // contraste... use um verde mais profundo, tom folha/esmeralda
     // fechado"), em vez do BrGreen puro (mais claro, perdia contraste no
     // fundo off-white sob luz forte).
-    primary = BrGreenPrimaryLight,
+    primary = Color(0xFF006F23),
     onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFD1DFD8),
-    onPrimaryContainer = Color(0xFF0E2B1C),
+    primaryContainer = Color(0xFFD9EBDD),
+    onPrimaryContainer = Color(0xFF00381A),
     secondary = BrYellow,
     secondaryContainer = Color(0xFFFCEFCD),
     onSecondaryContainer = Color(0xFF4D3C00),
@@ -108,7 +111,7 @@ private val LightColors = lightColorScheme(
     // 22% sobre o branco quase puro do site -- verde-sálvia claramente
     // visível. A barra inferior usa esta MESMA cor (ver BottomNavBar.kt,
     // containerColor = colorScheme.background, não mais .surface).
-    background = Color(0xFFCBD5CE),
+    background = Color(0xFFF5F7F6),
     // "surface" (cor dos Cards -- AppCard.kt/CardDefaults.cardColors() usam
     // este token, não "background") virou uma cor DIFERENTE do fundo --
     // pedido do usuário ("os blocos não tem contorno e não se destacam por
@@ -118,22 +121,22 @@ private val LightColors = lightColorScheme(
     // sumia visualmente). Agora surface é um tom bem mais claro/branco
     // (só 6% de verde) -- os Cards ficam claramente mais claros que o
     // fundo verde da página, sem precisar trazer a borda de volta.
-    surface = Color(0xFFEFF1EE),
-    surfaceVariant = Color(0xFFEFF1EE),
+    surface = Color(0xFFFFFFFF),
+    surfaceVariant = Color(0xFFEEF1EF),
     // Janelas (AlertDialog), menus suspensos e campos usam estes tokens --
     // sem defini-los ficavam no cinza/roxo padrão do Material3.
-    surfaceContainerLowest = Color(0xFFEFF1EE),
-    surfaceContainerLow = Color(0xFFEFF1EE),
-    surfaceContainer = Color(0xFFEFF1EE),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFFFFFFF),
+    surfaceContainer = Color(0xFFFFFFFF),
     // Janelas (AlertDialog/DatePicker): verde-acinzentado claro, um degrau
     // abaixo do campo (EFF1EE) -- campos se destacam dentro da janela,
     // igual ao Abastecimento rápido aprovado.
-    surfaceContainerHigh = Color(0xFFDCE4DE),
-    surfaceContainerHighest = Color(0xFFDCE4DE),
-    surfaceDim = Color(0xFFEFF1EE),
-    surfaceBright = Color(0xFFEFF1EE),
-    outline = Color(0xFF4A5C57),
-    outlineVariant = Color(0xFFC3D0CB),
+    surfaceContainerHigh = Color(0xFFFFFFFF),
+    surfaceContainerHighest = Color(0xFFF5F7F6),
+    surfaceDim = Color(0xFFF5F7F6),
+    surfaceBright = Color(0xFFFFFFFF),
+    outline = Color(0xFFC7C7C7),
+    outlineVariant = Color(0xFFD4D4D4),
 )
 
 private val DarkColors = darkColorScheme(
@@ -146,9 +149,9 @@ private val DarkColors = darkColorScheme(
     // ("reduza a saturação... prefira tons de verde mais pastel,
     // acinzentados... sem poluir a tela"), em vez do BrGreen puro (mais
     // saturado, "vibrava" em cima do fundo quase-preto).
-    primary = BrGreenPrimaryDark,
-    onPrimary = Color(0xFF0C2317),
-    primaryContainer = Color(0xFF243A2F),
+    primary = Color(0xFF40A35C),
+    onPrimary = Color(0xFF0A1F10),
+    primaryContainer = Color(0xFF1E3326),
     onPrimaryContainer = Color(0xFFB7D9C7),
     secondary = BrYellow,
     secondaryContainer = Color(0xFF5E4F26),
@@ -157,26 +160,26 @@ private val DarkColors = darkColorScheme(
     // Mesmo raciocínio do LightColors acima (ver comentário lá) -- 22% de
     // BrGreenPrimaryDark sobre o grafite quase-preto do site (0xFF16100B),
     // um verde musgo escuro nitidamente visível.
-    background = Color(0xFF2A3227),
+    background = Color(0xFF0E100F),
     // Cards mais CLAROS que o fundo (convenção Material de elevação no
     // escuro: quem "flutua" por cima fica mais claro, não mais escuro) --
     // mesmo motivo do LightColors acima, pra não ficarem invisíveis sem
     // borda e com a cor igual ao fundo.
-    surface = Color(0xFF434B40),
-    surfaceVariant = Color(0xFF434B40),
+    surface = Color(0xFF161917),
+    surfaceVariant = Color(0xFF222523),
     // Janelas (AlertDialog), menus suspensos e campos usam estes tokens --
     // sem defini-los ficavam no cinza/roxo padrão do Material3.
-    surfaceContainerLowest = Color(0xFF434B40),
-    surfaceContainerLow = Color(0xFF434B40),
-    surfaceContainer = Color(0xFF434B40),
+    surfaceContainerLowest = Color(0xFF161917),
+    surfaceContainerLow = Color(0xFF161917),
+    surfaceContainer = Color(0xFF161917),
     // Janelas: verde-musgo mais claro que o campo (3E4A3F) -- padrão do
     // Abastecimento rápido no escuro.
-    surfaceContainerHigh = Color(0xFF4B5A4E),
-    surfaceContainerHighest = Color(0xFF4B5A4E),
-    surfaceDim = Color(0xFF434B40),
-    surfaceBright = Color(0xFF434B40),
-    outline = Color(0xFF7A9186),
-    outlineVariant = Color(0xFF3F4A46),
+    surfaceContainerHigh = Color(0xFF1C201D),
+    surfaceContainerHighest = Color(0xFF222523),
+    surfaceDim = Color(0xFF0E100F),
+    surfaceBright = Color(0xFF222523),
+    outline = Color(0xFF484848),
+    outlineVariant = Color(0xFF383838),
 )
 
 // Tema Argentina (País = Argentina em Configurações): celeste e branco da

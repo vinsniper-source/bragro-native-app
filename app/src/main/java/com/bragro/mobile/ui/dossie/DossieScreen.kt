@@ -2,6 +2,7 @@ package com.bragro.mobile.ui.dossie
 
 import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.ui.draw.clip
@@ -251,7 +252,7 @@ private fun AnoDropdown(ano: Int, onSelect: (Int) -> Unit) {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
     val carregando by viewModel.carregando
@@ -360,17 +361,20 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
             item(key = "acoes") {
                 com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
                     Column(modifier = Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // Tudo dentro da largura da tela (pedido do usuário):
+                        // Ano + Imprimir dividem a linha; os atalhos quebram linha.
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             AnoDropdown(ano) { viewModel.setAno(it) }
-                            com.bragro.mobile.ui.domain.LabeledIconButton(
-                                icon = Icons.Filled.Print,
-                                label = "Imprimir / PDF",
-                                onClick = { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(d, ano)) },
-                            )
+                            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+                                com.bragro.mobile.ui.domain.LabeledIconButton(
+                                    icon = Icons.Filled.Print,
+                                    label = "Imprimir",
+                                    onClick = { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(d, ano)) },
+                                )
+                            }
                         }
-                        // Visão: atalhos pra cada seção.
-                        Row(
-                            modifier = Modifier.fillMaxWidth().horizontalScroll(androidx.compose.foundation.rememberScrollState()),
+                        androidx.compose.foundation.layout.FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
                             listOf(
@@ -382,7 +386,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                                         abertas[id] = true
                                         indiceSecao[id]?.let { i -> scope.launch { listState.animateScrollToItem(i) } }
                                     },
-                                    label = { Text(rotulo) },
+                                    label = { Text(rotulo, maxLines = 1) },
                                 )
                             }
                         }

@@ -264,21 +264,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                 },
             )
         },
-        floatingActionButton = {
-            // Ainda mais acima -- pedido do usuário repetiu de novo ("suba
-            // mais o botão drone"): 16dp não bastou, foi pra 32dp, agora 48dp.
-            // Fundo verde (mesma cor do título/primary), ícone branco --
-            // pedido do usuário ("altere a cor do fundo do botão do ícone
-            // drone para o verde a mesma do título"): antes usava as cores
-            // padrão (claras) do FAB, destoando do resto do app.
-            FloatingActionButton(
-                onClick = { showNovo = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ) {
-                Icon(Icons.Filled.FlightTakeoff, contentDescription = "Novo registro de drone")
-            }
-        },
+        // Botão flutuante removido (pedido do usuário) -- "+ Voo" fica em Ações.
     ) { padding ->
         // Padrão da plataforma: Painel de monitoramento + Ações (Tipo,
         // Prestadora, + Voo) + LANÇAMENTOS em cards. A prestadora abre numa

@@ -7,6 +7,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
@@ -116,6 +120,13 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
         private set
 
     val fields = mutableStateMapOf<String, String>()
+
+    /** Vários itens no mesmo lançamento/O.S. (padrão Safra da plataforma,
+     * MULTI_ITEM em record-form.tsx): o 1º item usa os campos normais; cada
+     * linha extra vira um lançamento com o mesmo cabeçalho ao salvar. */
+    val itensExtras = androidx.compose.runtime.mutableStateListOf<androidx.compose.runtime.snapshots.SnapshotStateMap<String, String>>()
+    fun addItemExtra() { itensExtras.add(mutableStateMapOf()) }
+    fun removeItemExtra(i: Int) { if (i in itensExtras.indices) itensExtras.removeAt(i) }
 
     // Guarda domainId/recordId da carga atual -- preview de O.S. (ver
     // refreshOsPreview()) precisa deles fora de load() pra poder ser
@@ -489,7 +500,29 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             val snapshot = fields
                 .filterKeys { it !in hiddenKeys }
                 .mapValues { (key, value) -> if (key in dateKeys) brDateToIso(value) else value }
-            val result = if (recordId == null) recordRepository.createRecord(domainId, snapshot) else recordRepository.updateRecord(domainId, recordId, snapshot)
+            val multi = MULTI_ITEM_FORM[domainId]
+            val extrasValidos = if (recordId == null && multi != null) itensExtras.filter { x -> !x[multi.chaveItem].isNullOrBlank() }.map { it.toMap() } else emptyList()
+            if (extrasValidos.isNotEmpty() && multi?.chave != null && snapshot[multi.chave].isNullOrBlank()) {
+                saving.value = false
+                errorMessage.value = "Informe o número do pedido -- ele une todos os itens."
+                return@launch
+            }
+            var result = if (recordId == null) recordRepository.createRecord(domainId, snapshot) else recordRepository.updateRecord(domainId, recordId, snapshot)
+            // Itens extras: mesmo cabeçalho (O.S./pedido, fazenda, datas...),
+            // só os campos do item trocados -- cada um vira um lançamento.
+            if (result !is SaveResult.Failure && multi != null) {
+                for (x in extrasValidos) {
+                    val linha = snapshot.toMutableMap()
+                    for (campo in multi.sel.map { it.first } + multi.inp.map { it.first }) {
+                        val v = x[campo]
+                        if (!v.isNullOrBlank()) linha[campo] = v else linha.remove(campo)
+                    }
+                    val r = recordRepository.createRecord(domainId, linha)
+                    if (r is SaveResult.Failure) { result = r; break }
+                    if (r is SaveResult.SavedOffline) result = r
+                }
+                if (result !is SaveResult.Failure) itensExtras.clear()
+            }
             saving.value = false
             when (result) {
                 is SaveResult.SavedOnline -> onDone()
@@ -508,6 +541,65 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
  * Os campos "computed" (calculados pelo servidor -- rateio, vencimento,
  * numeracao de O.S. etc.) nao aparecem aqui: so existem depois da
  * sincronizacao, quando o servidor devolve o registro definitivo. */
+/** Vários itens por lançamento -- espelho de MULTI_ITEM (record-form.tsx)
+ * da plataforma, estendido a Frota e Cotações (pedido do usuário: "pedidos,
+ * cotações, controle interno, frota, safra... como está o padrão na
+ * plataforma módulo safra"). sel = listas, inp = números. */
+data class MultiItemCfg(
+    val sel: List<Pair<String, String>>,
+    val inp: List<Pair<String, String>>,
+    val total: Pair<String, String>? = null,
+    val chave: String? = null,
+    val rotulo: String = "Adicionar item nesta O.S.",
+) {
+    val chaveItem: String get() = sel.firstOrNull { it.first == "item" }?.first ?: sel.first().first
+}
+
+val MULTI_ITEM_FORM: Map<String, MultiItemCfg> = mapOf(
+    "safra" to MultiItemCfg(
+        sel = listOf("categoria" to "Categoria", "subcategoriaVariedade" to "Subcategoria", "item" to "Item / insumo", "unidade" to "Unidade"),
+        inp = listOf("vazaoDose" to "Dose/ha", "qtd" to "Qtd", "unitario" to "Unitário (R$)"),
+        total = "qtd" to "unitario",
+    ),
+    "pedidos" to MultiItemCfg(
+        sel = listOf("categoria" to "Categoria", "item" to "Item", "unidade" to "Unidade"),
+        inp = listOf("qtdPedida" to "Qtd pedida", "qtdEntregue" to "Qtd entregue"),
+        chave = "noPedido",
+        rotulo = "Adicionar item neste pedido",
+    ),
+    "controleinterno" to MultiItemCfg(
+        sel = listOf("categoria" to "Categoria", "item" to "Item", "unidade" to "Unidade", "tamanho" to "Tamanho"),
+        inp = listOf("entrada" to "Entrada", "saida" to "Saída"),
+    ),
+    "frota" to MultiItemCfg(
+        sel = listOf("item" to "Item / peça", "unidade" to "Unidade"),
+        inp = listOf("qtd" to "Qtd", "unitario" to "Unitário (R$)"),
+        total = "qtd" to "unitario",
+    ),
+    "cotacoesfornecedores" to MultiItemCfg(
+        sel = listOf("categoria" to "Categoria", "item" to "Item", "fornecedor" to "Fornecedor", "unidade" to "Unidade"),
+        inp = listOf("quantidade" to "Quantidade", "precoUnitario" to "Preço unitário (R$)"),
+        total = "quantidade" to "precoUnitario",
+        rotulo = "Adicionar item nesta cotação",
+    ),
+)
+
+/** Seções do formulário -- mesmas da plataforma (SECOES_FORM). */
+private data class SecaoForm(val id: String, val titulo: String, val sub: String, val teste: (String) -> Boolean)
+private val SECOES_FORM = listOf(
+    SecaoForm("quando", "Quando", "número e datas") { k -> k == "os" || Regex("^data|vencimento|competencia|^hora|^periodo$|^parcelas?$|^dias$", RegexOption.IGNORE_CASE).containsMatchIn(k) },
+    SecaoForm("onde", "Onde", "safra, fazenda e área") { k -> Regex("^(safra|cultura|local|talhao|hectare|area|fazenda|setor|pivo|silo|lote|destino|origem)", RegexOption.IGNORE_CASE).containsMatchIn(k) },
+    SecaoForm("quem", "O quê e quem", "atividade e pessoas") { k -> Regex("^(operacao|responsavel|funcao|frota|colaborador|motorista|operador|entidade|fornecedor|cliente|comprador|maquina|placa|tipo)", RegexOption.IGNORE_CASE).containsMatchIn(k) },
+    SecaoForm("itens", "Itens", "produto e quantidades") { k -> Regex("^(categoria|subcategoria|item|insumo|produto|unidade|qtd|quantidade|unitario|vazao|dose|colhida|peso|umidade|impureza|variedade|docnf|nf)", RegexOption.IGNORE_CASE).containsMatchIn(k) },
+    SecaoForm("valores", "Valores", "orçamento e pagamento") { k -> Regex("^(realizado|planejado|produtividade|bruto|liquido|ajuste|valor|preco|custo|juros|desconto|banco|formapgto|rateio|despesa|incluir)", RegexOption.IGNORE_CASE).containsMatchIn(k) },
+)
+private val ITENS_POR_DOMINIO = mapOf("controleinterno" to setOf("ca", "tamanho", "validade", "entrada", "saida", "devolucao"))
+private val QUANDO_POR_DOMINIO = mapOf("pedidos" to setOf("noPedido"))
+private fun secaoDoCampo(k: String, domainId: String): String =
+    if (ITENS_POR_DOMINIO[domainId]?.contains(k) == true) "itens"
+    else if (QUANDO_POR_DOMINIO[domainId]?.contains(k) == true) "quando"
+    else SECOES_FORM.firstOrNull { it.teste(k) }?.id ?: "outros"
+
 /** Domínios com `ocrFoto` em registry.ts (site) -- botão "Preencher com foto
  * (IA)" no formulário. Mantém em sincronia com o registry do site. */
 private val OCR_FOTO_DOMAINS = setOf(
@@ -688,58 +780,63 @@ fun DomainFormScreen(
             // até os que são calculados automaticamente na ordem correta da
             // operação em todos os módulos"). Os computed viram uma caixa
             // somente-leitura em vez de um campo editável.
-            for (col in cfg.columns) {
-                // Esconde campo conforme a Operação escolhida (ou outro
-                // campo gatilho) -- ver isVisible() no ViewModel acima e
-                // visibleWhenField/visibleWhenValues em ColumnConfig
-                // (Models.kt). Mesmo comportamento do site (record-form.tsx).
-                if (!viewModel.isVisible(col)) continue
-                if (col.computed) {
-                    val optionLabels = col.lookupCategory?.let { cat -> lookups[cat]?.associate { it.value to it.label } } ?: emptyMap()
-                    ComputedFieldDisplay(col = col, raw = computedValues[col.key] ?: "", optionLabels = optionLabels)
-                } else {
-                    // Campos com dependsOn (ver ColumnConfig em Models.kt)
-                    // usam effectiveLookupCategory pra escolher a lista
-                    // certa conforme o valor atual do campo do qual
-                    // dependem (ex.: Item do Controle Interno conforme a
-                    // Categoria) -- campos sem dependsOn continuam usando
-                    // lookupCategory direto (effectiveLookupCategory cai
-                    // nele automaticamente).
+            // Formulário em seções (padrão da plataforma): Quando / Onde /
+            // O quê e quem / Itens / Valores / Outros; calculados num bloco
+            // "Calculado" no fim; vários itens na seção Itens.
+            val visiveis = cfg.columns.filter { viewModel.isVisible(it) }
+            val editaveis = visiveis.filter { !it.computed && it.type != "textarea" }
+            val calculados = visiveis.filter { it.computed }
+            val textos = visiveis.filter { !it.computed && it.type == "textarea" }
+            val grupos = (SECOES_FORM.map { Triple(it.id, it.titulo, it.sub) } + Triple("outros", "Outros dados", ""))
+                .map { g -> g to editaveis.filter { secaoDoCampo(it.key, domainId) == g.first } }
+                .filter { it.second.isNotEmpty() }
+            val multi = if (recordId == null) MULTI_ITEM_FORM[domainId] else null
+            grupos.forEach { (g, campos) ->
+                SecaoFormHeader(g.second, g.third)
+                campos.forEach { col ->
                     FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
+                    androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
+                    if (recordId == null && domainId == "financeiro" && col.key == "docNf") {
+                        FinanceiroItensInlineSection(
+                            docNf = viewModel.fields["docNf"] ?: "",
+                            data = viewModel.fields["data"] ?: "",
+                            local = viewModel.fields["local"] ?: "",
+                            entidade = viewModel.fields["entidade"] ?: "",
+                            safra = viewModel.fields["safra"] ?: "",
+                            cultura = viewModel.fields["cultura"] ?: "",
+                            setor = viewModel.fields["setor"] ?: "",
+                            banco = viewModel.fields["banco"] ?: "",
+                            formaPgto = viewModel.fields["formaPgto"] ?: "",
+                            periodo = viewModel.fields["periodo"] ?: "",
+                            bruto = viewModel.fields["bruto"] ?: "",
+                            onDone = onSaved,
+                        )
+                        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
+                    }
+                }
+                if (g.first == "itens" && multi != null) {
+                    ItensExtrasSection(domainId, multi, cfg.columns, lookups, viewModel)
+                }
+            }
+            if (calculados.isNotEmpty()) {
+                SecaoFormHeader("Calculado", if (recordId == null) "preenchido ao salvar" else "atualiza ao salvar")
+                androidx.compose.material3.Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        calculados.forEach { col ->
+                            val optionLabels = col.lookupCategory?.let { cat -> lookups[cat]?.associate { it.value to it.label } } ?: emptyMap()
+                            ComputedFieldDisplay(col = col, raw = computedValues[col.key] ?: "", optionLabels = optionLabels)
+                        }
+                    }
                 }
                 androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
-
-                // "Lançar nota com itens" EMBUTIDO logo depois do campo
-                // Doc/NF -- pedido do usuário (achado de auditoria: "não foi
-                // inserido no native como está na plataforma o módulo
-                // lançamentos, está faltando adicionar itens na sequência
-                // dos campos, como está em plataforma"), mesma posição do
-                // site (ver insertAfterField="docNf" em data-table.tsx).
-                // Só ao CRIAR (recordId == null) e só em Financeiro --
-                // complementa o formulário genérico em vez de substituí-lo,
-                // já que Financeiro cobre muitos outros tipos de lançamento
-                // sem "itens" (salário, aluguel, venda...). Ver
-                // FinanceiroItensInlineSection (FinanceiroItensInline.kt),
-                // que lê Doc/NF/Data/Local/Entidade/Safra/Cultura/Setor/
-                // Banco/Forma Pgto./Período/Bruto AO VIVO deste mesmo
-                // viewModel.fields, sem duplicar nenhum campo.
-                if (recordId == null && domainId == "financeiro" && col.key == "docNf") {
-                    FinanceiroItensInlineSection(
-                        docNf = viewModel.fields["docNf"] ?: "",
-                        data = viewModel.fields["data"] ?: "",
-                        local = viewModel.fields["local"] ?: "",
-                        entidade = viewModel.fields["entidade"] ?: "",
-                        safra = viewModel.fields["safra"] ?: "",
-                        cultura = viewModel.fields["cultura"] ?: "",
-                        setor = viewModel.fields["setor"] ?: "",
-                        banco = viewModel.fields["banco"] ?: "",
-                        formaPgto = viewModel.fields["formaPgto"] ?: "",
-                        periodo = viewModel.fields["periodo"] ?: "",
-                        bruto = viewModel.fields["bruto"] ?: "",
-                        onDone = onSaved,
-                    )
-                    androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
-                }
+            }
+            textos.forEach { col ->
+                FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
+                androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
             }
 
             if (error != null) {
@@ -755,7 +852,8 @@ fun DomainFormScreen(
                 enabled = !saving,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                if (saving) CircularProgressIndicator(modifier = Modifier.padding(2.dp)) else Text("Salvar")
+                val nExtras = MULTI_ITEM_FORM[domainId]?.let { m -> viewModel.itensExtras.count { !it[m.chaveItem].isNullOrBlank() } } ?: 0
+                if (saving) CircularProgressIndicator(modifier = Modifier.padding(2.dp)) else Text(if (recordId == null && nExtras > 0) "Salvar (${nExtras + 1} itens)" else "Salvar")
             }
         }
     }
@@ -1311,4 +1409,107 @@ private fun brDateToMillisOrNull(br: String): Long? {
     cal.clear()
     cal.set(y.toInt(), mo.toInt() - 1, d.toInt())
     return cal.timeInMillis
+}
+
+
+/** Cabeçalho de seção do formulário (QUANDO · número e datas). */
+@Composable
+private fun SecaoFormHeader(titulo: String, sub: String) {
+    Column(modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 8.dp)) {
+        androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.Bottom) {
+            Text(
+                titulo.uppercase(),
+                fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (sub.isNotBlank()) Text("  ·  $sub", fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+/** Linhas de itens extras + "Adicionar item nesta O.S." (padrão Safra). */
+@Composable
+private fun ItensExtrasSection(
+    domainId: String,
+    multi: MultiItemCfg,
+    columns: List<ColumnConfig>,
+    lookups: Map<String, List<LookupEntity>>,
+    viewModel: DomainFormViewModel,
+) {
+    val porChave = columns.associateBy { it.key }
+    val sel = multi.sel.filter { porChave.containsKey(it.first) }
+    val inp = multi.inp.filter { porChave.containsKey(it.first) }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (viewModel.itensExtras.isNotEmpty()) {
+            Text(
+                if (domainId == "pedidos") "MAIS ITENS DESTE PEDIDO" else "MAIS ITENS",
+                fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        viewModel.itensExtras.forEachIndexed { i, x ->
+            com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Item ${i + 2}", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        IconButton(onClick = { viewModel.removeItemExtra(i) }, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Filled.Close, contentDescription = "Remover item")
+                        }
+                    }
+                    sel.chunked(2).forEach { par ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            par.forEach { (k, rotulo) ->
+                                val c = porChave.getValue(k)
+                                val cat = c.dependsOn?.let { d -> c.lookupCategoryByValue?.get(x[d] ?: "") } ?: c.lookupCategory
+                                val opts = (c.staticOptions?.map { it to it } ?: lookups[cat].orEmpty().map { it.value to it.label })
+                                    .sortedBy { it.second.lowercase() }
+                                com.bragro.mobile.ui.theme.SearchableDropdownField(
+                                    value = x[k] ?: "",
+                                    label = rotulo,
+                                    options = opts,
+                                    onSelect = { v ->
+                                        x[k] = v
+                                        columns.filter { it.dependsOn == k }.forEach { dep -> if (!x[dep.key].isNullOrEmpty()) x[dep.key] = "" }
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    dense = true,
+                                )
+                            }
+                            if (par.size == 1) androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        inp.forEach { (k, rotulo) ->
+                            OutlinedTextField(
+                                value = x[k] ?: "",
+                                onValueChange = { v -> x[k] = v.replace(',', '.').filter { ch -> ch.isDigit() || ch == '.' } },
+                                label = { Text(rotulo, maxLines = 1) },
+                                singleLine = true,
+                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
+                                colors = greenFieldColors(),
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                    multi.total?.let { (a, b) ->
+                        val t = (x[a]?.toDoubleOrNull() ?: 0.0) * (x[b]?.toDoubleOrNull() ?: 0.0)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Total", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                            Text(if (t > 0) java.text.NumberFormat.getCurrencyInstance(java.util.Locale("pt", "BR")).format(t) else "—", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+        androidx.compose.material3.OutlinedButton(
+            onClick = { viewModel.addItemExtra() },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+            androidx.compose.foundation.layout.Spacer(Modifier.size(6.dp))
+            Text(multi.rotulo)
+        }
+        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 6.dp))
+    }
 }

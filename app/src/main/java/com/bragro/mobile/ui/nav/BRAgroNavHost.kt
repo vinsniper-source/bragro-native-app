@@ -503,8 +503,9 @@ fun BRAgroNavHost() {
             // (DOMAIN_FORM_EDIT, abaixo) continua na tela genérica -- "vários
             // itens de uma vez" só faz sentido ao criar.
             when (domainId) {
-                "pedidos" -> PedidoMultiItemScreen(onBack = { navController.popBackStack() })
-                "cotacoesfornecedores" -> CotacaoMultiItemScreen(onBack = { navController.popBackStack() })
+                // Pedidos e Cotações agora usam o formulário em seções com
+                // "Adicionar item" (mesmo padrão do módulo Safra da
+                // plataforma, ver MULTI_ITEM_FORM em DomainFormScreen.kt).
                 else -> DomainFormScreen(
                     domainId = domainId,
                     recordId = null,

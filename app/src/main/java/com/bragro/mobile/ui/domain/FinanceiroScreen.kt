@@ -597,7 +597,25 @@ fun FinanceiroScreen(
             // categorias, mostre apenas os ícones de cada categoria"), mesmo
             // padrão aplicado nos demais módulos (DomainListScreen.kt/
             // ModuleCategoryTabs).
-            // Faixa "AÇÕES" (padrão da plataforma), recolhível.
+            // Ordem da plataforma: primeiro o Painel de monitoramento (só na
+            // visão Lançamentos; cada cartão abre a visão certa), depois Ações.
+            if (!isQuickView && cfg != null) {
+                val painelFin = remember(allRecords, cfg) { calcularPainelModulo("financeiro", "Financeiro", cfg.columns, allRecords) }
+                if (painelFin != null) {
+                    PainelMonitoramento(
+                        painelFin,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        onKpi = { k ->
+                            when (k.destino) {
+                                "Contas a pagar" -> view = FinanceiroView.PAGAR
+                                "Contas a receber" -> view = FinanceiroView.RECEBER
+                                "Já pago/recebido" -> view = FinanceiroView.CONCILIADO
+                                else -> allExpanded = true
+                            }
+                        },
+                    )
+                }
+            }
             BlocoComFaixa("Ações", modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
                 FinanceiroCategoryTabs(
                     listOf(dadosBlock, operacoesBlock, arquivosBlock),
@@ -653,29 +671,6 @@ fun FinanceiroScreen(
                             // Calculadoras/Recalcular Vencimentos") -- e só
                             // quando o ícone correspondente na fileira acima
                             // está aberto (ver Card com FlowRow acima).
-                            // Painel de monitoramento (mesmo da plataforma) -- só na
-                            // visão Lançamentos; cada indicador abre a visão certa.
-                            if (!isQuickView && cfg != null) {
-                                val painelFin = calcularPainelModulo("financeiro", "Financeiro", cfg.columns, allRecords)
-                                if (painelFin != null) {
-                                    item(key = "painel") {
-                                        PainelMonitoramento(painelFin, onKpi = { k ->
-                                            when (k.destino) {
-                                                "Contas a pagar" -> view = FinanceiroView.PAGAR
-                                                "Contas a receber" -> view = FinanceiroView.RECEBER
-                                                "Já pago/recebido" -> view = FinanceiroView.CONCILIADO
-                                                else -> allExpanded = true
-                                            }
-                                        })
-                                    }
-                                }
-                            }
-                            if (!isQuickView && expandedBlocks["calculators"] == true) {
-                                item(key = "calculators") { CalculatorsCard("financeiro", showHeader = false) }
-                            }
-                            if (!isQuickView && expandedBlocks["recalcular-vencimentos"] == true) {
-                                item(key = "recalcular-vencimentos") { RecalcularVencimentosButton(showHeader = false) }
-                            }
                             // financeiroGroups / financeiroHiddenIndexes /
                             // financeiroGroupByStartIndex: declarados acima, antes do
                             // LazyColumn (precisam de contexto @Composable pro remember;

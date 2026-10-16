@@ -413,6 +413,36 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
             contentPadding = PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            // Painel de monitoramento (mesmo da plataforma), antes de Ações.
+            val sc = d?.situacaoConsolidada
+            if (sc != null) {
+                item(key = "painel") {
+                    val itens = sc.porCategoria.values.flatten()
+                    val nomes = itens.map { it.item.trim().uppercase() }.toSet()
+                    val total = nomes.size + d.itensCriticos.count { it.item.trim().uppercase() !in nomes }
+                    val falta = itens.count { it.status == "FALTA" }
+                    val transito = itens.count { it.status == "EM_TRANSITO" }
+                    val criticos = d.itensCriticos.count { it.status == "CRITICO" }
+                    val atencao = d.itensCriticos.count { it.status == "ATENCAO" }
+                    fun pct(a: Int) = if (total > 0) Math.round(a * 100.0 / total).toDouble() else 0.0
+                    com.bragro.mobile.ui.domain.PainelMonitoramento(
+                        com.bragro.mobile.ui.domain.PainelModulo(
+                            titulo = "Controle de insumos",
+                            subtitulo = "$total itens · " + listOf("SAFRA" to "Safra", "FROTA" to "Frota", "ADM" to "ADM").joinToString(" · ") { (k, l) -> "$l ${sc.porCategoria[k]?.size ?: 0}" },
+                            kpis = listOf(
+                                com.bragro.mobile.ui.domain.PainelKpi("Itens monitorados", total.toDouble(), "numero", null, "pedido → estoque → uso", "Itens"),
+                                com.bragro.mobile.ui.domain.PainelKpi("Em falta", falta.toDouble(), "numero", null, "sem saldo para o uso", "Itens", tom = if (falta > 0) "acima" else null),
+                                com.bragro.mobile.ui.domain.PainelKpi("Em trânsito", transito.toDouble(), "numero", null, "pedidos a receber", "Itens"),
+                                com.bragro.mobile.ui.domain.PainelKpi("Abaixo do mínimo", criticos.toDouble(), "numero", null, "$atencao em atenção", "Itens", tom = if (criticos > 0) "acima" else null),
+                            ),
+                            barras = listOf(
+                                com.bragro.mobile.ui.domain.PainelBarra("Sem falta", pct(total - falta), "${total - falta}/$total"),
+                                com.bragro.mobile.ui.domain.PainelBarra("Acima do mínimo", pct(total - d.itensCriticos.size), "${total - d.itensCriticos.size}/$total"),
+                            ),
+                        ),
+                    )
+                }
+            }
             item(key = "insumos-icon-row") {
                 val dadosBlock = InsumosBlockSpec("Dados") {
                     if (temDados) {

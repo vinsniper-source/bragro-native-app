@@ -205,10 +205,6 @@ fun calcularPainelModulo(
             ),
             barras = listOf(
                 PainelBarra("Despesas pagas", pctDe(pagas.size.toDouble(), despesas.size.toDouble()), "${pagas.size}/${despesas.size}"),
-                PainelBarra(
-                    "Valor pago / despesa", pctDe(valorPago, totalDesp),
-                    "${Math.round(valorPago / 1000)} mil / ${Math.round(totalDesp / 1000)} mil",
-                ),
             ),
         )
     }
@@ -225,19 +221,21 @@ fun calcularPainelModulo(
         PainelKpi("Lançamentos", daSafra.size.toDouble(), "numero", null, safraAtual?.let { "safra $it" } ?: "no total", "Lançamentos$sufixoSafra", filtro = filtroSafra),
     )
     if (medidaKey != null && medidaCol != null) {
-        kpis += PainelKpi("Total · ${medidaCol.label}", total, if (medidaCol.money) "moeda" else "numero", unidade, safraAtual?.let { "safra $it" } ?: "no total", "Lançamentos$sufixoSafra", filtro = filtroSafra)
+        kpis += PainelKpi(medidaCol.label, total, if (medidaCol.money) "moeda" else "numero", unidade, if (fazendas > 0) plural(fazendas, "fazenda") else safraAtual?.let { "safra $it" } ?: "no total", "Lançamentos$sufixoSafra", filtro = filtroSafra)
     }
     if (topFaz != null && localKey != null) {
         kpis += PainelKpi(
-            "Fazenda com mais", topFaz.second, if (medidaCol?.money == true) "moeda" else "numero",
-            if (medidaKey != null) unidade else "lanç.", topFaz.first, "Ver lançamentos da fazenda",
+            topFaz.first, topFaz.second, if (medidaCol?.money == true) "moeda" else "numero",
+            if (medidaKey != null) unidade else "lanç.",
+            if (total > 0 && medidaKey != null) "${Math.round(pctDe(topFaz.second, total))}% do total" else "fazenda com mais",
+            "Ver lançamentos da fazenda",
             filtro = filtroSafra + (localKey to topFaz.first),
         )
     }
     if (topCat != null) {
         kpis += PainelKpi(
-            "Categoria com mais", topCat.second, if (medidaCol?.money == true) "moeda" else "numero",
-            if (medidaKey != null) unidade else "lanç.", topCat.first, "Ver lançamentos da categoria",
+            topCat.first, topCat.second, if (medidaCol?.money == true) "moeda" else "numero",
+            if (medidaKey != null) unidade else "lanç.", "categoria com mais", "Ver lançamentos da categoria",
             filtro = filtroSafra + ("categoria" to topCat.first),
         )
     }
@@ -245,7 +243,7 @@ fun calcularPainelModulo(
         val topPend = topo(pendRows, "status", null)
         kpis += PainelKpi(
             "Pendentes", pendRows.size.toDouble(), "numero", null,
-            if (pendRows.isNotEmpty()) "não concluídos${topPend?.let { " · ${it.first.lowercase()}" } ?: ""}" else "tudo concluído",
+            if (pendRows.isNotEmpty()) (topPend?.first?.lowercase() ?: "não concluídos") else "tudo concluído",
             topPend?.let { "Ver ${it.first.lowercase()}" } ?: "Lançamentos$sufixoSafra",
             tom = if (pendRows.isNotEmpty()) "acima" else null,
             filtro = filtroSafra + (topPend?.let { mapOf("status" to it.first) } ?: emptyMap()),
@@ -255,9 +253,7 @@ fun calcularPainelModulo(
     if (comStatus && daSafra.isNotEmpty()) {
         barras += PainelBarra("Concluídos", pctDe(concluidos.toDouble(), daSafra.size.toDouble()), "$concluidos/${daSafra.size}")
     }
-    if (topFaz != null && total > 0 && medidaKey != null) {
-        barras += PainelBarra("Participação de ${topFaz.first}", pctDe(topFaz.second, total), "do total", neutra = true)
-    }
+    // Participação da fazenda vai no complemento do cartão da fazenda.
     return PainelModulo(
         titulo = titulo,
         subtitulo = listOfNotNull(if (fazendas > 0) plural(fazendas, "fazenda") else null, plural(daSafra.size, "lançamento")).joinToString(" · "),
@@ -279,11 +275,23 @@ fun barraFiltroAtivo(records: List<Map<String, String?>>, filtro: Map<String, St
 private val moedaFmt: NumberFormat = NumberFormat.getCurrencyInstance(Locale("pt", "BR")).apply { maximumFractionDigits = 0 }
 fun fmtMoeda(v: Double): String = moedaFmt.format(v)
 fun fmtPct(v: Double): String = "${NumberFormat.getNumberInstance(Locale("pt", "BR")).apply { maximumFractionDigits = 1 }.format(v)}%"
+/** Número curto pros cartões (R$ 2,42 mi / R$ 846 mil), igual à plataforma. */
+fun abrev(v: Double, moeda: Boolean): String {
+    val a = Math.abs(v)
+    val pre = if (moeda) "R$ " else ""
+    val sinal = if (v < 0) "-" else ""
+    fun nf(x: Double, d: Int) = NumberFormat.getNumberInstance(Locale("pt", "BR")).apply { maximumFractionDigits = d }.format(x)
+    return when {
+        a >= 1_000_000 -> "$sinal$pre${nf(a / 1_000_000, 2)} mi"
+        a >= 10_000 -> "$sinal$pre${nf(a / 1_000, 0)} mil"
+        moeda -> fmtMoeda(v)
+        else -> nf(v, 1)
+    }
+}
 fun fmtKpi(k: PainelKpi): String = when (k.formato) {
-    "moeda" -> fmtMoeda(k.valor)
+    "moeda" -> abrev(k.valor, true)
     "pct" -> fmtPct(k.valor)
-    else -> NumberFormat.getNumberInstance(Locale("pt", "BR")).apply { maximumFractionDigits = 0 }.format(k.valor) +
-        (if (!k.unidade.isNullOrBlank()) " ${k.unidade}" else "")
+    else -> abrev(k.valor, false) + (if (!k.unidade.isNullOrBlank()) " ${k.unidade}" else "")
 }
 
 /** Verde (bom) / laranja (atenção) -- nada vermelho. */
@@ -308,8 +316,9 @@ fun corProgressoBarra(pct: Double): Color = when {
 fun kpiVerdeFundo(): Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f).compositeOver(MaterialTheme.colorScheme.surface)
 
 /**
- * Bloco com faixa de título (Painel / Ações / seções): título em preto/branco,
- * linha e setinha no mesmo tom, borda verde contornando o bloco inteiro.
+ * Bloco de borda verde (Ações etc.) -- mockup v5: sem a faixa de título; a
+ * setinha de recolher fica no fim, à direita do conteúdo. Recolhido, mostra
+ * só o nome do bloco e a setinha.
  */
 @Composable
 fun BlocoComFaixa(
@@ -319,19 +328,34 @@ fun BlocoComFaixa(
     content: @Composable () -> Unit,
 ) {
     var aberto by rememberSaveable(titulo) { mutableStateOf(inicialAberto) }
-    val borda = MaterialTheme.colorScheme.primary
-    Column(
+    Row(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .border(2.dp, borda, RoundedCornerShape(14.dp))
+            .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.surface),
+        verticalAlignment = Alignment.Top,
     ) {
-        FaixaTitulo(titulo, aberto) { aberto = !aberto }
-        if (aberto) {
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            content()
+        Box(modifier = Modifier.weight(1f)) {
+            if (aberto) content() else Text(
+                Idioma.tr(titulo).uppercase(),
+                fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp,
+                modifier = Modifier.clickable { aberto = true }.padding(horizontal = 14.dp, vertical = 10.dp),
+            )
         }
+        SetaRecolher(aberto, Modifier.padding(top = 8.dp, end = 6.dp)) { aberto = !aberto }
+    }
+}
+
+/** Setinha de recolher/expandir (fim da linha), mesmo desenho da plataforma. */
+@Composable
+fun SetaRecolher(aberto: Boolean, modifier: Modifier = Modifier, onToggle: () -> Unit) {
+    val fg = MaterialTheme.colorScheme.onSurface
+    Box(
+        modifier = modifier.size(26.dp).clip(RoundedCornerShape(6.dp)).border(1.dp, fg.copy(alpha = 0.35f), RoundedCornerShape(6.dp)).clickable { onToggle() },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(Icons.Filled.ExpandMore, contentDescription = if (aberto) "Recolher" else "Expandir", tint = fg, modifier = Modifier.size(16.dp).rotate(if (aberto) 0f else -90f))
     }
 }
 
@@ -382,7 +406,12 @@ fun CabecalhoLancamentos(total: Int, aberto: Boolean, extra: String? = null, tit
     }
 }
 
-/** Painel de monitoramento (dentro de um BlocoComFaixa "Painel de monitoramento"). */
+/**
+ * Painel de monitoramento -- mockup v5: sem faixa de título; linha de
+ * identificação com a setinha de recolher no fim; até 6 cartões, 3 por
+ * linha, cada um com 3 linhas (rótulo, número, complemento). As barras
+ * viram cartões com barrinha.
+ */
 @Composable
 fun PainelMonitoramento(
     painel: PainelModulo,
@@ -390,29 +419,67 @@ fun PainelMonitoramento(
     kpiAtivo: String? = null,
     onKpi: ((PainelKpi) -> Unit)? = null,
 ) {
-    BlocoComFaixa("Painel de monitoramento", modifier = modifier) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Box(
-                    modifier = Modifier.size(36.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)),
-                    contentAlignment = Alignment.Center,
-                ) { Icon(Icons.Filled.Agriculture, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp)) }
-                Column {
-                    Text(Idioma.tr(painel.titulo).uppercase(), fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(painel.subtitulo, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
+    var aberto by rememberSaveable(painel.titulo) { mutableStateOf(true) }
+    val cartoes: List<Any> = (painel.kpis.take(2) + painel.barras + painel.kpis.drop(2)).take(6)
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surface),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().clickable { aberto = !aberto }.padding(start = 10.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Box(
+                modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)),
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Filled.Agriculture, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp)) }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(Idioma.tr(painel.titulo).uppercase(), fontWeight = FontWeight.Bold, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(painel.subtitulo, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            painel.kpis.chunked(2).forEach { par ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    par.forEach { k -> KpiTile(k, ativo = kpiAtivo == k.label, onClick = onKpi?.let { f -> { f(k) } }, modifier = Modifier.weight(1f)) }
-                    if (par.size == 1) Spacer(Modifier.weight(1f))
+            SetaRecolher(aberto) { aberto = !aberto }
+        }
+        if (aberto && cartoes.isNotEmpty()) {
+            Column(modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                cartoes.chunked(3).forEach { linha ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                        linha.forEach { c ->
+                            when (c) {
+                                is PainelKpi -> KpiTile(c, ativo = kpiAtivo == c.label, onClick = onKpi?.let { f -> { f(c) } }, modifier = Modifier.weight(1f))
+                                is PainelBarra -> BarraTile(c, modifier = Modifier.weight(1f))
+                            }
+                        }
+                        repeat(3 - linha.size) { Spacer(Modifier.weight(1f)) }
+                    }
                 }
             }
         }
-        if (painel.barras.isNotEmpty()) {
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                painel.barras.forEach { BarraPainel(it) }
+    }
+}
+
+/** Barra virou cartão: rótulo, percentual e barrinha com o detalhe. */
+@Composable
+fun BarraTile(b: PainelBarra, modifier: Modifier = Modifier) {
+    val primary = MaterialTheme.colorScheme.primary
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(kpiVerdeFundo())
+            .border(1.dp, primary.copy(alpha = 0.30f), RoundedCornerShape(10.dp))
+            .padding(horizontal = 8.dp, vertical = 7.dp),
+        verticalArrangement = Arrangement.spacedBy(1.dp),
+    ) {
+        Text(b.label, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(fmtPct(b.pct), fontSize = 14.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(b.detalhe, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+            val fracao = (b.pct / 100.0).coerceIn(0.02, 1.0).toFloat()
+            Box(Modifier.weight(1f).height(5.dp).clip(RoundedCornerShape(3.dp)).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f))) {
+                Box(Modifier.fillMaxWidth(fracao).height(5.dp).background(if (b.neutra) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f) else corProgressoBarra(b.pct)))
             }
         }
     }
@@ -426,30 +493,18 @@ fun KpiTile(k: PainelKpi, ativo: Boolean = false, onClick: (() -> Unit)? = null,
         "abaixo" -> corSucesso()
         else -> MaterialTheme.colorScheme.onSurface
     }
-    Box(
+    Column(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(10.dp))
             .background(kpiVerdeFundo())
-            .border(if (ativo) 2.dp else 1.dp, if (ativo) primary else primary.copy(alpha = 0.30f), RoundedCornerShape(12.dp))
+            .border(if (ativo) 2.dp else 1.dp, if (ativo) primary else primary.copy(alpha = 0.30f), RoundedCornerShape(10.dp))
             .let { if (onClick != null) it.clickable { onClick() } else it }
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+            .padding(horizontal = 8.dp, vertical = 7.dp),
+        verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            Text(k.label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(end = 14.dp))
-            Text(fmtKpi(k), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = cor, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(k.sub, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (onClick != null) {
-                HorizontalDivider(modifier = Modifier.padding(top = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
-                Text(k.destino, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-        }
-        if (onClick != null) {
-            Icon(
-                Icons.Filled.NorthEast, contentDescription = "Abrir: ${k.destino}",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                modifier = Modifier.size(14.dp).align(Alignment.TopEnd),
-            )
-        }
+        Text(k.label, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(fmtKpi(k), fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = cor, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(k.sub, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

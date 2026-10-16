@@ -591,6 +591,27 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                     onClick = { HtmlPrinter.printSimpleTable(context, "Orçamentos", headers, rows) },
                 )
             }
+            // Painel de monitoramento (mesmo da plataforma), antes de Ações.
+            if (orcamentos.isNotEmpty()) {
+                val pendentesNf = orcamentos.count { it.status != "FATURADO" }
+                val autorizados = orcamentos.count { !it.autorizadoPorNome.isNullOrBlank() }
+                com.bragro.mobile.ui.domain.PainelMonitoramento(
+                    com.bragro.mobile.ui.domain.PainelModulo(
+                        titulo = "Orçamentos",
+                        subtitulo = "${orcamentos.size} orçamento(s) · $pendentesNf aguardando NF",
+                        kpis = listOf(
+                            com.bragro.mobile.ui.domain.PainelKpi("Orçamentos", orcamentos.size.toDouble(), "numero", null, "no total", "Lançamentos"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Valor orçado", orcamentos.sumOf { totalOrcamento(it) }, "moeda", null, "soma dos itens", "Lançamentos"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Pendente NF", pendentesNf.toDouble(), "numero", null, "aguardam a nota mãe", "Lançamentos"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Autorizados", autorizados.toDouble(), "numero", null, "de ${orcamentos.size}", "Lançamentos"),
+                        ),
+                        barras = listOf(
+                            com.bragro.mobile.ui.domain.PainelBarra("Faturados", Math.round((orcamentos.size - pendentesNf) * 100.0 / orcamentos.size).toDouble(), "${orcamentos.size - pendentesNf}/${orcamentos.size}"),
+                        ),
+                    ),
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                )
+            }
             com.bragro.mobile.ui.domain.BlocoComFaixa("Ações", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
                 ModuleCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth().padding(8.dp))
             }

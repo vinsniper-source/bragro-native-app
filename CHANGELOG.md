@@ -3,6 +3,17 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.56] - 2026-10-16
+- Painel de monitoramento compacto (mockup v5, igual à plataforma): sem faixa de título; a setinha de recolher fica no fim da linha de identificação; até 6 cartões, 3 por linha, cada um com 3 linhas (rótulo, número, complemento); as barras viram cartões com barrinha; valores abreviados (R$ 2,42 mi / R$ 846 mil).
+- Ações sem a faixa de título; setinha de recolher no fim do bloco.
+- Ordem em todos os módulos: Painel, depois Ações, depois os cards (recolhidos). Financeiro passou a mostrar o painel antes de Ações.
+- Painel também em Controle de Insumos e Orçamentos.
+- Formulários em seções (Quando / Onde / O quê e quem / Itens / Valores / Calculado), como na plataforma.
+- "Adicionar item" no padrão do módulo Safra da plataforma em Safra, Pedidos, Cotações, Controle Interno e Frota: cada item vira um lançamento com o mesmo cabeçalho (O.S./pedido).
+- Fundo, cartões, campos e bordas com as mesmas cores da plataforma (claro e escuro).
+- Drone: botão flutuante removido (+ Voo fica em Ações).
+- Dossiê Bancário: botões de Ações dentro da largura da tela.
+
 ## [1.3.55] - 2026-10-15
 - Painel de monitoramento no topo dos módulos (mesmo da plataforma): até 5 indicadores em 2 colunas (verde-claro) e 2 barras de progresso. Tocar num indicador filtra a lista (fazenda, categoria, status pendente, safra atual), mostra a barra "Filtro ativo" e rola até os lançamentos; tocar de novo desfaz. Financeiro com Despesa, Pago, A vencer, Vencidas e Receita (cada um abre a visão certa); Clima com chuva acumulada, dias com chuva e temperaturas.
 - Faixa "AÇÕES" (título preto/branco, linha e setinha no mesmo tom, borda verde) em volta da barra Dados/Operações/Arquivos, recolhível -- em todos os módulos, Financeiro, DRE, Análises, Livro Caixa, Controle de Insumos e Orçamentos.
