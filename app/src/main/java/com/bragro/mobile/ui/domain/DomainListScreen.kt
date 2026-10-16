@@ -203,9 +203,18 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // Listas suspensas + fazendas pra conferência de cadastro (Pendentes, v11).
+    var lookupsConferencia = mutableStateOf<Map<String, List<com.bragro.mobile.data.local.LookupEntity>>>(emptyMap())
+    var fazendasConferencia = mutableStateOf<List<com.bragro.mobile.data.local.FarmEntity>>(emptyList())
+
     fun load(domainId: String) {
         viewModelScope.launch {
             config.value = configRepository.domainConfig(domainId)
+            config.value?.let { cfg ->
+                val cats = cfg.columns.flatMap { c -> listOfNotNull(c.lookupCategory) + c.lookupCategoryByValue?.values.orEmpty() }.toSet()
+                lookupsConferencia.value = cats.associateWith { configRepository.lookupsByCategory(it) }
+                fazendasConferencia.value = configRepository.farms()
+            }
             recordRepository.observeRecords(domainId).collectLatest { records.value = it }
         }
         viewModelScope.launch {
@@ -216,6 +225,23 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
             viewModelScope.launch { sprayAlert.value = moduleActionsRepository.run("spray-alert") }
         }
         refresh(domainId)
+    }
+
+    /** Aplica as sugestões da conferência (troca o texto pelo valor exato da
+     * lista) regravando o lançamento inteiro, igual a uma edição comum. */
+    fun aplicarCorrecoes(domainId: String, correcoes: List<Triple<String, String, String>>) {
+        val cfg = config.value ?: return
+        viewModelScope.launch {
+            for ((id, grupo) in correcoes.groupBy { it.first }) {
+                val atual = records.value.firstOrNull { it["id"] == id } ?: continue
+                val campos = cfg.columns.filter { !it.computed }.associate { c ->
+                    val raw = atual[c.key].orEmpty()
+                    c.key to (if (c.type == "date") isoDateOnly(raw) else raw)
+                }.toMutableMap()
+                grupo.forEach { (_, campo, valor) -> campos[campo] = valor }
+                recordRepository.updateRecord(domainId, id, campos)
+            }
+        }
     }
 
     fun refresh(domainId: String) {
@@ -441,6 +467,7 @@ fun DomainListScreen(
     // Painel de monitoramento (espelho da plataforma): indicador tocado fica
     // destacado e aplica o filtro dele na lista; Gráficos abrem numa janela.
     var kpiAtivo by remember(domainId) { mutableStateOf<String?>(null) }
+    var conferenciaAberta by remember(domainId) { mutableStateOf(false) }
     var kpiFiltroAtivo by remember(domainId) { mutableStateOf<Map<String, String>>(emptyMap()) }
     val gruposAbertos = remember(domainId) { mutableStateMapOf<String, Boolean>() }
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
@@ -739,6 +766,13 @@ fun DomainListScreen(
             }
             return@Scaffold
         }
+        // Conferência de cadastro (Pendentes, v11): lançamentos com campo
+        // vazio, fora da lista, grafia diferente ou números que não batem.
+        val lookupsConf by viewModel.lookupsConferencia
+        val fazConf by viewModel.fazendasConferencia
+        val problemasConf = remember(records, lookupsConf, fazConf, cfg) {
+            records.mapNotNull { r -> val p = conferirRegistro(cfg, r, lookupsConf, fazConf); val id = r["id"]; if (p.isEmpty() || id == null) null else id to p }.toMap()
+        }
         // Divisor tracejado entre lançamentos do MESMO Nº Pedido+Item, só em
         // Pedidos -- espelho de pedidoItemBoundary (data-table.tsx). Os
         // registros já chegam ordenados por criadoEmMillis DESC (mesmo
@@ -911,7 +945,7 @@ fun DomainListScreen(
             // Painel de monitoramento -- mesmo cálculo da plataforma
             // (module-panel.ts) com os registros já carregados; tocar num
             // indicador filtra a lista e rola até os lançamentos.
-            val painelBase = calcularPainelModulo(domainId, cfg.label, cfg.columns, records)
+            val painelBase = calcularPainelModulo(domainId, cfg.label, cfg.columns, records, pendentesConferencia = problemasConf.size)
             if (painelBase != null) {
                 item(key = "painel") {
                     val extra = barraFiltroAtivo(records, kpiFiltroAtivo)
@@ -919,7 +953,8 @@ fun DomainListScreen(
                     PainelMonitoramento(
                         painel = painel,
                         kpiAtivo = kpiAtivo,
-                        onKpi = { k ->
+                        onKpi = onKpi@{ k ->
+                            if (k.destino == "Conferir cadastro") { conferenciaAberta = !conferenciaAberta; return@onKpi }
                             // Desfaz o filtro do indicador anterior, sem mexer
                             // na fazenda/safra escolhidas no topo do app.
                             kpiFiltroAtivo.forEach { (key, v) ->
@@ -943,6 +978,15 @@ fun DomainListScreen(
                         },
                     )
                 }
+            }
+            if (conferenciaAberta) item(key = "conferencia") {
+                ConferenciaCard(
+                    records = records,
+                    problemas = problemasConf,
+                    onAplicar = { lista -> viewModel.aplicarCorrecoes(domainId, lista) },
+                    onAbrir = { id -> onEditRecord(id) },
+                    onFechar = { conferenciaAberta = false },
+                )
             }
             item(key = "module-icon-row") { BlocoComFaixa("Ações") { Column(modifier = Modifier.fillMaxWidth()) {
                 // Revisar: linha própria na aba Operações, filtra os lançamentos

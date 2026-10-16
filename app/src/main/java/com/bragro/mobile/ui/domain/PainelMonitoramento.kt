@@ -120,6 +120,9 @@ fun calcularPainelModulo(
     label: String,
     columns: List<ColumnConfig>,
     records: List<Map<String, String?>>,
+    /** Lançamentos com algo a corrigir (Conferencia.kt). Quando informado,
+     * "Pendentes" passa a ser a conferência de cadastro (v11), não status. */
+    pendentesConferencia: Int? = null,
 ): PainelModulo? {
     // Sem lançamentos: o painel aparece mesmo assim, zerado (padrão v7 --
     // todo módulo abre com Painel + Ações).
@@ -250,7 +253,16 @@ fun calcularPainelModulo(
             filtro = filtroSafra + ("categoria" to topCat.first),
         )
     }
-    if (comStatus) {
+    if (pendentesConferencia != null) {
+        kpis.add(
+            minOf(2, kpis.size),
+            PainelKpi(
+                "Pendentes", pendentesConferencia.toDouble(), "numero", null,
+                if (pendentesConferencia > 0) "a corrigir" else "cadastro ok", "Conferir cadastro",
+                tom = if (pendentesConferencia > 0) "acima" else null,
+            ),
+        )
+    } else if (comStatus) {
         val topPend = topo(pendRows, "status", null)
         kpis += PainelKpi(
             "Pendentes", pendRows.size.toDouble(), "numero", null,
@@ -268,7 +280,7 @@ fun calcularPainelModulo(
     return PainelModulo(
         titulo = titulo,
         subtitulo = listOfNotNull(if (fazendas > 0) plural(fazendas, "fazenda") else null, plural(daSafra.size, "lançamento")).joinToString(" · "),
-        kpis = kpis.take(5),
+        kpis = kpis.take(6),
         barras = barras.take(2),
     )
 }
@@ -366,7 +378,7 @@ fun BlocoComFaixa(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
+            .border(0.75.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surface),
     ) {
         androidx.compose.runtime.CompositionLocalProvider(LocalAcoesEncaixadas provides true) { content() }
@@ -488,7 +500,7 @@ fun PainelMonitoramento(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
+            .border(0.75.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surface),
     ) {
         Row(
