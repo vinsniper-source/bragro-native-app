@@ -1478,35 +1478,46 @@ fun DomainListScreen(
                     c == null || (tamanhoGrupo[c] ?: 0) <= 1 || gruposAbertos[c] == true || i == 0 || chavesFull[i - 1] != c
                 }
                 val chavesCards = if (agrupar) listaVisivel.map { chaveAtividade(domainId, it) } else emptyList()
-                lancTail[0] = listaVisivel.size + if (tableView && tableColumns.isNotEmpty()) 1 else 0
                 val medidaGrupo = medidaDoModulo(domainId, cfg.columns)
-                itemsIndexed(listaVisivel, key = { _, it -> it["id"] ?: it.hashCode().toString() }) { idx, record ->
-                  Column(modifier = Modifier.fillMaxWidth()) {
-                    val chaveGrupo = chavesCards.getOrNull(idx)
-                    val qtdGrupo = chaveGrupo?.let { tamanhoGrupo[it] } ?: 0
-                    if (chaveGrupo != null && qtdGrupo > 1) {
-                        val abertoGrupo = gruposAbertos[chaveGrupo] == true
-                        if (idx == 0 || chavesCards[idx - 1] != chaveGrupo) {
-                            val doGrupo = listaCards.filterIndexed { i, _ -> chavesFull[i] == chaveGrupo }
-                            val onde = listOf("local", "fazenda", "talhao").firstNotNullOfOrNull { k ->
-                                doGrupo.mapNotNull { it[k]?.takeIf { v -> v.isNotBlank() } }.distinct().takeIf { it.isNotEmpty() }
-                            }?.let { l -> l.take(2).joinToString(", ") + if (l.size > 2) " +${l.size - 2}" else "" }
-                            val total = medidaGrupo?.let { m ->
-                                val soma = doGrupo.sumOf { painelNum(it[m.key]) }
-                                if (soma == 0.0) null else if (m.money) fmtMoeda(soma) else java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 1 }.format(soma)
-                            }
-                            CartaoGrupo(
-                                titulo = tituloChave(chaveGrupo),
-                                qtd = qtdGrupo,
-                                onde = onde,
-                                total = total,
-                                totalRotulo = medidaGrupo?.label,
-                                aberto = abertoGrupo,
-                                onToggle = { gruposAbertos[chaveGrupo] = !abertoGrupo },
-                            )
-                        }
-                        if (!abertoGrupo) return@itemsIndexed
+                // Cartão do grupo vira um item próprio da lista (antes ficava
+                // num Column com "return" de dentro -- isso corrompia a
+                // composição do Compose e derrubava o app: crash
+                // ArrayIndexOutOfBoundsException na 1.3.55).
+                val entradas: List<Any> = buildList {
+                    listaVisivel.forEachIndexed { i, _ ->
+                        val c = chavesCards.getOrNull(i)
+                        val q = c?.let { tamanhoGrupo[it] } ?: 0
+                        if (c != null && q > 1 && (i == 0 || chavesCards[i - 1] != c)) add(Pair(c, q))
+                        if (c == null || q <= 1 || gruposAbertos[c] == true) add(i)
                     }
+                }
+                lancTail[0] = entradas.size + if (tableView && tableColumns.isNotEmpty()) 1 else 0
+                itemsIndexed(entradas, key = { _, e -> if (e is Pair<*, *>) "grupo:${e.first}" else listaVisivel[e as Int].let { it["id"] ?: it.hashCode().toString() } }) { _, entrada ->
+                    if (entrada is Pair<*, *>) {
+                        val chaveGrupo = entrada.first as String
+                        val qtdGrupo = entrada.second as Int
+                        val abertoGrupo = gruposAbertos[chaveGrupo] == true
+                        val doGrupo = listaCards.filterIndexed { i, _ -> chavesFull[i] == chaveGrupo }
+                        val onde = listOf("local", "fazenda", "talhao").firstNotNullOfOrNull { k ->
+                            doGrupo.mapNotNull { it[k]?.takeIf { v -> v.isNotBlank() } }.distinct().takeIf { it.isNotEmpty() }
+                        }?.let { l -> l.take(2).joinToString(", ") + if (l.size > 2) " +${l.size - 2}" else "" }
+                        val total = medidaGrupo?.let { m ->
+                            val soma = doGrupo.sumOf { painelNum(it[m.key]) }
+                            if (soma == 0.0) null else if (m.money) fmtMoeda(soma) else java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 1 }.format(soma)
+                        }
+                        CartaoGrupo(
+                            titulo = tituloChave(chaveGrupo),
+                            qtd = qtdGrupo,
+                            onde = onde,
+                            total = total,
+                            totalRotulo = medidaGrupo?.label,
+                            aberto = abertoGrupo,
+                            onToggle = { gruposAbertos[chaveGrupo] = !abertoGrupo },
+                        )
+                        return@itemsIndexed
+                    }
+                    val idx = entrada as Int
+                    val record = listaVisivel[idx]
                     val recordId = record["id"]
                     val isLastOfGroup = isPedidos && run {
                         val next = listaVisivel.getOrNull(idx + 1)
@@ -1666,7 +1677,6 @@ fun DomainListScreen(
                             }
                         }
                     }
-                  }
                 }
             }
         }

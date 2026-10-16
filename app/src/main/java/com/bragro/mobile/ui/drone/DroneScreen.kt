@@ -231,7 +231,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
     var showPrestadora by remember { mutableStateOf(false) }
     var tipoFiltro by remember { mutableStateOf<String?>(null) }
     var tipoMenu by remember { mutableStateOf(false) }
-    var lancAberto by remember { mutableStateOf(true) }
+    var lancAberto by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     Scaffold(

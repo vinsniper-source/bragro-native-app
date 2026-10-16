@@ -3,6 +3,12 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.57] - 2026-10-16
+- Correção de travamento (fechava o app ao abrir a lista de lançamentos agrupados -- ArrayIndexOutOfBoundsException, Sentry SISTEMA-AGRO-BRA-M): o cartão do grupo agora é um item próprio da lista.
+- Painel: valores completos com centavos (R$ 00.000,00) em uma linha só -- a fonte diminui até caber; cada cartão tem só 3 linhas.
+- Moeda sempre R$ 00.000,00 também nos cartões de grupo.
+- Lançamentos abrem recolhidos também no Drone e no Extrato do Livro Caixa (na tela ficam só Painel e Ações).
+
 ## [1.3.56] - 2026-10-16
 - Painel de monitoramento compacto (mockup v5, igual à plataforma): sem faixa de título; a setinha de recolher fica no fim da linha de identificação; até 6 cartões, 3 por linha, cada um com 3 linhas (rótulo, número, complemento); as barras viram cartões com barrinha; valores abreviados (R$ 2,42 mi / R$ 846 mil).
 - Ações sem a faixa de título; setinha de recolher no fim do bloco.

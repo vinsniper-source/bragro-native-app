@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
@@ -272,7 +273,8 @@ fun barraFiltroAtivo(records: List<Map<String, String?>>, filtro: Map<String, St
     return PainelBarra("Filtro ativo: ${extras.values.joinToString(" · ")}", pctDe(fat.size.toDouble(), base.size.toDouble()), "${fat.size}/${base.size}", neutra = true)
 }
 
-private val moedaFmt: NumberFormat = NumberFormat.getCurrencyInstance(Locale("pt", "BR")).apply { maximumFractionDigits = 0 }
+// Moeda sempre R$ 00.000,00 (pedido do usuário, app e plataforma).
+private val moedaFmt: NumberFormat = NumberFormat.getCurrencyInstance(Locale("pt", "BR")).apply { minimumFractionDigits = 2; maximumFractionDigits = 2 }
 fun fmtMoeda(v: Double): String = moedaFmt.format(v)
 fun fmtPct(v: Double): String = "${NumberFormat.getNumberInstance(Locale("pt", "BR")).apply { maximumFractionDigits = 1 }.format(v)}%"
 /** Número curto pros cartões (R$ 2,42 mi / R$ 846 mil), igual à plataforma. */
@@ -289,9 +291,31 @@ fun abrev(v: Double, moeda: Boolean): String {
     }
 }
 fun fmtKpi(k: PainelKpi): String = when (k.formato) {
-    "moeda" -> abrev(k.valor, true)
+    "moeda" -> fmtMoeda(k.valor)
     "pct" -> fmtPct(k.valor)
-    else -> abrev(k.valor, false) + (if (!k.unidade.isNullOrBlank()) " ${k.unidade}" else "")
+    else -> NumberFormat.getNumberInstance(Locale("pt", "BR")).apply { maximumFractionDigits = 1 }.format(k.valor) +
+        (if (!k.unidade.isNullOrBlank()) " ${k.unidade}" else "")
+}
+
+/** Valor do cartão sempre numa linha só: a fonte diminui até caber (o
+ * cartão tem só 3 linhas -- rótulo, valor e complemento). */
+@Composable
+fun ValorUmaLinha(texto: String, cor: Color, maxSp: Float = 14.5f, minSp: Float = 9f) {
+    var tamanho by androidx.compose.runtime.remember(texto) { mutableStateOf(maxSp) }
+    var pronto by androidx.compose.runtime.remember(texto) { mutableStateOf(false) }
+    Text(
+        texto,
+        fontSize = tamanho.sp,
+        fontWeight = FontWeight.Bold,
+        color = cor,
+        maxLines = 1,
+        softWrap = false,
+        letterSpacing = (-0.2).sp,
+        modifier = Modifier.drawWithContent { if (pronto) drawContent() },
+        onTextLayout = { r ->
+            if (r.hasVisualOverflow && tamanho > minSp) tamanho = (tamanho - 0.5f).coerceAtLeast(minSp) else pronto = true
+        },
+    )
 }
 
 /** Verde (bom) / laranja (atenção) -- nada vermelho. */
@@ -503,7 +527,7 @@ fun KpiTile(k: PainelKpi, ativo: Boolean = false, onClick: (() -> Unit)? = null,
         verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
         Text(k.label, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(fmtKpi(k), fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = cor, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        ValorUmaLinha(fmtKpi(k), cor)
         Text(k.sub, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
