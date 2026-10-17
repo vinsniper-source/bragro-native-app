@@ -449,7 +449,7 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
         topBar = {
             TopAppBar(
                 navigationIcon = { com.bragro.mobile.ui.domain.BackNavButton() },
-                title = { Text("NF-e", color = MaterialTheme.colorScheme.onSurface) },
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) { Text("NF-e", color = MaterialTheme.colorScheme.onSurface) } },
                 actions = { com.bragro.mobile.ui.domain.HomeNavButton() },
             )
         },

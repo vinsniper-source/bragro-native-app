@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.romaneio
 
+import androidx.compose.foundation.layout.Box
 import android.Manifest
 import android.app.Application
 import android.content.Context
@@ -456,12 +457,12 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
                         com.bragro.mobile.ui.domain.BackNavButton()
                     }
                 },
-                title = {
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Romaneio rápido", color = MaterialTheme.colorScheme.onSurface)
                     }
-                },
+                } },
                 // Ícone Copiar no canto superior direito -- pedido do
                 // usuário, mesmo padrão de "copiar último lançamento" já
                 // aplicado em Cotações/Pedidos (ver preencherComUltimo
@@ -469,19 +470,19 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
                 actions = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = { viewModel.preencherComUltimo() }, enabled = !copiando) {
-                            if (copiando) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            else Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último romaneio", tint = MaterialTheme.colorScheme.onSurface)
-                        }
-                    }
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )
         },
-    ) { padding ->
+    ) { padding0 ->
+        // v19 -- ícones do cabeçalho movidos para a faixa Ações.
+        Column(Modifier.fillMaxSize().padding(padding0)) {
+            com.bragro.mobile.ui.domain.AcoesFaixa {
+                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.ContentCopy, label = "Copiar último", loading = copiando, onClick = { if (!copiando) viewModel.preencherComUltimo() })
+            }
+            val padding = PaddingValues(0.dp)
+            Box(Modifier.fillMaxWidth().weight(1f)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(12.dp),
@@ -594,6 +595,8 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
                     else Text("Lançar")
                 }
             }
+        }
+    }
         }
     }
 }

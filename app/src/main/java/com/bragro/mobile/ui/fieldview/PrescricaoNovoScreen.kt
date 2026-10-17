@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.fieldview
 
+import androidx.compose.foundation.layout.Box
 import android.app.Application
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -303,12 +304,12 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
                         com.bragro.mobile.ui.domain.BackNavButton()
                     }
                 },
-                title = {
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Nova Prescrição", color = MaterialTheme.colorScheme.onSurface)
                     }
-                },
+                } },
                 // Ícone "Copiar último lançamento" (Task #624, gap
                 // encontrado em auditoria de paridade) -- mesmo padrão de
                 // PragaFotoScreen.kt: spinner enquanto busca, sempre
@@ -317,19 +318,19 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
                 actions = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = { viewModel.copiarUltimoLancamento() }, enabled = !copiando) {
-                            if (copiando) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            else Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último lançamento", tint = MaterialTheme.colorScheme.onSurface)
-                        }
-                    }
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )
         },
-    ) { padding ->
+    ) { padding0 ->
+        // v19 -- ícones do cabeçalho movidos para a faixa Ações.
+        Column(Modifier.fillMaxSize().padding(padding0)) {
+            com.bragro.mobile.ui.domain.AcoesFaixa {
+                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.ContentCopy, label = "Copiar último", loading = copiando, onClick = { if (!copiando) viewModel.copiarUltimoLancamento() })
+            }
+            val padding = PaddingValues(0.dp)
+            Box(Modifier.fillMaxWidth().weight(1f)) {
         if (successId != null) {
             Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
@@ -464,6 +465,8 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
                     else Text("Salvar prescrição")
                 }
             }
+        }
+    }
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.simulador
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.remember
 import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
@@ -159,16 +160,18 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
         topBar = {
             TopAppBar(
                 navigationIcon = { com.bragro.mobile.ui.domain.BackNavButton() },
-                title = { Text("Simulador \"E se?\"", color = MaterialTheme.colorScheme.onSurface) },
-                actions = {
-                    IconButton(onClick = { viewModel.restaurarPadrao() }) {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Restaurar padrão", tint = MaterialTheme.colorScheme.onSurface)
-                    }
-                    com.bragro.mobile.ui.domain.HomeNavButton()
-                },
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) { Text("Simulador \"E se?\"", color = MaterialTheme.colorScheme.onSurface) } },
+                actions = { com.bragro.mobile.ui.domain.HomeNavButton() },
             )
         },
-    ) { padding ->
+    ) { padding0 ->
+        // v19 -- ícones do cabeçalho movidos para a faixa Ações.
+        Column(Modifier.fillMaxSize().padding(padding0)) {
+            com.bragro.mobile.ui.domain.AcoesFaixa {
+                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Restaurar padrão", onClick = { viewModel.restaurarPadrao() })
+            }
+            val padding = PaddingValues(0.dp)
+            Box(Modifier.fillMaxWidth().weight(1f)) {
         if (carregando) {
             Column(modifier = Modifier.fillMaxSize().padding(padding), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                 CircularProgressIndicator()
@@ -289,6 +292,8 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
                     }
                 }
             }
+        }
+    }
         }
     }
 }

@@ -132,11 +132,10 @@ fun ModuleIconButton(
     // Liga/desliga: ativo = fundo verde cheio + ícone/rótulo brancos; tocar de
     // novo volta ao padrão (pedido do usuário). contentColor explícito (bloco
     // Faturamento) é respeitado só quando inativo.
-    val fg = if (item.active) MaterialTheme.colorScheme.onPrimary else (contentColor ?: MODULE_ICON_FG)
+    val fg = if (item.active) MaterialTheme.colorScheme.primary else (contentColor ?: MODULE_ICON_FG)
     Column(
         modifier = Modifier
             .widthIn(min = 44.dp)
-            .then(if (item.active) Modifier.background(MaterialTheme.colorScheme.primary) else Modifier)
             .clickable(onClick = onClick)
             .padding(horizontal = 6.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -152,6 +151,7 @@ fun ModuleIconButton(
         Text(
             item.label,
             style = MaterialTheme.typography.labelSmall,
+            fontWeight = if (item.active) androidx.compose.ui.text.font.FontWeight.ExtraBold else null,
             color = fg,
             maxLines = 1,
             softWrap = false,
@@ -203,12 +203,12 @@ fun LabeledIconButton(
     // Bolinha de contagem (Revisar): fundo amarelo, número preto.
     badgeCount: Int = 0,
 ) {
-    val fg = if (active) MaterialTheme.colorScheme.onPrimary else tint
+    // v19 -- ativo: sem fundo; ícone e rótulo em verde e negrito.
+    val fg = if (active) MaterialTheme.colorScheme.primary else tint
     // Sem Card próprio -- mesmo motivo do ModuleIconButton acima.
     Column(
         modifier = modifier
             .widthIn(min = 44.dp)
-            .then(if (active) Modifier.background(MaterialTheme.colorScheme.primary) else Modifier)
             .clickable(enabled = !loading, onClick = onClick)
             .padding(horizontal = 6.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -227,6 +227,7 @@ fun LabeledIconButton(
         Text(
             label,
             style = MaterialTheme.typography.labelSmall,
+            fontWeight = if (active) androidx.compose.ui.text.font.FontWeight.ExtraBold else null,
             color = fg,
             maxLines = 1,
             softWrap = false,

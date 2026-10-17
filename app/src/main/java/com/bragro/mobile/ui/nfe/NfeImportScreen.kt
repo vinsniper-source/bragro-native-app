@@ -285,12 +285,12 @@ fun NfeImportScreen(onBack: () -> Unit, viewModel: NfeImportViewModel = viewMode
                         com.bragro.mobile.ui.domain.BackNavButton()
                     }
                 },
-                title = {
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Importar NF-e (XML)", color = MaterialTheme.colorScheme.onSurface)
                     }
-                },
+                } },
                 actions = { Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()

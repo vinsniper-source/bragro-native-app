@@ -638,22 +638,15 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                         com.bragro.mobile.ui.domain.BackNavButton()
                     }
                 },
-                title = {
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Novo Orçamento", color = MaterialTheme.colorScheme.onSurface)
                     }
-                },
+                } },
                 // Ícone Copiar no topo -- mesmo padrão de Pedidos/Cotações/
                 // Romaneio Rápido (preencherComUltimo).
                 actions = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = { viewModel.preencherComUltimo() }, enabled = !copiando) {
-                            if (copiando) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            else Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último orçamento", tint = MaterialTheme.colorScheme.onSurface)
-                        }
-                    }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
@@ -661,7 +654,14 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                 },
             )
         },
-    ) { padding ->
+    ) { padding0 ->
+        // v19 -- ícones do cabeçalho movidos para a faixa Ações.
+        Column(Modifier.fillMaxSize().padding(padding0)) {
+            com.bragro.mobile.ui.domain.AcoesFaixa {
+                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.ContentCopy, label = "Copiar último", loading = copiando, onClick = { if (!copiando) viewModel.preencherComUltimo() })
+            }
+            val padding = PaddingValues(0.dp)
+            Box(Modifier.fillMaxWidth().weight(1f)) {
         if (successMessage != null) {
             Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Card(modifier = Modifier.fillMaxWidth()) {
@@ -841,6 +841,8 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                     else Text("Lançar orçamento")
                 }
             }
+        }
+    }
         }
     }
 }

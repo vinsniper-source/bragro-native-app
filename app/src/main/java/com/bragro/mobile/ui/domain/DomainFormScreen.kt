@@ -650,7 +650,7 @@ fun DomainFormScreen(
                 // DomainListScreen/Financeiro/DRE/Análises -- pedido do
                 // usuário ("em novo lançamento em todos os módulos... rebaixe
                 // a seta a esquerda e o título uma linha abaixo").
-                title = {
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         // basicMarquee() REMOVIDO -- suspeita forte de causa
@@ -675,70 +675,8 @@ fun DomainFormScreen(
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
-                },
+                } },
                 actions = {
-                    // "Copiar último lançamento" (Task #51/#77) virou ícone
-                    // no topo à direita -- pedido do usuário ("transforme a
-                    // palavra copiar último lançamento em ícone, posicione-o
-                    // à direita"), em vez do botão largo que ocupava uma
-                    // linha inteira do formulário. Mesmo Spacer do
-                    // título/seta (16.dp) pra ficar na mesma altura -- pedido
-                    // do usuário ("insira... o ícone copiar na mesma altura
-                    // do título no canto superior direito").
-                    // Ícone "Nota com itens" (atalho pra NotaMultiItemScreen)
-                    // removido daqui -- pedido do usuário (achado de
-                    // auditoria: "exclua o ícone de adicionar itens do app
-                    // native"), pra Financeiro/Novo Lançamento ficar no mesmo
-                    // modelo enxuto do módulo Lançamentos da plataforma (que
-                    // não tem esse atalho no cabeçalho). Mantém só o ícone
-                    // Copiar abaixo.
-                    // Sempre visível em Novo Lançamento, mesmo sem nenhum
-                    // registro anterior pra copiar -- pedido do usuário
-                    // ("force também o ícone copiar em novo lançamento mesmo
-                    // não estando preenchido os campos"): antes o ícone
-                    // inteiro sumia quando lastRecord era null (nenhum
-                    // lançamento anterior no módulo ainda), o que escondia a
-                    // funcionalidade em vez de só desabilitá-la. Agora
-                    // aparece sempre, só fica acinzentado/inerte quando não
-                    // há nada pra copiar (copyFromLastRecord() já retorna
-                    // sem fazer nada nesse caso, com segurança).
-                    // "Preencher com o clima de hoje" -- só no domínio
-                    // "clima", réplica nativa do botão do site (paridade
-                    // Task #304). Fica antes do ícone Copiar, mesma ordem
-                    // do site (data-table.tsx).
-                    if (recordId == null && domainId == "clima") {
-                        Column {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            val climaHojeBusy by viewModel.climaHojeBusy
-                            IconButton(onClick = { viewModel.preencherClimaHoje() }, enabled = !climaHojeBusy) {
-                                if (climaHojeBusy) {
-                                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.primary)
-                                } else {
-                                    Icon(
-                                        Icons.Filled.WaterDrop,
-                                        contentDescription = "Preencher com clima de hoje",
-                                        tint = MaterialTheme.colorScheme.onSurface,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    if (recordId == null) {
-                        Column {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            // Cor verde -- pedido do usuário ("em novo
-                            // lançamento altere a cor do ícone copiar para
-                            // verde").
-                            val hasLastRecord = lastRecord != null
-                            IconButton(onClick = { viewModel.copyFromLastRecord() }, enabled = hasLastRecord) {
-                                Icon(
-                                    Icons.Filled.ContentCopy,
-                                    contentDescription = "Copiar último lançamento",
-                                    tint = if (hasLastRecord) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                )
-                            }
-                        }
-                    }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
@@ -746,7 +684,18 @@ fun DomainFormScreen(
                 },
             )
         },
-    ) { padding ->
+    ) { padding0 ->
+        // v19 -- ícones do cabeçalho movidos para a faixa Ações.
+        Column(Modifier.fillMaxSize().padding(padding0)) {
+            if (recordId == null) com.bragro.mobile.ui.domain.AcoesFaixa {
+                if (domainId == "clima") {
+                    val climaHojeBusy by viewModel.climaHojeBusy
+                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.WaterDrop, label = "Clima de hoje", loading = climaHojeBusy, onClick = { if (!climaHojeBusy) viewModel.preencherClimaHoje() })
+                }
+                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.ContentCopy, label = "Copiar último", onClick = { if (lastRecord != null) viewModel.copyFromLastRecord() })
+            }
+            val padding = PaddingValues(0.dp)
+            Box(Modifier.fillMaxWidth().weight(1f)) {
         val cfg = config
         if (cfg == null) {
             Column(modifier = Modifier.fillMaxSize().padding(padding), verticalArrangement = Arrangement.Center) {
@@ -875,6 +824,8 @@ fun DomainFormScreen(
                 val nExtras = MULTI_ITEM_FORM[domainId]?.let { m -> viewModel.itensExtras.count { !it[m.chaveItem].isNullOrBlank() } } ?: 0
                 if (saving) CircularProgressIndicator(modifier = Modifier.padding(2.dp)) else Text(if (recordId == null && nExtras > 0) "Salvar (${nExtras + 1} itens)" else "Salvar")
             }
+        }
+    }
         }
     }
 }

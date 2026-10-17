@@ -171,12 +171,12 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = viewModel(
                 // agora replicado aqui e em todos os títulos do app (pedido
                 // do usuário: "rebaixe a seta e o título... troque a cor por
                 // verde... em todos os títulos do mobile").
-                title = {
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Configurações", color = MaterialTheme.colorScheme.onSurface)
                     }
-                },
+                } },
                 actions = { Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()

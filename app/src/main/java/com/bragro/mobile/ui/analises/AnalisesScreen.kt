@@ -835,35 +835,17 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                         com.bragro.mobile.ui.domain.BackNavButton()
                     }
                 },
-                title = {
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Análises", color = MaterialTheme.colorScheme.onSurface)
                     }
-                },
+                } },
                 // Nuvem/Imprimir no canto superior direito -- mesmo padrão
                 // já aplicado em todos os outros módulos (inclusive DRE
                 // acima), pedido do usuário ("aplique o mesmo padrão... da
                 // aba lançamentos").
                 actions = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row {
-                            // Fazenda removida / Imprimir antes da Nuvem --
-                            // pedido do usuário.
-                            if (analises != null && analises!!.entries.isNotEmpty()) {
-                                IconButton(onClick = { HtmlPrinter.printList(context, analisesExportConfig(), analisesExportRecords(analises!!)) }) {
-                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.onSurface)
-                                }
-                            }
-                            IconButton(onClick = {
-                                val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
-                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                            }) {
-                                Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.onSurface)
-                            }
-                        }
-                    }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
@@ -946,8 +928,10 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                         loading = loading,
                         onClick = { viewModel.refresh() },
                     )
+                    com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                 }
                 val arquivosBlock = AnalisesBlockSpec("Arquivos", vertical = false) {
+                    LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = { if (analises != null && analises!!.entries.isNotEmpty()) HtmlPrinter.printList(context, analisesExportConfig(), analisesExportRecords(analises!!)) })
                     if (temRegistros) {
                         LabeledIconButton(
                             icon = Icons.Filled.GridOn,

@@ -291,46 +291,17 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                 // demais módulos (DomainListScreen/FinanceiroScreen) --
                 // pedido do usuário ("abaixe o título do módulo e deixe na
                 // mesma altura dos modulos mais antigos").
-                title = {
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Prescrição / Taxa Variável", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.basicMarquee())
                     }
-                },
+                } },
                 // Ícones Imprimir + Nuvem na mesma altura do título -- pedido
                 // do usuário ("inclua o icone e nuvem e impressoora na mesma
                 // altura do título nesses módulos"), mesmo padrão dos demais
                 // módulos (ver DomainListScreen.kt).
                 actions = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row {
-                            IconButton(onClick = {
-                                val headers = listOf("Nome", "Produto", "Safra", "Cultura", "Talhão", "Taxa mín.", "Taxa média", "Taxa máx.")
-                                val rows = prescricoes.map {
-                                    listOf(
-                                        it.nome, it.produto ?: "", it.safra ?: "", it.cultura ?: "", it.talhao ?: "",
-                                        it.taxaMin?.let { v -> "%,.2f".format(java.util.Locale("pt", "BR"), v) } ?: "",
-                                        it.taxaMedia?.let { v -> "%,.2f".format(java.util.Locale("pt", "BR"), v) } ?: "",
-                                        it.taxaMax?.let { v -> "%,.2f".format(java.util.Locale("pt", "BR"), v) } ?: "",
-                                    )
-                                }
-                                HtmlPrinter.printSimpleTable(context, "Prescrição / Taxa Variável", headers, rows)
-                            }) {
-                                Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.onSurface)
-                            }
-                            IconButton(onClick = {
-                                val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
-                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                            }) {
-                                Icon(
-                                    if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
-                                    contentDescription = "Nuvem",
-                                    tint = MaterialTheme.colorScheme.onSurface,
-                                )
-                            }
-                        }
-                    }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
@@ -388,7 +359,7 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", onClick = { viewModel.carregar() })
                     },
                     arquivos = {
-                        com.bragro.mobile.ui.domain.ArquivosTabela("Prescrição / Taxa Variável", listOf("Nome", "Produto", "Safra", "Cultura", "Talhão", "Taxa mín.", "Taxa média", "Taxa máx.")) {
+                        com.bragro.mobile.ui.domain.ArquivosTabela("Prescrição / Taxa Variável", listOf("Nome", "Produto", "Safra", "Cultura", "Talhão", "Taxa mín.", "Taxa média", "Taxa máx."), nuvem = true) {
                             prescricoes.map {
                                 listOf(
                                     it.nome, it.produto ?: "", it.safra ?: "", it.cultura ?: "", it.talhao ?: "",

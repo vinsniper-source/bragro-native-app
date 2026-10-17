@@ -240,12 +240,12 @@ fun SegurancaScreen(onBack: () -> Unit, viewModel: SegurancaViewModel = viewMode
                 },
                 // Seta+título uma linha abaixo + fonte verde -- padrão global
                 // (pedido do usuário, ver comentário em SettingsScreen.kt).
-                title = {
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Acessos e Segurança", color = MaterialTheme.colorScheme.onSurface)
                     }
-                },
+                } },
                 actions = { Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()

@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material.icons.filled.ViewAgenda
@@ -412,15 +413,16 @@ private fun OperacaoCard(
                         Modifier.weight(1f),
                     )
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    androidx.compose.material3.TextButton(onClick = { etapa = "Todas"; atividade = "Todas"; talhao = "Todos"; revisao = "Todas" }) {
-                        Text("Limpar filtros", style = MaterialTheme.typography.labelSmall)
+                // v19 -- os três dividem a linha em partes iguais.
+                Row(Modifier.fillMaxWidth()) {
+                    androidx.compose.material3.TextButton(onClick = { etapa = "Todas"; atividade = "Todas"; talhao = "Todos"; revisao = "Todas" }, modifier = Modifier.weight(1f)) {
+                        Text("Limpar filtros", style = MaterialTheme.typography.labelSmall, maxLines = 1)
                     }
-                    androidx.compose.material3.TextButton(onClick = { cardsFechados.clear(); op.timeline.forEach { osAbertas[it.id] = true } }) {
-                        Text("▾ Abrir todas", style = MaterialTheme.typography.labelSmall)
+                    androidx.compose.material3.TextButton(onClick = { cardsFechados.clear(); op.timeline.forEach { osAbertas[it.id] = true } }, modifier = Modifier.weight(1f)) {
+                        Text("▾ Abrir todas", style = MaterialTheme.typography.labelSmall, maxLines = 1)
                     }
-                    androidx.compose.material3.TextButton(onClick = { atividades.forEach { cardsFechados[it] = true }; osAbertas.clear() }) {
-                        Text("▴ Recolher tudo", style = MaterialTheme.typography.labelSmall)
+                    androidx.compose.material3.TextButton(onClick = { atividades.forEach { cardsFechados[it] = true }; osAbertas.clear() }, modifier = Modifier.weight(1f)) {
+                        Text("▴ Recolher tudo", style = MaterialTheme.typography.labelSmall, maxLines = 1)
                     }
                 }
 
@@ -751,52 +753,13 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                         com.bragro.mobile.ui.domain.BackNavButton()
                     }
                 },
-                title = {
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Operações", color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
                     }
-                },
+                } },
                 actions = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row {
-                            // Fazenda removida -- pedido do usuário. Ordem
-                            // agora: Imprimir, Nuvem, Atualizar -- pedido do
-                            // usuário ("coloque apenas o ícone atualizar no
-                            // topo ao lado da nuvem e na frente da nuvem o
-                            // ícone imprimir"). Atualizar saiu da linha da
-                            // barra de ciclo (ver mais abaixo), que agora
-                            // expande até o limite da tela.
-                            if (operacoes.isNotEmpty()) {
-                                IconButton(onClick = { HtmlPrinter.printList(context, operacoesExportConfig(), operacoesExportRecords(operacoes)) }) {
-                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.onSurface)
-                                }
-                            }
-                            IconButton(onClick = {
-                                val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
-                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                            }) {
-                                Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.onSurface)
-                            }
-                            IconButton(onClick = { viewModel.refresh() }) {
-                                Icon(Icons.Filled.Refresh, contentDescription = "Atualizar", tint = MaterialTheme.colorScheme.onSurface)
-                            }
-                            IconButton(onClick = { tableView = !tableView }) {
-                                Icon(
-                                    if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
-                                    contentDescription = if (tableView) "Ver em Coluna" else "Ver em Tabela",
-                                    tint = MaterialTheme.colorScheme.onSurface,
-                                )
-                            }
-                            // Botão global "recolher/expandir tudo" REMOVIDO do
-                            // cabeçalho -- pedido do usuário (imagem 1: "exclua
-                            // a setinha do cabeçalho do lado superior direito").
-                            // A setinha individual de cada O.S. (OperacaoCard,
-                            // ao lado do ícone editar) continua controlando
-                            // cada linha por conta própria.
-                        }
-                    }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
@@ -816,6 +779,25 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                         "Um bloco por fazenda com todas as atividades, do preparo do solo à colheita. Deslize os lançamentos para o lado.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    // v19 -- bloco Ações com os ícones que estavam no cabeçalho.
+                    com.bragro.mobile.ui.domain.AcoesEmAbas(
+                        dados = {
+                            com.bragro.mobile.ui.domain.LabeledIconButton(
+                                icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
+                                label = if (tableView) "Coluna" else "Tabela",
+                                active = tableView,
+                                onClick = { tableView = !tableView },
+                            )
+                        },
+                        operacoes = {
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", onClick = { viewModel.refresh() })
+                            com.bragro.mobile.ui.domain.NuvemButton()
+                        },
+                        arquivos = {
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = { if (operacoes.isNotEmpty()) HtmlPrinter.printList(context, operacoesExportConfig(), operacoesExportRecords(operacoes)) })
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.PictureAsPdf, label = "PDF", onClick = { if (operacoes.isNotEmpty()) HtmlPrinter.exportPdfDirect(context, operacoesExportConfig(), operacoesExportRecords(operacoes)) })
+                        },
                     )
                     // Atualizar saiu daqui (subiu pro TopAppBar, ao lado da
                     // Nuvem) -- pedido do usuário: a barra de ciclo agora

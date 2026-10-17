@@ -307,7 +307,7 @@ fun FinanceiroScreen(
                 // sempre na 1ª linha; o nome do bloco aberto (Gráficos,
                 // Calculadoras, Recalcular Vencimentos) aparece numa 2ª
                 // linha, menor, só enquanto ele estiver aberto.
-                title = {
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // "Lançamentos" (era "Financeiro") só aparece com Todos
                     // selecionado; ao clicar em outro ícone da Gestão
                     // Financeira, o nome da visão substitui a palavra por
@@ -331,7 +331,7 @@ fun FinanceiroScreen(
                         // do limite da tela").
                         Text(if (isQuickView) view.label else "Lançamentos", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.basicMarquee())
                     }
-                },
+                } },
                 // A seta de voltar ganha o mesmo espaçador de cima do título
                 // -- pedido do usuário ("a seta [voltar] tinha que ficar na
                 // mesma altura do título"): sem isso ela fica centralizada
@@ -347,35 +347,6 @@ fun FinanceiroScreen(
                 // título/seta de voltar, pra ficarem alinhados na mesma
                 // altura.
                 actions = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row {
-                            // Ícone fazenda removido -- pedido do usuário
-                            // ("exclua o ícone fazenda de dentro de todos os
-                            // módulos"). Imprimir antes da Nuvem agora --
-                            // pedido do usuário ("insira o ícone imprimir...
-                            // deixe no lado superior direito na borda a
-                            // primeira").
-                            // Sem mais "&& filtered.isNotEmpty()" -- pedido
-                            // do usuário ("force todos os ícones
-                            // aparecerem"): ícone Imprimir sempre visível.
-                            if (config != null) {
-                                IconButton(onClick = { HtmlPrinter.printList(context, config!!, filtered, effectiveColumns.map { it.key }.toSet()) }) {
-                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.onSurface)
-                                }
-                            }
-                            IconButton(onClick = {
-                                val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
-                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                            }) {
-                                Icon(
-                                    if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
-                                    contentDescription = "Nuvem",
-                                    tint = MaterialTheme.colorScheme.onSurface,
-                                )
-                            }
-                        }
-                    }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
@@ -555,9 +526,11 @@ fun FinanceiroScreen(
                         badgeCount = pendingVisibleCount,
                         onClick = { pendingOnly = !pendingOnly },
                     )
+                    com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                 }
             val arquivosBlock =
                 FinBlockSpec("Arquivos", MaterialTheme.typography.titleSmall, vertical = false) {
+                    LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filtered, effectiveColumns.map { it.key }.toSet()) })
                     if (!isQuickView) {
                         LabeledIconButton(icon = Icons.Filled.Upload, label = "Extrato", onClick = onOpenBankImport)
                         LabeledIconButton(icon = Icons.Filled.Description, label = "XML", onClick = onOpenNfeImport)

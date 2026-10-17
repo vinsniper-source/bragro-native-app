@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -274,7 +275,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
         topBar = {
             TopAppBar(
                 navigationIcon = { com.bragro.mobile.ui.domain.BackNavButton() },
-                title = { Text("Dossiê Bancário", color = MaterialTheme.colorScheme.onSurface) },
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) { Text("Dossiê Bancário", color = MaterialTheme.colorScheme.onSurface) } },
                 // Ícone Imprimir/PDF (Task #615/#711, paridade com o botão
                 // Imprimir do dossie-client.tsx no site) -- monta o MESMO
                 // relatório já exibido na tela (Resumo Executivo + DRE por
@@ -282,15 +283,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                 // único HTML e reaproveita o motor de impressão genérico do
                 // HtmlPrinter (mesmo usado por Reconciliação/Frota/DRE/Livro
                 // Caixa), em vez de recriar o mecanismo de impressão aqui.
-                actions = {
-                    val d = dados
-                    if (d != null) {
-                        IconButton(onClick = { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(d, ano)) }) {
-                            Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.onSurface)
-                        }
-                    }
-                    com.bragro.mobile.ui.domain.HomeNavButton()
-                },
+                actions = { com.bragro.mobile.ui.domain.HomeNavButton() },
             )
         },
     ) { padding ->
@@ -420,6 +413,11 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                                 }
                                 repeat(3 - linha.size) { Spacer(Modifier.weight(1f)) }
                             }
+                        }
+                    // v19 -- Imprimir e PDF (antes no cabeçalho, como um ícone só).
+                        com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth()) {
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = { dados?.let { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(it, ano)) } })
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.PictureAsPdf, label = "PDF", onClick = { dados?.let { HtmlPrinter.printHtmlComoPdf(context, "Dossiê Bancário", buildDossieHtml(it, ano)) } })
                         }
                     }
                 }

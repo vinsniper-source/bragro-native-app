@@ -1,5 +1,8 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -766,8 +769,19 @@ fun AcoesEmAbas(
 
 /** Ícones da aba Arquivos: Excel e Imprimir/PDF a partir de uma tabela simples. */
 @Composable
-fun ArquivosTabela(titulo: String, headers: List<String>, linhas: () -> List<List<String>>) {
+fun ArquivosTabela(titulo: String, headers: List<String>, nuvem: Boolean = false, linhas: () -> List<List<String>>) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    // v19 -- "Imprimir/PDF" desmembrado; ordem Imprimir · PDF · Excel · Nuvem.
+    LabeledIconButton(
+        icon = androidx.compose.material.icons.Icons.Filled.Print,
+        label = "Imprimir",
+        onClick = { com.bragro.mobile.ui.print.HtmlPrinter.printSimpleTable(context, titulo, headers, linhas()) },
+    )
+    LabeledIconButton(
+        icon = androidx.compose.material.icons.Icons.Filled.PictureAsPdf,
+        label = "PDF",
+        onClick = { com.bragro.mobile.ui.print.HtmlPrinter.exportSimpleTablePdf(context, titulo, headers, linhas()) },
+    )
     LabeledIconButton(
         icon = androidx.compose.material.icons.Icons.Filled.GridOn,
         label = "Excel",
@@ -776,9 +790,31 @@ fun ArquivosTabela(titulo: String, headers: List<String>, linhas: () -> List<Lis
             com.bragro.mobile.ui.util.shareBinaryFile(context, com.bragro.mobile.data.export.XlsxWriter.buildXlsx(headers, linhas()), nome)
         },
     )
+    if (nuvem) NuvemButton()
+}
+
+/** v19 -- botão Nuvem (estado da sincronização) usado nos blocos Ações. */
+@Composable
+fun NuvemButton() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val online = com.bragro.mobile.data.NetworkStatus.isOnline(context)
     LabeledIconButton(
-        icon = androidx.compose.material.icons.Icons.Filled.Print,
-        label = "Imprimir/PDF",
-        onClick = { com.bragro.mobile.ui.print.HtmlPrinter.printSimpleTable(context, titulo, headers, linhas()) },
+        icon = if (online) androidx.compose.material.icons.Icons.Filled.Cloud else androidx.compose.material.icons.Icons.Filled.CloudOff,
+        label = "Nuvem",
+        onClick = {
+            val msg = if (!com.bragro.mobile.data.NetworkStatus.isOnline(context)) com.bragro.mobile.data.NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
+            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+        },
     )
+}
+
+/** v19 -- faixa "Ações" simples (sem abas) para telas de formulário, QR e
+ * Simulador: recebe os botões que antes ficavam no cabeçalho. */
+@Composable
+fun AcoesFaixa(content: @Composable () -> Unit) {
+    Box(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)) {
+        BlocoComFaixa("Ações") {
+            EqualWidthBlockRow(modifier = Modifier.fillMaxWidth()) { content() }
+        }
+    }
 }

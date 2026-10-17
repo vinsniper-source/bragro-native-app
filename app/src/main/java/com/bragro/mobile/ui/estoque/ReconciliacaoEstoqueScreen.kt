@@ -152,30 +152,15 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                 // Título desce uma linha, mesmo ajuste já aplicado nos
                 // demais módulos -- pedido do usuário ("abaixe o título do
                 // módulo e deixe na mesma altura dos modulos mais antigos").
-                title = {
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Reconciliação Físico x Fiscal", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.basicMarquee())
                     }
-                },
+                } },
                 // Ícones Imprimir + Nuvem na mesma altura do título -- pedido
                 // do usuário, mesmo padrão dos demais módulos.
                 actions = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row {
-                            IconButton(onClick = {
-                                val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
-                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                            }) {
-                                Icon(
-                                    if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
-                                    contentDescription = "Nuvem",
-                                    tint = MaterialTheme.colorScheme.onSurface,
-                                )
-                            }
-                        }
-                    }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
@@ -247,7 +232,7 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", onClick = { viewModel.carregar() })
                     },
                     arquivos = {
-                        com.bragro.mobile.ui.domain.ArquivosTabela("Reconciliação Físico x Fiscal", listOf("Item", "Categoria", "Saldo Fiscal", "Saldo Real", "Diferença")) {
+                        com.bragro.mobile.ui.domain.ArquivosTabela("Reconciliação Físico x Fiscal", listOf("Item", "Categoria", "Saldo Fiscal", "Saldo Real", "Diferença"), nuvem = true) {
                             itens.map { listOf(it.item, it.categoria ?: "", formatoNumero(it.saldoFiscal) + (it.unidade?.let { u -> " $u" } ?: ""), formatoNumero(it.saldoFisico) + (it.unidade?.let { u -> " $u" } ?: ""), formatoNumero(it.diferenca) + (it.unidade?.let { u -> " $u" } ?: "")) }
                         }
                     },

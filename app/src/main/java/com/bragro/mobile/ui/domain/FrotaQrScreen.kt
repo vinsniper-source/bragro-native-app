@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.foundation.layout.Box
 import android.app.Application
 import android.graphics.Bitmap
 import androidx.compose.foundation.layout.Arrangement
@@ -115,22 +117,19 @@ fun FrotaQrScreen(onBack: () -> Unit, viewModel: FrotaQrViewModel = viewModel())
         topBar = {
             TopAppBar(
                 navigationIcon = { com.bragro.mobile.ui.domain.BackNavButton() },
-                title = { Text("QR Codes das máquinas", color = MaterialTheme.colorScheme.onSurface) },
-                actions = {
-                    IconButton(
-                        onClick = {
-                            val items = frotas.mapNotNull { f -> bitmaps[f.value]?.let { f.label to it } }
-                            if (items.isNotEmpty()) HtmlPrinter.printQrCodes(context, "QR Codes das máquinas", items)
-                        },
-                        enabled = frotas.isNotEmpty(),
-                    ) {
-                        Icon(Icons.Filled.Print, contentDescription = "Imprimir todos", tint = MaterialTheme.colorScheme.onSurface)
-                    }
-                    com.bragro.mobile.ui.domain.HomeNavButton()
-                },
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) { Text("QR Codes das máquinas", color = MaterialTheme.colorScheme.onSurface) } },
+                actions = { com.bragro.mobile.ui.domain.HomeNavButton() },
             )
         },
-    ) { padding ->
+    ) { padding0 ->
+        // v19 -- ícones do cabeçalho movidos para a faixa Ações.
+        Column(Modifier.fillMaxSize().padding(padding0)) {
+            com.bragro.mobile.ui.domain.AcoesFaixa {
+                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir todos", onClick = { val items = frotas.mapNotNull { f -> bitmaps[f.value]?.let { f.label to it } }; if (items.isNotEmpty()) HtmlPrinter.printQrCodes(context, "QR Codes das máquinas", items) })
+                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.PictureAsPdf, label = "PDF", onClick = { val items = frotas.mapNotNull { f -> bitmaps[f.value]?.let { f.label to it } }; if (items.isNotEmpty()) { android.widget.Toast.makeText(context, "Na próxima tela, escolha \"Salvar como PDF\".", android.widget.Toast.LENGTH_LONG).show(); HtmlPrinter.printQrCodes(context, "QR Codes das máquinas", items) } })
+            }
+            val padding = PaddingValues(0.dp)
+            Box(Modifier.fillMaxWidth().weight(1f)) {
         if (carregando) {
             Column(modifier = Modifier.fillMaxSize().padding(padding), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                 CircularProgressIndicator()
@@ -167,6 +166,8 @@ fun FrotaQrScreen(onBack: () -> Unit, viewModel: FrotaQrViewModel = viewModel())
                     Text(f.label, style = MaterialTheme.typography.bodySmall, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             }
+        }
+    }
         }
     }
 }

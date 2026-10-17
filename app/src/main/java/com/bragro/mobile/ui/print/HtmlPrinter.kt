@@ -88,6 +88,13 @@ object HtmlPrinter {
     // MESMO motor de impressão (WebView + PrintManager) abaixo, em vez de
     // duplicar esse mecanismo. Retrato por padrão -- é um documento pra
     // anexar num pedido de crédito, não uma tabela larga.
+    /** v19 -- botão "PDF" de relatórios HTML: abre a mesma tela de impressão
+     * do Android já orientando a salvar como PDF. */
+    fun printHtmlComoPdf(context: Context, jobName: String, html: String, landscape: Boolean = false) {
+        android.widget.Toast.makeText(context, "Na próxima tela, escolha \"Salvar como PDF\".", android.widget.Toast.LENGTH_LONG).show()
+        printHtml(context, jobName, html, landscape)
+    }
+
     fun printHtml(context: Context, jobName: String, html: String, landscape: Boolean = false) {
         print(context, jobName = jobName, html = html, landscape = landscape)
     }
@@ -145,6 +152,13 @@ object HtmlPrinter {
         val cols = domain.columns.filter { !it.hideInTable && (visibleKeys == null || visibleKeys.contains(it.key)) }
         val file = buildPdfFile(context, domain.label, cols, records)
         openPdf(context, file)
+    }
+
+    /** v19 -- PDF direto de uma tabela simples (botão "PDF" separado do "Imprimir"). */
+    fun exportSimpleTablePdf(context: Context, title: String, headers: List<String>, rows: List<List<String>>) {
+        val cols = headers.mapIndexed { i, h -> ColumnConfig(key = "c$i", label = h, type = "text") }
+        val records = rows.map { r -> cols.indices.associate { i -> "c$i" to r.getOrNull(i) } }
+        openPdf(context, buildPdfFile(context, title, cols, records))
     }
 
     private fun buildPdfFile(context: Context, title: String, cols: List<ColumnConfig>, records: List<Map<String, String?>>): File {

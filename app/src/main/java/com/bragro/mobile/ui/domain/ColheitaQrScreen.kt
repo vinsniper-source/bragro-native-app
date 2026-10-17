@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.foundation.layout.Box
 import android.app.Application
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
@@ -109,22 +111,19 @@ fun ColheitaQrScreen(onBack: () -> Unit, viewModel: ColheitaQrViewModel = viewMo
         topBar = {
             TopAppBar(
                 navigationIcon = { com.bragro.mobile.ui.domain.BackNavButton() },
-                title = { Text("QR Code de Rastreabilidade", color = MaterialTheme.colorScheme.onSurface) },
-                actions = {
-                    IconButton(
-                        onClick = {
-                            val items = lotes.mapNotNull { l -> bitmaps[l.id]?.let { l.label to it } }
-                            if (items.isNotEmpty()) HtmlPrinter.printQrCodes(context, "QR Code de Rastreabilidade", items)
-                        },
-                        enabled = lotes.isNotEmpty(),
-                    ) {
-                        Icon(Icons.Filled.Print, contentDescription = "Imprimir todos", tint = MaterialTheme.colorScheme.onSurface)
-                    }
-                    com.bragro.mobile.ui.domain.HomeNavButton()
-                },
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) { Text("QR Code de Rastreabilidade", color = MaterialTheme.colorScheme.onSurface) } },
+                actions = { com.bragro.mobile.ui.domain.HomeNavButton() },
             )
         },
-    ) { padding ->
+    ) { padding0 ->
+        // v19 -- ícones do cabeçalho movidos para a faixa Ações.
+        Column(Modifier.fillMaxSize().padding(padding0)) {
+            com.bragro.mobile.ui.domain.AcoesFaixa {
+                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir todos", onClick = { val items = lotes.mapNotNull { l -> bitmaps[l.id]?.let { l.label to it } }; if (items.isNotEmpty()) HtmlPrinter.printQrCodes(context, "QR Code de Rastreabilidade", items) })
+                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.PictureAsPdf, label = "PDF", onClick = { val items = lotes.mapNotNull { l -> bitmaps[l.id]?.let { l.label to it } }; if (items.isNotEmpty()) { android.widget.Toast.makeText(context, "Na próxima tela, escolha \"Salvar como PDF\".", android.widget.Toast.LENGTH_LONG).show(); HtmlPrinter.printQrCodes(context, "QR Code de Rastreabilidade", items) } })
+            }
+            val padding = PaddingValues(0.dp)
+            Box(Modifier.fillMaxWidth().weight(1f)) {
         if (carregando) {
             Column(modifier = Modifier.fillMaxSize().padding(padding), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                 CircularProgressIndicator()
@@ -167,6 +166,8 @@ fun ColheitaQrScreen(onBack: () -> Unit, viewModel: ColheitaQrViewModel = viewMo
                     Text(l.label, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
                 }
             }
+        }
+    }
         }
     }
 }

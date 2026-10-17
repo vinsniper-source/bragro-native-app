@@ -486,12 +486,12 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                         com.bragro.mobile.ui.domain.BackNavButton()
                     }
                 },
-                title = {
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Talhões e Mapas", color = MaterialTheme.colorScheme.onSurface)
                     }
-                },
+                } },
                 actions = {
                     // v18 -- ícone de Prescrição saiu do cabeçalho; fica só
                     // em Arquivos > Prescrição (mesmo ícone).
@@ -530,7 +530,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                 dados = {
                     val tabIcons = listOf(Icons.Filled.Eco, Icons.Filled.DirectionsCar, Icons.Filled.Map)
                     tabs.forEachIndexed { i, label ->
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = tabIcons[i], label = if (i == 2) "Mapa/KML" else label, active = tab == i && listaAberta, onClick = { tab = i; listaAberta = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = tabIcons[i], label = if (i == 2) "Mapa/KML" else label, active = tab == i && listaAberta, onClick = { if (tab == i && listaAberta) listaAberta = false else { tab = i; listaAberta = true } })
                     }
                 },
                 operacoes = {

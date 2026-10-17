@@ -7,6 +7,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.unit.dp
 
 /** Ação "ir para a página inicial", configurada pelo BRAgroNavHost. */
 object HomeNavigator {
@@ -27,6 +29,6 @@ fun HomeNavButton() {
 fun BackNavButton() {
     val dispatcher = androidx.activity.compose.LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     IconButton(onClick = { dispatcher?.onBackPressed() }) {
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.onSurface)
+        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.onSurface, modifier = androidx.compose.ui.Modifier.size(27.dp))
     }
 }

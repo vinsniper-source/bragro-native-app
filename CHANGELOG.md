@@ -3,6 +3,12 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.67] - 2026-10-17
+- Botões dos blocos Ações: ao selecionar não ficam mais com fundo verde; ícone e texto ficam verdes e em negrito. Tocando de novo voltam ao normal.
+- Operações: Limpar filtros, Abrir todas e Recolher tudo dividem a linha em partes iguais.
+- Cabeçalho só com a seta de voltar e a casinha; título e seta em negrito. Imprimir, Nuvem, Atualizar, Tabela, Copiar último, Clima de hoje e Restaurar padrão foram para o bloco Ações de cada tela (Operações, Dossiê, QR de Frota/Colheita, formulários e Simulador ganharam bloco Ações).
+- "Imprimir/PDF" separado em Imprimir e PDF. Silos e Pivôs: Arquivos com Imprimir, PDF, Excel e Nuvem.
+
 ## [1.3.66] - 2026-10-17
 - Abas com aviso sem fundo amarelo: nome e traço em amarelo. Contador (ex.: Filtros) sem fundo, número em laranja com contorno fino.
 - Talhões e Mapas: ícone de Prescrição saiu do cabeçalho e ficou em Arquivos > Prescrição.

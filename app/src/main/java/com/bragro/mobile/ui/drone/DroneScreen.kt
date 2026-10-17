@@ -246,24 +246,16 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                         com.bragro.mobile.ui.domain.BackNavButton()
                     }
                 },
-                title = {
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Drone", color = MaterialTheme.colorScheme.onSurface)
                     }
-                },
+                } },
                 // Ícone de nuvem (armazenamento) -- faltava neste módulo,
                 // achado de auditoria ("veja se há algum módulo ainda sem a
                 // nuvem"). Mesmo padrão simples usado em Operações.
                 actions = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        androidx.compose.material3.IconButton(onClick = {
-                            android.widget.Toast.makeText(context, "Conectado -- dados sincronizados com o servidor.", android.widget.Toast.LENGTH_SHORT).show()
-                        }) {
-                            Icon(Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.onSurface)
-                        }
-                    }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
@@ -353,7 +345,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.load() })
                     },
                     arquivos = {
-                        com.bragro.mobile.ui.domain.ArquivosTabela("Drone", listOf("Data", "Talhão", "Tipo", "Piloto", "Altitude (m)", "Área (ha)", "Observações")) {
+                        com.bragro.mobile.ui.domain.ArquivosTabela("Drone", listOf("Data", "Talhão", "Tipo", "Piloto", "Altitude (m)", "Área (ha)", "Observações"), nuvem = true) {
                             filtrados.map { r ->
                                 listOf(
                                     com.bragro.mobile.ui.domain.isoDateToBr(r.data.take(10)), r.talhao.orEmpty(),

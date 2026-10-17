@@ -523,7 +523,7 @@ fun DomainListScreen(
                 // Setinha de recolher/expandir removida do título -- pedido
                 // do usuário ("retire essa seta de recolher ao lado do
                 // título"); ela mora só na fileira de ícones abaixo agora.
-                title = {
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         // maxLines/ellipsis defensivo -- pedido do usuário
@@ -534,7 +534,7 @@ fun DomainListScreen(
                         // que a AppBar tem altura fixa.
                         Text(config?.label ?: domainId, maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.basicMarquee())
                     }
-                },
+                } },
                 // A seta de voltar ganha o mesmo espaçador do título -- pedido
                 // do usuário ("a seta [voltar] tinha que ficar na mesma altura
                 // do título"): sem isso ela fica mais alta, na altura ORIGINAL
@@ -550,39 +550,6 @@ fun DomainListScreen(
                 // módulo genérico. Além do filtro global de fazenda, que já
                 // morava aqui.
                 actions = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row {
-                            // Ícone fazenda removido daqui -- pedido do
-                            // usuário ("exclua o ícone fazenda de dentro de
-                            // todos os módulos"). Imprimir agora vem ANTES
-                            // da Nuvem (era depois) -- pedido do usuário
-                            // ("insira o ícone imprimir... deixe no lado
-                            // superior direito na borda a primeira"), mesmo
-                            // padrão usado em Operações/Insumos/Livro Caixa.
-                            // Sem mais o "&& filteredRecords.isNotEmpty()"
-                            // -- pedido do usuário ("force todos os ícones
-                            // aparecerem"): ícone Imprimir sempre visível no
-                            // topo, mesmo com a lista vazia (config != null
-                            // continua checando, é null-safety de verdade,
-                            // não gate de dado vazio).
-                            if (config != null) {
-                                IconButton(onClick = { HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) }) {
-                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.onSurface)
-                                }
-                            }
-                            IconButton(onClick = {
-                                val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
-                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                            }) {
-                                Icon(
-                                    if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
-                                    contentDescription = "Nuvem",
-                                    tint = MaterialTheme.colorScheme.onSurface,
-                                )
-                            }
-                        }
-                    }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
@@ -1055,6 +1022,7 @@ fun DomainListScreen(
                                 onInterval = { from, to -> intervalFrom = from; intervalTo = to; if (from.isNotBlank() || to.isNotBlank()) periodo = null },
                             )
                         }
+                        com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                     }
                     // Ícones compactos (36dp, mesma referência do
                     // ModuleIconButton) -- pedido do usuário ("coloque os
@@ -1063,6 +1031,7 @@ fun DomainListScreen(
                     // cabiam lado a lado na largura do bloco Arquivos e
                     // quebravam pra 2 linhas, esticando a fileira inteira.
                     val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
+                        LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
                         if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
                                 icon = Icons.Filled.GridOn,
@@ -1191,11 +1160,13 @@ fun DomainListScreen(
                                 ModuleIconItem("recalcular-area", Icons.Filled.Autorenew, "Recalcular"),
                             ) { expandedBlocks["recalcular-area"] = expandedBlocks["recalcular-area"] != true }
                         }
+                        com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                     }
                     // Mesmo ajuste de tamanho do bloco genérico acima --
                     // pedido do usuário ("coloque os blocos da linha 2
                     // todos na horizontal e com limite de altura").
                     val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
+                        LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
                         if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
                                 icon = Icons.Filled.GridOn,
@@ -1277,8 +1248,10 @@ fun DomainListScreen(
                                 onInterval = { from, to -> intervalFrom = from; intervalTo = to; if (from.isNotBlank() || to.isNotBlank()) periodo = null },
                             )
                         }
+                        com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                     }
                     val arquivosBlockCobrancas = ModuleBlockSpec("Arquivos", vertical = false) {
+                        LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
                         if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
                                 icon = Icons.Filled.GridOn,
@@ -1391,6 +1364,7 @@ fun DomainListScreen(
                         // de um menu único -- pedido do usuário ("implemente
                         // nos módulos que não tiverem... csv, pdf, imprimir,
                         // compartilhar, nuvem").
+                        LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
                         LabeledIconButton(
                             icon = Icons.Filled.GridOn,
                             label = "Excel",
@@ -1401,6 +1375,7 @@ fun DomainListScreen(
                             label = "PDF",
                             onClick = { HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys) },
                         )
+                        com.bragro.mobile.ui.domain.NuvemButton()
                         // Ícone Compartilhar (txt) removido -- pedido do
                         // usuário ("exclua o ícone de compartilhar em txt...
                         // em todos os outros [módulos]").

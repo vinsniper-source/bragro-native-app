@@ -467,49 +467,13 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                         com.bragro.mobile.ui.domain.BackNavButton()
                     }
                 },
-                title = {
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Orçamentos", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface)
                     }
-                },
+                } },
                 actions = {
-                    // Bug real encontrado (usuário: "orçamento, cabeçalho
-                    // desconfigurado"): os 2 ícones (Imprimir/Nuvem) estavam
-                    // dentro de um Column (empilha na VERTICAL) em vez de um
-                    // Row como em todos os outros módulos -- por isso a nuvem
-                    // aparecia encavalada atrás/abaixo do ícone de imprimir
-                    // em vez de ao lado.
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row {
-                            IconButton(onClick = {
-                                val headers = listOf("Data", "Nº Orçamento", "Requisição", "Autorizado por", "Itens", "Total", "Status")
-                                val rows = filtered.map { o ->
-                                    listOf(
-                                        isoDateToBr(isoDateOnly(o.data)),
-                                        o.numeroOrcamento ?: "",
-                                        o.requisicao ?: "",
-                                        o.autorizadoPorNome ?: "",
-                                        o.itens.size.toString(),
-                                        formatoMoeda(totalOrcamento(o)),
-                                        if (o.status == "FATURADO") "Faturado" else "Pendente NF",
-                                    )
-                                }
-                                HtmlPrinter.printSimpleTable(context, "Orçamentos", headers, rows)
-                            }) {
-                                Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.onSurface)
-                            }
-                            // Ícone de nuvem -- faltava neste módulo, achado de
-                            // auditoria ("veja se há algum módulo ainda sem a
-                            // nuvem de armazenamento").
-                            IconButton(onClick = {
-                                android.widget.Toast.makeText(context, "Conectado -- dados sincronizados com o servidor.", android.widget.Toast.LENGTH_SHORT).show()
-                            }) {
-                                Icon(Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.onSurface)
-                            }
-                        }
-                    }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
@@ -567,8 +531,23 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                 ModuleIconButton(
                     ModuleIconItem("periodo", Icons.Filled.CalendarMonth, "Período", active = dateFrom.isNotBlank() || dateTo.isNotBlank()),
                 ) { showPeriodoDialog = true }
+                com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
             }
             val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
+                LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = { run {
+val headers = listOf("Data", "Nº Orçamento", "Requisição", "Autorizado por", "Itens", "Total", "Status")
+                                val rows = filtered.map { o ->
+                                    listOf(
+                                        isoDateToBr(isoDateOnly(o.data)),
+                                        o.numeroOrcamento ?: "",
+                                        o.requisicao ?: "",
+                                        o.autorizadoPorNome ?: "",
+                                        o.itens.size.toString(),
+                                        formatoMoeda(totalOrcamento(o)),
+                                        if (o.status == "FATURADO") "Faturado" else "Pendente NF",
+                                    )
+                                }
+                                HtmlPrinter.printSimpleTable(context, "Orçamentos", headers, rows) } })
                 val headers = listOf("Data", "Nº Orçamento", "Requisição", "Autorizado por", "Itens", "Total", "Status")
                 val rows = filtered.map { o ->
                     listOf(

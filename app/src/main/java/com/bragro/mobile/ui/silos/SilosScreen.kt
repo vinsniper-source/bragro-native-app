@@ -264,12 +264,12 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                         com.bragro.mobile.ui.domain.BackNavButton()
                     }
                 },
-                title = {
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Silos", color = MaterialTheme.colorScheme.onSurface)
                     }
-                },
+                } },
                 actions = { Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
@@ -322,7 +322,7 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Bolt, label = "Prestadora", onClick = { prestadoraAberta = true })
                     },
                     arquivos = {
-                        com.bragro.mobile.ui.domain.ArquivosTabela("Silos", listOf("Silo", "Fazenda", "Produto", "Capacidade (t)", "Nível (%)", "Temperatura (°C)", "Umidade (%)", "Status")) {
+                        com.bragro.mobile.ui.domain.ArquivosTabela("Silos", listOf("Silo", "Fazenda", "Produto", "Capacidade (t)", "Nível (%)", "Temperatura (°C)", "Umidade (%)", "Status"), nuvem = true) {
                             silos.map { x -> listOf(x.nome, farms.firstOrNull { it.id == x.farmId }?.name.orEmpty(), x.produto.orEmpty(), x.capacidadeT?.toString().orEmpty(), (x.estimadoPct ?: x.nivelAtualPct)?.toInt()?.toString().orEmpty(), x.temperaturaAtualC?.toString().orEmpty(), x.umidadeAtualPct?.toString().orEmpty(), statusLabel(x.status)) }
                         }
                     },
