@@ -278,6 +278,7 @@ object Idioma {
     "Esta ação não pode ser desfeita." to "Esta acción no se puede deshacer.",
     "Produto" to "Producto",
     "Safra" to "Zafra",
+    "Atividades" to "Actividades",
     "Pendente" to "Pendiente",
     "Somente números" to "Solo números",
     "Abastecimento rápido" to "Abastecimiento rápido",

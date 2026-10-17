@@ -139,7 +139,7 @@ private val BOTTOM_TABS = listOf(
     BottomTab(
         "producao", "Produção", Icons.Filled.Agriculture,
         items = listOf(
-            SectorTarget.Domain("safra", "Safra", category = "Produção"),
+            SectorTarget.Domain("safra", "Atividades", category = "Produção"),
             SectorTarget.Domain("planejamentosafra", "Planejamento de Safra", category = "Produção"),
             SectorTarget.Domain("colheita", "Colheita", category = "Produção"),
             // "Romaneio rápido" virou um 2º FAB dentro do próprio módulo
@@ -314,7 +314,7 @@ private val OWNER_BOTTOM_TABS = listOf(
     BottomTab(
         "safra", "Safra", Icons.Filled.Agriculture,
         items = listOf(
-            SectorTarget.Domain("safra", "Safra", category = "Produção"),
+            SectorTarget.Domain("safra", "Atividades", category = "Produção"),
             SectorTarget.Domain("planejamentosafra", "Planejamento de Safra", category = "Produção"),
             SectorTarget.Domain("colheita", "Colheita", category = "Produção"),
             SectorTarget.Domain("romaneios", "Romaneios", category = "Produção"),

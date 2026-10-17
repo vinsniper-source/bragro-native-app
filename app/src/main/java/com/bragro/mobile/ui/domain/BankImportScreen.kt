@@ -218,12 +218,10 @@ fun BankImportScreen(onBack: () -> Unit, viewModel: BankImportViewModel = viewMo
                         Text("Extrato Bancário", color = MaterialTheme.colorScheme.primary)
                     }
                 },
-                navigationIcon = {
-                    Column {
+                actions = { Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
-                    }
-                },
+                    } },
             )
         },
     ) { padding ->

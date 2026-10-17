@@ -597,12 +597,6 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                         Text("Livro Caixa", color = MaterialTheme.colorScheme.primary)
                     }
                 },
-                navigationIcon = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
-                    }
-                },
                 actions = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -611,16 +605,20 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                             // pedido do usuário.
                             if (resultado != null && resultado!!.lancamentos.isNotEmpty()) {
                                 IconButton(onClick = { HtmlPrinter.printList(context, livroCaixaExportConfig(), livroCaixaExportRecords(resultado!!.lancamentos)) }) {
-                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
+                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.onSurface)
                                 }
                             }
                             IconButton(onClick = {
                                 val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                             }) {
-                                Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.primary)
+                                Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.onSurface)
                             }
                         }
+                    }
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )

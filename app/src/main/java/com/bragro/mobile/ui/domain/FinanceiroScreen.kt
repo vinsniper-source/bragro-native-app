@@ -331,12 +331,6 @@ fun FinanceiroScreen(
                 // mesma altura do título"): sem isso ela fica centralizada
                 // na altura ORIGINAL da AppBar, mais alta que o título, que
                 // desceu uma linha.
-                navigationIcon = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
-                    }
-                },
                 // Nuvem/Imprimir promovidos pro canto superior direito, na
                 // mesma linha do título -- pedido do usuário ("coloque em
                 // todos os módulos os ícones imprimir e nuvem do lado
@@ -361,7 +355,7 @@ fun FinanceiroScreen(
                             // aparecerem"): ícone Imprimir sempre visível.
                             if (config != null) {
                                 IconButton(onClick = { HtmlPrinter.printList(context, config!!, filtered, effectiveColumns.map { it.key }.toSet()) }) {
-                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
+                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.onSurface)
                                 }
                             }
                             IconButton(onClick = {
@@ -371,10 +365,14 @@ fun FinanceiroScreen(
                                 Icon(
                                     if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
                                     contentDescription = "Nuvem",
-                                    tint = MaterialTheme.colorScheme.primary,
+                                    tint = MaterialTheme.colorScheme.onSurface,
                                 )
                             }
                         }
+                    }
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )

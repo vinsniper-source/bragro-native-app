@@ -638,12 +638,6 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                         Text("Novo Orçamento", color = MaterialTheme.colorScheme.primary)
                     }
                 },
-                navigationIcon = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
-                    }
-                },
                 // Ícone Copiar no topo -- mesmo padrão de Pedidos/Cotações/
                 // Romaneio Rápido (preencherComUltimo).
                 actions = {
@@ -651,8 +645,12 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                         Spacer(modifier = Modifier.height(16.dp))
                         IconButton(onClick = { viewModel.preencherComUltimo() }, enabled = !copiando) {
                             if (copiando) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            else Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último orçamento", tint = MaterialTheme.colorScheme.primary)
+                            else Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último orçamento", tint = MaterialTheme.colorScheme.onSurface)
                         }
+                    }
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )

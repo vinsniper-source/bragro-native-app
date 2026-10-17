@@ -264,12 +264,10 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                         Text("Silos", color = MaterialTheme.colorScheme.primary)
                     }
                 },
-                navigationIcon = {
-                    Column {
+                actions = { Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
-                    }
-                },
+                    } },
             )
         },
         // Botão flutuante removido -- "+ Silo" fica em Ações (padrão v7).
@@ -525,11 +523,11 @@ private fun SiloCard(
         Column(modifier = Modifier.padding(12.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
-                Text(silo.nome, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                Text(silo.nome.uppercase(), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                 if (estimado) Badge(modifier = Modifier.padding(end = 4.dp)) { Text("Estimado") }
                 Badge { Text(statusLabel(silo.status)) }
             }
-            Text(farmNome ?: "Sem fazenda vinculada", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(farmNome?.uppercase() ?: "Sem fazenda vinculada", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(
                 listOfNotNull(silo.produto, silo.fabricante, silo.capacidadeT?.let { "${it.toInt()} t" }).joinToString(" · ").ifBlank { "—" },
                 style = MaterialTheme.typography.bodySmall,
@@ -578,11 +576,11 @@ private fun SiloCard(
             Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Thermostat, contentDescription = null, modifier = Modifier.height(14.dp))
-                    Text(" ${silo.temperaturaAtualC?.let { "$it °C" } ?: "—"}", style = MaterialTheme.typography.labelSmall)
+                    Text(" ${silo.temperaturaAtualC?.let { "${"%,.1f".format(java.util.Locale("pt", "BR"), it)} °C" } ?: "—"}", style = MaterialTheme.typography.labelSmall)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Opacity, contentDescription = null, modifier = Modifier.height(14.dp))
-                    Text(" ${silo.umidadeAtualPct?.let { "$it %" } ?: "—"}", style = MaterialTheme.typography.labelSmall)
+                    Text(" ${silo.umidadeAtualPct?.let { "${"%,.1f".format(java.util.Locale("pt", "BR"), it)}%" } ?: "—"}", style = MaterialTheme.typography.labelSmall)
                 }
             }
             Text(
@@ -594,7 +592,7 @@ private fun SiloCard(
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 val pad = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 8.dp)
                 OutlinedButton(onClick = onEdit, modifier = Modifier.weight(1f), contentPadding = pad) { Text("Editar", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium) }
-                OutlinedButton(onClick = onLeitura, modifier = Modifier.weight(1.5f), contentPadding = pad) { Text("Temp./umid.", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium) }
+                OutlinedButton(onClick = onLeitura, modifier = Modifier.weight(1.5f), contentPadding = pad) { Text("Temp./Umid.", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium) }
                 OutlinedButton(onClick = onHistorico, modifier = Modifier.weight(1.2f), contentPadding = pad) { Text("Histórico", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium) }
                 IconButton(onClick = onArchive) { Icon(Icons.Filled.Delete, contentDescription = "Arquivar") }
             }

@@ -16,6 +16,6 @@ object HomeNavigator {
 @Composable
 fun HomeNavButton() {
     IconButton(onClick = { HomeNavigator.goHome() }) {
-        Icon(Icons.Filled.Home, contentDescription = "Página inicial", tint = MaterialTheme.colorScheme.primary)
+        Icon(Icons.Filled.Home, contentDescription = "Página inicial", tint = MaterialTheme.colorScheme.onSurface)
     }
 }

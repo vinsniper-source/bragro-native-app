@@ -421,12 +421,6 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                         Text("Novo Pedido", color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
                     }
                 },
-                navigationIcon = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
-                    }
-                },
                 // Ícone de copiar no topo direito -- pedido do usuário ("na
                 // imagem 4, crie um icone copiar do lado direito superior e
                 // exclua o botão copiar ultimo pedido"): substitui o botão
@@ -440,9 +434,13 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                             if (copiando) {
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             } else {
-                                Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último pedido", tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último pedido", tint = MaterialTheme.colorScheme.onSurface)
                             }
                         }
+                    }
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )

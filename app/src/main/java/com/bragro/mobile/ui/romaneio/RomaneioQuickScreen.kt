@@ -456,12 +456,6 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
                         Text("Romaneio rápido", color = MaterialTheme.colorScheme.primary)
                     }
                 },
-                navigationIcon = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
-                    }
-                },
                 // Ícone Copiar no canto superior direito -- pedido do
                 // usuário, mesmo padrão de "copiar último lançamento" já
                 // aplicado em Cotações/Pedidos (ver preencherComUltimo
@@ -471,8 +465,12 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
                         Spacer(modifier = Modifier.height(16.dp))
                         IconButton(onClick = { viewModel.preencherComUltimo() }, enabled = !copiando) {
                             if (copiando) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            else Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último romaneio", tint = MaterialTheme.colorScheme.primary)
+                            else Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último romaneio", tint = MaterialTheme.colorScheme.onSurface)
                         }
+                    }
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )

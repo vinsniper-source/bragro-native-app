@@ -125,12 +125,15 @@ fun campoNoBlocoColor(): Color {
 @Composable
 fun FormBlockCard(
     modifier: Modifier = Modifier,
+    /** false = cores originais (bloco cinza claro, campos brancos) -- v17,
+     * pedido do usuário para Cotações. */
+    invertido: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        content = { androidx.compose.runtime.CompositionLocalProvider(LocalBlocoItens provides true) { content() } },
+        colors = CardDefaults.cardColors(containerColor = if (invertido) MaterialTheme.colorScheme.surface else campoNoBlocoColor()),
+        content = { androidx.compose.runtime.CompositionLocalProvider(LocalBlocoItens provides invertido) { content() } },
     )
 }
 

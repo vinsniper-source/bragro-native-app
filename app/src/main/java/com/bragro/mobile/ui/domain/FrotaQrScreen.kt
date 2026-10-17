@@ -115,9 +115,6 @@ fun FrotaQrScreen(onBack: () -> Unit, viewModel: FrotaQrViewModel = viewModel())
         topBar = {
             TopAppBar(
                 title = { Text("QR Codes das máquinas", color = MaterialTheme.colorScheme.primary) },
-                navigationIcon = {
-                    com.bragro.mobile.ui.domain.HomeNavButton()
-                },
                 actions = {
                     IconButton(
                         onClick = {
@@ -126,8 +123,9 @@ fun FrotaQrScreen(onBack: () -> Unit, viewModel: FrotaQrViewModel = viewModel())
                         },
                         enabled = frotas.isNotEmpty(),
                     ) {
-                        Icon(Icons.Filled.Print, contentDescription = "Imprimir todos", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Filled.Print, contentDescription = "Imprimir todos", tint = MaterialTheme.colorScheme.onSurface)
                     }
+                    com.bragro.mobile.ui.domain.HomeNavButton()
                 },
             )
         },

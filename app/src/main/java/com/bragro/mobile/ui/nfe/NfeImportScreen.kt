@@ -285,12 +285,10 @@ fun NfeImportScreen(onBack: () -> Unit, viewModel: NfeImportViewModel = viewMode
                         Text("Importar NF-e (XML)", color = MaterialTheme.colorScheme.primary)
                     }
                 },
-                navigationIcon = {
-                    Column {
+                actions = { Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
-                    }
-                },
+                    } },
             )
         },
     ) { padding ->

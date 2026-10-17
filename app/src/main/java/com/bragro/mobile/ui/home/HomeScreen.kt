@@ -1554,7 +1554,7 @@ private fun NotificationsDialog(items: List<NotificationItemData>, onMarkAllRead
 // rótulo pra exibição, não pra ícone/agrupamento.
 private val PENDING_SYNC_DOMAIN_LABELS: Map<String, String> = mapOf(
     "financeiro" to "Financeiro",
-    "safra" to "Safra",
+    "safra" to "Atividades",
     "planejamentosafra" to "Planejamento de Safra",
     "colheita" to "Colheita",
     "romaneios" to "Romaneios",
@@ -1776,7 +1776,7 @@ private val NOTICE_SETOR_OPTIONS = listOf(
     "caixainterno" to "Caixa Interno",
     "nfe" to "NF-e",
     "pagamentos" to "Cobranças e NFS-e",
-    "safra" to "Safra",
+    "safra" to "Atividades",
     "operacoes" to "Operações",
     "planejamentosafra" to "Planejamento de Safra",
     "colheita" to "Colheita",
@@ -1909,13 +1909,18 @@ private fun HomeShortcutsRow(
 
     val which = if (destaquesAberto) "destaques" else open
     if (which != null) {
+        // v17 -- Monitor abre na largura toda (margem a margem) para caber
+        // tudo sem cortar; os demais seguem com a largura padrão.
+        val largo = which == "monitor"
         AlertDialog(
+            modifier = if (largo) Modifier.fillMaxWidth().padding(horizontal = 12.dp) else Modifier,
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = !largo),
             onDismissRequest = { if (destaquesAberto) onDestaquesChange(false) else open = null },
             confirmButton = {
                 TextButton(onClick = { if (destaquesAberto) onDestaquesChange(false) else open = null }) { Text("Fechar") }
             },
             text = {
-                Column(modifier = Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState())) {
+                Column(modifier = Modifier.heightIn(max = if (largo) 620.dp else 480.dp).verticalScroll(rememberScrollState())) {
                     when (which) {
                         "destaques" -> DestaquesCard(data, viewModel.lastUpdatedAt.value, modifier = Modifier.fillMaxWidth())
                         "alertas" -> AlertsCard(data.alerts, { id -> open = null; onOpenDomain(id) }, startExpanded = true)
@@ -2108,7 +2113,7 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (
                             // direcionado para a tela correspondente").
                             modifier = Modifier.fillMaxWidth().clickable { onOpenDomain(e.table) }.padding(vertical = 3.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
+                            verticalAlignment = Alignment.Top,
                         ) {
                             // Reordenado -- pedido do usuário: "tipo, item e
                             // quantidade, status". "Tipo" aqui é o campo
@@ -2139,18 +2144,15 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (
                                     },
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Medium,
-                                    maxLines = 1,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                                 )
                                 val sub = listOfNotNull(e.local, e.status, e.type).filter { it.isNotBlank() }.joinToString(" · ")
-                                if (sub.isNotBlank()) Text(sub, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                if (sub.isNotBlank()) Text(sub, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             Text(
                                 e.qtde ?: "—",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.SemiBold,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                maxLines = 1,
                                 modifier = Modifier.weight(0.9f),
                             )
                             Column(modifier = Modifier.weight(1.1f), horizontalAlignment = Alignment.End) {
@@ -2163,7 +2165,7 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (
                                         "aviso" -> androidx.compose.ui.graphics.Color(0xFFC2611F)
                                         else -> MaterialTheme.colorScheme.onSurface
                                     }
-                                    Text(q.texto, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = cor, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.End)
+                                    Text(q.texto, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = cor, textAlign = androidx.compose.ui.text.style.TextAlign.End)
                                 }
                                 Text(formatEventTime(e.at), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                             }

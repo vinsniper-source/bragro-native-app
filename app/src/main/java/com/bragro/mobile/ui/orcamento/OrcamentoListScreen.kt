@@ -467,12 +467,6 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                         Text("Orçamentos", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.primary)
                     }
                 },
-                navigationIcon = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
-                    }
-                },
                 actions = {
                     // Bug real encontrado (usuário: "orçamento, cabeçalho
                     // desconfigurado"): os 2 ícones (Imprimir/Nuvem) estavam
@@ -498,7 +492,7 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                                 }
                                 HtmlPrinter.printSimpleTable(context, "Orçamentos", headers, rows)
                             }) {
-                                Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.onSurface)
                             }
                             // Ícone de nuvem -- faltava neste módulo, achado de
                             // auditoria ("veja se há algum módulo ainda sem a
@@ -506,9 +500,13 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                             IconButton(onClick = {
                                 android.widget.Toast.makeText(context, "Conectado -- dados sincronizados com o servidor.", android.widget.Toast.LENGTH_SHORT).show()
                             }) {
-                                Icon(Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.onSurface)
                             }
                         }
+                    }
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )

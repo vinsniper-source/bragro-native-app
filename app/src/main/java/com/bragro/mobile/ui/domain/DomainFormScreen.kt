@@ -557,7 +557,7 @@ data class MultiItemCfg(
 
 /** v16 -- módulos com a seção Itens inteira invertida (espelho de
  * ITENS_INVERTIDOS em record-form.tsx). */
-val ITENS_INVERTIDOS = setOf("pedidos", "cotacoes", "safra", "orcamentos", "frota", "controleinterno", "financeiro")
+val ITENS_INVERTIDOS = setOf("pedidos", "safra", "orcamentos", "frota", "controleinterno", "financeiro")
 
 val MULTI_ITEM_FORM: Map<String, MultiItemCfg> = mapOf(
     "safra" to MultiItemCfg(
@@ -670,12 +670,6 @@ fun DomainFormScreen(
                         )
                     }
                 },
-                navigationIcon = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
-                    }
-                },
                 actions = {
                     // "Copiar último lançamento" (Task #51/#77) virou ícone
                     // no topo à direita -- pedido do usuário ("transforme a
@@ -717,7 +711,7 @@ fun DomainFormScreen(
                                     Icon(
                                         Icons.Filled.WaterDrop,
                                         contentDescription = "Preencher com clima de hoje",
-                                        tint = MaterialTheme.colorScheme.primary,
+                                        tint = MaterialTheme.colorScheme.onSurface,
                                     )
                                 }
                             }
@@ -738,6 +732,10 @@ fun DomainFormScreen(
                                 )
                             }
                         }
+                    }
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )

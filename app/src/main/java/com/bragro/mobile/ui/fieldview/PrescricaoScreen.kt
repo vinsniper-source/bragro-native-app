@@ -270,9 +270,9 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
         val rows = prescricoes.map {
             listOf(
                 it.nome, it.produto ?: "", it.safra ?: "", it.cultura ?: "", it.talhao ?: "",
-                it.taxaMin?.let { v -> "%.2f".format(v) } ?: "",
-                it.taxaMedia?.let { v -> "%.2f".format(v) } ?: "",
-                it.taxaMax?.let { v -> "%.2f".format(v) } ?: "",
+                it.taxaMin?.let { v -> "%,.2f".format(java.util.Locale("pt", "BR"), v) } ?: "",
+                it.taxaMedia?.let { v -> "%,.2f".format(java.util.Locale("pt", "BR"), v) } ?: "",
+                it.taxaMax?.let { v -> "%,.2f".format(java.util.Locale("pt", "BR"), v) } ?: "",
             )
         }
         HtmlPrinter.printSimpleTable(context, "Prescrição / Taxa Variável", headers, rows)
@@ -291,12 +291,6 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                         Text("Prescrição / Taxa Variável", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.primary, modifier = Modifier.basicMarquee())
                     }
                 },
-                navigationIcon = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
-                    }
-                },
                 // Ícones Imprimir + Nuvem na mesma altura do título -- pedido
                 // do usuário ("inclua o icone e nuvem e impressoora na mesma
                 // altura do título nesses módulos"), mesmo padrão dos demais
@@ -310,14 +304,14 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                                 val rows = prescricoes.map {
                                     listOf(
                                         it.nome, it.produto ?: "", it.safra ?: "", it.cultura ?: "", it.talhao ?: "",
-                                        it.taxaMin?.let { v -> "%.2f".format(v) } ?: "",
-                                        it.taxaMedia?.let { v -> "%.2f".format(v) } ?: "",
-                                        it.taxaMax?.let { v -> "%.2f".format(v) } ?: "",
+                                        it.taxaMin?.let { v -> "%,.2f".format(java.util.Locale("pt", "BR"), v) } ?: "",
+                                        it.taxaMedia?.let { v -> "%,.2f".format(java.util.Locale("pt", "BR"), v) } ?: "",
+                                        it.taxaMax?.let { v -> "%,.2f".format(java.util.Locale("pt", "BR"), v) } ?: "",
                                     )
                                 }
                                 HtmlPrinter.printSimpleTable(context, "Prescrição / Taxa Variável", headers, rows)
                             }) {
-                                Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.onSurface)
                             }
                             IconButton(onClick = {
                                 val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
@@ -326,10 +320,14 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                                 Icon(
                                     if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
                                     contentDescription = "Nuvem",
-                                    tint = MaterialTheme.colorScheme.primary,
+                                    tint = MaterialTheme.colorScheme.onSurface,
                                 )
                             }
                         }
+                    }
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )
@@ -388,9 +386,9 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                             prescricoes.map {
                                 listOf(
                                     it.nome, it.produto ?: "", it.safra ?: "", it.cultura ?: "", it.talhao ?: "",
-                                    it.taxaMin?.let { v -> "%.2f".format(v) } ?: "",
-                                    it.taxaMedia?.let { v -> "%.2f".format(v) } ?: "",
-                                    it.taxaMax?.let { v -> "%.2f".format(v) } ?: "",
+                                    it.taxaMin?.let { v -> "%,.2f".format(java.util.Locale("pt", "BR"), v) } ?: "",
+                                    it.taxaMedia?.let { v -> "%,.2f".format(java.util.Locale("pt", "BR"), v) } ?: "",
+                                    it.taxaMax?.let { v -> "%,.2f".format(java.util.Locale("pt", "BR"), v) } ?: "",
                                 )
                             }
                         }
@@ -486,15 +484,15 @@ private fun PrescricaoCard(
                 val unidade = p.unidadeTaxa?.let { " $it" } ?: ""
                 Column {
                     Text("Taxa mín.", style = MaterialTheme.typography.labelSmall)
-                    Text("${p.taxaMin?.let { "%.2f".format(it) } ?: "--"}$unidade", style = MaterialTheme.typography.bodyMedium)
+                    Text("${p.taxaMin?.let { "%,.2f".format(java.util.Locale("pt", "BR"), it) } ?: "--"}$unidade", style = MaterialTheme.typography.bodyMedium)
                 }
                 Column {
                     Text("Taxa média", style = MaterialTheme.typography.labelSmall)
-                    Text("${p.taxaMedia?.let { "%.2f".format(it) } ?: "--"}$unidade", style = MaterialTheme.typography.bodyMedium)
+                    Text("${p.taxaMedia?.let { "%,.2f".format(java.util.Locale("pt", "BR"), it) } ?: "--"}$unidade", style = MaterialTheme.typography.bodyMedium)
                 }
                 Column {
                     Text("Taxa máx.", style = MaterialTheme.typography.labelSmall)
-                    Text("${p.taxaMax?.let { "%.2f".format(it) } ?: "--"}$unidade", style = MaterialTheme.typography.bodyMedium)
+                    Text("${p.taxaMax?.let { "%,.2f".format(java.util.Locale("pt", "BR"), it) } ?: "--"}$unidade", style = MaterialTheme.typography.bodyMedium)
                 }
             }
             if (expandido) {

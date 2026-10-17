@@ -86,7 +86,7 @@ private val ORIGEM_LABELS: Map<String, String> = mapOf(
     "manual" to "Manual",
     "pedidos" to "Pedido",
     "frota" to "Frota",
-    "safra" to "Safra",
+    "safra" to "Atividades",
     "controleinterno" to "Controle Interno",
     "nfe" to "NF-e",
     "bankimport" to "Extrato Bancário",

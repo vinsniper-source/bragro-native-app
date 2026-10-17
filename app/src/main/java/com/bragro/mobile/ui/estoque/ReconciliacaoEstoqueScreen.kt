@@ -152,12 +152,6 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                         Text("Reconciliação Físico x Fiscal", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.primary, modifier = Modifier.basicMarquee())
                     }
                 },
-                navigationIcon = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
-                    }
-                },
                 // Ícones Imprimir + Nuvem na mesma altura do título -- pedido
                 // do usuário, mesmo padrão dos demais módulos.
                 actions = {
@@ -171,10 +165,14 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                                 Icon(
                                     if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud,
                                     contentDescription = "Nuvem",
-                                    tint = MaterialTheme.colorScheme.primary,
+                                    tint = MaterialTheme.colorScheme.onSurface,
                                 )
                             }
                         }
+                    }
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )

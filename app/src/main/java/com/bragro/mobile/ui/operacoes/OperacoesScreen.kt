@@ -739,12 +739,6 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                         Text("Operações", color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
                     }
                 },
-                navigationIcon = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
-                    }
-                },
                 actions = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -758,23 +752,23 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                             // expande até o limite da tela.
                             if (operacoes.isNotEmpty()) {
                                 IconButton(onClick = { HtmlPrinter.printList(context, operacoesExportConfig(), operacoesExportRecords(operacoes)) }) {
-                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
+                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.onSurface)
                                 }
                             }
                             IconButton(onClick = {
                                 val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                             }) {
-                                Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.primary)
+                                Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.onSurface)
                             }
                             IconButton(onClick = { viewModel.refresh() }) {
-                                Icon(Icons.Filled.Refresh, contentDescription = "Atualizar", tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Filled.Refresh, contentDescription = "Atualizar", tint = MaterialTheme.colorScheme.onSurface)
                             }
                             IconButton(onClick = { tableView = !tableView }) {
                                 Icon(
                                     if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
                                     contentDescription = if (tableView) "Ver em Coluna" else "Ver em Tabela",
-                                    tint = MaterialTheme.colorScheme.primary,
+                                    tint = MaterialTheme.colorScheme.onSurface,
                                 )
                             }
                             // Botão global "recolher/expandir tudo" REMOVIDO do
@@ -784,6 +778,10 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                             // ao lado do ícone editar) continua controlando
                             // cada linha por conta própria.
                         }
+                    }
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )

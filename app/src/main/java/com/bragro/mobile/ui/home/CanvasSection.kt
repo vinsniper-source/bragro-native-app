@@ -580,6 +580,26 @@ fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
             if (fazenda.breakdown.isNotEmpty()) {
                 val total = fazenda.breakdown.sumOf { it.valor }
                 Spacer(modifier = Modifier.height(10.dp))
+                // v17 -- valor de cada categoria em cima do seu pedaço da
+                // barra (discreto, R$ 00.000,00); pedaço < 14% mostra o valor
+                // só na legenda.
+                Row(modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp)) {
+                    fazenda.breakdown.forEach { b ->
+                        val pct = if (total > 0) (b.valor / total).toFloat() else 0f
+                        if (pct > 0f) {
+                            Text(
+                                if (pct >= 0.14f) fmtBrlCanvas(b.valor) else "",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontSize = 9.5.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                softWrap = false,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.weight(pct),
+                            )
+                        }
+                    }
+                }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -622,7 +642,12 @@ fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
                                     .background(BREAKDOWN_COLORS[i % BREAKDOWN_COLORS.size]),
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(b.categoria, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            val pctLeg = if (total > 0) (b.valor / total) else 0.0
+                            Text(
+                                if (pctLeg < 0.14) "${b.categoria} · ${fmtBrlCanvas(b.valor)}" else b.categoria,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     }
                 }
@@ -651,3 +676,7 @@ private val ESTAGIO_SUGESTAO: Map<String, Sugestao> = mapOf(
     "vegetativo" to Sugestao("Bom momento pra acompanhar pragas e manter os receituários em dia.", "pragas", "Ir para Pragas", Icons.Filled.BugReport),
     "colheita" to Sugestao("Registre romaneios e a produtividade realizada.", "colheita", "Ir para Colheita", Icons.Filled.Agriculture),
 )
+
+/** R$ 00.000,00 -- v17. */
+private fun fmtBrlCanvas(v: Double): String =
+    java.text.NumberFormat.getCurrencyInstance(java.util.Locale("pt", "BR")).format(v).replace('\u00A0', ' ')

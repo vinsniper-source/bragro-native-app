@@ -835,12 +835,6 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                         Text("Análises", color = MaterialTheme.colorScheme.primary)
                     }
                 },
-                navigationIcon = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
-                    }
-                },
                 // Nuvem/Imprimir no canto superior direito -- mesmo padrão
                 // já aplicado em todos os outros módulos (inclusive DRE
                 // acima), pedido do usuário ("aplique o mesmo padrão... da
@@ -853,16 +847,20 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                             // pedido do usuário.
                             if (analises != null && analises!!.entries.isNotEmpty()) {
                                 IconButton(onClick = { HtmlPrinter.printList(context, analisesExportConfig(), analisesExportRecords(analises!!)) }) {
-                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
+                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.onSurface)
                                 }
                             }
                             IconButton(onClick = {
                                 val msg = if (offline) NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                             }) {
-                                Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.primary)
+                                Icon(if (offline) Icons.Filled.CloudOff else Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.onSurface)
                             }
                         }
+                    }
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )

@@ -27,7 +27,7 @@ import java.text.Normalizer
  * permissões: "*" ou lista vazia (ainda não carregada) = todos. */
 private val SEARCHABLE_MODULES: List<Pair<String, String>> = listOf(
     "financeiro" to "Financeiro",
-    "safra" to "Safra",
+    "safra" to "Atividades",
     "planejamentosafra" to "Planejamento de Safra",
     "colheita" to "Colheita",
     "romaneios" to "Romaneios",

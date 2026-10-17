@@ -459,12 +459,6 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
                         Text("Diagnóstico por Foto", color = MaterialTheme.colorScheme.primary)
                     }
                 },
-                navigationIcon = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
-                    }
-                },
                 // Ícone Copiar no canto superior direito -- gap encontrado em
                 // auditoria de paridade, mesmo padrão de RomaneioQuickScreen.kt.
                 actions = {
@@ -472,8 +466,12 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
                         Spacer(modifier = Modifier.height(16.dp))
                         IconButton(onClick = { viewModel.preencherComUltimo() }, enabled = !copiando) {
                             if (copiando) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            else Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último lançamento", tint = MaterialTheme.colorScheme.primary)
+                            else Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último lançamento", tint = MaterialTheme.colorScheme.onSurface)
                         }
+                    }
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )

@@ -3,6 +3,14 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.65] - 2026-10-17
+- Cotações: bloco Itens volta às cores anteriores (bloco cinza claro, campos brancos).
+- Módulo Safra passa a se chamar "Atividades" (o botão Safra da barra inferior continua com o nome Safra).
+- Casinha (Início) agora fica à direita, ao lado da impressora, em todas as telas; título encostado na margem e em verde; ícones da direita em preto/branco.
+- Monitor em tempo real abre na largura toda e quebra o texto em quantas linhas forem necessárias.
+- Custo médio/ha: valor em R$ de cada categoria em cima da barra (categorias estreitas mostram o valor na legenda).
+- Revisão dos cards de Drone, Pivôs, Silos, Talhões, Prescrição e NF-e: números no padrão 1.234,5, nomes em maiúsculas, data/hora de atualização legível e textos sem cortes.
+
 ## [1.3.64] - 2026-10-16
 - Cartões do painel: nome e detalhe (texto com número) à esquerda; só o resultado à direita.
 - Seção "Itens" inteira (1º item e extras) com cores invertidas -- bloco branco, campos em cinza claro -- em Pedidos, Cotações, Safra, Orçamentos, Frota, Controle interno e Financeiro.

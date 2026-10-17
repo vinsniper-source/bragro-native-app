@@ -159,13 +159,11 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
         topBar = {
             TopAppBar(
                 title = { Text("Simulador \"E se?\"", color = MaterialTheme.colorScheme.primary) },
-                navigationIcon = {
-                    com.bragro.mobile.ui.domain.HomeNavButton()
-                },
                 actions = {
                     IconButton(onClick = { viewModel.restaurarPadrao() }) {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Restaurar padrão", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Filled.Refresh, contentDescription = "Restaurar padrão", tint = MaterialTheme.colorScheme.onSurface)
                     }
+                    com.bragro.mobile.ui.domain.HomeNavButton()
                 },
             )
         },

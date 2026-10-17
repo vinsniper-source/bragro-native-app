@@ -274,9 +274,6 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
         topBar = {
             TopAppBar(
                 title = { Text("Dossiê Bancário", color = MaterialTheme.colorScheme.primary) },
-                navigationIcon = {
-                    com.bragro.mobile.ui.domain.HomeNavButton()
-                },
                 // Ícone Imprimir/PDF (Task #615/#711, paridade com o botão
                 // Imprimir do dossie-client.tsx no site) -- monta o MESMO
                 // relatório já exibido na tela (Resumo Executivo + DRE por
@@ -288,9 +285,10 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                     val d = dados
                     if (d != null) {
                         IconButton(onClick = { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(d, ano)) }) {
-                            Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.onSurface)
                         }
                     }
+                    com.bragro.mobile.ui.domain.HomeNavButton()
                 },
             )
         },

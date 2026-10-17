@@ -434,12 +434,6 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                         Text("Talhões e Mapas", color = MaterialTheme.colorScheme.primary)
                     }
                 },
-                navigationIcon = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
-                    }
-                },
                 actions = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -448,8 +442,12 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                         // acessível daqui porque "prescricao" é alias de
                         // permissão de "fieldview" (ver PERMISSION_ALIAS).
                         IconButton(onClick = onOpenPrescricao) {
-                            Icon(Icons.Filled.Map, contentDescription = "Prescrição / Taxa Variável", tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Filled.Map, contentDescription = "Prescrição / Taxa Variável", tint = MaterialTheme.colorScheme.onSurface)
                         }
+                    }
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )
@@ -497,7 +495,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                 arquivos = {
                     com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Layers, label = "Prescrição", onClick = onOpenPrescricao)
                     com.bragro.mobile.ui.domain.ArquivosTabela("Talhões e Mapas", listOf("Talhão", "Nome", "Área (ha)")) {
-                        boundaries.map { b -> listOf(b.talhao, b.nome.orEmpty(), b.areaHaCalc?.let { "%.2f".format(it) }.orEmpty()) }
+                        boundaries.map { b -> listOf(b.talhao, b.nome.orEmpty(), b.areaHaCalc?.let { "%,.2f".format(java.util.Locale("pt", "BR"), it) }.orEmpty()) }
                     }
                 },
             )

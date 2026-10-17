@@ -70,7 +70,7 @@ import kotlinx.serialization.json.jsonPrimitive
 private val ROLES = listOf("ADMIN", "AGRONOMO", "FINANCEIRO", "CONTADOR", "AGRICULTURA_FAMILIAR", "RH", "OPERADOR", "CUSTOM")
 private val MODULES = listOf(
     "financeiro" to "Financeiro", "pedidos" to "Pedidos", "cotacoesfornecedores" to "Cotações de Fornecedores", "estoque" to "Estoque",
-    "safra" to "Safra", "planejamentosafra" to "Planejamento de Safra", "colheita" to "Colheita",
+    "safra" to "Atividades", "planejamentosafra" to "Planejamento de Safra", "colheita" to "Colheita",
     "romaneios" to "Romaneios", "contratos" to "Contratos", "inventario" to "Inventário (Ativos)",
     // Labels encurtados -- pedido do usuário (retirar "Recursos Humanos",
     // "e Doenças", "(EPI)", "(registro manual)", "(Serviços)").
@@ -240,12 +240,10 @@ fun SegurancaScreen(onBack: () -> Unit, viewModel: SegurancaViewModel = viewMode
                         Text("Acessos e Segurança", color = MaterialTheme.colorScheme.primary)
                     }
                 },
-                navigationIcon = {
-                    Column {
+                actions = { Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
-                    }
-                },
+                    } },
             )
         },
     ) { padding ->

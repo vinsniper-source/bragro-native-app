@@ -284,12 +284,10 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                         Text("Pivôs de Irrigação", color = MaterialTheme.colorScheme.primary)
                     }
                 },
-                navigationIcon = {
-                    Column {
+                actions = { Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
-                    }
-                },
+                    } },
             )
         },
         // Botão flutuante removido -- "+ Pivô" fica em Ações (padrão v7).
@@ -555,7 +553,7 @@ private fun PivoCard(
             Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                     Column(Modifier.weight(1f)) {
-                        Text("${farmNome ?: "Sem fazenda"} · ${pivo.marca}".uppercase(), fontSize = 10.sp, letterSpacing = 0.6.sp, color = cs.onSurfaceVariant, maxLines = 1)
+                        Text("${farmNome ?: "Sem fazenda"} · ${pivo.marca}".uppercase(), fontSize = 10.sp, letterSpacing = 0.6.sp, color = cs.onSurfaceVariant)
                         Text(pivo.nome, fontSize = 15.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
                     }
                     Text(
@@ -580,14 +578,14 @@ private fun PivoCard(
                         ).forEach { (l, v) ->
                             Column(Modifier.weight(1f)) {
                                 Text(l, fontSize = 10.5.sp, color = cs.onSurfaceVariant)
-                                Text(v, fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, maxLines = 1)
+                                Text(v, fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
                             }
                         }
                     }
                 }
                 Text(
                     (pivo.raioM?.let { "Raio ${it.toInt()} m · ${"%.1f".format(Locale("pt", "BR"), Math.PI * it * it / 10000)} ha · " } ?: "") +
-                        (pivo.ultimaSincronizacaoEm?.let { "atualizado em $it" } ?: "lançado manualmente") + " · toque no anel p/ histórico",
+                        (pivo.ultimaSincronizacaoEm?.let { "Atualizado em ${dataHoraBr(it)}" } ?: "Lançado manualmente") + " · Toque no anel para ver o histórico",
                     fontSize = 10.5.sp, color = cs.onSurfaceVariant,
                 )
             }
@@ -813,4 +811,13 @@ private fun SecaoCabecalho(titulo: String, aberto: Boolean, onToggle: () -> Unit
             contentDescription = if (aberto) "Recolher" else "Expandir",
         )
     }
+}
+
+/** ISO (2026-10-16T18:42:00Z) -> 16/10/2026 15:42 (horário de Brasília) -- v17. */
+private fun dataHoraBr(iso: String): String = runCatching {
+    val inst = java.time.Instant.parse(iso)
+    java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm").withZone(java.time.ZoneId.of("America/Sao_Paulo")).format(inst)
+}.getOrElse {
+    val d = iso.take(10).split("-")
+    if (d.size == 3) "${d[2]}/${d[1]}/${d[0]}" + (iso.drop(11).take(5).takeIf { it.length == 5 }?.let { " $it" } ?: "") else iso
 }

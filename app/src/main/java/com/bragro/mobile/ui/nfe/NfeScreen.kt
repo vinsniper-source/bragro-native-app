@@ -307,8 +307,6 @@ private fun InvoiceRow(
             Text(
                 inv.emitenteNome ?: inv.destinatarioNome ?: "-",
                 style = MaterialTheme.typography.labelSmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
         }
         Text(
@@ -451,9 +449,7 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
         topBar = {
             TopAppBar(
                 title = { Text("NF-e", color = MaterialTheme.colorScheme.primary) },
-                navigationIcon = {
-                    com.bragro.mobile.ui.domain.HomeNavButton()
-                },
+                actions = { com.bragro.mobile.ui.domain.HomeNavButton() },
             )
         },
         // Ícones do topo e botão flutuante foram para o bloco Ações (padrão v7).

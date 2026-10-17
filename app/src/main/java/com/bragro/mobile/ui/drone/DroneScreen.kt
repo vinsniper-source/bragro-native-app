@@ -246,12 +246,6 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                         Text("Drone", color = MaterialTheme.colorScheme.primary)
                     }
                 },
-                navigationIcon = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
-                    }
-                },
                 // Ícone de nuvem (armazenamento) -- faltava neste módulo,
                 // achado de auditoria ("veja se há algum módulo ainda sem a
                 // nuvem"). Mesmo padrão simples usado em Operações.
@@ -261,8 +255,12 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                         androidx.compose.material3.IconButton(onClick = {
                             android.widget.Toast.makeText(context, "Conectado -- dados sincronizados com o servidor.", android.widget.Toast.LENGTH_SHORT).show()
                         }) {
-                            Icon(Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Filled.Cloud, contentDescription = "Nuvem", tint = MaterialTheme.colorScheme.onSurface)
                         }
+                    }
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )
@@ -439,10 +437,10 @@ private fun DroneRecordCard(record: DroneRecordDto) {
                 Text(tipoLabel, style = MaterialTheme.typography.titleSmall)
             }
             Text(isoDateOnlyDrone(record.data), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            record.talhao?.let { Text("Talhão: $it", style = MaterialTheme.typography.bodySmall) }
-            record.piloto?.let { Text("Piloto: $it", style = MaterialTheme.typography.bodySmall) }
-            record.altitude?.let { Text("Altitude: $it m", style = MaterialTheme.typography.bodySmall) }
-            record.areaCoberta?.let { Text("Área coberta: $it ha", style = MaterialTheme.typography.bodySmall) }
+            record.talhao?.let { Text("Talhão: ${it.uppercase()}", style = MaterialTheme.typography.bodySmall) }
+            record.piloto?.let { Text("Piloto: ${it.uppercase()}", style = MaterialTheme.typography.bodySmall) }
+            record.altitude?.let { Text("Altitude: ${"%,.1f".format(java.util.Locale("pt", "BR"), it)} m", style = MaterialTheme.typography.bodySmall) }
+            record.areaCoberta?.let { Text("Área coberta: ${"%,.2f".format(java.util.Locale("pt", "BR"), it)} ha", style = MaterialTheme.typography.bodySmall) }
             record.observacoes?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
             // "Abrir arquivo" (igual ao card da plataforma).
             record.publicUrl?.takeIf { it.isNotBlank() }?.let { url ->
