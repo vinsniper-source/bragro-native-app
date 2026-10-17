@@ -114,7 +114,8 @@ fun FrotaQrScreen(onBack: () -> Unit, viewModel: FrotaQrViewModel = viewModel())
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("QR Codes das máquinas", color = MaterialTheme.colorScheme.primary) },
+                navigationIcon = { com.bragro.mobile.ui.domain.BackNavButton() },
+                title = { Text("QR Codes das máquinas", color = MaterialTheme.colorScheme.onSurface) },
                 actions = {
                     IconButton(
                         onClick = {

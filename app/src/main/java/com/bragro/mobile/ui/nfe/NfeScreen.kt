@@ -448,7 +448,8 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("NF-e", color = MaterialTheme.colorScheme.primary) },
+                navigationIcon = { com.bragro.mobile.ui.domain.BackNavButton() },
+                title = { Text("NF-e", color = MaterialTheme.colorScheme.onSurface) },
                 actions = { com.bragro.mobile.ui.domain.HomeNavButton() },
             )
         },

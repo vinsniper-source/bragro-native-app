@@ -591,10 +591,16 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Livro Caixa", color = MaterialTheme.colorScheme.primary)
+                        Text("Livro Caixa", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 actions = {

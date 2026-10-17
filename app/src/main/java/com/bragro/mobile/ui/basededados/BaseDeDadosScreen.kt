@@ -303,12 +303,18 @@ fun BaseDeDadosScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 // Seta+título uma linha abaixo + fonte verde -- padrão global
                 // (pedido do usuário, ver comentário em SettingsScreen.kt).
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Base de Dados", color = MaterialTheme.colorScheme.primary)
+                        Text("Base de Dados", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 actions = { Column {

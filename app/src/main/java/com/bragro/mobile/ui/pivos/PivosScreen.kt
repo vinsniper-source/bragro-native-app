@@ -278,10 +278,16 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Pivôs de Irrigação", color = MaterialTheme.colorScheme.primary)
+                        Text("Pivôs de Irrigação", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 actions = { Column {

@@ -510,6 +510,12 @@ fun DomainListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 // Título desce uma linha (mesmo ajuste do Financeiro) e
                 // alterna: sem nenhum ícone/bloco aberto mostra o nome do
                 // módulo; com um bloco aberto mostra SÓ o nome dele, sem
@@ -526,7 +532,7 @@ fun DomainListScreen(
                         // longos (ex.: "Transferências entre Fazendas") sem
                         // isso podiam quebrar linha e cortar embaixo, já
                         // que a AppBar tem altura fixa.
-                        Text(config?.label ?: domainId, maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.primary, modifier = Modifier.basicMarquee())
+                        Text(config?.label ?: domainId, maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.basicMarquee())
                     }
                 },
                 // A seta de voltar ganha o mesmo espaçador do título -- pedido

@@ -450,10 +450,16 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Romaneio rápido", color = MaterialTheme.colorScheme.primary)
+                        Text("Romaneio rápido", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 // Ícone Copiar no canto superior direito -- pedido do

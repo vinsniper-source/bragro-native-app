@@ -829,10 +829,16 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Análises", color = MaterialTheme.colorScheme.primary)
+                        Text("Análises", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 // Nuvem/Imprimir no canto superior direito -- mesmo padrão

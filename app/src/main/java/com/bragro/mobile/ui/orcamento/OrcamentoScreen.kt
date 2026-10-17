@@ -632,10 +632,16 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Novo Orçamento", color = MaterialTheme.colorScheme.primary)
+                        Text("Novo Orçamento", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 // Ícone Copiar no topo -- mesmo padrão de Pedidos/Cotações/

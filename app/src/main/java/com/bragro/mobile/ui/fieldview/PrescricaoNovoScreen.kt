@@ -297,10 +297,16 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Nova Prescrição", color = MaterialTheme.colorScheme.primary)
+                        Text("Nova Prescrição", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 // Ícone "Copiar último lançamento" (Task #624, gap

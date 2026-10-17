@@ -557,7 +557,7 @@ data class MultiItemCfg(
 
 /** v16 -- módulos com a seção Itens inteira invertida (espelho de
  * ITENS_INVERTIDOS em record-form.tsx). */
-val ITENS_INVERTIDOS = setOf("pedidos", "safra", "orcamentos", "frota", "controleinterno", "financeiro")
+val ITENS_INVERTIDOS = setOf("pedidos", "cotacoes", "safra", "orcamentos", "frota", "controleinterno", "financeiro")
 
 val MULTI_ITEM_FORM: Map<String, MultiItemCfg> = mapOf(
     "safra" to MultiItemCfg(
@@ -640,6 +640,12 @@ fun DomainFormScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 // Título desce uma linha, mesmo padrão já usado em
                 // DomainListScreen/Financeiro/DRE/Análises -- pedido do
                 // usuário ("em novo lançamento em todos os módulos... rebaixe
@@ -666,7 +672,7 @@ fun DomainFormScreen(
                             if (recordId == null) "Novo lançamento" else "Editar lançamento",
                             maxLines = 1,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 },

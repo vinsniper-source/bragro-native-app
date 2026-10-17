@@ -488,10 +488,16 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("DRE", color = MaterialTheme.colorScheme.primary)
+                        Text("DRE", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 // Nuvem/Imprimir no canto superior direito -- mesmo padrão

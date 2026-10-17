@@ -339,7 +339,34 @@ private val RAW_FIELD_LABELS: Map<String, String> = mapOf(
     "alertaEstoque" to "Alerta Estoque",
     "dias" to "Dias",
     "status" to "Status",
+    // v18 -- demais chaves que apareciam cruas no card do talhão.
+    "dataInicio" to "Data início",
+    "dataFim" to "Data fim",
+    "hectare" to "Hectare",
+    "categoria" to "Categoria",
+    "subcategoriaVariedade" to "Subcategoria/Variedade",
+    "subcategoria" to "Subcategoria",
+    "item" to "Item",
+    "unidade" to "Unidade",
+    "qtd" to "Qtd",
+    "unitario" to "Unitário",
+    "produtividadeScTon" to "Produtividade (sc/t)",
+    "observacoes" to "Observações",
+    "vazaoDose" to "Vazão/Dose",
+    "planejado" to "Planejado",
+    "realizado" to "Realizado",
+    "custoScTon" to "Custo sc/t",
+    "custoHa" to "Custo/ha",
+    "variacao" to "Variação",
+    "desvio" to "Desvio",
+    "fornecedor" to "Fornecedor",
+    "valor" to "Valor",
 )
+
+// v18 -- chaves em R$ (R$ 00.000,00) e chaves numéricas (1.234,5).
+private val RAW_MONEY_KEYS = setOf("unitario", "planejado", "realizado", "custoScTon", "custoHa", "variacao", "total", "custoPorKm", "custoPorHora", "acumFrota", "valor")
+private val RAW_NUMBER_KEYS = setOf("hectare", "qtd", "produtividadeScTon", "vazaoDose", "areaTotal", "kmOdometro", "horimetro", "dias")
+private val RAW_LONG_KEYS = setOf("observacoes", "obs", "descricao")
 
 // Campos checkbox cujo valor cru vem "true"/"false" -- precisam de
 // colType="checkbox" em displayValueFor pra virar "Sim"/"Não" em vez do
@@ -347,35 +374,60 @@ private val RAW_FIELD_LABELS: Map<String, String> = mapOf(
 private val RAW_CHECKBOX_KEYS = setOf("revisaoVencida", "emEstoque", "alertaEstoque")
 
 /** Mostra os campos primitivos de um registro cru (Safra/Frota), exceto
- * campos técnicos -- mesmo critério de "mostrar tudo que veio preenchido"
- * já usado no Ver de DomainListScreen, só que sem um ColumnConfig por trás
- * (esses dados não vêm do domínio genérico). */
+ * campos técnicos. v18 -- duas colunas; rótulo em cinza com o valor logo na
+ * frente, quebrando em quantas linhas precisar (nada cortado); textos longos
+ * ocupam a largura toda; R$ 00.000,00 e números no padrão brasileiro. */
 @Composable
 private fun RawRecordFields(obj: JsonObject) {
-    Column {
-        obj.entries
-            .filter { (k, v) -> k !in IGNORED_KEYS && v.jsonPrimitive.contentOrNull?.isNotBlank() == true }
-            .forEach { (k, v) ->
-                val raw = v.jsonPrimitive.contentOrNull ?: ""
-                val label = RAW_FIELD_LABELS[k] ?: k
-                if (k == "status") {
-                    // Badge colorido -- faltava aqui (outro achado do
-                    // usuário: cor/fundo de destaque), mesmo StatusBadge já
-                    // usado no resto do app (STATUS_TONE já reconhece
-                    // ANDAMENTO/FINALIZADO/ATRASADO etc.).
-                    StatusBadge(raw)
-                    return@forEach
-                }
-                val colType = when {
+    val ptBr = java.util.Locale("pt", "BR")
+    val itens = obj.entries
+        .filter { (k, v) -> k !in IGNORED_KEYS && (v as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull?.isNotBlank() == true }
+        .map { (k, v) ->
+            val raw = v.jsonPrimitive.contentOrNull ?: ""
+            val label = RAW_FIELD_LABELS[k] ?: k.replaceFirstChar { it.uppercase() }
+            val n = raw.toDoubleOrNull()
+            val valor = when {
+                k == "status" -> raw
+                k in RAW_MONEY_KEYS && n != null -> java.text.NumberFormat.getCurrencyInstance(ptBr).format(n).replace('\u00A0', ' ')
+                k == "hectare" || k == "areaTotal" -> if (n != null) "${java.text.NumberFormat.getNumberInstance(ptBr).format(n)} ha" else raw
+                k in RAW_NUMBER_KEYS && n != null -> java.text.NumberFormat.getNumberInstance(ptBr).format(n)
+                else -> displayValueFor(k, raw, when {
                     k in RAW_CHECKBOX_KEYS -> "checkbox"
                     ISO_DATETIME_PREFIX.containsMatchIn(raw) -> "date"
                     else -> "text"
-                }
-                Text(
-                    "$label: ${displayValueFor(k, raw, colType)}",
-                    style = MaterialTheme.typography.bodySmall,
-                )
+                })
             }
+            Triple(k, label, valor)
+        }
+    val status = itens.firstOrNull { it.first == "status" }
+    val longos = itens.filter { it.first in RAW_LONG_KEYS || (it.first != "status" && it.third.length > 40) }
+    val curtos = itens.filter { it != status && it !in longos }
+    val mut = MaterialTheme.colorScheme.onSurfaceVariant
+    @Composable
+    fun celula(label: String, valor: String, mod: Modifier) {
+        Text(
+            androidx.compose.ui.text.buildAnnotatedString {
+                pushStyle(androidx.compose.ui.text.SpanStyle(color = mut)); append("$label: "); pop()
+                append(valor)
+            },
+            style = MaterialTheme.typography.bodySmall,
+            modifier = mod,
+        )
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        curtos.chunked(2).forEach { par ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                celula(par[0].second, par[0].third, Modifier.weight(1f))
+                if (par.size > 1) celula(par[1].second, par[1].third, Modifier.weight(1f)) else Spacer(Modifier.weight(1f))
+            }
+        }
+        if (status != null) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Status: ", style = MaterialTheme.typography.bodySmall, color = mut)
+                StatusBadge(status.third)
+            }
+        }
+        longos.forEach { celula(it.second, it.third, Modifier.fillMaxWidth()) }
     }
 }
 
@@ -428,23 +480,21 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Talhões e Mapas", color = MaterialTheme.colorScheme.primary)
+                        Text("Talhões e Mapas", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 actions = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        // Prescrição / Taxa Variável (Task #604/#608) --
-                        // visualizador simples das zonas já salvas pelo site,
-                        // acessível daqui porque "prescricao" é alias de
-                        // permissão de "fieldview" (ver PERMISSION_ALIAS).
-                        IconButton(onClick = onOpenPrescricao) {
-                            Icon(Icons.Filled.Map, contentDescription = "Prescrição / Taxa Variável", tint = MaterialTheme.colorScheme.onSurface)
-                        }
-                    }
+                    // v18 -- ícone de Prescrição saiu do cabeçalho; fica só
+                    // em Arquivos > Prescrição (mesmo ícone).
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
@@ -493,7 +543,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                     com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Public, label = "NDVI", active = ndviIntegration != null, onClick = { prestadoraAberta = 2 })
                 },
                 arquivos = {
-                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Layers, label = "Prescrição", onClick = onOpenPrescricao)
+                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Map, label = "Prescrição", onClick = onOpenPrescricao)
                     com.bragro.mobile.ui.domain.ArquivosTabela("Talhões e Mapas", listOf("Talhão", "Nome", "Área (ha)")) {
                         boundaries.map { b -> listOf(b.talhao, b.nome.orEmpty(), b.areaHaCalc?.let { "%,.2f".format(java.util.Locale("pt", "BR"), it) }.orEmpty()) }
                     }
@@ -626,7 +676,12 @@ private fun TalhaoStatusList(rows: List<JsonObject>) {
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(Icons.Filled.Eco, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
-                        Text("Talhão", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                        val tit = run {
+                            val o = rows[i]
+                            fun c(k: String) = (o[k] as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() }
+                            listOfNotNull(c("talhao")?.let { "Talhão $it" } ?: "Talhão", c("os")?.let { "O.S. $it" }).joinToString(" · ")
+                        }
+                        Text(tit, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                         Icon(
                             if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
                             contentDescription = if (open) "Recolher" else "Expandir",

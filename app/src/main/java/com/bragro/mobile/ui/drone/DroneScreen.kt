@@ -240,10 +240,16 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Drone", color = MaterialTheme.colorScheme.primary)
+                        Text("Drone", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 // Ícone de nuvem (armazenamento) -- faltava neste módulo,

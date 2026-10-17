@@ -296,6 +296,12 @@ fun FinanceiroScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 // "Pule uma linha para aparecer o nome de cada ícone quando
                 // clicado" -- "Financeiro" (ou "Financeiro — visão") continua
                 // sempre na 1ª linha; o nome do bloco aberto (Gráficos,
@@ -323,7 +329,7 @@ fun FinanceiroScreen(
                         // maxLines/ellipsis defensivo -- pedido do usuário
                         // ("adapte ao tamanho da fonte sem cortes e dentro
                         // do limite da tela").
-                        Text(if (isQuickView) view.label else "Lançamentos", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.primary, modifier = Modifier.basicMarquee())
+                        Text(if (isQuickView) view.label else "Lançamentos", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.basicMarquee())
                     }
                 },
                 // A seta de voltar ganha o mesmo espaçador de cima do título

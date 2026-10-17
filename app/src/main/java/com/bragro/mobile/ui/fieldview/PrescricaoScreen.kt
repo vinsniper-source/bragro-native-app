@@ -281,6 +281,12 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 // Título desce uma linha, mesmo ajuste já aplicado nos
                 // demais módulos (DomainListScreen/FinanceiroScreen) --
                 // pedido do usuário ("abaixe o título do módulo e deixe na
@@ -288,7 +294,7 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Prescrição / Taxa Variável", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.primary, modifier = Modifier.basicMarquee())
+                        Text("Prescrição / Taxa Variável", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.basicMarquee())
                     }
                 },
                 // Ícones Imprimir + Nuvem na mesma altura do título -- pedido

@@ -160,6 +160,12 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = viewModel(
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 // Seta+título uma linha abaixo + fonte verde -- mesmo padrão
                 // já usado nos módulos (DomainListScreen/DomainFormScreen),
                 // agora replicado aqui e em todos os títulos do app (pedido
@@ -168,7 +174,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = viewModel(
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Configurações", color = MaterialTheme.colorScheme.primary)
+                        Text("Configurações", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 actions = { Column {

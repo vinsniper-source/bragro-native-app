@@ -453,10 +453,16 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Diagnóstico por Foto", color = MaterialTheme.colorScheme.primary)
+                        Text("Diagnóstico por Foto", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 // Ícone Copiar no canto superior direito -- gap encontrado em

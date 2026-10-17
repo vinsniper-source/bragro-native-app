@@ -397,6 +397,7 @@ fun BlocoComFaixa(
 fun AbasEncaixadas(titulos: List<String>, selecionada: Int, avisos: List<Int> = emptyList(), onSelect: (Int) -> Unit) {
     val cs = MaterialTheme.colorScheme
     val faixa = cs.onSurface.copy(alpha = 0.05f).compositeOver(cs.surface)
+    val amarelo = if (cs.background.luminance() < 0.5f) com.bragro.mobile.ui.theme.BrYellow else Color(0xFFB8860B)
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().background(faixa)) {
             titulos.forEachIndexed { i, t ->
@@ -405,18 +406,20 @@ fun AbasEncaixadas(titulos: List<String>, selecionada: Int, avisos: List<Int> = 
                 val aviso = (avisos.getOrNull(i) ?: 0) > 0
                 Box(
                     modifier = Modifier.weight(1f).height(34.dp)
-                        .background(if (aviso) com.bragro.mobile.ui.theme.BrYellow.copy(alpha = if (ativa) 1f else 0.55f) else if (ativa) cs.surface else Color.Transparent)
+                        // v18 -- aba com aviso: sem fundo amarelo; nome e
+                        // traço em amarelo.
+                        .background(if (ativa) cs.surface else Color.Transparent)
                         .clickable { onSelect(i) }
                         .drawWithContent {
                             drawContent()
-                            if (ativa) drawRect(cs.primary, topLeft = androidx.compose.ui.geometry.Offset(0f, size.height - 2.dp.toPx()), size = androidx.compose.ui.geometry.Size(size.width, 2.dp.toPx()))
+                            if (ativa || aviso) drawRect(if (aviso) amarelo else cs.primary, topLeft = androidx.compose.ui.geometry.Offset(0f, size.height - 2.dp.toPx()), size = androidx.compose.ui.geometry.Size(size.width, 2.dp.toPx()))
                         },
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         Idioma.tr(t), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                         fontWeight = if (ativa) FontWeight.ExtraBold else FontWeight.SemiBold,
-                        color = if (aviso) Color(0xFF1A1A1A) else if (ativa) cs.primary else cs.onSurfaceVariant,
+                        color = if (aviso) amarelo else if (ativa) cs.primary else cs.onSurfaceVariant,
                     )
                 }
             }

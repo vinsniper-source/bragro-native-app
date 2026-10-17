@@ -3,6 +3,14 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.66] - 2026-10-17
+- Abas com aviso sem fundo amarelo: nome e traço em amarelo. Contador (ex.: Filtros) sem fundo, número em laranja com contorno fino.
+- Talhões e Mapas: ícone de Prescrição saiu do cabeçalho e ficou em Arquivos > Prescrição.
+- Operações: card do responsável recolhido (só o nome); tocando mostra função e frota.
+- Card do talhão aberto em duas colunas, com rótulos em português, R$ 00.000,00, números com vírgula e nada cortado.
+- Novo lançamento de Cotação com o bloco Itens invertido.
+- Cabeçalhos: título em preto/branco e seta de voltar à esquerda; casinha continua à direita.
+
 ## [1.3.65] - 2026-10-17
 - Cotações: bloco Itens volta às cores anteriores (bloco cinza claro, campos brancos).
 - Módulo Safra passa a se chamar "Atividades" (o botão Safra da barra inferior continua com o nome Safra).

@@ -258,10 +258,16 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Silos", color = MaterialTheme.colorScheme.primary)
+                        Text("Silos", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 actions = { Column {

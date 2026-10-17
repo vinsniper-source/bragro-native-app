@@ -1,5 +1,9 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.ui.unit.sp
+
+import androidx.compose.foundation.layout.Box
+
 import com.bragro.mobile.ui.theme.BrYellow
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
@@ -137,7 +141,7 @@ fun ModuleIconButton(
             .padding(horizontal = 6.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        BadgedBox(badge = { if (item.badgeCount > 0) Badge(containerColor = BrYellow, contentColor = Color.Black) { Text("${item.badgeCount}") } }) {
+        BadgedBox(badge = { if (item.badgeCount > 0) BadgeContagem(item.badgeCount) }) {
             Icon(
                 item.icon,
                 contentDescription = null,
@@ -213,12 +217,7 @@ fun LabeledIconButton(
             CircularProgressIndicator(modifier = Modifier.size(MODULE_ICON_SIZE), strokeWidth = 2.dp)
         } else if (badgeCount > 0) {
             BadgedBox(
-                badge = {
-                    Badge(
-                        containerColor = BrYellow,
-                        contentColor = Color.Black,
-                    ) { Text("$badgeCount") }
-                },
+                badge = { BadgeContagem(badgeCount) },
             ) {
                 Icon(icon, contentDescription = null, tint = fg, modifier = Modifier.size(MODULE_ICON_SIZE))
             }
@@ -364,3 +363,18 @@ fun EqualWidthBlockRow(modifier: Modifier = Modifier, drawBackground: Boolean = 
 
 /** true dentro do bloco Ações -- ver BlocoComFaixa/EqualWidthBlockRow. */
 val LocalAcoesEncaixadas = androidx.compose.runtime.staticCompositionLocalOf { false }
+
+
+/** v18 -- contador sem fundo: número em laranja com contorno fino. */
+@Composable
+fun BadgeContagem(n: Int) {
+    val cor = corAtencao()
+    Box(
+        modifier = Modifier
+            .border(1.dp, cor, androidx.compose.foundation.shape.RoundedCornerShape(50))
+            .padding(horizontal = 4.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text("$n", color = cor, fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, lineHeight = 12.sp)
+    }
+}

@@ -273,7 +273,8 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Dossiê Bancário", color = MaterialTheme.colorScheme.primary) },
+                navigationIcon = { com.bragro.mobile.ui.domain.BackNavButton() },
+                title = { Text("Dossiê Bancário", color = MaterialTheme.colorScheme.onSurface) },
                 // Ícone Imprimir/PDF (Task #615/#711, paridade com o botão
                 // Imprimir do dossie-client.tsx no site) -- monta o MESMO
                 // relatório já exibido na tela (Resumo Executivo + DRE por

@@ -461,10 +461,16 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Orçamentos", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.primary)
+                        Text("Orçamentos", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 actions = {

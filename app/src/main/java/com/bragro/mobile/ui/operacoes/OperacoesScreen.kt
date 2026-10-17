@@ -338,6 +338,7 @@ private fun OperacaoCard(
     var talhao by remember(op.chave) { mutableStateOf("Todos") }
     var revisao by remember(op.chave) { mutableStateOf("Todas") }
     val cardsFechados = remember(op.chave) { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
+    val equipeAberta = remember(op.chave) { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
     val osAbertas = remember(op.chave) { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
     var blocoAberto by remember(op.chave) { mutableStateOf(false) }
 
@@ -479,12 +480,23 @@ private fun OperacaoCard(
                                     .padding(horizontal = 8.dp, vertical = 6.dp),
                                 verticalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
+                                // v18 -- recolhido por padrão: só o nome;
+                                // tocando abre função e frota.
                                 equipe.forEach { (nome, func, frota) ->
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                    val chaveEq = "$a|$nome|$frota"
+                                    val eqAberto = equipeAberta[chaveEq] == true
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().clickable { equipeAberta[chaveEq] = !eqAberto },
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
                                         Icon(Icons.Filled.Person, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text(" $nome", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                        Text(" $nome", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                                        Icon(if (eqAberto) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (eqAberto) "Recolher" else "Abrir", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
-                                    Text("$func · 🚜 $frota", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    if (eqAberto) {
+                                        Text("Função: $func", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text("Frota: $frota", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
                                 }
                             }
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -733,10 +745,16 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Operações", color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
+                        Text("Operações", color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
                     }
                 },
                 actions = {

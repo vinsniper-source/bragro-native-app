@@ -2,6 +2,7 @@ package com.bragro.mobile.ui.domain
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -17,5 +18,15 @@ object HomeNavigator {
 fun HomeNavButton() {
     IconButton(onClick = { HomeNavigator.goHome() }) {
         Icon(Icons.Filled.Home, contentDescription = "Página inicial", tint = MaterialTheme.colorScheme.onSurface)
+    }
+}
+
+/** v18 -- seta de voltar no cabeçalho (à esquerda do título): volta para a
+ * tela anterior pelo mesmo caminho do botão "voltar" do sistema. */
+@Composable
+fun BackNavButton() {
+    val dispatcher = androidx.activity.compose.LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+    IconButton(onClick = { dispatcher?.onBackPressed() }) {
+        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.onSurface)
     }
 }

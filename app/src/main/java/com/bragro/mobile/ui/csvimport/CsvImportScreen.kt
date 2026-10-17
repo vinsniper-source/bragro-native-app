@@ -258,10 +258,16 @@ fun CsvImportScreen(onBack: () -> Unit, viewModel: CsvImportViewModel = viewMode
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.BackNavButton()
+                    }
+                },
                 title = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Migração de Dados (CSV)", color = MaterialTheme.colorScheme.primary)
+                        Text("Migração de Dados (CSV)", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 actions = { Column {
