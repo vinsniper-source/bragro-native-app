@@ -782,6 +782,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                     )
                     // v19 -- bloco Ações com os ícones que estavam no cabeçalho.
                     com.bragro.mobile.ui.domain.AcoesEmAbas(
+                        titulos = listOf("Monitoramento", "Ações", "Progresso"),
                         dados = {
                             com.bragro.mobile.ui.domain.LabeledIconButton(
                                 icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,

@@ -362,35 +362,36 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
             item(key = "acoes") {
                 com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
                     Column(modifier = Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        var calendarioAberto by remember { mutableStateOf(true) }
                         // v9: "Ano-Calendário / Exercício" com duas listas lado a lado
                         // (exercício = ano-calendário + 1; mudar uma ajusta a outra).
                         val anoAtual = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
                         val anos = (anoAtual downTo anoAtual - 9).toList()
-                        Text("ANO-CALENDÁRIO / EXERCÍCIO", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            SearchableDropdownField(
-                                value = ano.toString(),
-                                label = "Ano-calendário",
-                                options = remember(anos) { anos.map { it.toString() to it.toString() } },
-                                onSelect = { picked -> picked.toIntOrNull()?.let { viewModel.setAno(it) } },
-                                modifier = Modifier.weight(1f),
-                                emptyOptionLabel = null,
-                            )
-                            SearchableDropdownField(
-                                value = (ano + 1).toString(),
-                                label = "Exercício",
-                                options = remember(anos) { anos.map { (it + 1).toString() to (it + 1).toString() } },
-                                onSelect = { picked -> picked.toIntOrNull()?.let { viewModel.setAno(it - 1) } },
-                                modifier = Modifier.weight(1f),
-                                emptyOptionLabel = null,
-                            )
-                            androidx.compose.material3.OutlinedButton(
-                                onClick = { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(d, ano)) },
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                                modifier = Modifier.height(40.dp),
-                            ) {
-                                Icon(Icons.Filled.Print, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Text(" PDF", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("ANO-CALENDÁRIO / EXERCÍCIO", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                            com.bragro.mobile.ui.domain.SetaRecolher(calendarioAberto, modifier = Modifier.size(26.dp)) { calendarioAberto = !calendarioAberto }
+                        }
+                        if (calendarioAberto) {
+                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                SearchableDropdownField(
+                                    value = ano.toString(),
+                                    label = "Ano-calendário",
+                                    options = remember(anos) { anos.map { it.toString() to it.toString() } },
+                                    onSelect = { picked -> picked.toIntOrNull()?.let { viewModel.setAno(it) } },
+                                    modifier = Modifier.weight(1f),
+                                    emptyOptionLabel = null,
+                                )
+                                SearchableDropdownField(
+                                    value = (ano + 1).toString(),
+                                    label = "Exercício",
+                                    options = remember(anos) { anos.map { (it + 1).toString() to (it + 1).toString() } },
+                                    onSelect = { picked -> picked.toIntOrNull()?.let { viewModel.setAno(it - 1) } },
+                                    modifier = Modifier.weight(1f),
+                                    emptyOptionLabel = null,
+                                )
                             }
                         }
                         val atalhos = listOf(
@@ -400,16 +401,33 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                         atalhos.chunked(3).forEach { linha ->
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 linha.forEach { (id, rotulo) ->
-                                    Box(
-                                        modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
-                                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
-                                            .clickable {
-                                                abertas[id] = true
-                                                indiceSecao[id]?.let { i -> scope.launch { listState.animateScrollToItem(i) } }
+                                    val isPatrimonio = id == "patrimonio"
+                                    Row(
+                                        modifier = Modifier.weight(1f),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    ) {
+                                        Box(
+                                            modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
+                                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                                                .clickable {
+                                                    abertas[id] = true
+                                                    indiceSecao[id]?.let { i -> scope.launch { listState.animateScrollToItem(i) } }
+                                                }
+                                                .padding(vertical = 8.dp),
+                                            contentAlignment = Alignment.Center,
+                                        ) { Text(rotulo, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1) }
+                                        if (isPatrimonio) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                                IconButton(onClick = { dados?.let { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(it, ano)) } }, modifier = Modifier.size(28.dp)) {
+                                                    Icon(Icons.Filled.Print, contentDescription = "Imprimir patrimônio", modifier = Modifier.size(16.dp))
+                                                }
+                                                IconButton(onClick = { dados?.let { HtmlPrinter.printHtmlComoPdf(context, "Dossiê Bancário", buildDossieHtml(it, ano)) } }, modifier = Modifier.size(28.dp)) {
+                                                    Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar patrimônio em PDF", modifier = Modifier.size(16.dp))
+                                                }
                                             }
-                                            .padding(vertical = 8.dp),
-                                        contentAlignment = Alignment.Center,
-                                    ) { Text(rotulo, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1) }
+                                        }
+                                    }
                                 }
                                 repeat(3 - linha.size) { Spacer(Modifier.weight(1f)) }
                             }

@@ -3,11 +3,13 @@ package com.bragro.mobile.ui.domain
 import android.app.Application
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.ExpandLess
@@ -28,6 +30,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -182,10 +186,22 @@ fun ModuleChartsCard(domainId: String, viewModel: ModuleChartsViewModel = viewMo
 // visualmente em cima do título do gráfico logo abaixo.
 @Composable
 private fun ChartPrintActions(onPrint: () -> Unit, onPdf: () -> Unit) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onPrint, modifier = Modifier.size(32.dp)) {
             Icon(Icons.Filled.Print, contentDescription = "Imprimir gráfico", modifier = Modifier.size(18.dp))
         }
+        Box(
+            modifier = Modifier
+                .size(10.dp, 18.dp)
+                .drawBehind {
+                    drawLine(
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                        start = Offset(0f, size.height),
+                        end = Offset(size.width, 0f),
+                        strokeWidth = 1.dp.toPx(),
+                    )
+                },
+        )
         IconButton(onClick = onPdf, modifier = Modifier.size(32.dp)) {
             Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar gráfico em PDF", modifier = Modifier.size(18.dp))
         }

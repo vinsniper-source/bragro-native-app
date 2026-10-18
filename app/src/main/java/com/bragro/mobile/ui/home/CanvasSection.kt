@@ -278,7 +278,7 @@ fun CanvasCirclesRow(
                     Text(
                         "${NumberFormat.getNumberInstance(Locale("pt", "BR")).format(areaExibida)} ha",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
+                        color = Color.White,
                     )
                     // Com filtro ativo, filtroLabel já junta safra+cultura
                     // ("SAFRINHA 26 · SORGO") -- mostrar culturaAtual/
@@ -289,12 +289,12 @@ fun CanvasCirclesRow(
                     // reportou de volta ("insira a informação da safra e
                     // cultura"). Mostra um OU outro.
                     if (filtroAtivo) {
-                        Text(filtroLabel, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f))
+                        Text(filtroLabel, style = MaterialTheme.typography.labelSmall, color = Color.White)
                     } else {
                         Text(
                             f.culturaAtual ?: "Sem cultura registrada na janela",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+                            color = Color.White,
                         )
                         if (!f.safraAtual.isNullOrBlank()) {
                             Text(
@@ -304,7 +304,7 @@ fun CanvasCirclesRow(
                                 // ou "Safrinha 24").
                                 f.safraAtual ?: "",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+                                color = Color.White,
                             )
                         }
                     }
@@ -320,7 +320,7 @@ fun CanvasCirclesRow(
                             statusLabel(f.status),
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                             fontWeight = FontWeight.Medium,
-                            color = statusColor(f.status),
+                            color = Color.White,
                         )
                     }
                 }
@@ -471,7 +471,7 @@ fun CanvasCirclesRow(
                         f.nome,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = statusColor(f.status),
+                        color = Color.White,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
@@ -480,19 +480,19 @@ fun CanvasCirclesRow(
                     Text(
                         "${NumberFormat.getNumberInstance(Locale("pt", "BR")).format(areaExibida)} ha",
                         style = MaterialTheme.typography.labelSmall,
-                        color = statusColor(f.status).copy(alpha = 0.8f),
+                        color = Color.White,
                     )
                     if (filtroAtivo) {
                         Text(
                             filtroLabel,
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                            color = statusColor(f.status).copy(alpha = 0.6f),
+                            color = Color.White,
                         )
                     } else {
                         Text(
                             (f.culturaAtual ?: "Sem cultura") + (f.safraAtual?.let { " · $it" } ?: ""),
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                            color = statusColor(f.status).copy(alpha = 0.6f),
+                            color = Color.White,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )

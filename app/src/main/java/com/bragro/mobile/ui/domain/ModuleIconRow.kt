@@ -54,6 +54,7 @@ data class ModuleIconItem(
     val label: String,
     val active: Boolean = false,
     val badgeCount: Int = 0,
+    val alert: Boolean = false,
 )
 
 /**
@@ -74,7 +75,7 @@ data class ModuleIconItem(
 // 40dp) -- se o texto não couber no espaço do bloco, o bloco é quem
 // alarga (ver os `weight()` dos Row que os contêm em DomainListScreen.kt/
 // FinanceiroScreen.kt), não o ícone que encolhe.
-private val MODULE_ICON_SIZE = 22.dp
+private val MODULE_ICON_SIZE = 18.dp
 
 // Fundo dos blocos de ícone = surface (sem preenchimento verde) -- ver
 // BottomNavBar.kt. Ícone/rótulo em preto/branco (onSurface, adapta sozinho
@@ -132,12 +133,16 @@ fun ModuleIconButton(
     // Liga/desliga: ativo = fundo verde cheio + ícone/rótulo brancos; tocar de
     // novo volta ao padrão (pedido do usuário). contentColor explícito (bloco
     // Faturamento) é respeitado só quando inativo.
-    val fg = if (item.active) MaterialTheme.colorScheme.primary else (contentColor ?: MODULE_ICON_FG)
+    val fg = when {
+        item.alert || item.badgeCount > 0 -> corAtencao()
+        item.active -> MaterialTheme.colorScheme.primary
+        else -> (contentColor ?: MODULE_ICON_FG)
+    }
     Column(
         modifier = Modifier
-            .widthIn(min = 44.dp)
+            .widthIn(min = 42.dp)
             .clickable(onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 8.dp),
+            .padding(horizontal = 4.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         BadgedBox(badge = { if (item.badgeCount > 0) BadgeContagem(item.badgeCount) }) {
@@ -151,7 +156,7 @@ fun ModuleIconButton(
         Text(
             item.label,
             style = MaterialTheme.typography.labelSmall,
-            fontWeight = if (item.active) androidx.compose.ui.text.font.FontWeight.ExtraBold else null,
+            fontWeight = if (item.active) androidx.compose.ui.text.font.FontWeight.Medium else androidx.compose.ui.text.font.FontWeight.Normal,
             color = fg,
             maxLines = 1,
             softWrap = false,
@@ -184,33 +189,26 @@ fun LabeledIconButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    // Preto/branco (onSurface) por padrão -- BUG real encontrado (usuário:
-    // "nao houve alteraçao nenhuma", print mostrando Gráficos/Filtros/
-    // Colunas/Expandir ainda verdes mesmo com o apk novo confirmado
-    // instalado): eu só removia o `tint = primary` EXPLÍCITO de call sites
-    // específicos (Período/Filtros em alguns arquivos), mas nunca troquei
-    // esse valor padrão aqui -- todo call site que NÃO passa `tint` (a
-    // maioria: Gráficos, Colunas, Expandir, Imprimir, Nuvem, Copiar,
-    // Atualizar, Exportar CSV/PDF etc., em todos os módulos) continuava
-    // caindo em verde por causa deste default, mesmo com MODULE_ICON_FG já
-    // corrigido em ModuleIconButton (que é uma função diferente, sem esse
-    // parâmetro). Call sites que já passam um `tint` próprio (ex.: alternar
-    // cor quando "ativo") continuam funcionando normalmente.
+    // Preto/branco (onSurface) por padrão -- evita que a maioria dos
+    // botões do app fique verde por default quando não recebe um tint
+    // explícito.
     tint: Color = MaterialTheme.colorScheme.onSurface,
     loading: Boolean = false,
-    // Liga/desliga: ativo = fundo verde cheio + ícone/rótulo brancos.
     active: Boolean = false,
-    // Bolinha de contagem (Revisar): fundo amarelo, número preto.
     badgeCount: Int = 0,
+    alert: Boolean = false,
+    showLabel: Boolean = true,
 ) {
-    // v19 -- ativo: sem fundo; ícone e rótulo em verde e negrito.
-    val fg = if (active) MaterialTheme.colorScheme.primary else tint
-    // Sem Card próprio -- mesmo motivo do ModuleIconButton acima.
+    val fg = when {
+        alert || badgeCount > 0 -> corAtencao()
+        active -> MaterialTheme.colorScheme.primary
+        else -> tint
+    }
     Column(
         modifier = modifier
-            .widthIn(min = 44.dp)
+            .widthIn(min = 42.dp)
             .clickable(enabled = !loading, onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 8.dp),
+            .padding(horizontal = 4.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (loading) {
@@ -224,16 +222,18 @@ fun LabeledIconButton(
         } else {
             Icon(icon, contentDescription = null, tint = fg, modifier = Modifier.size(MODULE_ICON_SIZE))
         }
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = if (active) androidx.compose.ui.text.font.FontWeight.ExtraBold else null,
-            color = fg,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Clip,
-            modifier = Modifier.basicMarquee(),
-        )
+        if (showLabel) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = if (active) androidx.compose.ui.text.font.FontWeight.Medium else androidx.compose.ui.text.font.FontWeight.Normal,
+                color = fg,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.basicMarquee(),
+            )
+        }
     }
 }
 

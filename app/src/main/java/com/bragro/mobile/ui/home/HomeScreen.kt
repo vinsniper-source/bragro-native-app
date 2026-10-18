@@ -1897,14 +1897,18 @@ private fun HomeShortcutsRow(
     if (!showDestaques && !showAlertas && !showMonitor && !showMural) return
     var open by remember { mutableStateOf<String?>(null) }
 
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    Box(
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
     ) {
-        if (showDestaques) HomeShortcutPill("Destaques", Icons.Filled.Star, 0, Modifier.weight(1f)) { onDestaquesChange(true) }
-        if (showAlertas) HomeShortcutPill("Alertas", Icons.Filled.WarningAmber, data.alerts.size, Modifier.weight(1f)) { open = "alertas" }
-        if (showMonitor) HomeShortcutPill("Monitor", Icons.Filled.Bolt, data.recentActivity.size, Modifier.weight(1f)) { open = "monitor" }
-        if (showMural) HomeShortcutPill("Avisos", Icons.Filled.Campaign, data.notices.size, Modifier.weight(1f)) { open = "mural" }
+        com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth()) {
+            if (showDestaques) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Star, label = "Destaques", onClick = { onDestaquesChange(true) })
+            if (showAlertas) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.WarningAmber, label = "Alertas", badgeCount = data.alerts.size, onClick = { open = "alertas" })
+            if (showMonitor) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Bolt, label = "Monitor", badgeCount = data.recentActivity.size, onClick = { open = "monitor" })
+            if (showMural) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Campaign, label = "Avisos", badgeCount = data.notices.size, onClick = { open = "mural" })
+        }
     }
 
     val which = if (destaquesAberto) "destaques" else open
