@@ -1,0 +1,93 @@
+name: Android Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  android-release:
+    name: Build and publish signed Android APK
+    runs-on: ubuntu-latest
+
+    env:
+      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Gradle cache
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: false
+
+      - name: Decodificar keystore da base64 do secret
+        working-directory: native-app
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${KEYSTORE_BASE64:-}" ]; then
+            echo "::error::O secret KEYSTORE_BASE64 é obrigatório para assinar o APK em CI."
+            exit 1
+          fi
+
+          if [ -z "${STORE_PASSWORD:-}" ] || [ -z "${KEY_ALIAS:-}" ] || [ -z "${KEY_PASSWORD:-}" ]; then
+            echo "::error::Os secrets STORE_PASSWORD, KEY_ALIAS e KEY_PASSWORD também são obrigatórios."
+            exit 1
+          fi
+
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$GITHUB_WORKSPACE/native-app/bragro-release.jks"
+
+          cat > "$GITHUB_WORKSPACE/native-app/keystore.properties" <<EOF
+          storeFile=$GITHUB_WORKSPACE/native-app/bragro-release.jks
+          storePassword=$STORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
+      - name: Dar permissão de execução ao gradlew
+        working-directory: native-app
+        run: chmod +x ./gradlew
+
+      - name: Compilar APK de release
+        working-directory: native-app
+        run: ./gradlew :app:assembleRelease --stacktrace --no-daemon
+
+      - name: Upload do APK como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: bragro-release-apk
+          path: native-app/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+      - name: Publicar no GitHub Releases
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name == 'main' && format('v{0}', github.run_number) || github.ref_name }}
+          name: ${{ github.ref_name == 'main' && format('Android Release v{0}', github.run_number) || github.ref_name }}
+          files: native-app/app/build/outputs/apk/release/*.apk
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

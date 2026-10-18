@@ -97,6 +97,16 @@ private fun parseDecimal(s: String): Double =
         ?: s.trim().toDoubleOrNull()
         ?: 0.0
 
+private fun lookupLabel(options: List<LookupEntity>, rawValue: String?): String? =
+    rawValue?.ifBlank { null }?.let { value ->
+        options.firstOrNull { it.value == value }?.label ?: value
+    }
+
+private fun lookupValue(options: List<LookupEntity>, label: String?): String =
+    label?.let { value ->
+        options.firstOrNull { it.label == value }?.value ?: value
+    } ?: ""
+
 private fun millisToBrDate(millis: Long): String {
     val cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
     cal.timeInMillis = millis
@@ -330,37 +340,41 @@ private fun ItemFieldBlock(modifier: Modifier = Modifier, content: @Composable (
 
 @Composable
 private fun PedidoLinhaCard(linha: PedidoLinha, categoriasOptions: List<LookupEntity>, itensOptions: List<LookupEntity>, unidadesOptions: List<LookupEntity>, viewModel: PedidoMultiItemViewModel, showRemove: Boolean, onRemove: () -> Unit) {
+    val categoriaLabel = lookupLabel(categoriasOptions, linha.categoria)
+    val itemLabel = lookupLabel(itensOptions, linha.item)
+    val unidadeLabel = lookupLabel(unidadesOptions, linha.unidade)
+
     com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             ItemFieldBlock {
                 StringDropdown(
                     label = "Categoria",
-                    value = categoriasOptions.firstOrNull { it.value == linha.categoria }?.label ?: linha.categoria.ifBlank { null },
+                    value = categoriaLabel,
                     options = categoriasOptions.map { it.label },
                     placeholder = "Opcional",
                     allowEmpty = true,
-                    onSelect = { picked -> linha.categoria = categoriasOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                    onSelect = { picked -> linha.categoria = lookupValue(categoriasOptions, picked) },
                     onCreate = { raw -> viewModel.quickCreateLookupOption("categorias_estoque", raw) { value -> value?.let { linha.categoria = it } } },
                 )
             }
             ItemFieldBlock {
                 StringDropdown(
                     label = "Item *",
-                    value = itensOptions.firstOrNull { it.value == linha.item }?.label ?: linha.item.ifBlank { null },
+                    value = itemLabel,
                     options = itensOptions.map { it.label },
                     placeholder = "Selecione o item",
-                    onSelect = { picked -> linha.item = itensOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                    onSelect = { picked -> linha.item = lookupValue(itensOptions, picked) },
                     onCreate = { raw -> viewModel.quickCreateLookupOption("itens_estoque", raw) { value -> value?.let { linha.item = it } } },
                 )
             }
             ItemFieldBlock {
                 StringDropdown(
                     label = "Unidade",
-                    value = unidadesOptions.firstOrNull { it.value == linha.unidade }?.label ?: linha.unidade.ifBlank { null },
+                    value = unidadeLabel,
                     options = unidadesOptions.map { it.label },
                     placeholder = "Opcional",
                     allowEmpty = true,
-                    onSelect = { picked -> linha.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                    onSelect = { picked -> linha.unidade = lookupValue(unidadesOptions, picked) },
                     onCreate = { raw -> viewModel.quickCreateLookupOption("unidades", raw) { value -> value?.let { linha.unidade = it } } },
                 )
             }
@@ -514,22 +528,22 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                     Column(modifier = Modifier.weight(1f)) {
                         StringDropdown(
                             label = "Setor",
-                            value = setoresOptions.firstOrNull { it.value == viewModel.setor }?.label ?: viewModel.setor,
+                            value = lookupLabel(setoresOptions, viewModel.setor),
                             options = setoresOptions.map { it.label },
                             placeholder = "Opcional",
                             allowEmpty = true,
-                            onSelect = { picked -> viewModel.setor = setoresOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                            onSelect = { picked -> viewModel.setor = lookupValue(setoresOptions, picked) },
                             onCreate = { raw -> viewModel.quickCreateLookupOption("setores", raw) { value -> value?.let { viewModel.setor = it } } },
                         )
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         StringDropdown(
                             label = "Fornecedor",
-                            value = fornecedoresOptions.firstOrNull { it.value == viewModel.fornecedor }?.label ?: viewModel.fornecedor,
+                            value = lookupLabel(fornecedoresOptions, viewModel.fornecedor),
                             options = fornecedoresOptions.map { it.label },
                             placeholder = "Opcional",
                             allowEmpty = true,
-                            onSelect = { picked -> viewModel.fornecedor = fornecedoresOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                            onSelect = { picked -> viewModel.fornecedor = lookupValue(fornecedoresOptions, picked) },
                             onCreate = { raw -> viewModel.quickCreateLookupOption("entidades_financeiro", raw) { value -> value?.let { viewModel.fornecedor = it } } },
                         )
                     }
@@ -540,22 +554,22 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                     Column(modifier = Modifier.weight(1f)) {
                         StringDropdown(
                             label = "Safra",
-                            value = safrasOptions.firstOrNull { it.value == viewModel.safra }?.label ?: viewModel.safra,
+                            value = lookupLabel(safrasOptions, viewModel.safra),
                             options = safrasOptions.map { it.label },
                             placeholder = "Opcional",
                             allowEmpty = true,
-                            onSelect = { picked -> viewModel.safra = safrasOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                            onSelect = { picked -> viewModel.safra = lookupValue(safrasOptions, picked) },
                             onCreate = { raw -> viewModel.quickCreateLookupOption("safras", raw) { value -> value?.let { viewModel.safra = it } } },
                         )
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         StringDropdown(
                             label = "Cultura",
-                            value = culturasOptions.firstOrNull { it.value == viewModel.cultura }?.label ?: viewModel.cultura,
+                            value = lookupLabel(culturasOptions, viewModel.cultura),
                             options = culturasOptions.map { it.label },
                             placeholder = "Opcional",
                             allowEmpty = true,
-                            onSelect = { picked -> viewModel.cultura = culturasOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                            onSelect = { picked -> viewModel.cultura = lookupValue(culturasOptions, picked) },
                             onCreate = { raw -> viewModel.quickCreateLookupOption("culturas", raw) { value -> value?.let { viewModel.cultura = it } } },
                         )
                     }

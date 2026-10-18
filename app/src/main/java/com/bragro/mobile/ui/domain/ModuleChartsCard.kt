@@ -1,12 +1,14 @@
 package com.bragro.mobile.ui.domain
 
 import android.app.Application
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -192,15 +194,10 @@ private fun ChartPrintActions(onPrint: () -> Unit, onPdf: () -> Unit) {
         }
         Box(
             modifier = Modifier
-                .size(10.dp, 18.dp)
-                .drawBehind {
-                    drawLine(
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                        start = Offset(0f, size.height),
-                        end = Offset(size.width, 0f),
-                        strokeWidth = 1.dp.toPx(),
-                    )
-                },
+                .padding(horizontal = 4.dp)
+                .width(1.dp)
+                .height(18.dp)
+                .background(MaterialTheme.colorScheme.outlineVariant),
         )
         IconButton(onClick = onPdf, modifier = Modifier.size(32.dp)) {
             Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar gráfico em PDF", modifier = Modifier.size(18.dp))
