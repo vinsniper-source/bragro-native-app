@@ -131,11 +131,7 @@ fun ModuleChartsCard(domainId: String, viewModel: ModuleChartsViewModel = viewMo
                     // ("esconda o gráfico eficiência de frota dentro do
                     // bloco gráficos"), em vez de um card próprio sempre
                     // visível na lista. Ganha seu próprio bloco também.
-                    if (domainId == "frota") {
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(12.dp)) { FleetEfficiencyCard() }
-                        }
-                    }
+                    if (domainId == "frota") FleetEfficiencyCard()
                     when {
                         loading && !loaded -> Text("Carregando gráficos...", style = MaterialTheme.typography.bodySmall)
                         data == null -> Text("Sem conexão -- não foi possível carregar os gráficos.", style = MaterialTheme.typography.bodySmall)
@@ -151,28 +147,22 @@ fun ModuleChartsCard(domainId: String, viewModel: ModuleChartsViewModel = viewMo
                             // Card exporta só o SEU próprio gráfico (não mais
                             // todos juntos de uma vez).
                             if (generic != null && generic.data.isNotEmpty()) {
-                                Card(modifier = Modifier.fillMaxWidth()) {
-                                    Column(modifier = Modifier.padding(12.dp)) {
-                                        ChartPrintActions(
-                                            onPrint = { HtmlPrinter.printCharts(context, "$domainId - ${generic.title}", listOf(genericToPrintData(generic))) },
-                                            onPdf = { HtmlPrinter.exportChartsPdfDirect(context, "$domainId - ${generic.title}", listOf(genericToPrintData(generic))) },
-                                        )
-                                        GenericChartBlock(generic)
-                                    }
-                                }
+                                BlocoGrafico(
+                                    titulo = generic.title,
+                                    onPrint = { HtmlPrinter.printCharts(context, "$domainId - ${generic.title}", listOf(genericToPrintData(generic))) },
+                                    onPdf = { HtmlPrinter.exportChartsPdfDirect(context, "$domainId - ${generic.title}", listOf(genericToPrintData(generic))) },
+                                ) { GenericChartBlock(generic) }
                             }
                             extras.forEach { spec ->
                                 val title = when (spec) { is ChartSpec.Bar -> spec.title; is ChartSpec.Table -> spec.title }
-                                Card(modifier = Modifier.fillMaxWidth()) {
-                                    Column(modifier = Modifier.padding(12.dp)) {
-                                        ChartPrintActions(
-                                            onPrint = { HtmlPrinter.printCharts(context, "$domainId - $title", listOf(specToPrintData(spec))) },
-                                            onPdf = { HtmlPrinter.exportChartsPdfDirect(context, "$domainId - $title", listOf(specToPrintData(spec))) },
-                                        )
-                                        when (spec) {
-                                            is ChartSpec.Bar -> BarChartBlock(spec)
-                                            is ChartSpec.Table -> TableChartBlock(spec)
-                                        }
+                                BlocoGrafico(
+                                    titulo = title,
+                                    onPrint = { HtmlPrinter.printCharts(context, "$domainId - $title", listOf(specToPrintData(spec))) },
+                                    onPdf = { HtmlPrinter.exportChartsPdfDirect(context, "$domainId - $title", listOf(specToPrintData(spec))) },
+                                ) {
+                                    when (spec) {
+                                        is ChartSpec.Bar -> BarChartBlock(spec)
+                                        is ChartSpec.Table -> TableChartBlock(spec)
                                     }
                                 }
                             }

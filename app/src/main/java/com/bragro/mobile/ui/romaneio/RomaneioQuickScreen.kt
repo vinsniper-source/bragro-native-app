@@ -478,7 +478,7 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
     ) { padding0 ->
         // v19 -- ícones do cabeçalho movidos para a faixa Ações.
         Column(Modifier.fillMaxSize().padding(padding0)) {
-            com.bragro.mobile.ui.domain.AcoesFaixa {
+            com.bragro.mobile.ui.domain.AcoesIcones {
                 com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.ContentCopy, label = "Copiar último", loading = copiando, onClick = { if (!copiando) viewModel.preencherComUltimo() })
             }
             val padding = PaddingValues(0.dp)

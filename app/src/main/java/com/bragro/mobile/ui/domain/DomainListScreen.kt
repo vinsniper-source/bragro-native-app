@@ -2389,6 +2389,7 @@ private fun GenericPeriodoDropdown(
         LabeledIconButton(
             icon = Icons.Filled.CalendarMonth,
             label = "Período",
+            active = hasFilter,
             // Sem tint proprio -- herda o padrao onSurface (preto/branco) do
             // LabeledIconButton, pedido do usuario ("tire o fundo verde de
             // todos os blocos individuais... coloque fontes e icones

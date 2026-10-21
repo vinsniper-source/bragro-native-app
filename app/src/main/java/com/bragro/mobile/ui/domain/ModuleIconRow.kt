@@ -40,6 +40,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 
+/** v20 -- dentro de [AcoesIcones] os botões aparecem só com o ícone. */
+val LocalSomenteIcone = androidx.compose.runtime.compositionLocalOf { false }
+
+
 /**
  * Um item da fileira de ícones do módulo -- pedido do usuário ("reduza os
  * blocos que são compatíveis a ícones, distribua numa linha só abaixo do
@@ -222,7 +226,7 @@ fun LabeledIconButton(
         } else {
             Icon(icon, contentDescription = null, tint = fg, modifier = Modifier.size(MODULE_ICON_SIZE))
         }
-        if (showLabel) {
+        if (showLabel && !LocalSomenteIcone.current) {
             Text(
                 label,
                 style = MaterialTheme.typography.labelSmall,

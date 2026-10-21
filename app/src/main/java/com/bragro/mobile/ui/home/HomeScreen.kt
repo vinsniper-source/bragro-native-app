@@ -1897,6 +1897,8 @@ private fun HomeShortcutsRow(
     if (!showDestaques && !showAlertas && !showMonitor && !showMural) return
     var open by remember { mutableStateOf<String?>(null) }
 
+    // v20 (opção A) -- faixa de ícones em partes iguais, igual ao bloco
+    // Ações: ícone + rótulo, contador laranja sem fundo.
     Box(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             .clip(RoundedCornerShape(12.dp))

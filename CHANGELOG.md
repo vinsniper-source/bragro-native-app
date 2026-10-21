@@ -3,6 +3,16 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.68] - 2026-10-20
+- Início: nome, área e cultura das fazendas em branco; Destaques, Alertas, Monitor e Avisos numa faixa de ícones em partes iguais, com contador laranja.
+- Formulários de lançamento: Clima de hoje e Copiar último viram ícones sem rótulo no canto direito da seção QUANDO (demais formulários: ícones no topo, à direita).
+- Simulador: Restaurar padrão na linha de Premissas do Cenário.
+- Dossiê: setinha para recolher Ano-calendário/Exercício; "PDF" solto removido; botão Imprimir / PDF ao lado de Patrimônio.
+- Gráficos (módulos, Frota, Análises, Silos, Pivôs, Orçamentos): setinha, Imprimir e PDF na vertical, no canto superior direito de cada bloco.
+- Operações: Monitoramento, Ações e Progresso (período + barra de O.S. finalizadas), nesta ordem; filtros abrem pelo ícone Filtros.
+- Reconciliação: Divergências com contador laranja e aba Dados em amarelo. Período, Filtros e Colunas mudam de cor quando há escolha ativa.
+- Silos e Pivôs: datas dos gráficos no padrão dd/mm.
+
 ## [1.3.67] - 2026-10-17
 - Botões dos blocos Ações: ao selecionar não ficam mais com fundo verde; ícone e texto ficam verdes e em negrito. Tocando de novo voltam ao normal.
 - Operações: Limpar filtros, Abrir todas e Recolher tudo dividem a linha em partes iguais.

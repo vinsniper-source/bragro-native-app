@@ -367,14 +367,19 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                 com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = 0, aberto = balancoOpen, titulo = "Balanço hídrico", rotulo = "30 dias") { balancoOpen = !balancoOpen }
             }
             if (balancoOpen) item(key = "balanco") {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(12.dp)) {
+                com.bragro.mobile.ui.domain.BlocoGraficoBarras(
+                    titulo = "Balanço hídrico (30 dias)",
+                    categorias = balanco.map { com.bragro.mobile.ui.domain.diaMesBr(it.data) },
+                    series = listOf("Lâmina aplicada" to balanco.map { it.laminaMm }, "Chuva (pluviômetro)" to balanco.map { it.chuvaMm }, "Chuva (Clima, automática)" to balanco.map { it.chuvaClimaMm }),
+                    isMoney = false,
+                ) {
+                    Column {
                         if (!balancoOpen) {
                         } else if (balanco.isEmpty()) {
                             Text("Sem lançamentos de telemetria no período.", style = MaterialTheme.typography.bodySmall)
                         } else {
                             SimpleBarChart(
-                                categories = balanco.map { it.data.takeLast(5) },
+                                categories = balanco.map { com.bragro.mobile.ui.domain.diaMesBr(it.data) },
                                 series = listOf(
                                     BarSeries("Lâmina aplicada", balanco.map { it.laminaMm }, MaterialTheme.colorScheme.primary),
                                     BarSeries("Chuva (pluviômetro)", balanco.map { it.chuvaMm }, MaterialTheme.colorScheme.secondary),

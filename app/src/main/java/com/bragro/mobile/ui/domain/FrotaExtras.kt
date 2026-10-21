@@ -146,8 +146,28 @@ fun FleetEfficiencyCard(viewModel: FleetEfficiencyViewModel = viewModel()) {
     val data by viewModel.data
     val loaded by viewModel.loaded
 
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    // v20 -- bloco de gráfico com setinha, Imprimir e PDF na vertical.
+    val printData = data?.let { d ->
+        val maq = d["maquinas"]?.jsonArray.orEmpty().mapNotNull { it as? JsonObject }
+        if (maq.isEmpty()) null else {
+            val cats = maq.map { it["frota"]?.jsonPrimitive?.content ?: "—" }
+            val vals = maq.map { it["litrosPorHora"]?.jsonPrimitive?.doubleOrNull ?: 0.0 }
+            com.bragro.mobile.ui.print.HtmlPrinter.ChartPrintData(
+                title = "Eficiência de Frota (L/h)",
+                headers = listOf("Máquina", "L/h"),
+                rows = cats.zip(vals).map { (c, v) -> listOf(c, formatChartValue(v, false)) },
+                barCategories = cats,
+                barSeries = listOf("L/h" to vals),
+            )
+        }
+    }
+    BlocoGrafico(
+        titulo = "Eficiência de Frota (L/h)",
+        onPrint = { printData?.let { com.bragro.mobile.ui.print.HtmlPrinter.printCharts(context, "Eficiência de Frota", listOf(it)) } },
+        onPdf = { printData?.let { com.bragro.mobile.ui.print.HtmlPrinter.exportChartsPdfDirect(context, "Eficiência de Frota", listOf(it)) } },
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Eficiência de Frota (L/h)", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
             when {
                 !loaded -> Text("Carregando...", style = MaterialTheme.typography.bodySmall)
@@ -181,7 +201,7 @@ fun FleetEfficiencyCard(viewModel: FleetEfficiencyViewModel = viewModel()) {
                             Text(
                                 "Acima da média (+15%): ${acima.joinToString(", ")}",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error,
+                                color = corAtencao(),
                             )
                         }
                     }

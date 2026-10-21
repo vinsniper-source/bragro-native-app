@@ -611,7 +611,13 @@ val headers = listOf("Data", "Nº Orçamento", "Requisição", "Autorizado por",
                 // SimpleBarChart usado em todos os outros módulos.
                 val totalPendente = filtered.filter { it.status != "FATURADO" }.sumOf { totalOrcamento(it) }
                 val totalFaturado = filtered.filter { it.status == "FATURADO" }.sumOf { totalOrcamento(it) }
-                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
+                com.bragro.mobile.ui.domain.BlocoGraficoBarras(
+                    titulo = "Orçamentos: Pendente NF x Faturado",
+                    categorias = listOf("Pendente NF", "Faturado"),
+                    series = listOf("Total (R$)" to listOf(totalPendente, totalFaturado)),
+                    isMoney = true,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                ) {
                     SimpleBarChart(
                         categories = listOf("Pendente NF", "Faturado"),
                         series = listOf(

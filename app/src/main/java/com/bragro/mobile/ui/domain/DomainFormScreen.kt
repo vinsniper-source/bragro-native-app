@@ -688,24 +688,6 @@ fun DomainFormScreen(
     ) { padding0 ->
         // v19 -- ícones do cabeçalho movidos para a faixa Ações.
         Column(Modifier.fillMaxSize().padding(padding0)) {
-            if (recordId == null) com.bragro.mobile.ui.domain.AcoesIcones {
-                if (domainId == "clima") {
-                    val climaHojeBusy by viewModel.climaHojeBusy
-                    com.bragro.mobile.ui.domain.LabeledIconButton(
-                        icon = Icons.Filled.WaterDrop,
-                        label = "Clima de hoje",
-                        loading = climaHojeBusy,
-                        showLabel = false,
-                        onClick = { if (!climaHojeBusy) viewModel.preencherClimaHoje() },
-                    )
-                }
-                com.bragro.mobile.ui.domain.LabeledIconButton(
-                    icon = Icons.Filled.ContentCopy,
-                    label = "Copiar último",
-                    showLabel = false,
-                    onClick = { if (lastRecord != null) viewModel.copyFromLastRecord() },
-                )
-            }
             val padding = PaddingValues(0.dp)
             Box(Modifier.fillMaxWidth().weight(1f)) {
         val cfg = config
@@ -761,26 +743,22 @@ fun DomainFormScreen(
                 .filter { it.second.isNotEmpty() }
             val multi = if (recordId == null) MULTI_ITEM_FORM[domainId] else null
             grupos.forEach { (g, campos) ->
-                SecaoFormHeader(
-                    g.second,
-                    g.third,
-                    trailing = if (recordId == null && g == grupos.first().first) {
-                        {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                if (domainId == "clima") {
-                                    val climaHojeBusy by viewModel.climaHojeBusy
-                                    IconButton(onClick = { if (!climaHojeBusy) viewModel.preencherClimaHoje() }, modifier = Modifier.size(32.dp)) {
-                                        if (climaHojeBusy) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                                        else Icon(Icons.Filled.WaterDrop, contentDescription = "Preencher com clima de hoje", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
-                                    }
-                                }
-                                IconButton(onClick = { if (lastRecord != null) viewModel.copyFromLastRecord() }, modifier = Modifier.size(32.dp)) {
-                                    Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último lançamento", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
-                                }
+                // v20 -- Clima de hoje / Copiar último como ícones sem rótulo
+                // no canto direito da primeira seção (QUANDO).
+                SecaoFormHeader(g.second, g.third) {
+                    if (recordId == null && g == grupos.first().first) {
+                        if (domainId == "clima") {
+                            val climaHojeBusy by viewModel.climaHojeBusy
+                            IconButton(onClick = { if (!climaHojeBusy) viewModel.preencherClimaHoje() }, modifier = Modifier.size(32.dp)) {
+                                if (climaHojeBusy) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                else Icon(Icons.Filled.WaterDrop, contentDescription = "Preencher com clima de hoje", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
                             }
                         }
-                    } else null,
-                )
+                        IconButton(onClick = { if (lastRecord != null) viewModel.copyFromLastRecord() }, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último lançamento", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
+                        }
+                    }
+                }
                 // v16 -- seção "Itens" inteira (1º item + extras) com cores
                 // invertidas: bloco branco, campos em cinza claro.
                 val camposDaSecao: @Composable () -> Unit = {
@@ -1416,29 +1394,17 @@ private fun brDateToMillisOrNull(br: String): Long? {
 
 /** Cabeçalho de seção do formulário (QUANDO · número e datas). */
 @Composable
-private fun SecaoFormHeader(
-    titulo: String,
-    sub: String,
-    trailing: (@Composable () -> Unit)? = null,
-) {
+private fun SecaoFormHeader(titulo: String, sub: String, acoes: @Composable () -> Unit = {}) {
     Column(modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 8.dp)) {
         androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.Bottom) {
-                Text(
-                    titulo.uppercase(),
-                    fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (sub.isNotBlank()) Text("  ·  $sub", fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            if (trailing != null) {
-                Spacer(modifier = Modifier.width(8.dp))
-                trailing()
-            }
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                titulo.uppercase(),
+                fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (sub.isNotBlank()) Text("  ·  $sub", fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f)) else Spacer(Modifier.weight(1f))
+            acoes()
         }
     }
 }

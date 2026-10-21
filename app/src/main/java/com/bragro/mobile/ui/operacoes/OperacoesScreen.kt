@@ -1,5 +1,8 @@
 package com.bragro.mobile.ui.operacoes
 
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.clip
+import androidx.compose.material.icons.filled.FilterAlt
 import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -333,6 +336,8 @@ private fun OperacaoCard(
     revisados: Set<String> = emptySet(),
     onReview: (String, String) -> Unit = { _, _ -> },
     onEditRecord: (String, String) -> Unit = { _, _ -> },
+    mostrarFiltros: Boolean = true,
+    meio: (@Composable () -> Unit)? = null,
 ) {
     var etapa by remember(op.chave) { mutableStateOf("Todas") }
     var atividade by remember(op.chave) { mutableStateOf("Todas") }
@@ -380,9 +385,12 @@ private fun OperacaoCard(
                 ),
                 onKpi = { blocoAberto = true },
             )
+            // v20 (opção A) -- Monitoramento, Ações e Progresso, nesta ordem.
+            meio?.invoke()
             com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = atividades.size, aberto = blocoAberto, titulo = "Atividades") { blocoAberto = !blocoAberto }
 
             if (blocoAberto) {
+                if (mostrarFiltros) {
                 // Filtros em listas suspensas
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FiltroLista(
@@ -412,6 +420,7 @@ private fun OperacaoCard(
                         { revisao = it },
                         Modifier.weight(1f),
                     )
+                }
                 }
                 // v19 -- os três dividem a linha em partes iguais.
                 Row(Modifier.fillMaxWidth()) {
@@ -731,6 +740,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
     // já usadas em Excel/PDF, sem coluna de ações (ver RecordTable.kt,
     // showActions).
     var tableView by remember { mutableStateOf(false) }
+    var filtrosVisiveis by remember { mutableStateOf(false) }
     val tableHScroll = remember { androidx.compose.foundation.ScrollState(0) }
     // Setinha de recolher removida do cabeçalho -- pedido do usuário
     // (imagem do próprio cabeçalho de Operações: "retire a setinha do
@@ -768,22 +778,14 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
             )
         },
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            item(key = "operacoes-header") {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        "Um bloco por fazenda com todas as atividades, do preparo do solo à colheita. Deslize os lançamentos para o lado.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    // v19 -- bloco Ações com os ícones que estavam no cabeçalho.
+    // v20 (opção A) -- Ações + Progresso: entram logo abaixo do card de
+    // Monitoramento da primeira fazenda (ou no topo, sem fazendas).
+    val acoesEProgresso: @Composable (Int?, String?) -> Unit = { pct, det ->
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     com.bragro.mobile.ui.domain.AcoesEmAbas(
                         titulos = listOf("Monitoramento", "Ações", "Progresso"),
                         dados = {
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.FilterAlt, label = "Filtros", active = filtrosVisiveis, onClick = { filtrosVisiveis = !filtrosVisiveis })
                             com.bragro.mobile.ui.domain.LabeledIconButton(
                                 icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
                                 label = if (tableView) "Coluna" else "Tabela",
@@ -803,6 +805,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                     // Atualizar saiu daqui (subiu pro TopAppBar, ao lado da
                     // Nuvem) -- pedido do usuário: a barra de ciclo agora
                     // expande sozinha até o limite da tela.
+                    Text("PROGRESSO", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                         JANELAS.forEachIndexed { index, d ->
                             SegmentedButton(
@@ -818,7 +821,24 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                             )
                         }
                     }
-                }
+                    if (pct != null) {
+                        androidx.compose.material3.LinearProgressIndicator(
+                            progress = { (pct / 100f).coerceIn(0f, 1f) },
+                            modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(50)),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        )
+                        Text("$pct% das O.S. finalizadas no período${det?.let { " ($it)" } ?: ""}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+        }
+    }
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            if (operacoes.isEmpty() || tableView) {
+                item(key = "operacoes-header") { acoesEProgresso(null, null) }
             }
             run {
                 if (offline) {
@@ -840,6 +860,8 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                     items(operacoes, key = { it.chave }) { op ->
                         OperacaoCard(
                             op,
+                            mostrarFiltros = filtrosVisiveis,
+                            meio = if (op.chave == operacoes.first().chave) ({ acoesEProgresso(op.progressoPct, "${op.osConcluidas}/${op.osTotal}") }) else null,
                             pendingIds = pendingIds,
                             revisados = revisados,
                             onReview = { id, dominio -> viewModel.marcarRevisado(id, dominio) },

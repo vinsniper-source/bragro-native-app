@@ -1221,6 +1221,7 @@ private fun PeriodoDropdown(
         LabeledIconButton(
             icon = Icons.Filled.CalendarMonth,
             label = "Período",
+            active = hasFilter,
             // Sem tint proprio -- herda onSurface (preto/branco), pedido do
             // usuario ("tire o fundo verde de todos os blocos individuais").
             onClick = { expanded = true },
@@ -1289,6 +1290,7 @@ private fun BancoDropdown(banco: String?, options: List<LookupEntity>, onSelect:
         LabeledIconButton(
             icon = Icons.Filled.FilterAlt,
             label = "Filtros",
+            active = hasFilter,
             // Sem tint proprio -- herda onSurface (preto/branco), pedido do
             // usuario ("tire o fundo verde de todos os blocos individuais").
             onClick = { expanded = true },

@@ -16,7 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 
 /** Título de bloco com setinha de recolher/expandir à direita. */
 @Composable
-fun TituloRecolhivel(titulo: String, aberto: Boolean, onToggle: () -> Unit) {
+fun TituloRecolhivel(titulo: String, aberto: Boolean, acoes: @Composable () -> Unit = {}, onToggle: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().clickable { onToggle() },
         verticalAlignment = Alignment.CenterVertically,
@@ -27,6 +27,7 @@ fun TituloRecolhivel(titulo: String, aberto: Boolean, onToggle: () -> Unit) {
             fontWeight = FontWeight.Bold,
             modifier = Modifier.weight(1f),
         )
+        acoes()
         Icon(if (aberto) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (aberto) "Recolher" else "Expandir")
     }
 }

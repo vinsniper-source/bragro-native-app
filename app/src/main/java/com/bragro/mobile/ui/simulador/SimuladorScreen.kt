@@ -167,9 +167,6 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
     ) { padding0 ->
         // v19 -- ícones do cabeçalho movidos para a faixa Ações.
         Column(Modifier.fillMaxSize().padding(padding0)) {
-            com.bragro.mobile.ui.domain.AcoesFaixa {
-                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Restaurar padrão", onClick = { viewModel.restaurarPadrao() })
-            }
             val padding = PaddingValues(0.dp)
             Box(Modifier.fillMaxWidth().weight(1f)) {
         if (carregando) {
@@ -217,7 +214,12 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
             }
 
             item {
-                SecaoTitulo("Premissas do Cenário", premissasAbertas) { premissasAbertas = !premissasAbertas }
+                com.bragro.mobile.ui.domain.TituloRecolhivel("Premissas do Cenário", premissasAbertas, acoes = {
+                    // v20 -- Restaurar padrão na linha das Premissas.
+                    androidx.compose.material3.IconButton(onClick = { viewModel.restaurarPadrao() }, modifier = Modifier.size(36.dp)) {
+                        androidx.compose.material3.Icon(Icons.Filled.Refresh, contentDescription = "Restaurar padrão", tint = MaterialTheme.colorScheme.onSurface)
+                    }
+                }) { premissasAbertas = !premissasAbertas }
             }
             if (premissasAbertas) item {
                 Card(modifier = Modifier.fillMaxWidth()) {
@@ -300,7 +302,7 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
 
 @Composable
 private fun SecaoTitulo(texto: String, aberto: Boolean, onToggle: () -> Unit) {
-    com.bragro.mobile.ui.domain.TituloRecolhivel(texto, aberto, onToggle)
+    com.bragro.mobile.ui.domain.TituloRecolhivel(texto, aberto, onToggle = onToggle)
 }
 
 @Composable

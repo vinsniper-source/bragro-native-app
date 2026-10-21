@@ -750,12 +750,15 @@ fun AcoesEmAbas(
     dados: @Composable () -> Unit,
     operacoes: @Composable () -> Unit,
     arquivos: @Composable () -> Unit,
+    /** v20 -- contagem de avisos por aba (Dados, Operações, Arquivos): aba
+     * com aviso fica com nome e traço amarelos. */
+    avisos: List<Int> = emptyList(),
     titulos: List<String> = listOf("Dados", "Operações", "Arquivos"),
 ) {
     var aba by rememberSaveable { mutableStateOf(0) }
     BlocoComFaixa("Ações") {
         Column(Modifier.fillMaxWidth()) {
-            AbasEncaixadas(titulos, aba, onSelect = { aba = it })
+            AbasEncaixadas(titulos, aba, avisos = avisos, onSelect = { aba = it })
             Spacer(Modifier.height(4.dp))
             EqualWidthBlockRow(modifier = Modifier.fillMaxWidth()) {
                 when (aba) {
@@ -820,17 +823,15 @@ fun AcoesFaixa(content: @Composable () -> Unit) {
     }
 }
 
-/** v20 -- ícones sem rótulo alinhados à direita, usados em cabeçalhos de
- * seções e ações rápidas, sem a faixa completa de Ações. */
+/** v20 -- ícones sem rótulo alinhados à direita, no topo dos formulários
+ * (Copiar último etc.), no lugar da faixa Ações. */
 @Composable
 fun AcoesIcones(content: @Composable () -> Unit) {
-    Box(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            content()
-        }
+    androidx.compose.foundation.layout.Row(
+        Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        androidx.compose.runtime.CompositionLocalProvider(LocalSomenteIcone provides true) { content() }
     }
 }

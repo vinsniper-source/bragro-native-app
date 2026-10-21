@@ -500,6 +500,12 @@ private fun serieDe(items: List<JsonObject>, label: String, key: String, cor: an
 
 @Composable
 private fun MiniChart(titulo: String, descricao: String, items: List<JsonObject>, labelKey: String, series: List<BarSeries>, isMoney: Boolean) {
+    com.bragro.mobile.ui.domain.BlocoGraficoBarras(
+        titulo = titulo.ifBlank { descricao.take(40) },
+        categorias = items.map { it.strOf(labelKey) },
+        series = series.map { it.label to it.values },
+        isMoney = isMoney,
+    ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         if (titulo.isNotBlank()) {
             Text(titulo, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -511,6 +517,7 @@ private fun MiniChart(titulo: String, descricao: String, items: List<JsonObject>
         } else {
             SimpleBarChart(categories = items.map { it.strOf(labelKey) }, series = series, isMoney = isMoney)
         }
+    }
     }
 }
 

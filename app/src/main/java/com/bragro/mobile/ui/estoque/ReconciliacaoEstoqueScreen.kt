@@ -216,7 +216,7 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
             item(key = "acoes") {
                 com.bragro.mobile.ui.domain.AcoesEmAbas(
                     dados = {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Warning, label = "Divergências", active = soDivergencia, onClick = { soDivergencia = true; listaAberta = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Warning, label = "Divergências", active = soDivergencia, badgeCount = divergentes.size, tint = if (divergentes.isNotEmpty()) com.bragro.mobile.ui.domain.corAtencao() else MaterialTheme.colorScheme.onSurface, onClick = { soDivergencia = true; listaAberta = true })
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.ViewList, label = "Todos", active = !soDivergencia, onClick = { soDivergencia = false; listaAberta = true })
                         androidx.compose.foundation.layout.Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
                             com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.FilterAlt, label = fCategoria ?: "Categoria", active = fCategoria != null, onClick = { catMenu = true })
@@ -231,6 +231,7 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                     operacoes = {
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", onClick = { viewModel.carregar() })
                     },
+                    avisos = listOf(divergentes.size, 0, 0),
                     arquivos = {
                         com.bragro.mobile.ui.domain.ArquivosTabela("Reconciliação Físico x Fiscal", listOf("Item", "Categoria", "Saldo Fiscal", "Saldo Real", "Diferença"), nuvem = true) {
                             itens.map { listOf(it.item, it.categoria ?: "", formatoNumero(it.saldoFiscal) + (it.unidade?.let { u -> " $u" } ?: ""), formatoNumero(it.saldoFisico) + (it.unidade?.let { u -> " $u" } ?: ""), formatoNumero(it.diferenca) + (it.unidade?.let { u -> " $u" } ?: "")) }

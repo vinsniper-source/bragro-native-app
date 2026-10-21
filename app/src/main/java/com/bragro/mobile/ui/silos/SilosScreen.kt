@@ -332,8 +332,14 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                 com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = 0, aberto = estoqueAberto, titulo = "Estoque por silo", rotulo = "30 dias") { estoqueAberto = !estoqueAberto }
             }
             if (estoqueAberto) item(key = "estoque") {
-                Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-                    Column(modifier = Modifier.padding(12.dp)) {
+                com.bragro.mobile.ui.domain.BlocoGraficoBarras(
+                    titulo = "Estoque armazenado (t, 30 dias)",
+                    categorias = estoque.map { com.bragro.mobile.ui.domain.diaMesBr(it.data) },
+                    series = listOf("Armazenado (t)" to estoque.map { it.quantidadeT }),
+                    isMoney = false,
+                    modifier = Modifier.padding(bottom = 12.dp),
+                ) {
+                    Column {
                         Text("Estoque armazenado (t, 30 dias)", style = MaterialTheme.typography.titleSmall)
                         Spacer(Modifier.height(8.dp))
                         SearchableDropdownField(
@@ -348,7 +354,7 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                             Text("Sem leituras com capacidade cadastrada no período.", style = MaterialTheme.typography.bodySmall)
                         } else {
                             SimpleBarChart(
-                                categories = estoque.map { it.data.takeLast(5) },
+                                categories = estoque.map { com.bragro.mobile.ui.domain.diaMesBr(it.data) },
                                 series = listOf(BarSeries("Armazenado (t)", estoque.map { it.quantidadeT }, MaterialTheme.colorScheme.primary)),
                                 isMoney = false,
                             )
