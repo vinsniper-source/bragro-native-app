@@ -1,8 +1,8 @@
 package com.bragro.mobile.ui.domain
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -19,7 +19,7 @@ object HomeNavigator {
 @Composable
 fun HomeNavButton() {
     IconButton(onClick = { HomeNavigator.goHome() }) {
-        Icon(Icons.Filled.Home, contentDescription = "Página inicial", tint = MaterialTheme.colorScheme.onSurface)
+        Icon(Icons.Outlined.Home, contentDescription = "Página inicial", tint = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -29,6 +29,6 @@ fun HomeNavButton() {
 fun BackNavButton() {
     val dispatcher = androidx.activity.compose.LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     IconButton(onClick = { dispatcher?.onBackPressed() }) {
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.onSurface, modifier = androidx.compose.ui.Modifier.size(27.dp))
+        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.onSurface, modifier = androidx.compose.ui.Modifier.size(27.dp))
     }
 }

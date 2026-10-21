@@ -10,9 +10,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Agriculture
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.outlined.Agriculture
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,17 +39,17 @@ private data class TourStep(val icon: androidx.compose.ui.graphics.vector.ImageV
 // lançamento", os atalhos que poupam mais tempo no dia a dia).
 private val TOUR_STEPS = listOf(
     TourStep(
-        Icons.Filled.Agriculture,
+        Icons.Outlined.Agriculture,
         "Bem-vindo ao BRAgro",
         "Na tela Início você vê o resumo visual das suas fazendas (Canvas) e pode filtrar por Fazenda, Safra ou Cultura a qualquer momento -- toque nos filtros logo abaixo do slogan.",
     ),
     TourStep(
-        Icons.Filled.Groups,
+        Icons.Outlined.Groups,
         "Todos os módulos, num toque",
         "A barra inferior leva pra Financeiro, Safra, Estoque, Frota e todos os outros módulos. O menu (ícone de grade) mostra a lista completa quando precisar de algo que não está fixo ali.",
     ),
     TourStep(
-        Icons.Filled.Bolt,
+        Icons.Outlined.Bolt,
         "Atalhos que poupam tempo",
         "Em cada módulo, o botão \"Copiar último lançamento\" pré-preenche um registro novo a partir do anterior. Romaneio Rápido e Abastecimento ficam nos atalhos do topo da Início.",
     ),

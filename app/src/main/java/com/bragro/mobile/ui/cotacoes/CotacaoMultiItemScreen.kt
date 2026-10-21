@@ -17,11 +17,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.SearchableDropdownField
@@ -492,13 +492,13 @@ private fun PropostaCard(
                         modifier = Modifier.size(52.dp),
                         contentPadding = PaddingValues(0.dp),
                     ) {
-                        Icon(Icons.Filled.Add, contentDescription = "Adicionar fornecedor")
+                        Icon(Icons.Outlined.Add, contentDescription = "Adicionar fornecedor")
                     }
                 }
             }
             if (showRemove) {
                 IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Remover proposta", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Outlined.Delete, contentDescription = "Remover proposta", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -617,13 +617,13 @@ private fun GrupoCard(
                         modifier = Modifier.size(52.dp),
                         contentPadding = PaddingValues(0.dp),
                     ) {
-                        Icon(Icons.Filled.Add, contentDescription = "Adicionar item")
+                        Icon(Icons.Outlined.Add, contentDescription = "Adicionar item")
                     }
                 }
             }
             if (showRemoveGrupo) {
                 IconButton(onClick = onRemoveGrupo, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Remover item", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Outlined.Delete, contentDescription = "Remover item", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -652,9 +652,15 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                     }
                 },
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(com.bragro.mobile.ui.home.domainIcon("cotacoesfornecedores"), contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Nova Cotação", color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
+                    }
+                
                     }
                 } },
                 actions = { Column {
@@ -708,7 +714,7 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                     colors = appFieldColors(),
                     trailingIcon = {
                         IconButton(onClick = { showPicker = true }) {
-                            Icon(Icons.Filled.CalendarMonth, contentDescription = "Escolher data", tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Outlined.CalendarMonth, contentDescription = "Escolher data", tint = MaterialTheme.colorScheme.primary)
                         }
                     },
                 )

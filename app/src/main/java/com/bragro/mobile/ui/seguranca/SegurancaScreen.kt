@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.seguranca
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.outlined.Lock
 import android.app.Application
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,12 +17,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Cancel
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.Settings
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
@@ -241,9 +243,15 @@ fun SegurancaScreen(onBack: () -> Unit, viewModel: SegurancaViewModel = viewMode
                 // Seta+título uma linha abaixo + fonte verde -- padrão global
                 // (pedido do usuário, ver comentário em SettingsScreen.kt).
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Lock, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Acessos e Segurança", color = MaterialTheme.colorScheme.onSurface)
+                    }
+                
                     }
                 } },
                 actions = { Column {
@@ -306,7 +314,7 @@ private fun CollapsibleCard(title: String, initiallyOpen: Boolean = false, conte
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
+                com.bragro.mobile.ui.domain.CantoL(open)
             }
             if (open) Column(modifier = Modifier.padding(top = 12.dp)) { content() }
         }
@@ -505,10 +513,10 @@ private fun EquipeCard(
                         // próprio usuário, sem passar pelo form genérico de
                         // papel/módulos (que nem se aplica ao próprio OWNER).
                         IconButton(onClick = { showPersonalizarInicio = true }) {
-                            Icon(Icons.Filled.Settings, contentDescription = "Personalizar Início", tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Outlined.Settings, contentDescription = "Personalizar Início", tint = MaterialTheme.colorScheme.primary)
                         }
                     } else {
-                        Icon(if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null)
+                        com.bragro.mobile.ui.domain.CantoL(expanded)
                     }
                 }
                 if (expanded && !isOwnOwnerRow) {
@@ -563,7 +571,7 @@ private fun AccessLogsCard(logs: kotlinx.serialization.json.JsonArray?) {
             val createdAt = l["createdAt"]?.jsonPrimitive?.contentOrNull
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 3.dp)) {
                 Icon(
-                    if (success) Icons.Filled.CheckCircle else Icons.Filled.Cancel,
+                    if (success) Icons.Outlined.CheckCircle else Icons.Outlined.Cancel,
                     contentDescription = null,
                     tint = if (success) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(end = 8.dp),

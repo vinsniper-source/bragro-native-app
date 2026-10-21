@@ -9,38 +9,38 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.Agriculture
-import androidx.compose.material.icons.filled.Analytics
-import androidx.compose.material.icons.filled.Assessment
-import androidx.compose.material.icons.filled.Assignment
-import androidx.compose.material.icons.filled.Balance
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.BugReport
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.ReceiptLong
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.Pets
-import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.FlightTakeoff
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.AccountTree
-import androidx.compose.material.icons.filled.Timeline
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.Warehouse
-import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.Agriculture
+import androidx.compose.material.icons.outlined.Analytics
+import androidx.compose.material.icons.outlined.Assessment
+import androidx.compose.material.icons.outlined.Assignment
+import androidx.compose.material.icons.outlined.Balance
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.BugReport
+import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.ReceiptLong
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.Pets
+import androidx.compose.material.icons.outlined.Receipt
+import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.DirectionsCar
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.FlightTakeoff
+import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.AccountTree
+import androidx.compose.material.icons.outlined.Timeline
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.Warehouse
+import androidx.compose.material.icons.outlined.WaterDrop
+import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -137,7 +137,7 @@ private val BOTTOM_TABS = listOf(
     // aparecer com cabeçalho de acordeão no dropdown (mesma UI já usada em
     // OWNER_BOTTOM_TABS), então Produção deixa de ser lista plana.
     BottomTab(
-        "producao", "Produção", Icons.Filled.Agriculture,
+        "producao", "Produção", Icons.Outlined.Agriculture,
         items = listOf(
             SectorTarget.Domain("safra", "Atividades", category = "Produção"),
             SectorTarget.Domain("planejamentosafra", "Planejamento de Safra", category = "Produção"),
@@ -165,7 +165,7 @@ private val BOTTOM_TABS = listOf(
     ),
     // Ex-categoria "Sanidade": pragas/doenças e o receituário que as trata.
     BottomTab(
-        "sanidade", "Sanidade", Icons.Filled.BugReport,
+        "sanidade", "Sanidade", Icons.Outlined.BugReport,
         items = listOf(
             SectorTarget.Domain("pragas", "Pragas"),
             SectorTarget.Domain("receituarios", "Receituários"),
@@ -174,7 +174,7 @@ private val BOTTOM_TABS = listOf(
     // Ex-categoria "Monitoramento": dados de campo captados por fonte
     // externa (clima, imagens de drone, mapa/talhões).
     BottomTab(
-        "monitoramento", "Monitoramento", Icons.Filled.WbSunny,
+        "monitoramento", "Monitoramento", Icons.Outlined.WbSunny,
         items = listOf(
             SectorTarget.Domain("clima", "Clima"),
             // Réplica completa do site (Task #106/#107) -- não são domínio
@@ -194,7 +194,7 @@ private val BOTTOM_TABS = listOf(
     ),
     // Acesso direto -- pedido do usuário ("botão frota acesso direto, retire
     // as listas suspensas").
-    BottomTab("frota", "Frota", Icons.Filled.DirectionsCar, directDomainId = "frota"),
+    BottomTab("frota", "Frota", Icons.Outlined.DirectionsCar, directDomainId = "frota"),
     // Ex-categorias "Lançamentos" + "Relatórios" + "Compras" (antigas abas
     // próprias da aba Financeiro) fundidas numa aba só -- pedido do usuário
     // (mesmo motivo do merge de Produção/Painéis acima: reduzir a barra de 9
@@ -202,7 +202,7 @@ private val BOTTOM_TABS = listOf(
     // visual de antes dentro do dropdown (acordeão, mesma UI de
     // OWNER_BOTTOM_TABS).
     BottomTab(
-        "financeiro", "Financeiro", Icons.Filled.Receipt,
+        "financeiro", "Financeiro", Icons.Outlined.Receipt,
         items = listOf(
             SectorTarget.Domain("financeiro", "Lançamentos", category = "Lançamentos"),
             // Entrada PRÓPRIA -- pedido do usuário ("na barra inferior do
@@ -237,7 +237,7 @@ private val BOTTOM_TABS = listOf(
     // Ex-categoria "Faturamento": movimento de caixa/cobrança -- mesmo
     // termo já usado no site pro bloco externo de Cobranças (Task #218).
     BottomTab(
-        "faturamento", "Faturamento", Icons.Filled.Payments,
+        "faturamento", "Faturamento", Icons.Outlined.Payments,
         items = listOf(
             SectorTarget.Domain("caixainterno", "Caixa Interno"),
             // Cobranças e NFS-e unificados numa única entrada -- pedido do
@@ -267,7 +267,7 @@ private val BOTTOM_TABS = listOf(
     // usuário), então a aba passa a ter 2 itens quando ambos liberados --
     // mesmo critério de "Painéis" (RenderTab.Direct quando sobra 1 só).
     BottomTab(
-        "estoque", "Estoque", Icons.Filled.Inventory2,
+        "estoque", "Estoque", Icons.Outlined.Inventory2,
         items = listOf(
             SectorTarget.Domain("estoque", "Estoque"),
             SectorTarget.Special("reconciliacaoestoque", "Reconciliação Físico x Fiscal"),
@@ -282,13 +282,13 @@ private val BOTTOM_TABS = listOf(
     // mesma seção "pessoas" do site (lib/modules.ts), mesmo critério de
     // Estoque acima (2 itens -> dropdown; 1 item só -> RenderTab.Direct).
     BottomTab(
-        "rh", "RH", Icons.Filled.People,
+        "rh", "RH", Icons.Outlined.People,
         items = listOf(
             SectorTarget.Domain("rh", "RH"),
             SectorTarget.Domain("maodeobra", "Mão de Obra e Familiar"),
         ),
     ),
-    BottomTab("controleinterno", "Controle Interno", Icons.Filled.Security, directDomainId = "controleinterno"),
+    BottomTab("controleinterno", "Controle Interno", Icons.Outlined.Security, directDomainId = "controleinterno"),
 )
 
 // Barra do DONO/OWNER: 6 botões fixos (Safra, Financeiro, Frota, Estoque, RH,
@@ -312,7 +312,7 @@ private val BOTTOM_TABS = listOf(
 // dois pontos de entrada de propósito (pedido explícito do mockup).
 private val OWNER_BOTTOM_TABS = listOf(
     BottomTab(
-        "safra", "Safra", Icons.Filled.Agriculture,
+        "safra", "Safra", Icons.Outlined.Agriculture,
         items = listOf(
             SectorTarget.Domain("safra", "Atividades", category = "Produção"),
             SectorTarget.Domain("planejamentosafra", "Planejamento de Safra", category = "Produção"),
@@ -332,7 +332,7 @@ private val OWNER_BOTTOM_TABS = listOf(
         ),
     ),
     BottomTab(
-        "financeiro", "Financeiro", Icons.Filled.Receipt,
+        "financeiro", "Financeiro", Icons.Outlined.Receipt,
         items = listOf(
             SectorTarget.Domain("financeiro", "Lançamentos", category = "Lançamentos"),
             SectorTarget.Domain("gestaofinanceira", "Gestão Financeira", category = "Lançamentos"),
@@ -352,9 +352,9 @@ private val OWNER_BOTTOM_TABS = listOf(
             SectorTarget.Domain("inventario", "Inventário", category = "Faturamento"),
         ),
     ),
-    BottomTab("frota", "Frota", Icons.Filled.DirectionsCar, directDomainId = "frota"),
+    BottomTab("frota", "Frota", Icons.Outlined.DirectionsCar, directDomainId = "frota"),
     BottomTab(
-        "estoque", "Estoque", Icons.Filled.Inventory2,
+        "estoque", "Estoque", Icons.Outlined.Inventory2,
         items = listOf(
             SectorTarget.Domain("estoque", "Estoque"),
             SectorTarget.Special("controleinsumos", "Controle de Insumos"),
@@ -363,7 +363,7 @@ private val OWNER_BOTTOM_TABS = listOf(
         ),
     ),
     BottomTab(
-        "rh", "RH", Icons.Filled.People,
+        "rh", "RH", Icons.Outlined.People,
         items = listOf(
             SectorTarget.Domain("rh", "RH"),
             SectorTarget.Domain("controleinterno", "Controle Interno"),
@@ -376,7 +376,7 @@ private val OWNER_BOTTOM_TABS = listOf(
     // no topo de OWNER_BOTTOM_TABS). Mesmo critério de "Frota" acima (domínio
     // genérico simples, sem dropdown).
     BottomTab(
-        "pecuaria", "Pecuária", Icons.Filled.Pets,
+        "pecuaria", "Pecuária", Icons.Outlined.Pets,
         items = listOf(
             SectorTarget.Domain("pecuaria", "Pecuária"),
             SectorTarget.Domain("pastagem", "Pastagem"),
@@ -404,24 +404,24 @@ private val OWNER_BOTTOM_TABS = listOf(
 // ícone da própria aba (tabIcon), sem quebrar nada.
 private val CATEGORY_ICONS: Map<String, ImageVector> = mapOf(
     // Safra
-    "Produção" to Icons.Filled.Agriculture,
-    "Sanidade" to Icons.Filled.BugReport,
-    "Monitoramento" to Icons.Filled.WbSunny,
-    "Painéis" to Icons.Filled.Assignment,
+    "Produção" to Icons.Outlined.Agriculture,
+    "Sanidade" to Icons.Outlined.BugReport,
+    "Monitoramento" to Icons.Outlined.WbSunny,
+    "Painéis" to Icons.Outlined.Assignment,
     // Financeiro
-    "Lançamentos" to Icons.Filled.Receipt,
-    "Relatórios" to Icons.Filled.BarChart,
-    "Compras" to Icons.Filled.ShoppingCart,
-    "Faturamento" to Icons.Filled.Payments,
-    "Patrimônio" to Icons.Filled.Warehouse,
+    "Lançamentos" to Icons.Outlined.Receipt,
+    "Relatórios" to Icons.Outlined.BarChart,
+    "Compras" to Icons.Outlined.ShoppingCart,
+    "Faturamento" to Icons.Outlined.Payments,
+    "Patrimônio" to Icons.Outlined.Warehouse,
 )
 
 private data class SistemaLink(val path: String, val label: String, val icon: ImageVector)
 
 private val SISTEMA_LINKS = listOf(
-    SistemaLink("configuracoes", "Configurações", Icons.Filled.Settings),
-    SistemaLink("base-de-dados", "Base de Dados", Icons.Filled.Storage),
-    SistemaLink("seguranca", "Acessos", Icons.Filled.Security),
+    SistemaLink("configuracoes", "Configurações", Icons.Outlined.Settings),
+    SistemaLink("base-de-dados", "Base de Dados", Icons.Outlined.Storage),
+    SistemaLink("seguranca", "Acessos", Icons.Outlined.Security),
 )
 
 // Delegação de acesso por funcionário (pedido do usuário: "delegar funções
@@ -798,11 +798,7 @@ fun BRAgroBottomBar(
                                             overflow = TextOverflow.Ellipsis,
                                             modifier = Modifier.weight(1f),
                                         )
-                                        Icon(
-                                            if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                                        )
+                                        com.bragro.mobile.ui.domain.CantoL(expanded)
                                     }
                                     if (expanded) {
                                         items.forEach { item -> SectorMenuItem(item, tab.icon, onClick = { openSector(item) }) }
@@ -827,7 +823,7 @@ fun BRAgroBottomBar(
             this@NavigationBar.NavigationBarItem(
                 selected = false,
                 onClick = { openTabId = if (openTabId == "sistema") null else "sistema" },
-                icon = { Icon(Icons.Filled.GridView, contentDescription = "Módulos", modifier = Modifier.size(22.dp)) },
+                icon = { Icon(Icons.Outlined.GridView, contentDescription = "Módulos", modifier = Modifier.size(22.dp)) },
                 label = { Text("Módulos", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) },
                 colors = BottomNavColors,
             )
@@ -908,28 +904,28 @@ private fun sectorItemIcon(item: SectorTarget, fallback: ImageVector): ImageVect
     // "Financeiro"/"Lançamentos" -- pedido do usuário ("troque icone dre
     // e icone analises cruzadas").
     is SectorTarget.Special -> when (item.routeKey) {
-        "dre" -> Icons.Filled.Assessment
-        "analises" -> Icons.Filled.Analytics
-        "livrocaixa" -> Icons.AutoMirrored.Filled.MenuBook
-        "drone" -> Icons.Filled.FlightTakeoff
-        "fieldview" -> Icons.Filled.Map
-        "controleinsumos" -> Icons.Filled.AccountTree
-        "operacoes" -> Icons.Filled.Timeline
+        "dre" -> Icons.Outlined.Assessment
+        "analises" -> Icons.Outlined.Analytics
+        "livrocaixa" -> Icons.AutoMirrored.Outlined.MenuBook
+        "drone" -> Icons.Outlined.FlightTakeoff
+        "fieldview" -> Icons.Outlined.Map
+        "controleinsumos" -> Icons.Outlined.AccountTree
+        "operacoes" -> Icons.Outlined.Timeline
         // Câmera -- reforça a leitura automática (OCR) que abre a tela, ver
         // handoff-ocr-orcamento.md.
-        "orcamentos" -> Icons.Filled.CameraAlt
+        "orcamentos" -> Icons.Outlined.CameraAlt
         // Dossiê Bancário / Simulador "E se?" (Task #599/#600/#615/#616).
-        "dossie" -> Icons.Filled.AccountBalance
-        "simulador" -> Icons.Filled.Tune
+        "dossie" -> Icons.Outlined.AccountBalance
+        "simulador" -> Icons.Outlined.Tune
         // Prescrição/Reconciliação (antes só ícone/FAB dentro de FieldView/
         // Estoque) e NF-e (módulo novo) -- mesmo critério de ícone próprio
         // já usado pelos itens acima.
-        "prescricao" -> Icons.Filled.Map
-        "reconciliacaoestoque" -> Icons.Filled.Balance
-        "nfe" -> Icons.Filled.ReceiptLong
+        "prescricao" -> Icons.Outlined.Map
+        "reconciliacaoestoque" -> Icons.Outlined.Balance
+        "nfe" -> Icons.Outlined.ReceiptLong
         // Pivôs de Irrigação (Task #904-909) -- mesmo critério acima.
-        "pivos" -> Icons.Filled.WaterDrop
-        "silos" -> Icons.Filled.Storage
+        "pivos" -> Icons.Outlined.WaterDrop
+        "silos" -> Icons.Outlined.Storage
         else -> fallback
     }
 }

@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.basededados
 
+import androidx.compose.material.icons.outlined.Storage
 import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
@@ -28,13 +29,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.Sync
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
@@ -312,9 +313,15 @@ fun BaseDeDadosScreen(
                 // Seta+título uma linha abaixo + fonte verde -- padrão global
                 // (pedido do usuário, ver comentário em SettingsScreen.kt).
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Storage, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Base de Dados", color = MaterialTheme.colorScheme.onSurface)
+                    }
+                
                     }
                 } },
                 actions = { Column {
@@ -496,7 +503,7 @@ private fun CollapsibleCard(title: String, initiallyOpen: Boolean = false, conte
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
+                com.bragro.mobile.ui.domain.CantoL(open)
             }
             if (open) Column(modifier = Modifier.padding(top = 12.dp)) { content() }
         }
@@ -694,13 +701,10 @@ private fun FarmsCard(
                             colors = appFieldColors(),
                         )
                         IconButton(onClick = { onDelete(id) }, enabled = !busy) {
-                            Icon(Icons.Filled.Delete, contentDescription = "Excluir fazenda")
+                            Icon(Icons.Outlined.Delete, contentDescription = "Excluir fazenda")
                         }
                         IconButton(onClick = { blocoAberto = !blocoAberto }) {
-                            Icon(
-                                if (blocoAberto) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                contentDescription = if (blocoAberto) "Recolher" else "Expandir",
-                            )
+                            com.bragro.mobile.ui.domain.CantoL(blocoAberto)
                         }
                     }
                     if (blocoAberto) {
@@ -866,7 +870,7 @@ private fun FarmsCard(
                             },
                             enabled = !busy,
                         ) {
-                            Icon(Icons.Filled.Check, contentDescription = "Salvar área")
+                            Icon(Icons.Outlined.Check, contentDescription = "Salvar área")
                         }
                     }
                     }
@@ -1084,11 +1088,11 @@ private fun SectorCard(
                     Text(vLabel, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
                     if (temFoto) {
                         IconButton(onClick = { onAttachFoto(category, valorReal) }, enabled = !busy && !uploadingFoto) {
-                            Icon(Icons.Filled.CameraAlt, contentDescription = "Anexar foto")
+                            Icon(Icons.Outlined.CameraAlt, contentDescription = "Anexar foto")
                         }
                     }
                     Switch(checked = ativo, onCheckedChange = { onToggle(id, it) }, enabled = !busy, colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)))
-                    IconButton(onClick = { onDelete(id) }, enabled = !busy) { Icon(Icons.Filled.Delete, contentDescription = "Excluir") }
+                    IconButton(onClick = { onDelete(id) }, enabled = !busy) { Icon(Icons.Outlined.Delete, contentDescription = "Excluir") }
                 }
             }
             if (category == "locais") {

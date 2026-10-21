@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.livrocaixa
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.outlined.MenuBook
 import android.app.Application
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -22,20 +24,20 @@ import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.FilterAlt
-import androidx.compose.material.icons.filled.GridOn
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
-import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.TableChart
-import androidx.compose.material.icons.filled.ViewAgenda
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Badge
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.FilterAlt
+import androidx.compose.material.icons.outlined.GridOn
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.outlined.PictureAsPdf
+import androidx.compose.material.icons.outlined.Print
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.TableChart
+import androidx.compose.material.icons.outlined.ViewAgenda
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -598,9 +600,15 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                     }
                 },
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.MenuBook, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Livro Caixa", color = MaterialTheme.colorScheme.onSurface)
+                    }
+                
                     }
                 } },
                 actions = {
@@ -646,7 +654,7 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
             item(key = "livro-caixa-icon-row") { com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") { Column(modifier = Modifier.fillMaxWidth()) {
                 val dadosBlock = LivroCaixaBlockSpec("Dados") {
                     LabeledIconButton(
-                        icon = Icons.Filled.FilterAlt,
+                        icon = Icons.Outlined.FilterAlt,
                         label = "Filtros",
                         // Sem tint proprio -- herda onSurface (preto/branco),
                         // pedido do usuario ("tire o fundo verde de todos os
@@ -655,12 +663,12 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                     )
                     if (temRegistros) {
                         LabeledIconButton(
-                            icon = if (contentExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                            icon = if (contentExpanded) Icons.Outlined.KeyboardDoubleArrowUp else Icons.Outlined.KeyboardDoubleArrowDown,
                             label = if (contentExpanded) "Recolher" else "Expandir",
                             onClick = { contentExpanded = !contentExpanded },
                         )
                         LabeledIconButton(
-                            icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
+                            icon = if (tableView) Icons.Outlined.ViewAgenda else Icons.Outlined.TableChart,
                             label = if (tableView) "Bloco" else "Tabela",
                             onClick = { tableView = !tableView },
                         )
@@ -669,27 +677,27 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                     // tudo que falta ainda para o app native da
                     // plataforma"): atalho pro card que faltava por completo.
                     LabeledIconButton(
-                        icon = Icons.Filled.Badge,
+                        icon = Icons.Outlined.Badge,
                         label = "Produtor Rural",
                         tint = if (produtorRuralOpen) MaterialTheme.colorScheme.primary else androidx.compose.material3.LocalContentColor.current,
                         onClick = { produtorRuralOpen = !produtorRuralOpen },
                     )
                 }
                 val operacoesBlock = LivroCaixaBlockSpec("Operações") {
-                    LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.refresh() })
+                    LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.refresh() })
                     com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                 }
                 val arquivosBlock = LivroCaixaBlockSpec("Arquivos") {
-                    LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = { if (resultado != null && resultado!!.lancamentos.isNotEmpty()) HtmlPrinter.printList(context, livroCaixaExportConfig(), livroCaixaExportRecords(resultado!!.lancamentos)) })
+                    LabeledIconButton(icon = Icons.Outlined.Print, label = "Imprimir", onClick = { if (resultado != null && resultado!!.lancamentos.isNotEmpty()) HtmlPrinter.printList(context, livroCaixaExportConfig(), livroCaixaExportRecords(resultado!!.lancamentos)) })
                     if (temRegistros) {
-                        LabeledIconButton(icon = Icons.Filled.GridOn, label = "Excel", onClick = { exportXlsx(context, "Livro Caixa", LIVRO_CAIXA_EXPORT_COLUMNS, livroCaixaExportRecords(data!!.lancamentos)) })
-                        LabeledIconButton(icon = Icons.Filled.PictureAsPdf, label = "PDF", onClick = { HtmlPrinter.exportPdfDirect(context, livroCaixaExportConfig(), livroCaixaExportRecords(data!!.lancamentos)) })
+                        LabeledIconButton(icon = Icons.Outlined.GridOn, label = "Excel", onClick = { exportXlsx(context, "Livro Caixa", LIVRO_CAIXA_EXPORT_COLUMNS, livroCaixaExportRecords(data!!.lancamentos)) })
+                        LabeledIconButton(icon = Icons.Outlined.PictureAsPdf, label = "PDF", onClick = { HtmlPrinter.exportPdfDirect(context, livroCaixaExportConfig(), livroCaixaExportRecords(data!!.lancamentos)) })
                         // Exportação LCDPR (.txt) -- pedido do usuário
                         // ("botão adicionado na toolbar de Livro Caixa, ao
                         // lado de Imprimir/Excel"), réplica do site (Task
                         // #645/lcdpr-txt.ts).
                         LabeledIconButton(
-                            icon = Icons.Filled.Description,
+                            icon = Icons.Outlined.Description,
                             label = "LCDPR",
                             onClick = {
                                 viewModel.exportarLcdpr(context) { erro ->

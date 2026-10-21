@@ -13,11 +13,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.PictureAsPdf
+import androidx.compose.material.icons.outlined.Print
 import com.bragro.mobile.ui.theme.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -105,9 +105,9 @@ fun ModuleChartsCard(domainId: String, viewModel: ModuleChartsViewModel = viewMo
                     modifier = Modifier.fillMaxWidth().clickable { open = !open }.padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Filled.BarChart, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                    Icon(Icons.Outlined.BarChart, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                     Text("Gráficos", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                    Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
+                    com.bragro.mobile.ui.domain.CantoL(open)
                 }
             }
             if (open) {
@@ -180,7 +180,7 @@ fun ModuleChartsCard(domainId: String, viewModel: ModuleChartsViewModel = viewMo
 private fun ChartPrintActions(onPrint: () -> Unit, onPdf: () -> Unit) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onPrint, modifier = Modifier.size(32.dp)) {
-            Icon(Icons.Filled.Print, contentDescription = "Imprimir gráfico", modifier = Modifier.size(18.dp))
+            Icon(Icons.Outlined.Print, contentDescription = "Imprimir gráfico", modifier = Modifier.size(18.dp))
         }
         Box(
             modifier = Modifier
@@ -190,7 +190,7 @@ private fun ChartPrintActions(onPrint: () -> Unit, onPdf: () -> Unit) {
                 .background(MaterialTheme.colorScheme.outlineVariant),
         )
         IconButton(onClick = onPdf, modifier = Modifier.size(32.dp)) {
-            Icon(Icons.Filled.PictureAsPdf, contentDescription = "Exportar gráfico em PDF", modifier = Modifier.size(18.dp))
+            Icon(Icons.Outlined.PictureAsPdf, contentDescription = "Exportar gráfico em PDF", modifier = Modifier.size(18.dp))
         }
     }
 }

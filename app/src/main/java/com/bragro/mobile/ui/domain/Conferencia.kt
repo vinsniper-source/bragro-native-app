@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bragro.mobile.ui.i18n.Text
@@ -147,7 +147,7 @@ fun ConferenciaCard(
         androidx.compose.foundation.layout.Row(M.fillMaxWidth().padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Text(if (problemas.isEmpty()) "Cadastro conferido — nada a corrigir" else "${problemas.size} lançamento(s) para corrigir", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, fontSize = 13.sp, modifier = M.weight(1f))
             if (corrigiveis.isNotEmpty()) androidx.compose.material3.TextButton(onClick = { confirmar = true }) { Text("Corrigir todos (${corrigiveis.size})", fontSize = 12.sp) }
-            androidx.compose.material3.IconButton(onClick = onFechar) { androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Filled.Close, contentDescription = "Fechar") }
+            androidx.compose.material3.IconButton(onClick = onFechar) { androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Close, contentDescription = "Fechar") }
         }
         problemas.entries.take(60).forEach { (id, ps) ->
             androidx.compose.material3.HorizontalDivider(color = cs.outlineVariant)

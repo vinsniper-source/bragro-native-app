@@ -21,19 +21,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.GridOn
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
-import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.WarningAmber
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.GridOn
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.outlined.PictureAsPdf
+import androidx.compose.material.icons.outlined.Print
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material.icons.outlined.WarningAmber
 import com.bragro.mobile.ui.theme.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -76,13 +76,13 @@ import com.bragro.mobile.ui.domain.EqualWidthBlockRow
 import com.bragro.mobile.ui.domain.FarmSelectorButton
 import com.bragro.mobile.ui.domain.LabeledIconButton
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.filled.HealthAndSafety
+import androidx.compose.material.icons.outlined.HealthAndSafety
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.RadioButtonChecked
-import androidx.compose.material.icons.filled.FilterAltOff
-import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.RadioButtonChecked
+import androidx.compose.material.icons.outlined.FilterAltOff
+import androidx.compose.material.icons.outlined.FilterAlt
 import com.bragro.mobile.ui.domain.SimpleBarChart
 import com.bragro.mobile.ui.domain.exportXlsx
 import com.bragro.mobile.ui.print.HtmlPrinter
@@ -249,11 +249,7 @@ private fun CategoriaBlock(categoria: String, itens: List<InsumoItemSituacaoData
             .padding(vertical = 8.dp, horizontal = 4.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Icon(
-                if (aberto) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                contentDescription = if (aberto) "Recolher" else "Expandir",
-                modifier = Modifier.size(18.dp),
-            )
+            com.bragro.mobile.ui.domain.CantoL(aberto)
             Text(
                 CATEGORIA_LABEL[categoria] ?: categoria,
                 style = MaterialTheme.typography.titleSmall,
@@ -294,7 +290,7 @@ private fun ItemCriticoCard(i: InsumoSaldoData, onPedidoRapido: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             OutlinedButton(onClick = onPedidoRapido, modifier = Modifier.padding(top = 4.dp)) {
-                Icon(Icons.Filled.ShoppingCart, contentDescription = null, modifier = Modifier.size(16.dp))
+                Icon(Icons.Outlined.ShoppingCart, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.size(4.dp))
                 Text("Pedido rápido", style = MaterialTheme.typography.labelSmall)
             }
@@ -370,9 +366,15 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                     }
                 },
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Inventory2, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Controle de Insumos", color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
+                    }
+                
                     }
                 } },
                 actions = {
@@ -440,35 +442,35 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                     }
                 }
                 val dadosBlock = InsumosBlockSpec("Dados") {
-                    filtro("cat", "Categoria", Icons.Filled.FilterAlt, fCat, listOf("SAFRA" to "Safra", "FROTA" to "Frota", "ADM" to "ADM")) { fCat = it }
-                    filtro("sit", "Situação", Icons.Filled.RadioButtonChecked, fSit, listOf("FALTA" to "Falta", "EM_USO" to "Em uso", "EM_TRANSITO" to "Em trânsito", "OK" to "OK")) { fSit = it }
-                    filtro("est", "Estoque", Icons.Filled.Inventory2, fEst, listOf("CRITICO" to "Crítico", "ATENCAO" to "Atenção", "OK" to "OK")) { fEst = it }
-                    LabeledIconButton(icon = Icons.Filled.BarChart, label = "Saldo", active = saldoAberto, onClick = { saldoAberto = !saldoAberto })
+                    filtro("cat", "Categoria", Icons.Outlined.FilterAlt, fCat, listOf("SAFRA" to "Safra", "FROTA" to "Frota", "ADM" to "ADM")) { fCat = it }
+                    filtro("sit", "Situação", Icons.Outlined.RadioButtonChecked, fSit, listOf("FALTA" to "Falta", "EM_USO" to "Em uso", "EM_TRANSITO" to "Em trânsito", "OK" to "OK")) { fSit = it }
+                    filtro("est", "Estoque", Icons.Outlined.Inventory2, fEst, listOf("CRITICO" to "Crítico", "ATENCAO" to "Atenção", "OK" to "OK")) { fEst = it }
+                    LabeledIconButton(icon = Icons.Outlined.BarChart, label = "Saldo", active = saldoAberto, onClick = { saldoAberto = !saldoAberto })
                     if (d?.arvoreControleInterno?.isNotEmpty() == true) {
-                        LabeledIconButton(icon = Icons.Filled.HealthAndSafety, label = "EPI", onClick = { controleInternoAberto = true })
+                        LabeledIconButton(icon = Icons.Outlined.HealthAndSafety, label = "EPI", onClick = { controleInternoAberto = true })
                     }
                     if (fCat != null || fSit != null || fEst != null) {
-                        LabeledIconButton(icon = Icons.Filled.FilterAltOff, label = "Limpar", onClick = { fCat = null; fSit = null; fEst = null })
+                        LabeledIconButton(icon = Icons.Outlined.FilterAltOff, label = "Limpar", onClick = { fCat = null; fSit = null; fEst = null })
                     }
                 }
                 val operacoesBlock = InsumosBlockSpec("Operações") {
-                    LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.refresh() })
+                    LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.refresh() })
                     com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                 }
                 val arquivosBlock = InsumosBlockSpec("Arquivos") {
                     if (temDados) {
                         LabeledIconButton(
-                            icon = Icons.Filled.GridOn,
+                            icon = Icons.Outlined.GridOn,
                             label = "Excel",
                             onClick = { exportXlsx(context, "controle-de-insumos", INSUMOS_EXPORT_COLUMNS, insumosExportRecords(d!!)) },
                         )
                         LabeledIconButton(
-                            icon = Icons.Filled.PictureAsPdf,
+                            icon = Icons.Outlined.PictureAsPdf,
                             label = "PDF",
                             onClick = { HtmlPrinter.exportPdfDirect(context, insumosExportConfig(), insumosExportRecords(d!!)) },
                         )
                         LabeledIconButton(
-                            icon = Icons.Filled.Print,
+                            icon = Icons.Outlined.Print,
                             label = "Imprimir",
                             onClick = { HtmlPrinter.printList(context, insumosExportConfig(), insumosExportRecords(d!!)) },
                         )

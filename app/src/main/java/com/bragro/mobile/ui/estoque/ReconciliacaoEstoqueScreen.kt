@@ -1,8 +1,10 @@
 package com.bragro.mobile.ui.estoque
 
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.outlined.CompareArrows
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.foundation.clickable
 import android.app.Application
 import androidx.compose.foundation.basicMarquee
@@ -17,16 +19,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.background
-import androidx.compose.material.icons.filled.ViewList
-import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.outlined.ViewList
+import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.Print
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -153,9 +155,15 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                 // demais módulos -- pedido do usuário ("abaixe o título do
                 // módulo e deixe na mesma altura dos modulos mais antigos").
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.CompareArrows, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Reconciliação Físico x Fiscal", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.basicMarquee())
+                    }
+                
                     }
                 } },
                 // Ícones Imprimir + Nuvem na mesma altura do título -- pedido
@@ -216,10 +224,10 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
             item(key = "acoes") {
                 com.bragro.mobile.ui.domain.AcoesEmAbas(
                     dados = {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Warning, label = "Divergências", active = soDivergencia, badgeCount = divergentes.size, tint = if (divergentes.isNotEmpty()) com.bragro.mobile.ui.domain.corAtencao() else MaterialTheme.colorScheme.onSurface, onClick = { soDivergencia = true; listaAberta = true })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.ViewList, label = "Todos", active = !soDivergencia, onClick = { soDivergencia = false; listaAberta = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Warning, label = "Divergências", active = soDivergencia, badgeCount = divergentes.size, tint = if (divergentes.isNotEmpty()) com.bragro.mobile.ui.domain.corAtencao() else MaterialTheme.colorScheme.onSurface, onClick = { soDivergencia = true; listaAberta = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ViewList, label = "Todos", active = !soDivergencia, onClick = { soDivergencia = false; listaAberta = true })
                         androidx.compose.foundation.layout.Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.FilterAlt, label = fCategoria ?: "Categoria", active = fCategoria != null, onClick = { catMenu = true })
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.FilterAlt, label = fCategoria ?: "Categoria", active = fCategoria != null, onClick = { catMenu = true })
                             androidx.compose.material3.DropdownMenu(expanded = catMenu, onDismissRequest = { catMenu = false }) {
                                 androidx.compose.material3.DropdownMenuItem(text = { Text("Todas") }, onClick = { fCategoria = null; catMenu = false })
                                 categorias.forEach { c ->
@@ -229,11 +237,12 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                         }
                     },
                     operacoes = {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", onClick = { viewModel.carregar() })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", onClick = { viewModel.carregar() })
+                        com.bragro.mobile.ui.domain.NuvemButton()
                     },
                     avisos = listOf(divergentes.size, 0, 0),
                     arquivos = {
-                        com.bragro.mobile.ui.domain.ArquivosTabela("Reconciliação Físico x Fiscal", listOf("Item", "Categoria", "Saldo Fiscal", "Saldo Real", "Diferença"), nuvem = true) {
+                        com.bragro.mobile.ui.domain.ArquivosTabela("Reconciliação Físico x Fiscal", listOf("Item", "Categoria", "Saldo Fiscal", "Saldo Real", "Diferença")) {
                             itens.map { listOf(it.item, it.categoria ?: "", formatoNumero(it.saldoFiscal) + (it.unidade?.let { u -> " $u" } ?: ""), formatoNumero(it.saldoFisico) + (it.unidade?.let { u -> " $u" } ?: ""), formatoNumero(it.diferenca) + (it.unidade?.let { u -> " $u" } ?: "")) }
                         }
                     },
@@ -281,7 +290,7 @@ private fun ReconciliacaoItemCard(i: ReconciliacaoEstoqueItemData) {
                     color = cor,
                     modifier = Modifier.background(cor.copy(alpha = 0.15f), androidx.compose.foundation.shape.RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 2.dp),
                 )
-                Icon(if (aberto) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (aberto) "Recolher" else "Expandir")
+                com.bragro.mobile.ui.domain.CantoL(aberto)
             }
             if (aberto) {
                 @Composable

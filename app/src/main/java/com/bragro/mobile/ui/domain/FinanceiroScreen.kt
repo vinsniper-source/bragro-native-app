@@ -27,41 +27,41 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import android.app.Application
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountTree
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Autorenew
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.FactCheck
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CallMade
-import androidx.compose.material.icons.filled.CallReceived
-import androidx.compose.material.icons.filled.CallSplit
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.GridOn
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
-import androidx.compose.material.icons.filled.FilterAlt
-import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.TableChart
-import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material.icons.filled.Upload
-import androidx.compose.material.icons.filled.ViewAgenda
-import androidx.compose.material.icons.filled.ViewList
+import androidx.compose.material.icons.outlined.AccountTree
+import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.FactCheck
+import androidx.compose.material.icons.outlined.Calculate
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.CallMade
+import androidx.compose.material.icons.outlined.CallReceived
+import androidx.compose.material.icons.outlined.CallSplit
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.GridOn
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.outlined.FilterAlt
+import androidx.compose.material.icons.outlined.PictureAsPdf
+import androidx.compose.material.icons.outlined.Print
+import androidx.compose.material.icons.outlined.Receipt
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.TableChart
+import androidx.compose.material.icons.outlined.TrendingUp
+import androidx.compose.material.icons.outlined.Upload
+import androidx.compose.material.icons.outlined.ViewAgenda
+import androidx.compose.material.icons.outlined.ViewList
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
@@ -308,6 +308,10 @@ fun FinanceiroScreen(
                 // Calculadoras, Recalcular Vencimentos) aparece numa 2ª
                 // linha, menor, só enquanto ele estiver aberto.
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(com.bragro.mobile.ui.home.domainIcon("financeiro"), contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+
                     // "Lançamentos" (era "Financeiro") só aparece com Todos
                     // selecionado; ao clicar em outro ícone da Gestão
                     // Financeira, o nome da visão substitui a palavra por
@@ -330,6 +334,8 @@ fun FinanceiroScreen(
                         // ("adapte ao tamanho da fonte sem cortes e dentro
                         // do limite da tela").
                         Text(if (isQuickView) view.label else "Lançamentos", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.basicMarquee())
+                    }
+                
                     }
                 } },
                 // A seta de voltar ganha o mesmo espaçador de cima do título
@@ -366,7 +372,7 @@ fun FinanceiroScreen(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) {
-                    Icon(Icons.Filled.Add, contentDescription = "Novo lançamento")
+                    Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento")
                 }
             }
         },
@@ -440,7 +446,7 @@ fun FinanceiroScreen(
                 FinBlockSpec("Dados", MaterialTheme.typography.titleSmall, vertical = false, badgeCount = if (banco != null) 1 else 0) {
                     if (!isQuickView) {
                         ModuleIconButton(
-                            ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
+                            ModuleIconItem("charts", Icons.Outlined.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
                         ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
                     }
                     // Sem guard de view -- pedido do usuário ("quando o
@@ -473,7 +479,7 @@ fun FinanceiroScreen(
                     // Sempre visível -- pedido do usuário ("force todos os
                     // ícones aparecerem").
                     LabeledIconButton(
-                        icon = if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                        icon = if (allExpanded) Icons.Outlined.KeyboardDoubleArrowUp else Icons.Outlined.KeyboardDoubleArrowDown,
                         label = if (allExpanded) "Recolher" else "Expandir",
                         onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
                     )
@@ -481,7 +487,7 @@ fun FinanceiroScreen(
                     // (achado de auditoria, pedido do usuário: "coloque em
                     // todos os módulos").
                     LabeledIconButton(
-                        icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
+                        icon = if (tableView) Icons.Outlined.ViewAgenda else Icons.Outlined.TableChart,
                         // "Coluna" -> "Bloco" -- pedido do usuário ("no
                         // native já existe com o nome tabela, apenas troque
                         // coluna por bloco"). Mesmo botão único do módulo
@@ -495,14 +501,14 @@ fun FinanceiroScreen(
                 FinBlockSpec("Operações", MaterialTheme.typography.titleSmall, vertical = false, badgeCount = pendingVisibleCount) {
                     if (!isQuickView) {
                         ModuleIconButton(
-                            ModuleIconItem("calculators", Icons.Filled.Calculate, "Calculadoras", active = expandedBlocks["calculators"] == true),
+                            ModuleIconItem("calculators", Icons.Outlined.Calculate, "Calculadoras", active = expandedBlocks["calculators"] == true),
                         ) { expandedBlocks["calculators"] = expandedBlocks["calculators"] != true }
                         // Icone diferente do "Atualizar" -- mesmo icone pra
                         // acoes diferentes na mesma tela confundia, pedido
                         // do usuario ("substitua icones que estejam iguais
                         // mas com funcoes diferentes").
                         ModuleIconButton(
-                            ModuleIconItem("recalcular-vencimentos", Icons.Filled.Autorenew, "Recalcular vcto", active = expandedBlocks["recalcular-vencimentos"] == true),
+                            ModuleIconItem("recalcular-vencimentos", Icons.Outlined.Autorenew, "Recalcular vcto", active = expandedBlocks["recalcular-vencimentos"] == true),
                         ) { expandedBlocks["recalcular-vencimentos"] = expandedBlocks["recalcular-vencimentos"] != true }
                     }
                     PeriodoDropdown(
@@ -514,13 +520,13 @@ fun FinanceiroScreen(
                         onInterval = { from, to -> intervalFrom = from; intervalTo = to; if (from.isNotBlank() || to.isNotBlank()) periodo = null },
                     )
                     LabeledIconButton(
-                        icon = Icons.Filled.Refresh,
+                        icon = Icons.Outlined.Refresh,
                         label = "Atualizar",
                         loading = refreshing,
                         onClick = { viewModel.refresh("financeiro") },
                     )
                     LabeledIconButton(
-                        icon = Icons.Filled.FactCheck,
+                        icon = Icons.Outlined.FactCheck,
                         label = "Revisar",
                         active = pendingOnly,
                         badgeCount = pendingVisibleCount,
@@ -530,10 +536,10 @@ fun FinanceiroScreen(
                 }
             val arquivosBlock =
                 FinBlockSpec("Arquivos", MaterialTheme.typography.titleSmall, vertical = false) {
-                    LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filtered, effectiveColumns.map { it.key }.toSet()) })
+                    LabeledIconButton(icon = Icons.Outlined.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filtered, effectiveColumns.map { it.key }.toSet()) })
                     if (!isQuickView) {
-                        LabeledIconButton(icon = Icons.Filled.Upload, label = "Extrato", onClick = onOpenBankImport)
-                        LabeledIconButton(icon = Icons.Filled.Description, label = "XML", onClick = onOpenNfeImport)
+                        LabeledIconButton(icon = Icons.Outlined.Upload, label = "Extrato", onClick = onOpenBankImport)
+                        LabeledIconButton(icon = Icons.Outlined.Description, label = "XML", onClick = onOpenNfeImport)
                         // "Nota c/ itens" saiu daqui -- pedido do usuário
                         // ("em novo lançamento coloque nota com itens e
                         // exclua de arquivos"): agora é um ícone no topo do
@@ -548,7 +554,7 @@ fun FinanceiroScreen(
                         // ficaram mais intuitivos"), em vez de um download
                         // genérico.
                         LabeledIconButton(
-                            icon = Icons.Filled.GridOn,
+                            icon = Icons.Outlined.GridOn,
                             label = "Excel",
                             onClick = { exportXlsx(context, "financeiro-${view.name.lowercase()}", effectiveColumns, filtered) },
                         )
@@ -559,7 +565,7 @@ fun FinanceiroScreen(
                         // o PDF direto e abre no leitor instalado (Adobe ou
                         // similar) -- pedido do usuário.
                         LabeledIconButton(
-                            icon = Icons.Filled.PictureAsPdf,
+                            icon = Icons.Outlined.PictureAsPdf,
                             label = "PDF",
                             onClick = { HtmlPrinter.exportPdfDirect(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) },
                         )
@@ -747,12 +753,7 @@ fun FinanceiroScreen(
                                             // ajuste do módulo genérico (DomainListScreen.kt).
                                             if (hasMore) {
                                                 IconButton(onClick = { cardOverrides[recordId ?: ""] = !expanded }, modifier = Modifier.size(28.dp)) {
-                                                    Icon(
-                                                        if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                                        contentDescription = if (expanded) "Recolher lançamento" else "Expandir lançamento",
-                                                        modifier = Modifier.size(18.dp),
-                                                        tint = MaterialTheme.colorScheme.primary,
-                                                    )
+                                                    com.bragro.mobile.ui.domain.CantoL(expanded)
                                                 }
                                             }
                                             // "Ver" removido da vista de BLOCO -- pedido do usuário
@@ -763,10 +764,10 @@ fun FinanceiroScreen(
                                             // (continua existindo na vista Tabela, ver RecordTable.kt,
                                             // que o usuário pediu pra manter).
                                             IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
-                                                Icon(Icons.Filled.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                                Icon(Icons.Outlined.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                                             }
                                             IconButton(onClick = { recordPendingDelete = recordId }, modifier = Modifier.size(28.dp)) {
-                                                Icon(Icons.Filled.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                                                Icon(Icons.Outlined.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
                                             }
                                         }
                                     }
@@ -974,10 +975,10 @@ private fun FinanceiroNfeGroupCard(
                         )
                     }
                     IconButton(onClick = { if (recId != null) onEditRecord(recId) }, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Outlined.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                     }
                     IconButton(onClick = { onDeleteRequest(recId) }, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                        Icon(Icons.Outlined.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -1039,7 +1040,7 @@ private fun FinanceiroGestaoDropdownButton(view: FinanceiroView, onSelect: (Fina
                 androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.surface, contentColor = MaterialTheme.colorScheme.onSurface)
             },
         ) {
-            Icon(if (ativo) financeiroViewIcon(view) else Icons.Filled.AccountTree, contentDescription = null, modifier = Modifier.size(18.dp))
+            Icon(if (ativo) financeiroViewIcon(view) else Icons.Outlined.AccountTree, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.size(4.dp))
             Text(
                 if (ativo) view.label else "Gestão Financeira",
@@ -1048,7 +1049,7 @@ private fun FinanceiroGestaoDropdownButton(view: FinanceiroView, onSelect: (Fina
                 overflow = TextOverflow.Clip,
                 modifier = Modifier.weight(1f).basicMarquee(),
             )
-            Icon(Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.size(18.dp))
+            Icon(Icons.Outlined.ExpandMore, contentDescription = null, modifier = Modifier.size(18.dp))
         }
         // Fundo verde (mesma cor do botão quando a conta/visão está
         // selecionada) -- pedido do usuário ("coloque a cor do fundo da
@@ -1219,7 +1220,7 @@ private fun PeriodoDropdown(
     // EqualWidthBlockRow.
     Box(contentAlignment = Alignment.Center) {
         LabeledIconButton(
-            icon = Icons.Filled.CalendarMonth,
+            icon = Icons.Outlined.CalendarMonth,
             label = "Período",
             active = hasFilter,
             // Sem tint proprio -- herda onSurface (preto/branco), pedido do
@@ -1288,7 +1289,7 @@ private fun BancoDropdown(banco: String?, options: List<LookupEntity>, onSelect:
     // contentAlignment = Center -- mesmo fix de PeriodoDropdown acima.
     Box(contentAlignment = Alignment.Center) {
         LabeledIconButton(
-            icon = Icons.Filled.FilterAlt,
+            icon = Icons.Outlined.FilterAlt,
             label = "Filtros",
             active = hasFilter,
             // Sem tint proprio -- herda onSurface (preto/branco), pedido do
@@ -1323,13 +1324,13 @@ private fun BancoDropdown(banco: String?, options: List<LookupEntity>, onSelect:
 // saindo/entrando de um canto) é o par clássico de "saída"/"entrada" de
 // dinheiro, bem mais claro.
 private fun financeiroViewIcon(v: FinanceiroView) = when (v) {
-    FinanceiroView.TODOS -> Icons.Filled.ViewList
-    FinanceiroView.PAGAR -> Icons.Filled.CallMade
-    FinanceiroView.RECEBER -> Icons.Filled.CallReceived
-    FinanceiroView.CONCILIADO -> Icons.Filled.CheckCircle
-    FinanceiroView.FLUXO -> Icons.Filled.TrendingUp
-    FinanceiroView.RATEIO_DIRETO -> Icons.Filled.CallSplit
-    FinanceiroView.RATEIO_INDIRETO -> Icons.Filled.AccountTree
+    FinanceiroView.TODOS -> Icons.Outlined.ViewList
+    FinanceiroView.PAGAR -> Icons.Outlined.CallMade
+    FinanceiroView.RECEBER -> Icons.Outlined.CallReceived
+    FinanceiroView.CONCILIADO -> Icons.Outlined.CheckCircle
+    FinanceiroView.FLUXO -> Icons.Outlined.TrendingUp
+    FinanceiroView.RATEIO_DIRETO -> Icons.Outlined.CallSplit
+    FinanceiroView.RATEIO_INDIRETO -> Icons.Outlined.AccountTree
 }
 
 @OptIn(ExperimentalFoundationApi::class)

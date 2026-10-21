@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.settings
 
+import androidx.compose.material.icons.outlined.Settings
 import android.app.Application
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,12 +16,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.Smartphone
+import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.Send
+import androidx.compose.material.icons.outlined.Smartphone
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.appFieldColors
 import androidx.compose.material3.Checkbox
@@ -172,9 +173,15 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = viewModel(
                 // do usuário: "rebaixe a seta e o título... troque a cor por
                 // verde... em todos os títulos do mobile").
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Settings, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Configurações", color = MaterialTheme.colorScheme.onSurface)
+                    }
+                
                     }
                 } },
                 actions = { Column {
@@ -240,7 +247,7 @@ private fun CollapsibleCard(title: String, icon: (@Composable () -> Unit)? = nul
             ) {
                 icon?.invoke()
                 Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.weight(1f).padding(start = if (icon != null) 8.dp else 0.dp))
-                Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
+                com.bragro.mobile.ui.domain.CantoL(open)
             }
             if (open) {
                 Column(modifier = Modifier.padding(top = 12.dp)) { content() }
@@ -358,7 +365,7 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
             delay(1_500)
         }
     }
-    CollapsibleCard("Aplicativo mobile (Android)", icon = { Icon(Icons.Filled.Smartphone, contentDescription = null) }) {
+    CollapsibleCard("Aplicativo mobile (Android)", icon = { Icon(Icons.Outlined.Smartphone, contentDescription = null) }) {
         // Versão REALMENTE instalada neste aparelho (BuildConfig.VERSION_NAME,
         // gravada em tempo de compilação) -- bug de confusão real do usuário:
         // ele reportou "a versão está 1.2.68" (conferido aqui nesta tela) e um
@@ -445,7 +452,7 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
                             CircularProgressIndicator(modifier = Modifier.size(16.dp).padding(end = 4.dp), strokeWidth = 2.dp)
                             Text("Baixando...")
                         } else {
-                            Icon(Icons.Filled.Download, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                            Icon(Icons.Outlined.Download, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
                             Text("Baixar")
                         }
                     }
@@ -461,7 +468,7 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
 // ("Adicionar à Tela de Início"). Mesmo texto/passo a passo do site.
 @Composable
 private fun AppMobileIosCard() {
-    CollapsibleCard("Aplicativo mobile (iPhone/iPad)", icon = { Icon(Icons.Filled.Smartphone, contentDescription = null) }) {
+    CollapsibleCard("Aplicativo mobile (iPhone/iPad)", icon = { Icon(Icons.Outlined.Smartphone, contentDescription = null) }) {
         Text(
             "O iOS não permite instalar um arquivo baixado como app — a Apple só libera isso pela App Store. O caminho que funciona sem custo, direto pelo Safari:",
             style = MaterialTheme.typography.bodySmall,
@@ -599,7 +606,7 @@ private fun NotificacoesCard(
                 onClick = { testingChannel = "telegram"; onSendTest("telegram") { msg, _ -> testingChannel = null; testResult = msg } },
                 enabled = testingChannel == null,
             ) {
-                Icon(Icons.Filled.Send, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                Icon(Icons.Outlined.Send, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
                 Text(if (testingChannel == "telegram") "Enviando..." else "Enviar teste (Telegram)")
             }
 
@@ -625,7 +632,7 @@ private fun NotificacoesCard(
                 onClick = { testingChannel = "whatsapp"; onSendTest("whatsapp") { msg, _ -> testingChannel = null; testResult = msg } },
                 enabled = testingChannel == null,
             ) {
-                Icon(Icons.Filled.Send, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                Icon(Icons.Outlined.Send, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
                 Text(if (testingChannel == "whatsapp") "Enviando..." else "Enviar teste (WhatsApp)")
             }
         }

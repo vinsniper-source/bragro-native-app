@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Autorenew
+import androidx.compose.material.icons.outlined.Autorenew
 import com.bragro.mobile.ui.theme.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -75,7 +75,7 @@ fun RecalcularAreaButton(domainId: String, viewModel: ModuleActionButtonViewMode
                     // ("transforme os botoes de operacao em so icone"), o
                     // titulo acima ja diz o que o botao faz.
                     IconButton(onClick = { viewModel.run(action, "Área recalculada com sucesso.") }, enabled = !running) {
-                        if (running) CircularProgressIndicator(modifier = Modifier.padding(2.dp)) else Icon(Icons.Filled.Autorenew, contentDescription = "Recalcular Área")
+                        if (running) CircularProgressIndicator(modifier = Modifier.padding(2.dp)) else Icon(Icons.Outlined.Autorenew, contentDescription = "Recalcular Área")
                     }
                 }
             } else {
@@ -107,7 +107,7 @@ fun RecalcularVencimentosButton(viewModel: ModuleActionButtonViewModel = viewMod
     Column {
         if (showHeader) {
             IconButton(onClick = { viewModel.run("recalcular-vencimentos", "Vencimentos recalculados com sucesso.") }, enabled = !running) {
-                if (running) CircularProgressIndicator(modifier = Modifier.padding(2.dp)) else Icon(Icons.Filled.Autorenew, contentDescription = "Recalcular Vencimentos")
+                if (running) CircularProgressIndicator(modifier = Modifier.padding(2.dp)) else Icon(Icons.Outlined.Autorenew, contentDescription = "Recalcular Vencimentos")
             }
         } else {
             // Fileira de ícones do módulo já revelou este bloco -- dispara a

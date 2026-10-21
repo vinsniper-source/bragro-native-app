@@ -1,8 +1,9 @@
 package com.bragro.mobile.ui.nfe
 
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.Receipt
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.outlined.Refresh
 import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,17 +18,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.FolderZip
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.ViewAgenda
-import androidx.compose.material.icons.filled.ViewList
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.FolderZip
+import androidx.compose.material.icons.outlined.Send
+import androidx.compose.material.icons.outlined.ViewAgenda
+import androidx.compose.material.icons.outlined.ViewList
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -264,12 +265,12 @@ private fun InvoiceCard(
                     if (inv.tipo == "SAIDA" && inv.statusSefaz != "AUTORIZADA") {
                         IconButton(onClick = onEmitir, enabled = !emitindo) {
                             if (emitindo) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            else Icon(Icons.Filled.Send, contentDescription = "Emitir junto à SEFAZ", tint = MaterialTheme.colorScheme.primary)
+                            else Icon(Icons.Outlined.Send, contentDescription = "Emitir junto à SEFAZ", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                     IconButton(onClick = onExcluir, enabled = !excluindo) {
                         if (excluindo) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                        else Icon(Icons.Filled.Delete, contentDescription = "Excluir nota", tint = MaterialTheme.colorScheme.error)
+                        else Icon(Icons.Outlined.Delete, contentDescription = "Excluir nota", tint = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -321,12 +322,12 @@ private fun InvoiceRow(
             if (inv.tipo == "SAIDA" && inv.statusSefaz != "AUTORIZADA") {
                 IconButton(onClick = onEmitir, enabled = !emitindo, modifier = Modifier.size(36.dp)) {
                     if (emitindo) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                    else Icon(Icons.Filled.Send, contentDescription = "Emitir junto à SEFAZ", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                    else Icon(Icons.Outlined.Send, contentDescription = "Emitir junto à SEFAZ", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                 }
             }
             IconButton(onClick = onExcluir, enabled = !excluindo, modifier = Modifier.size(36.dp)) {
                 if (excluindo) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                else Icon(Icons.Filled.Delete, contentDescription = "Excluir nota", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                else Icon(Icons.Outlined.Delete, contentDescription = "Excluir nota", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
             }
         }
     }
@@ -449,7 +450,13 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
         topBar = {
             TopAppBar(
                 navigationIcon = { com.bragro.mobile.ui.domain.BackNavButton() },
-                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) { Text("NF-e", color = MaterialTheme.colorScheme.onSurface) } },
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Receipt, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+ Text("NF-e", color = MaterialTheme.colorScheme.onSurface) 
+                    }
+                } },
                 actions = { com.bragro.mobile.ui.domain.HomeNavButton() },
             )
         },
@@ -503,24 +510,24 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
                         com.bragro.mobile.ui.domain.AcoesEmAbas(
                             dados = {
                                 com.bragro.mobile.ui.domain.LabeledIconButton(
-                                    icon = if (viewMode == NfeViewMode.BLOCOS) Icons.Filled.ViewList else Icons.Filled.ViewAgenda,
+                                    icon = if (viewMode == NfeViewMode.BLOCOS) Icons.Outlined.ViewList else Icons.Outlined.ViewAgenda,
                                     label = if (viewMode == NfeViewMode.BLOCOS) "Linhas" else "Blocos",
                                     onClick = { viewMode = if (viewMode == NfeViewMode.BLOCOS) NfeViewMode.LINHAS else NfeViewMode.BLOCOS; lancAberto = true },
                                 )
                                 com.bragro.mobile.ui.domain.LabeledIconButton(
-                                    icon = if (lancAberto) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                                    icon = if (lancAberto) Icons.Outlined.KeyboardDoubleArrowUp else Icons.Outlined.KeyboardDoubleArrowDown,
                                     label = if (lancAberto) "Recolher" else "Expandir",
                                     onClick = { lancAberto = !lancAberto },
                                 )
                             },
                             operacoes = {
-                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Add, label = "+ Nota", onClick = { copiaOrigem = null; showNovaNota = true })
-                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.ContentCopy, label = "Copiar", onClick = { if (ultimaNota != null) { copiaOrigem = ultimaNota; showNovaNota = true } })
-                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.VerifiedUser, label = "Certificado", onClick = { showCertificado = true })
-                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", onClick = { viewModel.carregar() })
+                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Add, label = "+ Nota", onClick = { copiaOrigem = null; showNovaNota = true })
+                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ContentCopy, label = "Copiar", onClick = { if (ultimaNota != null) { copiaOrigem = ultimaNota; showNovaNota = true } })
+                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.VerifiedUser, label = "Certificado", onClick = { showCertificado = true })
+                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", onClick = { viewModel.carregar() })
                             },
                             arquivos = {
-                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.FolderZip, label = "XML lote", onClick = { showXmlLote = true })
+                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.FolderZip, label = "XML lote", onClick = { showXmlLote = true })
                                 com.bragro.mobile.ui.domain.ArquivosTabela("NF-e", listOf("Número", "Série", "Tipo", "Emitente", "Valor", "Emissão", "Status")) {
                                     invoices.map { listOf(it.numero, it.serie.orEmpty(), it.tipo.orEmpty(), it.emitenteNome.orEmpty(), formatoMoeda(it.valorTotal), it.dataEmissao?.take(10)?.let { d -> com.bragro.mobile.ui.domain.isoDateToBr(d) }.orEmpty(), it.statusSefaz ?: it.status) }
                                 }

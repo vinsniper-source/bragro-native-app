@@ -1,8 +1,9 @@
 package com.bragro.mobile.ui.operacoes
 
+import androidx.compose.material.icons.outlined.Agriculture
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
-import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.outlined.FilterAlt
 import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,22 +28,22 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.TableChart
-import androidx.compose.material.icons.filled.ViewAgenda
-import androidx.compose.material.icons.filled.Wallet
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Print
+import androidx.compose.material.icons.outlined.PictureAsPdf
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.TableChart
+import androidx.compose.material.icons.outlined.ViewAgenda
+import androidx.compose.material.icons.outlined.Wallet
 import com.bragro.mobile.ui.domain.RecordTableHeader
 import com.bragro.mobile.ui.domain.RecordTableRow
 import com.bragro.mobile.ui.domain.StatusBadge
@@ -293,7 +294,7 @@ private fun FiltroLista(label: String, valor: String, opcoes: List<Pair<String, 
                 shape = RoundedCornerShape(8.dp),
             ) {
                 Text(opcoes.firstOrNull { it.first == valor }?.second ?: valor, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                Icon(Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.size(16.dp))
+                Icon(Icons.Outlined.ExpandMore, contentDescription = null, modifier = Modifier.size(16.dp))
             }
             androidx.compose.material3.DropdownMenu(expanded = aberto, onDismissRequest = { aberto = false }) {
                 opcoes.forEach { (v, l) ->
@@ -387,7 +388,7 @@ private fun OperacaoCard(
             )
             // v20 (opção A) -- Monitoramento, Ações e Progresso, nesta ordem.
             meio?.invoke()
-            com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = atividades.size, aberto = blocoAberto, titulo = "Atividades") { blocoAberto = !blocoAberto }
+            com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = atividades.size, aberto = blocoAberto, titulo = op.local, rotulo = "${atividades.size} atividades · ${op.cultura} · ${op.safra}") { blocoAberto = !blocoAberto }
 
             if (blocoAberto) {
                 if (mostrarFiltros) {
@@ -473,7 +474,7 @@ private fun OperacaoCard(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.weight(1f),
                                 )
-                                Icon(if (aberto) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (aberto) "Recolher" else "Abrir", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                com.bragro.mobile.ui.domain.CantoL(aberto)
                             }
                             Text(tituloAtividade(a), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                             Text(
@@ -500,9 +501,9 @@ private fun OperacaoCard(
                                         modifier = Modifier.fillMaxWidth().clickable { equipeAberta[chaveEq] = !eqAberto },
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
-                                        Icon(Icons.Filled.Person, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Icon(Icons.Outlined.Person, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Text(" $nome", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                                        Icon(if (eqAberto) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (eqAberto) "Recolher" else "Abrir", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        com.bragro.mobile.ui.domain.CantoL(eqAberto)
                                     }
                                     if (eqAberto) {
                                         Text("Função: $func", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -531,7 +532,7 @@ private fun OperacaoCard(
                                 androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                 Column(modifier = Modifier.fillMaxWidth().clickable { osAbertas[ev.id] = !osAberta }.padding(horizontal = 10.dp, vertical = 8.dp)) {
                                     Row(verticalAlignment = Alignment.Top) {
-                                        Icon(if (osAberta) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        com.bragro.mobile.ui.domain.CantoL(osAberta)
                                         Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
                                             Text(
                                                 (if (ev.tipo == "colheita") "Colheita" else "O.S. ${ev.os ?: "—"}") + " · " + (ev.talhao?.let { "Talhão $it" } ?: "Sem talhão"),
@@ -601,7 +602,7 @@ private fun OperacaoCard(
                                                 },
                                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
                                             ) {
-                                                Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(14.dp))
+                                                Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(14.dp))
                                                 Text(if (revisado) " Revisada · revisar e editar de novo" else " Revisar e editar", style = MaterialTheme.typography.labelMedium)
                                             }
                                         }
@@ -764,9 +765,15 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                     }
                 },
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Agriculture, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Operações", color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
+                    }
+                
                     }
                 } },
                 actions = {
@@ -785,21 +792,21 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                     com.bragro.mobile.ui.domain.AcoesEmAbas(
                         titulos = listOf("Monitoramento", "Ações", "Progresso"),
                         dados = {
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.FilterAlt, label = "Filtros", active = filtrosVisiveis, onClick = { filtrosVisiveis = !filtrosVisiveis })
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.FilterAlt, label = "Filtros", active = filtrosVisiveis, onClick = { filtrosVisiveis = !filtrosVisiveis })
                             com.bragro.mobile.ui.domain.LabeledIconButton(
-                                icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
+                                icon = if (tableView) Icons.Outlined.ViewAgenda else Icons.Outlined.TableChart,
                                 label = if (tableView) "Coluna" else "Tabela",
                                 active = tableView,
                                 onClick = { tableView = !tableView },
                             )
                         },
                         operacoes = {
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", onClick = { viewModel.refresh() })
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", onClick = { viewModel.refresh() })
                             com.bragro.mobile.ui.domain.NuvemButton()
                         },
                         arquivos = {
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = { if (operacoes.isNotEmpty()) HtmlPrinter.printList(context, operacoesExportConfig(), operacoesExportRecords(operacoes)) })
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.PictureAsPdf, label = "PDF", onClick = { if (operacoes.isNotEmpty()) HtmlPrinter.exportPdfDirect(context, operacoesExportConfig(), operacoesExportRecords(operacoes)) })
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Print, label = "Imprimir", onClick = { if (operacoes.isNotEmpty()) HtmlPrinter.printList(context, operacoesExportConfig(), operacoesExportRecords(operacoes)) })
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.PictureAsPdf, label = "PDF", onClick = { if (operacoes.isNotEmpty()) HtmlPrinter.exportPdfDirect(context, operacoesExportConfig(), operacoesExportRecords(operacoes)) })
                         },
                     )
                     // Atualizar saiu daqui (subiu pro TopAppBar, ao lado da

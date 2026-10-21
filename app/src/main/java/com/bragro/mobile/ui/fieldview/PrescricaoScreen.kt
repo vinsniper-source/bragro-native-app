@@ -1,8 +1,9 @@
 package com.bragro.mobile.ui.fieldview
 
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.outlined.Refresh
 import android.app.Application
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
@@ -19,22 +20,22 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.Print
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.outlined.Info
 import com.bragro.mobile.ui.i18n.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -292,9 +293,15 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                 // pedido do usuário ("abaixe o título do módulo e deixe na
                 // mesma altura dos modulos mais antigos").
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Map, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Prescrição / Taxa Variável", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.basicMarquee())
+                    }
+                
                     }
                 } },
                 // Ícones Imprimir + Nuvem na mesma altura do título -- pedido
@@ -348,18 +355,19 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                 com.bragro.mobile.ui.domain.AcoesEmAbas(
                     dados = {
                         com.bragro.mobile.ui.domain.LabeledIconButton(
-                            icon = if (lancAberto) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                            icon = if (lancAberto) Icons.Outlined.KeyboardDoubleArrowUp else Icons.Outlined.KeyboardDoubleArrowDown,
                             label = if (lancAberto) "Recolher" else "Expandir",
                             onClick = { lancAberto = !lancAberto },
                         )
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Info, label = "Formatos", onClick = { infoAberto = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Info, label = "Formatos", onClick = { infoAberto = true })
                     },
                     operacoes = {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Add, label = "+ Nova", onClick = onNovo)
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", onClick = { viewModel.carregar() })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Add, label = "+ Nova", onClick = onNovo)
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", onClick = { viewModel.carregar() })
+                        com.bragro.mobile.ui.domain.NuvemButton()
                     },
                     arquivos = {
-                        com.bragro.mobile.ui.domain.ArquivosTabela("Prescrição / Taxa Variável", listOf("Nome", "Produto", "Safra", "Cultura", "Talhão", "Taxa mín.", "Taxa média", "Taxa máx."), nuvem = true) {
+                        com.bragro.mobile.ui.domain.ArquivosTabela("Prescrição / Taxa Variável", listOf("Nome", "Produto", "Safra", "Cultura", "Talhão", "Taxa mín.", "Taxa média", "Taxa máx.")) {
                             prescricoes.map {
                                 listOf(
                                     it.nome, it.produto ?: "", it.safra ?: "", it.cultura ?: "", it.talhao ?: "",
@@ -447,14 +455,14 @@ private fun PrescricaoCard(
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                 } else {
                     IconButton(onClick = onExportarShp) {
-                        Icon(Icons.Filled.Download, contentDescription = "Exportar SHP", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Outlined.Download, contentDescription = "Exportar SHP", tint = MaterialTheme.colorScheme.primary)
                     }
                     IconButton(onClick = onExportarIsoXml) {
-                        Icon(Icons.Filled.Description, contentDescription = "Exportar ISO-XML", tint = MaterialTheme.colorScheme.secondary)
+                        Icon(Icons.Outlined.Description, contentDescription = "Exportar ISO-XML", tint = MaterialTheme.colorScheme.secondary)
                     }
                 }
                 IconButton(onClick = onToggle) {
-                    Icon(if (expandido) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (expandido) "Recolher mapa" else "Ver mapa")
+                    com.bragro.mobile.ui.domain.CantoL(expandido)
                 }
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

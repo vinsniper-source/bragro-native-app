@@ -1,8 +1,8 @@
 package com.bragro.mobile.ui.domain
 
-import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.outlined.PictureAsPdf
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,11 +20,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.GridOn
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.NorthEast
-import androidx.compose.material.icons.filled.Agriculture
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.GridOn
+import androidx.compose.material.icons.outlined.Print
+import androidx.compose.material.icons.outlined.NorthEast
+import androidx.compose.material.icons.outlined.Agriculture
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -436,10 +436,10 @@ fun AbasEncaixadas(titulos: List<String>, selecionada: Int, avisos: List<Int> = 
 fun SetaRecolher(aberto: Boolean, modifier: Modifier = Modifier, onToggle: () -> Unit) {
     val fg = MaterialTheme.colorScheme.onSurface
     Box(
-        modifier = modifier.size(26.dp).clip(RoundedCornerShape(6.dp)).border(1.dp, fg.copy(alpha = 0.35f), RoundedCornerShape(6.dp)).clickable { onToggle() },
+        modifier = modifier.size(26.dp).clickable { onToggle() },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Filled.ExpandMore, contentDescription = if (aberto) "Recolher" else "Expandir", tint = fg, modifier = Modifier.size(16.dp).rotate(if (aberto) 0f else -90f))
+        CantoL(aberto)
     }
 }
 
@@ -455,12 +455,7 @@ fun FaixaTitulo(titulo: String, aberto: Boolean, extra: String? = null, onToggle
         Text(Idioma.tr(titulo).uppercase(), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp, color = fg)
         if (extra != null) Text(extra, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
         Box(Modifier.weight(1f).height(1.5.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)))
-        Box(
-            modifier = Modifier.size(24.dp).border(1.dp, fg.copy(alpha = 0.35f), RoundedCornerShape(6.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Filled.ExpandMore, contentDescription = if (aberto) "Recolher" else "Expandir", tint = fg, modifier = Modifier.size(16.dp).rotate(if (aberto) 0f else -90f))
-        }
+        CantoL(aberto, Modifier.align(Alignment.Bottom))
     }
 }
 
@@ -482,13 +477,7 @@ fun CabecalhoLancamentos(total: Int, aberto: Boolean, extra: String? = null, tit
         // v14: a linha vai do número até a setinha (encostada na margem),
         // um pouco mais grossa e num cinza um tom mais escuro.
         Box(Modifier.weight(1f).height(1.5.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)))
-        Box(
-            modifier = Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surface)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Filled.ExpandMore, contentDescription = if (aberto) "Recolher" else "Expandir", tint = fg, modifier = Modifier.size(18.dp).rotate(if (aberto) 0f else -90f))
-        }
+        CantoL(aberto, Modifier.align(Alignment.Bottom))
     }
 }
 
@@ -498,6 +487,8 @@ fun CabecalhoLancamentos(total: Int, aberto: Boolean, extra: String? = null, tit
  * linha, cada um com 3 linhas (rótulo, número, complemento). As barras
  * viram cartões com barrinha.
  */
+const val MONITORAMENTO_DESLIGADO = true
+
 @Composable
 fun PainelMonitoramento(
     painel: PainelModulo,
@@ -505,6 +496,9 @@ fun PainelMonitoramento(
     kpiAtivo: String? = null,
     onKpi: ((PainelKpi) -> Unit)? = null,
 ) {
+    // v21 -- bloco de Monitoramento removido de todo o app (pedido do
+    // usuário: as informações já existem nos módulos próprios).
+    if (MONITORAMENTO_DESLIGADO) return
     var aberto by rememberSaveable(painel.titulo) { mutableStateOf(false) }
     val cartoes: List<Any> = (painel.kpis.take(2) + painel.barras + painel.kpis.drop(2)).take(6)
     Column(
@@ -522,7 +516,7 @@ fun PainelMonitoramento(
             Box(
                 modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)),
                 contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Filled.Agriculture, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp)) }
+            ) { Icon(Icons.Outlined.Agriculture, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp)) }
             Column(modifier = Modifier.weight(1f)) {
                 Text(Idioma.tr(painel.titulo).uppercase(), fontWeight = FontWeight.Bold, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(painel.subtitulo, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -693,7 +687,7 @@ fun CartaoGrupo(
             ValorUmaLinha(total ?: "—", MaterialTheme.colorScheme.onSurface, maxSp = 14f, minSp = 8.5f)
             if (!totalRotulo.isNullOrBlank()) Text(totalRotulo, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        Icon(Icons.Filled.ExpandMore, contentDescription = if (aberto) "Recolher grupo" else "Ver lançamentos do grupo", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.rotate(if (aberto) 180f else 0f))
+        CantoL(aberto, Modifier.align(Alignment.Bottom))
     }
 }
 
@@ -777,17 +771,17 @@ fun ArquivosTabela(titulo: String, headers: List<String>, nuvem: Boolean = false
     val context = androidx.compose.ui.platform.LocalContext.current
     // v19 -- "Imprimir/PDF" desmembrado; ordem Imprimir · PDF · Excel · Nuvem.
     LabeledIconButton(
-        icon = androidx.compose.material.icons.Icons.Filled.Print,
+        icon = androidx.compose.material.icons.Icons.Outlined.Print,
         label = "Imprimir",
         onClick = { com.bragro.mobile.ui.print.HtmlPrinter.printSimpleTable(context, titulo, headers, linhas()) },
     )
     LabeledIconButton(
-        icon = androidx.compose.material.icons.Icons.Filled.PictureAsPdf,
+        icon = androidx.compose.material.icons.Icons.Outlined.PictureAsPdf,
         label = "PDF",
         onClick = { com.bragro.mobile.ui.print.HtmlPrinter.exportSimpleTablePdf(context, titulo, headers, linhas()) },
     )
     LabeledIconButton(
-        icon = androidx.compose.material.icons.Icons.Filled.GridOn,
+        icon = androidx.compose.material.icons.Icons.Outlined.GridOn,
         label = "Excel",
         onClick = {
             val nome = titulo.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-') + ".xlsx"
@@ -803,7 +797,7 @@ fun NuvemButton() {
     val context = androidx.compose.ui.platform.LocalContext.current
     val online = com.bragro.mobile.data.NetworkStatus.isOnline(context)
     LabeledIconButton(
-        icon = if (online) androidx.compose.material.icons.Icons.Filled.Cloud else androidx.compose.material.icons.Icons.Filled.CloudOff,
+        icon = if (online) androidx.compose.material.icons.Icons.Outlined.Cloud else androidx.compose.material.icons.Icons.Outlined.CloudOff,
         label = "Nuvem",
         onClick = {
             val msg = if (!com.bragro.mobile.data.NetworkStatus.isOnline(context)) com.bragro.mobile.data.NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."

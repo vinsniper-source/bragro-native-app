@@ -37,53 +37,53 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AddPhotoAlternate
-import androidx.compose.material.icons.filled.Agriculture
-import androidx.compose.material.icons.filled.Assignment
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.Backup
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.Campaign
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.CloudSync
-import androidx.compose.material.icons.filled.CurrencyExchange
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.DoneAll
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Eco
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.Inventory
-import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.LocalDrink
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.NotificationsNone
-import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.Pets
-import androidx.compose.material.icons.filled.PlaylistAddCheck
-import androidx.compose.material.icons.filled.PushPin
-import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.ReportProblem
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.TrendingDown
-import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material.icons.filled.WarningAmber
-import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.AddPhotoAlternate
+import androidx.compose.material.icons.outlined.Agriculture
+import androidx.compose.material.icons.outlined.Assignment
+import androidx.compose.material.icons.outlined.AttachMoney
+import androidx.compose.material.icons.outlined.Backup
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.Campaign
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.CloudSync
+import androidx.compose.material.icons.outlined.CurrencyExchange
+import androidx.compose.material.icons.outlined.DirectionsCar
+import androidx.compose.material.icons.outlined.DoneAll
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Eco
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.Inventory
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.Logout
+import androidx.compose.material.icons.outlined.LocalDrink
+import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.NotificationsNone
+import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material.icons.outlined.Pets
+import androidx.compose.material.icons.outlined.PlaylistAddCheck
+import androidx.compose.material.icons.outlined.PushPin
+import androidx.compose.material.icons.outlined.Receipt
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.ReportProblem
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.SwapHoriz
+import androidx.compose.material.icons.outlined.TrendingDown
+import androidx.compose.material.icons.outlined.TrendingUp
+import androidx.compose.material.icons.outlined.WarningAmber
+import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -727,7 +727,7 @@ fun HomeScreen(
                                 android.widget.Toast.makeText(logoScreenContext, msg, android.widget.Toast.LENGTH_SHORT).show()
                             }
                         }) {
-                            Icon(Icons.Filled.Backup, contentDescription = "Backup completo")
+                            Icon(Icons.Outlined.Backup, contentDescription = "Backup completo")
                         }
                     }
                     // Ícone "Módulos" -- consolida Configurações + Base de
@@ -746,22 +746,22 @@ fun HomeScreen(
                         var modulosMenuOpen by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { modulosMenuOpen = true }) {
-                                Icon(Icons.Filled.GridView, contentDescription = "Módulos")
+                                Icon(Icons.Outlined.GridView, contentDescription = "Módulos")
                             }
                             DropdownMenu(expanded = modulosMenuOpen, onDismissRequest = { modulosMenuOpen = false }) {
                                 DropdownMenuItem(
                                     text = { Text("Configurações") },
-                                    leadingIcon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+                                    leadingIcon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
                                     onClick = { modulosMenuOpen = false; onOpenSettings() },
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Base de Dados") },
-                                    leadingIcon = { Icon(Icons.Filled.Storage, contentDescription = null) },
+                                    leadingIcon = { Icon(Icons.Outlined.Storage, contentDescription = null) },
                                     onClick = { modulosMenuOpen = false; onOpenBaseDeDados() },
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Acessos") },
-                                    leadingIcon = { Icon(Icons.Filled.Security, contentDescription = null) },
+                                    leadingIcon = { Icon(Icons.Outlined.Security, contentDescription = null) },
                                     onClick = { modulosMenuOpen = false; onOpenSeguranca() },
                                 )
                             }
@@ -783,7 +783,7 @@ fun HomeScreen(
                         var iosStepsOpen by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { configMenuOpen = true }) {
-                                Icon(Icons.Filled.Settings, contentDescription = "Configurações")
+                                Icon(Icons.Outlined.Settings, contentDescription = "Configurações")
                             }
                             DropdownMenu(expanded = configMenuOpen, onDismissRequest = { configMenuOpen = false }) {
                                 val apkUrl = home?.apkUrl
@@ -791,7 +791,7 @@ fun HomeScreen(
                                 if (!apkUrl.isNullOrBlank()) {
                                     DropdownMenuItem(
                                         text = { Text("Baixar para Android" + (apkVersao?.let { " (v$it)" } ?: "")) },
-                                        leadingIcon = { Icon(Icons.Filled.Download, contentDescription = null) },
+                                        leadingIcon = { Icon(Icons.Outlined.Download, contentDescription = null) },
                                         onClick = {
                                             configMenuOpen = false
                                             com.bragro.mobile.ui.util.enqueueApkDownload(logoScreenContext, apkUrl, apkVersao ?: "?")
@@ -859,7 +859,7 @@ fun HomeScreen(
                         var dbMenuOpen by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { dbMenuOpen = true }) {
-                                Icon(Icons.Filled.Storage, contentDescription = "Base de Dados")
+                                Icon(Icons.Outlined.Storage, contentDescription = "Base de Dados")
                             }
                             DropdownMenu(expanded = dbMenuOpen, onDismissRequest = { dbMenuOpen = false }) {
                                 val grupos = home?.baseDeDadosCategorias.orEmpty()
@@ -892,7 +892,7 @@ fun HomeScreen(
                     IconButton(onClick = { notificationsOpen = true; viewModel.loadNotifications() }) {
                         BadgedBox(badge = { if (unreadCount > 0) Badge(containerColor = BrYellow, contentColor = Color(0xFF412402)) { Text(unreadCount.toString()) } }) {
                             Icon(
-                                if (unreadCount > 0) Icons.Filled.NotificationsActive else Icons.Filled.NotificationsNone,
+                                if (unreadCount > 0) Icons.Outlined.NotificationsActive else Icons.Outlined.NotificationsNone,
                                 contentDescription = "Notificações",
                             )
                         }
@@ -915,7 +915,7 @@ fun HomeScreen(
                                     modifier = Modifier.size(28.dp).clip(CircleShape),
                                 )
                             } else {
-                                Icon(Icons.Filled.AccountCircle, contentDescription = "Conta")
+                                Icon(Icons.Outlined.AccountCircle, contentDescription = "Conta")
                             }
                         }
                         DropdownMenu(expanded = userMenuOpen, onDismissRequest = { userMenuOpen = false }) {
@@ -924,17 +924,17 @@ fun HomeScreen(
                             // opção de inserir foto").
                             DropdownMenuItem(
                                 text = { Text("Alterar foto") },
-                                leadingIcon = { Icon(Icons.Filled.AddPhotoAlternate, contentDescription = null) },
+                                leadingIcon = { Icon(Icons.Outlined.AddPhotoAlternate, contentDescription = null) },
                                 onClick = { userMenuOpen = false; avatarPickerLauncher.launch("image/*") },
                             )
                             DropdownMenuItem(
                                 text = { Text("Sincronizar agora") },
-                                leadingIcon = { Icon(Icons.Filled.CloudSync, contentDescription = null) },
+                                leadingIcon = { Icon(Icons.Outlined.CloudSync, contentDescription = null) },
                                 onClick = { userMenuOpen = false; viewModel.syncNow(); viewModel.refresh() },
                             )
                             DropdownMenuItem(
                                 text = { Text("Sair") },
-                                leadingIcon = { Icon(Icons.Filled.Logout, contentDescription = null) },
+                                leadingIcon = { Icon(Icons.Outlined.Logout, contentDescription = null) },
                                 onClick = { userMenuOpen = false; viewModel.logout(onLoggedOut) },
                             )
                         }
@@ -996,7 +996,7 @@ fun HomeScreen(
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             } else {
                                 Icon(
-                                    Icons.Filled.AddPhotoAlternate,
+                                    Icons.Outlined.AddPhotoAlternate,
                                     contentDescription = "Adicionar logo da empresa",
                                     modifier = Modifier
                                         .size(28.dp)
@@ -1242,7 +1242,7 @@ fun HomeScreen(
                                 .padding(horizontal = 10.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Icon(Icons.Filled.CloudSync, contentDescription = null, tint = BrOrange, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Outlined.CloudSync, contentDescription = null, tint = BrOrange, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 "$pending lançamento(s) aguardando conexão para sincronizar. Toque para ver quais.",
@@ -1274,7 +1274,7 @@ fun HomeScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Icon(
-                                    Icons.Filled.WarningAmber,
+                                    Icons.Outlined.WarningAmber,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onErrorContainer,
                                     modifier = Modifier.size(18.dp),
@@ -1541,7 +1541,7 @@ private fun NotificationsDialog(items: List<NotificationItemData>, onMarkAllRead
         },
         confirmButton = {
             TextButton(onClick = { onMarkAllRead() }) {
-                Icon(Icons.Filled.DoneAll, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(Icons.Outlined.DoneAll, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(" Marcar todas como lidas")
             }
         },
@@ -1671,7 +1671,7 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, all
                 // Ícone estilo KPI (badge circular colorido) no cabeçalho --
                 // pedido do usuário ("coloque um ícone como nos kpis abaixo
                 // nos blocos mural de avisos central de alertas").
-                SectionBadgeIcon(Icons.Filled.Campaign, MaterialTheme.colorScheme.tertiary)
+                SectionBadgeIcon(Icons.Outlined.Campaign, MaterialTheme.colorScheme.tertiary)
                 Spacer(Modifier.width(8.dp))
                 Box(modifier = Modifier.weight(1f)) {
                     CollapsibleHeader("Mural de Avisos (${notices.size})", expanded) { expanded = !expanded }
@@ -1689,7 +1689,7 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, all
                 // toque) deixava o cabeçalho do Mural mais alto que o de
                 // Alertas (que não tem esse botão extra).
                 IconButton(onClick = { showAddDialog = true }, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Filled.Add, contentDescription = "Adicionar aviso ou lembrete", tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Outlined.Add, contentDescription = "Adicionar aviso ou lembrete", tint = MaterialTheme.colorScheme.primary)
                 }
             }
             if (expanded) {
@@ -1738,10 +1738,10 @@ private fun NoticeRowItem(n: NoticeData, tone: Color, onDelete: () -> Unit) {
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (n.tipo == "lembrete") {
-                    Icon(Icons.Filled.NotificationsActive, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.padding(end = 4.dp).size(16.dp))
+                    Icon(Icons.Outlined.NotificationsActive, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.padding(end = 4.dp).size(16.dp))
                 }
                 if (n.fixado) {
-                    Icon(Icons.Filled.PushPin, contentDescription = null, tint = BrYellow, modifier = Modifier.padding(end = 4.dp))
+                    Icon(Icons.Outlined.PushPin, contentDescription = null, tint = BrYellow, modifier = Modifier.padding(end = 4.dp))
                 }
                 Text(n.titulo, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = tone)
             }
@@ -1752,7 +1752,7 @@ private fun NoticeRowItem(n: NoticeData, tone: Color, onDelete: () -> Unit) {
         // usuario: cada um so apaga o que publicou.
         if (n.podeExcluir) {
             IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
-                Icon(Icons.Filled.Close, contentDescription = "Excluir aviso", modifier = Modifier.size(16.dp))
+                Icon(Icons.Outlined.Close, contentDescription = "Excluir aviso", modifier = Modifier.size(16.dp))
             }
         }
     }
@@ -1906,10 +1906,10 @@ private fun HomeShortcutsRow(
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
     ) {
         com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth()) {
-            if (showDestaques) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Star, label = "Destaques", onClick = { onDestaquesChange(true) })
-            if (showAlertas) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.WarningAmber, label = "Alertas", badgeCount = data.alerts.size, onClick = { open = "alertas" })
-            if (showMonitor) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Bolt, label = "Monitor", badgeCount = data.recentActivity.size, onClick = { open = "monitor" })
-            if (showMural) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Campaign, label = "Avisos", badgeCount = data.notices.size, onClick = { open = "mural" })
+            if (showDestaques) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Star, label = "Destaques", onClick = { onDestaquesChange(true) })
+            if (showAlertas) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.WarningAmber, label = "Alertas", badgeCount = data.alerts.size, onClick = { open = "alertas" })
+            if (showMonitor) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Bolt, label = "Monitor", badgeCount = data.recentActivity.size, onClick = { open = "monitor" })
+            if (showMural) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Campaign, label = "Avisos", badgeCount = data.notices.size, onClick = { open = "mural" })
         }
     }
 
@@ -1991,7 +1991,7 @@ private fun CollapsibleHeader(title: String, expanded: Boolean, onToggle: () -> 
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-        Icon(if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (expanded) "Recolher" else "Expandir")
+        com.bragro.mobile.ui.domain.CantoL(expanded)
     }
 }
 
@@ -2022,7 +2022,7 @@ private fun AlertsCard(alerts: List<AlertData>, onOpenDomain: (String) -> Unit, 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                SectionBadgeIcon(Icons.Filled.WarningAmber, BrOrange)
+                SectionBadgeIcon(Icons.Outlined.WarningAmber, BrOrange)
                 Spacer(Modifier.width(8.dp))
                 Box(modifier = Modifier.weight(1f)) {
                     CollapsibleHeader("Central de Alertas (${alerts.size})", expanded) { expanded = !expanded }
@@ -2042,7 +2042,7 @@ private fun AlertsCard(alerts: List<AlertData>, onOpenDomain: (String) -> Unit, 
                             verticalAlignment = Alignment.Top,
                         ) {
                             Icon(
-                                Icons.Filled.NotificationsActive,
+                                Icons.Outlined.NotificationsActive,
                                 contentDescription = null,
                                 tint = if (a.severidade == "alta") MaterialTheme.colorScheme.error else BrYellow,
                                 modifier = Modifier.padding(top = 2.dp, end = 8.dp),
@@ -2094,7 +2094,7 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Bolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                Icon(Icons.Outlined.Bolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
                 Box(modifier = Modifier.weight(1f)) {
                     // Contagem no título -- mesmo padrão da Central de
@@ -2247,7 +2247,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.financeiro" to Kpi(
             "Financeiro",
             formatMoneyBrl(data.saldoFinanceiroAberto),
-            Icons.Filled.AccountBalanceWallet,
+            Icons.Outlined.AccountBalanceWallet,
             // BrBlue (fixo) -> colorScheme.tertiary (adapta por tema) --
             // pedido do usuário ("coloque as cores das fontes preto/branco
             // modo claro/escuro"): BrBlue cru tinha baixo contraste no modo
@@ -2259,7 +2259,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.financeiro.vencendo" to Kpi(
             "Contas vencendo",
             data.financeiroVencendoCount.toString(),
-            Icons.Filled.Schedule,
+            Icons.Outlined.Schedule,
             MaterialTheme.colorScheme.tertiary,
             KpiKind.QUANTIDADE,
             description = "Vencimento nos próximos 7 dias",
@@ -2267,7 +2267,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.financeiro.lancamentos" to Kpi(
             "Lançamentos (mês)",
             data.financeiroLancamentosMes.toString(),
-            Icons.Filled.Receipt,
+            Icons.Outlined.Receipt,
             MaterialTheme.colorScheme.tertiary,
             KpiKind.QUANTIDADE,
             description = "Lançamentos financeiros no mês corrente",
@@ -2275,7 +2275,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.estoque" to Kpi(
             "Itens no estoque",
             data.itensEstoque.toString(),
-            Icons.Filled.Inventory2,
+            Icons.Outlined.Inventory2,
             BrYellow,
             KpiKind.QUANTIDADE,
             description = "Total de itens cadastrados no estoque",
@@ -2283,7 +2283,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.estoque.critico" to Kpi(
             "Abaixo do mínimo",
             data.estoqueCriticoCount.toString(),
-            Icons.Filled.WarningAmber,
+            Icons.Outlined.WarningAmber,
             BrYellow,
             KpiKind.QUANTIDADE,
             description = "Itens com saldo abaixo do mínimo",
@@ -2291,7 +2291,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.estoque.movimentacoes" to Kpi(
             "Movimentações (mês)",
             data.estoqueMovimentacoesMes.toString(),
-            Icons.Filled.SwapHoriz,
+            Icons.Outlined.SwapHoriz,
             BrYellow,
             KpiKind.QUANTIDADE,
             description = "Movimentações de estoque no mês corrente",
@@ -2299,7 +2299,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.rh" to Kpi(
             "Colaboradores ativos",
             data.colaboradoresAtivos.toString(),
-            Icons.Filled.Groups,
+            Icons.Outlined.Groups,
             MaterialTheme.colorScheme.primary,
             KpiKind.QUANTIDADE,
             description = "Total cadastrado no módulo RH",
@@ -2307,7 +2307,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.rh.pendencias" to Kpi(
             "Pendências de RH",
             data.rhPendenciasCount.toString(),
-            Icons.Filled.Assignment,
+            Icons.Outlined.Assignment,
             MaterialTheme.colorScheme.primary,
             KpiKind.QUANTIDADE,
             description = "ASO, CNH ou férias pendentes",
@@ -2315,7 +2315,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.rh.admissoes" to Kpi(
             "Admissões (mês)",
             data.rhAdmissoesMes.toString(),
-            Icons.Filled.PersonAdd,
+            Icons.Outlined.PersonAdd,
             MaterialTheme.colorScheme.primary,
             KpiKind.QUANTIDADE,
             description = "Colaboradores admitidos no mês corrente",
@@ -2323,7 +2323,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.frota" to Kpi(
             "Veículos em manutenção",
             data.frotaEmManutencao.toString(),
-            Icons.Filled.DirectionsCar,
+            Icons.Outlined.DirectionsCar,
             BrOrange,
             KpiKind.QUANTIDADE,
             description = "Veículos/máquinas em manutenção",
@@ -2331,7 +2331,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.frota.custo" to Kpi(
             "Custo da frota (mês)",
             formatMoneyBrl(data.frotaCustoMes),
-            Icons.Filled.AttachMoney,
+            Icons.Outlined.AttachMoney,
             BrOrange,
             KpiKind.VALOR,
             description = "Custo total lançado no mês corrente",
@@ -2339,7 +2339,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.frota.veiculos" to Kpi(
             "Veículos cadastrados",
             data.frotaVeiculosDistintos.toString(),
-            Icons.Filled.Inventory,
+            Icons.Outlined.Inventory,
             BrOrange,
             KpiKind.QUANTIDADE,
             description = "Veículos/máquinas distintos já lançados",
@@ -2347,7 +2347,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.frota.os" to Kpi(
             "O.S. abertas (mês)",
             data.frotaOsMes.toString(),
-            Icons.Filled.Build,
+            Icons.Outlined.Build,
             BrOrange,
             KpiKind.QUANTIDADE,
             description = "Ordens de serviço abertas no mês corrente",
@@ -2355,7 +2355,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.safra" to Kpi(
             "Operações de safra",
             data.safrasAtivas.toString(),
-            Icons.Filled.Eco,
+            Icons.Outlined.Eco,
             MaterialTheme.colorScheme.primary,
             KpiKind.QUANTIDADE,
             description = "Lançamentos de safra em andamento",
@@ -2363,7 +2363,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.safra.lancamentos" to Kpi(
             "Lançamentos de safra (mês)",
             data.safraLancamentosMes.toString(),
-            Icons.Filled.PlaylistAddCheck,
+            Icons.Outlined.PlaylistAddCheck,
             MaterialTheme.colorScheme.primary,
             KpiKind.QUANTIDADE,
             description = "Lançamentos de safra no mês corrente",
@@ -2371,7 +2371,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.safra.colheitas" to Kpi(
             "Colheitas (mês)",
             data.safraColheitasMes.toString(),
-            Icons.Filled.Agriculture,
+            Icons.Outlined.Agriculture,
             MaterialTheme.colorScheme.primary,
             KpiKind.QUANTIDADE,
             description = "Colheitas iniciadas no mês corrente",
@@ -2383,7 +2383,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.pecuaria" to Kpi(
             "Animais cadastrados",
             data.pecuariaAnimaisDistintos.toString(),
-            Icons.Filled.Pets,
+            Icons.Outlined.Pets,
             BrGreen,
             KpiKind.QUANTIDADE,
             description = "Animais distintos já lançados no plantel",
@@ -2391,7 +2391,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.pecuaria.leite" to Kpi(
             "Produção de leite (mês)",
             "${data.pecuariaLeiteMesLitros.toInt()} L",
-            Icons.Filled.LocalDrink,
+            Icons.Outlined.LocalDrink,
             BrGreen,
             KpiKind.QUANTIDADE,
             description = "Litros de leite das ordenhas no mês corrente",
@@ -2399,7 +2399,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.pecuaria.mortes" to Kpi(
             "Mortes registradas (mês)",
             data.pecuariaMortesMes.toString(),
-            Icons.Filled.ReportProblem,
+            Icons.Outlined.ReportProblem,
             BrGreen,
             KpiKind.QUANTIDADE,
             description = "Mortes registradas no mês corrente",
@@ -2453,7 +2453,7 @@ private fun KpiGrid(data: HomeData) {
 private fun fazendasKpi(data: HomeData): Kpi = Kpi(
     "Fazendas cadastradas",
     data.numeroFazendas.toString(),
-    Icons.Filled.Map,
+    Icons.Outlined.Map,
     BrOrange,
     KpiKind.QUANTIDADE,
     description = "Área total: ${formatAreaHa(data.areaTotalHa)}",
@@ -2596,7 +2596,7 @@ private fun MiniCardHeaderWithRefresh(
 private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            MiniCardHeaderWithRefresh("Clima", Icons.Filled.WbSunny, BrYellow, MaterialTheme.typography.titleMedium, onRefresh)
+            MiniCardHeaderWithRefresh("Clima", Icons.Outlined.WbSunny, BrYellow, MaterialTheme.typography.titleMedium, onRefresh)
             // Temperatura atual centralizada, máx/mín centralizado na linha
             // debaixo -- pedido do usuário ("kpi clima colocar °C
             // centralizado e max °C/ min ºC na linha debaixo centralizado").
@@ -2658,7 +2658,7 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh
 private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            MiniCardHeaderWithRefresh("Câmbio", Icons.Filled.CurrencyExchange, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
+            MiniCardHeaderWithRefresh("Câmbio", Icons.Outlined.CurrencyExchange, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
             // Ícone de variação (alta/baixa) + porcentagem do dia ao lado do
             // valor -- pedido do usuário ("na linha dólar e na linha euro
             // adicione ícone de variação e porcentagem"), mesmo padrão já
@@ -2861,7 +2861,7 @@ private fun FxVariacaoTagSemRecuo(pct: Double) {
     val positive = pct >= 0
     val color = if (positive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
     Icon(
-        if (positive) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
+        if (positive) Icons.Outlined.TrendingUp else Icons.Outlined.TrendingDown,
         contentDescription = null,
         tint = color,
         modifier = Modifier.size(14.dp),
@@ -2876,7 +2876,7 @@ private fun FxVariacaoTag(pct: Double?) {
     val color = if (positive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 6.dp)) {
         Icon(
-            if (positive) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
+            if (positive) Icons.Outlined.TrendingUp else Icons.Outlined.TrendingDown,
             contentDescription = null,
             tint = color,
             modifier = Modifier.size(14.dp),
@@ -2897,7 +2897,7 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             // Renomeado -- pedido do usuário ("altere o kpi cotações
             // agrícolas para cotações grãos").
-            MiniCardHeaderWithRefresh("Cotações Grãos", Icons.Filled.Agriculture, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
+            MiniCardHeaderWithRefresh("Cotações Grãos", Icons.Outlined.Agriculture, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
             val itens = listOfNotNull(com.soja, com.milho, com.sorgo)
             // Quantidade (unidade "sc" = saca) + variação/porcentagem do dia
             // ao lado do preço -- pedido do usuário ("insira a quantidade de
@@ -2963,7 +2963,7 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Icon(
-                                Icons.Filled.Eco,
+                                Icons.Outlined.Eco,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(12.dp),
@@ -2989,7 +2989,7 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
                         val corVariacao = if (positivo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                             Icon(
-                                if (positivo) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
+                                if (positivo) Icons.Outlined.TrendingUp else Icons.Outlined.TrendingDown,
                                 contentDescription = null,
                                 tint = corVariacao,
                                 modifier = Modifier.size(12.dp),
@@ -3050,7 +3050,7 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
 private fun CotacoesPecuariaCard(livestock: com.bragro.mobile.data.model.LivestockQuotesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            MiniCardHeaderWithRefresh("Cotações Pecuária", Icons.Filled.Pets, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
+            MiniCardHeaderWithRefresh("Cotações Pecuária", Icons.Outlined.Pets, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
             val itens = listOfNotNull(livestock.boiGordo, livestock.bezerro, livestock.leite)
             // Estado vazio -- bug relatado pelo usuario ("cotacoes pecuaria
             // esta incompleto"): se os 3 indicadores vierem null (scraping
@@ -3082,7 +3082,7 @@ private fun CotacoesPecuariaCard(livestock: com.bragro.mobile.data.model.Livesto
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Icon(
-                                Icons.Filled.Pets,
+                                Icons.Outlined.Pets,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(12.dp),
@@ -3120,7 +3120,7 @@ private fun CotacoesPecuariaCard(livestock: com.bragro.mobile.data.model.Livesto
                         val corVariacao = if (positivo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                             Icon(
-                                if (positivo) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
+                                if (positivo) Icons.Outlined.TrendingUp else Icons.Outlined.TrendingDown,
                                 contentDescription = null,
                                 tint = corVariacao,
                                 modifier = Modifier.size(12.dp),
@@ -3156,7 +3156,7 @@ private fun CotacoesPecuariaCard(livestock: com.bragro.mobile.data.model.Livesto
 private fun DestaquesCard(data: HomeData, updatedAtMillis: Long?, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            MiniCardHeader("Destaques", Icons.Filled.Star, BrYellow, MaterialTheme.typography.titleMedium)
+            MiniCardHeader("Destaques", Icons.Outlined.Star, BrYellow, MaterialTheme.typography.titleMedium)
             // Destaques por SETOR -- réplica de destaqueCandidates (site,
             // dashboard/page.tsx) -- bug real reportado pelo usuário com
             // print (setor Financeiro): este card mostrava sempre "Cultura

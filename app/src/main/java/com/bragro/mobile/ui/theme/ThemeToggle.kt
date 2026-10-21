@@ -1,9 +1,9 @@
 package com.bragro.mobile.ui.theme
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BrightnessAuto
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.outlined.BrightnessAuto
+import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -21,9 +21,9 @@ fun ThemeToggle() {
     val context = LocalContext.current
     val mode by ThemeController.mode.collectAsState()
     val (icon, label) = when (mode) {
-        ThemeMode.AUTO -> Icons.Filled.BrightnessAuto to "Automático"
-        ThemeMode.LIGHT -> Icons.Filled.LightMode to "Claro"
-        ThemeMode.DARK -> Icons.Filled.DarkMode to "Escuro"
+        ThemeMode.AUTO -> Icons.Outlined.BrightnessAuto to "Automático"
+        ThemeMode.LIGHT -> Icons.Outlined.LightMode to "Claro"
+        ThemeMode.DARK -> Icons.Outlined.DarkMode to "Escuro"
     }
     IconButton(onClick = { ThemeController.cycle(context) }) {
         Icon(icon, contentDescription = "Tema: $label")

@@ -1,6 +1,8 @@
 package com.bragro.mobile.ui.silos
 
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.outlined.Warehouse
+import androidx.compose.material.icons.outlined.Refresh
 import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,20 +19,20 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.filled.ViewList
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.outlined.ViewList
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Opacity
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material.icons.filled.Thermostat
+import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Opacity
+import androidx.compose.material.icons.outlined.Speed
+import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.Thermostat
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
@@ -265,9 +267,15 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                     }
                 },
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Warehouse, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Silos", color = MaterialTheme.colorScheme.onSurface)
+                    }
+                
                     }
                 } },
                 actions = { Column {
@@ -313,16 +321,17 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
             item(key = "acoes") {
                 com.bragro.mobile.ui.domain.AcoesEmAbas(
                     dados = {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.BarChart, label = "Estoque", active = estoqueAberto, onClick = { estoqueAberto = !estoqueAberto })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.ViewList, label = "Silos", active = silosAbertos, onClick = { silosAbertos = !silosAbertos })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.BarChart, label = "Estoque", active = estoqueAberto, onClick = { estoqueAberto = !estoqueAberto })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ViewList, label = "Silos", active = silosAbertos, onClick = { silosAbertos = !silosAbertos })
                     },
                     operacoes = {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Storage, label = "+ Silo", onClick = { editing = null; showForm = true })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.load() })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Bolt, label = "Prestadora", onClick = { prestadoraAberta = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Storage, label = "+ Silo", onClick = { editing = null; showForm = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.load() })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Bolt, label = "Prestadora", onClick = { prestadoraAberta = true })
+                        com.bragro.mobile.ui.domain.NuvemButton()
                     },
                     arquivos = {
-                        com.bragro.mobile.ui.domain.ArquivosTabela("Silos", listOf("Silo", "Fazenda", "Produto", "Capacidade (t)", "Nível (%)", "Temperatura (°C)", "Umidade (%)", "Status"), nuvem = true) {
+                        com.bragro.mobile.ui.domain.ArquivosTabela("Silos", listOf("Silo", "Fazenda", "Produto", "Capacidade (t)", "Nível (%)", "Temperatura (°C)", "Umidade (%)", "Status")) {
                             silos.map { x -> listOf(x.nome, farms.firstOrNull { it.id == x.farmId }?.name.orEmpty(), x.produto.orEmpty(), x.capacidadeT?.toString().orEmpty(), (x.estimadoPct ?: x.nivelAtualPct)?.toInt()?.toString().orEmpty(), x.temperaturaAtualC?.toString().orEmpty(), x.umidadeAtualPct?.toString().orEmpty(), statusLabel(x.status)) }
                         }
                     },
@@ -534,7 +543,7 @@ private fun SiloCard(
     Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
+                Icon(Icons.Outlined.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
                 Text(silo.nome.uppercase(), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                 if (estimado) Badge(modifier = Modifier.padding(end = 4.dp)) { Text("Estimado") }
                 Badge { Text(statusLabel(silo.status)) }
@@ -587,11 +596,11 @@ private fun SiloCard(
             }
             Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Thermostat, contentDescription = null, modifier = Modifier.height(14.dp))
+                    Icon(Icons.Outlined.Thermostat, contentDescription = null, modifier = Modifier.height(14.dp))
                     Text(" ${silo.temperaturaAtualC?.let { "${"%,.1f".format(java.util.Locale("pt", "BR"), it)} °C" } ?: "—"}", style = MaterialTheme.typography.labelSmall)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Opacity, contentDescription = null, modifier = Modifier.height(14.dp))
+                    Icon(Icons.Outlined.Opacity, contentDescription = null, modifier = Modifier.height(14.dp))
                     Text(" ${silo.umidadeAtualPct?.let { "${"%,.1f".format(java.util.Locale("pt", "BR"), it)}%" } ?: "—"}", style = MaterialTheme.typography.labelSmall)
                 }
             }
@@ -606,7 +615,7 @@ private fun SiloCard(
                 OutlinedButton(onClick = onEdit, modifier = Modifier.weight(1f), contentPadding = pad) { Text("Editar", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium) }
                 OutlinedButton(onClick = onLeitura, modifier = Modifier.weight(1.5f), contentPadding = pad) { Text("Temp./Umid.", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium) }
                 OutlinedButton(onClick = onHistorico, modifier = Modifier.weight(1.2f), contentPadding = pad) { Text("Histórico", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium) }
-                IconButton(onClick = onArchive) { Icon(Icons.Filled.Delete, contentDescription = "Arquivar") }
+                IconButton(onClick = onArchive) { Icon(Icons.Outlined.Delete, contentDescription = "Arquivar") }
             }
         }
     }

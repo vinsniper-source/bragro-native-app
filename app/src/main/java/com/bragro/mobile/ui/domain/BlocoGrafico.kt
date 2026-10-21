@@ -8,10 +8,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.PictureAsPdf
+import androidx.compose.material.icons.outlined.Print
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,13 +48,13 @@ fun BlocoGrafico(
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 IconButton(onClick = { aberto = !aberto }, modifier = Modifier.size(32.dp)) {
-                    Icon(if (aberto) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (aberto) "Recolher gráfico" else "Abrir gráfico", modifier = Modifier.size(20.dp))
+                    com.bragro.mobile.ui.domain.CantoL(aberto)
                 }
                 if (onPrint != null) IconButton(onClick = onPrint, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Filled.Print, contentDescription = "Imprimir gráfico", modifier = Modifier.size(18.dp))
+                    Icon(Icons.Outlined.Print, contentDescription = "Imprimir gráfico", modifier = Modifier.size(18.dp))
                 }
                 if (onPdf != null) IconButton(onClick = onPdf, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Filled.PictureAsPdf, contentDescription = "PDF do gráfico", modifier = Modifier.size(18.dp))
+                    Icon(Icons.Outlined.PictureAsPdf, contentDescription = "PDF do gráfico", modifier = Modifier.size(18.dp))
                 }
             }
         }

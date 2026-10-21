@@ -14,14 +14,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.Error
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -125,7 +125,7 @@ fun ProviderIntegrationCard(
             // antes (task #338), agora resolvido de raiz em vez de só
             // mitigado.
             Row(verticalAlignment = Alignment.Top) {
-                Icon(Icons.Filled.Bolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp, top = 2.dp))
+                Icon(Icons.Outlined.Bolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp, top = 2.dp))
                 // Sem letreiro e sem limite de linha aqui -- pedido do
                 // usuário ("todas as frases estão incompletas, não use
                 // letreiro, pode usar mais de uma linha mas complete toda a
@@ -149,9 +149,9 @@ fun ProviderIntegrationCard(
                     // Selo de status: Conectado (validado) / Pendente (salvo,
                     // ainda não validado) / Erro de credencial (recusado).
                     val (rotulo, corFundo, icone) = when (situacao) {
-                        "CONECTADO" -> Triple("Conectado", MaterialTheme.colorScheme.primaryContainer, Icons.Filled.CheckCircle)
-                        "ERRO_CREDENCIAL" -> Triple("Erro de credencial", MaterialTheme.colorScheme.errorContainer, Icons.Filled.Error)
-                        else -> Triple("Pendente", MaterialTheme.colorScheme.tertiaryContainer, Icons.Filled.Schedule)
+                        "CONECTADO" -> Triple("Conectado", MaterialTheme.colorScheme.primaryContainer, Icons.Outlined.CheckCircle)
+                        "ERRO_CREDENCIAL" -> Triple("Erro de credencial", MaterialTheme.colorScheme.errorContainer, Icons.Outlined.Error)
+                        else -> Triple("Pendente", MaterialTheme.colorScheme.tertiaryContainer, Icons.Outlined.Schedule)
                     }
                     Surface(
                         color = corFundo,
@@ -205,7 +205,7 @@ fun ProviderIntegrationCard(
                         value = apiKey, onValueChange = { apiKey = it },
                         label = { Text("API Key / Token") },
                         placeholder = { Text(if (integration?.apiKeyConfigurado == true) "•••• (salvo)" else "Cole a credencial") },
-                        leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
+                        leadingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null) },
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         singleLine = true,
@@ -234,7 +234,7 @@ fun ProviderIntegrationCard(
                         if (busy == IntegrationBusy.SINCRONIZANDO || busy == IntegrationBusy.SALVANDO) {
                             CircularProgressIndicator(modifier = Modifier.height(16.dp))
                         } else {
-                            Icon(Icons.Filled.Sync, contentDescription = null, modifier = Modifier.padding(end = 4.dp).size(16.dp))
+                            Icon(Icons.Outlined.Sync, contentDescription = null, modifier = Modifier.padding(end = 4.dp).size(16.dp))
                         }
                         Text("Testar conexão", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium)
                     }
@@ -303,7 +303,7 @@ fun ProviderIntegrationCard(
 @Composable
 private fun IconButtonToggle(open: Boolean, onClick: () -> Unit) {
     androidx.compose.material3.IconButton(onClick = onClick) {
-        Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
+        com.bragro.mobile.ui.domain.CantoL(open)
     }
 }
 

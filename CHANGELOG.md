@@ -3,6 +3,14 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## [1.3.69] - 2026-10-20
+- Bloco de Monitoramento removido de todo o app; as telas começam pelo bloco Ações. Em Operações, cada fazenda aparece no título da lista de atividades.
+- Ações: "Expandir" virou "Lançamentos" -- abre uma lista com os tipos de lançamento do módulo (com quantidade e data do último), montada a partir dos próprios lançamentos; escolher filtra a lista, tocar de novo recolhe.
+- Ícones de contorno fino (minimalistas) em todo o app.
+- Cabeçalho com o ícone verde do módulo ao lado do título.
+- Nuvem sempre em Ações › Operações.
+- Setinhas de abrir/recolher trocadas por um "L" discreto no canto inferior direito.
+
 ## [1.3.68] - 2026-10-20
 - Início: nome, área e cultura das fazendas em branco; Destaques, Alertas, Monitor e Avisos numa faixa de ícones em partes iguais, com contador laranja.
 - Formulários de lançamento: Clima de hoje e Copiar último viram ícones sem rótulo no canto direito da seção QUANDO (demais formulários: ícones no topo, à direita).

@@ -1,30 +1,30 @@
 package com.bragro.mobile.ui.home
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.Agriculture
-import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.Assignment
-import androidx.compose.material.icons.filled.Balance
-import androidx.compose.material.icons.filled.BugReport
-import androidx.compose.material.icons.filled.CreditCard
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.Eco
-import androidx.compose.material.icons.filled.Engineering
-import androidx.compose.material.icons.filled.Grass
-import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.LocalShipping
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Pets
-import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.ReceiptLong
-import androidx.compose.material.icons.filled.Science
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Warehouse
-import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.Agriculture
+import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.Assignment
+import androidx.compose.material.icons.outlined.Balance
+import androidx.compose.material.icons.outlined.BugReport
+import androidx.compose.material.icons.outlined.CreditCard
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.DirectionsCar
+import androidx.compose.material.icons.outlined.Eco
+import androidx.compose.material.icons.outlined.Engineering
+import androidx.compose.material.icons.outlined.Grass
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.LocalShipping
+import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.Pets
+import androidx.compose.material.icons.outlined.Receipt
+import androidx.compose.material.icons.outlined.ReceiptLong
+import androidx.compose.material.icons.outlined.Science
+import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material.icons.outlined.Warehouse
+import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.bragro.mobile.ui.theme.BrBlue
@@ -93,44 +93,44 @@ private val DOMAIN_ICON: Map<String, ImageVector> = mapOf(
     // Trocado de AccountBalanceWallet -- pedido do usuário ("mude o ícone
     // do módulo lançamentos"); esse ícone era igual ao da própria aba
     // "Financeiro" e ao de DRE/Análises no dropdown, confundia.
-    "financeiro" to Icons.Filled.Receipt,
+    "financeiro" to Icons.Outlined.Receipt,
     // Entrada própria "Gestão Financeira" na lista suspensa do Financeiro
     // (ver BottomNavBar.kt) -- ícone diferente do "Lançamentos" (Receipt)
     // pra não confundir os dois na lista.
-    "gestaofinanceira" to Icons.Filled.AccountBalanceWallet,
-    "pedidos" to Icons.Filled.ShoppingCart,
+    "gestaofinanceira" to Icons.Outlined.AccountBalanceWallet,
+    "pedidos" to Icons.Outlined.ShoppingCart,
     // Balanca (comparacao de propostas) -- mesmo espirito do icone "Scale"
     // do site (lucide-react) pro modulo novo de Cotacoes de Fornecedores.
-    "cotacoesfornecedores" to Icons.Filled.Balance,
-    "contratos" to Icons.Filled.Description,
-    "caixainterno" to Icons.Filled.Payments,
-    "cobrancas" to Icons.Filled.CreditCard,
-    "nfse" to Icons.Filled.ReceiptLong,
-    "safra" to Icons.Filled.Eco,
-    "planejamentosafra" to Icons.Filled.Assignment,
-    "colheita" to Icons.Filled.Agriculture,
-    "romaneios" to Icons.Filled.LocalShipping,
-    "receituarios" to Icons.Filled.Science,
-    "pragas" to Icons.Filled.BugReport,
-    "clima" to Icons.Filled.WbSunny,
+    "cotacoesfornecedores" to Icons.Outlined.Balance,
+    "contratos" to Icons.Outlined.Description,
+    "caixainterno" to Icons.Outlined.Payments,
+    "cobrancas" to Icons.Outlined.CreditCard,
+    "nfse" to Icons.Outlined.ReceiptLong,
+    "safra" to Icons.Outlined.Eco,
+    "planejamentosafra" to Icons.Outlined.Assignment,
+    "colheita" to Icons.Outlined.Agriculture,
+    "romaneios" to Icons.Outlined.LocalShipping,
+    "receituarios" to Icons.Outlined.Science,
+    "pragas" to Icons.Outlined.BugReport,
+    "clima" to Icons.Outlined.WbSunny,
     // Pets (pata) -- Material Icons não tem um ícone de boi/gado no set
     // base; mesmo critério de "espírito visual" usado nos demais ícones
     // deste mapa (ver comentário no topo do arquivo).
-    "pecuaria" to Icons.Filled.Pets,
-    "pastagem" to Icons.Filled.Grass,
-    "estoque" to Icons.Filled.Inventory2,
+    "pecuaria" to Icons.Outlined.Pets,
+    "pastagem" to Icons.Outlined.Grass,
+    "estoque" to Icons.Outlined.Inventory2,
     // Trocado de Inventory (caixa única) -- pedido do usuário ("trocar
     // ícone inventário"); parecia demais com o ícone de "Estoque"
     // (Inventory2, caixas empilhadas), confundia. Warehouse (galpão) é
     // bem mais distinto visualmente.
-    "inventario" to Icons.Filled.Warehouse,
-    "frota" to Icons.Filled.DirectionsCar,
-    "controleinterno" to Icons.Filled.Security,
-    "rh" to Icons.Filled.People,
-    "maodeobra" to Icons.Filled.Engineering,
+    "inventario" to Icons.Outlined.Warehouse,
+    "frota" to Icons.Outlined.DirectionsCar,
+    "controleinterno" to Icons.Outlined.Security,
+    "rh" to Icons.Outlined.People,
+    "maodeobra" to Icons.Outlined.Engineering,
 )
 
-fun domainIcon(domainId: String): ImageVector = DOMAIN_ICON[domainId] ?: Icons.Filled.Apps
+fun domainIcon(domainId: String): ImageVector = DOMAIN_ICON[domainId] ?: Icons.Outlined.Apps
 
 fun domainSectionMeta(domainId: String): DomainSectionMeta {
     val sectionId = DOMAIN_SECTION_ID[domainId] ?: return FALLBACK_SECTION

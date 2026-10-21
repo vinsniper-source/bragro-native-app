@@ -18,10 +18,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import com.bragro.mobile.ui.i18n.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.AttachMoney
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -171,7 +171,7 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
             trailingIcon = {
                 IconButton(onClick = { senhaVisivel = !senhaVisivel }) {
                     Icon(
-                        imageVector = if (senhaVisivel) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                        imageVector = if (senhaVisivel) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
                         contentDescription = if (senhaVisivel) "Ocultar senha" else "Ver senha",
                     )
                 }
@@ -253,7 +253,7 @@ private fun LoginIdiomaMenu(modifier: Modifier = Modifier) {
     val idioma = com.bragro.mobile.ui.i18n.Idioma
     androidx.compose.foundation.layout.Box(modifier) {
         androidx.compose.material3.TextButton(onClick = { aberto = true }) {
-            Icon(Icons.Filled.AttachMoney, contentDescription = "País e idioma", modifier = Modifier.height(18.dp))
+            Icon(Icons.Outlined.AttachMoney, contentDescription = "País e idioma", modifier = Modifier.height(18.dp))
             Text(
                 if (idioma.argentina) "ARS" else "BRL",
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,

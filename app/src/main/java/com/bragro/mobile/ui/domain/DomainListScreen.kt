@@ -1,12 +1,13 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.material.icons.outlined.ViewList
 import android.app.Application
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.background
-import androidx.compose.material.icons.filled.FactCheck
+import androidx.compose.material.icons.outlined.FactCheck
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.border
@@ -33,43 +34,43 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Autorenew
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.CompareArrows
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.FilterAlt
-import androidx.compose.material.icons.filled.BugReport
-import androidx.compose.material.icons.filled.LocalGasStation
-import androidx.compose.material.icons.filled.MonitorWeight
-import androidx.compose.material.icons.filled.QrCode
-import androidx.compose.material.icons.filled.Balance
-import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.GridOn
-import androidx.compose.material.icons.filled.TableChart
-import androidx.compose.material.icons.filled.ViewAgenda
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.filled.WbSunny
-import androidx.compose.material.icons.filled.Air
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Calculate
+import androidx.compose.material.icons.outlined.CompareArrows
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.FilterAlt
+import androidx.compose.material.icons.outlined.BugReport
+import androidx.compose.material.icons.outlined.LocalGasStation
+import androidx.compose.material.icons.outlined.MonitorWeight
+import androidx.compose.material.icons.outlined.QrCode
+import androidx.compose.material.icons.outlined.Balance
+import androidx.compose.material.icons.outlined.PictureAsPdf
+import androidx.compose.material.icons.outlined.Print
+import androidx.compose.material.icons.outlined.Receipt
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Send
+import androidx.compose.material.icons.outlined.GridOn
+import androidx.compose.material.icons.outlined.TableChart
+import androidx.compose.material.icons.outlined.ViewAgenda
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material.icons.outlined.WbSunny
+import androidx.compose.material.icons.outlined.Air
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
@@ -489,9 +490,16 @@ fun DomainListScreen(
     // Só conta pendentes que ainda existem na lista carregada (mesmo critério
     // do site, que cruza com registros vivos).
     val pendingVisibleCount = remember(records, pendingReviewIds) { records.count { it["id"] in pendingReviewIds } }
-    val filteredRecords = remember(records, periodo, intervalFrom, intervalTo, dateCol, columnFilters.toMap(), pendingOnly, pendingReviewIds) {
+    // v21 -- "Lançamentos": lista suspensa com os tipos de lançamento do
+    // módulo (campo Operação/Tipo/Status), montada a partir dos próprios
+    // registros -- tipo novo entra sozinho.
+    val tipoKey = remember(config) { listOf("operacao", "tipo", "tipoMovimento", "tipoLancamento", "status").firstOrNull { k -> config?.columns?.any { it.key == k } == true } }
+    var tipoLanc by remember(domainId) { mutableStateOf<String?>(null) }
+    var lancMenu by remember { mutableStateOf(false) }
+    val filteredRecords = remember(records, periodo, intervalFrom, intervalTo, dateCol, columnFilters.toMap(), pendingOnly, pendingReviewIds, tipoLanc, tipoKey) {
         var result = records
         if (pendingOnly) result = result.filter { it["id"] in pendingReviewIds }
+        if (tipoKey != null && tipoLanc != null) result = result.filter { it[tipoKey] == tipoLanc }
         if (dateCol != null) {
             if (periodo != null) {
                 val (from, to) = genericPeriodoRange(periodo!!)
@@ -505,6 +513,36 @@ fun DomainListScreen(
             if (value.isNotBlank()) result = result.filter { it[key] == value }
         }
         result
+    }
+
+    val lancamentosBtn: @Composable () -> Unit = {
+        Box(contentAlignment = Alignment.Center) {
+            LabeledIconButton(
+                icon = Icons.Outlined.ViewList,
+                label = tipoLanc ?: "Lançamentos",
+                active = allExpanded,
+                onClick = { if (allExpanded) { allExpanded = false; cardOverrides.clear() } else lancMenu = true },
+            )
+            DropdownMenu(expanded = lancMenu, onDismissRequest = { lancMenu = false }) {
+                fun ultima(lista: List<Map<String, String?>>): String {
+                    val k = dateCol?.key ?: return ""
+                    val d = lista.mapNotNull { it[k]?.take(10) }.maxOrNull() ?: return ""
+                    val p = d.split("-"); return if (p.size == 3) " · último ${p[2]}/${p[1]}" else ""
+                }
+                DropdownMenuItem(
+                    text = { Text("Todos (${records.size}${ultima(records)})", fontWeight = if (tipoLanc == null) FontWeight.Bold else null) },
+                    onClick = { tipoLanc = null; lancMenu = false; allExpanded = true; cardOverrides.clear() },
+                )
+                if (tipoKey != null) {
+                    records.groupBy { it[tipoKey]?.trim().orEmpty() }.filterKeys { it.isNotBlank() }.toSortedMap().forEach { (t, lista) ->
+                        DropdownMenuItem(
+                            text = { Text("$t (${lista.size}${ultima(lista)})", fontWeight = if (tipoLanc == t) FontWeight.Bold else null) },
+                            onClick = { tipoLanc = t; lancMenu = false; allExpanded = true; cardOverrides.clear() },
+                        )
+                    }
+                }
+            }
+        }
     }
 
     Scaffold(
@@ -524,6 +562,10 @@ fun DomainListScreen(
                 // do usuário ("retire essa seta de recolher ao lado do
                 // título"); ela mora só na fileira de ícones abaixo agora.
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(com.bragro.mobile.ui.home.domainIcon(domainId), contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         // maxLines/ellipsis defensivo -- pedido do usuário
@@ -533,6 +575,8 @@ fun DomainListScreen(
                         // isso podiam quebrar linha e cortar embaixo, já
                         // que a AppBar tem altura fixa.
                         Text(config?.label ?: domainId, maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.basicMarquee())
+                    }
+                
                     }
                 } },
                 // A seta de voltar ganha o mesmo espaçador do título -- pedido
@@ -567,7 +611,7 @@ fun DomainListScreen(
                         onClick = { showQuickAbastecimento = true },
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Filled.LocalGasStation, contentDescription = "Abastecimento rápido")
+                        Icon(Icons.Outlined.LocalGasStation, contentDescription = "Abastecimento rápido")
                     }
                     // Card "Acesso automático via prestadora de serviço"
                     // (bomba de combustível) -- saiu do bloco Dados e virou
@@ -577,14 +621,14 @@ fun DomainListScreen(
                         onClick = { showIntegracaoDialog = true },
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Filled.Bolt, contentDescription = "Acesso automático (bomba de combustível)")
+                        Icon(Icons.Outlined.Bolt, contentDescription = "Acesso automático (bomba de combustível)")
                     }
                     if (onOpenFrotaQr != null) {
                         FloatingActionButton(
                             onClick = onOpenFrotaQr,
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         ) {
-                            Icon(Icons.Filled.QrCode, contentDescription = "Gerar QR Codes das máquinas")
+                            Icon(Icons.Outlined.QrCode, contentDescription = "Gerar QR Codes das máquinas")
                         }
                     }
                     FloatingActionButton(
@@ -598,7 +642,7 @@ fun DomainListScreen(
                     // inferior e nas abas ovais de categoria.
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
-                ) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
+                ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
                 }
             } else if (domainId == "romaneios" && onOpenRomaneioQuick != null) {
                 // Romaneio Rápido (leitura da balança) unificado aqui como
@@ -610,7 +654,7 @@ fun DomainListScreen(
                         onClick = onOpenRomaneioQuick,
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Filled.MonitorWeight, contentDescription = "Romaneio rápido (balança)")
+                        Icon(Icons.Outlined.MonitorWeight, contentDescription = "Romaneio rápido (balança)")
                     }
                     // Card "Acesso automático via prestadora de serviço"
                     // (balança) -- saiu do bloco Dados e virou FAB próprio,
@@ -620,7 +664,7 @@ fun DomainListScreen(
                         onClick = { showIntegracaoDialog = true },
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Filled.Bolt, contentDescription = "Acesso automático (balança)")
+                        Icon(Icons.Outlined.Bolt, contentDescription = "Acesso automático (balança)")
                     }
                     FloatingActionButton(
                     onClick = onNewRecord,
@@ -633,7 +677,7 @@ fun DomainListScreen(
                     // inferior e nas abas ovais de categoria.
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
-                ) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
+                ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
                 }
             } else if (domainId == "pragas" && onOpenPragaFoto != null) {
                 // Diagnóstico por Foto (Task #601) unificado como 2º FAB --
@@ -644,13 +688,13 @@ fun DomainListScreen(
                         onClick = onOpenPragaFoto,
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Filled.BugReport, contentDescription = "Diagnóstico por foto")
+                        Icon(Icons.Outlined.BugReport, contentDescription = "Diagnóstico por foto")
                     }
                     FloatingActionButton(
                         onClick = onNewRecord,
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
+                    ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
                 }
             } else if (domainId == "pecuaria") {
                 // Card "Acesso automático via prestadora de serviço"
@@ -662,13 +706,13 @@ fun DomainListScreen(
                         onClick = { showIntegracaoDialog = true },
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Filled.Bolt, contentDescription = "Acesso automático (balança/RFID Bluetooth)")
+                        Icon(Icons.Outlined.Bolt, contentDescription = "Acesso automático (balança/RFID Bluetooth)")
                     }
                     FloatingActionButton(
                         onClick = onNewRecord,
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
+                    ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
                 }
             } else if (domainId == "colheita" && onOpenColheitaQr != null) {
                 // QR Code de Rastreabilidade (Task #773) unificado como 2º
@@ -680,13 +724,13 @@ fun DomainListScreen(
                         onClick = onOpenColheitaQr,
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Filled.QrCode, contentDescription = "QR Code de Rastreabilidade")
+                        Icon(Icons.Outlined.QrCode, contentDescription = "QR Code de Rastreabilidade")
                     }
                     FloatingActionButton(
                         onClick = onNewRecord,
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
+                    ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
                 }
             } else if (domainId == "estoque" && onOpenReconciliacaoEstoque != null) {
                 // Reconciliação Físico x Fiscal (Task #603) unificada como 2º
@@ -700,19 +744,19 @@ fun DomainListScreen(
                         onClick = { showIntegracaoDialog = true },
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Filled.Bolt, contentDescription = "Acesso automático (silos)")
+                        Icon(Icons.Outlined.Bolt, contentDescription = "Acesso automático (silos)")
                     }
                     FloatingActionButton(
                         onClick = onOpenReconciliacaoEstoque,
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Filled.Balance, contentDescription = "Reconciliação Físico x Fiscal")
+                        Icon(Icons.Outlined.Balance, contentDescription = "Reconciliação Físico x Fiscal")
                     }
                     FloatingActionButton(
                         onClick = onNewRecord,
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
+                    ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
                 }
             } else {
                 FloatingActionButton(
@@ -726,7 +770,7 @@ fun DomainListScreen(
                     // inferior e nas abas ovais de categoria.
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
-                ) { Icon(Icons.Filled.Add, contentDescription = "Novo lançamento") }
+                ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
             }
         },
     ) { padding ->
@@ -967,7 +1011,7 @@ fun DomainListScreen(
                 // importados ainda não conferidos (abrir um lançamento o confirma).
                 val revisarFooter: (@Composable () -> Unit)? = {
                     LabeledIconButton(
-                        icon = Icons.Filled.FactCheck,
+                        icon = Icons.Outlined.FactCheck,
                         label = "Revisar",
                         active = pendingOnly,
                         badgeCount = pendingVisibleCount,
@@ -977,11 +1021,11 @@ fun DomainListScreen(
                 if (useCategorizedBlocks) {
                     val dadosBlock = ModuleBlockSpec("Dados", vertical = false, badgeCount = if (showFiltros) activeFilterCountGeneric else 0) {
                         ModuleIconButton(
-                            ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
+                            ModuleIconItem("charts", Icons.Outlined.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
                         ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
                         if (showFiltros) {
                             ModuleIconButton(
-                                ModuleIconItem("filtros", Icons.Filled.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
+                                ModuleIconItem("filtros", Icons.Outlined.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
                             ) { filtrosOverride = !filtrosExpanded }
                         }
                         ColumnsPickerButton(
@@ -990,16 +1034,12 @@ fun DomainListScreen(
                             onChange = { customVisibleKeys = it },
                         )
                         if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
-                            LabeledIconButton(
-                                icon = if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
-                                label = if (allExpanded) "Recolher" else "Expandir",
-                                onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
-                            )
+                            lancamentosBtn()
                             // Tabela/Coluna -- mesmo botão único alternando
                             // ícone+rótulo do Expandir/Recolher acima (achado
                             // de auditoria, pedido do usuário).
                             LabeledIconButton(
-                                icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
+                                icon = if (tableView) Icons.Outlined.ViewAgenda else Icons.Outlined.TableChart,
                                 label = if (tableView) "Bloco" else "Tabela",
                                 onClick = { tableView = !tableView },
                             )
@@ -1007,7 +1047,7 @@ fun DomainListScreen(
                     }
                     val operacoesBlock = ModuleBlockSpec("Operações", vertical = false, badgeCount = pendingVisibleCount, footer = revisarFooter) {
                         LabeledIconButton(
-                            icon = Icons.Filled.Refresh,
+                            icon = Icons.Outlined.Refresh,
                             label = "Atualizar",
                             loading = refreshing,
                             onClick = { viewModel.refresh(domainId) },
@@ -1031,17 +1071,17 @@ fun DomainListScreen(
                     // cabiam lado a lado na largura do bloco Arquivos e
                     // quebravam pra 2 linhas, esticando a fileira inteira.
                     val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
-                        LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
+                        LabeledIconButton(icon = Icons.Outlined.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
                         if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
-                                icon = Icons.Filled.GridOn,
+                                icon = Icons.Outlined.GridOn,
                                 label = "Excel",
                                 onClick = {
                                     exportXlsx(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
                                 },
                             )
                             LabeledIconButton(
-                                icon = Icons.Filled.PictureAsPdf,
+                                icon = Icons.Outlined.PictureAsPdf,
                                 label = "PDF",
                                 onClick = {
                                     HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys)
@@ -1063,11 +1103,11 @@ fun DomainListScreen(
                     // expandir/recolher (mesmo bloco Dados do padrão genérico).
                     val dadosBlock = ModuleBlockSpec("Dados", vertical = false, badgeCount = if (showFiltros) activeFilterCountGeneric else 0) {
                         ModuleIconButton(
-                            ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
+                            ModuleIconItem("charts", Icons.Outlined.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
                         ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
                         if (showFiltros) {
                             ModuleIconButton(
-                                ModuleIconItem("filtros", Icons.Filled.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
+                                ModuleIconItem("filtros", Icons.Outlined.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
                             ) { filtrosOverride = !filtrosExpanded }
                         }
                         ColumnsPickerButton(
@@ -1076,16 +1116,12 @@ fun DomainListScreen(
                             onChange = { customVisibleKeys = it },
                         )
                         if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
-                            LabeledIconButton(
-                                icon = if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
-                                label = if (allExpanded) "Recolher" else "Expandir",
-                                onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
-                            )
+                            lancamentosBtn()
                             // Tabela/Coluna -- mesmo botão único alternando
                             // ícone+rótulo do Expandir/Recolher acima (achado
                             // de auditoria, pedido do usuário).
                             LabeledIconButton(
-                                icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
+                                icon = if (tableView) Icons.Outlined.ViewAgenda else Icons.Outlined.TableChart,
                                 label = if (tableView) "Bloco" else "Tabela",
                                 onClick = { tableView = !tableView },
                             )
@@ -1097,7 +1133,7 @@ fun DomainListScreen(
                         // ícones, e deixe nuvem na mesma linha").
                         if (domainId == "estoque") {
                             ModuleIconButton(
-                                ModuleIconItem("estoque-fazenda", Icons.Filled.CompareArrows, "Movimentações", active = expandedBlocks["estoque-fazenda"] == true),
+                                ModuleIconItem("estoque-fazenda", Icons.Outlined.CompareArrows, "Movimentações", active = expandedBlocks["estoque-fazenda"] == true),
                             ) { expandedBlocks["estoque-fazenda"] = expandedBlocks["estoque-fazenda"] != true }
                         }
                         // Previsão do tempo entra dentro de Dados também --
@@ -1107,13 +1143,13 @@ fun DomainListScreen(
                         // blocos individuais").
                         if (domainId == "clima") {
                             ModuleIconButton(
-                                ModuleIconItem("clima-weather", Icons.Filled.WbSunny, "Previsão", active = expandedBlocks["clima-weather"] == true),
+                                ModuleIconItem("clima-weather", Icons.Outlined.WbSunny, "Previsão", active = expandedBlocks["clima-weather"] == true),
                             ) { expandedBlocks["clima-weather"] = expandedBlocks["clima-weather"] != true }
                             // Alerta de janela de pulverização -- pedido do
                             // usuário (gap analysis). Mesmo padrão de bloco
                             // colapsável do "Previsão" acima.
                             ModuleIconButton(
-                                ModuleIconItem("clima-spray", Icons.Filled.Air, "Pulverização", active = expandedBlocks["clima-spray"] == true),
+                                ModuleIconItem("clima-spray", Icons.Outlined.Air, "Pulverização", active = expandedBlocks["clima-spray"] == true),
                             ) { expandedBlocks["clima-spray"] = expandedBlocks["clima-spray"] != true }
                         }
                         // Bomba de combustível saiu daqui e virou um FAB
@@ -1131,11 +1167,11 @@ fun DomainListScreen(
                     val operacoesBlock = ModuleBlockSpec("Operações", vertical = false, badgeCount = pendingVisibleCount, footer = revisarFooter) {
                         if (domainId == "safra") {
                             ModuleIconButton(
-                                ModuleIconItem("recalcular-area", Icons.Filled.Autorenew, "Recalcular"),
+                                ModuleIconItem("recalcular-area", Icons.Outlined.Autorenew, "Recalcular"),
                             ) { expandedBlocks["recalcular-area"] = expandedBlocks["recalcular-area"] != true }
                         }
                         LabeledIconButton(
-                            icon = Icons.Filled.Refresh,
+                            icon = Icons.Outlined.Refresh,
                             label = "Atualizar",
                             loading = refreshing,
                             onClick = { viewModel.refresh(domainId) },
@@ -1152,12 +1188,12 @@ fun DomainListScreen(
                         }
                         if (domainId == "safra" || domainId == "colheita") {
                             ModuleIconButton(
-                                ModuleIconItem("calculators", Icons.Filled.Calculate, "Calculadoras", active = expandedBlocks["calculators"] == true),
+                                ModuleIconItem("calculators", Icons.Outlined.Calculate, "Calculadoras", active = expandedBlocks["calculators"] == true),
                             ) { expandedBlocks["calculators"] = expandedBlocks["calculators"] != true }
                         }
                         if (domainId == "frota") {
                             ModuleIconButton(
-                                ModuleIconItem("recalcular-area", Icons.Filled.Autorenew, "Recalcular"),
+                                ModuleIconItem("recalcular-area", Icons.Outlined.Autorenew, "Recalcular"),
                             ) { expandedBlocks["recalcular-area"] = expandedBlocks["recalcular-area"] != true }
                         }
                         com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
@@ -1166,17 +1202,17 @@ fun DomainListScreen(
                     // pedido do usuário ("coloque os blocos da linha 2
                     // todos na horizontal e com limite de altura").
                     val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
-                        LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
+                        LabeledIconButton(icon = Icons.Outlined.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
                         if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
-                                icon = Icons.Filled.GridOn,
+                                icon = Icons.Outlined.GridOn,
                                 label = "Excel",
                                 onClick = {
                                     exportXlsx(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
                                 },
                             )
                             LabeledIconButton(
-                                icon = Icons.Filled.PictureAsPdf,
+                                icon = Icons.Outlined.PictureAsPdf,
                                 label = "PDF",
                                 onClick = {
                                     HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys)
@@ -1200,24 +1236,20 @@ fun DomainListScreen(
                     // arquivos... csv e pdf").
                     val dadosBlockCobrancas = ModuleBlockSpec("Dados", vertical = false, badgeCount = if (showFiltros) activeFilterCountGeneric else 0) {
                         ModuleIconButton(
-                            ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
+                            ModuleIconItem("charts", Icons.Outlined.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
                         ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
                         if (showFiltros) {
                             ModuleIconButton(
-                                ModuleIconItem("filtros", Icons.Filled.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
+                                ModuleIconItem("filtros", Icons.Outlined.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
                             ) { filtrosOverride = !filtrosExpanded }
                         }
                         if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
-                            LabeledIconButton(
-                                icon = if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
-                                label = if (allExpanded) "Recolher" else "Expandir",
-                                onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
-                            )
+                            lancamentosBtn()
                             // Tabela/Coluna -- mesmo botão único alternando
                             // ícone+rótulo do Expandir/Recolher acima (achado
                             // de auditoria, pedido do usuário).
                             LabeledIconButton(
-                                icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
+                                icon = if (tableView) Icons.Outlined.ViewAgenda else Icons.Outlined.TableChart,
                                 label = if (tableView) "Bloco" else "Tabela",
                                 onClick = { tableView = !tableView },
                             )
@@ -1233,7 +1265,7 @@ fun DomainListScreen(
                     // vertical, volte para a horizontal").
                     val operacoesBlockCobrancas = ModuleBlockSpec("Operações", vertical = false, badgeCount = pendingVisibleCount, footer = revisarFooter) {
                         LabeledIconButton(
-                            icon = Icons.Filled.Refresh,
+                            icon = Icons.Outlined.Refresh,
                             label = "Atualizar",
                             loading = refreshing,
                             onClick = { viewModel.refresh(domainId) },
@@ -1251,15 +1283,15 @@ fun DomainListScreen(
                         com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                     }
                     val arquivosBlockCobrancas = ModuleBlockSpec("Arquivos", vertical = false) {
-                        LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
+                        LabeledIconButton(icon = Icons.Outlined.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
                         if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
-                                icon = Icons.Filled.GridOn,
+                                icon = Icons.Outlined.GridOn,
                                 label = "Excel",
                                 onClick = { exportXlsx(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords) },
                             )
                             LabeledIconButton(
-                                icon = Icons.Filled.PictureAsPdf,
+                                icon = Icons.Outlined.PictureAsPdf,
                                 label = "PDF",
                                 onClick = { HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys) },
                             )
@@ -1280,24 +1312,24 @@ fun DomainListScreen(
                 // blocos, gerador de caracteres se o rótulo não couber.
                 EqualWidthBlockRow(modifier = Modifier.fillMaxWidth()) {
                     ModuleIconButton(
-                        ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
+                        ModuleIconItem("charts", Icons.Outlined.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
                     ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
                     if (showCalc) {
                         ModuleIconButton(
-                            ModuleIconItem("calculators", Icons.Filled.Calculate, "Calculadoras", active = expandedBlocks["calculators"] == true),
+                            ModuleIconItem("calculators", Icons.Outlined.Calculate, "Calculadoras", active = expandedBlocks["calculators"] == true),
                         ) { expandedBlocks["calculators"] = expandedBlocks["calculators"] != true }
                     }
                     if (showClima) {
                         ModuleIconButton(
-                            ModuleIconItem("clima-weather", Icons.Filled.WbSunny, "Previsão", active = expandedBlocks["clima-weather"] == true),
+                            ModuleIconItem("clima-weather", Icons.Outlined.WbSunny, "Previsão", active = expandedBlocks["clima-weather"] == true),
                         ) { expandedBlocks["clima-weather"] = expandedBlocks["clima-weather"] != true }
                         ModuleIconButton(
-                            ModuleIconItem("clima-spray", Icons.Filled.Air, "Pulverização", active = expandedBlocks["clima-spray"] == true),
+                            ModuleIconItem("clima-spray", Icons.Outlined.Air, "Pulverização", active = expandedBlocks["clima-spray"] == true),
                         ) { expandedBlocks["clima-spray"] = expandedBlocks["clima-spray"] != true }
                     }
                     if (showEstoqueFazenda) {
                         ModuleIconButton(
-                            ModuleIconItem("estoque-fazenda", Icons.Filled.CompareArrows, "Movimentações", active = expandedBlocks["estoque-fazenda"] == true),
+                            ModuleIconItem("estoque-fazenda", Icons.Outlined.CompareArrows, "Movimentações", active = expandedBlocks["estoque-fazenda"] == true),
                         ) { expandedBlocks["estoque-fazenda"] = expandedBlocks["estoque-fazenda"] != true }
                     }
                     if (showRecalcularArea) {
@@ -1306,12 +1338,12 @@ fun DomainListScreen(
                         // confundia, pedido do usuario ("substitua icones
                         // que estejam iguais mas com funcoes diferentes").
                         ModuleIconButton(
-                            ModuleIconItem("recalcular-area", Icons.Filled.Autorenew, "Recalcular"),
+                            ModuleIconItem("recalcular-area", Icons.Outlined.Autorenew, "Recalcular"),
                         ) { expandedBlocks["recalcular-area"] = expandedBlocks["recalcular-area"] != true }
                     }
                     if (showFiltros) {
                         ModuleIconButton(
-                            ModuleIconItem("filtros", Icons.Filled.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
+                            ModuleIconItem("filtros", Icons.Outlined.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
                         ) { filtrosOverride = !filtrosExpanded }
                     }
                     if (dateCol != null) {
@@ -1332,7 +1364,7 @@ fun DomainListScreen(
                     // blocos"). Mesmo comportamento de antes, só mudou de
                     // lugar.
                     LabeledIconButton(
-                        icon = Icons.Filled.Refresh,
+                        icon = Icons.Outlined.Refresh,
                         label = "Atualizar",
                         loading = refreshing,
                         onClick = { viewModel.refresh(domainId) },
@@ -1341,15 +1373,11 @@ fun DomainListScreen(
                         // Só mexe nos cards de lançamento -- não fecha Filtros
                         // nem os outros blocos (Gráficos/Calculadoras/etc.),
                         // pedido do usuário.
-                        LabeledIconButton(
-                            icon = if (allExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
-                            label = if (allExpanded) "Recolher" else "Expandir",
-                            onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
-                        )
+                        lancamentosBtn()
                     }
                     if (true) {
                         LabeledIconButton(
-                            icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
+                            icon = if (tableView) Icons.Outlined.ViewAgenda else Icons.Outlined.TableChart,
                             label = if (tableView) "Bloco" else "Tabela",
                             onClick = { tableView = !tableView },
                         )
@@ -1364,14 +1392,14 @@ fun DomainListScreen(
                         // de um menu único -- pedido do usuário ("implemente
                         // nos módulos que não tiverem... csv, pdf, imprimir,
                         // compartilhar, nuvem").
-                        LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
+                        LabeledIconButton(icon = Icons.Outlined.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
                         LabeledIconButton(
-                            icon = Icons.Filled.GridOn,
+                            icon = Icons.Outlined.GridOn,
                             label = "Excel",
                             onClick = { exportXlsx(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords) },
                         )
                         LabeledIconButton(
-                            icon = Icons.Filled.PictureAsPdf,
+                            icon = Icons.Outlined.PictureAsPdf,
                             label = "PDF",
                             onClick = { HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys) },
                         )
@@ -1674,18 +1702,13 @@ fun DomainListScreen(
                                         if (nfseBusyId == recordId) {
                                             CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                                         } else {
-                                            Icon(Icons.Filled.Send, contentDescription = "Emitir NFS-e", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                            Icon(Icons.Outlined.Send, contentDescription = "Emitir NFS-e", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                                         }
                                     }
                                 }
                                 if (hasMore) {
                                     IconButton(onClick = { cardOverrides[recordId ?: ""] = !expanded }, modifier = Modifier.size(28.dp)) {
-                                        Icon(
-                                            if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                                            contentDescription = if (expanded) "Recolher lançamento" else "Expandir lançamento",
-                                            modifier = Modifier.size(18.dp),
-                                            tint = MaterialTheme.colorScheme.primary,
-                                        )
+                                        com.bragro.mobile.ui.domain.CantoL(expanded)
                                     }
                                 }
                                 // "Ver" removido da vista de BLOCO (aqui) --
@@ -1695,10 +1718,10 @@ fun DomainListScreen(
                                 // plataforma"): na vista Tabela (onView, ver
                                 // RecordTable.kt) o ícone Ver continua igual.
                                 IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
-                                    Icon(Icons.Filled.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                    Icon(Icons.Outlined.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                                 }
                                 IconButton(onClick = { recordPendingDelete = recordId }, modifier = Modifier.size(28.dp)) {
-                                    Icon(Icons.Filled.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                                    Icon(Icons.Outlined.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
                                 }
                             }
                         }
@@ -2165,10 +2188,10 @@ private fun FinanceiroNfeGroupCard(
                         )
                     }
                     IconButton(onClick = { if (recId != null) onEditRecord(recId) }, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Outlined.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                     }
                     IconButton(onClick = { onDeleteRequest(recId) }, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                        Icon(Icons.Outlined.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -2199,7 +2222,7 @@ private fun ClimaForecastCard(weather: WeatherResponse?, showHeader: Boolean = t
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Filled.WbSunny, contentDescription = null, tint = BrYellow, modifier = Modifier.padding(end = 8.dp))
+                    Icon(Icons.Outlined.WbSunny, contentDescription = null, tint = BrYellow, modifier = Modifier.padding(end = 8.dp))
                     Text(
                         "Clima — $CLIMA_REGIAO_PADRAO",
                         style = MaterialTheme.typography.titleMedium,
@@ -2207,7 +2230,7 @@ private fun ClimaForecastCard(weather: WeatherResponse?, showHeader: Boolean = t
                         modifier = Modifier.weight(1f),
                     )
                     IconButton(onClick = { open = !open }) {
-                        Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
+                        com.bragro.mobile.ui.domain.CantoL(open)
                     }
                 }
             }
@@ -2261,10 +2284,10 @@ private fun SprayAlertCard(alerta: kotlinx.serialization.json.JsonObject?, showH
         Column(modifier = Modifier.padding(16.dp)) {
             if (showHeader) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Air, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                    Icon(Icons.Outlined.Air, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                     Text("Janela de Pulverização", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     IconButton(onClick = { open = !open }) {
-                        Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
+                        com.bragro.mobile.ui.domain.CantoL(open)
                     }
                 }
             }
@@ -2285,7 +2308,7 @@ private fun SprayAlertCard(alerta: kotlinx.serialization.json.JsonObject?, showH
 
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 10.dp)) {
                         Icon(
-                            if (favoravelAgora) Icons.Filled.CheckCircle else Icons.Filled.Warning,
+                            if (favoravelAgora) Icons.Outlined.CheckCircle else Icons.Outlined.Warning,
                             contentDescription = null,
                             tint = if (favoravelAgora) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                             modifier = Modifier.padding(end = 6.dp),
@@ -2387,7 +2410,7 @@ private fun GenericPeriodoDropdown(
     // conteúdo pro canto superior-esquerdo em vez do centro da célula.
     Box(contentAlignment = Alignment.Center) {
         LabeledIconButton(
-            icon = Icons.Filled.CalendarMonth,
+            icon = Icons.Outlined.CalendarMonth,
             label = "Período",
             active = hasFilter,
             // Sem tint proprio -- herda o padrao onSurface (preto/branco) do
@@ -2486,7 +2509,7 @@ private fun ColumnFilterRow(
  * esses dois ids existem hoje (ver BRAgroNavHost.kt), cada um com um ícone
  * bem distinto do outro pra não confundir. */
 private fun linkedDomainIcon(domainId: String) = when (domainId) {
-    "cobrancas" -> Icons.Filled.Receipt
-    "nfse" -> Icons.Filled.Description
-    else -> Icons.Filled.Description
+    "cobrancas" -> Icons.Outlined.Receipt
+    "nfse" -> Icons.Outlined.Description
+    else -> Icons.Outlined.Description
 }

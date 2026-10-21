@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.simulador
 
+import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.remember
 import android.app.Application
@@ -14,12 +15,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.TrendingDown
-import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Remove
+import androidx.compose.material.icons.outlined.TrendingDown
+import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -160,7 +161,13 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
         topBar = {
             TopAppBar(
                 navigationIcon = { com.bragro.mobile.ui.domain.BackNavButton() },
-                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) { Text("Simulador \"E se?\"", color = MaterialTheme.colorScheme.onSurface) } },
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Calculate, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+ Text("Simulador \"E se?\"", color = MaterialTheme.colorScheme.onSurface) 
+                    }
+                } },
                 actions = { com.bragro.mobile.ui.domain.HomeNavButton() },
             )
         },
@@ -217,7 +224,7 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
                 com.bragro.mobile.ui.domain.TituloRecolhivel("Premissas do Cenário", premissasAbertas, acoes = {
                     // v20 -- Restaurar padrão na linha das Premissas.
                     androidx.compose.material3.IconButton(onClick = { viewModel.restaurarPadrao() }, modifier = Modifier.size(36.dp)) {
-                        androidx.compose.material3.Icon(Icons.Filled.Refresh, contentDescription = "Restaurar padrão", tint = MaterialTheme.colorScheme.onSurface)
+                        androidx.compose.material3.Icon(Icons.Outlined.Refresh, contentDescription = "Restaurar padrão", tint = MaterialTheme.colorScheme.onSurface)
                     }
                 }) { premissasAbertas = !premissasAbertas }
             }
@@ -282,7 +289,7 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
                         ) {
                             val positivo = resultado.deltaMargem >= 0
                             Icon(
-                                if (positivo) Icons.Filled.TrendingUp else Icons.Filled.TrendingDown,
+                                if (positivo) Icons.Outlined.TrendingUp else Icons.Outlined.TrendingDown,
                                 contentDescription = null,
                                 tint = if (positivo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                             )
@@ -342,7 +349,7 @@ private fun CampoPercentual(
                 onClick = { onChange((value - 5).coerceIn(min, max)) },
                 modifier = Modifier.size(40.dp),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-            ) { Icon(Icons.Filled.Remove, contentDescription = "Diminuir") }
+            ) { Icon(Icons.Outlined.Remove, contentDescription = "Diminuir") }
             OutlinedTextField(
                 value = value.toString(),
                 onValueChange = { txt -> txt.toIntOrNull()?.let { onChange(it.coerceIn(min, max)) } },
@@ -353,7 +360,7 @@ private fun CampoPercentual(
                 onClick = { onChange((value + 5).coerceIn(min, max)) },
                 modifier = Modifier.size(40.dp),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-            ) { Icon(Icons.Filled.Add, contentDescription = "Aumentar") }
+            ) { Icon(Icons.Outlined.Add, contentDescription = "Aumentar") }
         }
         if (hint != null) Text(hint, style = MaterialTheme.typography.labelSmall)
     }

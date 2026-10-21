@@ -10,12 +10,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CompareArrows
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.Undo
+import androidx.compose.material.icons.outlined.CompareArrows
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.Logout
+import androidx.compose.material.icons.outlined.Undo
 import androidx.compose.material3.Button
 import androidx.compose.material3.AlertDialog
 import com.bragro.mobile.ui.theme.Card
@@ -241,10 +241,10 @@ fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel(), 
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (showHeader) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.CompareArrows, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                    Icon(Icons.Outlined.CompareArrows, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                     Text("Movimentações de Estoque", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     IconButton(onClick = { open = !open }) {
-                        Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (open) "Recolher" else "Expandir")
+                        com.bragro.mobile.ui.domain.CantoL(open)
                     }
                 }
             }
@@ -263,15 +263,15 @@ fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel(), 
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         OutlinedButton(onClick = { transferOpen = true }) {
-                            Icon(Icons.Filled.CompareArrows, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Outlined.CompareArrows, contentDescription = null, modifier = Modifier.size(18.dp))
                             Text(" Transferir")
                         }
                         OutlinedButton(onClick = { saidaOpen = true }) {
-                            Icon(Icons.Filled.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Outlined.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
                             Text(" Saída")
                         }
                         OutlinedButton(onClick = { ajusteOpen = true }) {
-                            Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
                             Text(" Ajuste")
                         }
                     }
@@ -298,7 +298,7 @@ fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel(), 
                                 )
                                 if (disponivel > 0) {
                                     IconButton(onClick = { devolverAlvo = t.id }) {
-                                        Icon(Icons.Filled.Undo, contentDescription = "Devolver")
+                                        Icon(Icons.Outlined.Undo, contentDescription = "Devolver")
                                     }
                                 }
                             }

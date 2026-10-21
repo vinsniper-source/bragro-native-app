@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.analises
 
+import androidx.compose.material.icons.outlined.Insights
 import android.app.Application
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
@@ -19,20 +20,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.FilterAlt
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
-import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.TableChart
-import androidx.compose.material.icons.filled.ViewAgenda
-import androidx.compose.material.icons.filled.GridOn
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.FilterAlt
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.KeyboardArrowUp
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.outlined.PictureAsPdf
+import androidx.compose.material.icons.outlined.Print
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.TableChart
+import androidx.compose.material.icons.outlined.ViewAgenda
+import androidx.compose.material.icons.outlined.GridOn
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
@@ -78,7 +79,7 @@ import com.bragro.mobile.ui.domain.LabeledIconButton
 import com.bragro.mobile.ui.domain.SimpleBarChart
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.outlined.BarChart
 import com.bragro.mobile.ui.domain.defaultSeriesColor
 import com.bragro.mobile.ui.domain.RecordTableHeader
 import com.bragro.mobile.ui.domain.RecordTableRow
@@ -600,7 +601,7 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text("Gráficos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Icon(if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, contentDescription = null)
+                com.bragro.mobile.ui.domain.CantoL(open)
             }
             if (open) {
                 Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
@@ -843,9 +844,15 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                     }
                 },
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Insights, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Análises", color = MaterialTheme.colorScheme.onSurface)
+                    }
+                
                     }
                 } },
                 // Nuvem/Imprimir no canto superior direito -- mesmo padrão
@@ -898,13 +905,13 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                     // janela por aqui (padrão da plataforma).
                     if (temRegistros) {
                         LabeledIconButton(
-                            icon = Icons.Filled.BarChart,
+                            icon = Icons.Outlined.BarChart,
                             label = "Gráficos",
                             onClick = { graficosOpen = true },
                         )
                     }
                     LabeledIconButton(
-                        icon = Icons.Filled.FilterAlt,
+                        icon = Icons.Outlined.FilterAlt,
                         label = "Filtros",
                         // Sem tint proprio -- herda onSurface (preto/branco),
                         // pedido do usuario ("tire o fundo verde de todos os
@@ -917,12 +924,12 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                     // exatamente o que aplicou em dre").
                     if (temRegistros) {
                         LabeledIconButton(
-                            icon = if (contentExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                            icon = if (contentExpanded) Icons.Outlined.KeyboardDoubleArrowUp else Icons.Outlined.KeyboardDoubleArrowDown,
                             label = if (contentExpanded) "Recolher" else "Expandir",
                             onClick = { contentExpanded = !contentExpanded },
                         )
                         LabeledIconButton(
-                            icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
+                            icon = if (tableView) Icons.Outlined.ViewAgenda else Icons.Outlined.TableChart,
                             label = if (tableView) "Bloco" else "Tabela",
                             onClick = { tableView = !tableView },
                         )
@@ -930,7 +937,7 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                 }
                 val operacoesBlock = AnalisesBlockSpec("Operações", vertical = false) {
                     LabeledIconButton(
-                        icon = Icons.Filled.Refresh,
+                        icon = Icons.Outlined.Refresh,
                         label = "Atualizar",
                         loading = loading,
                         onClick = { viewModel.refresh() },
@@ -938,15 +945,15 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                     com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                 }
                 val arquivosBlock = AnalisesBlockSpec("Arquivos", vertical = false) {
-                    LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = { if (analises != null && analises!!.entries.isNotEmpty()) HtmlPrinter.printList(context, analisesExportConfig(), analisesExportRecords(analises!!)) })
+                    LabeledIconButton(icon = Icons.Outlined.Print, label = "Imprimir", onClick = { if (analises != null && analises!!.entries.isNotEmpty()) HtmlPrinter.printList(context, analisesExportConfig(), analisesExportRecords(analises!!)) })
                     if (temRegistros) {
                         LabeledIconButton(
-                            icon = Icons.Filled.GridOn,
+                            icon = Icons.Outlined.GridOn,
                             label = "Excel",
                             onClick = { exportXlsx(context, "Análises", ANALISES_EXPORT_COLUMNS, analisesExportRecords(data!!)) },
                         )
                         LabeledIconButton(
-                            icon = Icons.Filled.PictureAsPdf,
+                            icon = Icons.Outlined.PictureAsPdf,
                             label = "PDF",
                             onClick = { HtmlPrinter.exportPdfDirect(context, analisesExportConfig(), analisesExportRecords(data!!)) },
                         )

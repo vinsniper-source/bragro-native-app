@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.dre
 
+import androidx.compose.material.icons.outlined.Assessment
 import android.app.Application
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
@@ -19,26 +20,26 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.FilterAlt
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
-import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.TableChart
-import androidx.compose.material.icons.filled.ViewAgenda
-import androidx.compose.material.icons.filled.GridOn
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.FilterAlt
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.outlined.PictureAsPdf
+import androidx.compose.material.icons.outlined.Print
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.TableChart
+import androidx.compose.material.icons.outlined.ViewAgenda
+import androidx.compose.material.icons.outlined.GridOn
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors
@@ -407,10 +408,7 @@ private fun FarmCard(f: DreFazendaData, arvore: List<DreRamoItemData>, expanded:
                 )
                 if (arvore.isNotEmpty()) {
                     IconButton(onClick = onToggle, modifier = Modifier.size(24.dp)) {
-                        Icon(
-                            if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                            contentDescription = if (expanded) "Recolher detalhamento de custos" else "Ver detalhamento de custos",
-                        )
+                        com.bragro.mobile.ui.domain.CantoL(expanded)
                     }
                 }
             }
@@ -495,9 +493,15 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                     }
                 },
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Assessment, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("DRE", color = MaterialTheme.colorScheme.onSurface)
+                    }
+                
                     }
                 } },
                 // Nuvem/Imprimir no canto superior direito -- mesmo padrão
@@ -570,13 +574,13 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                 val dadosBlock = DreBlockSpec("Dados", vertical = false) {
                     if (temRegistros) {
                         LabeledIconButton(
-                            icon = Icons.Filled.BarChart,
+                            icon = Icons.Outlined.BarChart,
                             label = "Gráficos",
                             onClick = { graficosOpen = true },
                         )
                     }
                     LabeledIconButton(
-                        icon = Icons.Filled.FilterAlt,
+                        icon = Icons.Outlined.FilterAlt,
                         label = "Filtros",
                         // Sem tint proprio -- herda onSurface (preto/branco),
                         // pedido do usuario ("tire o fundo verde de todos os
@@ -596,12 +600,12 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                     // quando há dados.
                     if (temRegistros) {
                         LabeledIconButton(
-                            icon = if (resultadoOpen) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                            icon = if (resultadoOpen) Icons.Outlined.KeyboardDoubleArrowUp else Icons.Outlined.KeyboardDoubleArrowDown,
                             label = if (resultadoOpen) "Recolher" else "Expandir",
                             onClick = { resultadoOpen = !resultadoOpen },
                         )
                         LabeledIconButton(
-                            icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
+                            icon = if (tableView) Icons.Outlined.ViewAgenda else Icons.Outlined.TableChart,
                             label = if (tableView) "Bloco" else "Tabela",
                             onClick = { tableView = !tableView },
                         )
@@ -609,7 +613,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                 }
                 val operacoesBlock = DreBlockSpec("Operações", vertical = false) {
                     LabeledIconButton(
-                        icon = Icons.Filled.Refresh,
+                        icon = Icons.Outlined.Refresh,
                         label = "Atualizar",
                         loading = loading,
                         onClick = { viewModel.refresh() },
@@ -617,15 +621,15 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                     com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                 }
                 val arquivosBlock = DreBlockSpec("Arquivos", vertical = false) {
-                    LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = { if (dre != null && dre!!.porFazenda.isNotEmpty()) HtmlPrinter.printList(context, dreExportConfig(), dreExportRecords(dre!!)) })
+                    LabeledIconButton(icon = Icons.Outlined.Print, label = "Imprimir", onClick = { if (dre != null && dre!!.porFazenda.isNotEmpty()) HtmlPrinter.printList(context, dreExportConfig(), dreExportRecords(dre!!)) })
                     if (temRegistros) {
                         LabeledIconButton(
-                            icon = Icons.Filled.GridOn,
+                            icon = Icons.Outlined.GridOn,
                             label = "Excel",
                             onClick = { exportXlsx(context, "DRE", DRE_EXPORT_COLUMNS, dreExportRecords(data!!)) },
                         )
                         LabeledIconButton(
-                            icon = Icons.Filled.PictureAsPdf,
+                            icon = Icons.Outlined.PictureAsPdf,
                             label = "PDF",
                             onClick = { HtmlPrinter.exportPdfDirect(context, dreExportConfig(), dreExportRecords(data!!)) },
                         )

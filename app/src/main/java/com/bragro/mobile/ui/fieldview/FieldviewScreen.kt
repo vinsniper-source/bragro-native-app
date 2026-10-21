@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.fieldview
 
+import androidx.compose.foundation.layout.size
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
@@ -11,8 +12,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material.icons.filled.Layers
-import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.outlined.Layers
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -30,15 +31,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.Eco
-import androidx.compose.material.icons.filled.EditLocationAlt
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.Public
-import androidx.compose.material.icons.filled.UploadFile
+import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.DirectionsCar
+import androidx.compose.material.icons.outlined.Eco
+import androidx.compose.material.icons.outlined.EditLocationAlt
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -487,9 +488,15 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                     }
                 },
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Map, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Talhões e Mapas", color = MaterialTheme.colorScheme.onSurface)
+                    }
+                
                     }
                 } },
                 actions = {
@@ -528,22 +535,22 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
             // v14: abas Dados / Operações / Arquivos, iguais aos outros módulos.
             com.bragro.mobile.ui.domain.AcoesEmAbas(
                 dados = {
-                    val tabIcons = listOf(Icons.Filled.Eco, Icons.Filled.DirectionsCar, Icons.Filled.Map)
+                    val tabIcons = listOf(Icons.Outlined.Eco, Icons.Outlined.DirectionsCar, Icons.Outlined.Map)
                     tabs.forEachIndexed { i, label ->
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = tabIcons[i], label = if (i == 2) "Mapa/KML" else label, active = tab == i && listaAberta, onClick = { if (tab == i && listaAberta) listaAberta = false else { tab = i; listaAberta = true } })
                     }
                 },
                 operacoes = {
                     com.bragro.mobile.ui.domain.LabeledIconButton(
-                        icon = Icons.Filled.UploadFile, label = "KML/KMZ", loading = importing,
+                        icon = Icons.Outlined.UploadFile, label = "KML/KMZ", loading = importing,
                         onClick = { kmlPicker.launch(arrayOf("application/vnd.google-earth.kml+xml", "application/vnd.google-earth.kmz", "application/octet-stream", "*/*")) },
                     )
-                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.EditLocationAlt, label = "+ Talhão", onClick = { manualDialogOpen = true })
-                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Bolt, label = "Prestadora", active = integration != null, onClick = { prestadoraAberta = 1 })
-                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Public, label = "NDVI", active = ndviIntegration != null, onClick = { prestadoraAberta = 2 })
+                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.EditLocationAlt, label = "+ Talhão", onClick = { manualDialogOpen = true })
+                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Bolt, label = "Prestadora", active = integration != null, onClick = { prestadoraAberta = 1 })
+                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Public, label = "NDVI", active = ndviIntegration != null, onClick = { prestadoraAberta = 2 })
                 },
                 arquivos = {
-                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Map, label = "Prescrição", onClick = onOpenPrescricao)
+                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Map, label = "Prescrição", onClick = onOpenPrescricao)
                     com.bragro.mobile.ui.domain.ArquivosTabela("Talhões e Mapas", listOf("Talhão", "Nome", "Área (ha)")) {
                         boundaries.map { b -> listOf(b.talhao, b.nome.orEmpty(), b.areaHaCalc?.let { "%,.2f".format(java.util.Locale("pt", "BR"), it) }.orEmpty()) }
                     }
@@ -675,18 +682,14 @@ private fun TalhaoStatusList(rows: List<JsonObject>) {
                         Modifier.fillMaxWidth().clickable { open = !open },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.Eco, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
+                        Icon(Icons.Outlined.Eco, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
                         val tit = run {
                             val o = rows[i]
                             fun c(k: String) = (o[k] as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() }
                             listOfNotNull(c("talhao")?.let { "Talhão $it" } ?: "Talhão", c("os")?.let { "O.S. $it" }).joinToString(" · ")
                         }
                         Text(tit, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                        Icon(
-                            if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                            contentDescription = if (open) "Recolher" else "Expandir",
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
+                        com.bragro.mobile.ui.domain.CantoL(open)
                     }
                     if (open) RawRecordFields(rows[i])
                 }
@@ -727,7 +730,7 @@ private fun MaquinaStatusList(rows: List<JsonObject>) {
                         Modifier.fillMaxWidth().clickable { open = !open },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.DirectionsCar, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
+                        Icon(Icons.Outlined.DirectionsCar, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
                         Text("Máquina", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                         if (!proxRevisaoIso.isNullOrBlank()) {
                             Text(
@@ -743,12 +746,7 @@ private fun MaquinaStatusList(rows: List<JsonObject>) {
                                     .padding(horizontal = 8.dp, vertical = 2.dp),
                             )
                         }
-                        Icon(
-                            if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                            contentDescription = if (open) "Recolher" else "Expandir",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(start = 4.dp),
-                        )
+                        com.bragro.mobile.ui.domain.CantoL(open)
                     }
                     if (open) RawRecordFields(rows[i])
                 }
@@ -787,7 +785,7 @@ private fun BoundariesList(boundaries: List<FieldBoundaryDto>, modifier: Modifie
                     // talhão/KML longo crescia o Row inteiro além da borda
                     // do Card em vez de truncar.
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.Filled.Map, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                        Icon(Icons.Outlined.Map, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                         Text(
                             b.nome ?: b.talhao,
                             style = MaterialTheme.typography.titleSmall,
@@ -906,7 +904,7 @@ private fun FarmMapLinksRow(boundaries: List<FieldBoundaryDto>, farms: List<Farm
             for (farm in farms) {
                 val ponto = farmCentroid(boundaries, farm.id)
                 OutlinedButton(onClick = { openUrl(googleMapsUrl(ponto, farm.name)) }, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
-                    Icon(Icons.Filled.Map, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                    Icon(Icons.Outlined.Map, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
                     Text(farm.name, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
                 }
             }
@@ -917,7 +915,7 @@ private fun FarmMapLinksRow(boundaries: List<FieldBoundaryDto>, farms: List<Farm
             for (farm in farms) {
                 val ponto = farmCentroid(boundaries, farm.id)
                 OutlinedButton(onClick = { openUrl(googleEarthUrl(ponto, farm.name)) }, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
-                    Icon(Icons.Filled.Public, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                    Icon(Icons.Outlined.Public, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
                     Text(farm.name, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
                 }
             }

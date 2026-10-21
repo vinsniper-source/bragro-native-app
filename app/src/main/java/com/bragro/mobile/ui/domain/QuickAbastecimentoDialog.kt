@@ -15,9 +15,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CenterFocusWeak
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.outlined.CenterFocusWeak
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -365,7 +365,7 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
                         }
                     }) {
                         androidx.compose.material3.Icon(
-                            Icons.Filled.ContentCopy,
+                            Icons.Outlined.ContentCopy,
                             contentDescription = "Copiar último abastecimento",
                             tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                         )
@@ -382,7 +382,7 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
                             CircularProgressIndicator(modifier = Modifier)
                         } else {
                             androidx.compose.material3.Icon(
-                                Icons.Filled.QrCodeScanner,
+                                Icons.Outlined.QrCodeScanner,
                                 contentDescription = "Ler QR Code da máquina (foto)",
                                 tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                             )
@@ -394,7 +394,7 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
                     // leitor de QR é separado da câmera (pedido do usuário).
                     androidx.compose.material3.IconButton(onClick = { launchQrExterno() }, enabled = !lendoQr) {
                         androidx.compose.material3.Icon(
-                            Icons.Filled.CenterFocusWeak,
+                            Icons.Outlined.CenterFocusWeak,
                             contentDescription = "Ler QR Code com o leitor do aparelho",
                             tint = androidx.compose.material3.MaterialTheme.colorScheme.secondary,
                         )

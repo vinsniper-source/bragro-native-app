@@ -1,17 +1,18 @@
 package com.bragro.mobile.ui.drone
 
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.outlined.Refresh
 import android.app.Application
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material.icons.filled.FilterAlt
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.outlined.FilterAlt
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -26,11 +27,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.FlightTakeoff
+import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.AttachFile
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.FlightTakeoff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
@@ -247,9 +248,15 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                     }
                 },
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.FlightTakeoff, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Drone", color = MaterialTheme.colorScheme.onSurface)
+                    }
+                
                     }
                 } },
                 // Ícone de nuvem (armazenamento) -- faltava neste módulo,
@@ -321,7 +328,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                     dados = {
                         Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
                             com.bragro.mobile.ui.domain.LabeledIconButton(
-                                icon = Icons.Filled.FilterAlt,
+                                icon = Icons.Outlined.FilterAlt,
                                 label = tipoFiltro?.let { t -> TIPOS_CAPTURA.firstOrNull { it.first == t }?.second } ?: "Tipo",
                                 active = tipoFiltro != null,
                                 onClick = { tipoMenu = true },
@@ -334,18 +341,19 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                             }
                         }
                         com.bragro.mobile.ui.domain.LabeledIconButton(
-                            icon = if (lancAberto) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                            icon = if (lancAberto) Icons.Outlined.KeyboardDoubleArrowUp else Icons.Outlined.KeyboardDoubleArrowDown,
                             label = if (lancAberto) "Recolher" else "Expandir",
                             onClick = { lancAberto = !lancAberto },
                         )
                     },
                     operacoes = {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.FlightTakeoff, label = "+ Voo", onClick = { showNovo = true })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Bolt, label = "Prestadora", active = integration != null, onClick = { showPrestadora = true })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.load() })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.FlightTakeoff, label = "+ Voo", onClick = { showNovo = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Bolt, label = "Prestadora", active = integration != null, onClick = { showPrestadora = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.load() })
+                        com.bragro.mobile.ui.domain.NuvemButton()
                     },
                     arquivos = {
-                        com.bragro.mobile.ui.domain.ArquivosTabela("Drone", listOf("Data", "Talhão", "Tipo", "Piloto", "Altitude (m)", "Área (ha)", "Observações"), nuvem = true) {
+                        com.bragro.mobile.ui.domain.ArquivosTabela("Drone", listOf("Data", "Talhão", "Tipo", "Piloto", "Altitude (m)", "Área (ha)", "Observações")) {
                             filtrados.map { r ->
                                 listOf(
                                     com.bragro.mobile.ui.domain.isoDateToBr(r.data.take(10)), r.talhao.orEmpty(),
@@ -431,7 +439,7 @@ private fun DroneRecordCard(record: DroneRecordDto) {
             // NENHUM ícone -- a auditoria anterior tinha checado só o FAB/
             // botão de anexo e concluído (errado) que o módulo já estava OK.
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.FlightTakeoff, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
+                Icon(Icons.Outlined.FlightTakeoff, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
                 Text(tipoLabel, style = MaterialTheme.typography.titleSmall)
             }
             Text(isoDateOnlyDrone(record.data), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -447,7 +455,7 @@ private fun DroneRecordCard(record: DroneRecordDto) {
                     onClick = { runCatching { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))) } },
                     contentPadding = PaddingValues(0.dp),
                 ) {
-                    Icon(Icons.Filled.OpenInNew, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                    Icon(Icons.Outlined.OpenInNew, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
                     Text("Abrir arquivo")
                 }
             }
@@ -510,7 +518,7 @@ private fun NovoDroneRegistroDialog(
                         area = ultimoRegistro.areaCoberta?.toString() ?: ""
                         obs = ultimoRegistro.observacoes ?: ""
                     }) {
-                        Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último lançamento", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último lançamento", tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -547,7 +555,7 @@ private fun NovoDroneRegistroDialog(
                     onClick = { filePicker.launch(arrayOf("image/*", "video/*")) },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Icon(Icons.Filled.AttachFile, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                    Icon(Icons.Outlined.AttachFile, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                     Text(pickedName ?: "Selecionar arquivo *")
                 }
                 if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)

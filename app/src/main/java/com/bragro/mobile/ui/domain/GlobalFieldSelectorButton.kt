@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Eco
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Grass
+import androidx.compose.material.icons.outlined.Eco
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.Grass
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -108,7 +108,7 @@ fun GlobalFieldSelectorButton(
                 overflow = TextOverflow.Clip,
                 modifier = Modifier.weight(1f, fill = false).basicMarquee(),
             )
-            Icon(Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.size(14.dp).padding(start = 2.dp))
+            Icon(Icons.Outlined.ExpandMore, contentDescription = null, modifier = Modifier.size(14.dp).padding(start = 2.dp))
         }
     } else if (showLabel) {
         Column(
@@ -160,8 +160,8 @@ fun GlobalFieldSelectorButton(
 
 @Composable
 fun SafraSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onChanged: () -> Unit = {}) =
-    GlobalFieldSelectorButton(SafraSelection, Icons.Filled.Eco, "safra", "safras", showLabel, asPill, onChanged)
+    GlobalFieldSelectorButton(SafraSelection, Icons.Outlined.Eco, "safra", "safras", showLabel, asPill, onChanged)
 
 @Composable
 fun CulturaSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onChanged: () -> Unit = {}) =
-    GlobalFieldSelectorButton(CulturaSelection, Icons.Filled.Grass, "cultura", "culturas", showLabel, asPill, onChanged)
+    GlobalFieldSelectorButton(CulturaSelection, Icons.Outlined.Grass, "cultura", "culturas", showLabel, asPill, onChanged)

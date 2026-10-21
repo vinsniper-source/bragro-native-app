@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.orcamento
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.outlined.RequestQuote
 import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,20 +25,20 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.FilterAlt
-import androidx.compose.material.icons.filled.GridOn
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
-import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.TableChart
-import androidx.compose.material.icons.filled.ViewAgenda
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.FilterAlt
+import androidx.compose.material.icons.outlined.GridOn
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.outlined.PictureAsPdf
+import androidx.compose.material.icons.outlined.Print
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.TableChart
+import androidx.compose.material.icons.outlined.ViewAgenda
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -468,9 +470,15 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                     }
                 },
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.RequestQuote, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Orçamentos", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface)
+                    }
+                
                     }
                 } },
                 actions = {
@@ -490,7 +498,7 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                 onClick = onNovo,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-            ) { Icon(Icons.Filled.Add, contentDescription = "Novo orçamento") }
+            ) { Icon(Icons.Outlined.Add, contentDescription = "Novo orçamento") }
         },
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -509,32 +517,32 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                 // 3 desses aqui porque Orçamentos tem tela própria, fora do
                 // motor genérico ("force aparecer os outros ícones de dados").
                 ModuleIconButton(
-                    ModuleIconItem("charts", Icons.Filled.BarChart, "Gráficos", active = showCharts),
+                    ModuleIconItem("charts", Icons.Outlined.BarChart, "Gráficos", active = showCharts),
                 ) { showCharts = !showCharts }
                 ModuleIconButton(
-                    ModuleIconItem("filtros", Icons.Filled.FilterAlt, "Filtros", active = statusFiltro != null, badgeCount = if (statusFiltro != null) 1 else 0),
+                    ModuleIconItem("filtros", Icons.Outlined.FilterAlt, "Filtros", active = statusFiltro != null, badgeCount = if (statusFiltro != null) 1 else 0),
                 ) { showFiltroDialog = true }
                 ColumnsPickerButton(ORCAMENTO_COLUMNS, visibleColumnKeys) { visibleColumnKeys = it }
                 LabeledIconButton(
-                    icon = if (cardsExpanded) Icons.Filled.KeyboardDoubleArrowUp else Icons.Filled.KeyboardDoubleArrowDown,
+                    icon = if (cardsExpanded) Icons.Outlined.KeyboardDoubleArrowUp else Icons.Outlined.KeyboardDoubleArrowDown,
                     label = if (cardsExpanded) "Recolher" else "Expandir",
                     onClick = { cardsExpanded = !cardsExpanded },
                 )
                 LabeledIconButton(
-                    icon = if (tableView) Icons.Filled.ViewAgenda else Icons.Filled.TableChart,
+                    icon = if (tableView) Icons.Outlined.ViewAgenda else Icons.Outlined.TableChart,
                     label = if (tableView) "Bloco" else "Tabela",
                     onClick = { tableView = !tableView },
                 )
             }
             val operacoesBlock = ModuleBlockSpec("Operações", vertical = false) {
-                LabeledIconButton(icon = Icons.Filled.Refresh, label = "Atualizar", loading = carregando, onClick = { viewModel.carregar() })
+                LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", loading = carregando, onClick = { viewModel.carregar() })
                 ModuleIconButton(
-                    ModuleIconItem("periodo", Icons.Filled.CalendarMonth, "Período", active = dateFrom.isNotBlank() || dateTo.isNotBlank()),
+                    ModuleIconItem("periodo", Icons.Outlined.CalendarMonth, "Período", active = dateFrom.isNotBlank() || dateTo.isNotBlank()),
                 ) { showPeriodoDialog = true }
                 com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
             }
             val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
-                LabeledIconButton(icon = Icons.Filled.Print, label = "Imprimir", onClick = { run {
+                LabeledIconButton(icon = Icons.Outlined.Print, label = "Imprimir", onClick = { run {
 val headers = listOf("Data", "Nº Orçamento", "Requisição", "Autorizado por", "Itens", "Total", "Status")
                                 val rows = filtered.map { o ->
                                     listOf(
@@ -561,7 +569,7 @@ val headers = listOf("Data", "Nº Orçamento", "Requisição", "Autorizado por",
                     )
                 }
                 LabeledIconButton(
-                    icon = Icons.Filled.GridOn,
+                    icon = Icons.Outlined.GridOn,
                     label = "Excel",
                     onClick = {
                         val fileName = "orcamentos-${SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())}.xlsx"
@@ -569,7 +577,7 @@ val headers = listOf("Data", "Nº Orçamento", "Requisição", "Autorizado por",
                     },
                 )
                 LabeledIconButton(
-                    icon = Icons.Filled.PictureAsPdf,
+                    icon = Icons.Outlined.PictureAsPdf,
                     label = "PDF",
                     onClick = { HtmlPrinter.printSimpleTable(context, "Orçamentos", headers, rows) },
                 )

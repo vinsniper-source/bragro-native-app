@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ViewColumn
+import androidx.compose.material.icons.outlined.ViewColumn
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -50,7 +50,7 @@ fun ColumnsPickerButton(allColumns: List<ColumnConfig>, visibleKeys: Set<String>
         // Rótulo abaixo do ícone -- varredura geral pedida pelo usuário
         // ("alguns ícones não receberam rótulos como colunas e períodos,
         // filtros"), mesmo padrão visual do LabeledIconButton.
-        LabeledIconButton(icon = Icons.Filled.ViewColumn, label = "Colunas", active = allColumns.size != visibleKeys.size, onClick = { expanded = true })
+        LabeledIconButton(icon = Icons.Outlined.ViewColumn, label = "Colunas", active = allColumns.size != visibleKeys.size, onClick = { expanded = true })
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             Box(modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
                 Column {

@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,11 +23,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -652,6 +652,10 @@ fun DomainFormScreen(
                 // usuário ("em novo lançamento em todos os módulos... rebaixe
                 // a seta a esquerda e o título uma linha abaixo").
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(com.bragro.mobile.ui.home.domainIcon(domainId), contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         // basicMarquee() REMOVIDO -- suspeita forte de causa
@@ -675,6 +679,8 @@ fun DomainFormScreen(
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
+                    }
+                
                     }
                 } },
                 actions = {
@@ -751,11 +757,11 @@ fun DomainFormScreen(
                             val climaHojeBusy by viewModel.climaHojeBusy
                             IconButton(onClick = { if (!climaHojeBusy) viewModel.preencherClimaHoje() }, modifier = Modifier.size(32.dp)) {
                                 if (climaHojeBusy) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                                else Icon(Icons.Filled.WaterDrop, contentDescription = "Preencher com clima de hoje", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                                else Icon(Icons.Outlined.WaterDrop, contentDescription = "Preencher com clima de hoje", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
                             }
                         }
                         IconButton(onClick = { if (lastRecord != null) viewModel.copyFromLastRecord() }, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar último lançamento", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
+                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último lançamento", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
                         }
                     }
                 }
@@ -1192,7 +1198,7 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                         DropdownMenuItem(
                             text = { Text(if (creating) "Cadastrando..." else "+ Criar \"$trimmedQuery\"", color = MaterialTheme.colorScheme.primary) },
                             enabled = !creating,
-                            leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                            leadingIcon = { Icon(Icons.Outlined.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                             onClick = {
                                 creating = true
                                 viewModel.quickCreateLookupOption(creatableCategory!!, trimmedQuery) { created ->
@@ -1320,7 +1326,7 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                     // Cor verde -- pedido do usuário ("nos campos que houver
                     // calendário altere o ícone para cor verde").
                     IconButton(onClick = { showPicker = true }) {
-                        Icon(Icons.Filled.CalendarMonth, contentDescription = "Escolher data", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Outlined.CalendarMonth, contentDescription = "Escolher data", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
             )
@@ -1435,7 +1441,7 @@ private fun ItensExtrasSection(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Item ${i + 2}", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                         IconButton(onClick = { viewModel.removeItemExtra(i) }, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Filled.Close, contentDescription = "Remover item")
+                            Icon(Icons.Outlined.Close, contentDescription = "Remover item")
                         }
                     }
                     sel.chunked(2).forEach { par ->
@@ -1489,7 +1495,7 @@ private fun ItensExtrasSection(
             onClick = { viewModel.addItemExtra() },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+            Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
             androidx.compose.foundation.layout.Spacer(Modifier.size(6.dp))
             Text(multi.rotulo)
         }

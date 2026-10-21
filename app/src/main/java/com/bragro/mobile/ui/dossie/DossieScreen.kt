@@ -1,7 +1,8 @@
 package com.bragro.mobile.ui.dossie
 
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.layout.Spacer
@@ -11,8 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.ChevronLeft
 import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,9 +30,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Print
+import androidx.compose.material.icons.outlined.PictureAsPdf
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -279,7 +280,13 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
         topBar = {
             TopAppBar(
                 navigationIcon = { com.bragro.mobile.ui.domain.BackNavButton() },
-                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) { Text("Dossiê Bancário", color = MaterialTheme.colorScheme.onSurface) } },
+                title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
+                    // v21 -- ícone verde do módulo ao lado do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.AccountBalance, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+ Text("Dossiê Bancário", color = MaterialTheme.colorScheme.onSurface) 
+                    }
+                } },
                 // Ícone Imprimir/PDF (Task #615/#711, paridade com o botão
                 // Imprimir do dossie-client.tsx no site) -- monta o MESMO
                 // relatório já exibido na tela (Resumo Executivo + DRE por
@@ -374,7 +381,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                         // v20 -- setinha para recolher o bloco.
                         Row(Modifier.fillMaxWidth().clickable { anoAberto = !anoAberto }, verticalAlignment = Alignment.CenterVertically) {
                             Text("ANO-CALENDÁRIO / EXERCÍCIO", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-                            Icon(if (anoAberto) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = if (anoAberto) "Recolher" else "Abrir", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            com.bragro.mobile.ui.domain.CantoL(anoAberto)
                         }
                         if (anoAberto) {
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -422,11 +429,11 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         Box(Modifier.weight(1f).fillMaxHeight().clickable { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(d, ano)) }, contentAlignment = Alignment.Center) {
-                                            Icon(Icons.Filled.Print, contentDescription = "Imprimir", modifier = Modifier.size(18.dp))
+                                            Icon(Icons.Outlined.Print, contentDescription = "Imprimir", modifier = Modifier.size(18.dp))
                                         }
                                         Text("/", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Box(Modifier.weight(1f).fillMaxHeight().clickable { HtmlPrinter.printHtmlComoPdf(context, "Dossiê Bancário", buildDossieHtml(d, ano)) }, contentAlignment = Alignment.Center) {
-                                            Icon(Icons.Filled.PictureAsPdf, contentDescription = "PDF", modifier = Modifier.size(18.dp))
+                                            Icon(Icons.Outlined.PictureAsPdf, contentDescription = "PDF", modifier = Modifier.size(18.dp))
                                         }
                                     }
                                     repeat(2 - linha.size) { Spacer(Modifier.weight(1f)) }
