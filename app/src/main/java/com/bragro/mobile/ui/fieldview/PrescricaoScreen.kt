@@ -1,6 +1,7 @@
 package com.bragro.mobile.ui.fieldview
 
 import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.outlined.KeyboardDoubleArrowDown
 import androidx.compose.material.icons.outlined.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.outlined.Refresh
@@ -295,7 +296,7 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Map, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Map, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -355,8 +356,9 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                 com.bragro.mobile.ui.domain.AcoesEmAbas(
                     dados = {
                         com.bragro.mobile.ui.domain.LabeledIconButton(
-                            icon = if (lancAberto) Icons.Outlined.KeyboardDoubleArrowUp else Icons.Outlined.KeyboardDoubleArrowDown,
-                            label = if (lancAberto) "Recolher" else "Expandir",
+                            icon = Icons.AutoMirrored.Outlined.ViewList,
+                            label = "Lançamentos",
+                            active = lancAberto,
                             onClick = { lancAberto = !lancAberto },
                         )
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Info, label = "Formatos", onClick = { infoAberto = true })

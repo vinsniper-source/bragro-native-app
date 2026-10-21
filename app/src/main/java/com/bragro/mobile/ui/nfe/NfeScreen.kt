@@ -1,6 +1,7 @@
 package com.bragro.mobile.ui.nfe
 
 import androidx.compose.material.icons.outlined.Receipt
+import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.outlined.KeyboardDoubleArrowDown
 import androidx.compose.material.icons.outlined.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.outlined.Refresh
@@ -453,7 +454,7 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Receipt, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Receipt, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
  Text("NF-e", color = MaterialTheme.colorScheme.onSurface) 
                     }
                 } },
@@ -515,8 +516,9 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
                                     onClick = { viewMode = if (viewMode == NfeViewMode.BLOCOS) NfeViewMode.LINHAS else NfeViewMode.BLOCOS; lancAberto = true },
                                 )
                                 com.bragro.mobile.ui.domain.LabeledIconButton(
-                                    icon = if (lancAberto) Icons.Outlined.KeyboardDoubleArrowUp else Icons.Outlined.KeyboardDoubleArrowDown,
-                                    label = if (lancAberto) "Recolher" else "Expandir",
+                                    icon = Icons.AutoMirrored.Outlined.ViewList,
+                                    label = "Lançamentos",
+                                    active = lancAberto,
                                     onClick = { lancAberto = !lancAberto },
                                 )
                             },

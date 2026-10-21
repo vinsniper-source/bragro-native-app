@@ -3,6 +3,16 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## 1.3.70 (180)
+- Ícones de contorno com traço mais grosso (negrito minimalista) nos botões de Ações, cabeçalhos, KPIs e voltar/início; Star, Bolt, Stop e PlayArrow trocados pelas versões de contorno.
+- Início: KPIs sem o círculo colorido atrás e com ícone um pouco maior (24dp).
+- Ícone do título de todos os cabeçalhos em preto/branco, negrito.
+- L do canto menor (8dp), mais discreto e encostado na borda do bloco.
+- Removida a divisória "LANÇAMENTOS n ——— L" de todos os módulos; a lista abre pelo botão Lançamentos. Outras seções ficam só com título e L, sem traço. Botões "Expandir/Recolher" viram "Lançamentos".
+- Operações: abas das Ações corrigidas para Dados, Operações e Arquivos.
+- Botões de Ações mudam de cor ao toque e só voltam no segundo toque (o segundo toque não repete a ação).
+- PDF dos gráficos refeito: A4 retrato, título, barras proporcionais com valores, rótulos sem corte e tabela embaixo.
+
 ## [1.3.69] - 2026-10-20
 - Bloco de Monitoramento removido de todo o app; as telas começam pelo bloco Ações. Em Operações, cada fazenda aparece no título da lista de atividades.
 - Ações: "Expandir" virou "Lançamentos" -- abre uma lista com os tipos de lançamento do módulo (com quantidade e data do último), montada a partir dos próprios lançamentos; escolher filtra a lista, tocar de novo recolhe.

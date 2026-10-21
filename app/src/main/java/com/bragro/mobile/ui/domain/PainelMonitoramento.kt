@@ -462,6 +462,11 @@ fun FaixaTitulo(titulo: String, aberto: Boolean, extra: String? = null, onToggle
 /** Divisória "LANÇAMENTOS  n ——— v" (sem borda de bloco), igual à plataforma. */
 @Composable
 fun CabecalhoLancamentos(total: Int, aberto: Boolean, extra: String? = null, titulo: String = "Lançamentos", rotulo: String? = null, onToggle: () -> Unit) {
+    // v22 -- sem a palavra "LANÇAMENTOS", sem o traço e sem a setinha: a
+    // lista de lançamentos abre só pelo botão Lançamentos do bloco Ações.
+    if (titulo == "Lançamentos") return
+    // Outras seções (Silos, Itens, Notas...) ficam só com o título e o L
+    // discreto no canto -- sem a linha.
     val fg = MaterialTheme.colorScheme.onSurface
     Row(
         modifier = Modifier.fillMaxWidth().clickable { onToggle() }.padding(horizontal = 2.dp, vertical = 4.dp),
@@ -472,11 +477,8 @@ fun CabecalhoLancamentos(total: Int, aberto: Boolean, extra: String? = null, tit
         Text(
             rotulo ?: (NumberFormat.getIntegerInstance(Locale("pt", "BR")).format(total) + (extra?.let { " · $it" } ?: "")),
             fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 160.dp),
+            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
         )
-        // v14: a linha vai do número até a setinha (encostada na margem),
-        // um pouco mais grossa e num cinza um tom mais escuro.
-        Box(Modifier.weight(1f).height(1.5.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)))
         CantoL(aberto, Modifier.align(Alignment.Bottom))
     }
 }

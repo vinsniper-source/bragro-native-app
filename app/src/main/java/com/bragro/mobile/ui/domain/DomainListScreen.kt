@@ -38,7 +38,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.BarChart
-import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.OfflineBolt
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.CompareArrows
@@ -564,7 +564,7 @@ fun DomainListScreen(
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        androidx.compose.material3.Icon(com.bragro.mobile.ui.home.domainIcon(domainId), contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.home.domainIcon(domainId), contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -621,7 +621,7 @@ fun DomainListScreen(
                         onClick = { showIntegracaoDialog = true },
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Outlined.Bolt, contentDescription = "Acesso automático (bomba de combustível)")
+                        Icon(Icons.Outlined.OfflineBolt, contentDescription = "Acesso automático (bomba de combustível)")
                     }
                     if (onOpenFrotaQr != null) {
                         FloatingActionButton(
@@ -664,7 +664,7 @@ fun DomainListScreen(
                         onClick = { showIntegracaoDialog = true },
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Outlined.Bolt, contentDescription = "Acesso automático (balança)")
+                        Icon(Icons.Outlined.OfflineBolt, contentDescription = "Acesso automático (balança)")
                     }
                     FloatingActionButton(
                     onClick = onNewRecord,
@@ -706,7 +706,7 @@ fun DomainListScreen(
                         onClick = { showIntegracaoDialog = true },
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Outlined.Bolt, contentDescription = "Acesso automático (balança/RFID Bluetooth)")
+                        Icon(Icons.Outlined.OfflineBolt, contentDescription = "Acesso automático (balança/RFID Bluetooth)")
                     }
                     FloatingActionButton(
                         onClick = onNewRecord,
@@ -744,7 +744,7 @@ fun DomainListScreen(
                         onClick = { showIntegracaoDialog = true },
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Outlined.Bolt, contentDescription = "Acesso automático (silos)")
+                        Icon(Icons.Outlined.OfflineBolt, contentDescription = "Acesso automático (silos)")
                     }
                     FloatingActionButton(
                         onClick = onOpenReconciliacaoEstoque,
@@ -1476,15 +1476,6 @@ fun DomainListScreen(
                         modifier = Modifier.padding(bottom = 8.dp),
                     )
                 }
-            }
-            // Divisória "LANÇAMENTOS n" com setinha (mesma da plataforma) --
-            // a setinha mostra/esconde a lista (antes só pelo ícone Expandir).
-            item(key = "lanc-header") {
-                CabecalhoLancamentos(
-                    total = filteredRecords.size,
-                    aberto = allExpanded,
-                    extra = if (filteredRecords.size != records.size) "de ${records.size}" else null,
-                ) { allExpanded = !allExpanded; cardOverrides.clear() }
             }
             lancTail[0] = when {
                 filteredRecords.isEmpty() -> 1

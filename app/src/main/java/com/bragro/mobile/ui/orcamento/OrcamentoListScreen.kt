@@ -1,6 +1,7 @@
 package com.bragro.mobile.ui.orcamento
 
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.outlined.RequestQuote
 import android.app.Application
 import androidx.compose.foundation.background
@@ -472,7 +473,7 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.RequestQuote, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.RequestQuote, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -524,8 +525,9 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                 ) { showFiltroDialog = true }
                 ColumnsPickerButton(ORCAMENTO_COLUMNS, visibleColumnKeys) { visibleColumnKeys = it }
                 LabeledIconButton(
-                    icon = if (cardsExpanded) Icons.Outlined.KeyboardDoubleArrowUp else Icons.Outlined.KeyboardDoubleArrowDown,
-                    label = if (cardsExpanded) "Recolher" else "Expandir",
+                    icon = Icons.AutoMirrored.Outlined.ViewList,
+                    label = "Lançamentos",
+                    active = cardsExpanded,
                     onClick = { cardsExpanded = !cardsExpanded },
                 )
                 LabeledIconButton(

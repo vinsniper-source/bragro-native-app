@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.OfflineBolt
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
@@ -125,7 +125,7 @@ fun ProviderIntegrationCard(
             // antes (task #338), agora resolvido de raiz em vez de só
             // mitigado.
             Row(verticalAlignment = Alignment.Top) {
-                Icon(Icons.Outlined.Bolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp, top = 2.dp))
+                Icon(Icons.Outlined.OfflineBolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp, top = 2.dp))
                 // Sem letreiro e sem limite de linha aqui -- pedido do
                 // usuário ("todas as frases estão incompletas, não use
                 // letreiro, pode usar mais de uma linha mas complete toda a

@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.outlined.ViewList
 import androidx.compose.material.icons.outlined.BarChart
-import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.OfflineBolt
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -269,7 +269,7 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Warehouse, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Warehouse, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -327,7 +327,7 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                     operacoes = {
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Storage, label = "+ Silo", onClick = { editing = null; showForm = true })
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.load() })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Bolt, label = "Prestadora", onClick = { prestadoraAberta = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.OfflineBolt, label = "Prestadora", onClick = { prestadoraAberta = true })
                         com.bragro.mobile.ui.domain.NuvemButton()
                     },
                     arquivos = {

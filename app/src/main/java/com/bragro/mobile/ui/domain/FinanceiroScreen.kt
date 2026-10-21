@@ -1,6 +1,7 @@
 package com.bragro.mobile.ui.domain
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -310,7 +311,7 @@ fun FinanceiroScreen(
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        androidx.compose.material3.Icon(com.bragro.mobile.ui.home.domainIcon("financeiro"), contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp).size(22.dp))
+                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.home.domainIcon("financeiro"), contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     // "Lançamentos" (era "Financeiro") só aparece com Todos
                     // selecionado; ao clicar em outro ícone da Gestão
@@ -479,8 +480,9 @@ fun FinanceiroScreen(
                     // Sempre visível -- pedido do usuário ("force todos os
                     // ícones aparecerem").
                     LabeledIconButton(
-                        icon = if (allExpanded) Icons.Outlined.KeyboardDoubleArrowUp else Icons.Outlined.KeyboardDoubleArrowDown,
-                        label = if (allExpanded) "Recolher" else "Expandir",
+                        icon = Icons.AutoMirrored.Outlined.ViewList,
+                        label = "Lançamentos",
+                        active = allExpanded,
                         onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
                     )
                     // Tabela/Coluna -- mesmo botão único do módulo genérico

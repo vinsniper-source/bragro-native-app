@@ -19,7 +19,7 @@ object HomeNavigator {
 @Composable
 fun HomeNavButton() {
     IconButton(onClick = { HomeNavigator.goHome() }) {
-        Icon(Icons.Outlined.Home, contentDescription = "Página inicial", tint = MaterialTheme.colorScheme.onSurface)
+        IconeNegrito(Icons.Outlined.Home, contentDescription = "Página inicial", tint = MaterialTheme.colorScheme.onSurface, size = 24.dp)
     }
 }
 
@@ -29,6 +29,6 @@ fun HomeNavButton() {
 fun BackNavButton() {
     val dispatcher = androidx.activity.compose.LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     IconButton(onClick = { dispatcher?.onBackPressed() }) {
-        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.onSurface, modifier = androidx.compose.ui.Modifier.size(27.dp))
+        IconeNegrito(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.onSurface, size = 27.dp)
     }
 }

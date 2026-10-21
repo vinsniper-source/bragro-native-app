@@ -27,6 +27,8 @@ import com.bragro.mobile.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -150,12 +152,7 @@ fun ModuleIconButton(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         BadgedBox(badge = { if (item.badgeCount > 0) BadgeContagem(item.badgeCount) }) {
-            Icon(
-                item.icon,
-                contentDescription = null,
-                tint = fg,
-                modifier = Modifier.size(MODULE_ICON_SIZE),
-            )
+            IconeNegrito(item.icon, contentDescription = null, tint = fg, size = MODULE_ICON_SIZE)
         }
         Text(
             item.label,
@@ -203,15 +200,30 @@ fun LabeledIconButton(
     alert: Boolean = false,
     showLabel: Boolean = true,
 ) {
+    // v22 -- todo botão de Ações muda de cor ao ser tocado e só volta no
+    // segundo toque. Botões de ação única (Imprimir, PDF, Excel, Atualizar,
+    // Nuvem...) ficam marcados depois do toque; o segundo toque só desmarca,
+    // sem repetir a ação. Botões liga/desliga (active controlado por quem
+    // chama) seguem o próprio estado.
+    val marcadoState = androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    var marcado by marcadoState
+    androidx.compose.runtime.LaunchedEffect(active) { if (active) marcado = false }
+    val ligado = active || marcado
     val fg = when {
         alert || badgeCount > 0 -> corAtencao()
-        active -> MaterialTheme.colorScheme.primary
+        ligado -> MaterialTheme.colorScheme.primary
         else -> tint
     }
     Column(
         modifier = modifier
             .widthIn(min = 42.dp)
-            .clickable(enabled = !loading, onClick = onClick)
+            .clickable(enabled = !loading) {
+                when {
+                    active -> onClick()
+                    marcado -> marcado = false
+                    else -> { marcado = true; onClick() }
+                }
+            }
             .padding(horizontal = 4.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -221,16 +233,16 @@ fun LabeledIconButton(
             BadgedBox(
                 badge = { BadgeContagem(badgeCount) },
             ) {
-                Icon(icon, contentDescription = null, tint = fg, modifier = Modifier.size(MODULE_ICON_SIZE))
+                IconeNegrito(icon, contentDescription = null, tint = fg, size = MODULE_ICON_SIZE)
             }
         } else {
-            Icon(icon, contentDescription = null, tint = fg, modifier = Modifier.size(MODULE_ICON_SIZE))
+            IconeNegrito(icon, contentDescription = null, tint = fg, size = MODULE_ICON_SIZE)
         }
         if (showLabel && !LocalSomenteIcone.current) {
             Text(
                 label,
                 style = MaterialTheme.typography.labelSmall,
-                fontWeight = if (active) androidx.compose.ui.text.font.FontWeight.Medium else androidx.compose.ui.text.font.FontWeight.Normal,
+                fontWeight = if (ligado) androidx.compose.ui.text.font.FontWeight.Medium else androidx.compose.ui.text.font.FontWeight.Normal,
                 color = fg,
                 maxLines = 1,
                 softWrap = false,

@@ -45,7 +45,7 @@ import androidx.compose.material.icons.outlined.Agriculture
 import androidx.compose.material.icons.outlined.Assignment
 import androidx.compose.material.icons.outlined.AttachMoney
 import androidx.compose.material.icons.outlined.Backup
-import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.OfflineBolt
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Campaign
 import androidx.compose.material.icons.outlined.Close
@@ -77,7 +77,7 @@ import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.TrendingDown
@@ -1906,9 +1906,9 @@ private fun HomeShortcutsRow(
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
     ) {
         com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth()) {
-            if (showDestaques) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Star, label = "Destaques", onClick = { onDestaquesChange(true) })
+            if (showDestaques) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.StarOutline, label = "Destaques", onClick = { onDestaquesChange(true) })
             if (showAlertas) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.WarningAmber, label = "Alertas", badgeCount = data.alerts.size, onClick = { open = "alertas" })
-            if (showMonitor) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Bolt, label = "Monitor", badgeCount = data.recentActivity.size, onClick = { open = "monitor" })
+            if (showMonitor) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.OfflineBolt, label = "Monitor", badgeCount = data.recentActivity.size, onClick = { open = "monitor" })
             if (showMural) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Campaign, label = "Avisos", badgeCount = data.notices.size, onClick = { open = "mural" })
         }
     }
@@ -2094,7 +2094,7 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.Bolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                Icon(Icons.Outlined.OfflineBolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
                 Box(modifier = Modifier.weight(1f)) {
                     // Contagem no título -- mesmo padrão da Central de
@@ -2501,15 +2501,8 @@ private fun KpiCard(kpi: Kpi, modifier: Modifier = Modifier, fillHeight: Boolean
                 // Fundo translúcido em vez de contorno -- pedido do usuário
                 // ("tire todas as bordas de todo app"), mesmo critério de
                 // SectionBadgeIcon acima.
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(kpi.color.copy(alpha = 0.14f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(kpi.icon, contentDescription = null, tint = kpi.color, modifier = Modifier.size(20.dp))
-                }
+                // v22 -- sem o círculo colorido atrás; ícone um pouco maior.
+                com.bragro.mobile.ui.domain.IconeNegrito(kpi.icon, contentDescription = null, tint = kpi.color, size = 24.dp)
                 Spacer(Modifier.width(10.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -3156,7 +3149,7 @@ private fun CotacoesPecuariaCard(livestock: com.bragro.mobile.data.model.Livesto
 private fun DestaquesCard(data: HomeData, updatedAtMillis: Long?, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            MiniCardHeader("Destaques", Icons.Outlined.Star, BrYellow, MaterialTheme.typography.titleMedium)
+            MiniCardHeader("Destaques", Icons.Outlined.StarOutline, BrYellow, MaterialTheme.typography.titleMedium)
             // Destaques por SETOR -- réplica de destaqueCandidates (site,
             // dashboard/page.tsx) -- bug real reportado pelo usuário com
             // print (setor Financeiro): este card mostrava sempre "Cultura

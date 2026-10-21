@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Paint
+import java.util.Locale
 import android.graphics.pdf.PdfDocument
 import android.print.PrintAttributes
 import android.print.PrintManager
@@ -396,35 +397,49 @@ object HtmlPrinter {
     private fun clipLabel(text: String): String = if (text.length > 14) text.take(13) + "…" else text
 
     private fun buildChartsPdfFile(context: Context, title: String, charts: List<ChartPrintData>): File {
-        // A4 paisagem -- bug real reportado pelo usuário ("está configurado
-        // para retrato, acho que fica melhor em paisagem"): antes esta
-        // função (só a de gráficos) usava 595x842 (retrato), diferente de
-        // buildPdfFile (a de listas), que já era 842x595 (paisagem) -- agora
-        // as duas seguem a mesma orientação, igual ao "@page { size:
-        // landscape }" global do site.
-        val pageWidth = 842
-        val pageHeight = 595
-        val margin = 24f
-        val fontSize = 10f
-        val headerPaint = Paint().apply { textSize = fontSize; isFakeBoldText = true; color = android.graphics.Color.BLACK }
-        val cellPaint = Paint().apply { textSize = fontSize; color = android.graphics.Color.BLACK }
-        val titlePaint = Paint().apply { textSize = 16f; isFakeBoldText = true; color = android.graphics.Color.BLACK }
-        val chartTitlePaint = Paint().apply { textSize = 12f; isFakeBoldText = true; color = android.graphics.Color.BLACK }
-        val axisPaint = Paint().apply { color = android.graphics.Color.LTGRAY; strokeWidth = 1f }
-        val barLabelPaint = Paint().apply { textSize = 8f; color = android.graphics.Color.DKGRAY; textAlign = Paint.Align.CENTER }
-        val valueLabelPaint = Paint().apply { textSize = 8f; color = android.graphics.Color.BLACK; textAlign = Paint.Align.CENTER }
-        val seriesColors = intArrayOf(android.graphics.Color.parseColor("#2F6F4F"), android.graphics.Color.parseColor("#F2C037"), android.graphics.Color.parseColor("#1E4B8A"))
+        // v22 -- PDF dos gráficos refeito (saía desconfigurado): A4 retrato,
+        // título, barras proporcionais com o valor em cima, rótulos que
+        // quebram/encolhem em vez de cortar e a tabela embaixo, com colunas
+        // proporcionais ao conteúdo e texto ajustado à largura da célula.
+        val pageWidth = 595
+        val pageHeight = 842
+        val margin = 32f
+        val contentW = pageWidth - margin * 2
+        val black = android.graphics.Color.BLACK
+        val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 16f; isFakeBoldText = true; color = black }
+        val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 8.5f; color = android.graphics.Color.DKGRAY }
+        val chartTitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 12f; isFakeBoldText = true; color = black }
+        val headerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 9f; isFakeBoldText = true; color = black }
+        val cellPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 9f; color = black }
+        val axisPaint = Paint().apply { color = android.graphics.Color.GRAY; strokeWidth = 0.8f }
+        val gridPaint = Paint().apply { color = android.graphics.Color.parseColor("#E3E3E3"); strokeWidth = 0.5f }
+        val linePaint = Paint().apply { color = android.graphics.Color.parseColor("#D4D4D4"); strokeWidth = 0.6f }
+        val headBg = Paint().apply { color = android.graphics.Color.parseColor("#EEF0EF") }
+        val barLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 8f; color = android.graphics.Color.DKGRAY; textAlign = Paint.Align.CENTER }
+        val valueLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 7.5f; color = black; textAlign = Paint.Align.CENTER }
+        val legendPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 8.5f; color = black }
+        val seriesColors = intArrayOf(android.graphics.Color.parseColor("#2F6F4F"), android.graphics.Color.parseColor("#C9A227"), android.graphics.Color.parseColor("#1E4B8A"))
         val barPaints = seriesColors.map { Paint().apply { color = it } }
-        val rowHeight = fontSize + 10f
-        val chartAreaHeight = 150f
+        val rowHeight = 17f
+        val plotHeight = 190f
+
+        fun fit(text: String, paint: Paint, maxW: Float): String {
+            if (paint.measureText(text) <= maxW) return text
+            var t = text
+            while (t.length > 1 && paint.measureText("$t…") > maxW) t = t.dropLast(1)
+            return "$t…"
+        }
 
         val pdf = PdfDocument()
         var pageNum = 1
         var page = pdf.startPage(PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNum).create())
         var canvas = page.canvas
-        var y = margin + 16f
-        canvas.drawText(title, margin, y, titlePaint)
-        y += rowHeight * 1.5f
+        var y = margin + 14f
+        canvas.drawText(fit(title, titlePaint, contentW), margin, y, titlePaint)
+        y += 14f
+        val gerado = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR")).format(java.util.Date())
+        canvas.drawText("Gerado em $gerado", margin, y, subPaint)
+        y += 20f
 
         fun newPageIfNeeded(extra: Float = rowHeight) {
             if (y + extra > pageHeight - margin) {
@@ -432,58 +447,108 @@ object HtmlPrinter {
                 pageNum++
                 page = pdf.startPage(PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNum).create())
                 canvas = page.canvas
-                y = margin + 16f
+                y = margin + 14f
             }
         }
 
-        // Desenha as barras de verdade (retângulos proporcionais ao maior
-        // valor, igual ao SimpleBarChart da tela) -- bug real reportado pelo
-        // usuário ("gráficos não aparecem... apenas tabela, também não
-        // aparecem em PDF"): antes só existia a tabela abaixo, o PDF nunca
-        // desenhava a barra em si.
+        fun valor(v: Double, money: Boolean): String = if (money) formatChartValue(v, true)
+            else if (v == Math.floor(v)) java.text.NumberFormat.getIntegerInstance(Locale("pt", "BR")).format(v.toLong())
+            else java.text.NumberFormat.getNumberInstance(Locale("pt", "BR")).apply { maximumFractionDigits = 2 }.format(v)
+
         fun drawBars(chart: ChartPrintData) {
-            val maxValue = (chart.barSeries.flatMap { it.second }.maxOrNull() ?: 0.0).let { if (it <= 0.0) 1.0 else it }
-            val chartWidth = pageWidth - margin * 2
-            val baseline = y + chartAreaHeight - 20f
-            canvas.drawLine(margin, baseline, margin + chartWidth, baseline, axisPaint)
-            val colWidth = chartWidth / chart.barCategories.size
+            val all = chart.barSeries.flatMap { it.second }
+            val maxValue = (all.maxOrNull() ?: 0.0).coerceAtLeast(0.0).let { if (it <= 0.0) 1.0 else it }
+            val n = chart.barCategories.size
+            // Rótulos longos ou muitos itens: rótulo inclinado ocupa mais altura.
+            val colWidth = contentW / n
+            val maxLabelW = chart.barCategories.maxOf { barLabelPaint.measureText(it) }
+            val inclinado = maxLabelW > colWidth - 4f
+            val labelArea = if (inclinado) (minOf(maxLabelW, 90f) * 0.72f + 10f) else 14f
+            val legendArea = if (chart.barSeries.size > 1) 14f else 0f
+            val top = y + 12f
+            val baseline = top + plotHeight
+            // grade leve em 4 faixas
+            for (k in 0..4) {
+                val gy = baseline - plotHeight * k / 4f
+                canvas.drawLine(margin, gy, margin + contentW, gy, if (k == 0) axisPaint else gridPaint)
+            }
             val seriesCount = chart.barSeries.size.coerceAtLeast(1)
-            val barGap = 2f
-            val barWidth = ((colWidth - barGap * (seriesCount + 1)) / seriesCount).coerceAtLeast(3f)
+            val groupW = colWidth * 0.72f
+            val barWidth = (groupW / seriesCount).coerceAtLeast(2f)
             chart.barCategories.forEachIndexed { ci, cat ->
-                val colX = margin + ci * colWidth
+                val colX = margin + ci * colWidth + (colWidth - groupW) / 2f
                 chart.barSeries.forEachIndexed { si, (_, values) ->
                     val v = values.getOrElse(ci) { 0.0 }
-                    val h = ((v / maxValue).coerceIn(0.0, 1.0) * (chartAreaHeight - 20f)).toFloat()
-                    val x = colX + barGap + si * (barWidth + barGap)
-                    val top = baseline - h
-                    canvas.drawRect(x, top, x + barWidth, baseline, barPaints[si % barPaints.size])
-                    if (chart.barSeries.size == 1 && v != 0.0) {
-                        val text = if (chart.isMoney) formatChartValue(v, true) else v.toString()
-                        canvas.drawText(text, x + barWidth / 2, (top - 3f).coerceAtLeast(y + 8f), valueLabelPaint)
+                    val h = ((v / maxValue).coerceIn(0.0, 1.0) * plotHeight).toFloat()
+                    val x = colX + si * barWidth
+                    val barTop = baseline - h
+                    canvas.drawRect(x + 0.5f, barTop, x + barWidth - 0.5f, baseline, barPaints[si % barPaints.size])
+                    if (v != 0.0 && seriesCount * n <= 24) {
+                        val text = valor(v, chart.isMoney)
+                        val p = Paint(valueLabelPaint).apply { while (measureText(text) > maxOf(barWidth, colWidth / seriesCount) + 6f && textSize > 5f) textSize -= 0.5f }
+                        canvas.drawText(text, x + barWidth / 2, barTop - 3f, p)
                     }
                 }
-                canvas.drawText(clipLabel(cat), colX + colWidth / 2, baseline + 12f, barLabelPaint)
+                val cx = margin + ci * colWidth + colWidth / 2f
+                if (inclinado) {
+                    canvas.save()
+                    canvas.rotate(-45f, cx, baseline + 10f)
+                    val lp = Paint(barLabelPaint).apply { textAlign = Paint.Align.RIGHT }
+                    canvas.drawText(fit(cat, lp, 90f), cx + 3f, baseline + 10f, lp)
+                    canvas.restore()
+                } else {
+                    canvas.drawText(cat, cx, baseline + 11f, barLabelPaint)
+                }
             }
-            y += chartAreaHeight
+            y = baseline + labelArea
+            if (legendArea > 0f) {
+                var lx = margin
+                chart.barSeries.forEachIndexed { si, (nome, _) ->
+                    canvas.drawRect(lx, y + 2f, lx + 8f, y + 10f, barPaints[si % barPaints.size])
+                    canvas.drawText(nome, lx + 11f, y + 9.5f, legendPaint)
+                    lx += 22f + legendPaint.measureText(nome)
+                }
+                y += legendArea
+            }
+            y += 10f
+        }
+
+        fun drawTable(chart: ChartPrintData) {
+            val cols = chart.headers.size.coerceAtLeast(1)
+            // largura proporcional ao maior texto de cada coluna
+            val pesos = (0 until cols).map { c ->
+                val textos = listOf(chart.headers.getOrElse(c) { "" }) + chart.rows.map { it.getOrElse(c) { "" } }
+                textos.maxOf { cellPaint.measureText(it) }.coerceIn(40f, 220f)
+            }
+            val soma = pesos.sum()
+            val larguras = pesos.map { it / soma * contentW }
+            fun linha(cells: List<String>, paint: Paint, fundo: Paint?) {
+                newPageIfNeeded(rowHeight)
+                if (fundo != null) canvas.drawRect(margin, y, margin + contentW, y + rowHeight, fundo)
+                var x = margin
+                cells.forEachIndexed { i, cell ->
+                    val w = larguras.getOrElse(i) { 0f }
+                    val numerico = i > 0 && cell.isNotBlank() && cell.trim().let { it.first().isDigit() || it.startsWith("R$") || it.startsWith("-") }
+                    val t = fit(cell, paint, w - 8f)
+                    if (numerico) canvas.drawText(t, x + w - 4f - paint.measureText(t), y + 12f, paint)
+                    else canvas.drawText(t, x + 4f, y + 12f, paint)
+                    x += w
+                }
+                y += rowHeight
+                canvas.drawLine(margin, y, margin + contentW, y, linePaint)
+            }
+            linha(chart.headers, headerPaint, headBg)
+            chart.rows.forEach { linha(it, cellPaint, null) }
+            y += 16f
         }
 
         charts.forEach { chart ->
             val hasBars = chart.barCategories.isNotEmpty() && chart.barSeries.isNotEmpty()
-            newPageIfNeeded(rowHeight * 2 + if (hasBars) chartAreaHeight else 0f)
-            canvas.drawText(chart.title, margin, y, chartTitlePaint)
-            y += rowHeight
-            if (hasBars) drawBars(chart)
-            val colCount = chart.headers.size.coerceAtLeast(1)
-            val colWidth = (pageWidth - margin * 2) / colCount
-            chart.headers.forEachIndexed { i, h -> canvas.drawText(h, margin + i * colWidth, y, headerPaint) }
-            y += rowHeight
-            chart.rows.forEach { row ->
-                newPageIfNeeded()
-                row.forEachIndexed { i, cell -> canvas.drawText(cell, margin + i * colWidth, y, cellPaint) }
-                y += rowHeight
-            }
-            y += rowHeight * 0.5f
+            newPageIfNeeded(30f + (if (hasBars) plotHeight + 110f else 0f) + rowHeight * 2)
+            canvas.drawText(fit(chart.title, chartTitlePaint, contentW), margin, y, chartTitlePaint)
+            y += 6f
+            if (hasBars) drawBars(chart) else y += 10f
+            if (chart.headers.isNotEmpty()) drawTable(chart)
         }
         pdf.finishPage(page)
 

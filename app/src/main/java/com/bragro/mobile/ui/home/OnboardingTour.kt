@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Agriculture
-import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.OfflineBolt
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -49,7 +49,7 @@ private val TOUR_STEPS = listOf(
         "A barra inferior leva pra Financeiro, Safra, Estoque, Frota e todos os outros módulos. O menu (ícone de grade) mostra a lista completa quando precisar de algo que não está fixo ali.",
     ),
     TourStep(
-        Icons.Outlined.Bolt,
+        Icons.Outlined.OfflineBolt,
         "Atalhos que poupam tempo",
         "Em cada módulo, o botão \"Copiar último lançamento\" pré-preenche um registro novo a partir do anterior. Romaneio Rápido e Abastecimento ficam nos atalhos do topo da Início.",
     ),
