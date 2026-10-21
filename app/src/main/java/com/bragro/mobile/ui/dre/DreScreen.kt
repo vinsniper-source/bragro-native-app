@@ -408,9 +408,7 @@ private fun FarmCard(f: DreFazendaData, arvore: List<DreRamoItemData>, expanded:
                         .padding(horizontal = 8.dp, vertical = 2.dp),
                 )
                 if (arvore.isNotEmpty()) {
-                    IconButton(onClick = onToggle, modifier = Modifier.size(24.dp)) {
-                        com.bragro.mobile.ui.domain.CantoL(expanded)
-                    }
+                    com.bragro.mobile.ui.domain.CantoL(expanded, borda = false, onClick = onToggle)
                 }
             }
             HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))

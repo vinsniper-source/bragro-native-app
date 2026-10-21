@@ -1654,14 +1654,11 @@ fun DomainListScreen(
                         Row(modifier = Modifier.fillMaxWidth()) {
                             Column(modifier = Modifier.weight(1f).padding(12.dp)) {
                                 if (expanded) {
-                                    colsToShow.chunked(2).forEach { pair ->
-                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                            pair.forEach { col ->
-                                                Column(modifier = Modifier.weight(1f)) { RecordFieldLine(col, record[col.key]!!, record, domainId) }
-                                            }
-                                            if (pair.size == 1) Spacer(Modifier.weight(1f))
-                                        }
-                                    }
+                                    // v23 -- medido por coluna: quebra linha em vez de cortar.
+                                    CamposDuasColunas(
+                                        itens = colsToShow,
+                                        texto = { col -> "${col.label}: " + record[col.key]!!.let { v -> if (col.money) formatMoneyValue(v) else displayValueFor(col.key, v, col.type) } },
+                                    ) { col -> RecordFieldLine(col, record[col.key]!!, record, domainId) }
                                 } else {
                                     colsToShow.forEach { col -> RecordFieldLine(col, record[col.key]!!, record, domainId) }
                                 }
@@ -1698,9 +1695,7 @@ fun DomainListScreen(
                                     }
                                 }
                                 if (hasMore) {
-                                    IconButton(onClick = { cardOverrides[recordId ?: ""] = !expanded }, modifier = Modifier.size(28.dp)) {
-                                        com.bragro.mobile.ui.domain.CantoL(expanded)
-                                    }
+                                    com.bragro.mobile.ui.domain.CantoL(expanded, onClick = { cardOverrides[recordId ?: ""] = !expanded })
                                 }
                                 // "Ver" removido da vista de BLOCO (aqui) --
                                 // pedido do usuário ("pode retirar a opção do
@@ -2069,8 +2064,10 @@ private fun RecordFieldLine(
             modifier = Modifier.padding(vertical = 2.dp),
         ) {
             Text("${col.label}:", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            val drawn = FieldHighlight(col.key, col.type, col.money, displayValue, value)
-            if (!drawn) Text(displayValue, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Box(Modifier.weight(1f, fill = false)) {
+                val drawn = FieldHighlight(col.key, col.type, col.money, displayValue, value)
+                if (!drawn) Text(semQuebra(displayValue), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+            }
         }
     } else {
         RecordFieldPlain(col, value, record, domainId)
@@ -2098,11 +2095,9 @@ private fun RecordFieldPlain(
         Text(
             buildAnnotatedString {
                 withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) { append("${col.label}: ") }
-                withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = moneyColor ?: Color.Unspecified)) { append(displayValue) }
+                withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = moneyColor ?: Color.Unspecified)) { append(semQuebra(displayValue)) }
             },
             style = MaterialTheme.typography.bodySmall,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(vertical = 2.dp),
         )
     }
@@ -2220,9 +2215,7 @@ private fun ClimaForecastCard(weather: WeatherResponse?, showHeader: Boolean = t
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f),
                     )
-                    IconButton(onClick = { open = !open }) {
-                        com.bragro.mobile.ui.domain.CantoL(open)
-                    }
+                    com.bragro.mobile.ui.domain.CantoL(open, onClick = { open = !open })
                 }
             }
             if (open) {
@@ -2277,9 +2270,7 @@ private fun SprayAlertCard(alerta: kotlinx.serialization.json.JsonObject?, showH
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.Air, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                     Text("Janela de Pulverização", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                    IconButton(onClick = { open = !open }) {
-                        com.bragro.mobile.ui.domain.CantoL(open)
-                    }
+                    com.bragro.mobile.ui.domain.CantoL(open, onClick = { open = !open })
                 }
             }
             if (open) {

@@ -35,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.Layout
@@ -199,6 +200,10 @@ fun LabeledIconButton(
     badgeCount: Int = 0,
     alert: Boolean = false,
     showLabel: Boolean = true,
+    // v23 -- atalhos do Início (Destaques/Alertas/Monitor/Avisos): com
+    // pendência, ícone e rótulo ficam na cor normal; só a borda do
+    // retângulo fica amarela e a contagem vira um círculo verde.
+    realce: Boolean = false,
 ) {
     // v22 -- todo botão de Ações muda de cor ao ser tocado e só volta no
     // segundo toque. Botões de ação única (Imprimir, PDF, Excel, Atualizar,
@@ -208,8 +213,11 @@ fun LabeledIconButton(
     val marcadoState = androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
     var marcado by marcadoState
     androidx.compose.runtime.LaunchedEffect(active) { if (active) marcado = false }
-    val ligado = active || marcado
+    val ligado = if (realce) active else active || marcado
+    val realcado = realce && (alert || badgeCount > 0)
+    val amareloBorda = if (MaterialTheme.colorScheme.background.luminance() < 0.5f) com.bragro.mobile.ui.theme.BrYellow else Color(0xFFE0B020)
     val fg = when {
+        realce -> if (active) MaterialTheme.colorScheme.primary else tint
         alert || badgeCount > 0 -> corAtencao()
         ligado -> MaterialTheme.colorScheme.primary
         else -> tint
@@ -217,9 +225,10 @@ fun LabeledIconButton(
     Column(
         modifier = modifier
             .widthIn(min = 42.dp)
+            .then(if (realcado) Modifier.padding(2.dp).border(2.dp, amareloBorda, androidx.compose.foundation.shape.RoundedCornerShape(8.dp)) else Modifier)
             .clickable(enabled = !loading) {
                 when {
-                    active -> onClick()
+                    realce || active -> onClick()
                     marcado -> marcado = false
                     else -> { marcado = true; onClick() }
                 }
@@ -231,7 +240,7 @@ fun LabeledIconButton(
             CircularProgressIndicator(modifier = Modifier.size(MODULE_ICON_SIZE), strokeWidth = 2.dp)
         } else if (badgeCount > 0) {
             BadgedBox(
-                badge = { BadgeContagem(badgeCount) },
+                badge = { BadgeContagem(badgeCount, verde = realce) },
             ) {
                 IconeNegrito(icon, contentDescription = null, tint = fg, size = MODULE_ICON_SIZE)
             }
@@ -384,14 +393,14 @@ val LocalAcoesEncaixadas = androidx.compose.runtime.staticCompositionLocalOf { f
 
 /** v18 -- contador sem fundo: número em laranja com contorno fino. */
 @Composable
-fun BadgeContagem(n: Int) {
-    val cor = corAtencao()
+fun BadgeContagem(n: Int, verde: Boolean = false) {
+    val cor = if (verde) MaterialTheme.colorScheme.primary else corAtencao()
     Box(
         modifier = Modifier
-            .border(1.dp, cor, androidx.compose.foundation.shape.RoundedCornerShape(50))
+            .then(if (verde) Modifier.background(cor, androidx.compose.foundation.shape.RoundedCornerShape(50)).widthIn(min = 16.dp) else Modifier.border(1.dp, cor, androidx.compose.foundation.shape.RoundedCornerShape(50)))
             .padding(horizontal = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text("$n", color = cor, fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, lineHeight = 12.sp)
+        Text("$n", color = if (verde) MaterialTheme.colorScheme.onPrimary else cor, fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, lineHeight = 12.sp)
     }
 }

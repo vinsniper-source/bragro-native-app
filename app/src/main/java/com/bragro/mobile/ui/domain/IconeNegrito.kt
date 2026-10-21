@@ -16,8 +16,15 @@ import androidx.compose.ui.unit.dp
  * o mesmo desenho repetido com deslocamentos de fração de dp engrossa o
  * traço sem preencher o ícone.
  */
+/** v23 -- false no corpo do Início: lá os ícones ficam no traço fino. */
+val LocalIconeNegrito = androidx.compose.runtime.compositionLocalOf { true }
+
 @Composable
 fun IconeNegrito(icon: ImageVector, contentDescription: String?, tint: Color, size: Dp, modifier: Modifier = Modifier) {
+    if (!LocalIconeNegrito.current) {
+        Icon(icon, contentDescription = contentDescription, tint = tint, modifier = modifier.size(size))
+        return
+    }
     val d = 0.45.dp
     Box(modifier.size(size)) {
         listOf(0.dp to 0.dp, d to 0.dp, -d to 0.dp, 0.dp to d, 0.dp to -d).forEachIndexed { i, (x, y) ->

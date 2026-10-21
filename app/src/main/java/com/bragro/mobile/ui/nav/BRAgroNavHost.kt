@@ -120,7 +120,8 @@ private object Routes {
 // inferior sempre"): aparece em todas as telas (formulários, DRE, Simulador
 // etc.), só some no login e enquanto a rota ainda não foi resolvida.
 private fun showsBottomBar(route: String?): Boolean =
-    route != null && route != Routes.LOGIN
+    // v23 -- barra inferior só no Início; telas internas têm seta e casinha.
+    route == Routes.HOME
 
 @Composable
 fun BRAgroNavHost() {

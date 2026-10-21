@@ -465,7 +465,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
     // Diálogo de lançamento MANUAL de talhão (sem KML/KMZ) -- pedido do
     // usuário. Aberto pelo botão "+" nas abas Talhões e Fazendas/KML.
     var manualDialogOpen by remember { mutableStateOf(false) }
-    var listaAberta by remember { mutableStateOf(false) }
+    var listaAberta by remember { mutableStateOf(true) }
     var prestadoraAberta by remember { mutableIntStateOf(0) }
 
     val kmlPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->

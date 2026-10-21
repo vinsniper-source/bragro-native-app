@@ -516,7 +516,7 @@ private fun EquipeCard(
                             Icon(Icons.Outlined.Settings, contentDescription = "Personalizar Início", tint = MaterialTheme.colorScheme.primary)
                         }
                     } else {
-                        com.bragro.mobile.ui.domain.CantoL(expanded)
+                        com.bragro.mobile.ui.domain.CantoL(expanded, borda = false)
                     }
                 }
                 if (expanded && !isOwnOwnerRow) {

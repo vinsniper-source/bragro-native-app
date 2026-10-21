@@ -302,9 +302,7 @@ fun ProviderIntegrationCard(
 
 @Composable
 private fun IconButtonToggle(open: Boolean, onClick: () -> Unit) {
-    androidx.compose.material3.IconButton(onClick = onClick) {
-        com.bragro.mobile.ui.domain.CantoL(open)
-    }
+    com.bragro.mobile.ui.domain.CantoL(open, onClick = onClick)
 }
 
 /** Bloco individual pra separar campos dentro do card de integração --

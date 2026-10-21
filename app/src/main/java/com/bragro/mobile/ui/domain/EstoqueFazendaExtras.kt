@@ -243,9 +243,7 @@ fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel(), 
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.CompareArrows, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                     Text("Movimentações de Estoque", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                    IconButton(onClick = { open = !open }) {
-                        com.bragro.mobile.ui.domain.CantoL(open)
-                    }
+                    com.bragro.mobile.ui.domain.CantoL(open, onClick = { open = !open })
                 }
             }
             if (open) {

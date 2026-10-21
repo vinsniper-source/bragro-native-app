@@ -47,9 +47,7 @@ fun BlocoGrafico(
                 if (aberto) content() else Text(titulo, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                IconButton(onClick = { aberto = !aberto }, modifier = Modifier.size(32.dp)) {
-                    com.bragro.mobile.ui.domain.CantoL(aberto)
-                }
+                com.bragro.mobile.ui.domain.CantoL(aberto, onClick = { aberto = !aberto })
                 if (onPrint != null) IconButton(onClick = onPrint, modifier = Modifier.size(32.dp)) {
                     Icon(Icons.Outlined.Print, contentDescription = "Imprimir gráfico", modifier = Modifier.size(18.dp))
                 }

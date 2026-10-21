@@ -3,6 +3,16 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## 1.3.71 (181)
+- Removidas as divisórias com título, traço e L de todos os módulos (Silos, Pivôs, Insumos, NF-e, Prescrições, Livro Caixa, DRE, Análises, Reconciliação, Field View, Dossiê); as listas aparecem já abertas e os ícones do bloco Ações continuam separados. Em Operações o nome da operação segue como título do cartão.
+- PDF dos gráficos em A4 paisagem; valor que não cabe na barra fica só na tabela.
+- Barra inferior só no Início (telas internas têm seta de voltar e casinha).
+- Início: ícones sem negrito (negrito só no cabeçalho); Câmbio, Clima, Cotações, Pecuária e Destaques sem fundo colorido, com ícone de contorno do mesmo tamanho e altura dos KPIs.
+- Destaques/Alertas/Monitor/Avisos: com pendência, só a borda fica amarela e a contagem vira círculo verde; ícone e rótulo na cor normal.
+- Logo do cliente no cabeçalho sem círculo, mesma altura dos outros ícones.
+- L de abrir/recolher em cima da borda inferior direita dos blocos (branco no claro, cinza leve no escuro); nos cartões de lançamento Editar e Excluir sobem.
+- Campos dos cartões medidos por coluna: quebram linha em vez de cortar; campo longo ocupa as duas colunas; valores em R$ não quebram no meio.
+
 ## 1.3.70 (180)
 - Ícones de contorno com traço mais grosso (negrito minimalista) nos botões de Ações, cabeçalhos, KPIs e voltar/início; Star, Bolt, Stop e PlayArrow trocados pelas versões de contorno.
 - Início: KPIs sem o círculo colorido atrás e com ícone um pouco maior (24dp).

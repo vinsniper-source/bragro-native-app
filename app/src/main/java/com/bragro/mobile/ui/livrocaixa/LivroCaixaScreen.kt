@@ -574,7 +574,7 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
     val saldoInicialAtual by viewModel.saldoInicial
     val produtorRural by viewModel.produtorRural
     val produtorRuralLoading by viewModel.produtorRuralLoading
-    var extratoAberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var extratoAberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
     val context = LocalContext.current
     var filtrosOpen by remember { mutableStateOf(false) }
     var contentExpanded by remember { mutableStateOf(false) }

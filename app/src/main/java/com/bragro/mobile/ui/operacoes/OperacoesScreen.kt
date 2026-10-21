@@ -388,7 +388,7 @@ private fun OperacaoCard(
             )
             // v20 (opção A) -- Monitoramento, Ações e Progresso, nesta ordem.
             meio?.invoke()
-            com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = atividades.size, aberto = blocoAberto, titulo = op.local, rotulo = "${atividades.size} atividades · ${op.cultura} · ${op.safra}") { blocoAberto = !blocoAberto }
+            com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = atividades.size, aberto = blocoAberto, titulo = op.local, rotulo = "${atividades.size} atividades · ${op.cultura} · ${op.safra}", manter = true) { blocoAberto = !blocoAberto }
 
             if (blocoAberto) {
                 if (mostrarFiltros) {
@@ -474,7 +474,7 @@ private fun OperacaoCard(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.weight(1f),
                                 )
-                                com.bragro.mobile.ui.domain.CantoL(aberto)
+                                com.bragro.mobile.ui.domain.CantoL(aberto, borda = false)
                             }
                             Text(tituloAtividade(a), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                             Text(
@@ -503,7 +503,7 @@ private fun OperacaoCard(
                                     ) {
                                         Icon(Icons.Outlined.Person, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Text(" $nome", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                                        com.bragro.mobile.ui.domain.CantoL(eqAberto)
+                                        com.bragro.mobile.ui.domain.CantoL(eqAberto, borda = false)
                                     }
                                     if (eqAberto) {
                                         Text("Função: $func", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -532,7 +532,7 @@ private fun OperacaoCard(
                                 androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                 Column(modifier = Modifier.fillMaxWidth().clickable { osAbertas[ev.id] = !osAberta }.padding(horizontal = 10.dp, vertical = 8.dp)) {
                                     Row(verticalAlignment = Alignment.Top) {
-                                        com.bragro.mobile.ui.domain.CantoL(osAberta)
+                                        com.bragro.mobile.ui.domain.CantoL(osAberta, borda = false)
                                         Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
                                             Text(
                                                 (if (ev.tipo == "colheita") "Colheita" else "O.S. ${ev.os ?: "—"}") + " · " + (ev.talhao?.let { "Talhão $it" } ?: "Sem talhão"),

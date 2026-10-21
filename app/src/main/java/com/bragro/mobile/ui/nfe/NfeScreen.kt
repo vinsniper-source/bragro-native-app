@@ -303,8 +303,6 @@ private fun InvoiceRow(
                 "Nº ${inv.numero}${inv.serie?.takeIf { it.isNotBlank() }?.let { " / $it" } ?: ""}",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 inv.emitenteNome ?: inv.destinatarioNome ?: "-",
@@ -316,8 +314,6 @@ private fun InvoiceRow(
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 8.dp),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (inv.tipo == "SAIDA" && inv.statusSefaz != "AUTORIZADA") {

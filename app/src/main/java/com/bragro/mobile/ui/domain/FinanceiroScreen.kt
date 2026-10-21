@@ -728,12 +728,10 @@ fun FinanceiroScreen(
                                     Row(modifier = Modifier.fillMaxWidth()) {
                                         Column(modifier = Modifier.weight(1f).padding(12.dp)) {
                                             if (expanded) {
-                                                colsToShow.chunked(2).forEach { pair ->
-                                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                                        pair.forEach { col -> Column(modifier = Modifier.weight(1f)) { FinanceiroFieldLine(col, record[col.key], record["operacao"]) } }
-                                                        if (pair.size == 1) Spacer(modifier = Modifier.weight(1f))
-                                                    }
-                                                }
+                                                CamposDuasColunas(
+                                                    itens = colsToShow,
+                                                    texto = { col -> "${col.label}: " + (record[col.key] ?: "").let { v -> if (col.money) formatMoneyValue(v) else displayValueFor(col.key, v, col.type) } },
+                                                ) { col -> FinanceiroFieldLine(col, record[col.key], record["operacao"]) }
                                             } else {
                                                 colsToShow.forEach { col -> FinanceiroFieldLine(col, record[col.key], record["operacao"]) }
                                             }
@@ -754,9 +752,7 @@ fun FinanceiroScreen(
                                             // (diálogo de leitura completo) -- pedido do usuário, mesmo
                                             // ajuste do módulo genérico (DomainListScreen.kt).
                                             if (hasMore) {
-                                                IconButton(onClick = { cardOverrides[recordId ?: ""] = !expanded }, modifier = Modifier.size(28.dp)) {
-                                                    com.bragro.mobile.ui.domain.CantoL(expanded)
-                                                }
+                                                com.bragro.mobile.ui.domain.CantoL(expanded, onClick = { cardOverrides[recordId ?: ""] = !expanded })
                                             }
                                             // "Ver" removido da vista de BLOCO -- pedido do usuário
                                             // ("retire todos os icones ver dos blocos de todos os
@@ -893,11 +889,9 @@ private fun FinanceiroFieldLine(col: com.bragro.mobile.data.model.ColumnConfig, 
                             fontWeight = FontWeight.Bold,
                             color = moneyColor ?: Color.Unspecified,
                         ),
-                    ) { append(displayValue) }
+                    ) { append(semQuebra(displayValue)) }
                 },
                 style = MaterialTheme.typography.bodySmall,
-                maxLines = 2,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 modifier = Modifier.padding(vertical = 2.dp),
             )
         }

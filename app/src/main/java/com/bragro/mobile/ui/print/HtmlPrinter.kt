@@ -397,12 +397,13 @@ object HtmlPrinter {
     private fun clipLabel(text: String): String = if (text.length > 14) text.take(13) + "…" else text
 
     private fun buildChartsPdfFile(context: Context, title: String, charts: List<ChartPrintData>): File {
-        // v22 -- PDF dos gráficos refeito (saía desconfigurado): A4 retrato,
+        // v23 -- A4 paisagem (em retrato palavras e valores encavalavam).
+        // v22 -- PDF dos gráficos refeito (saía desconfigurado),
         // título, barras proporcionais com o valor em cima, rótulos que
         // quebram/encolhem em vez de cortar e a tabela embaixo, com colunas
         // proporcionais ao conteúdo e texto ajustado à largura da célula.
-        val pageWidth = 595
-        val pageHeight = 842
+        val pageWidth = 842
+        val pageHeight = 595
         val margin = 32f
         val contentW = pageWidth - margin * 2
         val black = android.graphics.Color.BLACK
@@ -421,7 +422,7 @@ object HtmlPrinter {
         val seriesColors = intArrayOf(android.graphics.Color.parseColor("#2F6F4F"), android.graphics.Color.parseColor("#C9A227"), android.graphics.Color.parseColor("#1E4B8A"))
         val barPaints = seriesColors.map { Paint().apply { color = it } }
         val rowHeight = 17f
-        val plotHeight = 190f
+        val plotHeight = 170f
 
         fun fit(text: String, paint: Paint, maxW: Float): String {
             if (paint.measureText(text) <= maxW) return text
@@ -485,8 +486,10 @@ object HtmlPrinter {
                     canvas.drawRect(x + 0.5f, barTop, x + barWidth - 0.5f, baseline, barPaints[si % barPaints.size])
                     if (v != 0.0 && seriesCount * n <= 24) {
                         val text = valor(v, chart.isMoney)
-                        val p = Paint(valueLabelPaint).apply { while (measureText(text) > maxOf(barWidth, colWidth / seriesCount) + 6f && textSize > 5f) textSize -= 0.5f }
-                        canvas.drawText(text, x + barWidth / 2, barTop - 3f, p)
+                        val limite = maxOf(barWidth, colWidth / seriesCount) + 4f
+                        val p = Paint(valueLabelPaint).apply { while (measureText(text) > limite && textSize > 5.5f) textSize -= 0.5f }
+                        // Não coube nem com a fonte mínima: o valor fica só na tabela.
+                        if (p.measureText(text) <= limite) canvas.drawText(text, x + barWidth / 2, barTop - 3f, p)
                     }
                 }
                 val cx = margin + ci * colWidth + colWidth / 2f

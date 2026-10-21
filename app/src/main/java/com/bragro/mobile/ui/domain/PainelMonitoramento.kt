@@ -461,12 +461,12 @@ fun FaixaTitulo(titulo: String, aberto: Boolean, extra: String? = null, onToggle
 
 /** Divisória "LANÇAMENTOS  n ——— v" (sem borda de bloco), igual à plataforma. */
 @Composable
-fun CabecalhoLancamentos(total: Int, aberto: Boolean, extra: String? = null, titulo: String = "Lançamentos", rotulo: String? = null, onToggle: () -> Unit) {
-    // v22 -- sem a palavra "LANÇAMENTOS", sem o traço e sem a setinha: a
-    // lista de lançamentos abre só pelo botão Lançamentos do bloco Ações.
-    if (titulo == "Lançamentos") return
-    // Outras seções (Silos, Itens, Notas...) ficam só com o título e o L
-    // discreto no canto -- sem a linha.
+fun CabecalhoLancamentos(total: Int, aberto: Boolean, extra: String? = null, titulo: String = "Lançamentos", rotulo: String? = null, manter: Boolean = false, onToggle: () -> Unit) {
+    // v23 -- divisórias removidas de todo o app (título, traço e L). As
+    // listas aparecem já abertas abaixo do bloco Ações; onde existe o botão
+    // Lançamentos, é ele que abre/fecha. `manter = true` só no cartão de
+    // cada operação (Operações), onde o nome é o título do cartão.
+    if (!manter) return
     val fg = MaterialTheme.colorScheme.onSurface
     Row(
         modifier = Modifier.fillMaxWidth().clickable { onToggle() }.padding(horizontal = 2.dp, vertical = 4.dp),
@@ -477,9 +477,8 @@ fun CabecalhoLancamentos(total: Int, aberto: Boolean, extra: String? = null, tit
         Text(
             rotulo ?: (NumberFormat.getIntegerInstance(Locale("pt", "BR")).format(total) + (extra?.let { " · $it" } ?: "")),
             fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f),
         )
-        CantoL(aberto, Modifier.align(Alignment.Bottom))
     }
 }
 

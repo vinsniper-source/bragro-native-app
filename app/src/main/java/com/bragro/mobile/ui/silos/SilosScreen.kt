@@ -250,8 +250,8 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
     var editing by remember { mutableStateOf<SiloData?>(null) }
     var leituraSilo by remember { mutableStateOf<SiloData?>(null) }
     var historicoSilo by remember { mutableStateOf<SiloData?>(null) }
-    var estoqueAberto by remember { mutableStateOf(false) }
-    var silosAbertos by remember { mutableStateOf(false) }
+    var estoqueAberto by remember { mutableStateOf(true) }
+    var silosAbertos by remember { mutableStateOf(true) }
     var prestadoraAberta by remember { mutableStateOf(false) }
     val filtroSilo by viewModel.filtroSiloId
     val leituras by viewModel.leituras

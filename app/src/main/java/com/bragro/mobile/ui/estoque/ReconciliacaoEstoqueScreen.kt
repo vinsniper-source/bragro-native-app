@@ -128,7 +128,7 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
     var soDivergencia by remember { mutableStateOf(true) }
     var fCategoria by remember { mutableStateOf<String?>(null) }
     var catMenu by remember { mutableStateOf(false) }
-    var listaAberta by remember { mutableStateOf(false) }
+    var listaAberta by remember { mutableStateOf(true) }
     val imprimir: () -> Unit = {
         val headers = listOf("Item", "Categoria", "Saldo Fiscal", "Saldo Real", "Diferença")
         val rows = itens.map {
@@ -280,7 +280,7 @@ private fun ReconciliacaoItemCard(i: ReconciliacaoEstoqueItemData) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(modifier = Modifier.fillMaxWidth().clickable { aberto = !aberto }, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(i.item, style = MaterialTheme.typography.bodyLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(i.item, style = MaterialTheme.typography.bodyLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
                     if (!i.categoria.isNullOrBlank()) Text(i.categoria, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Text(

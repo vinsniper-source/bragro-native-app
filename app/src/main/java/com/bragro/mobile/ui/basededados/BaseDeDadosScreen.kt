@@ -703,9 +703,7 @@ private fun FarmsCard(
                         IconButton(onClick = { onDelete(id) }, enabled = !busy) {
                             Icon(Icons.Outlined.Delete, contentDescription = "Excluir fazenda")
                         }
-                        IconButton(onClick = { blocoAberto = !blocoAberto }) {
-                            com.bragro.mobile.ui.domain.CantoL(blocoAberto)
-                        }
+                        com.bragro.mobile.ui.domain.CantoL(blocoAberto, onClick = { blocoAberto = !blocoAberto })
                     }
                     if (blocoAberto) {
                     // 4 linhas de 2 campos cada (em vez de 2 linhas de 4) --

@@ -345,12 +345,10 @@ private fun FieldPill(text: String, bg: Color, fg: Color) {
     // Só o destaque mais relevante (valor total) tem fundo; os demais ficam só
     // com a cor da fonte (pedido do usuário).
     Text(
-        text,
+        semQuebra(text),
         style = MaterialTheme.typography.bodySmall,
         color = fg,
         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
     )
 }
 

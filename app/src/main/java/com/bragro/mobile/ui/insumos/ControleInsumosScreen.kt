@@ -249,7 +249,7 @@ private fun CategoriaBlock(categoria: String, itens: List<InsumoItemSituacaoData
             .padding(vertical = 8.dp, horizontal = 4.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            com.bragro.mobile.ui.domain.CantoL(aberto)
+            com.bragro.mobile.ui.domain.CantoL(aberto, borda = false)
             Text(
                 CATEGORIA_LABEL[categoria] ?: categoria,
                 style = MaterialTheme.typography.titleSmall,
@@ -351,10 +351,10 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
     var fSit by remember { mutableStateOf<String?>(null) }
     var fEst by remember { mutableStateOf<String?>(null) }
     var menuAberto by remember { mutableStateOf<String?>(null) }
-    var saldoAberto by remember { mutableStateOf(false) }
-    var listaAberta by remember { mutableStateOf(false) }
+    var saldoAberto by remember { mutableStateOf(true) }
+    var listaAberta by remember { mutableStateOf(true) }
     var controleInternoAberto by remember { mutableStateOf(false) }
-    var criticosAbertos by remember { mutableStateOf(false) }
+    var criticosAbertos by remember { mutableStateOf(true) }
 
     Scaffold(
         topBar = {

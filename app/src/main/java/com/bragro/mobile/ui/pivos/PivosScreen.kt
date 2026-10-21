@@ -261,9 +261,9 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
     val busy by viewModel.busy
     val error by viewModel.errorMessage
     var showNovo by remember { mutableStateOf(false) }
-    var balancoOpen by remember { mutableStateOf(false) }
+    var balancoOpen by remember { mutableStateOf(true) }
     var graficosOpen by remember { mutableStateOf(false) }
-    var pivosOpen by remember { mutableStateOf(false) }
+    var pivosOpen by remember { mutableStateOf(true) }
     var prestadoraAberta by remember { mutableStateOf(false) }
     var filtroPivo by remember { mutableStateOf<String?>(null) }
     var filtroMenu by remember { mutableStateOf(false) }
@@ -824,7 +824,7 @@ private fun SecaoCabecalho(titulo: String, aberto: Boolean, onToggle: () -> Unit
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(titulo, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-        com.bragro.mobile.ui.domain.CantoL(aberto)
+        com.bragro.mobile.ui.domain.CantoL(aberto, borda = false)
     }
 }
 

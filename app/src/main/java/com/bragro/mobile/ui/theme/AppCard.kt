@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.bragro.mobile.ui.domain.cantoBorda
 
 /** SEM borda em TODO Card do app -- pedido do usuário ("tire todas as
  * bordas de todo app"), que reverte a fase anterior deste arquivo (borda
@@ -150,14 +151,15 @@ fun Card(
     // blocos de dentro se destacarem (padrão claro/escuro aprovado).
     val inside = LocalInsideCard.current
     val resolved = colors ?: if (inside) CardDefaults.cardColors(containerColor = formBlockColor()) else CardDefaults.cardColors()
+    val cantoHost = androidx.compose.runtime.remember { com.bragro.mobile.ui.domain.CantoHost() }
     androidx.compose.material3.Card(
-        modifier = greenShadow(shape).then(modifier),
+        modifier = greenShadow(shape).then(modifier).cantoBorda(cantoHost),
         shape = shape,
         colors = resolved,
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = border,
         content = {
-            androidx.compose.runtime.CompositionLocalProvider(LocalInsideCard provides true) { content() }
+            androidx.compose.runtime.CompositionLocalProvider(LocalInsideCard provides true, com.bragro.mobile.ui.domain.LocalCantoHost provides cantoHost) { content() }
         },
     )
 }
@@ -178,16 +180,17 @@ fun Card(
 ) {
     val inside = LocalInsideCard.current
     val resolved = colors ?: if (inside) CardDefaults.cardColors(containerColor = formBlockColor()) else CardDefaults.cardColors()
+    val cantoHost = androidx.compose.runtime.remember { com.bragro.mobile.ui.domain.CantoHost() }
     androidx.compose.material3.Card(
         onClick = onClick,
-        modifier = greenShadow(shape).then(modifier),
+        modifier = greenShadow(shape).then(modifier).cantoBorda(cantoHost),
         enabled = enabled,
         shape = shape,
         colors = resolved,
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = border,
         content = {
-            androidx.compose.runtime.CompositionLocalProvider(LocalInsideCard provides true) { content() }
+            androidx.compose.runtime.CompositionLocalProvider(LocalInsideCard provides true, com.bragro.mobile.ui.domain.LocalCantoHost provides cantoHost) { content() }
         },
     )
 }
@@ -376,3 +379,4 @@ fun appDatePickerColors() = androidx.compose.material3.DatePickerDefaults.colors
     selectedYearContentColor = MaterialTheme.colorScheme.onPrimary,
     currentYearContentColor = MaterialTheme.colorScheme.primary,
 )
+

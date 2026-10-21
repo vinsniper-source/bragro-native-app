@@ -319,7 +319,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
         // Seções em divisórias (padrão da plataforma), recolhíveis; o botão
         // "Seções" em Ações rola direto pra cada uma.
         val abertas = remember { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
-        fun aberta(id: String) = abertas[id] == true
+        fun aberta(id: String) = abertas[id] != false
         val listState = androidx.compose.foundation.lazy.rememberLazyListState()
         val scope = androidx.compose.runtime.rememberCoroutineScope()
         val indiceSecao = remember { mutableMapOf<String, Int>() }

@@ -463,9 +463,7 @@ private fun PrescricaoCard(
                         Icon(Icons.Outlined.Description, contentDescription = "Exportar ISO-XML", tint = MaterialTheme.colorScheme.secondary)
                     }
                 }
-                IconButton(onClick = onToggle) {
-                    com.bragro.mobile.ui.domain.CantoL(expandido)
-                }
+                com.bragro.mobile.ui.domain.CantoL(expandido, onClick = onToggle)
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 val unidade = p.unidadeTaxa?.let { " $it" } ?: ""

@@ -207,8 +207,6 @@ private fun OrcamentoStatusBadge(status: String) {
         if (faturado) "Faturado" else "Pendente NF",
         style = MaterialTheme.typography.labelMedium,
         color = fg,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
         modifier = Modifier
             .clip(RoundedCornerShape(50))
             .background(bg)
@@ -225,8 +223,6 @@ private fun OrcamentoCard(o: OrcamentoData, expanded: Boolean = true, onClick: (
                     o.numeroOrcamento?.let { "Orçamento $it" } ?: "Orçamento sem número",
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f).padding(end = 6.dp),
                 )
                 OrcamentoStatusBadge(o.status)
@@ -242,10 +238,10 @@ private fun OrcamentoCard(o: OrcamentoData, expanded: Boolean = true, onClick: (
             // DomainListScreen.kt.
             if (!expanded) return@Column
             if (!o.requisicao.isNullOrBlank()) {
-                Text("Requisição: ${o.requisicao}", style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("Requisição: ${o.requisicao}", style = MaterialTheme.typography.bodySmall)
             }
             if (!o.autorizadoPorNome.isNullOrBlank()) {
-                Text("Autorizado por: ${o.autorizadoPorNome}", style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("Autorizado por: ${o.autorizadoPorNome}", style = MaterialTheme.typography.bodySmall)
             }
             Text("${o.itens.size} item(ns)", style = MaterialTheme.typography.labelSmall)
         }
@@ -259,8 +255,6 @@ private fun TableCell(text: String, width: Dp, bold: Boolean = false) {
         modifier = Modifier.width(width).padding(horizontal = 4.dp),
         style = MaterialTheme.typography.bodySmall,
         fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
-        maxLines = 2,
-        overflow = TextOverflow.Ellipsis,
     )
 }
 
@@ -324,8 +318,6 @@ private fun OrcamentoViewDialog(o: OrcamentoData, onDismiss: () -> Unit) {
                         Text(
                             "${item.item}${if (!item.unidade.isNullOrBlank()) " (${item.unidade})" else ""} — ${formatQtdSimples(item.quantidade)}x",
                             style = MaterialTheme.typography.bodySmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f).padding(end = 6.dp),
                         )
                         Text(formatoMoeda(item.quantidade * item.valorUnitario), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)

@@ -962,7 +962,7 @@ fun HomeScreen(
                     }
                     if (!orgLogoUrl.isNullOrBlank()) {
                         Box(
-                            modifier = Modifier.padding(end = 8.dp).size(32.dp).then(logoClickModifier),
+                            modifier = Modifier.size(48.dp).then(logoClickModifier),
                             contentAlignment = Alignment.Center,
                         ) {
                             if (uploadingLogo) {
@@ -971,7 +971,7 @@ fun HomeScreen(
                                 AsyncImage(
                                     model = orgLogoUrl,
                                     contentDescription = "Logo da organização",
-                                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(4.dp)),
+                                    modifier = Modifier.size(28.dp).clip(RoundedCornerShape(4.dp)),
                                 )
                             }
                         }
@@ -989,19 +989,17 @@ fun HomeScreen(
                         // gerenciar (canManage) consegue tocar pra
                         // cadastrar uma.
                         Box(
-                            modifier = Modifier.padding(end = 8.dp).size(32.dp).then(logoClickModifier),
+                            modifier = Modifier.size(48.dp).then(logoClickModifier),
                             contentAlignment = Alignment.Center,
                         ) {
                             if (uploadingLogo) {
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             } else {
+                                // v23 -- sem o círculo; mesmo tamanho dos outros ícones do cabeçalho.
                                 Icon(
                                     Icons.Outlined.AddPhotoAlternate,
                                     contentDescription = "Adicionar logo da empresa",
-                                    modifier = Modifier
-                                        .size(28.dp)
-                                        .border(1.dp, LocalContentColor.current.copy(alpha = 0.5f), CircleShape)
-                                        .padding(6.dp),
+                                    modifier = Modifier.size(24.dp),
                                 )
                             }
                         }
@@ -1126,6 +1124,7 @@ fun HomeScreen(
             }
         },
     ) { padding ->
+    androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.domain.LocalIconeNegrito provides false) {
         val data = home
 
         if (notificationsOpen) {
@@ -1501,7 +1500,8 @@ fun HomeScreen(
             }
             }
         }
-    }
+        }
+}
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -1906,10 +1906,10 @@ private fun HomeShortcutsRow(
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
     ) {
         com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth()) {
-            if (showDestaques) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.StarOutline, label = "Destaques", onClick = { onDestaquesChange(true) })
-            if (showAlertas) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.WarningAmber, label = "Alertas", badgeCount = data.alerts.size, onClick = { open = "alertas" })
-            if (showMonitor) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.OfflineBolt, label = "Monitor", badgeCount = data.recentActivity.size, onClick = { open = "monitor" })
-            if (showMural) com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Campaign, label = "Avisos", badgeCount = data.notices.size, onClick = { open = "mural" })
+            if (showDestaques) com.bragro.mobile.ui.domain.LabeledIconButton(realce = true, icon = Icons.Outlined.StarOutline, label = "Destaques", onClick = { onDestaquesChange(true) })
+            if (showAlertas) com.bragro.mobile.ui.domain.LabeledIconButton(realce = true, icon = Icons.Outlined.WarningAmber, label = "Alertas", badgeCount = data.alerts.size, onClick = { open = "alertas" })
+            if (showMonitor) com.bragro.mobile.ui.domain.LabeledIconButton(realce = true, icon = Icons.Outlined.OfflineBolt, label = "Monitor", badgeCount = data.recentActivity.size, onClick = { open = "monitor" })
+            if (showMural) com.bragro.mobile.ui.domain.LabeledIconButton(realce = true, icon = Icons.Outlined.Campaign, label = "Avisos", badgeCount = data.notices.size, onClick = { open = "mural" })
         }
     }
 
@@ -2554,10 +2554,12 @@ private fun KpiCard(kpi: Kpi, modifier: Modifier = Modifier, fillHeight: Boolean
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MiniCardHeader(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color, titleStyle: androidx.compose.ui.text.TextStyle) {
+    // v23 -- sem o círculo colorido; ícone de contorno fino do mesmo
+    // tamanho e na mesma altura do KPI Financeiro.
     Row(verticalAlignment = Alignment.CenterVertically) {
-        SectionBadgeIcon(icon, color, size = 22.dp)
-        Spacer(Modifier.width(6.dp))
-        Text(title, style = titleStyle, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
     }
 }
 
@@ -2579,16 +2581,16 @@ private fun MiniCardHeaderWithRefresh(
     onRefresh: () -> Unit,
 ) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        SectionBadgeIcon(icon, color, size = 22.dp)
-        Spacer(Modifier.width(6.dp))
-        Text(title, style = titleStyle, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f).basicMarquee())
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f).basicMarquee())
     }
 }
 
 @Composable
 private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MiniCardHeaderWithRefresh("Clima", Icons.Outlined.WbSunny, BrYellow, MaterialTheme.typography.titleMedium, onRefresh)
             // Temperatura atual centralizada, máx/mín centralizado na linha
             // debaixo -- pedido do usuário ("kpi clima colocar °C
@@ -2650,7 +2652,7 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh
 @Composable
 private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MiniCardHeaderWithRefresh("Câmbio", Icons.Outlined.CurrencyExchange, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
             // Ícone de variação (alta/baixa) + porcentagem do dia ao lado do
             // valor -- pedido do usuário ("na linha dólar e na linha euro
@@ -2887,7 +2889,7 @@ private fun FxVariacaoTag(pct: Double?) {
 @Composable
 private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             // Renomeado -- pedido do usuário ("altere o kpi cotações
             // agrícolas para cotações grãos").
             MiniCardHeaderWithRefresh("Cotações Grãos", Icons.Outlined.Agriculture, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
@@ -3042,7 +3044,7 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
 @Composable
 private fun CotacoesPecuariaCard(livestock: com.bragro.mobile.data.model.LivestockQuotesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MiniCardHeaderWithRefresh("Cotações Pecuária", Icons.Outlined.Pets, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
             val itens = listOfNotNull(livestock.boiGordo, livestock.bezerro, livestock.leite)
             // Estado vazio -- bug relatado pelo usuario ("cotacoes pecuaria
@@ -3148,7 +3150,7 @@ private fun CotacoesPecuariaCard(livestock: com.bragro.mobile.data.model.Livesto
 @Composable
 private fun DestaquesCard(data: HomeData, updatedAtMillis: Long?, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MiniCardHeader("Destaques", Icons.Outlined.StarOutline, BrYellow, MaterialTheme.typography.titleMedium)
             // Destaques por SETOR -- réplica de destaqueCandidates (site,
             // dashboard/page.tsx) -- bug real reportado pelo usuário com

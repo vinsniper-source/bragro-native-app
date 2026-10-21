@@ -798,7 +798,7 @@ fun BRAgroBottomBar(
                                             overflow = TextOverflow.Ellipsis,
                                             modifier = Modifier.weight(1f),
                                         )
-                                        com.bragro.mobile.ui.domain.CantoL(expanded)
+                                        com.bragro.mobile.ui.domain.CantoL(expanded, borda = false)
                                     }
                                     if (expanded) {
                                         items.forEach { item -> SectorMenuItem(item, tab.icon, onClick = { openSector(item) }) }
