@@ -9,18 +9,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 
 /** Não deixa "R$ 1.164.566,00" quebrar entre o R$ e o número. */
-fun semQuebra(v: String): String = v.replace("R$ ", "R$ ").replace("US$ ", "US$ ")
+fun semQuebra(v: String): String = v.replace("R$ ", "R$ ").replace("US$ ", "US$ ")
 
 /**
- * v23 -- campos do cartão em duas colunas, sem cortes: cada campo é medido
- * na largura de meia coluna ("Rótulo: valor"). Se couber em até 3 linhas,
- * fica na sua coluna (quebrando linha quando precisar); se passar disso,
- * ocupa as duas colunas.
+ * v39 -- campos do cartão em duas colunas, sem nenhum corte.
+ *
+ * Um campo só fica em meia coluna quando TODAS as suas palavras cabem nela e
+ * o valor inteiro também cabe. Se a maior palavra (ou o valor) não couber em
+ * meia largura, o campo passa a ocupar a LINHA INTEIRA -- é isso que impede
+ * o texto de virar uma coluna de uma letra por linha.
  */
 @Composable
 fun <T> CamposDuasColunas(
@@ -31,22 +34,25 @@ fun <T> CamposDuasColunas(
 ) {
     val medidor = rememberTextMeasurer()
     val estilo = MaterialTheme.typography.bodySmall
+    val estiloValor = estilo.copy(fontWeight = FontWeight.Bold)
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val gap = 12.dp
         val meia = with(androidx.compose.ui.platform.LocalDensity.current) { ((maxWidth - gap) / 2).roundToPx().coerceAtLeast(1) }
+        fun largura(s: String, negrito: Boolean): Int =
+            medidor.measure(s, style = if (negrito) estiloValor else estilo, constraints = Constraints()).size.width
         val inteiro = itens.map { item ->
             val t = texto(item)
             val corte = t.indexOf(": ")
-            if (corte >= 0) {
-                // O valor inteiro precisa caber numa meia coluna (sem cortar palavra
-                // nem número); senão o campo ocupa as duas colunas.
-                val valor = t.substring(corte + 2)
-                val largura = medidor.measure(valor, style = estilo.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold), constraints = Constraints()).size.width
-                largura > meia
-            } else {
-                val r = medidor.measure(t, style = estilo, constraints = Constraints(maxWidth = meia))
-                r.lineCount > 3
-            }
+            val rot = if (corte >= 0) t.substring(0, corte + 1) else t
+            val valor = if (corte >= 0) t.substring(corte + 2) else ""
+            // 1) a maior palavra do rótulo ou do valor precisa caber em meia coluna;
+            // 2) o valor inteiro também precisa caber, para não ficar espremido.
+            val maiorPalavra = maxOf(
+                rot.split(' ', '/').maxOfOrNull { largura(it, false) } ?: 0,
+                valor.split(' ', '/').maxOfOrNull { largura(it, true) } ?: 0,
+            )
+            val valorInteiro = if (valor.isBlank()) 0 else largura(valor, true)
+            maiorPalavra > meia || valorInteiro > meia
         }
         // Agrupa em linhas: dois campos de meia largura ou um de largura inteira.
         val linhas = mutableListOf<List<Int>>()

@@ -725,10 +725,11 @@ private fun OperacaoDetalheCompleto(recordId: String, dominio: String = "safra")
                         }
                     } else {
                         val valorFormatado = if (col.money) formatMoneyValue(valorCru) else displayValueFor(col.key, valorCru, col.type)
-                        Text(
-                            "${col.label}: $valorFormatado",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        // v39 -- o valor desce inteiro quando não cabe ao lado do rótulo.
+                        com.bragro.mobile.ui.domain.RotuloValorLinha(
+                            rotulo = col.label,
+                            valor = valorFormatado,
+                            estilo = MaterialTheme.typography.labelSmall,
                         )
                     }
                 }

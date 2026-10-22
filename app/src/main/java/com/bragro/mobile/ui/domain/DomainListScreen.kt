@@ -2058,16 +2058,15 @@ private fun RecordFieldLine(
         // Destaque genérico por tipo de campo (padrão aprovado "imagem 2").
         // Se nenhuma regra casar, cai no texto simples de sempre.
         val displayValue = if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)
-        androidx.compose.foundation.layout.Row(
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp),
+        // v39 -- mesma regra dos demais campos: valor ao lado do rótulo se
+        // couber inteiro, senão na linha de baixo a partir da margem.
+        RotuloValorSlot(
+            rotulo = col.label,
             modifier = Modifier.padding(vertical = 2.dp),
+            estiloRotulo = MaterialTheme.typography.bodySmall,
         ) {
-            Text("${col.label}:", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Box(Modifier.weight(1f, fill = false)) {
-                val drawn = FieldHighlight(col.key, col.type, col.money, displayValue, value)
-                if (!drawn) Text(semQuebra(displayValue), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-            }
+            val drawn = FieldHighlight(col.key, col.type, col.money, displayValue, value)
+            if (!drawn) Text(semQuebra(displayValue), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
         }
     } else {
         RecordFieldPlain(col, value, record, domainId)
