@@ -2092,13 +2092,11 @@ private fun RecordFieldPlain(
         // Negrito só no valor preenchido, cabeçalho fica normal/mais claro --
         // pedido do usuário ("coloque ou o cabeçalho ou o campo preenchido em
         // negrito"), assim a linha não fica toda em negrito nem toda plana.
-        Text(
-            buildAnnotatedString {
-                withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) { append("${col.label}: ") }
-                withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = moneyColor ?: Color.Unspecified)) { append(semQuebra(displayValue)) }
-            },
-            style = MaterialTheme.typography.bodySmall,
+        RotuloValorLinha(
+            rotulo = col.label,
+            valor = semQuebra(displayValue),
             modifier = Modifier.padding(vertical = 2.dp),
+            corValor = moneyColor ?: Color.Unspecified,
         )
     }
 }

@@ -35,8 +35,18 @@ fun <T> CamposDuasColunas(
         val gap = 12.dp
         val meia = with(androidx.compose.ui.platform.LocalDensity.current) { ((maxWidth - gap) / 2).roundToPx().coerceAtLeast(1) }
         val inteiro = itens.map { item ->
-            val r = medidor.measure(texto(item), style = estilo, constraints = Constraints(maxWidth = meia))
-            r.lineCount > 3
+            val t = texto(item)
+            val corte = t.indexOf(": ")
+            if (corte >= 0) {
+                // O valor inteiro precisa caber numa meia coluna (sem cortar palavra
+                // nem número); senão o campo ocupa as duas colunas.
+                val valor = t.substring(corte + 2)
+                val largura = medidor.measure(valor, style = estilo.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold), constraints = Constraints()).size.width
+                largura > meia
+            } else {
+                val r = medidor.measure(t, style = estilo, constraints = Constraints(maxWidth = meia))
+                r.lineCount > 3
+            }
         }
         // Agrupa em linhas: dois campos de meia largura ou um de largura inteira.
         val linhas = mutableListOf<List<Int>>()

@@ -893,18 +893,11 @@ private fun FinanceiroFieldLine(col: com.bragro.mobile.data.model.ColumnConfig, 
             // sobre o negrito azul do vcto -- pedido do usuário sobre a cor
             // da fonte dos valores.
             val moneyColor: Color? = null
-            Text(
-                buildAnnotatedString {
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) { append("${col.label}: ") }
-                    withStyle(
-                        SpanStyle(
-                            fontWeight = FontWeight.Bold,
-                            color = moneyColor ?: Color.Unspecified,
-                        ),
-                    ) { append(semQuebra(displayValue)) }
-                },
-                style = MaterialTheme.typography.bodySmall,
+            RotuloValorLinha(
+                rotulo = col.label,
+                valor = semQuebra(displayValue),
                 modifier = Modifier.padding(vertical = 2.dp),
+                corValor = moneyColor ?: Color.Unspecified,
             )
         }
     }
@@ -1349,9 +1342,6 @@ private fun FluxoCard(row: FluxoRow, onClick: () -> Unit) {
             Text(
                 "${row.original["entidade"] ?: "—"} — ${row.original["categoria"] ?: "—"}",
                 fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Clip,
-                modifier = Modifier.basicMarquee(),
             )
             Text("Data movimento: ${row.dataMovimento?.let { displayValueFor("data", it, "date") } ?: "—"}", style = MaterialTheme.typography.bodySmall)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

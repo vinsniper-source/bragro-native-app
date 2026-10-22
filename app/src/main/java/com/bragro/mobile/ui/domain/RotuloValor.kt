@@ -73,3 +73,46 @@ fun RotuloValorSlot(
         }
     }
 }
+
+/**
+ * Mesma regra, alinhada à esquerda (campos de cartão "Rótulo: valor"): o
+ * valor fica ao lado do rótulo só se os dois couberem inteiros na linha; se
+ * não couberem, o valor desce inteiro para a linha de baixo. Só quebra entre
+ * palavras.
+ */
+@Composable
+fun RotuloValorLinha(
+    rotulo: String,
+    valor: String,
+    modifier: Modifier = Modifier,
+    estilo: TextStyle = MaterialTheme.typography.bodySmall,
+    corValor: Color = Color.Unspecified,
+) {
+    Layout(
+        modifier = modifier.fillMaxWidth(),
+        content = {
+            Text("$rotulo:", style = estilo, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(valor, style = estilo.copy(fontWeight = FontWeight.Bold), color = corValor)
+        },
+    ) { medidas, constraints ->
+        val maxW = constraints.maxWidth
+        val gap = 4.dp.roundToPx()
+        val rotNatural = medidas[0].maxIntrinsicWidth(Constraints.Infinity)
+        val valNatural = medidas[1].maxIntrinsicWidth(Constraints.Infinity)
+        if (rotNatural + gap + valNatural <= maxW) {
+            val rot = medidas[0].measure(Constraints(maxWidth = maxW))
+            val val_ = medidas[1].measure(Constraints(maxWidth = maxW - rot.width - gap))
+            layout(rot.width + gap + val_.width, maxOf(rot.height, val_.height)) {
+                rot.placeRelative(0, 0)
+                val_.placeRelative(rot.width + gap, 0)
+            }
+        } else {
+            val rot = medidas[0].measure(Constraints(maxWidth = maxW))
+            val val_ = medidas[1].measure(Constraints(maxWidth = maxW))
+            layout(maxOf(rot.width, val_.width), rot.height + val_.height) {
+                rot.placeRelative(0, 0)
+                val_.placeRelative(0, rot.height)
+            }
+        }
+    }
+}
