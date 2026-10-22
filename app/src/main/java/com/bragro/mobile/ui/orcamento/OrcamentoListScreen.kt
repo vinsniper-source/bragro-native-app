@@ -228,8 +228,7 @@ private fun OrcamentoCard(o: OrcamentoData, expanded: Boolean = true, onClick: (
                 OrcamentoStatusBadge(o.status)
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(isoDateToBr(isoDateOnly(o.data)), style = MaterialTheme.typography.bodySmall)
-                Text(formatoMoeda(totalOrcamento(o)), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                com.bragro.mobile.ui.domain.RotuloValor(rotulo = isoDateToBr(isoDateOnly(o.data)), valor = formatoMoeda(totalOrcamento(o)), estiloRotulo = MaterialTheme.typography.bodySmall, estiloValor = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
             }
             // "Recolher" (toggle global no bloco Dados) -- pedido do usuário
             // (imagem 3): quando recolhido, esconde o miolo do card
@@ -325,8 +324,7 @@ private fun OrcamentoViewDialog(o: OrcamentoData, onDismiss: () -> Unit) {
                 }
                 HorizontalDivider()
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Total", fontWeight = FontWeight.Bold)
-                    Text(formatoMoeda(totalOrcamento(o)), fontWeight = FontWeight.Bold)
+                    com.bragro.mobile.ui.domain.RotuloValor(rotulo = "Total", valor = formatoMoeda(totalOrcamento(o)), corRotulo = MaterialTheme.colorScheme.onSurface, estiloRotulo = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), estiloValor = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
                 }
                 if (!o.observacoes.isNullOrBlank()) {
                     Text(o.observacoes, style = MaterialTheme.typography.bodySmall)

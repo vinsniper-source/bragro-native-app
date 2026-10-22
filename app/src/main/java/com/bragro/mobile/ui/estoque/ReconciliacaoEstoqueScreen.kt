@@ -292,10 +292,7 @@ private fun ReconciliacaoItemCard(i: ReconciliacaoEstoqueItemData) {
             if (aberto) {
                 @Composable
                 fun linha(rotulo: String, valor: String, c: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(rotulo, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(valor, style = MaterialTheme.typography.bodySmall, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, color = c)
-                    }
+                    com.bragro.mobile.ui.domain.RotuloValor(rotulo = rotulo, valor = valor, corValor = c, estiloRotulo = MaterialTheme.typography.bodySmall, estiloValor = MaterialTheme.typography.bodySmall.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold))
                 }
                 linha("Saldo fiscal", formatoNumero(i.saldoFiscal) + un)
                 linha("Saldo real", formatoNumero(i.saldoFisico) + un)
