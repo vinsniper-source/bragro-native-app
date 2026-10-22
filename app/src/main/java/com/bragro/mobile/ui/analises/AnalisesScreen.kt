@@ -439,21 +439,25 @@ private fun ObjetoCard(obj: JsonObject) {
 
 @Composable
 private fun SecaoAnalise(chave: String, valor: JsonElement) {
-    var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
-    Column(modifier = Modifier.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        com.bragro.mobile.ui.domain.TituloRecolhivel(tituloSecao(chave), aberto) { aberto = !aberto }
-        if (aberto) when (valor) {
-            is JsonArray -> {
-                if (valor.isEmpty()) {
-                    Text("Sem dados.", style = MaterialTheme.typography.bodySmall)
-                } else {
-                    valor.forEach { item ->
-                        if (item is JsonObject) ObjetoCard(item)
+    // v36 -- todos os tópicos entram recolhidos; cada um abre pelo canto curvo
+    // na borda inferior direita do próprio bloco.
+    var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            com.bragro.mobile.ui.domain.TituloRecolhivel(tituloSecao(chave), aberto) { aberto = !aberto }
+            if (aberto) when (valor) {
+                is JsonArray -> {
+                    if (valor.isEmpty()) {
+                        Text("Sem dados.", style = MaterialTheme.typography.bodySmall)
+                    } else {
+                        valor.forEach { item ->
+                            if (item is JsonObject) ObjetoCard(item)
+                        }
                     }
                 }
+                is JsonObject -> ObjetoCard(valor)
+                else -> Text(valorParaTexto(chave, valor), style = MaterialTheme.typography.bodySmall)
             }
-            is JsonObject -> ObjetoCard(valor)
-            else -> Text(valorParaTexto(chave, valor), style = MaterialTheme.typography.bodySmall)
         }
     }
 }

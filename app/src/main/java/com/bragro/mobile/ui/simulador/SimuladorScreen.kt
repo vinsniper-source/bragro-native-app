@@ -371,12 +371,12 @@ private fun LinhaComparativo(label: String, base: Double, projetado: Double, inv
     val delta = projetado - base
     val bom = if (inverso) delta <= 0 else delta >= 0
     val cor = if (bom) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            label,
-            style = if (destaque) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodySmall,
-            fontWeight = if (destaque) FontWeight.Bold else FontWeight.Normal,
-        )
+    com.bragro.mobile.ui.domain.RotuloValorSlot(
+        rotulo = label,
+        corRotulo = MaterialTheme.colorScheme.onSurface,
+        estiloRotulo = (if (destaque) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodySmall)
+            .copy(fontWeight = if (destaque) FontWeight.Bold else FontWeight.Normal),
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(formatMoneyBrl(base), style = MaterialTheme.typography.labelSmall, textDecoration = TextDecoration.LineThrough)
             Text(

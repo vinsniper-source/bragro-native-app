@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,11 +30,25 @@ fun RotuloValor(
     estiloRotulo: TextStyle = MaterialTheme.typography.labelSmall,
     estiloValor: TextStyle = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
 ) {
+    RotuloValorSlot(rotulo = rotulo, modifier = modifier, corRotulo = corRotulo, estiloRotulo = estiloRotulo) {
+        Text(valor, style = estiloValor, color = corValor, textAlign = TextAlign.End)
+    }
+}
+
+/** Mesma regra, mas o valor é um conteúdo livre (ex.: dois valores lado a lado). */
+@Composable
+fun RotuloValorSlot(
+    rotulo: String,
+    modifier: Modifier = Modifier,
+    corRotulo: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    estiloRotulo: TextStyle = MaterialTheme.typography.labelSmall,
+    valor: @Composable () -> Unit,
+) {
     Layout(
         modifier = modifier.fillMaxWidth(),
         content = {
             Text(rotulo, style = estiloRotulo, color = corRotulo)
-            Text(valor, style = estiloValor, color = corValor, textAlign = TextAlign.End)
+            Box { valor() }
         },
     ) { medidas, constraints ->
         val maxW = constraints.maxWidth

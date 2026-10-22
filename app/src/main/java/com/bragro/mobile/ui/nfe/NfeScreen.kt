@@ -240,16 +240,21 @@ private fun InvoiceCard(
     val excluindo = pendingAction == "delete:${inv.id}"
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column {
-                    Text("Nº ${inv.numero}${inv.serie?.takeIf { it.isNotBlank() }?.let { " / série $it" } ?: ""}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                    Text(inv.emitenteNome ?: inv.destinatarioNome ?: "-", style = MaterialTheme.typography.bodyMedium)
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(formatoMoeda(inv.valorTotal), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                    Text(inv.tipo ?: "ENTRADA", style = MaterialTheme.typography.labelSmall)
-                }
-            }
+            com.bragro.mobile.ui.domain.RotuloValor(
+                rotulo = "Nº ${inv.numero}${inv.serie?.takeIf { it.isNotBlank() }?.let { " / série $it" } ?: ""}",
+                valor = formatoMoeda(inv.valorTotal),
+                corRotulo = MaterialTheme.colorScheme.onSurface,
+                estiloRotulo = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                estiloValor = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+            )
+            com.bragro.mobile.ui.domain.RotuloValor(
+                rotulo = inv.emitenteNome ?: inv.destinatarioNome ?: "-",
+                valor = inv.tipo ?: "ENTRADA",
+                corRotulo = MaterialTheme.colorScheme.onSurface,
+                estiloRotulo = MaterialTheme.typography.bodyMedium,
+                estiloValor = MaterialTheme.typography.labelSmall,
+                corValor = MaterialTheme.colorScheme.onSurface,
+            )
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
                     Text(inv.status, style = MaterialTheme.typography.labelSmall)

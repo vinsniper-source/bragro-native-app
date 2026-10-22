@@ -386,6 +386,25 @@ private fun LivroCaixaCategoryTabs(blocks: List<LivroCaixaBlockSpec>, modifier: 
 }
 
 @Composable
+private fun ExtratoBloco(nome: String, lancamentos: List<LivroCaixaLancamentoData>) {
+    var aberto by androidx.compose.runtime.saveable.rememberSaveable(nome) { androidx.compose.runtime.mutableStateOf(true) }
+    com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+            Column(modifier = Modifier.fillMaxWidth().clickable { aberto = !aberto }) {
+                Text(nome, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Text(
+                    "${lancamentos.size} lançamento${if (lancamentos.size == 1) "" else "s"}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (aberto) lancamentos.forEach { LancamentoRow(it) }
+        }
+        com.bragro.mobile.ui.domain.CantoL(aberto, onClick = { aberto = !aberto })
+    }
+}
+
+@Composable
 private fun LancamentoRow(l: LivroCaixaLancamentoData) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Column(modifier = Modifier.weight(2f)) {
@@ -823,11 +842,12 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                 if (data.porMes.any { it.entradas > 0 || it.saidas > 0 }) {
                     item { ResumoMensalCard(data.porMes) }
                 }
-                item {
-                    // Divisória "EXTRATO n" (padrão LANÇAMENTOS da plataforma).
-                    com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = data.lancamentos.size, aberto = extratoAberto, titulo = "Extrato") { extratoAberto = !extratoAberto }
+                // v36 -- um bloco por extrato; cresce conforme os lançamentos e abre/
+                // recolhe pelo canto curvo na borda inferior direita.
+                val gruposExtrato = data.lancamentos.groupBy { it.tipoDocumento?.takeIf { d -> d.isNotBlank() } ?: "Sem extrato" }
+                gruposExtrato.forEach { (nomeExtrato, lista) ->
+                    item(key = "extrato-$nomeExtrato") { ExtratoBloco(nomeExtrato, lista) }
                 }
-                if (extratoAberto) items(data.lancamentos, key = { it.id }) { l -> LancamentoRow(l) }
             }
         }
     }

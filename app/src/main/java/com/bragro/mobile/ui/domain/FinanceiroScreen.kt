@@ -644,8 +644,20 @@ fun FinanceiroScreen(
                             contentPadding = PaddingValues(12.dp, 4.dp, 12.dp, 80.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
-                            items(fRows, key = { it.original["id"] ?: it.hashCode().toString() }) { row ->
-                                FluxoCard(row, onClick = { row.original["id"]?.let(onEditRecord) })
+                            // v36 -- lançamentos sempre ocultos até tocar em Lançamentos.
+                            if (allExpanded) {
+                                items(fRows, key = { it.original["id"] ?: it.hashCode().toString() }) { row ->
+                                    FluxoCard(row, onClick = { row.original["id"]?.let(onEditRecord) })
+                                }
+                            } else {
+                                item(key = "fluxo-oculto") {
+                                    Text(
+                                        "Toque em Lançamentos para exibir.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(vertical = 8.dp),
+                                    )
+                                }
                             }
                         }
                     } else {

@@ -38,6 +38,14 @@ fun isReceitaOp(operacao: String?): Boolean {
     return RECEITA_OPS.contains(v)
 }
 
+/** Local que é propriedade rural: começa com fazenda, sítio, rancho ou chácara
+ * (sem acento e sem diferença de maiúscula). */
+fun isPropriedadeRural(local: String?): Boolean {
+    val v = java.text.Normalizer.normalize(local?.trim()?.lowercase() ?: return false, java.text.Normalizer.Form.NFD)
+        .replace(Regex("\\p{M}+"), "")
+    return v.startsWith("fazenda") || v.startsWith("sitio") || v.startsWith("rancho") || v.startsWith("chacara")
+}
+
 fun filterByFinanceiroView(records: List<Map<String, String?>>, view: FinanceiroView): List<Map<String, String?>> =
     when (view) {
         FinanceiroView.TODOS -> records
@@ -45,8 +53,17 @@ fun filterByFinanceiroView(records: List<Map<String, String?>>, view: Financeiro
         FinanceiroView.RECEBER -> records.filter { it["dataReceb"].isNullOrBlank() && isReceitaOp(it["operacao"]) }
         FinanceiroView.CONCILIADO -> records.filter { it["conciliar"] == "true" }
         FinanceiroView.FLUXO -> records.filter { it["conciliar"] == "true" }
-        FinanceiroView.RATEIO_DIRETO -> records.filter { !it["rateadoR"].isNullOrBlank() && it["rateioIndiretoR"].isNullOrBlank() }
-        FinanceiroView.RATEIO_INDIRETO -> records.filter { !it["rateioIndiretoR"].isNullOrBlank() }
+        // v36 -- local que é propriedade rural (fazenda, sítio, rancho, chácara)
+        // é sempre rateio DIRETO; o Rateio Indireto fica só com locais que não
+        // são propriedade rural (sede, escritório, galpão...).
+        FinanceiroView.RATEIO_DIRETO -> records.filter {
+            val temDireto = !it["rateadoR"].isNullOrBlank()
+            val temIndireto = !it["rateioIndiretoR"].isNullOrBlank()
+            (temDireto && !temIndireto) || (isPropriedadeRural(it["local"]) && (temDireto || temIndireto))
+        }
+        FinanceiroView.RATEIO_INDIRETO -> records.filter {
+            !it["rateioIndiretoR"].isNullOrBlank() && !isPropriedadeRural(it["local"])
+        }
     }
 
 /** Espelho de FINANCEIRO_VIEW_COLUMN_KEYS (data-table.tsx) -- substitui o

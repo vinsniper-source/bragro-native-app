@@ -386,7 +386,42 @@ private fun OperacaoCard(
             )
             // v20 (opção A) -- Monitoramento, Ações e Progresso, nesta ordem.
             meio?.invoke()
-            com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = atividades.size, aberto = blocoAberto, titulo = op.local, rotulo = "${atividades.size} atividades · ${op.cultura} · ${op.safra}", manter = true) { blocoAberto = !blocoAberto }
+            // v36 -- o texto "FAZENDA ... N atividades" vira o botão Atividades
+            // (ícone e rótulo na horizontal): abre e recolhe os blocos, que ficam
+            // ocultos até o toque. O nome do local segue ao lado, em tom suave.
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .border(1.dp, if (blocoAberto) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(10.dp))
+                        .clickable { blocoAberto = !blocoAberto }
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    com.bragro.mobile.ui.domain.IconeNegrito(
+                        Icons.Outlined.ViewList,
+                        contentDescription = null,
+                        tint = if (blocoAberto) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        size = 20.dp,
+                    )
+                    Text(
+                        "Atividades",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (blocoAberto) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f) else MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+                Text(
+                    "${op.local} · ${atividades.size} atividades · ${op.cultura} · ${op.safra}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+            }
 
             if (blocoAberto) {
                 if (mostrarFiltros) {
