@@ -465,7 +465,8 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
     // Diálogo de lançamento MANUAL de talhão (sem KML/KMZ) -- pedido do
     // usuário. Aberto pelo botão "+" nas abas Talhões e Fazendas/KML.
     var manualDialogOpen by remember { mutableStateOf(false) }
-    var listaAberta by remember { mutableStateOf(true) }
+    // v40 -- a lista de talhões só aparece depois de tocar no ícone Talhões.
+    var listaAberta by remember { mutableStateOf(false) }
     var prestadoraAberta by remember { mutableIntStateOf(0) }
 
     val kmlPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
@@ -890,7 +891,7 @@ private fun googleEarthUrl(point: GeoPoint?, fallbackQuery: String): String =
     if (point != null) "https://earth.google.com/web/@${point.latitude},${point.longitude},1000a,1000d,35y,0h,0t,0r"
     else "https://earth.google.com/web/search/${Uri.encode(fallbackQuery)}"
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun FarmMapLinksRow(boundaries: List<FieldBoundaryDto>, farms: List<FarmEntity>) {
     if (farms.isEmpty()) return
@@ -900,23 +901,32 @@ private fun FarmMapLinksRow(boundaries: List<FieldBoundaryDto>, farms: List<Farm
     }
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
         Text("Abrir no Google Maps:", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        // v40 -- os botões quebram em linhas e nenhum passa da margem.
+        androidx.compose.foundation.layout.FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
             for (farm in farms) {
                 val ponto = farmCentroid(boundaries, farm.id)
                 OutlinedButton(onClick = { openUrl(googleMapsUrl(ponto, farm.name)) }, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
                     Icon(Icons.Outlined.Map, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                    Text(farm.name, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
+                    Text(farm.name, style = MaterialTheme.typography.labelSmall, maxLines = 2, overflow = TextOverflow.Clip)
                 }
             }
         }
         Spacer(modifier = Modifier.height(4.dp))
         Text("Abrir no Google Earth:", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        androidx.compose.foundation.layout.FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
             for (farm in farms) {
                 val ponto = farmCentroid(boundaries, farm.id)
                 OutlinedButton(onClick = { openUrl(googleEarthUrl(ponto, farm.name)) }, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
                     Icon(Icons.Outlined.Public, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                    Text(farm.name, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
+                    Text(farm.name, style = MaterialTheme.typography.labelSmall, maxLines = 2, overflow = TextOverflow.Clip)
                 }
             }
         }

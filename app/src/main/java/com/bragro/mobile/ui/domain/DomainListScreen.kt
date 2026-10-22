@@ -574,7 +574,7 @@ fun DomainListScreen(
                         // longos (ex.: "Transferências entre Fazendas") sem
                         // isso podiam quebrar linha e cortar embaixo, já
                         // que a AppBar tem altura fixa.
-                        Text(config?.label ?: domainId, maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.basicMarquee())
+                        Text(config?.label ?: domainId, maxLines = 2, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                     }
                 
                     }
@@ -2461,7 +2461,7 @@ private fun ColumnFilterRow(
             style = MaterialTheme.typography.labelSmall,
             maxLines = 1,
             overflow = TextOverflow.Clip,
-            modifier = Modifier.padding(bottom = 2.dp).basicMarquee(),
+            modifier = Modifier.padding(bottom = 2.dp),
         )
         Box(modifier = Modifier.fillMaxWidth()) {
             OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {

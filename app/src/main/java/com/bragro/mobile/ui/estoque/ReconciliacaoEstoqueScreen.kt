@@ -159,6 +159,19 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
                         com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.CompareArrows, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
+                    // v40 -- título fixo (sem letreiro), quebrando em duas
+                    // linhas quando não couber numa.
+                    Column {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            "Reconciliação Físico x Fiscal",
+                            maxLines = 2,
+                            overflow = TextOverflow.Clip,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+
                 
                     }
                 } },

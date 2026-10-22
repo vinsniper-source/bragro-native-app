@@ -334,7 +334,7 @@ fun FinanceiroScreen(
                         // maxLines/ellipsis defensivo -- pedido do usuário
                         // ("adapte ao tamanho da fonte sem cortes e dentro
                         // do limite da tela").
-                        Text(if (isQuickView) view.label else "Lançamentos", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.basicMarquee())
+                        Text(if (isQuickView) view.label else "Lançamentos", maxLines = 2, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface)
                     }
                 
                     }
@@ -1045,10 +1045,9 @@ private fun FinanceiroGestaoDropdownButton(view: FinanceiroView, onSelect: (Fina
             Spacer(modifier = Modifier.size(4.dp))
             Text(
                 if (ativo) view.label else "Gestão Financeira",
-                maxLines = 1,
-                softWrap = false,
+                maxLines = 2,
                 overflow = TextOverflow.Clip,
-                modifier = Modifier.weight(1f).basicMarquee(),
+                modifier = Modifier.weight(1f),
             )
             Icon(Icons.Outlined.ExpandMore, contentDescription = null, modifier = Modifier.size(18.dp))
         }

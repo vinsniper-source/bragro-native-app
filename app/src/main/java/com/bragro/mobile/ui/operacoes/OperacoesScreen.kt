@@ -193,11 +193,10 @@ private fun EstagioChip(estagio: String) {
         ESTAGIO_LABEL[estagio] ?: estagio,
         style = MaterialTheme.typography.labelSmall,
         color = fg,
-        maxLines = 1,
+        maxLines = 2,
         overflow = TextOverflow.Clip,
         modifier = Modifier
             .background(bg, RoundedCornerShape(50))
-            .basicMarquee()
             .padding(horizontal = 8.dp, vertical = 3.dp),
     )
 }
@@ -282,6 +281,9 @@ private fun fmtNum1(v: Double): String = NumberFormat.getNumberInstance(PT_BR).a
 private fun fmtNum0(v: Double): String = NumberFormat.getNumberInstance(PT_BR).apply { maximumFractionDigits = 0 }.format(v)
 private fun fmtPct(v: Double): String = (if (v > 0) "+" else "") + fmtNum1(v) + "%"
 
+/** Chave da opção "Limpar filtros" nas listas suspensas (v40). */
+private const val LIMPAR = "__limpar"
+
 @Composable
 private fun FiltroLista(label: String, valor: String, opcoes: List<Pair<String, String>>, onSelect: (String) -> Unit, modifier: Modifier = Modifier) {
     var aberto by remember { mutableStateOf(false) }
@@ -343,9 +345,8 @@ private fun OperacaoCard(
     var talhao by remember(op.chave) { mutableStateOf("Todos") }
     var revisao by remember(op.chave) { mutableStateOf("Todas") }
     val cardsFechados = remember(op.chave) { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
-    val equipeAberta = remember(op.chave) { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
     val osAbertas = remember(op.chave) { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
-    var blocoAberto by remember(op.chave) { mutableStateOf(false) }
+    var blocoAberto by remember(op.chave) { mutableStateOf(true) }
 
     val atividades = op.timeline.map { it.operacao }.distinct()
     fun grupoDe(a: String): String = op.timeline.firstOrNull { it.operacao == a }?.grupo ?: "Outras"
@@ -386,88 +387,45 @@ private fun OperacaoCard(
             )
             // v20 (opção A) -- Monitoramento, Ações e Progresso, nesta ordem.
             meio?.invoke()
-            // v36 -- o texto "FAZENDA ... N atividades" vira o botão Atividades
-            // (ícone e rótulo na horizontal): abre e recolhe os blocos, que ficam
-            // ocultos até o toque. O nome do local segue ao lado, em tom suave.
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .border(1.dp, if (blocoAberto) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(10.dp))
-                        .clickable { blocoAberto = !blocoAberto }
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    com.bragro.mobile.ui.domain.IconeNegrito(
-                        Icons.Outlined.ViewList,
-                        contentDescription = null,
-                        tint = if (blocoAberto) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                        size = 20.dp,
-                    )
-                    Text(
-                        "Atividades",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = if (blocoAberto) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f) else MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-                Text(
-                    "${op.local} · ${atividades.size} atividades · ${op.cultura} · ${op.safra}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
+            // v40 -- o controle de Atividades é só o ícone do bloco Ações; o
+            // botão solto e o texto ao lado saíram daqui.
             if (blocoAberto) {
                 if (mostrarFiltros) {
+                // v40 -- "Limpar filtros" virou a primeira opção das listas.
+                val limpar: () -> Unit = { etapa = "Todas"; atividade = "Todas"; talhao = "Todos"; revisao = "Todas" }
                 // Filtros em listas suspensas
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FiltroLista(
                         "Etapa", etapa,
-                        listOf("Todas" to "Todas as etapas") + etapas.map { g -> g to "$g (${atividades.count { grupoDe(it) == g }})" },
-                        { etapa = it; atividade = "Todas" },
+                        listOf(LIMPAR to "Limpar filtros", "Todas" to "Todas as etapas") + etapas.map { g -> g to "$g (${atividades.count { grupoDe(it) == g }})" },
+                        { if (it == LIMPAR) limpar() else { etapa = it; atividade = "Todas" } },
                         Modifier.weight(1f),
                     )
                     FiltroLista(
                         "Atividade", atividade,
-                        listOf("Todas" to "Todas as atividades") + atividades.filter { etapa == "Todas" || grupoDe(it) == etapa }
+                        listOf(LIMPAR to "Limpar filtros", "Todas" to "Todas as atividades") + atividades.filter { etapa == "Todas" || grupoDe(it) == etapa }
                             .map { a -> a to "${tituloAtividade(a)} (${op.timeline.count { it.operacao == a }})" },
-                        { atividade = it },
+                        { if (it == LIMPAR) limpar() else atividade = it },
                         Modifier.weight(1f),
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FiltroLista(
                         "Talhão", talhao,
-                        listOf("Todos" to "Todos os talhões") + op.talhoes.map { it.talhao to "Talhão ${it.talhao} · ${fmtNum0(it.hectare)} ha" },
-                        { talhao = it },
+                        listOf(LIMPAR to "Limpar filtros", "Todos" to "Todos os talhões") + op.talhoes.map { it.talhao to "Talhão ${it.talhao} · ${fmtNum0(it.hectare)} ha" },
+                        { if (it == LIMPAR) limpar() else talhao = it },
                         Modifier.weight(1f),
                     )
                     FiltroLista(
                         "Revisão", revisao,
-                        listOf("Todas" to "Todas as O.S.", "Pendentes" to "Pendentes de revisão", "Revisadas" to "Revisadas"),
-                        { revisao = it },
+                        listOf(LIMPAR to "Limpar filtros", "Todas" to "Todas as O.S.", "Pendentes" to "Pendentes de revisão", "Revisadas" to "Revisadas"),
+                        { if (it == LIMPAR) limpar() else revisao = it },
                         Modifier.weight(1f),
                     )
                 }
                 }
-                // v19 -- os três dividem a linha em partes iguais.
-                Row(Modifier.fillMaxWidth()) {
-                    androidx.compose.material3.TextButton(onClick = { etapa = "Todas"; atividade = "Todas"; talhao = "Todos"; revisao = "Todas" }, modifier = Modifier.weight(1f)) {
-                        Text("Limpar filtros", style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                    }
-                    androidx.compose.material3.TextButton(onClick = { cardsFechados.clear(); op.timeline.forEach { osAbertas[it.id] = true } }, modifier = Modifier.weight(1f)) {
-                        Text("▾ Abrir todas", style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                    }
-                    androidx.compose.material3.TextButton(onClick = { atividades.forEach { cardsFechados[it] = true }; osAbertas.clear() }, modifier = Modifier.weight(1f)) {
-                        Text("▴ Recolher tudo", style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                    }
-                }
+                // v40 -- "Limpar filtros", "Abrir todas" e "Recolher tudo" saíram:
+                // limpar virou opção das listas suspensas de filtro.
 
                 if (cards.isEmpty()) {
                     Text("Nenhuma O.S. para os filtros escolhidos.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -521,23 +479,18 @@ private fun OperacaoCard(
                                     .padding(horizontal = 8.dp, vertical = 6.dp),
                                 verticalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
-                                // v18 -- recolhido por padrão: só o nome;
-                                // tocando abre função e frota.
+                                // v40 -- Responsável, Função e Frota sempre à vista,
+                                // sem o L: o cartão da equipe não recolhe mais.
                                 equipe.forEach { (nome, func, frota) ->
-                                    val chaveEq = "$a|$nome|$frota"
-                                    val eqAberto = equipeAberta[chaveEq] == true
                                     Row(
-                                        modifier = Modifier.fillMaxWidth().clickable { equipeAberta[chaveEq] = !eqAberto },
+                                        modifier = Modifier.fillMaxWidth(),
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         Icon(Icons.Outlined.Person, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Text(" $nome", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                                        com.bragro.mobile.ui.domain.CantoL(eqAberto, borda = false)
                                     }
-                                    if (eqAberto) {
-                                        Text("Função: $func", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text("Frota: $frota", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
+                                    com.bragro.mobile.ui.domain.RotuloValorLinha(rotulo = "Função", valor = func, estilo = MaterialTheme.typography.labelSmall)
+                                    com.bragro.mobile.ui.domain.RotuloValorLinha(rotulo = "Frota", valor = frota, estilo = MaterialTheme.typography.labelSmall)
                                 }
                             }
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -802,7 +755,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Operações", color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
+                        Text("Operações", color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Clip)
                     }
                 
                     }

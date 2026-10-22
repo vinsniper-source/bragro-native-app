@@ -374,7 +374,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                 n++
             }
             item(key = "acoes") {
-                var anoAberto by rememberSaveable { mutableStateOf(true) }
+                var anoAberto by rememberSaveable { mutableStateOf(false) }
                 com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
                     Column(modifier = Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         // v9: "Ano-Calendário / Exercício" com duas listas lado a lado
@@ -547,7 +547,7 @@ private fun Secao(titulo: String, aberta: Boolean, extra: String? = null, onTogg
 
 @Composable
 private fun SecaoCard(titulo: String?, conteudo: @Composable () -> Unit) {
-    var aberto by remember { mutableStateOf(true) }
+    var aberto by remember { mutableStateOf(false) }
     com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             if (titulo != null) com.bragro.mobile.ui.domain.TituloRecolhivel(titulo, aberto) { aberto = !aberto }

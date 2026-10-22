@@ -388,7 +388,7 @@ private fun LivroCaixaCategoryTabs(blocks: List<LivroCaixaBlockSpec>, modifier: 
 
 @Composable
 private fun ExtratoBloco(nome: String, lancamentos: List<LivroCaixaLancamentoData>) {
-    var aberto by androidx.compose.runtime.saveable.rememberSaveable(nome) { androidx.compose.runtime.mutableStateOf(true) }
+    var aberto by androidx.compose.runtime.saveable.rememberSaveable(nome) { androidx.compose.runtime.mutableStateOf(false) }
     com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
             Column(modifier = Modifier.fillMaxWidth().clickable { aberto = !aberto }) {
@@ -480,7 +480,7 @@ private fun ProdutorRuralCard(
     var contaIrpf by remember(config) { mutableStateOf(config?.contaIrpfPadrao ?: "") }
 
     com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
-        var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
+        var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             com.bragro.mobile.ui.domain.TituloRecolhivel("Produtor Rural / IRPF", aberto) { aberto = !aberto }
             if (aberto) {
@@ -546,7 +546,7 @@ private fun ProdutorRuralCard(
 @Composable
 private fun ResumoPorImovelCard(imoveis: List<com.bragro.mobile.data.model.LivroCaixaImovelResumoData>, onSelect: (String) -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
-        var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
+        var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
         Column(modifier = Modifier.padding(12.dp)) {
             com.bragro.mobile.ui.domain.TituloRecolhivel("Resumo por imóvel rural", aberto) { aberto = !aberto }
             if (aberto) {
@@ -580,7 +580,7 @@ private fun ResumoPorImovelCard(imoveis: List<com.bragro.mobile.data.model.Livro
 @Composable
 private fun ResumoMensalCard(porMes: List<com.bragro.mobile.data.model.LivroCaixaMesData>) {
     Card(modifier = Modifier.fillMaxWidth()) {
-        var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
+        var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
         Column(modifier = Modifier.padding(12.dp)) {
             com.bragro.mobile.ui.domain.TituloRecolhivel("Resumo mensal", aberto) { aberto = !aberto }
             if (aberto) {
@@ -789,7 +789,7 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                 if (data.contas.isNotEmpty()) {
                     item {
                         Card(modifier = Modifier.fillMaxWidth()) {
-                            var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
+                            var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
                             Column(modifier = Modifier.padding(12.dp)) {
                                 com.bragro.mobile.ui.domain.TituloRecolhivel("Resumo por conta", aberto) { aberto = !aberto }
                                 if (aberto) {

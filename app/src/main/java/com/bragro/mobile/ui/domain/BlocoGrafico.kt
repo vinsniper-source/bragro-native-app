@@ -40,22 +40,25 @@ fun BlocoGrafico(
     onPdf: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    var aberto by rememberSaveable(titulo) { mutableStateOf(true) }
-    Card(modifier = modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().padding(start = 12.dp, top = 6.dp, bottom = 10.dp, end = 2.dp), verticalAlignment = Alignment.Top) {
-            Column(Modifier.weight(1f).padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (aberto) content() else Text(titulo, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                com.bragro.mobile.ui.domain.CantoL(aberto, onClick = { aberto = !aberto })
-                if (onPrint != null) IconButton(onClick = onPrint, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Outlined.Print, contentDescription = "Imprimir gráfico", modifier = Modifier.size(18.dp))
+    // v40 -- o bloco nasce recolhido; Imprimir e PDF sobem para a linha do
+    // topo, lado a lado; o L sai e fica só a curva na borda inferior direita
+    // (desenhada pelo Card do app).
+    var aberto by rememberSaveable(titulo) { mutableStateOf(false) }
+    com.bragro.mobile.ui.theme.Card(modifier = modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().padding(start = 12.dp, top = 6.dp, bottom = 10.dp, end = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (onPrint != null || onPdf != null) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                    if (onPrint != null) IconButton(onClick = onPrint, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Outlined.Print, contentDescription = "Imprimir gráfico", modifier = Modifier.size(18.dp))
+                    }
+                    if (onPdf != null) IconButton(onClick = onPdf, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Outlined.PictureAsPdf, contentDescription = "PDF do gráfico", modifier = Modifier.size(18.dp))
+                    }
                 }
-                if (onPdf != null) IconButton(onClick = onPdf, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Outlined.PictureAsPdf, contentDescription = "PDF do gráfico", modifier = Modifier.size(18.dp))
-                }
             }
+            if (aberto) content() else Text(titulo, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
         }
+        com.bragro.mobile.ui.domain.CantoL(aberto, onClick = { aberto = !aberto })
     }
 }
 

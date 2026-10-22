@@ -159,15 +159,11 @@ fun ModuleIconButton(
             style = MaterialTheme.typography.labelSmall,
             fontWeight = if (item.active) androidx.compose.ui.text.font.FontWeight.Medium else androidx.compose.ui.text.font.FontWeight.Normal,
             color = fg,
-            maxLines = 1,
-            softWrap = false,
+            // v40 -- sem letreiro: o rótulo fica fixo e quebra em duas
+            // linhas quando não cabe numa.
+            maxLines = 2,
             overflow = TextOverflow.Clip,
-            // Letreiro (marquee) em vez de "..." -- pedido do usuário
-            // ("tem como aparecer como um letreiro se movendo? aplique
-            // em todo app que tiver fontes cortadas"). Só anima quando o
-            // texto realmente não cabe no espaço disponível -- rótulo
-            // que cabe fica parado normal, sem nenhum efeito.
-            modifier = Modifier.basicMarquee(),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
     }
 }
@@ -214,11 +210,9 @@ fun LabeledIconButton(
     androidx.compose.runtime.LaunchedEffect(active) { if (active) marcado = false }
     val ligado = if (realce) active else active || marcado
     val realcado = realce && (alert || badgeCount > 0)
-    val fg = when {
-        realce -> if (active) MaterialTheme.colorScheme.primary else tint
-        ligado -> MaterialTheme.colorScheme.primary
-        else -> tint
-    }
+    // v40 -- bloco Ações sempre neutro: o ícone nunca fica verde. O único
+    // sinal de ligado é o rótulo em tom apagado (ver abaixo).
+    val fg = tint
     Column(
         modifier = modifier
             .widthIn(min = 42.dp)
@@ -251,11 +245,10 @@ fun LabeledIconButton(
                 fontWeight = if (ligado) androidx.compose.ui.text.font.FontWeight.Medium else androidx.compose.ui.text.font.FontWeight.Normal,
                 // Botão alternado ativo: nome em tom apagado (mesmo padrão
                 // do modo escuro, agora nos dois modos).
-                color = if (ligado && !realce) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f) else fg,
-                maxLines = 1,
-                softWrap = false,
+                color = if (ligado) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f) else fg,
+                maxLines = 2,
                 overflow = TextOverflow.Clip,
-                modifier = Modifier.basicMarquee(),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
         }
     }
