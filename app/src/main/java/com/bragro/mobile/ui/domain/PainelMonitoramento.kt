@@ -596,11 +596,12 @@ fun KpiTile(k: PainelKpi, ativo: Boolean = false, onClick: (() -> Unit)? = null,
 @Composable
 fun BarraPainel(b: PainelBarra) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(b.label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-            Spacer(Modifier.width(8.dp))
-            Text("${b.detalhe} · ${fmtPct(b.pct)}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-        }
+        RotuloValor(
+            rotulo = b.label,
+            valor = "${b.detalhe} · ${fmtPct(b.pct)}",
+            estiloRotulo = androidx.compose.ui.text.TextStyle(fontSize = 12.sp),
+            estiloValor = androidx.compose.ui.text.TextStyle(fontSize = 12.sp),
+        )
         val fracao = (b.pct / 100.0).coerceIn(0.01, 1.0).toFloat()
         Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f))) {
             Box(

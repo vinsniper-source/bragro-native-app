@@ -278,10 +278,12 @@ fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel(), 
                         Text("Nenhuma transferência lançada ainda.", style = MaterialTheme.typography.bodySmall)
                     } else {
                         saldos.forEach { s ->
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("${s.fazendaNome} — ${s.item}", style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-                                Text("${s.saldo} ${s.unidade ?: ""}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-                            }
+                            RotuloValor(
+                                rotulo = "${s.fazendaNome} — ${s.item}",
+                                valor = "${s.saldo} ${s.unidade ?: ""}",
+                                estiloRotulo = MaterialTheme.typography.bodySmall,
+                                estiloValor = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                            )
                         }
                     }
                     if (transferencias.isNotEmpty()) {
