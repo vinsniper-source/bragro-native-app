@@ -324,10 +324,7 @@ private fun KpiBox(label: String, valor: String, sub: String? = null, cor: andro
 
 @Composable
 private fun LinhaCampo(l: String, v: String, cor: androidx.compose.ui.graphics.Color? = null) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(l, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(v, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = cor ?: MaterialTheme.colorScheme.onSurface)
-    }
+    com.bragro.mobile.ui.domain.RotuloValor(rotulo = l, valor = v, corValor = cor ?: MaterialTheme.colorScheme.onSurface)
 }
 
 @OptIn(ExperimentalFoundationApi::class)

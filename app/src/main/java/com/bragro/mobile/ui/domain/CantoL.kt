@@ -52,7 +52,8 @@ val LocalCantoHost = compositionLocalOf<CantoHost?> { null }
 
 @Composable
 fun corCantoBorda(): Color =
-    if (MaterialTheme.colorScheme.background.luminance() > 0.5f) Color.White else Color(0xFF8A8F8C)
+    // Discreto: cinza claro no modo claro e grafite suave no escuro (mockup v35).
+    if (MaterialTheme.colorScheme.background.luminance() > 0.5f) Color(0xFFC3C9BD) else Color(0xFF3F463E)
 
 /** Desenha o L na borda inferior direita (acompanhando o arredondado) e
  * aceita toque nesse canto quando o dono do canto passou um onClick. */

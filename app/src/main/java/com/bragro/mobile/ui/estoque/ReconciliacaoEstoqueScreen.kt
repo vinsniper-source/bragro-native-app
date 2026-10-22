@@ -159,10 +159,6 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
                         com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.CompareArrows, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("Reconciliação Físico x Fiscal", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.basicMarquee())
-                    }
                 
                     }
                 } },
@@ -224,7 +220,7 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
             item(key = "acoes") {
                 com.bragro.mobile.ui.domain.AcoesEmAbas(
                     dados = {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Warning, label = "Divergências", active = soDivergencia, badgeCount = divergentes.size, tint = if (divergentes.isNotEmpty()) com.bragro.mobile.ui.domain.corAtencao() else MaterialTheme.colorScheme.onSurface, onClick = { soDivergencia = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Warning, label = "Divergências", active = soDivergencia, badgeCount = divergentes.size, tint = MaterialTheme.colorScheme.onSurface, onClick = { soDivergencia = true })
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ViewList, label = "Todos", active = !soDivergencia, onClick = { soDivergencia = false })
                         androidx.compose.foundation.layout.Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
                             com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.FilterAlt, label = fCategoria ?: "Categoria", active = fCategoria != null, onClick = { catMenu = true })

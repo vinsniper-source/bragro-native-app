@@ -249,7 +249,9 @@ fun LabeledIconButton(
                 label,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = if (ligado) androidx.compose.ui.text.font.FontWeight.Medium else androidx.compose.ui.text.font.FontWeight.Normal,
-                color = fg,
+                // Botão alternado ativo: nome em tom apagado (mesmo padrão
+                // do modo escuro, agora nos dois modos).
+                color = if (ligado && !realce) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f) else fg,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Clip,

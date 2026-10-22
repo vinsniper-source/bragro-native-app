@@ -566,10 +566,7 @@ private fun LinhaResumo(label: String, valor: String, destaquePositivo: Boolean?
         false -> com.bragro.mobile.ui.domain.corAtencao()
         null -> MaterialTheme.colorScheme.onSurface
     }
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = MaterialTheme.typography.bodyMedium)
-        Text(valor, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = cor)
-    }
+    com.bragro.mobile.ui.domain.RotuloValor(rotulo = label, valor = valor, corValor = cor, estiloRotulo = MaterialTheme.typography.bodyMedium, estiloValor = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
 }
 
 @Composable
