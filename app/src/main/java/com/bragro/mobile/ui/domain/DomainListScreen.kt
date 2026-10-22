@@ -640,7 +640,7 @@ fun DomainListScreen(
                     // verde cheio (primary, mesma cor do ícone fazenda) com
                     // ícone branco -- mesmo tratamento já aplicado na barra
                     // inferior e nas abas ovais de categoria.
-                    containerColor = MaterialTheme.colorScheme.primary,
+                    containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
                 }
@@ -675,7 +675,7 @@ fun DomainListScreen(
                     // verde cheio (primary, mesma cor do ícone fazenda) com
                     // ícone branco -- mesmo tratamento já aplicado na barra
                     // inferior e nas abas ovais de categoria.
-                    containerColor = MaterialTheme.colorScheme.primary,
+                    containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
                 }
@@ -692,7 +692,7 @@ fun DomainListScreen(
                     }
                     FloatingActionButton(
                         onClick = onNewRecord,
-                        containerColor = MaterialTheme.colorScheme.primary,
+                        containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
                     ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
                 }
@@ -710,7 +710,7 @@ fun DomainListScreen(
                     }
                     FloatingActionButton(
                         onClick = onNewRecord,
-                        containerColor = MaterialTheme.colorScheme.primary,
+                        containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
                     ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
                 }
@@ -728,7 +728,7 @@ fun DomainListScreen(
                     }
                     FloatingActionButton(
                         onClick = onNewRecord,
-                        containerColor = MaterialTheme.colorScheme.primary,
+                        containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
                     ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
                 }
@@ -754,7 +754,7 @@ fun DomainListScreen(
                     }
                     FloatingActionButton(
                         onClick = onNewRecord,
-                        containerColor = MaterialTheme.colorScheme.primary,
+                        containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
                     ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
                 }
@@ -768,7 +768,7 @@ fun DomainListScreen(
                     // verde cheio (primary, mesma cor do ícone fazenda) com
                     // ícone branco -- mesmo tratamento já aplicado na barra
                     // inferior e nas abas ovais de categoria.
-                    containerColor = MaterialTheme.colorScheme.primary,
+                    containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
             }

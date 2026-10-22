@@ -226,7 +226,7 @@ fun CanvasCirclesRow(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(topStart = 36.dp, topEnd = 8.dp, bottomEnd = 36.dp, bottomStart = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
+        colors = CardDefaults.cardColors(containerColor = com.bragro.mobile.ui.theme.VerdeBarra, contentColor = MaterialTheme.colorScheme.onPrimary),
         border = BorderStroke(0.dp, Color.Transparent),
     ) {
         Column {

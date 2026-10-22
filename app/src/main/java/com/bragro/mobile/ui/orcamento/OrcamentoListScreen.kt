@@ -487,7 +487,7 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
             // encostava mais embaixo que nos módulos genéricos.
             FloatingActionButton(
                 onClick = onNovo,
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
             ) { Icon(Icons.Outlined.Add, contentDescription = "Novo orçamento") }
         },

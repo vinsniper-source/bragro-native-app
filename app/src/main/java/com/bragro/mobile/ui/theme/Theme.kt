@@ -35,6 +35,10 @@ import java.util.Calendar
 // secao de modulos igual ao agrupamento do site -- ver sidebar-nav.tsx).
 // BrGreen (cor de categoria, sem relação com claro/escuro) continua igual.
 val BrGreen = Color(0xFF2F6F4F)
+
+// Verde da barra do bloco Ações (mockup v35): botões "+" e bloco de fazendas do Início,
+// igual nos modos claro e escuro.
+val VerdeBarra = Color(0xFF2E6B4A)
 val BrYellow = Color(0xFFF2C037)
 val BrBlue = Color(0xFF1E4B8A)
 // Quarta cor de apoio (fora da bandeira) so pra diferenciar a 4a secao

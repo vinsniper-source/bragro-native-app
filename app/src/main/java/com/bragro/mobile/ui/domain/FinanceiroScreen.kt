@@ -370,7 +370,7 @@ fun FinanceiroScreen(
                     // Cores invertidas -- pedido do usuário ("inverta também
                     // as cores dos botões +, tendo como exemplo a cor do
                     // ícone fazenda").
-                    containerColor = MaterialTheme.colorScheme.primary,
+                    containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) {
                     Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento")
