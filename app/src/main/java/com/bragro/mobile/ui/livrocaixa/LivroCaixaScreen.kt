@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -406,8 +407,8 @@ private fun ExtratoBloco(nome: String, lancamentos: List<LivroCaixaLancamentoDat
 
 @Composable
 private fun LancamentoRow(l: LivroCaixaLancamentoData) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Column(modifier = Modifier.weight(2f)) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(formatDataBr(l.data), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
             Text(l.historico, style = MaterialTheme.typography.bodySmall)
             // Imóvel + Doc. -- pedido do usuário ("implemente tudo que falta
@@ -421,10 +422,12 @@ private fun LancamentoRow(l: LivroCaixaLancamentoData) {
                 Text(detalhe, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        Column(modifier = Modifier.weight(1f), horizontalAlignment = androidx.compose.ui.Alignment.End) {
-            if (l.entrada > 0) Text("+ ${formatMoneyBrl(l.entrada)}", style = MaterialTheme.typography.bodySmall)
-            if (l.saida > 0) Text("- ${formatMoneyBrl(l.saida)}", style = MaterialTheme.typography.bodySmall)
-            Text(formatMoneyBrl(l.saldo), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+        // v37 -- a coluna dos valores recebe a largura que o número precisa
+        // (wrapContentWidth), em vez de um peso fixo que espremia o texto.
+        Column(modifier = Modifier.wrapContentWidth(), horizontalAlignment = androidx.compose.ui.Alignment.End) {
+            if (l.entrada > 0) Text("+ ${formatMoneyBrl(l.entrada)}", style = MaterialTheme.typography.bodySmall, softWrap = false)
+            if (l.saida > 0) Text("- ${formatMoneyBrl(l.saida)}", style = MaterialTheme.typography.bodySmall, softWrap = false)
+            Text(formatMoneyBrl(l.saldo), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, softWrap = false)
         }
     }
     HorizontalDivider()

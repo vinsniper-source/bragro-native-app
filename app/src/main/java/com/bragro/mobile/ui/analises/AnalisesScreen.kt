@@ -423,15 +423,11 @@ private fun ObjetoCard(obj: JsonObject) {
             }
             obj.entries.forEach { (campo, valor) ->
                 if (campo == "label") return@forEach
-                Row {
-                    // tituloCampo() em vez do nome cru do JSON -- pedido do
-                    // usuário ("corrija a ortografia, há palavras maiúsculas
-                    // que deveriam ser minúsculas e vice-versa"): antes
-                    // aparecia a chave crua ("custoHaTotal"), misturando
-                    // camelCase técnico com o resto da tela em Title Case.
-                    Text("${tituloCampo(campo)}: ", style = MaterialTheme.typography.bodySmall)
-                    Text(valorParaTexto(campo, valor), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-                }
+                // v37 -- rótulo e valor na mesma linha só se couberem inteiros.
+                com.bragro.mobile.ui.domain.RotuloValorLinha(
+                    rotulo = tituloCampo(campo),
+                    valor = valorParaTexto(campo, valor),
+                )
             }
         }
     }
