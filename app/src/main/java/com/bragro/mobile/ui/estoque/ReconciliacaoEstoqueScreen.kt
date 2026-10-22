@@ -128,7 +128,7 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
     var soDivergencia by remember { mutableStateOf(true) }
     var fCategoria by remember { mutableStateOf<String?>(null) }
     var catMenu by remember { mutableStateOf(false) }
-    var listaAberta by remember { mutableStateOf(true) }
+    var listaAberta by remember { mutableStateOf(false) }
     val imprimir: () -> Unit = {
         val headers = listOf("Item", "Categoria", "Saldo Fiscal", "Saldo Real", "Diferença")
         val rows = itens.map {
@@ -218,25 +218,26 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                             com.bragro.mobile.ui.domain.PainelBarra("Conferidos", Math.round(conferidos * 1000.0 / itens.size) / 10.0, "$conferidos/${itens.size}"),
                         ),
                     ),
-                    onKpi = { k -> soDivergencia = k.destino == "Divergências"; listaAberta = true },
+                    onKpi = { k -> soDivergencia = k.destino == "Divergências" },
                 )
             }
             item(key = "acoes") {
                 com.bragro.mobile.ui.domain.AcoesEmAbas(
                     dados = {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Warning, label = "Divergências", active = soDivergencia, badgeCount = divergentes.size, tint = if (divergentes.isNotEmpty()) com.bragro.mobile.ui.domain.corAtencao() else MaterialTheme.colorScheme.onSurface, onClick = { soDivergencia = true; listaAberta = true })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ViewList, label = "Todos", active = !soDivergencia, onClick = { soDivergencia = false; listaAberta = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Warning, label = "Divergências", active = soDivergencia, badgeCount = divergentes.size, tint = if (divergentes.isNotEmpty()) com.bragro.mobile.ui.domain.corAtencao() else MaterialTheme.colorScheme.onSurface, onClick = { soDivergencia = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ViewList, label = "Todos", active = !soDivergencia, onClick = { soDivergencia = false })
                         androidx.compose.foundation.layout.Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
                             com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.FilterAlt, label = fCategoria ?: "Categoria", active = fCategoria != null, onClick = { catMenu = true })
                             androidx.compose.material3.DropdownMenu(expanded = catMenu, onDismissRequest = { catMenu = false }) {
                                 androidx.compose.material3.DropdownMenuItem(text = { Text("Todas") }, onClick = { fCategoria = null; catMenu = false })
                                 categorias.forEach { c ->
-                                    androidx.compose.material3.DropdownMenuItem(text = { Text(c) }, onClick = { fCategoria = c; catMenu = false; listaAberta = true })
+                                    androidx.compose.material3.DropdownMenuItem(text = { Text(c) }, onClick = { fCategoria = c; catMenu = false })
                                 }
                             }
                         }
                     },
                     operacoes = {
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ViewList, label = "Lista", active = listaAberta, onClick = { listaAberta = !listaAberta })
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", onClick = { viewModel.carregar() })
                         com.bragro.mobile.ui.domain.NuvemButton()
                     },
@@ -248,7 +249,7 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                     },
                 )
             }
-            item(key = "lista-header") {
+            if (listaAberta) item(key = "lista-header") {
                 com.bragro.mobile.ui.domain.CabecalhoLancamentos(
                     total = visiveis.size,
                     aberto = listaAberta,

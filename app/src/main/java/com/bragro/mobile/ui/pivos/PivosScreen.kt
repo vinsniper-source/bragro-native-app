@@ -4,6 +4,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.material.icons.outlined.Archive
+import androidx.compose.material.icons.outlined.ViewList
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.StopCircle
@@ -261,9 +262,9 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
     val busy by viewModel.busy
     val error by viewModel.errorMessage
     var showNovo by remember { mutableStateOf(false) }
-    var balancoOpen by remember { mutableStateOf(true) }
+    var balancoOpen by remember { mutableStateOf(false) }
     var graficosOpen by remember { mutableStateOf(false) }
-    var pivosOpen by remember { mutableStateOf(true) }
+    var pivosOpen by remember { mutableStateOf(false) }
     var prestadoraAberta by remember { mutableStateOf(false) }
     var filtroPivo by remember { mutableStateOf<String?>(null) }
     var filtroMenu by remember { mutableStateOf(false) }
@@ -352,6 +353,7 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                                 }
                             }
                             com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Opacity, label = "Balanço", active = balancoOpen, onClick = { balancoOpen = !balancoOpen })
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ViewList, label = "Pivôs", active = pivosOpen, onClick = { pivosOpen = !pivosOpen })
                             com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.BarChart, label = "Gráficos", onClick = { graficosOpen = true })
                         },
                         operacoes = {

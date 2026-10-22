@@ -1,6 +1,7 @@
 package com.bragro.mobile.ui.operacoes
 
 import androidx.compose.material.icons.outlined.Agriculture
+import androidx.compose.material.icons.outlined.ViewList
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.outlined.FilterAlt
@@ -453,11 +454,7 @@ private fun OperacaoCard(
                     val nOS = lista.mapNotNull { it.os }.distinct().size
                     val equipe = lista.map { Triple(it.responsavel ?: "Não lançado", it.funcao ?: "—", it.frota ?: "Não lançada") }.distinctBy { it.first + it.third }
                     val ordem = (atividades.indexOf(a) + 1).toString().padStart(2, '0')
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
-                    ) {
+                    com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth()) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -474,7 +471,7 @@ private fun OperacaoCard(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.weight(1f),
                                 )
-                                com.bragro.mobile.ui.domain.CantoL(aberto, borda = false)
+                                com.bragro.mobile.ui.domain.CantoL(aberto)
                             }
                             Text(tituloAtividade(a), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                             Text(
@@ -530,9 +527,9 @@ private fun OperacaoCard(
                                 val pendente = ev.id in pendingIds && !revisado
                                 val dominio = if (ev.tipo == "colheita") "colheita" else "safra"
                                 androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                                Column(modifier = Modifier.fillMaxWidth().clickable { osAbertas[ev.id] = !osAberta }.padding(horizontal = 10.dp, vertical = 8.dp)) {
+                                com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().clickable { osAbertas[ev.id] = !osAberta }.padding(horizontal = 10.dp, vertical = 8.dp)) {
                                     Row(verticalAlignment = Alignment.Top) {
-                                        com.bragro.mobile.ui.domain.CantoL(osAberta, borda = false)
+                                        com.bragro.mobile.ui.domain.CantoL(osAberta)
                                         Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
                                             Text(
                                                 (if (ev.tipo == "colheita") "Colheita" else "O.S. ${ev.os ?: "—"}") + " · " + (ev.talhao?.let { "Talhão $it" } ?: "Sem talhão"),
@@ -742,6 +739,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
     // showActions).
     var tableView by remember { mutableStateOf(false) }
     var filtrosVisiveis by remember { mutableStateOf(false) }
+    var atividadesVisiveis by remember { mutableStateOf(false) }
     val tableHScroll = remember { androidx.compose.foundation.ScrollState(0) }
     // Setinha de recolher removida do cabeçalho -- pedido do usuário
     // (imagem do próprio cabeçalho de Operações: "retire a setinha do
@@ -800,6 +798,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                             )
                         },
                         operacoes = {
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ViewList, label = "Atividades", active = atividadesVisiveis, onClick = { atividadesVisiveis = !atividadesVisiveis })
                             com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", onClick = { viewModel.refresh() })
                             com.bragro.mobile.ui.domain.NuvemButton()
                         },
@@ -843,7 +842,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
             contentPadding = PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            if (operacoes.isEmpty() || tableView) {
+            if (operacoes.isEmpty() || tableView || !atividadesVisiveis) {
                 item(key = "operacoes-header") { acoesEProgresso(null, null) }
             }
             run {
@@ -862,6 +861,8 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                     items(operacoesExportRecords(operacoes), key = { it["cultura"] + "|" + it["safra"] + "|" + it["local"] }) { row ->
                         RecordTableRow(columns = OPERACOES_EXPORT_COLUMNS, record = row, domainId = "", hScroll = tableHScroll)
                     }
+                } else if (!atividadesVisiveis) {
+                    item { Text("Toque em Atividades para exibir as operações.", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 12.dp)) }
                 } else {
                     items(operacoes, key = { it.chave }) { op ->
                         OperacaoCard(

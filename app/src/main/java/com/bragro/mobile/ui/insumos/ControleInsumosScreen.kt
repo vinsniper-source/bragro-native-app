@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ViewList
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.CloudOff
@@ -249,7 +250,7 @@ private fun CategoriaBlock(categoria: String, itens: List<InsumoItemSituacaoData
             .padding(vertical = 8.dp, horizontal = 4.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            com.bragro.mobile.ui.domain.CantoL(aberto, borda = false)
+            com.bragro.mobile.ui.domain.CantoL(aberto, onClick = onToggle)
             Text(
                 CATEGORIA_LABEL[categoria] ?: categoria,
                 style = MaterialTheme.typography.titleSmall,
@@ -351,10 +352,10 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
     var fSit by remember { mutableStateOf<String?>(null) }
     var fEst by remember { mutableStateOf<String?>(null) }
     var menuAberto by remember { mutableStateOf<String?>(null) }
-    var saldoAberto by remember { mutableStateOf(true) }
-    var listaAberta by remember { mutableStateOf(true) }
+    var saldoAberto by remember { mutableStateOf(false) }
+    var listaAberta by remember { mutableStateOf(false) }
     var controleInternoAberto by remember { mutableStateOf(false) }
-    var criticosAbertos by remember { mutableStateOf(true) }
+    var criticosAbertos by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -446,6 +447,8 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                     filtro("sit", "Situação", Icons.Outlined.RadioButtonChecked, fSit, listOf("FALTA" to "Falta", "EM_USO" to "Em uso", "EM_TRANSITO" to "Em trânsito", "OK" to "OK")) { fSit = it }
                     filtro("est", "Estoque", Icons.Outlined.Inventory2, fEst, listOf("CRITICO" to "Crítico", "ATENCAO" to "Atenção", "OK" to "OK")) { fEst = it }
                     LabeledIconButton(icon = Icons.Outlined.BarChart, label = "Saldo", active = saldoAberto, onClick = { saldoAberto = !saldoAberto })
+                    LabeledIconButton(icon = Icons.Outlined.ViewList, label = "Itens", active = listaAberta, onClick = { listaAberta = !listaAberta })
+                    LabeledIconButton(icon = Icons.Outlined.WarningAmber, label = "Mínimo", active = criticosAbertos, onClick = { criticosAbertos = !criticosAbertos })
                     if (d?.arvoreControleInterno?.isNotEmpty() == true) {
                         LabeledIconButton(icon = Icons.Outlined.HealthAndSafety, label = "EPI", onClick = { controleInternoAberto = true })
                     }
@@ -498,7 +501,7 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                 val criticosFiltrados = d.itensCriticos.filter { fEst == null || it.status == fEst }
                 val totalLista = categorias.values.sumOf { it.size }
                 if (d.saldoTop10.isNotEmpty()) {
-                    item(key = "saldo-header") {
+                    if (saldoAberto) item(key = "saldo-header") {
                         com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = d.saldoTop10.size, aberto = saldoAberto, titulo = "Saldo por item", rotulo = "top ${d.saldoTop10.size}") { saldoAberto = !saldoAberto }
                     }
                     if (saldoAberto) item(key = "saldo") {
@@ -509,7 +512,7 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                         }
                     }
                 }
-                item(key = "itens-header") {
+                if (listaAberta) item(key = "itens-header") {
                     com.bragro.mobile.ui.domain.CabecalhoLancamentos(
                         total = totalLista,
                         aberto = listaAberta,
@@ -537,7 +540,7 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                     }
                 }
                 if (criticosFiltrados.isNotEmpty()) {
-                    item(key = "criticos-header") {
+                    if (criticosAbertos) item(key = "criticos-header") {
                         com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = criticosFiltrados.size, aberto = criticosAbertos, titulo = "Abaixo do mínimo") { criticosAbertos = !criticosAbertos }
                     }
                     if (criticosAbertos) items(criticosFiltrados, key = { "crit-" + it.item }) { i ->

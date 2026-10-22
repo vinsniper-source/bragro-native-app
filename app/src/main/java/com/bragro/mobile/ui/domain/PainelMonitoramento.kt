@@ -663,15 +663,9 @@ fun CartaoGrupo(
     onToggle: () -> Unit,
 ) {
     val primary = MaterialTheme.colorScheme.primary
+    com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { onToggle() }) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
-            .clickable { onToggle() }
-            .padding(12.dp),
+        modifier = Modifier.fillMaxWidth().padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // v13: nome à esquerda, quantidade no meio, valor à direita. O valor
@@ -688,7 +682,8 @@ fun CartaoGrupo(
             ValorUmaLinha(total ?: "—", MaterialTheme.colorScheme.onSurface, maxSp = 14f, minSp = 8.5f)
             if (!totalRotulo.isNullOrBlank()) Text(totalRotulo, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        CantoL(aberto, Modifier.align(Alignment.Bottom))
+        CantoL(aberto, onClick = onToggle)
+    }
     }
 }
 

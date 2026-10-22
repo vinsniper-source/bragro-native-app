@@ -163,7 +163,6 @@ fun EstagioSugestaoCard(
                         Spacer(modifier = Modifier.width(6.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(sugestao.label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
-                            Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                         }
                     }
                 }

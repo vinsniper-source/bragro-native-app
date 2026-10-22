@@ -269,28 +269,49 @@ private fun livroCaixaExportRecords(lancamentos: List<LivroCaixaLancamentoData>)
         )
     }
 
+// v34 (item 8): Ano, Conta e Imóvel são listas suspensas de toque único,
+// sem digitação (campo somente leitura + lista ao tocar).
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun CampoListaSuspensa(label: String, valorTexto: String, opcoes: List<Pair<String, String>>, onSelect: (String) -> Unit) {
+    var aberto by remember { mutableStateOf(false) }
+    androidx.compose.material3.ExposedDropdownMenuBox(expanded = aberto, onExpandedChange = { aberto = it }) {
+        androidx.compose.material3.OutlinedTextField(
+            value = valorTexto,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            singleLine = true,
+            trailingIcon = { androidx.compose.material3.ExposedDropdownMenuDefaults.TrailingIcon(expanded = aberto) },
+            modifier = Modifier.fillMaxWidth().menuAnchor(),
+            colors = appFieldColors(),
+        )
+        androidx.compose.material3.DropdownMenu(expanded = aberto, onDismissRequest = { aberto = false }) {
+            opcoes.forEach { (v, l) ->
+                androidx.compose.material3.DropdownMenuItem(text = { Text(l) }, onClick = { onSelect(v); aberto = false })
+            }
+        }
+    }
+}
+
 @Composable
 private fun AnoDropdown(ano: Int, onSelect: (Int) -> Unit) {
     val anoAtual = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
     val anos = (anoAtual downTo anoAtual - 6).toList()
-    SearchableDropdownField(
-        value = ano.toString(),
+    CampoListaSuspensa(
         label = "Ano",
-        options = remember(anos) { anos.map { it.toString() to it.toString() } },
-        onSelect = { picked -> picked.toIntOrNull()?.let(onSelect) },
-        emptyOptionLabel = null,
-    )
+        valorTexto = ano.toString(),
+        opcoes = remember(anos) { anos.map { it.toString() to it.toString() } },
+    ) { picked -> picked.toIntOrNull()?.let(onSelect) }
 }
 
 @Composable
 private fun BancoDropdown(banco: String?, opcoes: List<String>, onSelect: (String?) -> Unit) {
-    SearchableDropdownField(
-        value = banco ?: "",
+    CampoListaSuspensa(
         label = "Conta",
-        options = remember(opcoes) { listOf("" to "Todas as contas") + opcoes.map { it to it } },
-        onSelect = { picked -> onSelect(picked.ifEmpty { null }) },
-        emptyOptionLabel = null,
-    )
+        valorTexto = banco ?: "Todas as contas",
+        opcoes = remember(opcoes) { listOf("" to "Todas as contas") + opcoes.map { it to it } },
+    ) { picked -> onSelect(picked.ifEmpty { null }) }
 }
 
 // Filtro de imóvel rural (COD_IMOVEL do LCDPR) -- pedido do usuário
@@ -298,13 +319,11 @@ private fun BancoDropdown(banco: String?, opcoes: List<String>, onSelect: (Strin
 // existia na tela web (livro-caixa-client.tsx), faltava no app.
 @Composable
 private fun ImovelDropdown(imovel: String?, opcoes: List<String>, onSelect: (String?) -> Unit) {
-    SearchableDropdownField(
-        value = imovel ?: "",
+    CampoListaSuspensa(
         label = "Imóvel",
-        options = remember(opcoes) { listOf("" to "Todos os imóveis") + opcoes.map { it to it } },
-        onSelect = { picked -> onSelect(picked.ifEmpty { null }) },
-        emptyOptionLabel = null,
-    )
+        valorTexto = imovel ?: "Todos os imóveis",
+        opcoes = remember(opcoes) { listOf("" to "Todos os imóveis") + opcoes.map { it to it } },
+    ) { picked -> onSelect(picked.ifEmpty { null }) }
 }
 
 // Tipo do certificado digital (A1 = arquivo, A3 = token/cartão) -- mesmas

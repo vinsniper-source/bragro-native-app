@@ -408,7 +408,7 @@ private fun FarmCard(f: DreFazendaData, arvore: List<DreRamoItemData>, expanded:
                         .padding(horizontal = 8.dp, vertical = 2.dp),
                 )
                 if (arvore.isNotEmpty()) {
-                    com.bragro.mobile.ui.domain.CantoL(expanded, borda = false, onClick = onToggle)
+                    com.bragro.mobile.ui.domain.CantoL(expanded, onClick = onToggle)
                 }
             }
             HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
@@ -571,6 +571,9 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
             }
             item(key = "dre-icon-row") { com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") { Column(modifier = Modifier.fillMaxWidth()) {
                 val dadosBlock = DreBlockSpec("Dados", vertical = false) {
+                    // v34 (item 7): ícone Fazenda com lista suspensa, sem setinha
+                    // (FarmSelectorButton showLabel -- mesmo filtro global).
+                    com.bragro.mobile.ui.domain.FarmSelectorButton(showLabel = true)
                     if (temRegistros) {
                         LabeledIconButton(
                             icon = Icons.Outlined.BarChart,

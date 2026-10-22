@@ -253,6 +253,9 @@ private fun buildDossieHtml(d: DossieResponse, ano: Int): String {
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+/** v34 (item 9): célula da grade de atalhos do Dossiê (texto ou ícone). */
+private class CelulaDossie(val rotulo: String, val icone: androidx.compose.ui.graphics.vector.ImageVector?, val acao: () -> Unit)
+
 @Composable
 private fun AnoDropdown(ano: Int, onSelect: (Int) -> Unit) {
     val anoAtual = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
@@ -406,38 +409,33 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                             "resumo" to "Resumo", "fazendas" to "Por fazenda", "caixa" to "Livro Caixa",
                             "contratos" to "Contratos", "patrimonio" to "Patrimônio",
                         ).filter { indiceSecao.containsKey(it.first) }
-                        atalhos.chunked(3).forEach { linha ->
+                        // v34 (item 9): Imprimir e PDF viram botões separados, na mesma
+                        // grade de atalhos (3 por linha), igual aos demais atalhos.
+                        val celulas = atalhos.map { (id, rotulo) ->
+                            CelulaDossie(rotulo, null) {
+                                abertas[id] = true
+                                indiceSecao[id]?.let { i -> scope.launch { listState.animateScrollToItem(i) } }
+                            }
+                        } + listOf(
+                            CelulaDossie("Imprimir", Icons.Outlined.Print) { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(d, ano)) },
+                            CelulaDossie("PDF", Icons.Outlined.PictureAsPdf) { HtmlPrinter.printHtmlComoPdf(context, "Dossiê Bancário", buildDossieHtml(d, ano)) },
+                        )
+                        celulas.chunked(3).forEach { linha ->
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                linha.forEach { (id, rotulo) ->
+                                linha.forEach { c ->
                                     Box(
                                         modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
                                             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
-                                            .clickable {
-                                                abertas[id] = true
-                                                indiceSecao[id]?.let { i -> scope.launch { listState.animateScrollToItem(i) } }
-                                            }
+                                            .clickable { c.acao() }
                                             .padding(vertical = 8.dp),
                                         contentAlignment = Alignment.Center,
-                                    ) { Text(rotulo, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1) }
-                                }
-                                if (linha.size < 3) {
-                                    // v20 -- botão só com ícones: Imprimir / PDF.
-                                    Row(
-                                        modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
-                                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
-                                            .height(36.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
                                     ) {
-                                        Box(Modifier.weight(1f).fillMaxHeight().clickable { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(d, ano)) }, contentAlignment = Alignment.Center) {
-                                            Icon(Icons.Outlined.Print, contentDescription = "Imprimir", modifier = Modifier.size(18.dp))
-                                        }
-                                        Text("/", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Box(Modifier.weight(1f).fillMaxHeight().clickable { HtmlPrinter.printHtmlComoPdf(context, "Dossiê Bancário", buildDossieHtml(d, ano)) }, contentAlignment = Alignment.Center) {
-                                            Icon(Icons.Outlined.PictureAsPdf, contentDescription = "PDF", modifier = Modifier.size(18.dp))
-                                        }
+                                        val icone = c.icone
+                                        if (icone != null) Icon(icone, contentDescription = c.rotulo, modifier = Modifier.size(18.dp))
+                                        else Text(c.rotulo, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                                     }
-                                    repeat(2 - linha.size) { Spacer(Modifier.weight(1f)) }
                                 }
+                                repeat(3 - linha.size) { Spacer(Modifier.weight(1f)) }
                             }
                         }
                         }

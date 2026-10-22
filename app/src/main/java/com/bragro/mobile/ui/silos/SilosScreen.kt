@@ -250,8 +250,8 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
     var editing by remember { mutableStateOf<SiloData?>(null) }
     var leituraSilo by remember { mutableStateOf<SiloData?>(null) }
     var historicoSilo by remember { mutableStateOf<SiloData?>(null) }
-    var estoqueAberto by remember { mutableStateOf(true) }
-    var silosAbertos by remember { mutableStateOf(true) }
+    var estoqueAberto by remember { mutableStateOf(false) }
+    var silosAbertos by remember { mutableStateOf(false) }
     var prestadoraAberta by remember { mutableStateOf(false) }
     val filtroSilo by viewModel.filtroSiloId
     val leituras by viewModel.leituras
@@ -315,7 +315,7 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                         ),
                         barras = if (capTotal > 0) listOf(com.bragro.mobile.ui.domain.PainelBarra("Ocupação", Math.round(armazenado / capTotal * 100).toDouble(), "${Math.round(armazenado)}/${Math.round(capTotal)} t", neutra = true)) else emptyList(),
                     ),
-                    onKpi = { k -> if (k.destino == "Estoque") estoqueAberto = true else silosAbertos = true },
+                    onKpi = { _ -> },
                 )
             }
             item(key = "acoes") {
@@ -337,7 +337,7 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                     },
                 )
             }
-            item(key = "estoque-header") {
+            if (estoqueAberto) item(key = "estoque-header") {
                 com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = 0, aberto = estoqueAberto, titulo = "Estoque por silo", rotulo = "30 dias") { estoqueAberto = !estoqueAberto }
             }
             if (estoqueAberto) item(key = "estoque") {
@@ -371,7 +371,7 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                     }
                 }
             }
-            item(key = "silos-header") {
+            if (silosAbertos) item(key = "silos-header") {
                 com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = silos.size, aberto = silosAbertos, titulo = "Silos") { silosAbertos = !silosAbertos }
             }
             if (silosAbertos) {

@@ -773,6 +773,7 @@ fun BRAgroBottomBar(
                                         )
                                     }
                                     val expanded = expandedCategory == category
+                                    com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth()) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         modifier = Modifier
@@ -798,10 +799,11 @@ fun BRAgroBottomBar(
                                             overflow = TextOverflow.Ellipsis,
                                             modifier = Modifier.weight(1f),
                                         )
-                                        com.bragro.mobile.ui.domain.CantoL(expanded, borda = false)
+                                        com.bragro.mobile.ui.domain.CantoL(expanded, onClick = { expandedCategory = if (expanded) null else category })
                                     }
                                     if (expanded) {
                                         items.forEach { item -> SectorMenuItem(item, tab.icon, onClick = { openSector(item) }) }
+                                    }
                                     }
                                 }
                             }

@@ -266,7 +266,24 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
     var expandidoId by remember { mutableStateOf<String?>(null) }
     var erroExportacao by remember { mutableStateOf<String?>(null) }
     var lancAberto by remember { mutableStateOf(false) }
-    var infoAberto by remember { mutableStateOf(false) }
+    // Item 2 (v34): SHP e ISO-XML saem da barra e viram botões que exportam a
+    // prescrição expandida na lista (toque no cabeçalho para expandir).
+    val exportarExpandida: (Boolean) -> Unit = { iso ->
+        val alvo = prescricoes.firstOrNull { it.id == expandidoId }
+        if (alvo == null) {
+            erroExportacao = "Toque em uma prescrição na lista para expandi-la e depois exporte."
+        } else if (iso) {
+            viewModel.exportarIsoXml(alvo.id) { xml, erroMsg, filename ->
+                if (xml != null) shareTextFile(context, filename, "application/xml", xml)
+                else erroExportacao = erroMsg
+            }
+        } else {
+            viewModel.exportarShp(alvo.id) { bytes, erroMsg, filename ->
+                if (bytes != null) shareBinaryFile(context, bytes, filename, "application/zip")
+                else erroExportacao = erroMsg
+            }
+        }
+    }
     val imprimir: () -> Unit = {
         val headers = listOf("Nome", "Produto", "Safra", "Cultura", "Talhão", "Taxa mín.", "Taxa média", "Taxa máx.")
         val rows = prescricoes.map {
@@ -361,7 +378,8 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                             active = lancAberto,
                             onClick = { lancAberto = !lancAberto },
                         )
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Info, label = "Formatos", onClick = { infoAberto = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Download, label = "SHP", onClick = { exportarExpandida(false) })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Description, label = "ISO-XML", onClick = { exportarExpandida(true) })
                     },
                     operacoes = {
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Add, label = "+ Nova", onClick = onNovo)
@@ -411,15 +429,6 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
         }
     }
 
-    if (infoAberto) {
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { infoAberto = false },
-            title = { Text("Formatos suportados") },
-            text = { Text("ISO-XML (TASKDATA.XML) pelo app ou pelo site; Shapefile (.zip com .shp/.dbf) pelo site. Exporta em SHP e ISO-XML pelos ícones de cada prescrição.") },
-            confirmButton = { androidx.compose.material3.TextButton(onClick = { infoAberto = false }) { Text("Ok") } },
-        )
-    }
-
     if (erroExportacao != null) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { erroExportacao = null },
@@ -456,12 +465,6 @@ private fun PrescricaoCard(
                 if (exportando) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                 } else {
-                    IconButton(onClick = onExportarShp) {
-                        Icon(Icons.Outlined.Download, contentDescription = "Exportar SHP", tint = MaterialTheme.colorScheme.primary)
-                    }
-                    IconButton(onClick = onExportarIsoXml) {
-                        Icon(Icons.Outlined.Description, contentDescription = "Exportar ISO-XML", tint = MaterialTheme.colorScheme.secondary)
-                    }
                 }
                 com.bragro.mobile.ui.domain.CantoL(expandido, onClick = onToggle)
             }

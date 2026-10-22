@@ -1948,7 +1948,7 @@ private fun HomeShortcutPill(label: String, icon: androidx.compose.ui.graphics.v
         modifier = modifier
             .clip(RoundedCornerShape(50))
             .background(container)
-            .border(BorderStroke(1.dp, if (alert) BrYellow else com.bragro.mobile.ui.theme.cardBorderColor()), RoundedCornerShape(50))
+            .border(BorderStroke(1.dp, com.bragro.mobile.ui.theme.cardBorderColor()), RoundedCornerShape(50))
             .clickable { onClick() }
             .padding(horizontal = 4.dp, vertical = 7.dp),
         horizontalArrangement = Arrangement.Center,

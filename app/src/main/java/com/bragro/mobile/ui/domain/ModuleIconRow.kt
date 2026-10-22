@@ -141,7 +141,6 @@ fun ModuleIconButton(
     // novo volta ao padrão (pedido do usuário). contentColor explícito (bloco
     // Faturamento) é respeitado só quando inativo.
     val fg = when {
-        item.alert || item.badgeCount > 0 -> corAtencao()
         item.active -> MaterialTheme.colorScheme.primary
         else -> (contentColor ?: MODULE_ICON_FG)
     }
@@ -152,7 +151,7 @@ fun ModuleIconButton(
             .padding(horizontal = 4.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        BadgedBox(badge = { if (item.badgeCount > 0) BadgeContagem(item.badgeCount) }) {
+        BadgedBox(badge = { if (item.badgeCount > 0) BadgeContagem(item.badgeCount, verde = true) }) {
             IconeNegrito(item.icon, contentDescription = null, tint = fg, size = MODULE_ICON_SIZE)
         }
         Text(
@@ -215,17 +214,15 @@ fun LabeledIconButton(
     androidx.compose.runtime.LaunchedEffect(active) { if (active) marcado = false }
     val ligado = if (realce) active else active || marcado
     val realcado = realce && (alert || badgeCount > 0)
-    val amareloBorda = if (MaterialTheme.colorScheme.background.luminance() < 0.5f) com.bragro.mobile.ui.theme.BrYellow else Color(0xFFE0B020)
     val fg = when {
         realce -> if (active) MaterialTheme.colorScheme.primary else tint
-        alert || badgeCount > 0 -> corAtencao()
         ligado -> MaterialTheme.colorScheme.primary
         else -> tint
     }
     Column(
         modifier = modifier
             .widthIn(min = 42.dp)
-            .then(if (realcado) Modifier.padding(2.dp).border(2.dp, amareloBorda, androidx.compose.foundation.shape.RoundedCornerShape(8.dp)) else Modifier)
+            .then(if (realcado) Modifier.padding(2.dp).border(1.dp, MaterialTheme.colorScheme.outlineVariant, androidx.compose.foundation.shape.RoundedCornerShape(8.dp)) else Modifier)
             .clickable(enabled = !loading) {
                 when {
                     realce || active -> onClick()
@@ -240,7 +237,7 @@ fun LabeledIconButton(
             CircularProgressIndicator(modifier = Modifier.size(MODULE_ICON_SIZE), strokeWidth = 2.dp)
         } else if (badgeCount > 0) {
             BadgedBox(
-                badge = { BadgeContagem(badgeCount, verde = realce) },
+                badge = { BadgeContagem(badgeCount, verde = true) },
             ) {
                 IconeNegrito(icon, contentDescription = null, tint = fg, size = MODULE_ICON_SIZE)
             }

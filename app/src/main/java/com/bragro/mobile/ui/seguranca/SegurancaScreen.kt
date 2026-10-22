@@ -458,7 +458,7 @@ private fun EquipeCard(
             var editRole by remember(id) { mutableStateOf(role) }
             var editModules by remember(id) { mutableStateOf(modulos) }
 
-            Column(modifier = Modifier.padding(vertical = 6.dp)) {
+            com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = if (isOwnOwnerRow) Modifier else Modifier.clickable { expanded = !expanded },
@@ -516,7 +516,7 @@ private fun EquipeCard(
                             Icon(Icons.Outlined.Settings, contentDescription = "Personalizar Início", tint = MaterialTheme.colorScheme.primary)
                         }
                     } else {
-                        com.bragro.mobile.ui.domain.CantoL(expanded, borda = false)
+                        com.bragro.mobile.ui.domain.CantoL(expanded, onClick = { expanded = !expanded })
                     }
                 }
                 if (expanded && !isOwnOwnerRow) {
