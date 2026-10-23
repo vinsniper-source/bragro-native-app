@@ -951,13 +951,17 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                     com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                 }
                 val arquivosBlock = AnalisesBlockSpec("Arquivos", vertical = false) {
-                    // v46 -- Imprimir e PDF num bloco só, com divisória no meio.
-                    com.bragro.mobile.ui.domain.PrintPdfSegmentedButton(onPrint = { if (analises != null && analises!!.entries.isNotEmpty()) HtmlPrinter.printList(context, analisesExportConfig(), analisesExportRecords(analises!!)) }, onPdf = { if (temRegistros) { HtmlPrinter.exportPdfDirect(context, analisesExportConfig(), analisesExportRecords(data!!)) } })
+                    LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Print, label = "Imprimir", onClick = { if (analises != null && analises!!.entries.isNotEmpty()) HtmlPrinter.printList(context, analisesExportConfig(), analisesExportRecords(analises!!)) })
                     if (temRegistros) {
                         LabeledIconButton(
                             icon = Icons.Outlined.GridOn,
                             label = "Excel",
                             onClick = { exportXlsx(context, "Análises", ANALISES_EXPORT_COLUMNS, analisesExportRecords(data!!)) },
+                        )
+                        LabeledIconButton(
+                            icon = com.bragro.mobile.ui.domain.IconesVazados.PictureAsPdf,
+                            label = "PDF",
+                            onClick = { HtmlPrinter.exportPdfDirect(context, analisesExportConfig(), analisesExportRecords(data!!)) },
                         )
                     }
                 }

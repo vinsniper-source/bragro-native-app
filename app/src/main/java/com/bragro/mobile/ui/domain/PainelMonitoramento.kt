@@ -769,8 +769,16 @@ fun AcoesEmAbas(
 fun ArquivosTabela(titulo: String, headers: List<String>, nuvem: Boolean = false, linhas: () -> List<List<String>>) {
     val context = androidx.compose.ui.platform.LocalContext.current
     // v19 -- "Imprimir/PDF" desmembrado; ordem Imprimir · PDF · Excel · Nuvem.
-    // v46 -- Imprimir e PDF num bloco só, com divisória no meio.
-    com.bragro.mobile.ui.domain.PrintPdfSegmentedButton(onPrint = { com.bragro.mobile.ui.print.HtmlPrinter.printSimpleTable(context, titulo, headers, linhas()) }, onPdf = { com.bragro.mobile.ui.print.HtmlPrinter.exportSimpleTablePdf(context, titulo, headers, linhas()) })
+    LabeledIconButton(
+        icon = com.bragro.mobile.ui.domain.IconesVazados.Print,
+        label = "Imprimir",
+        onClick = { com.bragro.mobile.ui.print.HtmlPrinter.printSimpleTable(context, titulo, headers, linhas()) },
+    )
+    LabeledIconButton(
+        icon = com.bragro.mobile.ui.domain.IconesVazados.PictureAsPdf,
+        label = "PDF",
+        onClick = { com.bragro.mobile.ui.print.HtmlPrinter.exportSimpleTablePdf(context, titulo, headers, linhas()) },
+    )
     LabeledIconButton(
         icon = androidx.compose.material.icons.Icons.Outlined.GridOn,
         label = "Excel",

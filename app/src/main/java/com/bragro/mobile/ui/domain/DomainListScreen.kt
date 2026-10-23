@@ -563,10 +563,7 @@ fun DomainListScreen(
                 // título"); ela mora só na fileira de ícones abaixo agora.
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
-                    // v46 -- Pecuária/Pastagem com desenho novo que ocupa o quadro todo:
-                    // mesmo alinhamento dos demais módulos (altura do título).
-                    val iconVertAlign = androidx.compose.ui.Alignment.Bottom
-                    androidx.compose.foundation.layout.Row(verticalAlignment = iconVertAlign) {
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
                         com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.home.domainIcon(domainId), contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     Column {
@@ -1078,17 +1075,20 @@ fun DomainListScreen(
                     // cabiam lado a lado na largura do bloco Arquivos e
                     // quebravam pra 2 linhas, esticando a fileira inteira.
                     val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
-                        // v45 -- Ponto D: Print e PDF unificados em botão segmentado único.
-                        PrintPdfSegmentedButton(
-                            onPrint = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) },
-                            onPdf = { HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys) },
-                        )
+                        LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
                         if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
                                 icon = Icons.Outlined.GridOn,
                                 label = "Excel",
                                 onClick = {
                                     exportXlsx(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
+                                },
+                            )
+                            LabeledIconButton(
+                                icon = com.bragro.mobile.ui.domain.IconesVazados.PictureAsPdf,
+                                label = "PDF",
+                                onClick = {
+                                    HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys)
                                 },
                             )
                         }
@@ -1206,17 +1206,20 @@ fun DomainListScreen(
                     // pedido do usuário ("coloque os blocos da linha 2
                     // todos na horizontal e com limite de altura").
                     val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
-                        // v45 -- Ponto D: Print e PDF unificados em botão segmentado único.
-                        PrintPdfSegmentedButton(
-                            onPrint = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) },
-                            onPdf = { HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys) },
-                        )
+                        LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
                         if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
                                 icon = Icons.Outlined.GridOn,
                                 label = "Excel",
                                 onClick = {
                                     exportXlsx(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
+                                },
+                            )
+                            LabeledIconButton(
+                                icon = com.bragro.mobile.ui.domain.IconesVazados.PictureAsPdf,
+                                label = "PDF",
+                                onClick = {
+                                    HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys)
                                 },
                             )
                         }
@@ -1284,16 +1287,17 @@ fun DomainListScreen(
                         com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                     }
                     val arquivosBlockCobrancas = ModuleBlockSpec("Arquivos", vertical = false) {
-                        // v45 -- Ponto D: Print e PDF unificados em botão segmentado único.
-                        PrintPdfSegmentedButton(
-                            onPrint = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) },
-                            onPdf = { HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys) },
-                        )
+                        LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
                         if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
                                 icon = Icons.Outlined.GridOn,
                                 label = "Excel",
                                 onClick = { exportXlsx(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords) },
+                            )
+                            LabeledIconButton(
+                                icon = com.bragro.mobile.ui.domain.IconesVazados.PictureAsPdf,
+                                label = "PDF",
+                                onClick = { HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys) },
                             )
                         }
                     }
@@ -1392,15 +1396,16 @@ fun DomainListScreen(
                         // de um menu único -- pedido do usuário ("implemente
                         // nos módulos que não tiverem... csv, pdf, imprimir,
                         // compartilhar, nuvem").
-                        // v45 -- Ponto D: Print e PDF unificados em botão segmentado único.
-                        PrintPdfSegmentedButton(
-                            onPrint = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) },
-                            onPdf = { HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys) },
-                        )
+                        LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
                         LabeledIconButton(
                             icon = Icons.Outlined.GridOn,
                             label = "Excel",
                             onClick = { exportXlsx(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords) },
+                        )
+                        LabeledIconButton(
+                            icon = com.bragro.mobile.ui.domain.IconesVazados.PictureAsPdf,
+                            label = "PDF",
+                            onClick = { HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys) },
                         )
                         com.bragro.mobile.ui.domain.NuvemButton()
                         // Ícone Compartilhar (txt) removido -- pedido do

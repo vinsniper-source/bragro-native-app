@@ -538,8 +538,7 @@ fun FinanceiroScreen(
                 }
             val arquivosBlock =
                 FinBlockSpec("Arquivos", MaterialTheme.typography.titleSmall, vertical = false) {
-                    // v46 -- Imprimir e PDF num bloco só, com divisória no meio.
-                    com.bragro.mobile.ui.domain.PrintPdfSegmentedButton(onPrint = { if (config != null) HtmlPrinter.printList(context, config!!, filtered, effectiveColumns.map { it.key }.toSet()) }, onPdf = { cfg?.let { c -> HtmlPrinter.exportPdfDirect(context, c, filtered, effectiveColumns.map { it.key }.toSet()) } })
+                    LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filtered, effectiveColumns.map { it.key }.toSet()) })
                     if (!isQuickView) {
                         LabeledIconButton(icon = Icons.Outlined.Upload, label = "Extrato", onClick = onOpenBankImport)
                         LabeledIconButton(icon = Icons.Outlined.Description, label = "XML", onClick = onOpenNfeImport)
@@ -567,6 +566,11 @@ fun FinanceiroScreen(
                         // ícones faziam exatamente a mesma coisa. Agora gera
                         // o PDF direto e abre no leitor instalado (Adobe ou
                         // similar) -- pedido do usuário.
+                        LabeledIconButton(
+                            icon = com.bragro.mobile.ui.domain.IconesVazados.PictureAsPdf,
+                            label = "PDF",
+                            onClick = { HtmlPrinter.exportPdfDirect(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) },
+                        )
                     }
                 }
             // Nuvem e Imprimir saíram daqui -- foram promovidos pro canto

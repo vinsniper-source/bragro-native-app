@@ -625,13 +625,17 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                     com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                 }
                 val arquivosBlock = DreBlockSpec("Arquivos", vertical = false) {
-                    // v46 -- Imprimir e PDF num bloco só, com divisória no meio.
-                    com.bragro.mobile.ui.domain.PrintPdfSegmentedButton(onPrint = { if (dre != null && dre!!.porFazenda.isNotEmpty()) HtmlPrinter.printList(context, dreExportConfig(), dreExportRecords(dre!!)) }, onPdf = { if (temRegistros) { HtmlPrinter.exportPdfDirect(context, dreExportConfig(), dreExportRecords(data!!)) } })
+                    LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Print, label = "Imprimir", onClick = { if (dre != null && dre!!.porFazenda.isNotEmpty()) HtmlPrinter.printList(context, dreExportConfig(), dreExportRecords(dre!!)) })
                     if (temRegistros) {
                         LabeledIconButton(
                             icon = Icons.Outlined.GridOn,
                             label = "Excel",
                             onClick = { exportXlsx(context, "DRE", DRE_EXPORT_COLUMNS, dreExportRecords(data!!)) },
+                        )
+                        LabeledIconButton(
+                            icon = com.bragro.mobile.ui.domain.IconesVazados.PictureAsPdf,
+                            label = "PDF",
+                            onClick = { HtmlPrinter.exportPdfDirect(context, dreExportConfig(), dreExportRecords(data!!)) },
                         )
                     }
                 }

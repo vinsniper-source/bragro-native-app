@@ -132,8 +132,8 @@ fun FrotaQrScreen(onBack: () -> Unit, viewModel: FrotaQrViewModel = viewModel())
         // v19 -- ícones do cabeçalho movidos para a faixa Ações.
         Column(Modifier.fillMaxSize().padding(padding0)) {
             com.bragro.mobile.ui.domain.AcoesFaixa {
-                // v46 -- Imprimir e PDF num bloco só, com divisória no meio.
-                com.bragro.mobile.ui.domain.PrintPdfSegmentedButton(onPrint = { val items = frotas.mapNotNull { f -> bitmaps[f.value]?.let { f.label to it } }; if (items.isNotEmpty()) HtmlPrinter.printQrCodes(context, "QR Codes das máquinas", items) }, onPdf = { val items = frotas.mapNotNull { f -> bitmaps[f.value]?.let { f.label to it } }; if (items.isNotEmpty()) { android.widget.Toast.makeText(context, "Na próxima tela, escolha \"Salvar como PDF\".", android.widget.Toast.LENGTH_LONG).show(); HtmlPrinter.printQrCodes(context, "QR Codes das máquinas", items) } })
+                com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Print, label = "Imprimir todos", onClick = { val items = frotas.mapNotNull { f -> bitmaps[f.value]?.let { f.label to it } }; if (items.isNotEmpty()) HtmlPrinter.printQrCodes(context, "QR Codes das máquinas", items) })
+                com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.PictureAsPdf, label = "PDF", onClick = { val items = frotas.mapNotNull { f -> bitmaps[f.value]?.let { f.label to it } }; if (items.isNotEmpty()) { android.widget.Toast.makeText(context, "Na próxima tela, escolha \"Salvar como PDF\".", android.widget.Toast.LENGTH_LONG).show(); HtmlPrinter.printQrCodes(context, "QR Codes das máquinas", items) } })
             }
             val padding = PaddingValues(0.dp)
             Box(Modifier.fillMaxWidth().weight(1f)) {

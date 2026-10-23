@@ -23,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.bragro.mobile.ui.theme.BrBlue
@@ -71,15 +70,37 @@ private fun TextoEmPe(texto: String, cor: Color, negrito: Boolean = false) {
     )
 }
 
+/** Quebra o nome em 2 linhas no espaço mais perto do meio (texto muito
+ * extenso, ver regra v46 abaixo). Sem espaço, devolve o nome inteiro. */
+internal fun quebrarEmDuas(nome: String): List<String> {
+    val palavras = nome.trim().split(Regex("\\s+"))
+    if (palavras.size < 2) return listOf(nome)
+    var melhor = 1
+    var menorDif = Int.MAX_VALUE
+    for (j in 1 until palavras.size) {
+        val dif = kotlin.math.abs(palavras.take(j).joinToString(" ").length - palavras.drop(j).joinToString(" ").length)
+        if (dif < menorDif) { menorDif = dif; melhor = j }
+    }
+    return listOf(palavras.take(melhor).joinToString(" "), palavras.drop(melhor).joinToString(" "))
+}
+
+private enum class ModoRotulo { DEITADO, EM_PE, COMPACTO }
+
 /**
- * v45 -- regra dos rótulos (Pontos C e E do mockup v45):
- *  - Layout consistente para TODAS as barras (sem exceção -- Ponto E):
- *    [nome-vertical-esq] [barra] [valor-dir]
- *  - nome: sempre em pé (vertical) à ESQUERDA da barra, começando da base
- *    (quando não cabe em pé, deitado abaixo do eixo a cada N colunas)
- *  - valor: DEITADO acima da barra quando a barra é alta o suficiente
- *    (>= linhaTexto + 4dp de margem -- Ponto C); caso contrário em pé à
- *    DIREITA da barra começando da base. Regra idêntica para todas as barras.
+ * v46/v47 -- regra geral dos rótulos (mockups v46 e v47). O PDF e a
+ * impressão (HtmlPrinter) usam a mesma regra, recalculada para a página em
+ * paisagem. A decisão vale para
+ * o gráfico inteiro, então todas as barras ficam iguais:
+ *  1. Textos e valores curtos (cabem na HORIZONTAL na largura da coluna
+ *     sem encostar no vizinho): texto na horizontal na BASE da barra e
+ *     número curto na horizontal no TOPO.
+ *  2. Texto ou valor extenso (colidiria com a barra vizinha): nome em pé à
+ *     ESQUERDA da barra e valor em pé à DIREITA, ambos começando na base.
+ *  3. Texto muito extenso (em pé não cabe na altura do gráfico): o nome
+ *     quebra em DUAS colunas em pé à esquerda; valor segue em pé à direita.
+ *  Sem largura nem para os rótulos em pé (muitas colunas estreitas): nomes
+ *  deitados abaixo do eixo a cada N colunas, sem valor.
+ * Com mais de uma série os valores não aparecem (ficam na legenda/toque).
  * `linha` desenha uma série extra como linha por cima das barras (ex.:
  * Total no balanço hídrico).
  */
@@ -110,84 +131,78 @@ fun SimpleBarChart(
         fun largura(s: String): Dp = if (s.isEmpty()) 0.dp else with(densidade) {
             medidor.measure(s, estilo, maxLines = 1, softWrap = false).size.width.toDp()
         }
-        val linhaTexto = with(densidade) { medidor.measure("Ag", estilo).size.height.toDp() }
-        // Valores formatados só para série única.
+        val lh = with(densidade) { medidor.measure("Ag", estilo).size.height.toDp() }
+        // Valores só com série única.
         val valores = if (series.size == 1) series[0].values.map { if (it != 0.0) fmtChartValue(it, isMoney) else "" } else emptyList()
+        val temValor = valores.any { it.isNotEmpty() }
         val nomeMax = categories.maxOf { largura(it) }
+        val valorMax = if (temValor) valores.maxOf { largura(it) } else 0.dp
         val barraMin = 4.dp
-        // v45 -- Ponto E: nome sempre em pé (vertical) à esquerda; valor em pé à direita.
-        // Largura disponível para a barra = colW - linhaTexto(nome) - linhaTexto(valor se houver)
-        val temValor = valores.isNotEmpty()
-        // Decide se o nome cabe em pé dentro da coluna (limitado a linhaTexto de largura).
-        // nomeEmPe = true: mostra à esquerda. nomeEmPe = false: mostra deitado abaixo (a cada N cols).
-        val nomeEmPe = colW >= barraMin + linhaTexto
-        val valorEmPe = temValor && colW >= barraMin + (if (nomeEmPe) linhaTexto else 0.dp) + linhaTexto
-        val mostraValor = temValor && valorEmPe
-        // Sem espaço nem em pé: nome deitado a cada `passo` colunas.
-        val passo = if (nomeEmPe) 1 else kotlin.math.ceil(((nomeMax + gap) / (colW + gap)).toDouble()).toInt().coerceAtLeast(1)
-        val areaBarras = (colW - (if (nomeEmPe) linhaTexto else 0.dp) - (if (mostraValor) linhaTexto else 0.dp)).coerceAtLeast(barraMin)
+        val folga = 2.dp
+
+        // 1. cabe deitado?
+        val cabeDeitado = nomeMax + folga <= colW && valorMax + folga <= colW
+        // 2/3. em pé: 1 coluna se o nome cabe na altura, senão 2 colunas.
+        val linhasNome = if (nomeMax <= barsHeight) 1 else 2
+        val larguraRotulosEmPe = lh * linhasNome + (if (temValor) lh else 0.dp)
+        val cabeEmPe = colW >= larguraRotulosEmPe + barraMin * series.size + 2.dp
+        val modo = when {
+            cabeDeitado -> ModoRotulo.DEITADO
+            cabeEmPe -> ModoRotulo.EM_PE
+            else -> ModoRotulo.COMPACTO
+        }
+        val nomesEmPe = categories.map { if (modo == ModoRotulo.EM_PE && linhasNome == 2) quebrarEmDuas(it) else listOf(it) }
+        val mostraValor = temValor && modo != ModoRotulo.COMPACTO
+        // Reserva no topo para o valor deitado da barra mais alta.
+        val reservaTopo = if (modo == ModoRotulo.DEITADO && mostraValor) lh + 2.dp else 0.dp
+        val altUtil = barsHeight - reservaTopo
+        val areaBarras = (colW - (if (modo == ModoRotulo.EM_PE) larguraRotulosEmPe else 0.dp)).coerceAtLeast(barraMin)
         val larguraBarra = ((areaBarras - 2.dp * series.size) / series.size).coerceIn(2.dp, if (series.size > 1) 10.dp else 18.dp)
-        // Altura mínima da barra para o valor caber DEITADO acima (Ponto C).
-        // O valor fica deitado só quando a barra tem altura >= (1 linha de texto + 4dp margem).
-        val altMinValorDeitado = linhaTexto + 4.dp
+        // Compacto: nome deitado a cada `passo` colunas.
+        val passo = if (modo == ModoRotulo.COMPACTO) kotlin.math.ceil(((nomeMax + gap) / (colW + gap)).toDouble()).toInt().coerceAtLeast(1) else 1
 
         Column(modifier = Modifier.fillMaxWidth()) {
             Box(Modifier.fillMaxWidth().height(barsHeight)) {
                 Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(gap)) {
-                    categories.forEachIndexed { i, cat ->
-                        // v45 -- Ponto E: layout idêntico para TODAS as barras:
-                        //   [nome-em-pé-esq] [coluna-barra+valor-deitado] [valor-em-pé-dir]
+                    categories.forEachIndexed { i, _ ->
                         Row(
                             modifier = Modifier.weight(1f).fillMaxHeight(),
                             verticalAlignment = Alignment.Bottom,
                             horizontalArrangement = Arrangement.Center,
                         ) {
-                            // Nome em pé à esquerda (começa da base -- Row alinhada em Bottom)
-                            if (nomeEmPe) TextoEmPe(cat, corNome)
-
-                            series.forEach { s ->
-                                val v = s.values.getOrElse(i) { 0.0 }
-                                val fraction = (v / maxValue).coerceIn(0.0, 1.0).toFloat()
-                                val altBarra = barsHeight * fraction
-                                // v45 -- Ponto C: valor deitado acima quando barra alta o suficiente,
-                                // senão em pé à direita (tratado fora desta Column).
-                                val valorDeitadoAqui = mostraValor && valores[i].isNotEmpty() && altBarra >= altMinValorDeitado
-                                Column(
-                                    modifier = Modifier.fillMaxHeight(),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Bottom,
-                                ) {
-                                    if (valorDeitadoAqui) {
-                                        // Valor deitado acima da barra (Ponto C)
-                                        Text(
-                                            valores[i], style = estilo, color = corValor, maxLines = 1, softWrap = false,
-                                            modifier = Modifier.padding(bottom = 2.dp).wrapContentWidth(unbounded = true),
-                                        )
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(horizontal = 1.dp)
-                                            .width(larguraBarra)
-                                            .fillMaxHeight(if (fraction > 0f) fraction else 0.01f)
-                                            .clip(RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp))
-                                            .background(s.color),
+                            // Nome em pé à esquerda (1 ou 2 colunas), começando da base.
+                            if (modo == ModoRotulo.EM_PE) nomesEmPe[i].forEach { TextoEmPe(it, corNome) }
+                            Column(
+                                modifier = Modifier.fillMaxHeight(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Bottom,
+                            ) {
+                                // Valor deitado no topo da barra (modo curto).
+                                if (modo == ModoRotulo.DEITADO && mostraValor && valores[i].isNotEmpty()) {
+                                    Text(
+                                        valores[i], style = estilo, color = corValor, maxLines = 1, softWrap = false,
+                                        modifier = Modifier.padding(bottom = 2.dp).wrapContentWidth(unbounded = true),
                                     )
                                 }
-                            }
-
-                            // v45 -- Ponto C/E: valor em pé à DIREITA da barra quando a barra
-                            // não é alta o suficiente para o valor deitado. Layout idêntico para
-                            // TODAS as barras (Ponto E) -- o bloco abaixo é sempre renderizado
-                            // da mesma forma independentemente da altura da barra.
-                            if (mostraValor && valores[i].isNotEmpty()) {
-                                val v = series[0].values.getOrElse(i) { 0.0 }
-                                val fraction = (v / maxValue).coerceIn(0.0, 1.0).toFloat()
-                                val altBarra = barsHeight * fraction
-                                val valorDeitadoAcima = altBarra >= altMinValorDeitado
-                                // Só mostra em pé quando não coube deitado
-                                if (!valorDeitadoAcima) {
-                                    TextoEmPe(valores[i], corValor, negrito = true)
+                                Row(verticalAlignment = Alignment.Bottom) {
+                                    series.forEach { s ->
+                                        val v = s.values.getOrElse(i) { 0.0 }
+                                        val fraction = (v / maxValue).coerceIn(0.0, 1.0).toFloat()
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(horizontal = 1.dp)
+                                                .width(larguraBarra)
+                                                .height((altUtil * fraction).coerceAtLeast(1.dp))
+                                                .clip(RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp))
+                                                .background(s.color),
+                                        )
+                                    }
                                 }
+                            }
+                            // Valor em pé à direita (modo extenso).
+                            if (modo == ModoRotulo.EM_PE && mostraValor) {
+                                if (valores[i].isNotEmpty()) TextoEmPe(valores[i], corValor, negrito = true)
+                                else Spacer(Modifier.width(lh))
                             }
                         }
                     }
@@ -197,10 +212,11 @@ fun SimpleBarChart(
                     androidx.compose.foundation.Canvas(Modifier.matchParentSize()) {
                         val gapPx = gap.toPx()
                         val cw = (size.width - gapPx * (n - 1)) / n
+                        val utilPx = altUtil.toPx()
                         val path = androidx.compose.ui.graphics.Path()
                         linha.values.take(n).forEachIndexed { i, v ->
                             val x = i * (cw + gapPx) + cw / 2
-                            val yy = size.height * (1f - (v / maxValue).coerceIn(0.0, 1.0).toFloat())
+                            val yy = size.height - utilPx * (v / maxValue).coerceIn(0.0, 1.0).toFloat()
                             if (i == 0) path.moveTo(x, yy) else path.lineTo(x, yy)
                             drawCircle(corLinha, radius = 2.dp.toPx(), center = androidx.compose.ui.geometry.Offset(x, yy))
                         }
@@ -209,7 +225,8 @@ fun SimpleBarChart(
                 }
             }
             Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outlineVariant))
-            if (!nomeEmPe) {
+            // Nome deitado na base (modo curto e compacto).
+            if (modo != ModoRotulo.EM_PE) {
                 Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(gap)) {
                     categories.forEachIndexed { i, cat ->
                         val restante = colW * (n - i) + gap * (n - i - 1)

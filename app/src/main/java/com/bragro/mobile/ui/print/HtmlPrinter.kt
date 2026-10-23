@@ -349,42 +349,68 @@ object HtmlPrinter {
     private fun buildBarChartSvg(categories: List<String>, series: List<Pair<String, List<Double>>>, isMoney: Boolean): String {
         if (categories.isEmpty() || series.isEmpty()) return ""
         val maxValue = (series.flatMap { it.second }.maxOrNull() ?: 0.0).let { if (it <= 0.0) 1.0 else it }
+        // v47 -- mesma regra da tela, recalculada para a página em PAISAGEM:
+        //  1. texto e número cabem na largura da coluna -> HORIZONTAL: texto na
+        //     base da barra, número no topo;
+        //  2. não cabe -> em pé ao lado da barra: texto à esquerda, número à
+        //     direita (texto que nem em pé cabe na altura quebra em 2 colunas);
+        //  3. nem em pé cabe -> texto horizontal a cada N colunas, sem número.
+        // A decisão vale para o gráfico inteiro (todas as barras iguais).
         val width = 760.0
-        val colW0 = width / categories.size
-        val emPe = categories.any { it.length * 5.0 > colW0 - 2 }
-        val labelH = if (emPe) categories.maxOf { it.length } * 5.2 + 8.0 else 20.0
-        val height = 196.0 + labelH
-        val baseline = height - labelH
-        val chartTop = 20.0
-        val chartH = baseline - chartTop
-        val colWidth = width / categories.size
-        val barGap = 2.0
-        val barWidth = ((colWidth - barGap * (series.size + 1)) / series.size).coerceAtLeast(3.0)
+        val n = categories.size
+        val gap = 6.0
+        val colW = (width - gap * (n - 1)) / n
+        val charW = 5.2
+        val lh = 11.0
+        fun tw(t: String) = t.length * charW
         val fmt = if (isMoney) {
             java.text.NumberFormat.getCurrencyInstance(java.util.Locale("pt", "BR"))
         } else {
             java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 1 }
         }
+        val textos = if (series.size == 1) series[0].second.map { if (it != 0.0) fmt.format(it) else "" } else emptyList()
+        val temValor = textos.any { it.isNotEmpty() }
+        val nomeMax = categories.maxOf { tw(it) }
+        val valMax = textos.maxOfOrNull { tw(it) } ?: 0.0
+        val plotH = 200.0
+        val horizontal = nomeMax + 4 <= colW && valMax + 4 <= colW
+        val linhas = if (horizontal || nomeMax <= plotH) 1 else 2
+        val rotW = lh * linhas + (if (temValor) lh else 0.0)
+        val emPe = !horizontal && colW >= rotW + 3.0 * series.size + 2
+        val passo = if (horizontal || emPe) 1 else kotlin.math.ceil((nomeMax + 4) / (colW + gap)).toInt().coerceAtLeast(1)
+        val topo = if (horizontal && temValor) 16.0 else 6.0
+        val baseline = topo + plotH
+        val height = baseline + (if (emPe) 4.0 else 16.0)
+        val barW = ((if (emPe) colW - rotW - 2 else colW * 0.72) / series.size).coerceIn(3.0, 48.0)
+        val groupW = barW * series.size
+        val nomes = categories.map { if (linhas == 2) com.bragro.mobile.ui.domain.quebrarEmDuas(it) else listOf(it) }
+        fun emPeSvg(t: String, xDir: Double, peso: String, cor: String) =
+            """<text transform="translate(${xDir.f()},${(baseline - 2).f()}) rotate(-90)" font-size="9" $peso fill="$cor">${escapeHtml(t)}</text>"""
         val bars = StringBuilder()
         val labels = StringBuilder()
         categories.forEachIndexed { ci, cat ->
-            val colX = ci * colWidth
+            val colX = ci * (colW + gap)
+            val totalW = if (emPe) rotW + 2 + groupW else groupW
+            var x = colX + (colW - totalW) / 2
+            if (emPe) {
+                nomes[ci].forEachIndexed { j, ln -> labels.append(emPeSvg(ln, x + (j + 1) * lh - 2.5, "", "#333")) }
+                x += lh * linhas + 2
+            }
             series.forEachIndexed { si, (_, values) ->
                 val v = values.getOrElse(ci) { 0.0 }
-                val h = (v / maxValue).coerceIn(0.0, 1.0) * chartH
-                val x = colX + barGap + si * (barWidth + barGap)
-                val y = baseline - h
-                bars.append("""<rect x="${x.f()}" y="${y.f()}" width="${barWidth.f()}" height="${h.coerceAtLeast(1.0).f()}" fill="${PRINT_SERIES_COLORS[si % PRINT_SERIES_COLORS.size]}" />""")
-                if (series.size == 1 && v != 0.0) {
-                    bars.append("""<text x="${(x + barWidth / 2).f()}" y="${(y - 4).coerceAtLeast(10.0).f()}" font-size="9" text-anchor="middle" fill="#111">${escapeHtml(fmt.format(v))}</text>""")
-                }
+                val h = (v / maxValue).coerceIn(0.0, 1.0) * plotH
+                bars.append("""<rect x="${(x + si * barW).f()}" y="${(baseline - h).f()}" width="${(barW - 1).coerceAtLeast(2.0).f()}" height="${h.coerceAtLeast(1.0).f()}" fill="${PRINT_SERIES_COLORS[si % PRINT_SERIES_COLORS.size]}" />""")
             }
-            // v44: deitado se cabe; senão em pé e inteiro (sem "…").
-            val cx = colX + colWidth / 2
-            if (cat.length * 5.0 <= colWidth - 2) {
-                labels.append("""<text x="${cx.f()}" y="${(baseline + 12).f()}" font-size="9" text-anchor="middle" fill="#333">${escapeHtml(cat)}</text>""")
-            } else {
-                labels.append("""<text x="${cx.f()}" y="${(baseline + 4).f()}" font-size="9" text-anchor="end" dominant-baseline="middle" transform="rotate(-90 ${cx.f()} ${(baseline + 4).f()})" fill="#333">${escapeHtml(cat)}</text>""")
+            val cx = x + groupW / 2
+            val texto = textos.getOrElse(ci) { "" }
+            val h0 = (series[0].second.getOrElse(ci) { 0.0 } / maxValue).coerceIn(0.0, 1.0) * plotH
+            when {
+                horizontal -> {
+                    labels.append("""<text x="${cx.f()}" y="${(baseline + 12).f()}" font-size="9" text-anchor="middle" fill="#333">${escapeHtml(cat)}</text>""")
+                    if (texto.isNotEmpty()) bars.append("""<text x="${cx.f()}" y="${(baseline - h0 - 4).f()}" font-size="9" font-weight="600" text-anchor="middle" fill="#111">${escapeHtml(texto)}</text>""")
+                }
+                emPe -> if (texto.isNotEmpty()) bars.append(emPeSvg(texto, x + groupW + 2 + lh - 2.5, "font-weight=\"600\"", "#111"))
+                ci % passo == 0 -> labels.append("""<text x="${colX.f()}" y="${(baseline + 12).f()}" font-size="9" fill="#333">${escapeHtml(cat)}</text>""")
             }
         }
         val legend = if (series.size > 1) {
@@ -493,66 +519,75 @@ object HtmlPrinter {
             val all = chart.barSeries.flatMap { it.second }
             val maxValue = (all.maxOrNull() ?: 0.0).coerceAtLeast(0.0).let { if (it <= 0.0) 1.0 else it }
             val n = chart.barCategories.size
-            val colWidth = contentW / n
+            val gapCol = 6f
+            val colWidth = (contentW - gapCol * (n - 1)) / n
             val seriesCount = chart.barSeries.size.coerceAtLeast(1)
-            val groupW = colWidth * 0.72f
-            val barWidth = (groupW / seriesCount).coerceAtLeast(2f)
+            // largura de uma coluna de texto em pé
             val alturaTexto = barLabelPaint.textSize + 2f
-            // Mesma regra da tela: deitado se cabe; em pé (inteiro) se não cabe;
-            // se nem em pé cabe, um nome a cada N colunas.
-            val maxLabelW = chart.barCategories.maxOf { barLabelPaint.measureText(it) }
-            val nomeDeitado = maxLabelW <= colWidth - 2f
-            val nomeEmPe = !nomeDeitado && colWidth >= alturaTexto
-            val passo = if (nomeDeitado || nomeEmPe) 1 else kotlin.math.ceil((maxLabelW + 4f) / colWidth).toInt().coerceAtLeast(1)
-            val labelArea = if (nomeEmPe) maxLabelW + 8f else 14f
-            // Valores: deitados no topo se cabem na barra/coluna, senão em pé
-            // acima da barra; com barra fina demais até para isso ficam só na tabela.
-            val textos = chart.barSeries.map { (_, values) -> values.map { if (it != 0.0) valor(it, chart.isMoney) else "" } }
-            val limiteDeitado = colWidth / seriesCount + 2f
-            val maxValW = textos.flatten().maxOfOrNull { valueLabelPaint.measureText(it) } ?: 0f
-            val valorDeitado = maxValW <= limiteDeitado
-            val valorEmPe = !valorDeitado && barWidth >= valueLabelPaint.textSize
-            val folgaTopo = when { valorDeitado -> 12f; valorEmPe -> maxValW + 6f; else -> 0f }
+            // v47 -- mesma regra da tela, recalculada para a página em PAISAGEM:
+            //  1. texto e número cabem na coluna -> HORIZONTAL: texto na base
+            //     da barra e número no topo;
+            //  2. não cabe -> em pé ao lado da barra: texto à esquerda, número à
+            //     direita (texto que nem em pé cabe na altura quebra em 2 colunas);
+            //  3. nem em pé cabe -> texto horizontal a cada N colunas, sem número.
+            // A decisão vale para o gráfico inteiro (todas as barras iguais).
+            val textos = if (seriesCount == 1) chart.barSeries[0].second.map { if (it != 0.0) valor(it, chart.isMoney) else "" } else emptyList()
+            val temValor = textos.any { it.isNotEmpty() }
+            val maxNomeW = chart.barCategories.maxOf { barLabelPaint.measureText(it) }
+            val maxValW = textos.maxOfOrNull { valueLabelPaint.measureText(it) } ?: 0f
+            val horizontal = maxNomeW + 4f <= colWidth && maxValW + 4f <= colWidth
+            val linhasNome = if (horizontal || maxNomeW <= plotHeight) 1 else 2
+            val nomes = chart.barCategories.map { if (linhasNome == 2) com.bragro.mobile.ui.domain.quebrarEmDuas(it) else listOf(it) }
+            val rotulosW = alturaTexto * linhasNome + (if (temValor) alturaTexto else 0f)
+            val emPe = !horizontal && colWidth >= rotulosW + 3f * seriesCount + 2f
+            val passo = if (horizontal || emPe) 1 else kotlin.math.ceil((maxNomeW + 4f) / (colWidth + gapCol)).toInt().coerceAtLeast(1)
+            val barWidth = ((if (emPe) colWidth - rotulosW - 2f else colWidth * 0.72f) / seriesCount).coerceIn(2f, 40f)
+            val groupW = barWidth * seriesCount
+            val folgaTopo = if (horizontal && temValor) 12f else 0f
+            val labelArea = if (emPe) 6f else 14f
             val legendArea = if (chart.barSeries.size > 1) 14f else 0f
             val top = y + 12f + folgaTopo
             val baseline = top + plotHeight
+            val nomeEmPePaint = Paint(barLabelPaint).apply { textAlign = Paint.Align.LEFT }
+            val valorEmPePaint = Paint(valueLabelPaint).apply { textAlign = Paint.Align.LEFT; isFakeBoldText = true }
+            val nomeEsqPaint = Paint(barLabelPaint).apply { textAlign = Paint.Align.LEFT }
+            // texto em pé lendo de baixo pra cima, começando na base; xDir é a
+            // borda direita da coluna de texto.
+            fun emPeTexto(t: String, xDir: Float, paint: Paint) {
+                canvas.save()
+                canvas.rotate(-90f, xDir, baseline - 2f)
+                canvas.drawText(t, xDir, baseline - 2f, paint)
+                canvas.restore()
+            }
             for (k in 0..4) {
                 val gy = baseline - plotHeight * k / 4f
                 canvas.drawLine(margin, gy, margin + contentW, gy, if (k == 0) axisPaint else gridPaint)
             }
             chart.barCategories.forEachIndexed { ci, cat ->
-                val colX = margin + ci * colWidth + (colWidth - groupW) / 2f
+                val colX = margin + ci * (colWidth + gapCol)
+                val totalW = if (emPe) rotulosW + 2f + groupW else groupW
+                var x = colX + (colWidth - totalW) / 2f
+                if (emPe) {
+                    nomes[ci].forEachIndexed { j, ln -> emPeTexto(ln, x + (j + 1) * alturaTexto - 2.5f, nomeEmPePaint) }
+                    x += alturaTexto * linhasNome + 2f
+                }
+                var topo0 = baseline
                 chart.barSeries.forEachIndexed { si, (_, values) ->
                     val v = values.getOrElse(ci) { 0.0 }
                     val h = ((v / maxValue).coerceIn(0.0, 1.0) * plotHeight).toFloat()
-                    val x = colX + si * barWidth
-                    val barTop = baseline - h
-                    canvas.drawRect(x + 0.5f, barTop, x + barWidth - 0.5f, baseline, barPaints[si % barPaints.size])
-                    val text = textos[si].getOrElse(ci) { "" }
-                    if (text.isNotEmpty()) {
-                        if (valorDeitado) {
-                            canvas.drawText(text, x + barWidth / 2, barTop - 3f, valueLabelPaint)
-                        } else if (valorEmPe) {
-                            canvas.save()
-                            canvas.rotate(-90f, x + barWidth / 2, barTop - 3f)
-                            val vp = Paint(valueLabelPaint).apply { textAlign = Paint.Align.LEFT }
-                            canvas.drawText(text, x + barWidth / 2, barTop - 3f + vp.textSize / 3f, vp)
-                            canvas.restore()
-                        }
-                    }
+                    val bx = x + si * barWidth
+                    if (si == 0) topo0 = baseline - h
+                    canvas.drawRect(bx + 0.5f, baseline - h, bx + barWidth - 0.5f, baseline, barPaints[si % barPaints.size])
                 }
-                val cx = margin + ci * colWidth + colWidth / 2f
-                if (nomeEmPe) {
-                    // em pé, lendo de baixo para cima, começando colado no eixo
-                    canvas.save()
-                    canvas.rotate(-90f, cx, baseline + 4f)
-                    val lp = Paint(barLabelPaint).apply { textAlign = Paint.Align.RIGHT }
-                    canvas.drawText(cat, cx, baseline + 4f + lp.textSize / 3f, lp)
-                    canvas.restore()
-                } else if (ci % passo == 0) {
-                    val lp = if (nomeDeitado) barLabelPaint else Paint(barLabelPaint).apply { textAlign = Paint.Align.LEFT }
-                    val lx = if (nomeDeitado) cx else margin + ci * colWidth
-                    if (nomeDeitado || lx + lp.measureText(cat) <= margin + contentW) canvas.drawText(cat, lx, baseline + 11f, lp)
+                val cx = x + groupW / 2f
+                val texto = textos.getOrElse(ci) { "" }
+                when {
+                    horizontal -> {
+                        canvas.drawText(cat, cx, baseline + 11f, barLabelPaint)
+                        if (texto.isNotEmpty()) canvas.drawText(texto, cx, topo0 - 3f, valueLabelPaint)
+                    }
+                    emPe -> if (texto.isNotEmpty()) emPeTexto(texto, x + groupW + 2f + alturaTexto - 2.5f, valorEmPePaint)
+                    ci % passo == 0 -> if (colX + nomeEsqPaint.measureText(cat) <= margin + contentW) canvas.drawText(cat, colX, baseline + 11f, nomeEsqPaint)
                 }
             }
             y = baseline + labelArea

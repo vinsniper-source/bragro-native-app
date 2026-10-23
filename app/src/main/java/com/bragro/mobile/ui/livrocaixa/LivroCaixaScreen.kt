@@ -731,10 +731,10 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                     com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                 }
                 val arquivosBlock = LivroCaixaBlockSpec("Arquivos") {
-                    // v46 -- Imprimir e PDF num bloco só, com divisória no meio.
-                    com.bragro.mobile.ui.domain.PrintPdfSegmentedButton(onPrint = { if (resultado != null && resultado!!.lancamentos.isNotEmpty()) HtmlPrinter.printList(context, livroCaixaExportConfig(), livroCaixaExportRecords(resultado!!.lancamentos)) }, onPdf = { if (temRegistros) { HtmlPrinter.exportPdfDirect(context, livroCaixaExportConfig(), livroCaixaExportRecords(data!!.lancamentos)) } })
+                    LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Print, label = "Imprimir", onClick = { if (resultado != null && resultado!!.lancamentos.isNotEmpty()) HtmlPrinter.printList(context, livroCaixaExportConfig(), livroCaixaExportRecords(resultado!!.lancamentos)) })
                     if (temRegistros) {
                         LabeledIconButton(icon = Icons.Outlined.GridOn, label = "Excel", onClick = { exportXlsx(context, "Livro Caixa", LIVRO_CAIXA_EXPORT_COLUMNS, livroCaixaExportRecords(data!!.lancamentos)) })
+                        LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.PictureAsPdf, label = "PDF", onClick = { HtmlPrinter.exportPdfDirect(context, livroCaixaExportConfig(), livroCaixaExportRecords(data!!.lancamentos)) })
                         // Exportação LCDPR (.txt) -- pedido do usuário
                         // ("botão adicionado na toolbar de Livro Caixa, ao
                         // lado de Imprimir/Excel"), réplica do site (Task

@@ -467,8 +467,16 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                             label = "Excel",
                             onClick = { exportXlsx(context, "controle-de-insumos", INSUMOS_EXPORT_COLUMNS, insumosExportRecords(d!!)) },
                         )
-                        // v46 -- Imprimir e PDF num bloco só, com divisória no meio.
-                        com.bragro.mobile.ui.domain.PrintPdfSegmentedButton(onPrint = { HtmlPrinter.printList(context, insumosExportConfig(), insumosExportRecords(d!!)) }, onPdf = { HtmlPrinter.exportPdfDirect(context, insumosExportConfig(), insumosExportRecords(d!!)) })
+                        LabeledIconButton(
+                            icon = com.bragro.mobile.ui.domain.IconesVazados.PictureAsPdf,
+                            label = "PDF",
+                            onClick = { HtmlPrinter.exportPdfDirect(context, insumosExportConfig(), insumosExportRecords(d!!)) },
+                        )
+                        LabeledIconButton(
+                            icon = com.bragro.mobile.ui.domain.IconesVazados.Print,
+                            label = "Imprimir",
+                            onClick = { HtmlPrinter.printList(context, insumosExportConfig(), insumosExportRecords(d!!)) },
+                        )
                     }
                 }
                 com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {
