@@ -3,6 +3,20 @@
 Formato livre (não segue Keep a Changelog à risca), só pra ter um
 histórico legível de cada versão publicada. Datas no formato AAAA-MM-DD.
 
+## 1.3.84 (200)
+- Graficos: nome e valor ficam deitados sempre que cabem; so o que nao cabe fica em pe, comecando na base da barra e colado nela, com o valor do outro lado. Graficos com muitas colunas mostram um nome a cada N, sem cortar nenhum.
+- PDF e impressao dos graficos: rotulos inteiros (sem "..."), tabela que quebra linha na celula e se divide em blocos de colunas quando nao cabe na folha.
+- Field View: mapa com altura fixa, preso no quadro, sem piscar, com botoes de zoom; nao cobre mais os icones Maps/Earth/Desenhar e respeita o zoom do usuario.
+- Alertas e Monitor abrem o modulo ja no registro que gerou o aviso.
+- Pivos: selo de status, rodape e balanco hidrico iguais aos da plataforma (linha do total e nota explicativa).
+- Dossie: os quatro valores da fazenda em duas linhas.
+- Base de Dados: bloco Fazendas (e cada fazenda) comeca fechado.
+- Rotulos: Lancamentos virou Registros, Recalcular area virou Recalc area, Recalcular vencimento virou Recalc. vcto, Movimentacoes virou Giro. O icone de recalcular gira enquanto processa.
+- Pecuaria, Pastagem e Graficos com icone de traco.
+- Financeiro: os blocos Calculadoras e Recalc. vcto voltaram a aparecer (o icone ligava, mas nada era desenhado).
+- Numeros em formato brasileiro com uma casa decimal; verde unico em todo o app; letreiro so nos KPIs do Inicio; blocos de graficos e calculadoras recolhidos.
+- Numeracao: o codigo estava em 1.3.71 e a publicacao em 1.3.83 -- versionCode saltou para 200 para ficar acima do que ja foi enviado.
+
 ## 1.3.71 (181)
 - Removidas as divisórias com título, traço e L de todos os módulos (Silos, Pivôs, Insumos, NF-e, Prescrições, Livro Caixa, DRE, Análises, Reconciliação, Field View, Dossiê); as listas aparecem já abertas e os ícones do bloco Ações continuam separados. Em Operações o nome da operação segue como título do cartão.
 - PDF dos gráficos em A4 paisagem; valor que não cabe na barra fica só na tabela.
