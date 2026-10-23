@@ -359,10 +359,10 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                         titulo = "Prescrição / Taxa variável",
                         subtitulo = "${prescricoes.size} prescrição(ões) salvas",
                         kpis = listOf(
-                            com.bragro.mobile.ui.domain.PainelKpi("Prescrições", prescricoes.size.toDouble(), "numero", null, "mapas salvos", "Lançamentos"),
-                            com.bragro.mobile.ui.domain.PainelKpi("Produtos", prescricoes.mapNotNull { it.produto?.takeIf { s -> s.isNotBlank() } }.toSet().size.toDouble(), "numero", null, "diferentes", "Lançamentos"),
-                            com.bragro.mobile.ui.domain.PainelKpi("Em SHP", prescricoes.count { it.origemTipo == "SHP" }.toDouble(), "numero", null, "importadas de .zip", "Lançamentos"),
-                            com.bragro.mobile.ui.domain.PainelKpi("Em ISO-XML", prescricoes.count { it.origemTipo == "ISO_XML" }.toDouble(), "numero", null, "TASKDATA.XML", "Lançamentos"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Prescrições", prescricoes.size.toDouble(), "numero", null, "mapas salvos", "Registros"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Produtos", prescricoes.mapNotNull { it.produto?.takeIf { s -> s.isNotBlank() } }.toSet().size.toDouble(), "numero", null, "diferentes", "Registros"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Em SHP", prescricoes.count { it.origemTipo == "SHP" }.toDouble(), "numero", null, "importadas de .zip", "Registros"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Em ISO-XML", prescricoes.count { it.origemTipo == "ISO_XML" }.toDouble(), "numero", null, "TASKDATA.XML", "Registros"),
                         ),
                         barras = emptyList(),
                     ),
@@ -373,8 +373,8 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                 com.bragro.mobile.ui.domain.AcoesEmAbas(
                     dados = {
                         com.bragro.mobile.ui.domain.LabeledIconButton(
-                            icon = Icons.AutoMirrored.Outlined.ViewList,
-                            label = "Lançamentos",
+                            icon = com.bragro.mobile.ui.domain.IconesVazados.ViewList,
+                            label = "Registros",
                             active = lancAberto,
                             onClick = { lancAberto = !lancAberto },
                         )

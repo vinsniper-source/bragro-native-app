@@ -87,7 +87,7 @@ private fun AmortizacaoCalc() {
         }
     }
 
-    CalcCard(icon = androidx.compose.material.icons.Icons.Outlined.AccountBalance, title = "Amortização (custeio/financiamento)") {
+    CalcCard(icon = com.bragro.mobile.ui.domain.IconesVazados.AccountBalance, title = "Amortização (custeio/financiamento)") {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             CalcNumField("Valor financiado", "R$", valorFinanciado)
             CalcNumField("Taxa", "% ao mês", taxa)

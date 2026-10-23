@@ -550,7 +550,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                         onClick = { kmlPicker.launch(arrayOf("application/vnd.google-earth.kml+xml", "application/vnd.google-earth.kmz", "application/octet-stream", "*/*")) },
                     )
                     com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.EditLocationAlt, label = "+ Talhão", onClick = { manualDialogOpen = true })
-                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.OfflineBolt, label = "Prestadora", active = integration != null, onClick = { prestadoraAberta = 1 })
+                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, label = "Prestadora", active = integration != null, onClick = { prestadoraAberta = 1 })
                     com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Public, label = "NDVI", active = ndviIntegration != null, onClick = { prestadoraAberta = 2 })
                 },
                 arquivos = {

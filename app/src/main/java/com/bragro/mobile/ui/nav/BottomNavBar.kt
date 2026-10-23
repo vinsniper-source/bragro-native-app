@@ -137,7 +137,7 @@ private val BOTTOM_TABS = listOf(
     // aparecer com cabeçalho de acordeão no dropdown (mesma UI já usada em
     // OWNER_BOTTOM_TABS), então Produção deixa de ser lista plana.
     BottomTab(
-        "producao", "Produção", Icons.Outlined.Agriculture,
+        "producao", "Produção", com.bragro.mobile.ui.domain.IconesVazados.Agriculture,
         items = listOf(
             SectorTarget.Domain("safra", "Atividades", category = "Produção"),
             SectorTarget.Domain("planejamentosafra", "Planejamento de Safra", category = "Produção"),
@@ -165,7 +165,7 @@ private val BOTTOM_TABS = listOf(
     ),
     // Ex-categoria "Sanidade": pragas/doenças e o receituário que as trata.
     BottomTab(
-        "sanidade", "Sanidade", Icons.Outlined.BugReport,
+        "sanidade", "Sanidade", com.bragro.mobile.ui.domain.IconesVazados.BugReport,
         items = listOf(
             SectorTarget.Domain("pragas", "Pragas"),
             SectorTarget.Domain("receituarios", "Receituários"),
@@ -312,7 +312,7 @@ private val BOTTOM_TABS = listOf(
 // dois pontos de entrada de propósito (pedido explícito do mockup).
 private val OWNER_BOTTOM_TABS = listOf(
     BottomTab(
-        "safra", "Safra", Icons.Outlined.Agriculture,
+        "safra", "Safra", com.bragro.mobile.ui.domain.IconesVazados.Agriculture,
         items = listOf(
             SectorTarget.Domain("safra", "Atividades", category = "Produção"),
             SectorTarget.Domain("planejamentosafra", "Planejamento de Safra", category = "Produção"),
@@ -404,8 +404,8 @@ private val OWNER_BOTTOM_TABS = listOf(
 // ícone da própria aba (tabIcon), sem quebrar nada.
 private val CATEGORY_ICONS: Map<String, ImageVector> = mapOf(
     // Safra
-    "Produção" to Icons.Outlined.Agriculture,
-    "Sanidade" to Icons.Outlined.BugReport,
+    "Produção" to com.bragro.mobile.ui.domain.IconesVazados.Agriculture,
+    "Sanidade" to com.bragro.mobile.ui.domain.IconesVazados.BugReport,
     "Monitoramento" to Icons.Outlined.WbSunny,
     "Painéis" to Icons.Outlined.Assignment,
     // Financeiro
@@ -420,7 +420,7 @@ private data class SistemaLink(val path: String, val label: String, val icon: Im
 
 private val SISTEMA_LINKS = listOf(
     SistemaLink("configuracoes", "Configurações", Icons.Outlined.Settings),
-    SistemaLink("base-de-dados", "Base de Dados", Icons.Outlined.Storage),
+    SistemaLink("base-de-dados", "Base de Dados", com.bragro.mobile.ui.domain.IconesVazados.Storage),
     SistemaLink("seguranca", "Acessos", Icons.Outlined.Security),
 )
 
@@ -906,10 +906,10 @@ private fun sectorItemIcon(item: SectorTarget, fallback: ImageVector): ImageVect
     // "Financeiro"/"Lançamentos" -- pedido do usuário ("troque icone dre
     // e icone analises cruzadas").
     is SectorTarget.Special -> when (item.routeKey) {
-        "dre" -> Icons.Outlined.Assessment
-        "analises" -> Icons.Outlined.Analytics
+        "dre" -> com.bragro.mobile.ui.domain.IconesVazados.Assessment
+        "analises" -> com.bragro.mobile.ui.domain.IconesVazados.Analytics
         "livrocaixa" -> Icons.AutoMirrored.Outlined.MenuBook
-        "drone" -> Icons.Outlined.FlightTakeoff
+        "drone" -> com.bragro.mobile.ui.domain.IconesVazados.FlightTakeoff
         "fieldview" -> Icons.Outlined.Map
         "controleinsumos" -> Icons.Outlined.AccountTree
         "operacoes" -> Icons.Outlined.Timeline
@@ -917,17 +917,17 @@ private fun sectorItemIcon(item: SectorTarget, fallback: ImageVector): ImageVect
         // handoff-ocr-orcamento.md.
         "orcamentos" -> Icons.Outlined.CameraAlt
         // Dossiê Bancário / Simulador "E se?" (Task #599/#600/#615/#616).
-        "dossie" -> Icons.Outlined.AccountBalance
+        "dossie" -> com.bragro.mobile.ui.domain.IconesVazados.AccountBalance
         "simulador" -> Icons.Outlined.Tune
         // Prescrição/Reconciliação (antes só ícone/FAB dentro de FieldView/
         // Estoque) e NF-e (módulo novo) -- mesmo critério de ícone próprio
         // já usado pelos itens acima.
         "prescricao" -> Icons.Outlined.Map
-        "reconciliacaoestoque" -> Icons.Outlined.Balance
+        "reconciliacaoestoque" -> com.bragro.mobile.ui.domain.IconesVazados.Balance
         "nfe" -> Icons.Outlined.ReceiptLong
         // Pivôs de Irrigação (Task #904-909) -- mesmo critério acima.
         "pivos" -> Icons.Outlined.WaterDrop
-        "silos" -> Icons.Outlined.Storage
+        "silos" -> com.bragro.mobile.ui.domain.IconesVazados.Storage
         else -> fallback
     }
 }

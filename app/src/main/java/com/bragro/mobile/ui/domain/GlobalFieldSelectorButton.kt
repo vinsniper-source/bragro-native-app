@@ -164,4 +164,4 @@ fun SafraSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onC
 
 @Composable
 fun CulturaSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onChanged: () -> Unit = {}) =
-    GlobalFieldSelectorButton(CulturaSelection, Icons.Outlined.Grass, "cultura", "culturas", showLabel, asPill, onChanged)
+    GlobalFieldSelectorButton(CulturaSelection, com.bragro.mobile.ui.domain.IconesVazados.Grass, "cultura", "culturas", showLabel, asPill, onChanged)

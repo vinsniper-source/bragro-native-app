@@ -519,7 +519,7 @@ fun PainelMonitoramento(
             Box(
                 modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)),
                 contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Outlined.Agriculture, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp)) }
+            ) { Icon(com.bragro.mobile.ui.domain.IconesVazados.Agriculture, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp)) }
             Column(modifier = Modifier.weight(1f)) {
                 Text(Idioma.tr(painel.titulo).uppercase(), fontWeight = FontWeight.Bold, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(painel.subtitulo, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -769,16 +769,8 @@ fun AcoesEmAbas(
 fun ArquivosTabela(titulo: String, headers: List<String>, nuvem: Boolean = false, linhas: () -> List<List<String>>) {
     val context = androidx.compose.ui.platform.LocalContext.current
     // v19 -- "Imprimir/PDF" desmembrado; ordem Imprimir · PDF · Excel · Nuvem.
-    LabeledIconButton(
-        icon = androidx.compose.material.icons.Icons.Outlined.Print,
-        label = "Imprimir",
-        onClick = { com.bragro.mobile.ui.print.HtmlPrinter.printSimpleTable(context, titulo, headers, linhas()) },
-    )
-    LabeledIconButton(
-        icon = androidx.compose.material.icons.Icons.Outlined.PictureAsPdf,
-        label = "PDF",
-        onClick = { com.bragro.mobile.ui.print.HtmlPrinter.exportSimpleTablePdf(context, titulo, headers, linhas()) },
-    )
+    // v46 -- Imprimir e PDF num bloco só, com divisória no meio.
+    com.bragro.mobile.ui.domain.PrintPdfSegmentedButton(onPrint = { com.bragro.mobile.ui.print.HtmlPrinter.printSimpleTable(context, titulo, headers, linhas()) }, onPdf = { com.bragro.mobile.ui.print.HtmlPrinter.exportSimpleTablePdf(context, titulo, headers, linhas()) })
     LabeledIconButton(
         icon = androidx.compose.material.icons.Icons.Outlined.GridOn,
         label = "Excel",

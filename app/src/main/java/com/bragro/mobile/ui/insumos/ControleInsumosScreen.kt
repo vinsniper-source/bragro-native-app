@@ -443,17 +443,17 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                     }
                 }
                 val dadosBlock = InsumosBlockSpec("Dados") {
-                    filtro("cat", "Categoria", Icons.Outlined.FilterAlt, fCat, listOf("SAFRA" to "Safra", "FROTA" to "Frota", "ADM" to "ADM")) { fCat = it }
-                    filtro("sit", "Situação", Icons.Outlined.RadioButtonChecked, fSit, listOf("FALTA" to "Falta", "EM_USO" to "Em uso", "EM_TRANSITO" to "Em trânsito", "OK" to "OK")) { fSit = it }
+                    filtro("cat", "Categoria", com.bragro.mobile.ui.domain.IconesVazados.FilterAlt, fCat, listOf("SAFRA" to "Safra", "FROTA" to "Frota", "ADM" to "ADM")) { fCat = it }
+                    filtro("sit", "Situação", com.bragro.mobile.ui.domain.IconesVazados.RadioButtonChecked, fSit, listOf("FALTA" to "Falta", "EM_USO" to "Em uso", "EM_TRANSITO" to "Em trânsito", "OK" to "OK")) { fSit = it }
                     filtro("est", "Estoque", Icons.Outlined.Inventory2, fEst, listOf("CRITICO" to "Crítico", "ATENCAO" to "Atenção", "OK" to "OK")) { fEst = it }
                     LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconeGraficos, label = "Saldo", active = saldoAberto, onClick = { saldoAberto = !saldoAberto })
-                    LabeledIconButton(icon = Icons.Outlined.ViewList, label = "Itens", active = listaAberta, onClick = { listaAberta = !listaAberta })
+                    LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.ViewList, label = "Itens", active = listaAberta, onClick = { listaAberta = !listaAberta })
                     LabeledIconButton(icon = Icons.Outlined.WarningAmber, label = "Mínimo", active = criticosAbertos, onClick = { criticosAbertos = !criticosAbertos })
                     if (d?.arvoreControleInterno?.isNotEmpty() == true) {
                         LabeledIconButton(icon = Icons.Outlined.HealthAndSafety, label = "EPI", onClick = { controleInternoAberto = true })
                     }
                     if (fCat != null || fSit != null || fEst != null) {
-                        LabeledIconButton(icon = Icons.Outlined.FilterAltOff, label = "Limpar", onClick = { fCat = null; fSit = null; fEst = null })
+                        LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.FilterAltOff, label = "Limpar", onClick = { fCat = null; fSit = null; fEst = null })
                     }
                 }
                 val operacoesBlock = InsumosBlockSpec("Operações") {
@@ -467,16 +467,8 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                             label = "Excel",
                             onClick = { exportXlsx(context, "controle-de-insumos", INSUMOS_EXPORT_COLUMNS, insumosExportRecords(d!!)) },
                         )
-                        LabeledIconButton(
-                            icon = Icons.Outlined.PictureAsPdf,
-                            label = "PDF",
-                            onClick = { HtmlPrinter.exportPdfDirect(context, insumosExportConfig(), insumosExportRecords(d!!)) },
-                        )
-                        LabeledIconButton(
-                            icon = Icons.Outlined.Print,
-                            label = "Imprimir",
-                            onClick = { HtmlPrinter.printList(context, insumosExportConfig(), insumosExportRecords(d!!)) },
-                        )
+                        // v46 -- Imprimir e PDF num bloco só, com divisória no meio.
+                        com.bragro.mobile.ui.domain.PrintPdfSegmentedButton(onPrint = { HtmlPrinter.printList(context, insumosExportConfig(), insumosExportRecords(d!!)) }, onPdf = { HtmlPrinter.exportPdfDirect(context, insumosExportConfig(), insumosExportRecords(d!!)) })
                     }
                 }
                 com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {

@@ -751,7 +751,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Agriculture, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
+                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.domain.IconesVazados.Agriculture, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -775,22 +775,22 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     com.bragro.mobile.ui.domain.AcoesEmAbas(
                         dados = {
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.FilterAlt, label = "Filtros", active = filtrosVisiveis, onClick = { filtrosVisiveis = !filtrosVisiveis })
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.FilterAlt, label = "Filtros", active = filtrosVisiveis, onClick = { filtrosVisiveis = !filtrosVisiveis })
                             com.bragro.mobile.ui.domain.LabeledIconButton(
-                                icon = if (tableView) Icons.Outlined.ViewAgenda else Icons.Outlined.TableChart,
+                                icon = if (tableView) Icons.Outlined.ViewAgenda else com.bragro.mobile.ui.domain.IconesVazados.TableChart,
                                 label = if (tableView) "Coluna" else "Tabela",
                                 active = tableView,
                                 onClick = { tableView = !tableView },
                             )
                         },
                         operacoes = {
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ViewList, label = "Atividades", active = atividadesVisiveis, onClick = { atividadesVisiveis = !atividadesVisiveis })
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.ViewList, label = "Atividades", active = atividadesVisiveis, onClick = { atividadesVisiveis = !atividadesVisiveis })
                             com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", onClick = { viewModel.refresh() })
                             com.bragro.mobile.ui.domain.NuvemButton()
                         },
                         arquivos = {
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Print, label = "Imprimir", onClick = { if (operacoes.isNotEmpty()) HtmlPrinter.printList(context, operacoesExportConfig(), operacoesExportRecords(operacoes)) })
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.PictureAsPdf, label = "PDF", onClick = { if (operacoes.isNotEmpty()) HtmlPrinter.exportPdfDirect(context, operacoesExportConfig(), operacoesExportRecords(operacoes)) })
+                            // v46 -- Imprimir e PDF num bloco só, com divisória no meio.
+                            com.bragro.mobile.ui.domain.PrintPdfSegmentedButton(onPrint = { if (operacoes.isNotEmpty()) HtmlPrinter.printList(context, operacoesExportConfig(), operacoesExportRecords(operacoes)) }, onPdf = { if (operacoes.isNotEmpty()) HtmlPrinter.exportPdfDirect(context, operacoesExportConfig(), operacoesExportRecords(operacoes)) })
                         },
                     )
                     // Atualizar saiu daqui (subiu pro TopAppBar, ao lado da

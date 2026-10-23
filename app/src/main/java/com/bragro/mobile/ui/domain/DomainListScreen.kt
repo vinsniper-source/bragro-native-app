@@ -518,7 +518,7 @@ fun DomainListScreen(
     val lancamentosBtn: @Composable () -> Unit = {
         Box(contentAlignment = Alignment.Center) {
             LabeledIconButton(
-                icon = Icons.Outlined.ViewList,
+                icon = com.bragro.mobile.ui.domain.IconesVazados.ViewList,
                 label = tipoLanc ?: "Registros",
                 active = allExpanded,
                 onClick = { if (allExpanded) { allExpanded = false; cardOverrides.clear() } else lancMenu = true },
@@ -563,11 +563,11 @@ fun DomainListScreen(
                 // título"); ela mora só na fileira de ícones abaixo agora.
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
-                    // v45 -- Pecuária/Pastagem: ícone alinhado ao TOPO do
-                    // título (módulos com título que pode quebrar linha).
-                    val iconVertAlign = if (domainId == "pecuaria" || domainId == "pastagem") androidx.compose.ui.Alignment.Top else androidx.compose.ui.Alignment.Bottom
+                    // v46 -- Pecuária/Pastagem com desenho novo que ocupa o quadro todo:
+                    // mesmo alinhamento dos demais módulos (altura do título).
+                    val iconVertAlign = androidx.compose.ui.Alignment.Bottom
                     androidx.compose.foundation.layout.Row(verticalAlignment = iconVertAlign) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.home.domainIcon(domainId), contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = if (domainId == "pecuaria" || domainId == "pastagem") 0.dp else 3.dp))
+                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.home.domainIcon(domainId), contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -624,14 +624,14 @@ fun DomainListScreen(
                         onClick = { showIntegracaoDialog = true },
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Outlined.OfflineBolt, contentDescription = "Acesso automático (bomba de combustível)")
+                        Icon(com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, contentDescription = "Acesso automático (bomba de combustível)")
                     }
                     if (onOpenFrotaQr != null) {
                         FloatingActionButton(
                             onClick = onOpenFrotaQr,
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         ) {
-                            Icon(Icons.Outlined.QrCode, contentDescription = "Gerar QR Codes das máquinas")
+                            Icon(com.bragro.mobile.ui.domain.IconesVazados.QrCode, contentDescription = "Gerar QR Codes das máquinas")
                         }
                     }
                     FloatingActionButton(
@@ -667,7 +667,7 @@ fun DomainListScreen(
                         onClick = { showIntegracaoDialog = true },
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Outlined.OfflineBolt, contentDescription = "Acesso automático (balança)")
+                        Icon(com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, contentDescription = "Acesso automático (balança)")
                     }
                     FloatingActionButton(
                     onClick = onNewRecord,
@@ -691,7 +691,7 @@ fun DomainListScreen(
                         onClick = onOpenPragaFoto,
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Outlined.BugReport, contentDescription = "Diagnóstico por foto")
+                        Icon(com.bragro.mobile.ui.domain.IconesVazados.BugReport, contentDescription = "Diagnóstico por foto")
                     }
                     FloatingActionButton(
                         onClick = onNewRecord,
@@ -709,7 +709,7 @@ fun DomainListScreen(
                         onClick = { showIntegracaoDialog = true },
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Outlined.OfflineBolt, contentDescription = "Acesso automático (balança/RFID Bluetooth)")
+                        Icon(com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, contentDescription = "Acesso automático (balança/RFID Bluetooth)")
                     }
                     FloatingActionButton(
                         onClick = onNewRecord,
@@ -727,7 +727,7 @@ fun DomainListScreen(
                         onClick = onOpenColheitaQr,
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Outlined.QrCode, contentDescription = "QR Code de Rastreabilidade")
+                        Icon(com.bragro.mobile.ui.domain.IconesVazados.QrCode, contentDescription = "QR Code de Rastreabilidade")
                     }
                     FloatingActionButton(
                         onClick = onNewRecord,
@@ -747,13 +747,13 @@ fun DomainListScreen(
                         onClick = { showIntegracaoDialog = true },
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Outlined.OfflineBolt, contentDescription = "Acesso automático (silos)")
+                        Icon(com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, contentDescription = "Acesso automático (silos)")
                     }
                     FloatingActionButton(
                         onClick = onOpenReconciliacaoEstoque,
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(com.bragro.mobile.ui.domain.IconeAjustarFisicoFiscal, contentDescription = "Ajustar Físico x Fiscal", tint = androidx.compose.ui.graphics.Color.Unspecified)
+                        Icon(com.bragro.mobile.ui.domain.IconeAjustarFisicoFiscal, contentDescription = "Ajustar Físico x Fiscal")
                     }
                     FloatingActionButton(
                         onClick = onNewRecord,
@@ -1032,7 +1032,7 @@ fun DomainListScreen(
                         ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
                         if (showFiltros) {
                             ModuleIconButton(
-                                ModuleIconItem("filtros", Icons.Outlined.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
+                                ModuleIconItem("filtros", com.bragro.mobile.ui.domain.IconesVazados.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
                             ) { filtrosOverride = !filtrosExpanded }
                         }
                         ColumnsPickerButton(
@@ -1046,7 +1046,7 @@ fun DomainListScreen(
                             // ícone+rótulo do Expandir/Recolher acima (achado
                             // de auditoria, pedido do usuário).
                             LabeledIconButton(
-                                icon = if (tableView) Icons.Outlined.ViewAgenda else Icons.Outlined.TableChart,
+                                icon = if (tableView) Icons.Outlined.ViewAgenda else com.bragro.mobile.ui.domain.IconesVazados.TableChart,
                                 label = if (tableView) "Bloco" else "Tabela",
                                 onClick = { tableView = !tableView },
                             )
@@ -1111,7 +1111,7 @@ fun DomainListScreen(
                         ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
                         if (showFiltros) {
                             ModuleIconButton(
-                                ModuleIconItem("filtros", Icons.Outlined.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
+                                ModuleIconItem("filtros", com.bragro.mobile.ui.domain.IconesVazados.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
                             ) { filtrosOverride = !filtrosExpanded }
                         }
                         ColumnsPickerButton(
@@ -1125,7 +1125,7 @@ fun DomainListScreen(
                             // ícone+rótulo do Expandir/Recolher acima (achado
                             // de auditoria, pedido do usuário).
                             LabeledIconButton(
-                                icon = if (tableView) Icons.Outlined.ViewAgenda else Icons.Outlined.TableChart,
+                                icon = if (tableView) Icons.Outlined.ViewAgenda else com.bragro.mobile.ui.domain.IconesVazados.TableChart,
                                 label = if (tableView) "Bloco" else "Tabela",
                                 onClick = { tableView = !tableView },
                             )
@@ -1241,7 +1241,7 @@ fun DomainListScreen(
                         ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
                         if (showFiltros) {
                             ModuleIconButton(
-                                ModuleIconItem("filtros", Icons.Outlined.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
+                                ModuleIconItem("filtros", com.bragro.mobile.ui.domain.IconesVazados.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
                             ) { filtrosOverride = !filtrosExpanded }
                         }
                         if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
@@ -1250,7 +1250,7 @@ fun DomainListScreen(
                             // ícone+rótulo do Expandir/Recolher acima (achado
                             // de auditoria, pedido do usuário).
                             LabeledIconButton(
-                                icon = if (tableView) Icons.Outlined.ViewAgenda else Icons.Outlined.TableChart,
+                                icon = if (tableView) Icons.Outlined.ViewAgenda else com.bragro.mobile.ui.domain.IconesVazados.TableChart,
                                 label = if (tableView) "Bloco" else "Tabela",
                                 onClick = { tableView = !tableView },
                             )
@@ -1343,7 +1343,7 @@ fun DomainListScreen(
                     }
                     if (showFiltros) {
                         ModuleIconButton(
-                            ModuleIconItem("filtros", Icons.Outlined.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
+                            ModuleIconItem("filtros", com.bragro.mobile.ui.domain.IconesVazados.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
                         ) { filtrosOverride = !filtrosExpanded }
                     }
                     if (dateCol != null) {
@@ -1377,7 +1377,7 @@ fun DomainListScreen(
                     }
                     if (true) {
                         LabeledIconButton(
-                            icon = if (tableView) Icons.Outlined.ViewAgenda else Icons.Outlined.TableChart,
+                            icon = if (tableView) Icons.Outlined.ViewAgenda else com.bragro.mobile.ui.domain.IconesVazados.TableChart,
                             label = if (tableView) "Bloco" else "Tabela",
                             onClick = { tableView = !tableView },
                         )
@@ -1952,45 +1952,6 @@ private fun ModuleCategoryBlock(spec: ModuleBlockSpec, modifier: Modifier = Modi
 // barra oval alternando entre as categorias, mostre apenas os ícones de
 // cada categoria"), a partir do print do módulo Safra onde as 3 categorias
 // (Dados/Operações/Arquivos) apareciam empilhadas com todos os ícones
-// v45 -- Ponto D: botão segmentado unificando 🖨 Imprimir e PDF.
-// Um único controle de dois segmentos com borda compartilhada --
-// substitui os dois LabeledIconButton separados em todos os blocos
-// Arquivos (genérico, por módulo e cobranças/NFS-e).
-@Composable
-fun PrintPdfSegmentedButton(onPrint: () -> Unit, onPdf: () -> Unit) {
-    val outlineColor = androidx.compose.material3.MaterialTheme.colorScheme.outline
-    val segShape = RoundedCornerShape(8.dp)
-    Row(
-        modifier = Modifier.border(BorderStroke(1.dp, outlineColor), segShape),
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-    ) {
-        // Segmento Imprimir
-        Row(
-            modifier = Modifier
-                .clickable(onClick = onPrint)
-                .padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            androidx.compose.material3.Icon(Icons.Outlined.Print, contentDescription = "Imprimir", modifier = Modifier.size(18.dp))
-            com.bragro.mobile.ui.i18n.Text("Impr.", style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
-        }
-        // Divisor vertical
-        Box(modifier = Modifier.width(1.dp).height(32.dp).background(outlineColor))
-        // Segmento PDF
-        Row(
-            modifier = Modifier
-                .clickable(onClick = onPdf)
-                .padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            androidx.compose.material3.Icon(Icons.Outlined.PictureAsPdf, contentDescription = "PDF", modifier = Modifier.size(18.dp))
-            com.bragro.mobile.ui.i18n.Text("PDF", style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
-        }
-    }
-}
-
 // juntos de uma vez. Substitui o Column de N ModuleCategoryBlock nos 3
 // pontos que usam esse padrão (blocos genéricos, blocos por módulo em
 // PER_MODULE_BLOCK_DOMAINS, e Cobranças/NFS-e).

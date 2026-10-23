@@ -495,7 +495,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Assessment, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
+                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.domain.IconesVazados.Assessment, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -583,7 +583,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                         )
                     }
                     LabeledIconButton(
-                        icon = Icons.Outlined.FilterAlt,
+                        icon = com.bragro.mobile.ui.domain.IconesVazados.FilterAlt,
                         label = "Filtros",
                         // Sem tint proprio -- herda onSurface (preto/branco),
                         // pedido do usuario ("tire o fundo verde de todos os
@@ -603,13 +603,13 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                     // quando há dados.
                     if (temRegistros) {
                         LabeledIconButton(
-                            icon = Icons.AutoMirrored.Outlined.ViewList,
+                            icon = com.bragro.mobile.ui.domain.IconesVazados.ViewList,
                             label = "Registros",
                             active = resultadoOpen,
                             onClick = { resultadoOpen = !resultadoOpen },
                         )
                         LabeledIconButton(
-                            icon = if (tableView) Icons.Outlined.ViewAgenda else Icons.Outlined.TableChart,
+                            icon = if (tableView) Icons.Outlined.ViewAgenda else com.bragro.mobile.ui.domain.IconesVazados.TableChart,
                             label = if (tableView) "Bloco" else "Tabela",
                             onClick = { tableView = !tableView },
                         )
@@ -625,17 +625,13 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                     com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                 }
                 val arquivosBlock = DreBlockSpec("Arquivos", vertical = false) {
-                    LabeledIconButton(icon = Icons.Outlined.Print, label = "Imprimir", onClick = { if (dre != null && dre!!.porFazenda.isNotEmpty()) HtmlPrinter.printList(context, dreExportConfig(), dreExportRecords(dre!!)) })
+                    // v46 -- Imprimir e PDF num bloco só, com divisória no meio.
+                    com.bragro.mobile.ui.domain.PrintPdfSegmentedButton(onPrint = { if (dre != null && dre!!.porFazenda.isNotEmpty()) HtmlPrinter.printList(context, dreExportConfig(), dreExportRecords(dre!!)) }, onPdf = { if (temRegistros) { HtmlPrinter.exportPdfDirect(context, dreExportConfig(), dreExportRecords(data!!)) } })
                     if (temRegistros) {
                         LabeledIconButton(
                             icon = Icons.Outlined.GridOn,
                             label = "Excel",
                             onClick = { exportXlsx(context, "DRE", DRE_EXPORT_COLUMNS, dreExportRecords(data!!)) },
-                        )
-                        LabeledIconButton(
-                            icon = Icons.Outlined.PictureAsPdf,
-                            label = "PDF",
-                            onClick = { HtmlPrinter.exportPdfDirect(context, dreExportConfig(), dreExportRecords(data!!)) },
                         )
                     }
                 }

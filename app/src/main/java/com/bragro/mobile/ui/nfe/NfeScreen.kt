@@ -498,10 +498,10 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
                                 titulo = "NF-e",
                                 subtitulo = "${invoices.size} notas · ${formatoMoeda(totalValor)}",
                                 kpis = listOf(
-                                    com.bragro.mobile.ui.domain.PainelKpi("Notas", invoices.size.toDouble(), "numero", null, "registradas", "Lançamentos"),
-                                    com.bragro.mobile.ui.domain.PainelKpi("Valor total", totalValor, "moeda", null, "soma das notas", "Lançamentos"),
-                                    com.bragro.mobile.ui.domain.PainelKpi("Entradas", nEntrada.toDouble(), "numero", null, "compras", "Lançamentos"),
-                                    com.bragro.mobile.ui.domain.PainelKpi("Saídas", nSaida.toDouble(), "numero", null, "$nAutorizadas autorizadas", "Lançamentos"),
+                                    com.bragro.mobile.ui.domain.PainelKpi("Notas", invoices.size.toDouble(), "numero", null, "registradas", "Registros"),
+                                    com.bragro.mobile.ui.domain.PainelKpi("Valor total", totalValor, "moeda", null, "soma das notas", "Registros"),
+                                    com.bragro.mobile.ui.domain.PainelKpi("Entradas", nEntrada.toDouble(), "numero", null, "compras", "Registros"),
+                                    com.bragro.mobile.ui.domain.PainelKpi("Saídas", nSaida.toDouble(), "numero", null, "$nAutorizadas autorizadas", "Registros"),
                                 ),
                                 barras = emptyList(),
                             ),
@@ -512,13 +512,13 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
                         com.bragro.mobile.ui.domain.AcoesEmAbas(
                             dados = {
                                 com.bragro.mobile.ui.domain.LabeledIconButton(
-                                    icon = if (viewMode == NfeViewMode.BLOCOS) Icons.Outlined.ViewList else Icons.Outlined.ViewAgenda,
+                                    icon = if (viewMode == NfeViewMode.BLOCOS) com.bragro.mobile.ui.domain.IconesVazados.ViewList else Icons.Outlined.ViewAgenda,
                                     label = if (viewMode == NfeViewMode.BLOCOS) "Linhas" else "Blocos",
                                     onClick = { viewMode = if (viewMode == NfeViewMode.BLOCOS) NfeViewMode.LINHAS else NfeViewMode.BLOCOS; lancAberto = true },
                                 )
                                 com.bragro.mobile.ui.domain.LabeledIconButton(
-                                    icon = Icons.AutoMirrored.Outlined.ViewList,
-                                    label = "Lançamentos",
+                                    icon = com.bragro.mobile.ui.domain.IconesVazados.ViewList,
+                                    label = "Registros",
                                     active = lancAberto,
                                     onClick = { lancAberto = !lancAberto },
                                 )

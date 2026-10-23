@@ -47,7 +47,7 @@ private fun GraosPesoLiquidoCalc() {
         }
     }
 
-    CalcCard(icon = androidx.compose.material.icons.Icons.Outlined.Balance, title = "Grãos — peso líquido") {
+    CalcCard(icon = com.bragro.mobile.ui.domain.IconesVazados.Balance, title = "Grãos — peso líquido") {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             CalcNumField("Peso bruto", "kg", pesoBruto)
             CalcNumField("Umidade real", "%", umidadeReal)
@@ -74,7 +74,7 @@ private fun CanaAtrCalc() {
     val atrTotal = if (pc != null && atr != null) pc * atr else null
     val valorEstimado = if (atrTotal != null && preco != null) atrTotal * preco else null
 
-    CalcCard(icon = androidx.compose.material.icons.Icons.Outlined.Agriculture, title = "Cana — ATR") {
+    CalcCard(icon = com.bragro.mobile.ui.domain.IconesVazados.Agriculture, title = "Cana — ATR") {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             CalcNumField("Peso bruto cana", "ton", pesoCana)
             CalcNumField("ATR — usina", "kg/ton", atrUsina)

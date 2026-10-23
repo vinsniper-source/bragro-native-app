@@ -39,7 +39,7 @@ private data class TourStep(val icon: androidx.compose.ui.graphics.vector.ImageV
 // lançamento", os atalhos que poupam mais tempo no dia a dia).
 private val TOUR_STEPS = listOf(
     TourStep(
-        Icons.Outlined.Agriculture,
+        com.bragro.mobile.ui.domain.IconesVazados.Agriculture,
         "Bem-vindo ao BRAgro",
         "Na tela Início você vê o resumo visual das suas fazendas (Canvas) e pode filtrar por Fazenda, Safra ou Cultura a qualquer momento -- toque nos filtros logo abaixo do slogan.",
     ),
@@ -49,7 +49,7 @@ private val TOUR_STEPS = listOf(
         "A barra inferior leva pra Financeiro, Safra, Estoque, Frota e todos os outros módulos. O menu (ícone de grade) mostra a lista completa quando precisar de algo que não está fixo ali.",
     ),
     TourStep(
-        Icons.Outlined.OfflineBolt,
+        com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt,
         "Atalhos que poupam tempo",
         "Em cada módulo, o botão \"Copiar último lançamento\" pré-preenche um registro novo a partir do anterior. Romaneio Rápido e Abastecimento ficam nos atalhos do topo da Início.",
     ),

@@ -511,17 +511,17 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                     ModuleIconItem("charts", com.bragro.mobile.ui.domain.IconeGraficos, "Gráficos", active = showCharts),
                 ) { showCharts = !showCharts }
                 ModuleIconButton(
-                    ModuleIconItem("filtros", Icons.Outlined.FilterAlt, "Filtros", active = statusFiltro != null, badgeCount = if (statusFiltro != null) 1 else 0),
+                    ModuleIconItem("filtros", com.bragro.mobile.ui.domain.IconesVazados.FilterAlt, "Filtros", active = statusFiltro != null, badgeCount = if (statusFiltro != null) 1 else 0),
                 ) { showFiltroDialog = true }
                 ColumnsPickerButton(ORCAMENTO_COLUMNS, visibleColumnKeys) { visibleColumnKeys = it }
                 LabeledIconButton(
-                    icon = Icons.AutoMirrored.Outlined.ViewList,
+                    icon = com.bragro.mobile.ui.domain.IconesVazados.ViewList,
                     label = "Lançamentos",
                     active = cardsExpanded,
                     onClick = { cardsExpanded = !cardsExpanded },
                 )
                 LabeledIconButton(
-                    icon = if (tableView) Icons.Outlined.ViewAgenda else Icons.Outlined.TableChart,
+                    icon = if (tableView) Icons.Outlined.ViewAgenda else com.bragro.mobile.ui.domain.IconesVazados.TableChart,
                     label = if (tableView) "Bloco" else "Tabela",
                     onClick = { tableView = !tableView },
                 )
@@ -534,20 +534,6 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                 com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
             }
             val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
-                LabeledIconButton(icon = Icons.Outlined.Print, label = "Imprimir", onClick = { run {
-val headers = listOf("Data", "Nº Orçamento", "Requisição", "Autorizado por", "Itens", "Total", "Status")
-                                val rows = filtered.map { o ->
-                                    listOf(
-                                        isoDateToBr(isoDateOnly(o.data)),
-                                        o.numeroOrcamento ?: "",
-                                        o.requisicao ?: "",
-                                        o.autorizadoPorNome ?: "",
-                                        o.itens.size.toString(),
-                                        formatoMoeda(totalOrcamento(o)),
-                                        if (o.status == "FATURADO") "Faturado" else "Pendente NF",
-                                    )
-                                }
-                                HtmlPrinter.printSimpleTable(context, "Orçamentos", headers, rows) } })
                 val headers = listOf("Data", "Nº Orçamento", "Requisição", "Autorizado por", "Itens", "Total", "Status")
                 val rows = filtered.map { o ->
                     listOf(
@@ -568,11 +554,21 @@ val headers = listOf("Data", "Nº Orçamento", "Requisição", "Autorizado por",
                         shareBinaryFile(context, XlsxWriter.buildXlsx(headers, rows), fileName)
                     },
                 )
-                LabeledIconButton(
-                    icon = Icons.Outlined.PictureAsPdf,
-                    label = "PDF",
-                    onClick = { HtmlPrinter.printSimpleTable(context, "Orçamentos", headers, rows) },
-                )
+                // v46 -- Imprimir e PDF num bloco só, com divisória no meio.
+                com.bragro.mobile.ui.domain.PrintPdfSegmentedButton(onPrint = { run {
+val headers = listOf("Data", "Nº Orçamento", "Requisição", "Autorizado por", "Itens", "Total", "Status")
+                                val rows = filtered.map { o ->
+                                    listOf(
+                                        isoDateToBr(isoDateOnly(o.data)),
+                                        o.numeroOrcamento ?: "",
+                                        o.requisicao ?: "",
+                                        o.autorizadoPorNome ?: "",
+                                        o.itens.size.toString(),
+                                        formatoMoeda(totalOrcamento(o)),
+                                        if (o.status == "FATURADO") "Faturado" else "Pendente NF",
+                                    )
+                                }
+                                HtmlPrinter.printSimpleTable(context, "Orçamentos", headers, rows) } }, onPdf = { HtmlPrinter.printSimpleTable(context, "Orçamentos", headers, rows) })
             }
             // Painel de monitoramento (mesmo da plataforma), antes de Ações.
             run {

@@ -671,9 +671,9 @@ private data class Sugestao(val texto: String, val domainId: String?, val label:
 // operação de safra lançada, a dica seria só mais uma repetição do próprio
 // rótulo de estágio (ver EstagioSugestaoCard acima), sem nenhuma ação nova.
 private val ESTAGIO_SUGESTAO: Map<String, Sugestao> = mapOf(
-    "plantio" to Sugestao("Registre cada operação (data, hectare, insumo) conforme for plantando.", "safra", "Ir para Safra", Icons.Outlined.Grass),
-    "vegetativo" to Sugestao("Bom momento pra acompanhar pragas e manter os receituários em dia.", "pragas", "Ir para Pragas", Icons.Outlined.BugReport),
-    "colheita" to Sugestao("Registre romaneios e a produtividade realizada.", "colheita", "Ir para Colheita", Icons.Outlined.Agriculture),
+    "plantio" to Sugestao("Registre cada operação (data, hectare, insumo) conforme for plantando.", "safra", "Ir para Safra", com.bragro.mobile.ui.domain.IconesVazados.Grass),
+    "vegetativo" to Sugestao("Bom momento pra acompanhar pragas e manter os receituários em dia.", "pragas", "Ir para Pragas", com.bragro.mobile.ui.domain.IconesVazados.BugReport),
+    "colheita" to Sugestao("Registre romaneios e a produtividade realizada.", "colheita", "Ir para Colheita", com.bragro.mobile.ui.domain.IconesVazados.Agriculture),
 )
 
 /** R$ 00.000,00 -- v17. */

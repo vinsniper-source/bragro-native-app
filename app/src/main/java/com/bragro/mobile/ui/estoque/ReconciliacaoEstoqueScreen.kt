@@ -157,7 +157,7 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.CompareArrows, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
+                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.domain.IconeAjustarFisicoFiscal, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     // v40 -- título fixo (sem letreiro), quebrando em duas
                     // linhas quando não couber numa.
@@ -233,9 +233,9 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                 com.bragro.mobile.ui.domain.AcoesEmAbas(
                     dados = {
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Warning, label = "Divergências", active = soDivergencia, badgeCount = divergentes.size, tint = MaterialTheme.colorScheme.onSurface, onClick = { soDivergencia = true })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ViewList, label = "Todos", active = !soDivergencia, onClick = { soDivergencia = false })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.ViewList, label = "Todos", active = !soDivergencia, onClick = { soDivergencia = false })
                         androidx.compose.foundation.layout.Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.FilterAlt, label = fCategoria ?: "Categoria", active = fCategoria != null, onClick = { catMenu = true })
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.FilterAlt, label = fCategoria ?: "Categoria", active = fCategoria != null, onClick = { catMenu = true })
                             androidx.compose.material3.DropdownMenu(expanded = catMenu, onDismissRequest = { catMenu = false }) {
                                 androidx.compose.material3.DropdownMenuItem(text = { Text("Todas") }, onClick = { fCategoria = null; catMenu = false })
                                 categorias.forEach { c ->
@@ -245,7 +245,7 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                         }
                     },
                     operacoes = {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ViewList, label = "Lista", active = listaAberta, onClick = { listaAberta = !listaAberta })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.ViewList, label = "Lista", active = listaAberta, onClick = { listaAberta = !listaAberta })
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", onClick = { viewModel.carregar() })
                         com.bragro.mobile.ui.domain.NuvemButton()
                     },

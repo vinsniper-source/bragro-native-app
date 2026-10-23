@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.home
 
+import com.bragro.mobile.ui.domain.IconesVazados
+
 import android.app.Application
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -756,7 +758,7 @@ fun HomeScreen(
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Base de Dados") },
-                                    leadingIcon = { Icon(Icons.Outlined.Storage, contentDescription = null) },
+                                    leadingIcon = { Icon(IconesVazados.Storage, contentDescription = null) },
                                     onClick = { modulosMenuOpen = false; onOpenBaseDeDados() },
                                 )
                                 DropdownMenuItem(
@@ -859,7 +861,7 @@ fun HomeScreen(
                         var dbMenuOpen by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { dbMenuOpen = true }) {
-                                Icon(Icons.Outlined.Storage, contentDescription = "Base de Dados")
+                                Icon(IconesVazados.Storage, contentDescription = "Base de Dados")
                             }
                             DropdownMenu(expanded = dbMenuOpen, onDismissRequest = { dbMenuOpen = false }) {
                                 val grupos = home?.baseDeDadosCategorias.orEmpty()
@@ -1908,7 +1910,7 @@ private fun HomeShortcutsRow(
         com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth()) {
             if (showDestaques) com.bragro.mobile.ui.domain.LabeledIconButton(realce = true, icon = Icons.Outlined.StarOutline, label = "Destaques", onClick = { onDestaquesChange(true) })
             if (showAlertas) com.bragro.mobile.ui.domain.LabeledIconButton(realce = true, icon = Icons.Outlined.WarningAmber, label = "Alertas", badgeCount = data.alerts.size, onClick = { open = "alertas" })
-            if (showMonitor) com.bragro.mobile.ui.domain.LabeledIconButton(realce = true, icon = Icons.Outlined.OfflineBolt, label = "Monitor", badgeCount = data.recentActivity.size, onClick = { open = "monitor" })
+            if (showMonitor) com.bragro.mobile.ui.domain.LabeledIconButton(realce = true, icon = IconesVazados.OfflineBolt, label = "Monitor", badgeCount = data.recentActivity.size, onClick = { open = "monitor" })
             if (showMural) com.bragro.mobile.ui.domain.LabeledIconButton(realce = true, icon = Icons.Outlined.Campaign, label = "Avisos", badgeCount = data.notices.size, onClick = { open = "mural" })
         }
     }
@@ -2094,7 +2096,7 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.OfflineBolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                Icon(IconesVazados.OfflineBolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
                 Box(modifier = Modifier.weight(1f)) {
                     // Contagem no título -- mesmo padrão da Central de
@@ -2371,7 +2373,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.safra.colheitas" to Kpi(
             "Colheitas (mês)",
             data.safraColheitasMes.toString(),
-            Icons.Outlined.Agriculture,
+            IconesVazados.Agriculture,
             MaterialTheme.colorScheme.primary,
             KpiKind.QUANTIDADE,
             description = "Colheitas iniciadas no mês corrente",
@@ -2892,7 +2894,7 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             // Renomeado -- pedido do usuário ("altere o kpi cotações
             // agrícolas para cotações grãos").
-            MiniCardHeaderWithRefresh("Cotações Grãos", Icons.Outlined.Agriculture, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
+            MiniCardHeaderWithRefresh("Cotações Grãos", IconesVazados.Agriculture, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
             val itens = listOfNotNull(com.soja, com.milho, com.sorgo)
             // Quantidade (unidade "sc" = saca) + variação/porcentagem do dia
             // ao lado do preço -- pedido do usuário ("insira a quantidade de

@@ -251,7 +251,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.FlightTakeoff, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
+                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.domain.IconesVazados.FlightTakeoff, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -329,7 +329,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                     dados = {
                         Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
                             com.bragro.mobile.ui.domain.LabeledIconButton(
-                                icon = Icons.Outlined.FilterAlt,
+                                icon = com.bragro.mobile.ui.domain.IconesVazados.FilterAlt,
                                 label = tipoFiltro?.let { t -> TIPOS_CAPTURA.firstOrNull { it.first == t }?.second } ?: "Tipo",
                                 active = tipoFiltro != null,
                                 onClick = { tipoMenu = true },
@@ -342,15 +342,15 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                             }
                         }
                         com.bragro.mobile.ui.domain.LabeledIconButton(
-                            icon = Icons.AutoMirrored.Outlined.ViewList,
+                            icon = com.bragro.mobile.ui.domain.IconesVazados.ViewList,
                             label = "Registros",
                             active = lancAberto,
                             onClick = { lancAberto = !lancAberto },
                         )
                     },
                     operacoes = {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.FlightTakeoff, label = "+ Voo", onClick = { showNovo = true })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.OfflineBolt, label = "Prestadora", active = integration != null, onClick = { showPrestadora = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.FlightTakeoff, label = "+ Voo", onClick = { showNovo = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, label = "Prestadora", active = integration != null, onClick = { showPrestadora = true })
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.load() })
                         com.bragro.mobile.ui.domain.NuvemButton()
                     },
@@ -441,7 +441,7 @@ private fun DroneRecordCard(record: DroneRecordDto) {
             // NENHUM ícone -- a auditoria anterior tinha checado só o FAB/
             // botão de anexo e concluído (errado) que o módulo já estava OK.
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.FlightTakeoff, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
+                Icon(com.bragro.mobile.ui.domain.IconesVazados.FlightTakeoff, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
                 Text(tipoLabel, style = MaterialTheme.typography.titleSmall)
             }
             Text(isoDateOnlyDrone(record.data), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -254,6 +254,8 @@ private fun buildDossieHtml(d: DossieResponse, ano: Int): String {
 
 @OptIn(ExperimentalMaterial3Api::class)
 /** v34 (item 9): célula da grade de atalhos do Dossiê (texto ou ícone). */
+private const val CELULA_IMPRIMIR_PDF = "__imprimir_pdf__"
+
 private class CelulaDossie(val rotulo: String, val icone: androidx.compose.ui.graphics.vector.ImageVector?, val acao: () -> Unit)
 
 @Composable
@@ -286,7 +288,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.AccountBalance, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
+                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.domain.IconesVazados.AccountBalance, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
  Text("Dossiê Bancário", color = MaterialTheme.colorScheme.onSurface) 
                     }
                 } },
@@ -417,13 +419,20 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                                 indiceSecao[id]?.let { i -> scope.launch { listState.animateScrollToItem(i) } }
                             }
                         } + listOf(
-                            CelulaDossie("Imprimir", Icons.Outlined.Print) { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(d, ano)) },
-                            CelulaDossie("PDF", Icons.Outlined.PictureAsPdf) { HtmlPrinter.printHtmlComoPdf(context, "Dossiê Bancário", buildDossieHtml(d, ano)) },
+                            // v46 -- Imprimir e PDF numa célula só, com divisória no meio.
+                            CelulaDossie(CELULA_IMPRIMIR_PDF, null) {},
                         )
                         celulas.chunked(3).forEach { linha ->
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 linha.forEach { c ->
-                                    Box(
+                                    if (c.rotulo == CELULA_IMPRIMIR_PDF) com.bragro.mobile.ui.domain.PrintPdfSegmentedButton(
+                                        onPrint = { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(d, ano)) },
+                                        onPdf = { HtmlPrinter.printHtmlComoPdf(context, "Dossiê Bancário", buildDossieHtml(d, ano)) },
+                                        modifier = Modifier.weight(1f),
+                                        rotulos = false,
+                                        compacto = true,
+                                        preencher = true,
+                                    ) else Box(
                                         modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
                                             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
                                             .clickable { c.acao() }

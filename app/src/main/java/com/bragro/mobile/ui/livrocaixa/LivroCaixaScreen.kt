@@ -696,7 +696,7 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
             item(key = "livro-caixa-icon-row") { com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") { Column(modifier = Modifier.fillMaxWidth()) {
                 val dadosBlock = LivroCaixaBlockSpec("Dados") {
                     LabeledIconButton(
-                        icon = Icons.Outlined.FilterAlt,
+                        icon = com.bragro.mobile.ui.domain.IconesVazados.FilterAlt,
                         label = "Filtros",
                         // Sem tint proprio -- herda onSurface (preto/branco),
                         // pedido do usuario ("tire o fundo verde de todos os
@@ -705,13 +705,13 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                     )
                     if (temRegistros) {
                         LabeledIconButton(
-                            icon = Icons.AutoMirrored.Outlined.ViewList,
-                            label = "Lançamentos",
+                            icon = com.bragro.mobile.ui.domain.IconesVazados.ViewList,
+                            label = "Registros",
                             active = contentExpanded,
                             onClick = { contentExpanded = !contentExpanded },
                         )
                         LabeledIconButton(
-                            icon = if (tableView) Icons.Outlined.ViewAgenda else Icons.Outlined.TableChart,
+                            icon = if (tableView) Icons.Outlined.ViewAgenda else com.bragro.mobile.ui.domain.IconesVazados.TableChart,
                             label = if (tableView) "Bloco" else "Tabela",
                             onClick = { tableView = !tableView },
                         )
@@ -731,10 +731,10 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                     com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                 }
                 val arquivosBlock = LivroCaixaBlockSpec("Arquivos") {
-                    LabeledIconButton(icon = Icons.Outlined.Print, label = "Imprimir", onClick = { if (resultado != null && resultado!!.lancamentos.isNotEmpty()) HtmlPrinter.printList(context, livroCaixaExportConfig(), livroCaixaExportRecords(resultado!!.lancamentos)) })
+                    // v46 -- Imprimir e PDF num bloco só, com divisória no meio.
+                    com.bragro.mobile.ui.domain.PrintPdfSegmentedButton(onPrint = { if (resultado != null && resultado!!.lancamentos.isNotEmpty()) HtmlPrinter.printList(context, livroCaixaExportConfig(), livroCaixaExportRecords(resultado!!.lancamentos)) }, onPdf = { if (temRegistros) { HtmlPrinter.exportPdfDirect(context, livroCaixaExportConfig(), livroCaixaExportRecords(data!!.lancamentos)) } })
                     if (temRegistros) {
                         LabeledIconButton(icon = Icons.Outlined.GridOn, label = "Excel", onClick = { exportXlsx(context, "Livro Caixa", LIVRO_CAIXA_EXPORT_COLUMNS, livroCaixaExportRecords(data!!.lancamentos)) })
-                        LabeledIconButton(icon = Icons.Outlined.PictureAsPdf, label = "PDF", onClick = { HtmlPrinter.exportPdfDirect(context, livroCaixaExportConfig(), livroCaixaExportRecords(data!!.lancamentos)) })
                         // Exportação LCDPR (.txt) -- pedido do usuário
                         // ("botão adicionado na toolbar de Livro Caixa, ao
                         // lado de Imprimir/Excel"), réplica do site (Task

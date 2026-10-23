@@ -19,7 +19,7 @@ object HomeNavigator {
 @Composable
 fun HomeNavButton() {
     IconButton(onClick = { HomeNavigator.goHome() }) {
-        IconeNegrito(Icons.Outlined.Home, contentDescription = "Página inicial", tint = MaterialTheme.colorScheme.onSurface, size = 24.dp)
+        IconeNegrito(com.bragro.mobile.ui.domain.IconesVazados.Home, contentDescription = "Página inicial", tint = MaterialTheme.colorScheme.onSurface, size = 24.dp)
     }
 }
 

@@ -480,7 +480,7 @@ fun FinanceiroScreen(
                     // Sempre visível -- pedido do usuário ("force todos os
                     // ícones aparecerem").
                     LabeledIconButton(
-                        icon = Icons.AutoMirrored.Outlined.ViewList,
+                        icon = com.bragro.mobile.ui.domain.IconesVazados.ViewList,
                         label = "Registros",
                         active = allExpanded,
                         onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
@@ -489,7 +489,7 @@ fun FinanceiroScreen(
                     // (achado de auditoria, pedido do usuário: "coloque em
                     // todos os módulos").
                     LabeledIconButton(
-                        icon = if (tableView) Icons.Outlined.ViewAgenda else Icons.Outlined.TableChart,
+                        icon = if (tableView) Icons.Outlined.ViewAgenda else com.bragro.mobile.ui.domain.IconesVazados.TableChart,
                         // "Coluna" -> "Bloco" -- pedido do usuário ("no
                         // native já existe com o nome tabela, apenas troque
                         // coluna por bloco"). Mesmo botão único do módulo
@@ -538,7 +538,8 @@ fun FinanceiroScreen(
                 }
             val arquivosBlock =
                 FinBlockSpec("Arquivos", MaterialTheme.typography.titleSmall, vertical = false) {
-                    LabeledIconButton(icon = Icons.Outlined.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filtered, effectiveColumns.map { it.key }.toSet()) })
+                    // v46 -- Imprimir e PDF num bloco só, com divisória no meio.
+                    com.bragro.mobile.ui.domain.PrintPdfSegmentedButton(onPrint = { if (config != null) HtmlPrinter.printList(context, config!!, filtered, effectiveColumns.map { it.key }.toSet()) }, onPdf = { cfg?.let { c -> HtmlPrinter.exportPdfDirect(context, c, filtered, effectiveColumns.map { it.key }.toSet()) } })
                     if (!isQuickView) {
                         LabeledIconButton(icon = Icons.Outlined.Upload, label = "Extrato", onClick = onOpenBankImport)
                         LabeledIconButton(icon = Icons.Outlined.Description, label = "XML", onClick = onOpenNfeImport)
@@ -566,11 +567,6 @@ fun FinanceiroScreen(
                         // ícones faziam exatamente a mesma coisa. Agora gera
                         // o PDF direto e abre no leitor instalado (Adobe ou
                         // similar) -- pedido do usuário.
-                        LabeledIconButton(
-                            icon = Icons.Outlined.PictureAsPdf,
-                            label = "PDF",
-                            onClick = { HtmlPrinter.exportPdfDirect(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) },
-                        )
                     }
                 }
             // Nuvem e Imprimir saíram daqui -- foram promovidos pro canto
@@ -1307,7 +1303,7 @@ private fun BancoDropdown(banco: String?, options: List<LookupEntity>, onSelect:
     // contentAlignment = Center -- mesmo fix de PeriodoDropdown acima.
     Box(contentAlignment = Alignment.Center) {
         LabeledIconButton(
-            icon = Icons.Outlined.FilterAlt,
+            icon = com.bragro.mobile.ui.domain.IconesVazados.FilterAlt,
             label = "Filtros",
             active = hasFilter,
             // Sem tint proprio -- herda onSurface (preto/branco), pedido do
@@ -1342,7 +1338,7 @@ private fun BancoDropdown(banco: String?, options: List<LookupEntity>, onSelect:
 // saindo/entrando de um canto) é o par clássico de "saída"/"entrada" de
 // dinheiro, bem mais claro.
 private fun financeiroViewIcon(v: FinanceiroView) = when (v) {
-    FinanceiroView.TODOS -> Icons.Outlined.ViewList
+    FinanceiroView.TODOS -> com.bragro.mobile.ui.domain.IconesVazados.ViewList
     FinanceiroView.PAGAR -> Icons.Outlined.CallMade
     FinanceiroView.RECEBER -> Icons.Outlined.CallReceived
     FinanceiroView.CONCILIADO -> Icons.Outlined.CheckCircle

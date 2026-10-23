@@ -125,7 +125,7 @@ fun ProviderIntegrationCard(
             // antes (task #338), agora resolvido de raiz em vez de só
             // mitigado.
             Row(verticalAlignment = Alignment.Top) {
-                Icon(Icons.Outlined.OfflineBolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp, top = 2.dp))
+                Icon(com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp, top = 2.dp))
                 // Sem letreiro e sem limite de linha aqui -- pedido do
                 // usuário ("todas as frases estão incompletas, não use
                 // letreiro, pode usar mais de uma linha mas complete toda a

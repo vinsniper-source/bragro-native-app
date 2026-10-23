@@ -322,12 +322,12 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                 com.bragro.mobile.ui.domain.AcoesEmAbas(
                     dados = {
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconeGraficos, label = "Estoque", active = estoqueAberto, onClick = { estoqueAberto = !estoqueAberto })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ViewList, label = "Silos", active = silosAbertos, onClick = { silosAbertos = !silosAbertos })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.ViewList, label = "Silos", active = silosAbertos, onClick = { silosAbertos = !silosAbertos })
                     },
                     operacoes = {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Storage, label = "+ Silo", onClick = { editing = null; showForm = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Storage, label = "+ Silo", onClick = { editing = null; showForm = true })
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.load() })
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.OfflineBolt, label = "Prestadora", onClick = { prestadoraAberta = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, label = "Prestadora", onClick = { prestadoraAberta = true })
                         com.bragro.mobile.ui.domain.NuvemButton()
                     },
                     arquivos = {
@@ -546,7 +546,7 @@ private fun SiloCard(
     com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
+                Icon(com.bragro.mobile.ui.domain.IconesVazados.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
                 Text(silo.nome.uppercase(), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                 if (estimado) Badge(modifier = Modifier.padding(end = 4.dp)) { Text("Estimado") }
                 Badge { Text(statusLabel(silo.status)) }
@@ -604,7 +604,7 @@ private fun SiloCard(
                     Text(" ${silo.temperaturaAtualC?.let { "${"%,.1f".format(java.util.Locale("pt", "BR"), it)} °C" } ?: "—"}", style = MaterialTheme.typography.labelSmall)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Opacity, contentDescription = null, modifier = Modifier.height(14.dp))
+                    Icon(com.bragro.mobile.ui.domain.IconesVazados.Opacity, contentDescription = null, modifier = Modifier.height(14.dp))
                     Text(" ${silo.umidadeAtualPct?.let { "${"%,.1f".format(java.util.Locale("pt", "BR"), it)}%" } ?: "—"}", style = MaterialTheme.typography.labelSmall)
                 }
             }

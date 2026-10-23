@@ -178,20 +178,9 @@ fun ModuleChartsCard(domainId: String, viewModel: ModuleChartsViewModel = viewMo
 // visualmente em cima do título do gráfico logo abaixo.
 @Composable
 private fun ChartPrintActions(onPrint: () -> Unit, onPdf: () -> Unit) {
+    // v46 -- Imprimir e PDF num bloco só, com divisória no meio.
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = onPrint, modifier = Modifier.size(32.dp)) {
-            Icon(Icons.Outlined.Print, contentDescription = "Imprimir gráfico", modifier = Modifier.size(18.dp))
-        }
-        Box(
-            modifier = Modifier
-                .padding(horizontal = 4.dp)
-                .width(1.dp)
-                .height(18.dp)
-                .background(MaterialTheme.colorScheme.outlineVariant),
-        )
-        IconButton(onClick = onPdf, modifier = Modifier.size(32.dp)) {
-            Icon(Icons.Outlined.PictureAsPdf, contentDescription = "Exportar gráfico em PDF", modifier = Modifier.size(18.dp))
-        }
+        com.bragro.mobile.ui.domain.PrintPdfSegmentedButton(onPrint = onPrint, onPdf = onPdf, rotulos = false, compacto = true)
     }
 }
 

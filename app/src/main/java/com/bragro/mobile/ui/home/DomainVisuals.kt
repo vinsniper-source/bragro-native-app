@@ -101,17 +101,17 @@ private val DOMAIN_ICON: Map<String, ImageVector> = mapOf(
     "pedidos" to Icons.Outlined.ShoppingCart,
     // Balanca (comparacao de propostas) -- mesmo espirito do icone "Scale"
     // do site (lucide-react) pro modulo novo de Cotacoes de Fornecedores.
-    "cotacoesfornecedores" to Icons.Outlined.Balance,
+    "cotacoesfornecedores" to com.bragro.mobile.ui.domain.IconesVazados.Balance,
     "contratos" to Icons.Outlined.Description,
     "caixainterno" to Icons.Outlined.Payments,
     "cobrancas" to Icons.Outlined.CreditCard,
     "nfse" to Icons.Outlined.ReceiptLong,
     "safra" to Icons.Outlined.Eco,
     "planejamentosafra" to Icons.Outlined.Assignment,
-    "colheita" to Icons.Outlined.Agriculture,
+    "colheita" to com.bragro.mobile.ui.domain.IconesVazados.Agriculture,
     "romaneios" to Icons.Outlined.LocalShipping,
     "receituarios" to Icons.Outlined.Science,
-    "pragas" to Icons.Outlined.BugReport,
+    "pragas" to com.bragro.mobile.ui.domain.IconesVazados.BugReport,
     "clima" to Icons.Outlined.WbSunny,
     // Pets (pata) -- Material Icons não tem um ícone de boi/gado no set
     // base; mesmo critério de "espírito visual" usado nos demais ícones
@@ -130,7 +130,7 @@ private val DOMAIN_ICON: Map<String, ImageVector> = mapOf(
     "maodeobra" to Icons.Outlined.Engineering,
 )
 
-fun domainIcon(domainId: String): ImageVector = DOMAIN_ICON[domainId] ?: Icons.Outlined.Apps
+fun domainIcon(domainId: String): ImageVector = DOMAIN_ICON[domainId] ?: com.bragro.mobile.ui.domain.IconesVazados.Apps
 
 fun domainSectionMeta(domainId: String): DomainSectionMeta {
     val sectionId = DOMAIN_SECTION_ID[domainId] ?: return FALLBACK_SECTION

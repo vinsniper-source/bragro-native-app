@@ -50,7 +50,7 @@ fun ColumnsPickerButton(allColumns: List<ColumnConfig>, visibleKeys: Set<String>
         // Rótulo abaixo do ícone -- varredura geral pedida pelo usuário
         // ("alguns ícones não receberam rótulos como colunas e períodos,
         // filtros"), mesmo padrão visual do LabeledIconButton.
-        LabeledIconButton(icon = Icons.Outlined.ViewColumn, label = "Colunas", active = allColumns.size != visibleKeys.size, onClick = { expanded = true })
+        LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.ViewColumn, label = "Colunas", active = allColumns.size != visibleKeys.size, onClick = { expanded = true })
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             Box(modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
                 Column {
