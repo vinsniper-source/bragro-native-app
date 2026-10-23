@@ -563,8 +563,11 @@ fun DomainListScreen(
                 // título"); ela mora só na fileira de ícones abaixo agora.
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
-                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.home.domainIcon(domainId), contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
+                    // v45 -- Pecuária/Pastagem: ícone alinhado ao TOPO do
+                    // título (módulos com título que pode quebrar linha).
+                    val iconVertAlign = if (domainId == "pecuaria" || domainId == "pastagem") androidx.compose.ui.Alignment.Top else androidx.compose.ui.Alignment.Bottom
+                    androidx.compose.foundation.layout.Row(verticalAlignment = iconVertAlign) {
+                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.home.domainIcon(domainId), contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = if (domainId == "pecuaria" || domainId == "pastagem") 0.dp else 3.dp))
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -750,7 +753,7 @@ fun DomainListScreen(
                         onClick = onOpenReconciliacaoEstoque,
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Outlined.Balance, contentDescription = "Ajustar Físico x Fiscal")
+                        Icon(com.bragro.mobile.ui.domain.IconeAjustarFisicoFiscal, contentDescription = "Ajustar Físico x Fiscal", tint = androidx.compose.ui.graphics.Color.Unspecified)
                     }
                     FloatingActionButton(
                         onClick = onNewRecord,
@@ -1075,20 +1078,17 @@ fun DomainListScreen(
                     // cabiam lado a lado na largura do bloco Arquivos e
                     // quebravam pra 2 linhas, esticando a fileira inteira.
                     val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
-                        LabeledIconButton(icon = Icons.Outlined.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
+                        // v45 -- Ponto D: Print e PDF unificados em botão segmentado único.
+                        PrintPdfSegmentedButton(
+                            onPrint = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) },
+                            onPdf = { HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys) },
+                        )
                         if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
                                 icon = Icons.Outlined.GridOn,
                                 label = "Excel",
                                 onClick = {
                                     exportXlsx(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
-                                },
-                            )
-                            LabeledIconButton(
-                                icon = Icons.Outlined.PictureAsPdf,
-                                label = "PDF",
-                                onClick = {
-                                    HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys)
                                 },
                             )
                         }
@@ -1206,20 +1206,17 @@ fun DomainListScreen(
                     // pedido do usuário ("coloque os blocos da linha 2
                     // todos na horizontal e com limite de altura").
                     val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
-                        LabeledIconButton(icon = Icons.Outlined.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
+                        // v45 -- Ponto D: Print e PDF unificados em botão segmentado único.
+                        PrintPdfSegmentedButton(
+                            onPrint = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) },
+                            onPdf = { HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys) },
+                        )
                         if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
                                 icon = Icons.Outlined.GridOn,
                                 label = "Excel",
                                 onClick = {
                                     exportXlsx(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords)
-                                },
-                            )
-                            LabeledIconButton(
-                                icon = Icons.Outlined.PictureAsPdf,
-                                label = "PDF",
-                                onClick = {
-                                    HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys)
                                 },
                             )
                         }
@@ -1287,17 +1284,16 @@ fun DomainListScreen(
                         com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                     }
                     val arquivosBlockCobrancas = ModuleBlockSpec("Arquivos", vertical = false) {
-                        LabeledIconButton(icon = Icons.Outlined.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
+                        // v45 -- Ponto D: Print e PDF unificados em botão segmentado único.
+                        PrintPdfSegmentedButton(
+                            onPrint = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) },
+                            onPdf = { HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys) },
+                        )
                         if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
                                 icon = Icons.Outlined.GridOn,
                                 label = "Excel",
                                 onClick = { exportXlsx(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords) },
-                            )
-                            LabeledIconButton(
-                                icon = Icons.Outlined.PictureAsPdf,
-                                label = "PDF",
-                                onClick = { HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys) },
                             )
                         }
                     }
@@ -1396,16 +1392,15 @@ fun DomainListScreen(
                         // de um menu único -- pedido do usuário ("implemente
                         // nos módulos que não tiverem... csv, pdf, imprimir,
                         // compartilhar, nuvem").
-                        LabeledIconButton(icon = Icons.Outlined.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
+                        // v45 -- Ponto D: Print e PDF unificados em botão segmentado único.
+                        PrintPdfSegmentedButton(
+                            onPrint = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) },
+                            onPdf = { HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys) },
+                        )
                         LabeledIconButton(
                             icon = Icons.Outlined.GridOn,
                             label = "Excel",
                             onClick = { exportXlsx(context, cfg.label, cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }, filteredRecords) },
-                        )
-                        LabeledIconButton(
-                            icon = Icons.Outlined.PictureAsPdf,
-                            label = "PDF",
-                            onClick = { HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys) },
                         )
                         com.bragro.mobile.ui.domain.NuvemButton()
                         // Ícone Compartilhar (txt) removido -- pedido do
@@ -1957,6 +1952,45 @@ private fun ModuleCategoryBlock(spec: ModuleBlockSpec, modifier: Modifier = Modi
 // barra oval alternando entre as categorias, mostre apenas os ícones de
 // cada categoria"), a partir do print do módulo Safra onde as 3 categorias
 // (Dados/Operações/Arquivos) apareciam empilhadas com todos os ícones
+// v45 -- Ponto D: botão segmentado unificando 🖨 Imprimir e PDF.
+// Um único controle de dois segmentos com borda compartilhada --
+// substitui os dois LabeledIconButton separados em todos os blocos
+// Arquivos (genérico, por módulo e cobranças/NFS-e).
+@Composable
+fun PrintPdfSegmentedButton(onPrint: () -> Unit, onPdf: () -> Unit) {
+    val outlineColor = androidx.compose.material3.MaterialTheme.colorScheme.outline
+    val segShape = RoundedCornerShape(8.dp)
+    Row(
+        modifier = Modifier.border(BorderStroke(1.dp, outlineColor), segShape),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+    ) {
+        // Segmento Imprimir
+        Row(
+            modifier = Modifier
+                .clickable(onClick = onPrint)
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            androidx.compose.material3.Icon(Icons.Outlined.Print, contentDescription = "Imprimir", modifier = Modifier.size(18.dp))
+            com.bragro.mobile.ui.i18n.Text("Impr.", style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
+        }
+        // Divisor vertical
+        Box(modifier = Modifier.width(1.dp).height(32.dp).background(outlineColor))
+        // Segmento PDF
+        Row(
+            modifier = Modifier
+                .clickable(onClick = onPdf)
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            androidx.compose.material3.Icon(Icons.Outlined.PictureAsPdf, contentDescription = "PDF", modifier = Modifier.size(18.dp))
+            com.bragro.mobile.ui.i18n.Text("PDF", style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
+        }
+    }
+}
+
 // juntos de uma vez. Substitui o Column de N ModuleCategoryBlock nos 3
 // pontos que usam esse padrão (blocos genéricos, blocos por módulo em
 // PER_MODULE_BLOCK_DOMAINS, e Cobranças/NFS-e).
