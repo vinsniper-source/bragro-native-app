@@ -273,14 +273,22 @@ dependencies {
     // verdade, so como recurso de PREENCHIMENTO ASSISTIDO (o usuario sempre
     // confere/edita antes de lancar) -- nao e regra de negocio, entao nao
     // fere o principio de "nao duplicar logica do backend em Kotlin".
-    implementation("com.google.mlkit:text-recognition:16.0.1")
+    // v48 -- versao "unbundled" (Google Play Services): o modelo de OCR NAO
+    // vai mais dentro do APK (eram ~12MB de libmlkit_google_ocr_pipeline.so +
+    // modelos); o Play Services baixa uma vez no aparelho. Mesma API
+    // (com.google.mlkit.vision.text.*), nenhuma mudanca no codigo. Pedido do
+    // usuario: diminuir o tamanho do APK para nao estourar a transferencia
+    // do plano gratuito do Supabase (cada atualizacao baixa o APK inteiro).
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
     // QR Code no abastecimento (paridade com o site, quick-abastecimento-button.tsx
     // + frota-qr-codes-button.tsx, Task #602): ML Kit Barcode Scanning pra LER
     // o QR de uma foto tirada (mesmo padrao "foto, nao camera ao vivo" do OCR
     // acima) -- mesma familia do text-recognition, ja no projeto. ZXing core
     // (so o encoder, sem a parte "android embedded") pra GERAR o QR de cada
     // frota como Bitmap/impressao -- nao tem gerador no ML Kit, so leitura.
-    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+    // v48 -- tambem "unbundled": tira ~5,5MB (libbarhopper_v3.so + modelos)
+    // do APK; mesma API com.google.mlkit.vision.barcode.*.
+    implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
     implementation("com.google.zxing:core:3.5.3")
     // Leitor de QR NATIVO do aparelho (Task #883/#896): a action antiga
     // "com.google.zxing.client.android.SCAN" (app ZXing "Barcode Scanner")

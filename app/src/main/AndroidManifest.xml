@@ -97,6 +97,11 @@
         android:usesCleartextTraffic="false"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules">
+        <!-- v48: OCR e leitor de QR "unbundled" -- o Play Services baixa os
+             modelos junto com a instalacao do app, em vez de virem no APK. -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="ocr,barcode" />
         <!-- Sentry: inicializado manualmente em BRAgroApplication.initSentry()
              (so em release). Desliga o auto-init do SDK pra nao inicializar duas vezes. -->
         <meta-data android:name="io.sentry.auto-init" android:value="false" />
