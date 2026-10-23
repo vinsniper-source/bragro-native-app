@@ -251,7 +251,14 @@ fun BRAgroNavHost() {
         }
         composable(Routes.HOME) {
             HomeScreen(
-                onOpenDomain = { domainId -> navController.navigate(Routes.domainList(domainId)) },
+                // v44 -- "dominio#idDoRegistro" (Alertas/Monitor) abre o
+                // módulo e, por cima dele, o registro; Voltar cai na lista.
+                onOpenDomain = { alvo ->
+                    val domainId = alvo.substringBefore('#')
+                    val recordId = alvo.substringAfter('#', "")
+                    navController.navigate(Routes.domainList(domainId))
+                    if (recordId.isNotBlank()) navController.navigate(Routes.domainFormEdit(domainId, recordId))
+                },
                 onLoggedOut = { navController.navigate(Routes.LOGIN) { popUpTo(Routes.HOME) { inclusive = true } } },
                 // "Importar KML desta fazenda" (linha de filtros do Canvas) --
                 // pedido do usuário ("implemente nessa sequência no app

@@ -49,10 +49,12 @@ class ModuleActionButtonViewModel(app: Application) : AndroidViewModel(app) {
     fun run(action: String, successMessage: String) {
         if (running.value) return
         running.value = true
+        AcaoEmAndamento.ativo.value = true
         resultMessage.value = null
         viewModelScope.launch {
             val result = repo.run(action)
             running.value = false
+            AcaoEmAndamento.ativo.value = false
             resultMessage.value = if (result != null) successMessage else "Sem conexão -- não foi possível executar agora."
         }
     }
@@ -70,12 +72,12 @@ fun RecalcularAreaButton(domainId: String, viewModel: ModuleActionButtonViewMode
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             if (showHeader) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Recalcular Área", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    Text("Recalc área", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                     // So icone (sem texto no botao) -- pedido do usuario
                     // ("transforme os botoes de operacao em so icone"), o
                     // titulo acima ja diz o que o botao faz.
                     IconButton(onClick = { viewModel.run(action, "Área recalculada com sucesso.") }, enabled = !running) {
-                        if (running) CircularProgressIndicator(modifier = Modifier.padding(2.dp)) else Icon(Icons.Outlined.Autorenew, contentDescription = "Recalcular Área")
+                        Icon(Icons.Outlined.Autorenew, contentDescription = "Recalc área", modifier = Modifier.girar(running))
                     }
                 }
             } else {
@@ -83,8 +85,8 @@ fun RecalcularAreaButton(domainId: String, viewModel: ModuleActionButtonViewMode
                 // dispara a ação direto, sem precisar de outro toque.
                 LaunchedEffect(Unit) { viewModel.run(action, "Área recalculada com sucesso.") }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Recalcular Área", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                    if (running) CircularProgressIndicator(modifier = Modifier.padding(2.dp).size(18.dp))
+                    Text("Recalc área", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    Icon(Icons.Outlined.Autorenew, contentDescription = null, modifier = Modifier.size(18.dp).girar(running))
                 }
             }
             Text(
@@ -107,15 +109,15 @@ fun RecalcularVencimentosButton(viewModel: ModuleActionButtonViewModel = viewMod
     Column {
         if (showHeader) {
             IconButton(onClick = { viewModel.run("recalcular-vencimentos", "Vencimentos recalculados com sucesso.") }, enabled = !running) {
-                if (running) CircularProgressIndicator(modifier = Modifier.padding(2.dp)) else Icon(Icons.Outlined.Autorenew, contentDescription = "Recalcular Vencimentos")
+                Icon(Icons.Outlined.Autorenew, contentDescription = "Recalc. vcto", modifier = Modifier.girar(running))
             }
         } else {
             // Fileira de ícones do módulo já revelou este bloco -- dispara a
             // ação direto, sem precisar de outro toque.
             LaunchedEffect(Unit) { viewModel.run("recalcular-vencimentos", "Vencimentos recalculados com sucesso.") }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Recalcular vcto", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                if (running) CircularProgressIndicator(modifier = Modifier.padding(2.dp).size(18.dp))
+                Text("Recalc. vcto", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                Icon(Icons.Outlined.Autorenew, contentDescription = null, modifier = Modifier.size(18.dp).girar(running))
             }
         }
         if (message != null) Text(message!!, style = MaterialTheme.typography.bodySmall)

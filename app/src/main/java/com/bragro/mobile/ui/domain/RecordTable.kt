@@ -99,10 +99,9 @@ fun RecordTableHeader(columns: List<ColumnConfig>, hScroll: ScrollState, showAct
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = TextOverflow.Clip,
-                    modifier = Modifier.basicMarquee(),
+                    maxLines = 2,
+                                        overflow = TextOverflow.Clip,
+                    
                 )
             }
         }
@@ -232,10 +231,9 @@ private fun RecordTableCellValue(col: ColumnConfig, value: String, record: Map<S
                 // própria, apareciam). onSurface = mesma cor que qualquer
                 // outro texto normal sobre um fundo `surface` no app.
                 color = moneyColor ?: MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Clip,
-                modifier = Modifier.basicMarquee(),
+                maxLines = 2,
+                                overflow = TextOverflow.Clip,
+                
             )
         }
     }

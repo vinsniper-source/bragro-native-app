@@ -422,7 +422,9 @@ fun AbasEncaixadas(titulos: List<String>, selecionada: Int, avisos: List<Int> = 
                     Text(
                         Idioma.tr(t), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                         fontWeight = if (ativa) FontWeight.ExtraBold else FontWeight.SemiBold,
-                        color = if (aviso) amarelo else if (ativa) cs.primary else cs.onSurfaceVariant,
+                        // v42 -- só a barra embaixo marca a aba atual; o rótulo fica na cor padrão.
+                        // v43 -- o nome nunca muda de cor; só o traço fica amarelo com aviso.
+                        color = cs.onSurface,
                     )
                 }
             }

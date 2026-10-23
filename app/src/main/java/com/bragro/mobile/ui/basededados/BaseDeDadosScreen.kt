@@ -33,6 +33,7 @@ import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Sync
@@ -630,7 +631,7 @@ private fun FarmsCard(
     // lista suspensa (parceria, comodato, própria, arrendo)".
     var newSituacaoTerra by remember { mutableStateOf("") }
 
-    CollapsibleCard("Fazendas (${farms?.size ?: 0})", initiallyOpen = true) {
+    CollapsibleCard("Fazendas (${farms?.size ?: 0})", initiallyOpen = false) { // v44: entra fechado
         farms?.forEach { el ->
             val f = el.jsonObject
             val id = f["id"]?.jsonPrimitive?.contentOrNull ?: return@forEach
@@ -663,7 +664,7 @@ private fun FarmsCard(
             // principal esta informação".
             var situacaoTerraText by remember(id) { mutableStateOf(f["situacaoTerra"]?.jsonPrimitive?.contentOrNull ?: "") }
             // Recolher por bloco de fazenda (pedido: botão de recolher em cada bloco).
-            var blocoAberto by remember(id) { mutableStateOf(true) }
+            var blocoAberto by remember(id) { mutableStateOf(false) } // v44: cada fazenda também fechada
             // Bloco individual por fazenda -- pedido do usuário ("divida
             // cada fazenda em um bloco e dentro do bloco individual separe
             // os campos, coloque todos os campos em apenas duas linhas"):
@@ -1089,7 +1090,12 @@ private fun SectorCard(
                             Icon(Icons.Outlined.CameraAlt, contentDescription = "Anexar foto")
                         }
                     }
-                    Switch(checked = ativo, onCheckedChange = { onToggle(id, it) }, enabled = !busy, colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)))
+                    // v43 -- o interruptor virou o ícone de editar; ligar e
+                    // desligar o item passou para dentro da edição.
+                    IconButton(onClick = { onToggle(id, !ativo) }, enabled = !busy) {
+                        Icon(Icons.Outlined.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
+                    }
+                    if (false) Switch(checked = ativo, onCheckedChange = { onToggle(id, it) }, enabled = !busy, colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)))
                     IconButton(onClick = { onDelete(id) }, enabled = !busy) { Icon(Icons.Outlined.Delete, contentDescription = "Excluir") }
                 }
             }

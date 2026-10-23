@@ -2038,7 +2038,7 @@ private fun AlertsCard(alerts: List<AlertData>, onOpenDomain: (String) -> Unit, 
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp)
-                                .then(if (domainId.isNotBlank()) Modifier.clickable { onOpenDomain(domainId) } else Modifier),
+                                .then(if (domainId.isNotBlank()) Modifier.clickable { onOpenDomain(alvoComRegistro(domainId, idDoAlerta(a.id))) } else Modifier),
                             verticalAlignment = Alignment.Top,
                         ) {
                             Icon(
@@ -2117,7 +2117,7 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (
                             // (AlertsCard acima) -- pedido do usuario
                             // ("quando trocar em alguma movimentação ser
                             // direcionado para a tela correspondente").
-                            modifier = Modifier.fillMaxWidth().clickable { onOpenDomain(e.table) }.padding(vertical = 3.dp),
+                            modifier = Modifier.fillMaxWidth().clickable { onOpenDomain(alvoComRegistro(e.table, e.id.removePrefix("${e.table}-").takeIf { it != e.id })) }.padding(vertical = 3.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.Top,
                         ) {
@@ -2383,7 +2383,7 @@ private fun KpiGrid(data: HomeData) {
         "inicio.kpi.pecuaria" to Kpi(
             "Animais cadastrados",
             data.pecuariaAnimaisDistintos.toString(),
-            Icons.Outlined.Pets,
+            com.bragro.mobile.ui.domain.IconePecuaria,
             BrGreen,
             KpiKind.QUANTIDADE,
             description = "Animais distintos já lançados no plantel",
@@ -3045,7 +3045,7 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
 private fun CotacoesPecuariaCard(livestock: com.bragro.mobile.data.model.LivestockQuotesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            MiniCardHeaderWithRefresh("Cotações Pecuária", Icons.Outlined.Pets, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
+            MiniCardHeaderWithRefresh("Cotações Pecuária", com.bragro.mobile.ui.domain.IconePecuaria, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
             val itens = listOfNotNull(livestock.boiGordo, livestock.bezerro, livestock.leite)
             // Estado vazio -- bug relatado pelo usuario ("cotacoes pecuaria
             // esta incompleto"): se os 3 indicadores vierem null (scraping
@@ -3077,7 +3077,7 @@ private fun CotacoesPecuariaCard(livestock: com.bragro.mobile.data.model.Livesto
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Icon(
-                                Icons.Outlined.Pets,
+                                com.bragro.mobile.ui.domain.IconePecuaria,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(12.dp),
@@ -3223,3 +3223,14 @@ private fun destaquesVisiveis(data: HomeData): List<Pair<String, String>> {
 
 private fun formatUpdatedAt(millis: Long): String =
     SimpleDateFormat("dd/MM HH:mm", Locale("pt", "BR")).format(Date(millis))
+
+
+// v44 -- Alertas e Monitor abrem o módulo JÁ no registro que gerou o aviso.
+// O destino segue como "dominio" ou "dominio#idDoRegistro" (ver
+// BRAgroNavHost, onOpenDomain), sem mudar a assinatura dos callbacks.
+private val PREFIXOS_ALERTA = listOf("financeiro-vencendo-", "financeiro-", "estoque-", "contrato-", "cobranca-", "rh-", "inventario-")
+
+/** id do alerta ("financeiro-vencendo-<id>", "estoque-<id>"...) -> id do registro. */
+private fun idDoAlerta(id: String): String? = PREFIXOS_ALERTA.firstOrNull { id.startsWith(it) }?.let { id.removePrefix(it) }?.takeIf { it.isNotBlank() }
+
+private fun alvoComRegistro(domainId: String, recordId: String?): String = if (recordId.isNullOrBlank()) domainId else "$domainId#$recordId"

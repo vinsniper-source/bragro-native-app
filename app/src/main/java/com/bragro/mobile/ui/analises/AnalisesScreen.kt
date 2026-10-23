@@ -606,16 +606,20 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
             }
             if (open) {
                 Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
-                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                        AnalisesAba.entries.forEachIndexed { index, item ->
-                            SegmentedButton(
-                                selected = aba == item,
-                                onClick = { aba = item },
-                                shape = SegmentedButtonDefaults.itemShape(index = index, count = AnalisesAba.entries.size),
-                                label = {
-                                    Text(item.titulo, maxLines = 1, softWrap = false, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
-                                },
-                            )
+                    // v43 -- duas linhas com dois botões em cada: o nome de cada
+                    // aba cabe inteiro, sem corte e sem letreiro.
+                    AnalisesAba.entries.chunked(2).forEach { dupla ->
+                        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
+                            dupla.forEachIndexed { index, item ->
+                                SegmentedButton(
+                                    selected = aba == item,
+                                    onClick = { aba = item },
+                                    shape = SegmentedButtonDefaults.itemShape(index = index, count = dupla.size),
+                                    label = {
+                                        Text(item.titulo, maxLines = 2, overflow = TextOverflow.Clip, style = MaterialTheme.typography.labelSmall)
+                                    },
+                                )
+                            }
                         }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
@@ -906,7 +910,7 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                     // janela por aqui (padrão da plataforma).
                     if (temRegistros) {
                         LabeledIconButton(
-                            icon = Icons.Outlined.BarChart,
+                            icon = com.bragro.mobile.ui.domain.IconeGraficos,
                             label = "Gráficos",
                             onClick = { graficosOpen = true },
                         )
@@ -926,7 +930,7 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                     if (temRegistros) {
                         LabeledIconButton(
                             icon = Icons.AutoMirrored.Outlined.ViewList,
-                            label = "Lançamentos",
+                            label = "Registros",
                             active = contentExpanded,
                             onClick = { contentExpanded = !contentExpanded },
                         )

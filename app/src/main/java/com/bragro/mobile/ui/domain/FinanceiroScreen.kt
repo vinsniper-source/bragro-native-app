@@ -447,7 +447,7 @@ fun FinanceiroScreen(
                 FinBlockSpec("Dados", MaterialTheme.typography.titleSmall, vertical = false, badgeCount = if (banco != null) 1 else 0) {
                     if (!isQuickView) {
                         ModuleIconButton(
-                            ModuleIconItem("charts", Icons.Outlined.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
+                            ModuleIconItem("charts", com.bragro.mobile.ui.domain.IconeGraficos, "Gráficos", active = expandedBlocks["charts"] == true),
                         ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
                     }
                     // Sem guard de view -- pedido do usuário ("quando o
@@ -481,7 +481,7 @@ fun FinanceiroScreen(
                     // ícones aparecerem").
                     LabeledIconButton(
                         icon = Icons.AutoMirrored.Outlined.ViewList,
-                        label = "Lançamentos",
+                        label = "Registros",
                         active = allExpanded,
                         onClick = { allExpanded = !allExpanded; cardOverrides.clear() },
                     )
@@ -510,7 +510,7 @@ fun FinanceiroScreen(
                         // do usuario ("substitua icones que estejam iguais
                         // mas com funcoes diferentes").
                         ModuleIconButton(
-                            ModuleIconItem("recalcular-vencimentos", Icons.Outlined.Autorenew, "Recalcular vcto", active = expandedBlocks["recalcular-vencimentos"] == true),
+                            ModuleIconItem("recalcular-vencimentos", Icons.Outlined.Autorenew, "Recalc. vcto", active = expandedBlocks["recalcular-vencimentos"] == true),
                         ) { expandedBlocks["recalcular-vencimentos"] = expandedBlocks["recalcular-vencimentos"] != true }
                     }
                     PeriodoDropdown(
@@ -619,7 +619,13 @@ fun FinanceiroScreen(
                     }
                 }
                 filtered.isEmpty() -> {
-                    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
+                    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        if (!isQuickView && expandedBlocks["calculators"] == true) CalculatorsCard("financeiro", showHeader = false)
+                        if (!isQuickView && expandedBlocks["recalcular-vencimentos"] == true) {
+                            com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth()) {
+                                Column(Modifier.padding(12.dp)) { RecalcularVencimentosButton(showHeader = false) }
+                            }
+                        }
                         if (offline) {
                             Text(
                                 "Sem conexão -- não foi possível verificar se há lançamentos salvos no servidor.",
@@ -652,7 +658,7 @@ fun FinanceiroScreen(
                             } else {
                                 item(key = "fluxo-oculto") {
                                     Text(
-                                        "Toque em Lançamentos para exibir.",
+                                        "Toque em Registros para exibir.",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(vertical = 8.dp),
@@ -676,6 +682,18 @@ fun FinanceiroScreen(
                             // financeiroGroupByStartIndex: declarados acima, antes do
                             // LazyColumn (precisam de contexto @Composable pro remember;
                             // disponíveis aqui por closure).
+                            // v44 -- bug: os ícones Calculadoras e Recalc. vcto
+                            // ligavam o estado, mas nenhum bloco era desenhado.
+                            if (!isQuickView && expandedBlocks["calculators"] == true) {
+                                item(key = "calculators") { CalculatorsCard("financeiro", showHeader = false) }
+                            }
+                            if (!isQuickView && expandedBlocks["recalcular-vencimentos"] == true) {
+                                item(key = "recalcular-vencimentos") {
+                                    com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth()) {
+                                        Column(Modifier.padding(12.dp)) { RecalcularVencimentosButton(showHeader = false) }
+                                    }
+                                }
+                            }
                             item(key = "lanc-header") {
                                 CabecalhoLancamentos(
                                     total = filtered.size,

@@ -116,8 +116,8 @@ private val DOMAIN_ICON: Map<String, ImageVector> = mapOf(
     // Pets (pata) -- Material Icons não tem um ícone de boi/gado no set
     // base; mesmo critério de "espírito visual" usado nos demais ícones
     // deste mapa (ver comentário no topo do arquivo).
-    "pecuaria" to Icons.Outlined.Pets,
-    "pastagem" to Icons.Outlined.Grass,
+    "pecuaria" to com.bragro.mobile.ui.domain.IconePecuaria,
+    "pastagem" to com.bragro.mobile.ui.domain.IconePastagem,
     "estoque" to Icons.Outlined.Inventory2,
     // Trocado de Inventory (caixa única) -- pedido do usuário ("trocar
     // ícone inventário"); parecia demais com o ícone de "Estoque"

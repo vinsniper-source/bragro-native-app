@@ -325,7 +325,8 @@ object HtmlPrinter {
               h2 { font-size: 14px; margin-top: 20px; margin-bottom: 6px; }
               p { font-size: 11px; color: #666; margin-top: 0; margin-bottom: 16px; }
               table { border-collapse: collapse; width: 100%; font-size: 11px; margin-bottom: 12px; }
-              th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+              th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; word-break: break-word; overflow-wrap: anywhere; }
+              svg { overflow: visible; }
               .chart-legend { font-size: 10px; color: #444; margin: 4px 0 10px; }
               .chart-legend span { display: inline-block; margin-right: 12px; }
               .chart-legend i { display: inline-block; width: 8px; height: 8px; margin-right: 4px; }
@@ -349,8 +350,11 @@ object HtmlPrinter {
         if (categories.isEmpty() || series.isEmpty()) return ""
         val maxValue = (series.flatMap { it.second }.maxOrNull() ?: 0.0).let { if (it <= 0.0) 1.0 else it }
         val width = 760.0
-        val height = 220.0
-        val baseline = height - 24.0
+        val colW0 = width / categories.size
+        val emPe = categories.any { it.length * 5.0 > colW0 - 2 }
+        val labelH = if (emPe) categories.maxOf { it.length } * 5.2 + 8.0 else 20.0
+        val height = 196.0 + labelH
+        val baseline = height - labelH
         val chartTop = 20.0
         val chartH = baseline - chartTop
         val colWidth = width / categories.size
@@ -375,7 +379,13 @@ object HtmlPrinter {
                     bars.append("""<text x="${(x + barWidth / 2).f()}" y="${(y - 4).coerceAtLeast(10.0).f()}" font-size="9" text-anchor="middle" fill="#111">${escapeHtml(fmt.format(v))}</text>""")
                 }
             }
-            labels.append("""<text x="${(colX + colWidth / 2).f()}" y="${(height - 6).f()}" font-size="9" text-anchor="middle" fill="#333">${escapeHtml(clipLabel(cat))}</text>""")
+            // v44: deitado se cabe; senão em pé e inteiro (sem "…").
+            val cx = colX + colWidth / 2
+            if (cat.length * 5.0 <= colWidth - 2) {
+                labels.append("""<text x="${cx.f()}" y="${(baseline + 12).f()}" font-size="9" text-anchor="middle" fill="#333">${escapeHtml(cat)}</text>""")
+            } else {
+                labels.append("""<text x="${cx.f()}" y="${(baseline + 4).f()}" font-size="9" text-anchor="end" dominant-baseline="middle" transform="rotate(-90 ${cx.f()} ${(baseline + 4).f()})" fill="#333">${escapeHtml(cat)}</text>""")
+            }
         }
         val legend = if (series.size > 1) {
             "<div class=\"chart-legend\">" + series.mapIndexed { i, (label, _) ->
@@ -383,7 +393,7 @@ object HtmlPrinter {
             }.joinToString("") + "</div>"
         } else ""
         return """
-            <svg viewBox="0 0 ${width.f()} ${height.f()}" width="100%" height="180" xmlns="http://www.w3.org/2000/svg">
+            <svg viewBox="0 0 ${width.f()} ${height.f()}" width="100%" height="${(height * 0.82).f()}" xmlns="http://www.w3.org/2000/svg">
               <line x1="0" y1="${baseline.f()}" x2="${width.f()}" y2="${baseline.f()}" stroke="#ccc" stroke-width="1" />
               $bars
               $labels
@@ -456,26 +466,60 @@ object HtmlPrinter {
             else if (v == Math.floor(v)) java.text.NumberFormat.getIntegerInstance(Locale("pt", "BR")).format(v.toLong())
             else java.text.NumberFormat.getNumberInstance(Locale("pt", "BR")).apply { maximumFractionDigits = 2 }.format(v)
 
+        // Quebra o texto em linhas que cabem em maxW (palavra longa é partida
+        // em pedaços) -- v44: nada sai cortado com "…" no PDF.
+        fun wrap(text: String, paint: Paint, maxW: Float): List<String> {
+            if (text.isEmpty()) return listOf("")
+            val linhas = mutableListOf<String>()
+            var atual = ""
+            for (palavra in text.split(' ')) {
+                var w = palavra
+                while (paint.measureText(w) > maxW && w.length > 1) {
+                    if (atual.isNotEmpty()) { linhas += atual; atual = "" }
+                    var k = w.length
+                    while (k > 1 && paint.measureText(w.take(k)) > maxW) k--
+                    linhas += w.take(k)
+                    w = w.drop(k)
+                }
+                val tentativa = if (atual.isEmpty()) w else "$atual $w"
+                if (paint.measureText(tentativa) <= maxW) atual = tentativa
+                else { linhas += atual; atual = w }
+            }
+            if (atual.isNotEmpty() || linhas.isEmpty()) linhas += atual
+            return linhas
+        }
+
         fun drawBars(chart: ChartPrintData) {
             val all = chart.barSeries.flatMap { it.second }
             val maxValue = (all.maxOrNull() ?: 0.0).coerceAtLeast(0.0).let { if (it <= 0.0) 1.0 else it }
             val n = chart.barCategories.size
-            // Rótulos longos ou muitos itens: rótulo inclinado ocupa mais altura.
             val colWidth = contentW / n
+            val seriesCount = chart.barSeries.size.coerceAtLeast(1)
+            val groupW = colWidth * 0.72f
+            val barWidth = (groupW / seriesCount).coerceAtLeast(2f)
+            val alturaTexto = barLabelPaint.textSize + 2f
+            // Mesma regra da tela: deitado se cabe; em pé (inteiro) se não cabe;
+            // se nem em pé cabe, um nome a cada N colunas.
             val maxLabelW = chart.barCategories.maxOf { barLabelPaint.measureText(it) }
-            val inclinado = maxLabelW > colWidth - 4f
-            val labelArea = if (inclinado) (minOf(maxLabelW, 90f) * 0.72f + 10f) else 14f
+            val nomeDeitado = maxLabelW <= colWidth - 2f
+            val nomeEmPe = !nomeDeitado && colWidth >= alturaTexto
+            val passo = if (nomeDeitado || nomeEmPe) 1 else kotlin.math.ceil((maxLabelW + 4f) / colWidth).toInt().coerceAtLeast(1)
+            val labelArea = if (nomeEmPe) maxLabelW + 8f else 14f
+            // Valores: deitados no topo se cabem na barra/coluna, senão em pé
+            // acima da barra; com barra fina demais até para isso ficam só na tabela.
+            val textos = chart.barSeries.map { (_, values) -> values.map { if (it != 0.0) valor(it, chart.isMoney) else "" } }
+            val limiteDeitado = colWidth / seriesCount + 2f
+            val maxValW = textos.flatten().maxOfOrNull { valueLabelPaint.measureText(it) } ?: 0f
+            val valorDeitado = maxValW <= limiteDeitado
+            val valorEmPe = !valorDeitado && barWidth >= valueLabelPaint.textSize
+            val folgaTopo = when { valorDeitado -> 12f; valorEmPe -> maxValW + 6f; else -> 0f }
             val legendArea = if (chart.barSeries.size > 1) 14f else 0f
-            val top = y + 12f
+            val top = y + 12f + folgaTopo
             val baseline = top + plotHeight
-            // grade leve em 4 faixas
             for (k in 0..4) {
                 val gy = baseline - plotHeight * k / 4f
                 canvas.drawLine(margin, gy, margin + contentW, gy, if (k == 0) axisPaint else gridPaint)
             }
-            val seriesCount = chart.barSeries.size.coerceAtLeast(1)
-            val groupW = colWidth * 0.72f
-            val barWidth = (groupW / seriesCount).coerceAtLeast(2f)
             chart.barCategories.forEachIndexed { ci, cat ->
                 val colX = margin + ci * colWidth + (colWidth - groupW) / 2f
                 chart.barSeries.forEachIndexed { si, (_, values) ->
@@ -484,32 +528,42 @@ object HtmlPrinter {
                     val x = colX + si * barWidth
                     val barTop = baseline - h
                     canvas.drawRect(x + 0.5f, barTop, x + barWidth - 0.5f, baseline, barPaints[si % barPaints.size])
-                    if (v != 0.0 && seriesCount * n <= 24) {
-                        val text = valor(v, chart.isMoney)
-                        val limite = maxOf(barWidth, colWidth / seriesCount) + 4f
-                        val p = Paint(valueLabelPaint).apply { while (measureText(text) > limite && textSize > 5.5f) textSize -= 0.5f }
-                        // Não coube nem com a fonte mínima: o valor fica só na tabela.
-                        if (p.measureText(text) <= limite) canvas.drawText(text, x + barWidth / 2, barTop - 3f, p)
+                    val text = textos[si].getOrElse(ci) { "" }
+                    if (text.isNotEmpty()) {
+                        if (valorDeitado) {
+                            canvas.drawText(text, x + barWidth / 2, barTop - 3f, valueLabelPaint)
+                        } else if (valorEmPe) {
+                            canvas.save()
+                            canvas.rotate(-90f, x + barWidth / 2, barTop - 3f)
+                            val vp = Paint(valueLabelPaint).apply { textAlign = Paint.Align.LEFT }
+                            canvas.drawText(text, x + barWidth / 2, barTop - 3f + vp.textSize / 3f, vp)
+                            canvas.restore()
+                        }
                     }
                 }
                 val cx = margin + ci * colWidth + colWidth / 2f
-                if (inclinado) {
+                if (nomeEmPe) {
+                    // em pé, lendo de baixo para cima, começando colado no eixo
                     canvas.save()
-                    canvas.rotate(-45f, cx, baseline + 10f)
+                    canvas.rotate(-90f, cx, baseline + 4f)
                     val lp = Paint(barLabelPaint).apply { textAlign = Paint.Align.RIGHT }
-                    canvas.drawText(fit(cat, lp, 90f), cx + 3f, baseline + 10f, lp)
+                    canvas.drawText(cat, cx, baseline + 4f + lp.textSize / 3f, lp)
                     canvas.restore()
-                } else {
-                    canvas.drawText(cat, cx, baseline + 11f, barLabelPaint)
+                } else if (ci % passo == 0) {
+                    val lp = if (nomeDeitado) barLabelPaint else Paint(barLabelPaint).apply { textAlign = Paint.Align.LEFT }
+                    val lx = if (nomeDeitado) cx else margin + ci * colWidth
+                    if (nomeDeitado || lx + lp.measureText(cat) <= margin + contentW) canvas.drawText(cat, lx, baseline + 11f, lp)
                 }
             }
             y = baseline + labelArea
             if (legendArea > 0f) {
                 var lx = margin
                 chart.barSeries.forEachIndexed { si, (nome, _) ->
+                    val w = 22f + legendPaint.measureText(nome)
+                    if (lx + w > margin + contentW) { lx = margin; y += legendArea }
                     canvas.drawRect(lx, y + 2f, lx + 8f, y + 10f, barPaints[si % barPaints.size])
                     canvas.drawText(nome, lx + 11f, y + 9.5f, legendPaint)
-                    lx += 22f + legendPaint.measureText(nome)
+                    lx += w
                 }
                 y += legendArea
             }
@@ -518,37 +572,67 @@ object HtmlPrinter {
 
         fun drawTable(chart: ChartPrintData) {
             val cols = chart.headers.size.coerceAtLeast(1)
-            // largura proporcional ao maior texto de cada coluna
-            val pesos = (0 until cols).map { c ->
+            val minCol = 64f
+            // largura desejada = maior texto da coluna (limitada); a coluna
+            // nunca fica abaixo de minCol, e o texto que passar QUEBRA linha.
+            val desejada = (0 until cols).map { c ->
                 val textos = listOf(chart.headers.getOrElse(c) { "" }) + chart.rows.map { it.getOrElse(c) { "" } }
-                textos.maxOf { cellPaint.measureText(it) }.coerceIn(40f, 220f)
+                (textos.maxOf { cellPaint.measureText(it) } + 10f).coerceIn(minCol, 240f)
             }
-            val soma = pesos.sum()
-            val larguras = pesos.map { it / soma * contentW }
-            fun linha(cells: List<String>, paint: Paint, fundo: Paint?) {
-                newPageIfNeeded(rowHeight)
-                if (fundo != null) canvas.drawRect(margin, y, margin + contentW, y + rowHeight, fundo)
-                var x = margin
-                cells.forEachIndexed { i, cell ->
-                    val w = larguras.getOrElse(i) { 0f }
-                    val numerico = i > 0 && cell.isNotBlank() && cell.trim().let { it.first().isDigit() || it.startsWith("R$") || it.startsWith("-") }
-                    val t = fit(cell, paint, w - 8f)
-                    if (numerico) canvas.drawText(t, x + w - 4f - paint.measureText(t), y + 12f, paint)
-                    else canvas.drawText(t, x + 4f, y + 12f, paint)
-                    x += w
+            // Colunas demais para a folha: divide em blocos de colunas,
+            // repetindo a 1ª coluna (a identificação da linha) em cada bloco.
+            val blocos = mutableListOf<List<Int>>()
+            var atual = mutableListOf(0)
+            var soma = desejada[0]
+            for (c in 1 until cols) {
+                if (soma + minCol > contentW && atual.size > 1) {
+                    blocos += atual; atual = mutableListOf(0, c); soma = desejada[0] + minCol
+                } else { atual += c; soma += minCol }
+            }
+            blocos += atual
+            blocos.forEachIndexed { bi, bloco ->
+                val pesos = bloco.map { desejada[it] }
+                val total = pesos.sum()
+                val larguras = if (total <= contentW) pesos.map { it / total * contentW } else {
+                    // encolhe proporcionalmente, sem passar do mínimo
+                    val escala = contentW / total
+                    pesos.map { maxOf(minCol, it * escala) }.let { l -> val t = l.sum(); l.map { it / t * contentW } }
                 }
-                y += rowHeight
-                canvas.drawLine(margin, y, margin + contentW, y, linePaint)
+                fun linha(cells: List<String>, paint: Paint, fundo: Paint?) {
+                    val quebradas = bloco.mapIndexed { i, c -> wrap(cells.getOrElse(c) { "" }, paint, larguras[i] - 8f) }
+                    val h = maxOf(rowHeight, quebradas.maxOf { it.size } * 11f + 6f)
+                    newPageIfNeeded(h)
+                    if (fundo != null) canvas.drawRect(margin, y, margin + contentW, y + h, fundo)
+                    var x = margin
+                    quebradas.forEachIndexed { i, ls ->
+                        val w = larguras[i]
+                        val cell = cells.getOrElse(bloco[i]) { "" }
+                        val numerico = bloco[i] > 0 && cell.isNotBlank() && cell.trim().let { it.first().isDigit() || it.startsWith("R$") || it.startsWith("-") }
+                        ls.forEachIndexed { li, t ->
+                            val ty = y + 12f + li * 11f
+                            if (numerico) canvas.drawText(t, x + w - 4f - paint.measureText(t), ty, paint)
+                            else canvas.drawText(t, x + 4f, ty, paint)
+                        }
+                        x += w
+                    }
+                    y += h
+                    canvas.drawLine(margin, y, margin + contentW, y, linePaint)
+                }
+                if (blocos.size > 1) {
+                    newPageIfNeeded(rowHeight * 2)
+                    canvas.drawText("Colunas ${bi + 1} de ${blocos.size}", margin, y + 9f, subPaint)
+                    y += 12f
+                }
+                linha(chart.headers, headerPaint, headBg)
+                chart.rows.forEach { linha(it, cellPaint, null) }
+                y += 16f
             }
-            linha(chart.headers, headerPaint, headBg)
-            chart.rows.forEach { linha(it, cellPaint, null) }
-            y += 16f
         }
 
         charts.forEach { chart ->
             val hasBars = chart.barCategories.isNotEmpty() && chart.barSeries.isNotEmpty()
-            newPageIfNeeded(30f + (if (hasBars) plotHeight + 110f else 0f) + rowHeight * 2)
-            canvas.drawText(fit(chart.title, chartTitlePaint, contentW), margin, y, chartTitlePaint)
+            newPageIfNeeded(30f + (if (hasBars) plotHeight + 200f else 0f) + rowHeight * 2)
+            wrap(chart.title, chartTitlePaint, contentW).forEachIndexed { i, t -> if (i > 0) y += 14f; canvas.drawText(t, margin, y, chartTitlePaint) }
             y += 6f
             if (hasBars) drawBars(chart) else y += 10f
             if (chart.headers.isNotEmpty()) drawTable(chart)

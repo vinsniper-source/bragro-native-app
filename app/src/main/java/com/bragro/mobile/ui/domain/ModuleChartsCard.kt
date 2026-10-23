@@ -105,7 +105,7 @@ fun ModuleChartsCard(domainId: String, viewModel: ModuleChartsViewModel = viewMo
                     modifier = Modifier.fillMaxWidth().clickable { open = !open }.padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Outlined.BarChart, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                    Icon(com.bragro.mobile.ui.domain.IconeGraficos, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                     Text("Gráficos", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                     com.bragro.mobile.ui.domain.CantoL(open)
                 }

@@ -119,12 +119,19 @@ fun FarmSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onCh
             modifier = Modifier.clickable { menuOpen = true }.padding(horizontal = 6.dp, vertical = 2.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Icon(Icons.Outlined.LocationOn, contentDescription = "Filtrar por fazenda: ${selected ?: "todas"}", tint = MaterialTheme.colorScheme.primary)
-            Text("Fazenda", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, maxLines = 1)
+            // v42 -- mesma regra do bloco Ações: ícone sempre na cor padrão;
+            // com fazenda escolhida, só o rótulo fica em tom apagado.
+            Icon(Icons.Outlined.LocationOn, contentDescription = "Filtrar por fazenda: ${selected ?: "todas"}", tint = MaterialTheme.colorScheme.onSurface)
+            Text(
+                "Fazenda",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (selected != null) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f) else MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+            )
         }
     } else {
         IconButton(onClick = { menuOpen = true }) {
-            Icon(Icons.Outlined.LocationOn, contentDescription = "Filtrar por fazenda: ${selected ?: "todas"}", tint = MaterialTheme.colorScheme.primary)
+            Icon(Icons.Outlined.LocationOn, contentDescription = "Filtrar por fazenda: ${selected ?: "todas"}", tint = MaterialTheme.colorScheme.onSurface)
         }
     }
     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {

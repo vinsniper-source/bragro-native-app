@@ -4,6 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.outlined.Agriculture
+import androidx.compose.material.icons.outlined.Balance
+import androidx.compose.material.icons.outlined.CompareArrows
 
 /** Espelho de GraosPesoLiquido()/CanaAtr()/ConversaoProdutividade() em
  * agronomic-calculators.tsx. */
@@ -44,7 +47,7 @@ private fun GraosPesoLiquidoCalc() {
         }
     }
 
-    CalcCard(icon = "🌾", title = "Grãos — peso líquido") {
+    CalcCard(icon = androidx.compose.material.icons.Icons.Outlined.Balance, title = "Grãos — peso líquido") {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             CalcNumField("Peso bruto", "kg", pesoBruto)
             CalcNumField("Umidade real", "%", umidadeReal)
@@ -71,7 +74,7 @@ private fun CanaAtrCalc() {
     val atrTotal = if (pc != null && atr != null) pc * atr else null
     val valorEstimado = if (atrTotal != null && preco != null) atrTotal * preco else null
 
-    CalcCard(icon = "🎋", title = "Cana — ATR") {
+    CalcCard(icon = androidx.compose.material.icons.Icons.Outlined.Agriculture, title = "Cana — ATR") {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             CalcNumField("Peso bruto cana", "ton", pesoCana)
             CalcNumField("ATR — usina", "kg/ton", atrUsina)
@@ -89,7 +92,7 @@ private fun ConversaoProdutividadeCalc() {
     val emSacas = if (p != null) p / 60 else null
     val emToneladas = if (p != null) p / 1000 else null
 
-    CalcCard(icon = "🔄", title = "Conversão de produtividade") {
+    CalcCard(icon = androidx.compose.material.icons.Icons.Outlined.CompareArrows, title = "Conversão de produtividade") {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             CalcNumField("Produtividade", "kg/ha", produtividade)
             CalcResultField("Sacas (60kg)", value = fmtCalc(emSacas))

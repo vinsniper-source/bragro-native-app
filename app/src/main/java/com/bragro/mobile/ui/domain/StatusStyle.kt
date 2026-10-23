@@ -552,9 +552,9 @@ fun DomainProgressCell(colLabel: String, info: DomainProgressInfo) {
             "$colLabel: ${info.label ?: "${Math.round(info.value)}%"}",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Clip,
-            modifier = Modifier.basicMarquee(),
+            
         )
         Spacer(Modifier.height(2.dp))
         Box(

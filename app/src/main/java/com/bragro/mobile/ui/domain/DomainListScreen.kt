@@ -519,7 +519,7 @@ fun DomainListScreen(
         Box(contentAlignment = Alignment.Center) {
             LabeledIconButton(
                 icon = Icons.Outlined.ViewList,
-                label = tipoLanc ?: "Lançamentos",
+                label = tipoLanc ?: "Registros",
                 active = allExpanded,
                 onClick = { if (allExpanded) { allExpanded = false; cardOverrides.clear() } else lancMenu = true },
             )
@@ -574,7 +574,7 @@ fun DomainListScreen(
                         // longos (ex.: "Transferências entre Fazendas") sem
                         // isso podiam quebrar linha e cortar embaixo, já
                         // que a AppBar tem altura fixa.
-                        Text(config?.label ?: domainId, maxLines = 2, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                        Text(config?.label ?: domainId, maxLines = 2, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface)
                     }
                 
                     }
@@ -750,7 +750,7 @@ fun DomainListScreen(
                         onClick = onOpenReconciliacaoEstoque,
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
-                        Icon(Icons.Outlined.Balance, contentDescription = "Reconciliação Físico x Fiscal")
+                        Icon(Icons.Outlined.Balance, contentDescription = "Ajustar Físico x Fiscal")
                     }
                     FloatingActionButton(
                         onClick = onNewRecord,
@@ -888,9 +888,14 @@ fun DomainListScreen(
                         // pedido do usuário ("troque a cor do bloco cobranças
                         // e nfe, coloque o fundo verde escuro e a fonte
                         // branca").
+                        // v40 -- fundo neutro nos dois modos: a opção escolhida
+                        // é que fica verde (ícone e rótulo), como já acontecia
+                        // no modo escuro. Antes o verde cheio no modo claro
+                        // apagava a diferença entre as duas.
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = BrGreen),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                         ) {
                             // Borda vertical dividindo em partes iguais +
                             // ícones centralizados dentro de cada bloco --
@@ -916,7 +921,6 @@ fun DomainListScreen(
                                     val active = id == domainId
                                     ModuleIconButton(
                                         ModuleIconItem(id, linkedDomainIcon(id), label, active = active),
-                                        contentColor = Color.White,
                                     ) { if (!active) onSwitchDomain(id) }
                                 }
                             }
@@ -1021,7 +1025,7 @@ fun DomainListScreen(
                 if (useCategorizedBlocks) {
                     val dadosBlock = ModuleBlockSpec("Dados", vertical = false, badgeCount = if (showFiltros) activeFilterCountGeneric else 0) {
                         ModuleIconButton(
-                            ModuleIconItem("charts", Icons.Outlined.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
+                            ModuleIconItem("charts", com.bragro.mobile.ui.domain.IconeGraficos, "Gráficos", active = expandedBlocks["charts"] == true),
                         ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
                         if (showFiltros) {
                             ModuleIconButton(
@@ -1103,7 +1107,7 @@ fun DomainListScreen(
                     // expandir/recolher (mesmo bloco Dados do padrão genérico).
                     val dadosBlock = ModuleBlockSpec("Dados", vertical = false, badgeCount = if (showFiltros) activeFilterCountGeneric else 0) {
                         ModuleIconButton(
-                            ModuleIconItem("charts", Icons.Outlined.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
+                            ModuleIconItem("charts", com.bragro.mobile.ui.domain.IconeGraficos, "Gráficos", active = expandedBlocks["charts"] == true),
                         ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
                         if (showFiltros) {
                             ModuleIconButton(
@@ -1133,7 +1137,7 @@ fun DomainListScreen(
                         // ícones, e deixe nuvem na mesma linha").
                         if (domainId == "estoque") {
                             ModuleIconButton(
-                                ModuleIconItem("estoque-fazenda", Icons.Outlined.CompareArrows, "Movimentações", active = expandedBlocks["estoque-fazenda"] == true),
+                                ModuleIconItem("estoque-fazenda", Icons.Outlined.CompareArrows, "Giro", active = expandedBlocks["estoque-fazenda"] == true),
                             ) { expandedBlocks["estoque-fazenda"] = expandedBlocks["estoque-fazenda"] != true }
                         }
                         // Previsão do tempo entra dentro de Dados também --
@@ -1167,7 +1171,7 @@ fun DomainListScreen(
                     val operacoesBlock = ModuleBlockSpec("Operações", vertical = false, badgeCount = pendingVisibleCount, footer = revisarFooter) {
                         if (domainId == "safra") {
                             ModuleIconButton(
-                                ModuleIconItem("recalcular-area", Icons.Outlined.Autorenew, "Recalcular"),
+                                ModuleIconItem("recalcular-area", Icons.Outlined.Autorenew, "Recalc área"),
                             ) { expandedBlocks["recalcular-area"] = expandedBlocks["recalcular-area"] != true }
                         }
                         LabeledIconButton(
@@ -1193,7 +1197,7 @@ fun DomainListScreen(
                         }
                         if (domainId == "frota") {
                             ModuleIconButton(
-                                ModuleIconItem("recalcular-area", Icons.Outlined.Autorenew, "Recalcular"),
+                                ModuleIconItem("recalcular-area", Icons.Outlined.Autorenew, "Recalc área"),
                             ) { expandedBlocks["recalcular-area"] = expandedBlocks["recalcular-area"] != true }
                         }
                         com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
@@ -1236,7 +1240,7 @@ fun DomainListScreen(
                     // arquivos... csv e pdf").
                     val dadosBlockCobrancas = ModuleBlockSpec("Dados", vertical = false, badgeCount = if (showFiltros) activeFilterCountGeneric else 0) {
                         ModuleIconButton(
-                            ModuleIconItem("charts", Icons.Outlined.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
+                            ModuleIconItem("charts", com.bragro.mobile.ui.domain.IconeGraficos, "Gráficos", active = expandedBlocks["charts"] == true),
                         ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
                         if (showFiltros) {
                             ModuleIconButton(
@@ -1312,7 +1316,7 @@ fun DomainListScreen(
                 // blocos, gerador de caracteres se o rótulo não couber.
                 EqualWidthBlockRow(modifier = Modifier.fillMaxWidth()) {
                     ModuleIconButton(
-                        ModuleIconItem("charts", Icons.Outlined.BarChart, "Gráficos", active = expandedBlocks["charts"] == true),
+                        ModuleIconItem("charts", com.bragro.mobile.ui.domain.IconeGraficos, "Gráficos", active = expandedBlocks["charts"] == true),
                     ) { expandedBlocks["charts"] = expandedBlocks["charts"] != true }
                     if (showCalc) {
                         ModuleIconButton(
@@ -1329,7 +1333,7 @@ fun DomainListScreen(
                     }
                     if (showEstoqueFazenda) {
                         ModuleIconButton(
-                            ModuleIconItem("estoque-fazenda", Icons.Outlined.CompareArrows, "Movimentações", active = expandedBlocks["estoque-fazenda"] == true),
+                            ModuleIconItem("estoque-fazenda", Icons.Outlined.CompareArrows, "Giro", active = expandedBlocks["estoque-fazenda"] == true),
                         ) { expandedBlocks["estoque-fazenda"] = expandedBlocks["estoque-fazenda"] != true }
                     }
                     if (showRecalcularArea) {
@@ -1338,7 +1342,7 @@ fun DomainListScreen(
                         // confundia, pedido do usuario ("substitua icones
                         // que estejam iguais mas com funcoes diferentes").
                         ModuleIconButton(
-                            ModuleIconItem("recalcular-area", Icons.Outlined.Autorenew, "Recalcular"),
+                            ModuleIconItem("recalcular-area", Icons.Outlined.Autorenew, "Recalc área"),
                         ) { expandedBlocks["recalcular-area"] = expandedBlocks["recalcular-area"] != true }
                     }
                     if (showFiltros) {
@@ -2459,13 +2463,13 @@ private fun ColumnFilterRow(
         Text(
             col.label,
             style = MaterialTheme.typography.labelSmall,
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Clip,
             modifier = Modifier.padding(bottom = 2.dp),
         )
         Box(modifier = Modifier.fillMaxWidth()) {
             OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
-                Text(selected.ifBlank { "Todos" }, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
+                Text(selected.ifBlank { "Todos" }, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier)
             }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 DropdownMenuItem(text = { Text("Todos") }, onClick = { onSelect(""); expanded = false })

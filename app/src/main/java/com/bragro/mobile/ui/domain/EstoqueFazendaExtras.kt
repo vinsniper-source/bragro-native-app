@@ -280,7 +280,7 @@ fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel(), 
                         saldos.forEach { s ->
                             RotuloValor(
                                 rotulo = "${s.fazendaNome} — ${s.item}",
-                                valor = "${s.saldo} ${s.unidade ?: ""}",
+                                valor = quantidadeBr(s.saldo, s.unidade),
                                 estiloRotulo = MaterialTheme.typography.bodySmall,
                                 estiloValor = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
                             )

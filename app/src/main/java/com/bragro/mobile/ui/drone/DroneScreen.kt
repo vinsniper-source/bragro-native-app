@@ -343,7 +343,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                         }
                         com.bragro.mobile.ui.domain.LabeledIconButton(
                             icon = Icons.AutoMirrored.Outlined.ViewList,
-                            label = "Lançamentos",
+                            label = "Registros",
                             active = lancAberto,
                             onClick = { lancAberto = !lancAberto },
                         )

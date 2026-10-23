@@ -4,6 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.outlined.Eco
+import androidx.compose.material.icons.outlined.Science
+import androidx.compose.material.icons.outlined.WaterDrop
 
 /** Espelho de Semeadura()/Pulverizacao()/Adubacao() em agronomic-calculators.tsx. */
 @Composable
@@ -39,7 +42,7 @@ private fun SemeaduraCalc() {
         if (areaVal != null) totalSementes = kgPorHa * areaVal
     }
 
-    CalcCard(icon = "🌱", title = "Semeadura") {
+    CalcCard(icon = androidx.compose.material.icons.Icons.Outlined.Eco, title = "Semeadura") {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             CalcNumField("Pop. desejada", "plantas/m", popDesejada)
             CalcNumField("Espaçamento", "m", espacamento)
@@ -73,7 +76,7 @@ private fun PulverizacaoCalc() {
     val produtoTotal = if (dose != null && area != null) dose * area else null
     val nTanques = if (caldaTotal != null && capacidade != null && capacidade > 0) caldaTotal / capacidade else null
 
-    CalcCard(icon = "💧", title = "Pulverização") {
+    CalcCard(icon = androidx.compose.material.icons.Icons.Outlined.WaterDrop, title = "Pulverização") {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             CalcNumField("Vazão/bico", "L/min", vazaoBico)
             CalcNumField("Velocidade", "km/h", velocidade)
@@ -105,7 +108,7 @@ private fun AdubacaoCalc() {
     val pTotal = if (aduboTotal != null && pctP.n != null) aduboTotal * (pctP.n!! / 100) else null
     val kTotal = if (aduboTotal != null && pctK.n != null) aduboTotal * (pctK.n!! / 100) else null
 
-    CalcCard(icon = "🧪", title = "Adubação") {
+    CalcCard(icon = androidx.compose.material.icons.Icons.Outlined.Science, title = "Adubação") {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             CalcNumField("Dose", "kg/ha", dose)
             CalcNumField("Área", "ha", area)

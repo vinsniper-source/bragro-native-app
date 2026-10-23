@@ -3,6 +3,7 @@ package com.bragro.mobile.ui.domain
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -117,7 +118,7 @@ fun CalcResultField(label: String, unit: String? = null, value: String) {
 /** Card individual de UMA calculadora, com título+ícone (emoji, igual ao
  * site) no topo e os campos empilhados embaixo. */
 @Composable
-fun CalcCard(icon: String, title: String, content: @Composable () -> Unit) {
+fun CalcCard(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, content: @Composable () -> Unit) {
     // Sem borda externa (pedido do usuário, mesmo ajuste do CalcCard em
     // agronomic-calculators.tsx no site) -- o Card padrão do tema
     // (ui/theme/AppCard.kt) sempre desenha uma borda verde fina, sobrescrita
@@ -131,13 +132,27 @@ fun CalcCard(icon: String, title: String, content: @Composable () -> Unit) {
     // Cobranças -- os campos continuam brancos por dentro (CalcNumField usa
     // appFieldColors(), CalcResultField usa colorScheme.surface), então o
     // contraste "campo branco sobre bloco verde" fica igual ao resto do app.
+    // v42 -- ícone de traço no lugar da figura colorida; a calculadora entra
+    // recolhida (mostrando só o nome, levemente apagada) e o toque em qualquer
+    // ponto do bloco abre e fecha.
+    var aberto by androidx.compose.runtime.saveable.rememberSaveable(title) { androidx.compose.runtime.mutableStateOf(false) }
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .alpha(if (aberto) 1f else 0.82f),
         colors = CardDefaults.cardColors(containerColor = com.bragro.mobile.ui.theme.formBlockColor()),
     ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("$icon $title", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
-            content()
+        Column(
+            modifier = Modifier
+                .clickable { aberto = !aberto }
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                com.bragro.mobile.ui.domain.IconeNegrito(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, size = 20.dp)
+                Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+            }
+            if (aberto) content()
         }
     }
 }

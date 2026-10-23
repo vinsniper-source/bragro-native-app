@@ -23,6 +23,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
@@ -792,7 +795,7 @@ private fun BoundariesList(boundaries: List<FieldBoundaryDto>, modifier: Modifie
                             style = MaterialTheme.typography.titleSmall,
                             maxLines = 1,
                             overflow = TextOverflow.Clip,
-                            modifier = Modifier.weight(1f).basicMarquee(),
+                            modifier = Modifier.weight(1f),
                         )
                     }
                     Text("Talhão: ${b.talhao}", style = MaterialTheme.typography.bodySmall)
@@ -826,7 +829,8 @@ private fun FazendasKmlTab(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (!drawing) {
-                OutlinedButton(onClick = { drawing = true; draft = emptyList() }) { Text("Desenhar talhão no mapa") }
+                // v42 -- "Desenhar" entrou na fileira de ícones do Mapa/KML
+                // (ver FarmMapLinksRow abaixo); aqui fica só o modo de desenho.
             } else {
                 Text("${draft.size} pontos", style = MaterialTheme.typography.labelSmall, modifier = Modifier.weight(1f))
                 TextButton(onClick = { draft = draft.dropLast(1) }, enabled = draft.isNotEmpty()) { Text("Desfazer") }
@@ -852,7 +856,7 @@ private fun FazendasKmlTab(
         // (fileira comum acima das abas, ver FieldviewScreen) -- fica
         // visível tanto em Talhões quanto em Fazendas/KML agora, sem
         // duplicar nesta aba.
-        FarmMapLinksRow(boundaries, farms)
+        FarmMapLinksRow(boundaries, farms, onDesenhar = { drawing = true; draft = emptyList() })
         BoundariesMap(boundaries, drawing = drawing, draft = draft, onTap = { draft = draft + it })
         BoundariesList(boundaries, modifier = Modifier.weight(1f))
     }
@@ -893,40 +897,56 @@ private fun googleEarthUrl(point: GeoPoint?, fallbackQuery: String): String =
 
 @OptIn(ExperimentalFoundationApi::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-private fun FarmMapLinksRow(boundaries: List<FieldBoundaryDto>, farms: List<FarmEntity>) {
-    if (farms.isEmpty()) return
+private fun FarmMapLinksRow(
+    boundaries: List<FieldBoundaryDto>,
+    farms: List<FarmEntity>,
+    onDesenhar: () -> Unit,
+) {
     val context = LocalContext.current
     fun openUrl(url: String) {
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     }
+    // v42 -- o que ficava solto aqui embaixo virou uma fileira de ícones, no
+    // mesmo padrão do bloco Ações: Maps, Earth e Desenhar. Os botões de
+    // fazenda só aparecem depois de tocar em Maps ou em Earth.
+    var destino by remember { mutableStateOf<String?>(null) }
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-        Text("Abrir no Google Maps:", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        // v40 -- os botões quebram em linhas e nenhum passa da margem.
-        androidx.compose.foundation.layout.FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            for (farm in farms) {
-                val ponto = farmCentroid(boundaries, farm.id)
-                OutlinedButton(onClick = { openUrl(googleMapsUrl(ponto, farm.name)) }, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
-                    Icon(Icons.Outlined.Map, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                    Text(farm.name, style = MaterialTheme.typography.labelSmall, maxLines = 2, overflow = TextOverflow.Clip)
-                }
-            }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            com.bragro.mobile.ui.domain.LabeledIconButton(
+                icon = Icons.Outlined.Map,
+                label = "Maps",
+                active = destino == "maps",
+                modifier = Modifier.weight(1f),
+                onClick = { destino = if (destino == "maps") null else "maps" },
+            )
+            com.bragro.mobile.ui.domain.LabeledIconButton(
+                icon = Icons.Outlined.Public,
+                label = "Earth",
+                active = destino == "earth",
+                modifier = Modifier.weight(1f),
+                onClick = { destino = if (destino == "earth") null else "earth" },
+            )
+            com.bragro.mobile.ui.domain.LabeledIconButton(
+                icon = Icons.Outlined.EditLocationAlt,
+                label = "Desenhar",
+                modifier = Modifier.weight(1f),
+                onClick = onDesenhar,
+            )
         }
-        Spacer(modifier = Modifier.height(4.dp))
-        Text("Abrir no Google Earth:", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        androidx.compose.foundation.layout.FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            for (farm in farms) {
-                val ponto = farmCentroid(boundaries, farm.id)
-                OutlinedButton(onClick = { openUrl(googleEarthUrl(ponto, farm.name)) }, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
-                    Icon(Icons.Outlined.Public, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                    Text(farm.name, style = MaterialTheme.typography.labelSmall, maxLines = 2, overflow = TextOverflow.Clip)
+        if (destino != null && farms.isNotEmpty()) {
+            androidx.compose.foundation.layout.FlowRow(
+                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                for (farm in farms) {
+                    val ponto = farmCentroid(boundaries, farm.id)
+                    OutlinedButton(
+                        onClick = { openUrl(if (destino == "earth") googleEarthUrl(ponto, farm.name) else googleMapsUrl(ponto, farm.name)) },
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                    ) {
+                        Text(farm.name, style = MaterialTheme.typography.labelSmall, maxLines = 2, overflow = TextOverflow.Clip)
+                    }
                 }
             }
         }
@@ -947,17 +967,63 @@ private fun BoundariesMap(
 ) {
     val strokeColor = MaterialTheme.colorScheme.primary.toArgb()
     val onTapState = androidx.compose.runtime.rememberUpdatedState(onTap)
+    val drawingState = androidx.compose.runtime.rememberUpdatedState(drawing)
+    // v44 -- mapa estável: altura fixa, recortado no próprio quadro (não
+    // cobre mais os ícones), sem repetir o mundo nem "soltar" para fora,
+    // overlays só refeitos quando o conteúdo muda (acabou o piscar) e o
+    // zoom do usuário é respeitado (só centraliza uma vez).
+    var mapaRef by remember { mutableStateOf<MapView?>(null) }
+    // [0] = assinatura do conteúdo desenhado, [1] = já centralizou
+    val estadoMapa = remember { arrayOfNulls<Any>(2) }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .height(300.dp)
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, androidx.compose.foundation.shape.RoundedCornerShape(12.dp)),
+    ) {
     AndroidView(
-        modifier = Modifier.fillMaxWidth().height(280.dp).padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = Modifier.matchParentSize().clipToBounds(),
         factory = { ctx ->
             MapView(ctx).apply {
                 setTileSource(TileSourceFactory.MAPNIK)
                 setMultiTouchControls(true)
-                controller.setZoom(14.0)
+                zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
+                isHorizontalMapRepetitionEnabled = false
+                isVerticalMapRepetitionEnabled = false
+                setScrollableAreaLimitLatitude(MapView.getTileSystem().maxLatitude, MapView.getTileSystem().minLatitude, 0)
+                minZoomLevel = 3.0
+                maxZoomLevel = 19.0
+                isTilesScaledToDpi = true
+                clipToOutline = true
+                // A tela rola na vertical: enquanto o dedo está no mapa, o
+                // gesto é do mapa (arrastar/pinçar), não da página.
+                setOnTouchListener { v, e ->
+                    v.parent?.requestDisallowInterceptTouchEvent(e.action != android.view.MotionEvent.ACTION_UP && e.action != android.view.MotionEvent.ACTION_CANCEL)
+                    false
+                }
+                overlays.add(
+                    org.osmdroid.views.overlay.MapEventsOverlay(object : org.osmdroid.events.MapEventsReceiver {
+                        override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean {
+                            if (!drawingState.value || p == null) return false
+                            onTapState.value(GeoPoint(p.latitude, p.longitude))
+                            return true
+                        }
+                        override fun longPressHelper(p: GeoPoint?): Boolean = false
+                    }),
+                )
+                controller.setZoom(4.0)
+                controller.setCenter(GeoPoint(-15.0, -55.0))
+                mapaRef = this
             }
         },
         update = { mv ->
-            mv.overlays.clear()
+            val assinatura = Triple(boundaries.map { it.id }, draft.toList(), strokeColor)
+            if (estadoMapa[0] == assinatura) return@AndroidView
+            estadoMapa[0] = assinatura
+            // mantém o 1º overlay (eventos de toque) e refaz só os polígonos
+            while (mv.overlays.size > 1) mv.overlays.removeAt(mv.overlays.size - 1)
             val allPoints = mutableListOf<GeoPoint>()
             boundaries.forEach { boundary ->
                 val points = geoJsonPolygonToGeoPoints(boundary.geojson)
@@ -966,9 +1032,6 @@ private fun BoundariesMap(
                     polygon.setPoints(points)
                     polygon.setStrokeColor(strokeColor)
                     polygon.setStrokeWidth(3f)
-                    // Mesma cor do traço pro preenchimento, so que com
-                    // alfa baixo (0x33 ~= 20% de opacidade) -- mascara os
-                    // 3 bytes de RGB originais e substitui só o alfa.
                     polygon.setFillColor((strokeColor and 0x00FFFFFF) or 0x33000000)
                     mv.overlays.add(polygon)
                     allPoints.addAll(points)
@@ -982,35 +1045,36 @@ private fun BoundariesMap(
                 d.setFillColor(if (draft.size >= 3) 0x33E65100 else 0)
                 mv.overlays.add(d)
             }
-            if (drawing) {
-                mv.overlays.add(
-                    org.osmdroid.views.overlay.MapEventsOverlay(object : org.osmdroid.events.MapEventsReceiver {
-                        override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean {
-                            if (p != null) onTapState.value(GeoPoint(p.latitude, p.longitude))
-                            return true
-                        }
-                        override fun longPressHelper(p: GeoPoint?): Boolean = false
-                    }),
-                )
-            }
-            // Só recentraliza no 1º contorno fora do modo desenho (não "pula"
-            // o mapa a cada vértice tocado).
-            if (!drawing && draft.isEmpty() && allPoints.isNotEmpty()) {
+            // Centraliza nos talhões UMA vez; depois o zoom é do usuário.
+            if (estadoMapa[1] != true && allPoints.isNotEmpty()) {
+                estadoMapa[1] = true
+                mv.controller.setZoom(14.0)
                 mv.controller.setCenter(allPoints.first())
             }
             mv.invalidate()
         },
-        // Sem isso, o MapView do osmdroid (cache de tiles em memoria/disco +
-        // threads de download) continua vivo mesmo depois que esta tela sai
-        // de composicao (ex.: usuario aperta Voltar) -- vazamento de memoria
-        // classico de osmdroid em Compose. onRelease (disponivel desde
-        // Compose UI 1.4, presente na 1.6.8 usada neste projeto -- ver
-        // app/build.gradle.kts) e chamado exatamente uma vez, quando a View
-        // sai de composicao pra nao ser reaproveitada -- ponto certo pra
-        // liberar o MapView, igual a documentacao do osmdroid recomenda.
         onRelease = { mapView -> mapView.onDetach() },
     )
+        // Zoom por botões (pinçar continua funcionando).
+        Column(
+            modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            listOf("+" to true, "−" to false).forEach { (rotulo, mais) ->
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surface)
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                        .clickable { mapaRef?.let { if (mais) it.controller.zoomIn() else it.controller.zoomOut() } },
+                    contentAlignment = Alignment.Center,
+                ) { Text(rotulo, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface) }
+            }
+        }
+    }
 }
+
 
 /** Converte o GeoJSON Polygon cru salvo em FieldBoundaryDto.geojson
  * (coordenadas em ordem lon,lat, padrão GeoJSON) pra uma lista de

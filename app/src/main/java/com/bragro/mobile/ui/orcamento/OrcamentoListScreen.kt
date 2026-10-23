@@ -508,7 +508,7 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                 // 3 desses aqui porque Orçamentos tem tela própria, fora do
                 // motor genérico ("force aparecer os outros ícones de dados").
                 ModuleIconButton(
-                    ModuleIconItem("charts", Icons.Outlined.BarChart, "Gráficos", active = showCharts),
+                    ModuleIconItem("charts", com.bragro.mobile.ui.domain.IconeGraficos, "Gráficos", active = showCharts),
                 ) { showCharts = !showCharts }
                 ModuleIconButton(
                     ModuleIconItem("filtros", Icons.Outlined.FilterAlt, "Filtros", active = statusFiltro != null, badgeCount = if (statusFiltro != null) 1 else 0),

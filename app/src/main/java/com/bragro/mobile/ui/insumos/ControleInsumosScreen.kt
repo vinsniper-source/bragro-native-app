@@ -446,7 +446,7 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                     filtro("cat", "Categoria", Icons.Outlined.FilterAlt, fCat, listOf("SAFRA" to "Safra", "FROTA" to "Frota", "ADM" to "ADM")) { fCat = it }
                     filtro("sit", "Situação", Icons.Outlined.RadioButtonChecked, fSit, listOf("FALTA" to "Falta", "EM_USO" to "Em uso", "EM_TRANSITO" to "Em trânsito", "OK" to "OK")) { fSit = it }
                     filtro("est", "Estoque", Icons.Outlined.Inventory2, fEst, listOf("CRITICO" to "Crítico", "ATENCAO" to "Atenção", "OK" to "OK")) { fEst = it }
-                    LabeledIconButton(icon = Icons.Outlined.BarChart, label = "Saldo", active = saldoAberto, onClick = { saldoAberto = !saldoAberto })
+                    LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconeGraficos, label = "Saldo", active = saldoAberto, onClick = { saldoAberto = !saldoAberto })
                     LabeledIconButton(icon = Icons.Outlined.ViewList, label = "Itens", active = listaAberta, onClick = { listaAberta = !listaAberta })
                     LabeledIconButton(icon = Icons.Outlined.WarningAmber, label = "Mínimo", active = criticosAbertos, onClick = { criticosAbertos = !criticosAbertos })
                     if (d?.arvoreControleInterno?.isNotEmpty() == true) {

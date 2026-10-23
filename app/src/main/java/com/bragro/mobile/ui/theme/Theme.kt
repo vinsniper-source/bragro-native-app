@@ -101,7 +101,8 @@ private val LightColors = lightColorScheme(
     // contraste... use um verde mais profundo, tom folha/esmeralda
     // fechado"), em vez do BrGreen puro (mais claro, perdia contraste no
     // fundo off-white sob luz forte).
-    primary = Color(0xFF006F23),
+    // v43 -- um verde só no app, o mesmo do botão "+": VerdeBarra.
+    primary = VerdeBarra,
     onPrimary = Color(0xFFFFFFFF),
     primaryContainer = Color(0xFFD9EBDD),
     onPrimaryContainer = Color(0xFF00381A),
@@ -153,7 +154,8 @@ private val DarkColors = darkColorScheme(
     // ("reduza a saturação... prefira tons de verde mais pastel,
     // acinzentados... sem poluir a tela"), em vez do BrGreen puro (mais
     // saturado, "vibrava" em cima do fundo quase-preto).
-    primary = Color(0xFF40A35C),
+    // v43 -- mesmo verde do modo claro (o da barra de categorias).
+    primary = VerdeBarra,
     onPrimary = Color(0xFF0A1F10),
     primaryContainer = Color(0xFF1E3326),
     onPrimaryContainer = Color(0xFFB7D9C7),

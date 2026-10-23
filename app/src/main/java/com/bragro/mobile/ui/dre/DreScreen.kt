@@ -386,7 +386,7 @@ private fun DreCategoryTabs(blocks: List<DreBlockSpec>, modifier: Modifier = Mod
 
 @Composable
 private fun FarmCard(f: DreFazendaData, arvore: List<DreRamoItemData>, expanded: Boolean, onToggle: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -407,10 +407,10 @@ private fun FarmCard(f: DreFazendaData, arvore: List<DreRamoItemData>, expanded:
                         .background(corSelo.copy(alpha = 0.15f))
                         .padding(horizontal = 8.dp, vertical = 2.dp),
                 )
-                if (arvore.isNotEmpty()) {
-                    com.bragro.mobile.ui.domain.CantoL(expanded, onClick = onToggle)
-                }
+                com.bragro.mobile.ui.domain.CantoL(expanded, onClick = onToggle)
             }
+            // v42 -- recolhido mostra só o nome, a área e o selo.
+            if (expanded) {
             HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
             Row { Text("Custo total: "); Text(formatMoneyBrl(f.custoTotal), fontWeight = FontWeight.Bold) }
             Row { Text("Custo/ha: "); Text(formatMoneyBrl(f.custoPorHa), fontWeight = FontWeight.Bold) }
@@ -431,12 +431,13 @@ private fun FarmCard(f: DreFazendaData, arvore: List<DreRamoItemData>, expanded:
                     color = if (f.margem >= 0) com.bragro.mobile.ui.domain.corSucesso() else com.bragro.mobile.ui.domain.corAtencao(),
                 )
             }
-            if (expanded && arvore.isNotEmpty()) {
+            if (arvore.isNotEmpty()) {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
                 Text("Detalhamento de custos", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                 Column(modifier = Modifier.padding(top = 4.dp)) {
                     arvore.forEach { ramo -> DreTreeNode(ramo, 0) }
                 }
+            }
             }
         }
     }
@@ -576,7 +577,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                     com.bragro.mobile.ui.domain.FarmSelectorButton(showLabel = true)
                     if (temRegistros) {
                         LabeledIconButton(
-                            icon = Icons.Outlined.BarChart,
+                            icon = com.bragro.mobile.ui.domain.IconeGraficos,
                             label = "Gráficos",
                             onClick = { graficosOpen = true },
                         )
@@ -603,7 +604,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                     if (temRegistros) {
                         LabeledIconButton(
                             icon = Icons.AutoMirrored.Outlined.ViewList,
-                            label = "Lançamentos",
+                            label = "Registros",
                             active = resultadoOpen,
                             onClick = { resultadoOpen = !resultadoOpen },
                         )

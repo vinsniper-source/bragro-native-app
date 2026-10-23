@@ -321,7 +321,7 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
             item(key = "acoes") {
                 com.bragro.mobile.ui.domain.AcoesEmAbas(
                     dados = {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.BarChart, label = "Estoque", active = estoqueAberto, onClick = { estoqueAberto = !estoqueAberto })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconeGraficos, label = "Estoque", active = estoqueAberto, onClick = { estoqueAberto = !estoqueAberto })
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ViewList, label = "Silos", active = silosAbertos, onClick = { silosAbertos = !silosAbertos })
                     },
                     operacoes = {
@@ -540,7 +540,10 @@ private fun SiloCard(
     val dirty = pct != base
     val estimado = silo.estimadoT != null
     val critico = pct > 0f && pct <= silo.nivelCriticoLimitePct
-    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+    // v41 -- o cartão do silo entra recolhido: nome, fazenda e quanto tem.
+    // Toque em qualquer ponto abre o resto.
+    var aberto by androidx.compose.runtime.saveable.rememberSaveable(silo.id) { mutableStateOf(false) }
+    com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
@@ -549,16 +552,17 @@ private fun SiloCard(
                 Badge { Text(statusLabel(silo.status)) }
             }
             Text(farmNome?.uppercase() ?: "Sem fazenda vinculada", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(
-                listOfNotNull(silo.produto, silo.fabricante, silo.capacidadeT?.let { "${it.toInt()} t" }).joinToString(" · ").ifBlank { "—" },
-                style = MaterialTheme.typography.bodySmall,
-            )
             val toneladas = silo.capacidadeT?.let { it * pct / 100.0 }
             Text(
                 (toneladas?.let { "%.1f de %d t · ".format(Locale("pt", "BR"), it, silo.capacidadeT!!.toInt()) } ?: "") + "${pct.toInt()}%",
                 style = MaterialTheme.typography.labelMedium,
                 color = if (critico) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = 6.dp),
+            )
+            if (aberto) {
+            Text(
+                listOfNotNull(silo.produto, silo.fabricante, silo.capacidadeT?.let { "${it.toInt()} t" }).joinToString(" · ").ifBlank { "—" },
+                style = MaterialTheme.typography.bodySmall,
             )
             Slider(
                 value = pct,
@@ -617,7 +621,9 @@ private fun SiloCard(
                 OutlinedButton(onClick = onHistorico, modifier = Modifier.weight(1.2f), contentPadding = pad) { Text("Histórico", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium) }
                 IconButton(onClick = onArchive) { Icon(Icons.Outlined.Delete, contentDescription = "Arquivar") }
             }
+            }
         }
+        com.bragro.mobile.ui.domain.CantoL(aberto, onClick = { aberto = !aberto })
     }
 }
 

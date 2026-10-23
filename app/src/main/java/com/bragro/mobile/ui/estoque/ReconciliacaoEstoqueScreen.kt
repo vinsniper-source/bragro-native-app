@@ -164,10 +164,9 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                     Column {
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            "Reconciliação Físico x Fiscal",
+                            "Ajustar Físico x Fiscal",
                             maxLines = 2,
                             overflow = TextOverflow.Clip,
-                            style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
@@ -214,7 +213,7 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                 val conferidos = itens.size - divergentes.size
                 com.bragro.mobile.ui.domain.PainelMonitoramento(
                     com.bragro.mobile.ui.domain.PainelModulo(
-                        titulo = "Reconciliação físico x fiscal",
+                        titulo = "Ajustar Físico x Fiscal",
                         subtitulo = "${itens.size} itens com movimento · ${divergentes.size} com diferença",
                         kpis = listOf(
                             com.bragro.mobile.ui.domain.PainelKpi("Com movimento", itens.size.toDouble(), "numero", null, "todas as origens", "Todos"),

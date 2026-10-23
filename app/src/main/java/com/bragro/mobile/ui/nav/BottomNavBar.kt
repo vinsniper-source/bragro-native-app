@@ -376,7 +376,7 @@ private val OWNER_BOTTOM_TABS = listOf(
     // no topo de OWNER_BOTTOM_TABS). Mesmo critério de "Frota" acima (domínio
     // genérico simples, sem dropdown).
     BottomTab(
-        "pecuaria", "Pecuária", Icons.Outlined.Pets,
+        "pecuaria", "Pecuária", com.bragro.mobile.ui.domain.IconePecuaria,
         items = listOf(
             SectorTarget.Domain("pecuaria", "Pecuária"),
             SectorTarget.Domain("pastagem", "Pastagem"),
@@ -410,7 +410,7 @@ private val CATEGORY_ICONS: Map<String, ImageVector> = mapOf(
     "Painéis" to Icons.Outlined.Assignment,
     // Financeiro
     "Lançamentos" to Icons.Outlined.Receipt,
-    "Relatórios" to Icons.Outlined.BarChart,
+    "Relatórios" to com.bragro.mobile.ui.domain.IconeGraficos,
     "Compras" to Icons.Outlined.ShoppingCart,
     "Faturamento" to Icons.Outlined.Payments,
     "Patrimônio" to Icons.Outlined.Warehouse,

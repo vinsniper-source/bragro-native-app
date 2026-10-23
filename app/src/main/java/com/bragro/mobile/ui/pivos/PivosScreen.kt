@@ -3,6 +3,7 @@ package com.bragro.mobile.ui.pivos
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.ViewList
 import androidx.compose.material.icons.outlined.Edit
@@ -95,6 +96,11 @@ import java.util.Locale
 private val STATUS_OPTIONS = listOf("RUNNING_WATER" to "Irrigando", "RUNNING_DRY" to "Girando (sem água)", "STOPPED" to "Parado", "OFFLINE" to "Offline")
 private val SENTIDO_OPTIONS = listOf("CLOCKWISE" to "Horário", "COUNTER_CLOCKWISE" to "Anti-horário")
 private val MARCAS = listOf("Lindsay FieldNET", "Valley 365/AgSense", "Reinke ReinCloud", "Outro")
+
+// Cores do balanço hídrico iguais às da plataforma.
+private val COR_LAMINA = androidx.compose.ui.graphics.Color(0xFF2563EB)
+private val COR_CHUVA = androidx.compose.ui.graphics.Color(0xFF16A34A)
+private val COR_CHUVA_CLIMA = androidx.compose.ui.graphics.Color(0xFF7DD3FC)
 
 private fun statusLabel(status: String?): String = STATUS_OPTIONS.firstOrNull { it.first == status }?.second ?: "Offline"
 private fun todayBr(): String = SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR")).format(java.util.Date())
@@ -264,7 +270,7 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
     var showNovo by remember { mutableStateOf(false) }
     var balancoOpen by remember { mutableStateOf(false) }
     var graficosOpen by remember { mutableStateOf(false) }
-    var pivosOpen by remember { mutableStateOf(false) }
+    var pivosOpen by remember { mutableStateOf(true) } // v44: abre na lista, igual à plataforma (Visão: Pivôs)
     var prestadoraAberta by remember { mutableStateOf(false) }
     var filtroPivo by remember { mutableStateOf<String?>(null) }
     var filtroMenu by remember { mutableStateOf(false) }
@@ -354,7 +360,7 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                             }
                             com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Opacity, label = "Balanço", active = balancoOpen, onClick = { balancoOpen = !balancoOpen })
                             com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ViewList, label = "Pivôs", active = pivosOpen, onClick = { pivosOpen = !pivosOpen })
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.BarChart, label = "Gráficos", onClick = { graficosOpen = true })
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconeGraficos, label = "Gráficos", onClick = { graficosOpen = true })
                         },
                         operacoes = {
                             com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.WaterDrop, label = "+ Pivô", onClick = { editing = null; showNovo = true })
@@ -379,24 +385,37 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                 com.bragro.mobile.ui.domain.BlocoGraficoBarras(
                     titulo = "Balanço hídrico (30 dias)",
                     categorias = balanco.map { com.bragro.mobile.ui.domain.diaMesBr(it.data) },
-                    series = listOf("Lâmina aplicada" to balanco.map { it.laminaMm }, "Chuva (pluviômetro)" to balanco.map { it.chuvaMm }, "Chuva (Clima, automática)" to balanco.map { it.chuvaClimaMm }),
+                    series = listOf("Lâmina aplicada" to balanco.map { it.laminaMm }, "Chuva (pluviômetro)" to balanco.map { it.chuvaMm }, "Chuva (módulo Clima, automática)" to balanco.map { it.chuvaClimaMm }, "Total (oferta de água)" to balanco.map { it.laminaMm + it.chuvaMm + it.chuvaClimaMm }),
                     isMoney = false,
                 ) {
-                    Column {
-                        if (!balancoOpen) {
-                        } else if (balanco.isEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        // v44 -- igual à plataforma: título com o recorte, barras
+                        // por fonte de água, linha do total e a nota explicativa.
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text("Balanço hídrico · últimos 30 dias", style = MaterialTheme.typography.titleSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                            Spacer(Modifier.size(6.dp))
+                            Text(pivos.firstOrNull { it.id == filtroPivo }?.nome ?: "todos os pivôs", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        if (balanco.isEmpty()) {
                             Text("Sem lançamentos de telemetria no período.", style = MaterialTheme.typography.bodySmall)
                         } else {
                             SimpleBarChart(
                                 categories = balanco.map { com.bragro.mobile.ui.domain.diaMesBr(it.data) },
                                 series = listOf(
-                                    BarSeries("Lâmina aplicada", balanco.map { it.laminaMm }, MaterialTheme.colorScheme.primary),
-                                    BarSeries("Chuva (pluviômetro)", balanco.map { it.chuvaMm }, MaterialTheme.colorScheme.secondary),
-                                    BarSeries("Chuva (Clima, automática)", balanco.map { it.chuvaClimaMm }, MaterialTheme.colorScheme.tertiary),
+                                    BarSeries("Lâmina aplicada", balanco.map { it.laminaMm }, COR_LAMINA),
+                                    BarSeries("Chuva (pluviômetro)", balanco.map { it.chuvaMm }, COR_CHUVA),
+                                    BarSeries("Chuva (módulo Clima, automática)", balanco.map { it.chuvaClimaMm }, COR_CHUVA_CLIMA),
                                 ),
                                 isMoney = false,
+                                barsHeight = 170.dp,
+                                linha = BarSeries("Total (oferta de água)", balanco.map { it.laminaMm + it.chuvaMm + it.chuvaClimaMm }, MaterialTheme.colorScheme.onSurface),
                             )
                         }
+                        Text(
+                            "Mostra a oferta diária de água (lâmina aplicada pelo pivô + chuva do pluviômetro; nos dias sem pluviômetro, entra a chuva lançada no módulo Clima da fazenda do pivô). Não calcula a necessidade hídrica da cultura (evapotranspiração) -- esse cruzamento depende de um coeficiente de cultura que este módulo ainda não modela.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
             }
@@ -574,11 +593,21 @@ private fun PivoCard(
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                     Column(Modifier.weight(1f)) {
                         Text("${farmNome ?: "Sem fazenda"} · ${pivo.marca}".uppercase(), fontSize = 10.sp, letterSpacing = 0.6.sp, color = cs.onSurfaceVariant)
-                        Text(pivo.nome, fontSize = 15.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                        Text(pivo.nome, fontSize = 15.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = cs.onSurface)
+                    }
+                    // Selo como na plataforma: Irrigando cheio, Girando contornado,
+                    // Parado/Offline em tom de atenção.
+                    val forma = androidx.compose.foundation.shape.RoundedCornerShape(50)
+                    val selo = when (pivo.status) {
+                        "RUNNING_WATER" -> Modifier.background(corStatus, forma)
+                        "RUNNING_DRY" -> Modifier.border(1.dp, cs.outline, forma)
+                        else -> Modifier.background(com.bragro.mobile.ui.domain.corAtencao().copy(alpha = 0.15f), forma)
                     }
                     Text(
-                        statusLabel(pivo.status).uppercase(), fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, color = corStatus,
-                        modifier = Modifier.background(corStatus.copy(alpha = 0.15f), androidx.compose.foundation.shape.RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 2.dp),
+                        statusLabel(pivo.status), fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                        color = if (pivo.status == "RUNNING_WATER") androidx.compose.ui.graphics.Color.White else cs.onSurface,
+                        maxLines = 1,
+                        modifier = Modifier.padding(start = 8.dp).then(selo).padding(horizontal = 10.dp, vertical = 3.dp),
                     )
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -605,7 +634,7 @@ private fun PivoCard(
                 }
                 Text(
                     (pivo.raioM?.let { "Raio ${it.toInt()} m · ${"%.1f".format(Locale("pt", "BR"), Math.PI * it * it / 10000)} ha · " } ?: "") +
-                        (pivo.ultimaSincronizacaoEm?.let { "Atualizado em ${dataHoraBr(it)}" } ?: "Lançado manualmente") + " · Toque no anel para ver o histórico",
+                        (pivo.ultimaSincronizacaoEm?.let { "Atualizado em ${dataHoraBr(it)}" } ?: "Lançado manualmente"),
                     fontSize = 10.5.sp, color = cs.onSurfaceVariant,
                 )
             }
@@ -833,7 +862,7 @@ private fun SecaoCabecalho(titulo: String, aberto: Boolean, onToggle: () -> Unit
 /** ISO (2026-10-16T18:42:00Z) -> 16/10/2026 15:42 (horário de Brasília) -- v17. */
 private fun dataHoraBr(iso: String): String = runCatching {
     val inst = java.time.Instant.parse(iso)
-    java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm").withZone(java.time.ZoneId.of("America/Sao_Paulo")).format(inst)
+    java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy, HH:mm").withZone(java.time.ZoneId.of("America/Sao_Paulo")).format(inst)
 }.getOrElse {
     val d = iso.take(10).split("-")
     if (d.size == 3) "${d[2]}/${d[1]}/${d[0]}" + (iso.drop(11).take(5).takeIf { it.length == 5 }?.let { " $it" } ?: "") else iso

@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -140,28 +141,30 @@ fun ModuleIconButton(
     // Liga/desliga: ativo = fundo verde cheio + ícone/rótulo brancos; tocar de
     // novo volta ao padrão (pedido do usuário). contentColor explícito (bloco
     // Faturamento) é respeitado só quando inativo.
-    val fg = when {
-        item.active -> MaterialTheme.colorScheme.primary
-        else -> (contentColor ?: MODULE_ICON_FG)
-    }
+    // v40/v41 -- ícone sempre neutro; o sinal de ligado é o rótulo apagado.
+    val fg = contentColor ?: MODULE_ICON_FG
     Column(
         modifier = Modifier
             .widthIn(min = 42.dp)
             .clickable(onClick = onClick)
-            .padding(horizontal = 4.dp, vertical = 6.dp),
+            .padding(horizontal = 1.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         BadgedBox(badge = { if (item.badgeCount > 0) BadgeContagem(item.badgeCount, verde = true) }) {
-            IconeNegrito(item.icon, contentDescription = null, tint = fg, size = MODULE_ICON_SIZE)
+            // v44 -- ícone de recálculo gira enquanto a ação roda.
+            val girando = item.key.startsWith("recalcular") && AcaoEmAndamento.ativo.value
+            Box(Modifier.girar(girando)) { IconeNegrito(item.icon, contentDescription = null, tint = fg, size = MODULE_ICON_SIZE) }
         }
         Text(
             item.label,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = if (item.active) androidx.compose.ui.text.font.FontWeight.Medium else androidx.compose.ui.text.font.FontWeight.Normal,
-            color = fg,
+            color = if (item.active) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f) else fg,
             // v40 -- sem letreiro: o rótulo fica fixo e quebra em duas
             // linhas quando não cabe numa.
-            maxLines = 2,
+            // v41 -- uma linha só, no mesmo tamanho dos demais rótulos.
+            maxLines = 1,
+            softWrap = false,
             overflow = TextOverflow.Clip,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
@@ -224,7 +227,7 @@ fun LabeledIconButton(
                     else -> { marcado = true; onClick() }
                 }
             }
-            .padding(horizontal = 4.dp, vertical = 6.dp),
+            .padding(horizontal = 1.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (loading) {
@@ -246,7 +249,9 @@ fun LabeledIconButton(
                 // Botão alternado ativo: nome em tom apagado (mesmo padrão
                 // do modo escuro, agora nos dois modos).
                 color = if (ligado) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f) else fg,
-                maxLines = 2,
+                // v41 -- uma linha só, no mesmo tamanho dos demais rótulos.
+                maxLines = 1,
+                softWrap = false,
                 overflow = TextOverflow.Clip,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
@@ -395,4 +400,24 @@ fun BadgeContagem(n: Int, verde: Boolean = false) {
     ) {
         Text("$n", color = if (verde) MaterialTheme.colorScheme.onPrimary else cor, fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, lineHeight = 12.sp)
     }
+}
+
+
+/** v44 -- sinal global "há uma ação de recálculo rodando" (ver
+ * ModuleActionButtonViewModel): faz o ícone da fileira girar. */
+object AcaoEmAndamento {
+    val ativo = androidx.compose.runtime.mutableStateOf(false)
+}
+
+/** Gira o conteúdo continuamente enquanto `ativo`. */
+@Composable
+fun Modifier.girar(ativo: Boolean): Modifier {
+    if (!ativo) return this
+    val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "girar")
+    val graus by t.animateFloat(
+        initialValue = 0f, targetValue = 360f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(900, easing = androidx.compose.animation.core.LinearEasing)),
+        label = "graus",
+    )
+    return this.graphicsLayer { rotationZ = graus }
 }

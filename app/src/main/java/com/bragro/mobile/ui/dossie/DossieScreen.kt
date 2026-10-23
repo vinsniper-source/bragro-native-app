@@ -589,19 +589,27 @@ private fun FazendaDreCard(f: DossieDreFazendaData) {
                         .padding(horizontal = 8.dp, vertical = 2.dp),
                 )
             }
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column { Text("Área", style = MaterialTheme.typography.labelSmall); Text(formatArea(f.areaHa), style = MaterialTheme.typography.bodyMedium) }
-                Column { Text("Custo", style = MaterialTheme.typography.labelSmall); Text(formatMoneyBrl(f.custoTotal), style = MaterialTheme.typography.bodyMedium) }
-                Column { Text("Receita", style = MaterialTheme.typography.labelSmall); Text(formatMoneyBrl(f.receitaTotal), style = MaterialTheme.typography.bodyMedium) }
-                Column {
-                    Text("Margem", style = MaterialTheme.typography.labelSmall)
+            // v44 -- os quatro valores em duas linhas (2 × 2): em uma linha só
+            // eles se encavalavam com valores grandes.
+            @Composable
+            fun celula(rotulo: String, valor: String, mod: Modifier, destaque: Boolean = false) {
+                Column(mod) {
+                    Text(rotulo, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
-                        formatMoneyBrl(f.margem),
+                        valor,
                         style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = corSelo,
+                        fontWeight = if (destaque) FontWeight.Bold else null,
+                        color = if (destaque) corSelo else MaterialTheme.colorScheme.onSurface,
                     )
                 }
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                celula("Área", formatArea(f.areaHa), Modifier.weight(1f))
+                celula("Custo", formatMoneyBrl(f.custoTotal), Modifier.weight(1f))
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                celula("Receita", formatMoneyBrl(f.receitaTotal), Modifier.weight(1f))
+                celula("Margem", formatMoneyBrl(f.margem), Modifier.weight(1f), destaque = true)
             }
         }
     }

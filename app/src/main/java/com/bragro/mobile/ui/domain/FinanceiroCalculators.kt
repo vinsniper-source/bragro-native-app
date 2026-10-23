@@ -14,6 +14,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlin.math.pow
+import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.TrendingUp
 
 /** Espelho de JurosCompostos()/Amortizacao() em agronomic-calculators.tsx. */
 @Composable
@@ -41,7 +43,7 @@ private fun JurosCompostosCalc() {
         jurosTotais = montante - c
     }
 
-    CalcCard(icon = "📈", title = "Juros compostos") {
+    CalcCard(icon = androidx.compose.material.icons.Icons.Outlined.TrendingUp, title = "Juros compostos") {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             CalcNumField("Capital inicial", "R$", capital)
             CalcNumField("Taxa", "% ao mês", taxa)
@@ -85,7 +87,7 @@ private fun AmortizacaoCalc() {
         }
     }
 
-    CalcCard(icon = "🏦", title = "Amortização (custeio/financiamento)") {
+    CalcCard(icon = androidx.compose.material.icons.Icons.Outlined.AccountBalance, title = "Amortização (custeio/financiamento)") {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             CalcNumField("Valor financiado", "R$", valorFinanciado)
             CalcNumField("Taxa", "% ao mês", taxa)
