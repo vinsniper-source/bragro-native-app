@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
@@ -122,7 +124,7 @@ private val INICIO_WIDGETS = listOf(
     // lib/permissions.ts, INICIO_WIDGETS).
     "inicio.kpi.financeiro" to "KPI: Em aberto (Financeiro)",
     "inicio.kpi.financeiro.vencendo" to "KPI: Contas vencendo em 7 dias",
-    "inicio.kpi.financeiro.lancamentos" to "KPI: Lançamentos financeiros no mês",
+    "inicio.kpi.financeiro.lancamentos" to "KPI: Registros financeiros no mês",
     "inicio.kpi.estoque" to "KPI: Itens no estoque",
     "inicio.kpi.estoque.critico" to "KPI: Itens abaixo do mínimo",
     "inicio.kpi.estoque.movimentacoes" to "KPI: Movimentações de estoque no mês",
@@ -134,7 +136,7 @@ private val INICIO_WIDGETS = listOf(
     "inicio.kpi.frota.veiculos" to "KPI: Veículos/máquinas cadastrados",
     "inicio.kpi.frota.os" to "KPI: O.S. abertas no mês",
     "inicio.kpi.safra" to "KPI: Safras ativas",
-    "inicio.kpi.safra.lancamentos" to "KPI: Lançamentos de safra no mês",
+    "inicio.kpi.safra.lancamentos" to "KPI: Registros de safra no mês",
     "inicio.kpi.safra.colheitas" to "KPI: Colheitas no mês",
     // KPIs de Pecuária (novo, pedido do usuário "crie kpis para pecuária") --
     // mesmo critério dos demais setores acima, ver comentário em
@@ -379,8 +381,16 @@ private fun PersonalizarInicioDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
-                INICIO_WIDGETS.forEach { (id, label) ->
-                    ModuleToggleRow(id, label, selected) { selected = it }
+                // v51 -- a lista rola dentro da janela (antes ficava travada e
+                // escondia os 8 últimos itens: RH, Frota e Safra).
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = 380.dp)
+                        .verticalScroll(androidx.compose.foundation.rememberScrollState()),
+                ) {
+                    INICIO_WIDGETS.forEach { (id, label) ->
+                        ModuleToggleRow(id, label, selected) { selected = it }
+                    }
                 }
             }
         },
@@ -440,6 +450,11 @@ private fun EquipeCard(
         memberships?.forEach { el ->
             val m = el.jsonObject
             val id = m["id"]?.jsonPrimitive?.contentOrNull ?: return@forEach
+            // v51 -- key(id): cada linha fica presa ao próprio membro. Antes,
+            // membros criados no mesmo instante voltavam do servidor em ordem
+            // diferente a cada recarga e o toque caía no interruptor de outro
+            // membro (ex.: desligar Frota desligava RH).
+            androidx.compose.runtime.key(id) {
             val user = m["user"]?.jsonObject
             val email = user?.get("email")?.jsonPrimitive?.contentOrNull ?: ""
             val fullName = user?.get("fullName")?.jsonPrimitive?.contentOrNull
@@ -529,6 +544,7 @@ private fun EquipeCard(
                         }
                     }
                 }
+            } // key(id)
             }
         }
 

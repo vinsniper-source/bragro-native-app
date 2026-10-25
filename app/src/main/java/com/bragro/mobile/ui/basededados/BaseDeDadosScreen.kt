@@ -224,6 +224,10 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
     }
     fun deleteLookup(id: String) = act("delete_lookup", id = id)
     fun toggleLookup(id: String, ativo: Boolean) = act("toggle_lookup", id = id, ativo = ativo)
+    // v51 -- lápis: troca o nome e liga/desliga o item (opção A aprovada:
+    // só a lista muda; registros já lançados mantêm o nome antigo).
+    fun updateLookup(id: String, value: String, ativo: Boolean, onDone: (Boolean) -> Unit = {}) =
+        act("update_lookup", id = id, value = value, ativo = ativo, onDone = onDone)
     fun importDefaults() = act("import_defaults")
     // "Recusar" -- pedido do usuário ("coloque o botão com a opção
     // recusar"), espelho de declineDefaultsAction no site: lapideia os
@@ -438,6 +442,7 @@ fun BaseDeDadosScreen(
                         onAddValue = { category, value -> viewModel.addLookup(category, value) },
                         onToggle = { id, ativo -> viewModel.toggleLookup(id, ativo) },
                         onDelete = { id -> viewModel.deleteLookup(id) },
+                        onEdit = { id, value, ativo, done -> viewModel.updateLookup(id, value, ativo, done) },
                         onAttachFoto = { category, value -> pendingFotoTarget = category to value; lookupFotoPicker.launch("image/*") },
                         uploadingFoto = uploadingFoto,
                     )
@@ -1054,7 +1059,52 @@ private fun SectorCard(
     // Storage + addLookup de novo com fotoUrl) acontece no ViewModel.
     onAttachFoto: (String, String) -> Unit = { _, _ -> },
     uploadingFoto: Boolean = false,
+    onEdit: (String, String, Boolean, (Boolean) -> Unit) -> Unit = { _, _, _, _ -> },
 ) {
+    // v51 -- janela do lápis (nome + ativo) e confirmação da lixeira.
+    var editando by remember { mutableStateOf<LookupEmEdicao?>(null) }
+    var excluindo by remember { mutableStateOf<Pair<String, String>?>(null) }
+    editando?.let { e ->
+        var nome by remember(e.id) { mutableStateOf(e.nome) }
+        var ativoEd by remember(e.id) { mutableStateOf(e.ativo) }
+        AlertDialog(
+            onDismissRequest = { editando = null },
+            title = { Text("Editar · ${e.categoria}") },
+            text = {
+                androidx.compose.foundation.layout.Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome") }, singleLine = true, colors = appFieldColors())
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Switch(
+                            checked = ativoEd,
+                            onCheckedChange = { ativoEd = it },
+                            colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("Ativo (aparece nas listas suspensas)", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = { onEdit(e.id, nome.trim(), ativoEd) { ok -> if (ok) editando = null } }, enabled = !busy && nome.isNotBlank()) { Text("Salvar") }
+            },
+            dismissButton = { TextButton(onClick = { editando = null }) { Text("Cancelar") } },
+        )
+    }
+    excluindo?.let { (idEx, nomeEx) ->
+        AlertDialog(
+            onDismissRequest = { excluindo = null },
+            title = { Text("Excluir “$nomeEx”?") },
+            text = { Text("Sai da lista. Registros que já usam “$nomeEx” continuam com esse nome.", style = MaterialTheme.typography.bodySmall) },
+            confirmButton = {
+                Button(
+                    onClick = { onDelete(idEx); excluindo = null },
+                    enabled = !busy,
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = com.bragro.mobile.ui.domain.corAtencao()),
+                ) { Text("Excluir") }
+            },
+            dismissButton = { TextButton(onClick = { excluindo = null }) { Text("Cancelar") } },
+        )
+    }
     CollapsibleCard(label) {
         categories?.forEach { catEl ->
             val cat = catEl.jsonObject
@@ -1084,7 +1134,12 @@ private fun SectorCard(
                         )
                         Spacer(Modifier.width(6.dp))
                     }
-                    Text(vLabel, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        if (ativo) vLabel else "$vLabel (desativado)",
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (ativo) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                     if (temFoto) {
                         IconButton(onClick = { onAttachFoto(category, valorReal) }, enabled = !busy && !uploadingFoto) {
                             Icon(Icons.Outlined.CameraAlt, contentDescription = "Anexar foto")
@@ -1092,11 +1147,11 @@ private fun SectorCard(
                     }
                     // v43 -- o interruptor virou o ícone de editar; ligar e
                     // desligar o item passou para dentro da edição.
-                    IconButton(onClick = { onToggle(id, !ativo) }, enabled = !busy) {
+                    IconButton(onClick = { editando = LookupEmEdicao(id, category, vLabel, ativo) }, enabled = !busy) {
                         Icon(Icons.Outlined.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
                     }
                     if (false) Switch(checked = ativo, onCheckedChange = { onToggle(id, it) }, enabled = !busy, colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)))
-                    IconButton(onClick = { onDelete(id) }, enabled = !busy) { Icon(Icons.Outlined.Delete, contentDescription = "Excluir") }
+                    IconButton(onClick = { excluindo = id to vLabel }, enabled = !busy) { Icon(Icons.Outlined.Delete, contentDescription = "Excluir") }
                 }
             }
             if (category == "locais") {
@@ -1126,3 +1181,6 @@ private fun SectorCard(
         }
     }
 }
+
+/** v51 -- item da lista suspensa aberto na janela do lápis. */
+private data class LookupEmEdicao(val id: String, val categoria: String, val nome: String, val ativo: Boolean)

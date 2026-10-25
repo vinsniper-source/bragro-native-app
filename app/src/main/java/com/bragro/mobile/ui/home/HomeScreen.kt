@@ -1522,18 +1522,19 @@ private fun NotificationsDialog(items: List<NotificationItemData>, onMarkAllRead
                 ) {
                     items.forEach { n ->
                         Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    n.titulo,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = if (!n.lida) FontWeight.Bold else FontWeight.Normal,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Clip,
-                                    modifier = Modifier.weight(1f, fill = false).basicMarquee(),
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text("· ${n.tipo}", style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                            }
+                            // v51 -- sem letreiro: título inteiro, quebrando
+                            // linha; o código do tipo vira uma etiqueta legível.
+                            Text(
+                                n.titulo,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = if (!n.lida) FontWeight.Bold else FontWeight.Normal,
+                            )
+                            Text(
+                                tipoNotificacaoLegivel(n.tipo),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = com.bragro.mobile.ui.domain.corAtencao(),
+                                modifier = Modifier.padding(vertical = 2.dp),
+                            )
                             Text(n.mensagem, style = MaterialTheme.typography.bodySmall)
                             Text(formatEventTime(n.criadaEm), style = MaterialTheme.typography.labelSmall)
                         }
@@ -3236,3 +3237,13 @@ private val PREFIXOS_ALERTA = listOf("financeiro-vencendo-", "financeiro-", "est
 private fun idDoAlerta(id: String): String? = PREFIXOS_ALERTA.firstOrNull { id.startsWith(it) }?.let { id.removePrefix(it) }?.takeIf { it.isNotBlank() }
 
 private fun alvoComRegistro(domainId: String, recordId: String?): String = if (recordId.isNullOrBlank()) domainId else "$domainId#$recordId"
+
+/** v51 -- código do tipo de notificação (ESTOQUE_MINIMO...) em texto legível. */
+private fun tipoNotificacaoLegivel(tipo: String): String = when (tipo) {
+    "ESTOQUE_MINIMO" -> "Estoque mínimo"
+    "FROTA_MANUTENCAO" -> "Manutenção da frota"
+    "ROMANEIO_DIARIO" -> "Romaneio diário"
+    "ENTRADA" -> "Entrada"
+    "FORNECEDOR" -> "Fornecedor"
+    else -> tipo.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }
+}
