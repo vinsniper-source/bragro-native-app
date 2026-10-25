@@ -5,6 +5,8 @@ import androidx.compose.material.icons.outlined.Warehouse
 import androidx.compose.material.icons.outlined.Refresh
 import android.app.Application
 import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Slider
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +35,9 @@ import androidx.compose.material.icons.outlined.Opacity
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Thermostat
+import androidx.compose.material.icons.outlined.Archive
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
@@ -59,6 +64,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -362,10 +368,12 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                         if (estoque.isEmpty()) {
                             Text("Sem leituras com capacidade cadastrada no período.", style = MaterialTheme.typography.bodySmall)
                         } else {
-                            SimpleBarChart(
-                                categories = estoque.map { com.bragro.mobile.ui.domain.diaMesBr(it.data) },
-                                series = listOf(BarSeries("Armazenado (t)", estoque.map { it.quantidadeT }, MaterialTheme.colorScheme.primary)),
-                                isMoney = false,
+                            // v53 -- gráfico de área, igual à plataforma.
+                            com.bragro.mobile.ui.domain.GraficoArea(
+                                categorias = estoque.map { com.bragro.mobile.ui.domain.diaMesBr(it.data) },
+                                valores = estoque.map { it.quantidadeT },
+                                cor = MaterialTheme.colorScheme.primary,
+                                unidade = "t",
                             )
                         }
                     }
@@ -549,14 +557,21 @@ private fun SiloCard(
                 Icon(com.bragro.mobile.ui.domain.IconesVazados.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
                 Text(silo.nome.uppercase(), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                 if (estimado) Badge(modifier = Modifier.padding(end = 4.dp)) { Text("Estimado") }
-                Badge { Text(statusLabel(silo.status)) }
+                // v53 -- Crítico em laranja (sem vermelho), Normal no verde do app.
+                val cs = MaterialTheme.colorScheme
+                val (fundoStatus, textoStatus) = when (silo.status) {
+                    "CRITICO" -> com.bragro.mobile.ui.domain.corAtencao() to androidx.compose.ui.graphics.Color.White
+                    "OK" -> cs.primary to cs.onPrimary
+                    else -> cs.surfaceVariant to cs.onSurfaceVariant
+                }
+                Badge(containerColor = fundoStatus, contentColor = textoStatus) { Text(statusLabel(silo.status)) }
             }
             Text(farmNome?.uppercase() ?: "Sem fazenda vinculada", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             val toneladas = silo.capacidadeT?.let { it * pct / 100.0 }
             Text(
                 (toneladas?.let { "%.1f de %d t · ".format(Locale("pt", "BR"), it, silo.capacidadeT!!.toInt()) } ?: "") + "${pct.toInt()}%",
                 style = MaterialTheme.typography.labelMedium,
-                color = if (critico) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                color = if (critico) com.bragro.mobile.ui.domain.corAtencao() else MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = 6.dp),
             )
             if (aberto) {
@@ -614,13 +629,28 @@ private fun SiloCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp),
             )
-            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                val pad = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 8.dp)
-                OutlinedButton(onClick = onEdit, modifier = Modifier.weight(1f), contentPadding = pad) { Text("Editar", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium) }
-                OutlinedButton(onClick = onLeitura, modifier = Modifier.weight(1.5f), contentPadding = pad) { Text("Temp./Umid.", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium) }
-                OutlinedButton(onClick = onHistorico, modifier = Modifier.weight(1.2f), contentPadding = pad) { Text("Histórico", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium) }
-                IconButton(onClick = onArchive) { Icon(Icons.Outlined.Delete, contentDescription = "Arquivar") }
             }
+        }
+        // v53 -- rodapé de ícones igual à plataforma e ao card do pivô:
+        // Temp./umid. · Histórico · Editar · Arquivar (laranja).
+        if (aberto) {
+            val cs = MaterialTheme.colorScheme
+            androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth().height(1.dp).background(cs.outlineVariant))
+            Row(Modifier.fillMaxWidth().padding(4.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                @Composable
+                fun botao(icone: androidx.compose.ui.graphics.vector.ImageVector, rotulo: String, cor: androidx.compose.ui.graphics.Color, acao: () -> Unit, mod: Modifier) {
+                    Column(
+                        mod.clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp)).clickable(enabled = !busy) { acao() }.padding(vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Icon(icone, contentDescription = null, tint = cor, modifier = Modifier.size(17.dp))
+                        Text(rotulo, fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = cor, maxLines = 1)
+                    }
+                }
+                botao(Icons.Outlined.Thermostat, "Temp./umid.", cs.onSurface, onLeitura, Modifier.weight(1f))
+                botao(Icons.Outlined.History, "Histórico", cs.onSurface, onHistorico, Modifier.weight(1f))
+                botao(Icons.Outlined.Edit, "Editar", cs.onSurface, onEdit, Modifier.weight(1f))
+                botao(Icons.Outlined.Archive, "Arquivar", com.bragro.mobile.ui.domain.corAtencao(), onArchive, Modifier.weight(1f))
             }
         }
         com.bragro.mobile.ui.domain.CantoL(aberto, onClick = { aberto = !aberto })

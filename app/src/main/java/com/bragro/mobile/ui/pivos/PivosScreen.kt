@@ -263,7 +263,10 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
     val pivos = remember(pivosTodos, farms, farmSel) {
         if (farmSel == null) pivosTodos else pivosTodos.filter { x -> farms.firstOrNull { it.id == x.farmId }?.name?.let { com.bragro.mobile.ui.domain.normalizarTexto(it) } == com.bragro.mobile.ui.domain.normalizarTexto(farmSel) }
     }
-    val balanco by viewModel.balanco
+    // v53 -- só os últimos 30 dias de verdade: nada depois de hoje.
+    val balancoBruto by viewModel.balanco
+    val hojeIso = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.US).format(java.util.Date())
+    val balanco = remember(balancoBruto, hojeIso) { balancoBruto.filter { it.data.take(10) <= hojeIso }.takeLast(30) }
     val loading by viewModel.loading
     val busy by viewModel.busy
     val error by viewModel.errorMessage
@@ -650,8 +653,9 @@ private fun PivoCard(
                         Text(rotulo, fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = cor, maxLines = 1)
                     }
                 }
-                if (ligado) botao(com.bragro.mobile.ui.domain.IconesVazados.StopCircle, "Desligar", com.bragro.mobile.ui.domain.corAtencao().copy(alpha = 0.15f), com.bragro.mobile.ui.domain.corAtencao(), onDesligar, Modifier.weight(1f))
-                else botao(com.bragro.mobile.ui.domain.IconesVazados.PlayCircle, "Ligar", cs.primary, cs.onPrimary, onLigar, Modifier.weight(1f))
+                // v53 -- Ligar/Desligar neutro (cor só para status).
+                if (ligado) botao(com.bragro.mobile.ui.domain.IconesVazados.StopCircle, "Desligar", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onDesligar, Modifier.weight(1f))
+                else botao(com.bragro.mobile.ui.domain.IconesVazados.PlayCircle, "Ligar", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onLigar, Modifier.weight(1f))
                 botao(com.bragro.mobile.ui.domain.IconesVazados.Opacity, "Telemetria", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onTelemetria, Modifier.weight(1f))
                 botao(Icons.Outlined.Speed, "Controle", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onControle, Modifier.weight(1f))
                 botao(Icons.Outlined.Edit, "Editar", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onEdit, Modifier.weight(1f))
