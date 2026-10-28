@@ -17,6 +17,8 @@ import com.bragro.mobile.ui.nav.BRAgroNavHost
 import com.bragro.mobile.ui.theme.BRAgroTheme
 
 class MainActivity : ComponentActivity() {
+    private val pedirNotificacao = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Precisa ser chamado ANTES de super.onCreate() (Task #38, contrato
         // da API androidx.core.splashscreen) -- troca pro tema normal
@@ -48,6 +50,14 @@ class MainActivity : ComponentActivity() {
         WindowInsetsControllerCompat(window, window.decorView).let { controller ->
             controller.hide(WindowInsetsCompat.Type.statusBars())
             controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+        // v55 -- Android 13+: pede uma vez a permissão de notificação, para
+        // os alertas da fazenda aparecerem com o app fechado.
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+            androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            pedirNotificacao.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         }
         setContent {
             BRAgroTheme {

@@ -3,6 +3,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- v55: alertas na barra do Android com o app fechado (NotificacoesWorker). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Baixar/instalar o APK de atualização direto pelo DownloadManager
          nativo, em vez de abrir o link num Custom Tab do navegador:
          corrige bug real ("o download vai até o final mas não aparece a

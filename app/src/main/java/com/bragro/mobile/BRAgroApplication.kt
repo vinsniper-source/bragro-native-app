@@ -28,6 +28,9 @@ class BRAgroApplication : Application() {
         // ser barato de chamar toda vez que o app abre (nao recria o
         // agendamento se ja existir um rodando).
         TokenRefreshWorker.enqueuePeriodic(this)
+        // v55 -- alertas do sino na barra do Android, mesmo com o app
+        // fechado (consulta a cada ~15 min, ver NotificacoesWorker).
+        com.bragro.mobile.sync.NotificacoesWorker.enqueuePeriodic(this)
         // Bug real reportado pelo usuario ("aparece a mensagem de sync
         // pendente mesmo com o app online"): antes so tentava sincronizar
         // na ABERTURA do app -- se a conexao caiu e voltou com o app ja
