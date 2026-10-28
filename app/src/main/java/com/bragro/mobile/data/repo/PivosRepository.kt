@@ -123,7 +123,7 @@ class PivosRepository(context: Context) {
 
     /** Painel de "controle" -- SEM comando real pro equipamento (não há
      * parceria com nenhum fabricante ainda). Só registra o estado
-     * desejado, igual a um lançamento manual. */
+     * desejado, igual a um registro manual. */
     suspend fun registrarControle(id: String, status: String, laminaAtualMm: Double?, sentido: String?): PivoGenericResponse? {
         val tokens = tokenStore.current() ?: return null
         var (accessToken, refreshToken) = tokens

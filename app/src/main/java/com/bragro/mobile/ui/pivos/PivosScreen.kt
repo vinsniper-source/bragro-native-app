@@ -89,7 +89,7 @@ import java.util.Locale
 // -- pedido do usuário com documentação técnica completa de integração
 // OAuth2. Mesmo scaffolding dos demais módulos com fabricante externo
 // (Frota/Romaneio/Pecuária): cadastro, telemetria e "controle" 100%
-// funcionais via lançamento manual; sincronização automática real fica
+// funcionais via registro manual; sincronização automática real fica
 // stub (ver ModuleProviderIntegrationCard, domainId "pivos") até alguma
 // marca aprovar parceria de desenvolvedor.
 
@@ -179,7 +179,7 @@ class PivosViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Painel de "controle" -- SEM comando real pro equipamento (não há
      * parceria com nenhum fabricante ainda). Só registra o estado
-     * desejado, igual a um lançamento manual. */
+     * desejado, igual a um registro manual. */
     fun registrarControle(id: String, status: String, lamina: String, sentido: String, onDone: (Boolean) -> Unit) {
         busy.value = true
         viewModelScope.launch {
@@ -400,7 +400,7 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                             Text(pivos.firstOrNull { it.id == filtroPivo }?.nome ?: "todos os pivôs", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         if (balanco.isEmpty()) {
-                            Text("Sem lançamentos de telemetria no período.", style = MaterialTheme.typography.bodySmall)
+                            Text("Sem registros de telemetria no período.", style = MaterialTheme.typography.bodySmall)
                         } else {
                             SimpleBarChart(
                                 categories = balanco.map { com.bragro.mobile.ui.domain.diaMesBr(it.data) },

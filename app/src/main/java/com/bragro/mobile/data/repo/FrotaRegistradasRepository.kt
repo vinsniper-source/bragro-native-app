@@ -7,7 +7,7 @@ import com.bragro.mobile.data.model.FrotasRegistradasRequest
 import com.bragro.mobile.data.model.FrotasRegistradasResponse
 import com.bragro.mobile.data.remote.NetworkModule
 
-// Nomes de frota com pelo menos um lançamento real (FrotaRegistro) -- usado
+// Nomes de frota com pelo menos um registro real (FrotaRegistro) -- usado
 // pra limitar "QR Codes das máquinas" (FrotaQrScreen.kt) ao que a fazenda de
 // fato usa, em vez do catálogo genérico inteiro de Base de Dados > Frotas
 // (pedido do usuário: "esses QRCode foram criados a partir da base de dados

@@ -91,11 +91,11 @@ private val DOMAIN_SECTION_ID: Map<String, String> = mapOf(
 // site (nomes diferentes, mesma ideia visual) -- nao ha lucide no Compose.
 private val DOMAIN_ICON: Map<String, ImageVector> = mapOf(
     // Trocado de AccountBalanceWallet -- pedido do usuário ("mude o ícone
-    // do módulo lançamentos"); esse ícone era igual ao da própria aba
+    // do módulo registros"); esse ícone era igual ao da própria aba
     // "Financeiro" e ao de DRE/Análises no dropdown, confundia.
     "financeiro" to Icons.Outlined.Receipt,
     // Entrada própria "Gestão Financeira" na lista suspensa do Financeiro
-    // (ver BottomNavBar.kt) -- ícone diferente do "Lançamentos" (Receipt)
+    // (ver BottomNavBar.kt) -- ícone diferente do "Registros" (Receipt)
     // pra não confundir os dois na lista.
     "gestaofinanceira" to Icons.Outlined.AccountBalanceWallet,
     "pedidos" to Icons.Outlined.ShoppingCart,

@@ -8,7 +8,7 @@ import com.bragro.mobile.data.model.AuditInfoRequest
 import com.bragro.mobile.data.remote.NetworkModule
 
 /** "Editado por" + data/hora dentro de cada card (pedido do usuário:
- * "coloque a condição que quando alguém editar um lançamento apareça
+ * "coloque a condição que quando alguém editar um registro apareça
  * dentro do bloco o usuário, dia e hora... via histórico de alterações"),
  * lendo /api/mobile/audit-info -- que devolve só a ÚLTIMA edição de cada
  * recordId pedido (não o histórico completo). Sem cache no Room de

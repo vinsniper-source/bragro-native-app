@@ -109,7 +109,7 @@ fun CategoryBreakdownCard(titulo: String, data: HomeBreakdownData, modifier: Mod
                 }
             } else {
                 Text(
-                    "Sem lançamentos nos últimos 30 dias.",
+                    "Sem registros nos últimos 30 dias.",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 8.dp),

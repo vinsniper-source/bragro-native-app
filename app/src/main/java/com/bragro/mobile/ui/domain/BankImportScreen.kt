@@ -105,7 +105,7 @@ class BankImportViewModel(app: Application) : AndroidViewModel(app) {
             fileName.value = queryDisplayName(uri)
             val lines = text.split("\r\n", "\n").filter { it.isNotBlank() }
             if (lines.size < 2) {
-                errorMessage.value = "Arquivo vazio ou sem lançamentos."
+                errorMessage.value = "Arquivo vazio ou sem registros."
                 busy.value = false
                 return@launch
             }
@@ -116,7 +116,7 @@ class BankImportViewModel(app: Application) : AndroidViewModel(app) {
             val roles = guessColumnRoles(header)
             val parsed = parseBankRows(body, roles)
             if (parsed.isEmpty()) {
-                errorMessage.value = "Nenhum lançamento reconhecido nesse arquivo -- confira se é um extrato bancário em CSV."
+                errorMessage.value = "Nenhum registro reconhecido nesse arquivo -- confira se é um extrato bancário em CSV."
                 busy.value = false
                 return@launch
             }
@@ -255,7 +255,7 @@ fun BankImportScreen(onBack: () -> Unit, viewModel: BankImportViewModel = viewMo
                 item {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("$importedCount lançamento(s) importado(s) para o Financeiro.", fontWeight = FontWeight.Bold)
+                            Text("$importedCount registro(s) importado(s) para o Financeiro.", fontWeight = FontWeight.Bold)
                             Button(onClick = { viewModel.reset() }, modifier = Modifier.fillMaxWidth()) {
                                 Text("Importar outro extrato")
                             }
@@ -309,7 +309,7 @@ fun BankImportScreen(onBack: () -> Unit, viewModel: BankImportViewModel = viewMo
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            "${rows.size} lançamentos encontrados -- ${rows.count { it.include }} selecionados",
+                            "${rows.size} registros encontrados -- ${rows.count { it.include }} selecionados",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                         )

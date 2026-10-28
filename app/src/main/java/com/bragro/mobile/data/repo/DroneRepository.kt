@@ -12,7 +12,7 @@ import com.bragro.mobile.data.remote.NetworkModule
  * dados de src/app/(app)/drone/actions.ts no site. Sem cache no Room de
  * propósito (mesmo critério de ChartsRepository): a lista de voos é
  * pequena (take=100) e não precisa funcionar offline -- é sempre um
- * registro histórico de algo já ocorrido, nunca um lançamento urgente de
+ * registro histórico de algo já ocorrido, nunca um registro urgente de
  * campo sem sinal. */
 class DroneRepository(context: Context) {
     private val tokenStore = TokenStore(context)

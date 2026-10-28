@@ -6,7 +6,7 @@ package com.bragro.mobile.data
  * Antes disso, TODO `catch (e: Exception)` do projeto engolia o erro em
  * silêncio -- nem Logcat, nem Crashlytics (que só registra crash NÃO
  * tratado, nunca uma exceção capturada dentro de um catch). Resultado: um
- * usuário relatando "meu lançamento não aparece" ou "deu erro ao
+ * usuário relatando "meu registro não aparece" ou "deu erro ao
  * sincronizar" não deixava rastro nenhum pra diagnosticar se foi timeout,
  * erro de parsing, token expirado, etc.
  *

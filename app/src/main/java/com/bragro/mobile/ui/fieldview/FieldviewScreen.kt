@@ -264,7 +264,7 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Lançamento MANUAL de talhão, sem KML/KMZ nenhum -- pedido do usuário
+    /** Registro MANUAL de talhão, sem KML/KMZ nenhum -- pedido do usuário
      * ("fieldview não tem a opção de lançar manualmente só automaticamente...
      * insira o botão + em talhões, máquinas e fazendas/kml"). Reaproveita o
      * MESMO endpoint/upsert de importBoundary acima, só que com um GeoJSON
@@ -465,7 +465,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
     val tabs = listOf("Talhões", "Máquinas", "Fazendas/KML")
     var pendingPolygons by remember { mutableStateOf<List<ParsedPolygon>>(emptyList()) }
     var pendingIndex by remember { mutableStateOf(0) }
-    // Diálogo de lançamento MANUAL de talhão (sem KML/KMZ) -- pedido do
+    // Diálogo de registro MANUAL de talhão (sem KML/KMZ) -- pedido do
     // usuário. Aberto pelo botão "+" nas abas Talhões e Fazendas/KML.
     var manualDialogOpen by remember { mutableStateOf(false) }
     // v40 -- a lista de talhões só aparece depois de tocar no ícone Talhões.
@@ -526,11 +526,11 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                     titulo = "Talhões e Mapas",
                     subtitulo = "${talhoes.size} talhões · ${farms.size} fazendas",
                     kpis = listOf(
-                        com.bragro.mobile.ui.domain.PainelKpi("Talhões", talhoes.size.toDouble(), "numero", null, "com lançamentos", "Talhões"),
+                        com.bragro.mobile.ui.domain.PainelKpi("Talhões", talhoes.size.toDouble(), "numero", null, "com registros", "Talhões"),
                         com.bragro.mobile.ui.domain.PainelKpi("Com contorno", comContorno.toDouble(), "numero", null, "aparecem no mapa", "Mapa"),
                         com.bragro.mobile.ui.domain.PainelKpi("Soja", talhoes.count { cultura(it).contains("SOJA") }.toDouble(), "numero", null, "talhões", "Talhões"),
                         com.bragro.mobile.ui.domain.PainelKpi("Cana", talhoes.count { cultura(it).contains("CANA") }.toDouble(), "numero", null, "talhões", "Talhões"),
-                        com.bragro.mobile.ui.domain.PainelKpi("Máquinas", data?.maquinaStatus.orEmpty().size.toDouble(), "numero", null, "com lançamentos", "Máquinas"),
+                        com.bragro.mobile.ui.domain.PainelKpi("Máquinas", data?.maquinaStatus.orEmpty().size.toDouble(), "numero", null, "com registros", "Máquinas"),
                     ),
                     barras = emptyList(),
                 ),
@@ -663,14 +663,14 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
 @Composable
 private fun TalhaoStatusList(rows: List<JsonObject>) {
     if (rows.isEmpty()) {
-        Text("Nenhum lançamento de Safra com talhão preenchido ainda.", modifier = Modifier.padding(16.dp))
+        Text("Nenhum registro de Safra com talhão preenchido ainda.", modifier = Modifier.padding(16.dp))
         return
     }
     LazyColumn(contentPadding = PaddingValues(16.dp)) {
         items(rows.size) { i ->
             // Setinha de recolher/expandir -- pedido do usuário ("na imagem
             // 3 coloque setinha nos blocos"): mesmo padrão ExpandLess/
-            // ExpandMore já usado nos cards de lançamento (DomainListScreen.kt),
+            // ExpandMore já usado nos cards de registro (DomainListScreen.kt),
             // que faltava nestes 2 blocos (Talhão/Máquina).
             var open by remember { mutableStateOf(false) }
             Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
@@ -705,7 +705,7 @@ private fun TalhaoStatusList(rows: List<JsonObject>) {
 @Composable
 private fun MaquinaStatusList(rows: List<JsonObject>) {
     if (rows.isEmpty()) {
-        Text("Nenhum lançamento de Frota ainda.", modifier = Modifier.padding(16.dp))
+        Text("Nenhum registro de Frota ainda.", modifier = Modifier.padding(16.dp))
         return
     }
     LazyColumn(contentPadding = PaddingValues(16.dp)) {
@@ -720,7 +720,7 @@ private fun MaquinaStatusList(rows: List<JsonObject>) {
             val vencida = proxRevisaoIso?.let { isDatePast(it) } ?: false
             // Setinha de recolher/expandir -- pedido do usuário ("na imagem
             // 3 coloque setinha nos blocos"): mesmo padrão ExpandLess/
-            // ExpandMore já usado nos cards de lançamento (DomainListScreen.kt),
+            // ExpandMore já usado nos cards de registro (DomainListScreen.kt),
             // que faltava neste bloco (Máquina não tinha nenhuma).
             var open by remember { mutableStateOf(false) }
             Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
@@ -1166,7 +1166,7 @@ private fun ImportBoundaryDialog(
     )
 }
 
-/** Diálogo de lançamento MANUAL de talhão (sem KML/KMZ) -- pedido do
+/** Diálogo de registro MANUAL de talhão (sem KML/KMZ) -- pedido do
  * usuário. Mesmo layout do ImportBoundaryDialog acima, só que sem o passo
  * de escolher um arquivo/polígono: o usuário digita o número/nome do talhão
  * direto, e o servidor cria o registro com um GeoJSON vazio (ver

@@ -219,7 +219,7 @@ interface MobileApi {
     @POST("api/mobile/dre")
     suspend fun dre(@Body body: DreRequest): Response<DreResponse>
 
-    // Reconciliação Físico x Fiscal de Estoque (Task #603/#607) -- leitura
+    // Ajustar Físico x Fiscal de Estoque (Task #603/#607) -- leitura
     // pura, sem input do usuário.
     @POST("api/mobile/reconciliacao-estoque")
     suspend fun reconciliacaoEstoque(@Body body: ReconciliacaoEstoqueRequest): Response<ReconciliacaoEstoqueResponse>
@@ -229,7 +229,7 @@ interface MobileApi {
     @POST("api/mobile/colheita-lotes-qr")
     suspend fun colheitaLotesQr(@Body body: ColheitaLotesQrRequest): Response<ColheitaLotesQrResponse>
 
-    // Nomes de frota com pelo menos um lançamento real -- usado pra limitar
+    // Nomes de frota com pelo menos um registro real -- usado pra limitar
     // "QR Codes das máquinas" (FrotaQrScreen.kt) ao que a fazenda de fato usa,
     // em vez do catálogo genérico inteiro de Base de Dados > Frotas.
     @POST("api/mobile/frota-registradas")

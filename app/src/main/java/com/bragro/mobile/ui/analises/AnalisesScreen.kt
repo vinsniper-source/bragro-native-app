@@ -188,7 +188,7 @@ private val TOKEN_FIXES = mapOf(
     "Os" to "O.S.", "Pct" to "%", "Km" to "km", "Cnpj" to "CNPJ", "Cpf" to "CPF",
     "Cif" to "CIF", "Fob" to "FOB", "Kg" to "kg", "Ph" to "pH",
     "Farm" to "Fazenda", "Name" to "Nome", "Mm" to "mm", "Ton" to "ton",
-    "Talhao" to "Talhão", "Funcao" to "Função", "Lancamentos" to "Lançamentos",
+    "Talhao" to "Talhão", "Funcao" to "Função", "Lancamentos" to "Registros",
     "Ultimo" to "Último", "Atras" to "Atrás", "No" to "Nº",
     "PVenc" to "para vencer", "PVencer" to "para vencer",
     "Eficiencia" to "Eficiência", "Maquina" to "Máquina",
@@ -249,7 +249,7 @@ private val CAMPOS_MOEDA = setOf(
     // imprimindo o número cru. Nome completo em minúsculo (não só
     // "financeiro"/"frota" soltos) pra não capturar por engano campos de
     // CONTAGEM que também têm essas palavras (ex.: "lancamentosFrota",
-    // "lancamentosSafra" -- esses são quantidade de lançamentos, não R$).
+    // "lancamentosSafra" -- esses são quantidade de registros, não R$).
     "financeirodiretoha", "financeiroindiretoha", "frotaha", "safraha",
     "arrendamentoha",
 )
@@ -705,7 +705,7 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                             HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                             MiniChart(
                                 "Conciliação: Caixa Interno x Financeiro",
-                                "Saldo do Caixa Interno x lançamentos conciliados no Financeiro, por setor.",
+                                "Saldo do Caixa Interno x registros conciliados no Financeiro, por setor.",
                                 conciliacaoCaixaVsFinanceiro, "setor",
                                 listOf(
                                     serieDe(conciliacaoCaixaVsFinanceiro, "Saldo Caixa Interno", "saldoCaixaInterno", defaultSeriesColor(1)),
@@ -780,7 +780,7 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                         AnalisesAba.PESSOAS -> {
                             MiniChart(
                                 "RH x Atividade de campo",
-                                "Colaboradores ativos x lançamentos feitos em Safra/Frota/Controle Interno com o mesmo nome.",
+                                "Colaboradores ativos x registros feitos em Safra/Frota/Controle Interno com o mesmo nome.",
                                 rhVsAtividadeCampo, "colaborador",
                                 listOf(
                                     serieDe(rhVsAtividadeCampo, "Safra", "lancamentosSafra", defaultSeriesColor(1)),
@@ -825,7 +825,7 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
     var filtrosOpen by remember { mutableStateOf(false) }
     // Recolher/expandir as seções de análise de uma vez -- pedido do usuário
     // ("insira o ícone recolher/expandir os blocos em dre e análises"),
-    // mesmo padrão do allExpanded já usado nas listas de lançamentos
+    // mesmo padrão do allExpanded já usado nas listas de registros
     // (DomainListScreen/FinanceiroScreen) e agora também no DRE. Começa
     // FECHADO -- pedido do usuário ("sempre aparecer a tela vazia, só
     // expandir quando clicar no ícone").
@@ -863,7 +863,7 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                 // Nuvem/Imprimir no canto superior direito -- mesmo padrão
                 // já aplicado em todos os outros módulos (inclusive DRE
                 // acima), pedido do usuário ("aplique o mesmo padrão... da
-                // aba lançamentos").
+                // aba registros").
                 actions = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -970,7 +970,7 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                 // padrão já usado em todos os outros módulos (inclusive
                 // DRE). Dados/Operações/Arquivos viraram uma barra oval
                 // (pill) que alterna entre categorias -- pedido do usuário
-                // ("aplique o mesmo padrão... da aba lançamentos com a
+                // ("aplique o mesmo padrão... da aba registros com a
                 // barra oval e as categorias os ícones no topo").
                 AnalisesCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth())
             } } }

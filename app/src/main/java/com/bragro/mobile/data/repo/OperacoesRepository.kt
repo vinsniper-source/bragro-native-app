@@ -32,7 +32,7 @@ class OperacoesRepository(context: Context) {
     fun parsePending(entity: OperacoesEntity): List<String> =
         json.decodeFromString(OperacoesResponse.serializer(), entity.dataJson).pendingIds
 
-    /** Marca o lançamento de Safra como revisado (action "mark-reviewed"). */
+    /** Marca o registro de Safra como revisado (action "mark-reviewed"). */
     suspend fun marcarRevisado(recordId: String, dominio: String = "safra"): Boolean {
         val tokens = tokenStore.current() ?: return false
         var (accessToken, refreshToken) = tokens

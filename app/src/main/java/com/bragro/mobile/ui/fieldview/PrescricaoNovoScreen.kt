@@ -124,7 +124,7 @@ class PrescricaoNovoViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var successId = mutableStateOf<String?>(null)
         private set
-    // "Copiar último lançamento" (Task #624, gap encontrado em auditoria de
+    // "Copiar último registro" (Task #624, gap encontrado em auditoria de
     // paridade -- a auditoria anterior tinha marcado como concluído, mas
     // nunca chegou neste arquivo) -- busca sob demanda ao tocar o ícone, em
     // vez de pré-carregar no init() como listFarms() acima: reaproveita
@@ -232,7 +232,7 @@ class PrescricaoNovoViewModel(app: Application) : AndroidViewModel(app) {
         errorMessage.value = null
     }
 
-    /** "Copiar último lançamento" (Task #624) -- paridade com
+    /** "Copiar último registro" (Task #624) -- paridade com
      * preencherComUltimo() do site (prescricao-client.tsx): reaproveita o
      * mesmo fetch() já usado pra listar prescrições em PrescricaoScreen.kt
      * (sem endpoint dedicado "getUltimo"). A resposta já vem ordenada por
@@ -317,7 +317,7 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
                 
                     }
                 } },
-                // Ícone "Copiar último lançamento" (Task #624, gap
+                // Ícone "Copiar último registro" (Task #624, gap
                 // encontrado em auditoria de paridade) -- mesmo padrão de
                 // PragaFotoScreen.kt: spinner enquanto busca, sempre
                 // habilitado (copiarUltimoLancamento() já avisa via

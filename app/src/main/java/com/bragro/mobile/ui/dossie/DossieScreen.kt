@@ -548,7 +548,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
     }
 }
 
-/** Divisória de seção "TÍTULO  extra ——— v" (mesma do LANÇAMENTOS). */
+/** Divisória de seção "TÍTULO  extra ——— v" (mesma do REGISTROS). */
 @Composable
 private fun Secao(titulo: String, aberta: Boolean, extra: String? = null, onToggle: () -> Unit) {
     com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = 0, aberto = aberta, titulo = titulo, rotulo = extra ?: "", onToggle = onToggle)

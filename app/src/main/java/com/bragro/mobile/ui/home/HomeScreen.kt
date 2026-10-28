@@ -218,7 +218,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     var pendingCount = mutableStateOf(0)
         private set
     // Lista completa (não só a contagem) -- pedido do usuário ("poderia
-    // saber ao clicar na frase quais são os lançamentos"), pro banner do
+    // saber ao clicar na frase quais são os registros"), pro banner do
     // Início abrir um diálogo com o detalhe de cada pendência.
     var pendingItems = mutableStateOf<List<PendingSyncEntity>>(emptyList())
         private set
@@ -315,13 +315,13 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     // desatualizadas... tem valores que apaguei na base de dados mas
     // continua aparecendo"; "o modulo cotações não apareceu"; "a logo do
     // cliente não aparece"): "Sincronizar agora" só chamava
-    // recordRepository.syncAll() (fila de LANÇAMENTOS offline pendentes) --
+    // recordRepository.syncAll() (fila de REGISTROS offline pendentes) --
     // NUNCA reexecutava o bootstrap (configRepository.bootstrapAndCacheConfig),
     // que é quem baixa e recacheia no Room a lista de módulos, as listas
     // suspensas e as fazendas. bootstrapAndCacheConfig só rodava mesmo no
     // LOGIN (ver AuthRepository.login) -- ou seja, não existia NENHUM jeito
     // de atualizar esse cache sem sair e entrar de novo na conta. Agora
-    // "Sincronizar agora" recarrega os dois: os lançamentos pendentes E a
+    // "Sincronizar agora" recarrega os dois: os registros pendentes E a
     // configuração/listas suspensas/fazendas, usando o token já salvo na
     // sessão (sem pedir senha de novo).
     fun syncNow() {
@@ -1232,7 +1232,7 @@ fun HomeScreen(
                         // como algo que precisa chamar mais atenção).
                         // Clicável agora -- pedido do usuário ("poderia
                         // saber ao clicar na frase quais são os
-                        // lançamentos"): abre um diálogo com o módulo, tipo
+                        // registros"): abre um diálogo com o módulo, tipo
                         // de operação e horário de cada pendência na fila.
                         Row(
                             modifier = Modifier
@@ -1246,7 +1246,7 @@ fun HomeScreen(
                             Icon(Icons.Outlined.CloudSync, contentDescription = null, tint = BrOrange, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                "$pending lançamento(s) aguardando conexão para sincronizar. Toque para ver quais.",
+                                "$pending registro(s) aguardando conexão para sincronizar. Toque para ver quais.",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Bold,
                                 color = BrOrange,
@@ -1254,11 +1254,11 @@ fun HomeScreen(
                         }
                         // Task #124 (conflito de sync) -- item(ns) da fila
                         // que o backend recusou com 409 CONFLICT (outro
-                        // aparelho editou o MESMO lançamento antes deste
+                        // aparelho editou o MESMO registro antes deste
                         // sincronizar) NÃO entram mais no retry automático
                         // (ver RecordRepository.syncAll/hasPending) -- sem
                         // este segundo aviso, o problema ficaria invisível
-                        // pro usuário (o lançamento simplesmente nunca
+                        // pro usuário (o registro simplesmente nunca
                         // sincronizaria, sem explicação nenhuma na tela).
                         // Cor de erro (mais forte que o âmbar de "pendente
                         // normal" acima) porque isso não se resolve só
@@ -1282,7 +1282,7 @@ fun HomeScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    "Um lançamento foi alterado em outro dispositivo — abra e confira antes de tentar salvar de novo.",
+                                    "Um registro foi alterado em outro dispositivo — abra e confira antes de tentar salvar de novo.",
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onErrorContainer,
@@ -1387,7 +1387,7 @@ fun HomeScreen(
             // pedido do usuário ("replique o que ainda falta da plataforma no
             // native"). Cada card só aparece quando o widget está liberado E o
             // backend retornou dados pro setor (não null -- setor sem nenhum
-            // lançamento na janela de 30 dias).
+            // registro na janela de 30 dias).
             data.breakdowns?.financeiro?.let { b ->
                 if (data.hasWidget("inicio.breakdown.financeiro")) {
                     item(key = "breakdown-financeiro") { CategoryBreakdownCard(titulo = "Financeiro", data = b) }
@@ -1579,14 +1579,14 @@ private val PENDING_SYNC_DOMAIN_LABELS: Map<String, String> = mapOf(
 /** "kind" salvo em PendingSyncEntity ("create"/"update"/"delete") -> texto
  * legível na lista de pendências. */
 private fun pendingSyncKindLabel(kind: String): String = when (kind) {
-    "create" -> "Novo lançamento"
+    "create" -> "Novo registro"
     "update" -> "Edição"
     "delete" -> "Exclusão"
     else -> kind
 }
 
-/** Diálogo do banner "N lançamento(s) aguardando conexão" -- pedido do
- * usuário ("poderia saber ao clicar na frase quais são os lançamentos"):
+/** Diálogo do banner "N registro(s) aguardando conexão" -- pedido do
+ * usuário ("poderia saber ao clicar na frase quais são os registros"):
  * lista cada item da fila local (PendingSyncEntity) com módulo, tipo de
  * operação, horário em que foi salvo offline e o motivo do último erro de
  * sincronização, se já tentou e falhou (ultimoErro, preenchido pelo
@@ -1596,17 +1596,17 @@ private fun pendingSyncKindLabel(kind: String): String = when (kind) {
 private fun PendingSyncDialog(items: List<PendingSyncEntity>, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Lançamentos aguardando sincronizar") },
+        title = { Text("Registros aguardando sincronizar") },
         text = {
             if (items.isEmpty()) {
-                Text("Nenhum lançamento pendente.", style = MaterialTheme.typography.bodySmall)
+                Text("Nenhum registro pendente.", style = MaterialTheme.typography.bodySmall)
             } else {
                 Column(
                     modifier = Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     Text(
-                        "Esses lançamentos foram salvos neste aparelho, mas ainda não foram confirmados pelo servidor -- geralmente por falta de conexão, mas também pode ser sessão expirada ou algum erro no envio (ver abaixo).",
+                        "Esses registros foram salvos neste aparelho, mas ainda não foram confirmados pelo servidor -- geralmente por falta de conexão, mas também pode ser sessão expirada ou algum erro no envio (ver abaixo).",
                         style = MaterialTheme.typography.bodySmall,
                     )
                     items.forEach { item ->
@@ -1632,7 +1632,7 @@ private fun PendingSyncDialog(items: List<PendingSyncEntity>, onDismiss: () -> U
                             // ultimoErro acima: este item PAROU de ser
                             // tentado automaticamente (ver
                             // RecordRepository.syncAll/hasPending), só
-                            // resolve com o usuário abrindo o lançamento no
+                            // resolve com o usuário abrindo o registro no
                             // módulo e decidindo o que fazer.
                             if (item.conflictMessage != null) {
                                 Text(
@@ -2126,7 +2126,7 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (
                         ) {
                             // Reordenado -- pedido do usuário: "tipo, item e
                             // quantidade, status". "Tipo" aqui é o campo
-                            // `operacao` (tipo de lançamento/operação, ex.:
+                            // `operacao` (tipo de registro/operação, ex.:
                             // "VENDA"/"COMPRA") -- é o que faz sentido
                             // semântico de "tipo" no contexto do monitor, e
                             // não o `type` (criado/atualizado), que é uma
@@ -2268,12 +2268,12 @@ private fun KpiGrid(data: HomeData) {
             description = "Vencimento nos próximos 7 dias",
         ),
         "inicio.kpi.financeiro.lancamentos" to Kpi(
-            "Lançamentos (mês)",
+            "Registros (mês)",
             data.financeiroLancamentosMes.toString(),
             Icons.Outlined.Receipt,
             MaterialTheme.colorScheme.tertiary,
             KpiKind.QUANTIDADE,
-            description = "Lançamentos financeiros no mês corrente",
+            description = "Registros financeiros no mês corrente",
         ),
         "inicio.kpi.estoque" to Kpi(
             "Itens no estoque",
@@ -2361,15 +2361,15 @@ private fun KpiGrid(data: HomeData) {
             Icons.Outlined.Eco,
             MaterialTheme.colorScheme.primary,
             KpiKind.QUANTIDADE,
-            description = "Lançamentos de safra em andamento",
+            description = "Registros de safra em andamento",
         ),
         "inicio.kpi.safra.lancamentos" to Kpi(
-            "Lançamentos de safra (mês)",
+            "Registros de safra (mês)",
             data.safraLancamentosMes.toString(),
             Icons.Outlined.PlaylistAddCheck,
             MaterialTheme.colorScheme.primary,
             KpiKind.QUANTIDADE,
-            description = "Lançamentos de safra no mês corrente",
+            description = "Registros de safra no mês corrente",
         ),
         "inicio.kpi.safra.colheitas" to Kpi(
             "Colheitas (mês)",
@@ -2415,7 +2415,7 @@ private fun KpiGrid(data: HomeData) {
         // muita informação um kpi por linha, pouca informação dois kpis por
         // linha"): antes SEMPRE agrupava de 2 em 2 (`chunked(2)`), então um
         // rótulo comprido (ex.: "Colaboradores ativos", "Veículos em
-        // manutenção", "Lançamentos de safra (mês)") saía cortado na metade
+        // manutenção", "Registros de safra (mês)") saía cortado na metade
         // da largura do card. `groupKpisAdaptively` reserva a linha INTEIRA
         // só pro KPI de rótulo longo, e continua parear os de rótulo curto
         // 2 a 2 -- ver função abaixo.

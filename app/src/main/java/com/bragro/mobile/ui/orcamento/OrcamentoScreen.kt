@@ -313,7 +313,7 @@ class OrcamentoViewModel(app: Application) : AndroidViewModel(app) {
         ocrMensagemRequisicao.value = "Nenhuma foto capturada -- você pode lançar sem foto ou tentar de novo."
     }
 
-    /** "Copiar último lançamento" -- busca o último Orçamento lançado no
+    /** "Copiar último registro" -- busca o último Orçamento lançado no
      * servidor (sem cache offline de propósito, ver comentário em
      * OrcamentoRepository.kt) e preenche o cabeçalho + a primeira linha de
      * item, mesmo padrão de preencherComUltimo() em PedidoMultiItemScreen.kt. */
@@ -680,7 +680,7 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                 Button(onClick = { viewModel.reset() }, modifier = Modifier.fillMaxWidth()) {
                     Text("Lançar outro orçamento")
                 }
-                // Fecha o ciclo lançamento -> lista (Task #710, auditoria de
+                // Fecha o ciclo registro -> lista (Task #710, auditoria de
                 // paridade site-vs-native): antes só existia "Lançar outro"
                 // (ficava na mesma tela); agora que existe uma tela de lista
                 // de verdade (OrcamentoListScreen.kt, aberta antes deste

@@ -51,9 +51,9 @@ import kotlinx.serialization.json.contentOrNull
 import java.text.NumberFormat
 import java.util.Locale
 
-// "Lançar nota com itens" EMBUTIDO na sequência de campos do Novo Lançamento
+// "Lançar nota com itens" EMBUTIDO na sequência de campos do Novo Registro
 // de Financeiro -- pedido do usuário (achado de auditoria: "não foi
-// inserido no native como está na plataforma o módulo lançamentos, está
+// inserido no native como está na plataforma o módulo registros, está
 // faltando adicionar itens na sequência dos campos, como está em
 // plataforma"). Réplica do que o SITE já faz (ver nota-multi-item-button.tsx
 // + insertAfterField="docNf" em data-table.tsx): esta seção aparece INLINE,
@@ -202,7 +202,7 @@ class FinanceiroItensInlineViewModel(app: Application) : AndroidViewModel(app) {
             // Mesmo motor do site (criarNotaComItensAction): já grava
             // Estoque + Financeiro juntos -- fecha a tela igual um Salvar
             // normal bem-sucedido, sem precisar do botão "Salvar" genérico
-            // logo abaixo (que criaria um SEGUNDO lançamento vazio).
+            // logo abaixo (que criaria um SEGUNDO registro vazio).
             onDone()
         }
     }

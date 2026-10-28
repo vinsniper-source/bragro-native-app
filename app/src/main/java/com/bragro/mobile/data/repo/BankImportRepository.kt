@@ -36,7 +36,7 @@ class BankImportRepository(context: Context) {
         }
     }
 
-    /** Retorna quantos lançamentos foram gravados, ou null em caso de falha
+    /** Retorna quantos registros foram gravados, ou null em caso de falha
      * (sem conexão/sessão/erro do servidor). */
     suspend fun confirm(banco: String, rows: List<BankImportRowDto>): Int? {
         val tokens = tokenStore.current() ?: return null

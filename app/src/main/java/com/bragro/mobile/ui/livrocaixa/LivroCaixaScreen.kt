@@ -202,7 +202,7 @@ class LivroCaixaViewModel(app: Application) : AndroidViewModel(app) {
     fun exportarLcdpr(context: android.content.Context, onError: (String) -> Unit) {
         val data = resultado.value
         if (data == null || data.lancamentos.isEmpty()) {
-            onError("Sem lançamentos no período pra exportar.")
+            onError("Sem registros no período pra exportar.")
             return
         }
         viewModelScope.launch {
@@ -394,7 +394,7 @@ private fun ExtratoBloco(nome: String, lancamentos: List<LivroCaixaLancamentoDat
             Column(modifier = Modifier.fillMaxWidth().clickable { aberto = !aberto }) {
                 Text(nome, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 Text(
-                    "${lancamentos.size} lançamento${if (lancamentos.size == 1) "" else "s"}",
+                    "${lancamentos.size} registro${if (lancamentos.size == 1) "" else "s"}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -561,7 +561,7 @@ private fun ResumoPorImovelCard(imoveis: List<com.bragro.mobile.data.model.Livro
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(i.imovel, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
-                            Text("${i.quantidade} lançamento(s)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("${i.quantidade} registro(s)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Text(formatMoneyBrl(i.saldo), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                     }
@@ -623,7 +623,7 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
     // usuário: "coloque em todos os módulos"). Reaproveita a mesma
     // exportação (LIVRO_CAIXA_EXPORT_COLUMNS/livroCaixaExportRecords) já
     // usada em Excel/PDF/Imprimir; sem ações (Ver/Editar/Excluir) porque os
-    // lançamentos aqui vêm do razão computado (LancamentoRow também não
+    // registros aqui vêm do razão computado (LancamentoRow também não
     // tem ação nenhuma hoje, ver mais abaixo).
     var tableView by remember { mutableStateOf(false) }
     val tableHScroll = remember { androidx.compose.foundation.ScrollState(0) }
@@ -677,10 +677,10 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                     com.bragro.mobile.ui.domain.PainelMonitoramento(
                         com.bragro.mobile.ui.domain.PainelModulo(
                             titulo = "Livro Caixa · $ano",
-                            subtitulo = "${data.lancamentos.size} lançamento(s) · ${data.contas.size} conta(s)" + (banco?.let { " · $it" } ?: ""),
+                            subtitulo = "${data.lancamentos.size} registro(s) · ${data.contas.size} conta(s)" + (banco?.let { " · $it" } ?: ""),
                             kpis = listOf(
-                                com.bragro.mobile.ui.domain.PainelKpi("Entradas", data.totalEntradas, "moeda", null, "$nEnt lançamento(s)", "Extrato"),
-                                com.bragro.mobile.ui.domain.PainelKpi("Saídas", data.totalSaidas, "moeda", null, "$nSai lançamento(s)", "Extrato"),
+                                com.bragro.mobile.ui.domain.PainelKpi("Entradas", data.totalEntradas, "moeda", null, "$nEnt registro(s)", "Extrato"),
+                                com.bragro.mobile.ui.domain.PainelKpi("Saídas", data.totalSaidas, "moeda", null, "$nSai registro(s)", "Extrato"),
                                 com.bragro.mobile.ui.domain.PainelKpi("Saldo do ano", data.saldoFinal, "moeda", null, "saldo inicial ${formatMoneyBrl(data.saldoInicial)}", "Extrato", tom = if (data.saldoFinal >= 0) "abaixo" else "acima"),
                                 com.bragro.mobile.ui.domain.PainelKpi("Contas", data.contas.size.toDouble(), "numero", null, "bancos com movimento", "Resumo por conta"),
                             ),
@@ -845,7 +845,7 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                 if (data.porMes.any { it.entradas > 0 || it.saidas > 0 }) {
                     item { ResumoMensalCard(data.porMes) }
                 }
-                // v36 -- um bloco por extrato; cresce conforme os lançamentos e abre/
+                // v36 -- um bloco por extrato; cresce conforme os registros e abre/
                 // recolhe pelo canto curvo na borda inferior direita.
                 val gruposExtrato = data.lancamentos.groupBy { it.tipoDocumento?.takeIf { d -> d.isNotBlank() } ?: "Sem extrato" }
                 gruposExtrato.forEach { (nomeExtrato, lista) ->

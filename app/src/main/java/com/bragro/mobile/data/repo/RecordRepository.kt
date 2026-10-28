@@ -50,8 +50,8 @@ class RecordRepository(private val context: Context) {
         pendingReviewIds.map { it[domainId] ?: emptySet() }
 
     // Lista completa da fila (não só a contagem) -- pedido do usuário
-    // ("poderia saber ao clicar na frase quais são os lançamentos"), pro
-    // banner "N lançamentos aguardando conexão" do Início abrir um diálogo
+    // ("poderia saber ao clicar na frase quais são os registros"), pro
+    // banner "N registros aguardando conexão" do Início abrir um diálogo
     // com o detalhe de cada pendência.
     fun observePending(): Flow<List<PendingSyncEntity>> = db.pendingSyncDao().observeAll()
 
@@ -79,7 +79,7 @@ class RecordRepository(private val context: Context) {
         db.recordDao().updateExpectedVersion(domainId, id, version)
     }
 
-    /** "Copiar último lançamento" (Task #51/#77) -- mesmo mecanismo generico
+    /** "Copiar último registro" (Task #51/#77) -- mesmo mecanismo generico
      * do site (data-table.tsx: abre o formulario de criacao pre-preenchido
      * com os campos do registro mais recente do modulo). Funciona igual pra
      * QUALQUER um dos ~18 dominios, sem excecao por modulo. */
@@ -161,7 +161,7 @@ class RecordRepository(private val context: Context) {
         return trySyncOne(pendingId) ?: SaveResult.SavedOffline
     }
 
-    /** Ícone Excluir por lançamento (pedido do usuário -- "crie
+    /** Ícone Excluir por registro (pedido do usuário -- "crie
      * individualmente em cada bloco ícone ver, editar e excluir"). Some da
      * tela IMEDIATAMENTE (mesmo princípio de createRecord/updateRecord) e
      * entra na fila de sincronização; trySyncOne já sabe lidar com
@@ -275,7 +275,7 @@ class RecordRepository(private val context: Context) {
                 }
                 if (code == "CONFLICT") {
                     val conflictMsg = message
-                        ?: "Este lançamento foi alterado por outro dispositivo desde a última sincronização."
+                        ?: "Este registro foi alterado por outro dispositivo desde a última sincronização."
                     db.pendingSyncDao().marcarConflito(pending.id, conflictMsg)
                     return SaveResult.Failure(conflictMsg)
                 }

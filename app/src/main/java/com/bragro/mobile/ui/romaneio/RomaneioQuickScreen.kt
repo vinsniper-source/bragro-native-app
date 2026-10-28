@@ -181,7 +181,7 @@ class RomaneioQuickViewModel(app: Application) : AndroidViewModel(app) {
                 if (url != null) {
                     fotoTicketUrl.value = url
                 } else if (ocrMensagem.value?.startsWith("Campos") != true) {
-                    ocrMensagem.value = "Foto lida, mas não foi possível enviar agora (sem conexão) — o lançamento segue sem foto."
+                    ocrMensagem.value = "Foto lida, mas não foi possível enviar agora (sem conexão) — o registro segue sem foto."
                 }
             }
             uploadingFoto.value = false
@@ -470,7 +470,7 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
                     }
                 } },
                 // Ícone Copiar no canto superior direito -- pedido do
-                // usuário, mesmo padrão de "copiar último lançamento" já
+                // usuário, mesmo padrão de "copiar último registro" já
                 // aplicado em Cotações/Pedidos (ver preencherComUltimo
                 // acima no ViewModel).
                 actions = {

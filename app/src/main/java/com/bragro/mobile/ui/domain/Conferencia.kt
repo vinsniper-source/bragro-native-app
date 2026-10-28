@@ -137,15 +137,15 @@ fun ConferenciaCard(
     val verde = corSucesso()
     var confirmar by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     fun titulo(id: String): String {
-        val r = records.firstOrNull { it["id"] == id } ?: return "Lançamento"
+        val r = records.firstOrNull { it["id"] == id } ?: return "Registro"
         val data = (r["data"] ?: r["dataInicio"] ?: r["dataEmissao"])?.take(10)?.let { isoDateToBr(it) }
-        return listOfNotNull(r["os"]?.takeIf { it.isNotBlank() }?.let { "O.S. $it" }, (r["local"] ?: r["fazenda"] ?: r["item"] ?: r["descricao"])?.takeIf { it.isNotBlank() }, data).joinToString(" · ").ifBlank { "Lançamento" }
+        return listOfNotNull(r["os"]?.takeIf { it.isNotBlank() }?.let { "O.S. $it" }, (r["local"] ?: r["fazenda"] ?: r["item"] ?: r["descricao"])?.takeIf { it.isNotBlank() }, data).joinToString(" · ").ifBlank { "Registro" }
     }
     val corrigiveis = problemas.flatMap { (id, ps) -> ps.filter { (it.tipo == "grafia" || it.tipo == "lista") && it.sugestao != null }.map { Triple(id, it, titulo(id)) } }
     val M = androidx.compose.ui.Modifier
     com.bragro.mobile.ui.theme.Card(modifier = M.fillMaxWidth(), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = cs.surface)) {
         androidx.compose.foundation.layout.Row(M.fillMaxWidth().padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            Text(if (problemas.isEmpty()) "Cadastro conferido — nada a corrigir" else "${problemas.size} lançamento(s) para corrigir", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, fontSize = 13.sp, modifier = M.weight(1f))
+            Text(if (problemas.isEmpty()) "Cadastro conferido — nada a corrigir" else "${problemas.size} registro(s) para corrigir", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, fontSize = 13.sp, modifier = M.weight(1f))
             if (corrigiveis.isNotEmpty()) androidx.compose.material3.TextButton(onClick = { confirmar = true }) { Text("Corrigir todos (${corrigiveis.size})", fontSize = 12.sp) }
             androidx.compose.material3.IconButton(onClick = onFechar) { androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Close, contentDescription = "Fechar") }
         }
@@ -186,7 +186,7 @@ fun ConferenciaCard(
             title = { Text("Corrigir ${corrigiveis.size} campo(s)?") },
             text = {
                 androidx.compose.foundation.layout.Column(M.heightIn(max = 380.dp).verticalScroll(androidx.compose.foundation.rememberScrollState()), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)) {
-                    Text("Confira o que vai mudar. Campos vazios e divergências não entram — abra o lançamento.", fontSize = 12.sp, color = cs.onSurfaceVariant)
+                    Text("Confira o que vai mudar. Campos vazios e divergências não entram — abra o registro.", fontSize = 12.sp, color = cs.onSurfaceVariant)
                     corrigiveis.forEach { (_, p, t) -> Text("$t — ${p.rotulo}: ${p.atual} → ${p.sugestao}", fontSize = 12.sp) }
                 }
             },

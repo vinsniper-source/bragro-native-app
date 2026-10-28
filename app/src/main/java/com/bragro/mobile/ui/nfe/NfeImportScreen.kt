@@ -340,7 +340,7 @@ fun NfeImportScreen(onBack: () -> Unit, viewModel: NfeImportViewModel = viewMode
                             if (!inv.emitenteNome.isNullOrBlank()) Row { Text("Emitente: "); Text(inv.emitenteNome, fontWeight = FontWeight.Bold) }
                             if (inv.valorTotal != null) Row { Text("Valor total: "); Text(formatMoneyBrl(inv.valorTotal), fontWeight = FontWeight.Bold) }
                             Text(
-                                "Lançamentos de Estoque e Financeiro já foram gerados automaticamente, igual à importação pelo site.",
+                                "Registros de Estoque e Financeiro já foram gerados automaticamente, igual à importação pelo site.",
                                 style = MaterialTheme.typography.bodySmall,
                             )
                             Button(onClick = { viewModel.reset() }, modifier = Modifier.fillMaxWidth()) {
@@ -403,7 +403,7 @@ fun NfeImportScreen(onBack: () -> Unit, viewModel: NfeImportViewModel = viewMode
                     }
                     item {
                         Text(
-                            "Confirmar cria a nota, os lançamentos de Estoque e o lançamento no Financeiro (com rateio) automaticamente -- confira os itens antes de continuar.",
+                            "Confirmar cria a nota, os registros de Estoque e o registro no Financeiro (com rateio) automaticamente -- confira os itens antes de continuar.",
                             style = MaterialTheme.typography.labelSmall,
                         )
                     }

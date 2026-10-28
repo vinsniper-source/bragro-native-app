@@ -128,7 +128,7 @@ class PragaFotoViewModel(app: Application) : AndroidViewModel(app) {
     // Campo/Precisão), 10ª exceção de schema (Praga.latitude/longitude).
     // Capturado best-effort (LocationManager nativo, getLastKnownLocation)
     // no mesmo instante da foto -- se a permissão for negada ou não houver
-    // fix recente, segue sem coordenada, sem bloquear o lançamento.
+    // fix recente, segue sem coordenada, sem bloquear o registro.
     var latitude = mutableStateOf<Double?>(null)
         private set
     var longitude = mutableStateOf<Double?>(null)
@@ -198,7 +198,7 @@ class PragaFotoViewModel(app: Application) : AndroidViewModel(app) {
     /** Mesma sequência de RomaneioQuickViewModel.onPhotoTaken: comprime,
      * sobe pro Storage e SÓ ENTÃO chama a IA (precisa da URL pública já
      * publicada pro servidor conseguir baixar a foto e mandar pro modelo de
-     * visão). Nunca bloqueia o lançamento se qualquer etapa falhar. */
+     * visão). Nunca bloqueia o registro se qualquer etapa falhar. */
     fun onPhotoTaken(context: Context, uri: Uri) {
         enviandoFoto.value = true
         mensagemFoto.value = null
@@ -305,7 +305,7 @@ class PragaFotoViewModel(app: Application) : AndroidViewModel(app) {
                     savedOk.value = true
                 }
                 is SaveResult.SavedOffline -> {
-                    resultMessage.value = "Sem conexão — lançamento salvo neste aparelho. Sincroniza sozinho quando a internet voltar."
+                    resultMessage.value = "Sem conexão — registro salvo neste aparelho. Sincroniza sozinho quando a internet voltar."
                     savedOk.value = true
                 }
                 is SaveResult.Failure -> {

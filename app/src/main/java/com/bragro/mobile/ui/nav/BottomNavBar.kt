@@ -118,7 +118,7 @@ private data class BottomTab(
 
 // Antigas abas "Safra"/"Financeiro"/"RH" (cada uma com dropdown agrupado por
 // "category") foram ACHATADAS em abas de nível superior -- pedido do
-// usuário, mockup por mockup: "não são 5 botões, são 4: lançamentos,
+// usuário, mockup por mockup: "não são 5 botões, são 4: registros,
 // relatórios, compras, faturamento" / "são 4 botões produção, sanidade,
 // monitoramento e painéis" / "são 2 botões RH e Controle Interno". Cada
 // antiga CATEGORIA (ou item solto, no caso de RH) virou sua própria
@@ -195,7 +195,7 @@ private val BOTTOM_TABS = listOf(
     // Acesso direto -- pedido do usuário ("botão frota acesso direto, retire
     // as listas suspensas").
     BottomTab("frota", "Frota", Icons.Outlined.DirectionsCar, directDomainId = "frota"),
-    // Ex-categorias "Lançamentos" + "Relatórios" + "Compras" (antigas abas
+    // Ex-categorias "Registros" + "Relatórios" + "Compras" (antigas abas
     // próprias da aba Financeiro) fundidas numa aba só -- pedido do usuário
     // (mesmo motivo do merge de Produção/Painéis acima: reduzir a barra de 9
     // pra 6 abas). Cada item ganha "category" pra manter o mesmo agrupamento
@@ -204,14 +204,14 @@ private val BOTTOM_TABS = listOf(
     BottomTab(
         "financeiro", "Financeiro", Icons.Outlined.Receipt,
         items = listOf(
-            SectorTarget.Domain("financeiro", "Lançamentos", category = "Lançamentos"),
+            SectorTarget.Domain("financeiro", "Registros", category = "Registros"),
             // Entrada PRÓPRIA -- pedido do usuário ("na barra inferior do
             // botão financeiro insira, na lista suspensa, um módulo chamado
             // gestão financeira"). Abre a mesma tela do Financeiro já na
             // visão "Contas a Pagar" (ver domainId == "gestaofinanceira" em
             // BRAgroNavHost.kt + startInGestao em FinanceiroScreen.kt).
             // "gestaofinanceira" não é um domínio de verdade separado.
-            SectorTarget.Domain("gestaofinanceira", "Gestão Financeira", category = "Lançamentos"),
+            SectorTarget.Domain("gestaofinanceira", "Gestão Financeira", category = "Registros"),
             SectorTarget.Special("dre", "DRE", category = "Relatórios"),
             SectorTarget.Special("analises", "Análises cruzadas", category = "Relatórios"),
             // Livro Caixa do Produtor Rural (Task #58).
@@ -251,7 +251,7 @@ private val BOTTOM_TABS = listOf(
             // emissão de documento fiscal).
             SectorTarget.Special("nfe", "NF-e"),
             // Inventário (ex-categoria "Patrimônio") -- pedido do usuário
-            // foi só 4 botões em Financeiro ("lançamentos, relatóros,
+            // foi só 4 botões em Financeiro ("registros, relatóros,
             // compras, faturamento", sem "patrimônio"). Sem uma nova
             // categoria própria, Inventário entra aqui por afinidade
             // (ativo/patrimonial, mesmo espírito de Caixa Interno) -- ainda
@@ -263,14 +263,14 @@ private val BOTTOM_TABS = listOf(
     // Deixava de ser acesso direto -- pedido do usuário ("botão estoque
     // retire a lista suspensa") original ainda vale como PADRÃO (1 item só
     // continua Direct via RenderTab, ver comentário logo abaixo), mas agora
-    // Reconciliação Físico x Fiscal ganha entrada própria aqui (pedido do
+    // Ajustar Físico x Fiscal ganha entrada própria aqui (pedido do
     // usuário), então a aba passa a ter 2 itens quando ambos liberados --
     // mesmo critério de "Painéis" (RenderTab.Direct quando sobra 1 só).
     BottomTab(
         "estoque", "Estoque", Icons.Outlined.Inventory2,
         items = listOf(
             SectorTarget.Domain("estoque", "Estoque"),
-            SectorTarget.Special("reconciliacaoestoque", "Reconciliação Físico x Fiscal"),
+            SectorTarget.Special("reconciliacaoestoque", "Ajustar Físico x Fiscal"),
             SectorTarget.Special("silos", "Silos"),
         ),
     ),
@@ -334,8 +334,8 @@ private val OWNER_BOTTOM_TABS = listOf(
     BottomTab(
         "financeiro", "Financeiro", Icons.Outlined.Receipt,
         items = listOf(
-            SectorTarget.Domain("financeiro", "Lançamentos", category = "Lançamentos"),
-            SectorTarget.Domain("gestaofinanceira", "Gestão Financeira", category = "Lançamentos"),
+            SectorTarget.Domain("financeiro", "Registros", category = "Registros"),
+            SectorTarget.Domain("gestaofinanceira", "Gestão Financeira", category = "Registros"),
             SectorTarget.Special("dre", "DRE", category = "Relatórios"),
             SectorTarget.Special("analises", "Análises cruzadas", category = "Relatórios"),
             SectorTarget.Special("livrocaixa", "Livro Caixa", category = "Relatórios"),
@@ -358,7 +358,7 @@ private val OWNER_BOTTOM_TABS = listOf(
         items = listOf(
             SectorTarget.Domain("estoque", "Estoque"),
             SectorTarget.Special("controleinsumos", "Controle de Insumos"),
-            SectorTarget.Special("reconciliacaoestoque", "Reconciliação Físico x Fiscal"),
+            SectorTarget.Special("reconciliacaoestoque", "Ajustar Físico x Fiscal"),
             SectorTarget.Special("silos", "Silos"),
         ),
     ),
@@ -409,7 +409,7 @@ private val CATEGORY_ICONS: Map<String, ImageVector> = mapOf(
     "Monitoramento" to Icons.Outlined.WbSunny,
     "Painéis" to Icons.Outlined.Assignment,
     // Financeiro
-    "Lançamentos" to Icons.Outlined.Receipt,
+    "Registros" to Icons.Outlined.Receipt,
     "Relatórios" to com.bragro.mobile.ui.domain.IconeGraficos,
     "Compras" to Icons.Outlined.ShoppingCart,
     "Faturamento" to Icons.Outlined.Payments,
@@ -453,7 +453,7 @@ private fun permissionIdFor(nativeId: String): String = when (nativeId) {
     // sem toggle próprio em Acessos.
     "dossie" -> "financeiro"
     "simulador" -> "financeiro"
-    // Reconciliação Físico x Fiscal e Prescrição/Taxa Variável -- pedido do
+    // Ajustar Físico x Fiscal e Prescrição/Taxa Variável -- pedido do
     // usuário pra virarem entradas próprias na barra (antes só um FAB/ícone
     // dentro de Estoque/FieldView). PERMISSION_ALIAS no site (lib/
     // permissions.ts) já resolve "reconciliacaoestoque"->"estoque" e
@@ -473,7 +473,7 @@ private fun isAllowed(allowedModules: Set<String>, nativeId: String): Boolean =
 
 // Resolução de cada aba pra renderização -- pedido do usuário (mockup do
 // setor Estoque): quando uma aba-grupo (Produção/Sanidade/Monitoramento/
-// Painéis/Lançamentos/Relatórios/Compras/Faturamento) sobra com um único
+// Painéis/Registros/Relatórios/Compras/Faturamento) sobra com um único
 // item visível depois do filtro de permissão (ex.: conta só com
 // "controledeinsumos", sem "safra" -- a aba Painéis teria só "Controle de
 // Insumos"), ela vira acesso direto com o ÍCONE/RÓTULO DO PRÓPRIO ITEM (não
@@ -530,7 +530,7 @@ fun BRAgroBottomBar(
     // #615/#616) -- mesmo critério de onOpenDre/onOpenAnalises acima.
     onOpenDossie: () -> Unit,
     onOpenSimulador: () -> Unit,
-    // Prescrição/Taxa Variável e Reconciliação Físico x Fiscal ganham
+    // Prescrição/Taxa Variável e Ajustar Físico x Fiscal ganham
     // entrada própria na barra (pedido do usuário) -- mesma tela/rota que
     // já existia como ícone/FAB dentro de FieldView/Estoque, sem duplicar
     // lógica; NF-e é módulo novo (Task #628, ausente por completo antes).
@@ -550,7 +550,7 @@ fun BRAgroBottomBar(
     // usuário ("na barra inferior coloque os títulos como botões e dentro
     // dos botões as listas suspensas correspondente a cada categoria de
     // títulos"): cada "category" (Produção/Sanidade/... em Safra,
-    // Lançamentos/Relatórios/... em Financeiro) virou um botão clicável que
+    // Registros/Relatórios/... em Financeiro) virou um botão clicável que
     // abre/fecha SÓ os itens dela (acordeão), em vez de aparecer tudo
     // sempre expandido com um texto de cabeçalho fixo. Só 1 categoria aberta
     // por vez (accordion simples) -- reseta pra fechada sempre que um setor
@@ -903,7 +903,7 @@ private fun sectorItemIcon(item: SectorTarget, fallback: ImageVector): ImageVect
     is SectorTarget.Domain -> domainIcon(item.domainId)
     // Antes cada "Special" caía no ícone da aba pai (fallback) -- DRE e
     // Análises cruzadas ficavam iguais entre si e iguais ao item
-    // "Financeiro"/"Lançamentos" -- pedido do usuário ("troque icone dre
+    // "Financeiro"/"Registros" -- pedido do usuário ("troque icone dre
     // e icone analises cruzadas").
     is SectorTarget.Special -> when (item.routeKey) {
         "dre" -> com.bragro.mobile.ui.domain.IconesVazados.Assessment

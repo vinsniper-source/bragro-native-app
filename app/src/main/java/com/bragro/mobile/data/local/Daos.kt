@@ -160,9 +160,9 @@ interface RecordDao {
     @Query("SELECT * FROM records WHERE domainId = :domainId AND id = :id LIMIT 1")
     suspend fun byId(domainId: String, id: String): RecordEntity?
 
-    // "Copiar último lançamento" (mesma ideia de records[0] em data-table.tsx,
+    // "Copiar último registro" (mesma ideia de records[0] em data-table.tsx,
     // que ja vem ordenado por criadoEm DESC do servidor) -- usado pra
-    // pré-preencher um novo formulário com os valores do lançamento mais
+    // pré-preencher um novo formulário com os valores do registro mais
     // recente do módulo, em QUALQUER domínio (mecanismo genérico no site).
     @Query("SELECT * FROM records WHERE domainId = :domainId ORDER BY criadoEmMillis DESC LIMIT 1")
     suspend fun mostRecent(domainId: String): RecordEntity?
@@ -185,7 +185,7 @@ interface RecordDao {
     @Delete
     suspend fun delete(record: RecordEntity)
 
-    // Ícone Excluir por lançamento (DomainListScreen.kt) -- exclusão local
+    // Ícone Excluir por registro (DomainListScreen.kt) -- exclusão local
     // imediata, mesmo princípio de createRecord/updateRecord (o app nunca
     // espera rede pra refletir a ação do usuário na tela).
     @Query("DELETE FROM records WHERE domainId = :domainId AND id = :id")
@@ -231,7 +231,7 @@ interface PendingSyncDao {
     // Task #124 (conflito de sync) -- diferente de marcarErro: um item
     // marcado aqui não entra mais no retry automático (ver
     // RecordRepository.syncAll/hasPending), só volta a ser tentado se o
-    // usuário editar o lançamento de novo (o que cria um NOVO item na
+    // usuário editar o registro de novo (o que cria um NOVO item na
     // fila) ou se este for removido manualmente.
     @Query("UPDATE pending_sync SET conflictMessage = :mensagem WHERE id = :id")
     suspend fun marcarConflito(id: Long, mensagem: String)
@@ -239,7 +239,7 @@ interface PendingSyncDao {
     // Task #124 (isolamento de cache por organização) -- ver
     // RecordDao.clearAll(). Some com a fila pendente inteira quando a
     // organização recém-autenticada é diferente da última conhecida neste
-    // aparelho (evita sincronizar um lançamento contra a organização
+    // aparelho (evita sincronizar um registro contra a organização
     // errada).
     @Query("DELETE FROM pending_sync")
     suspend fun clearAll()

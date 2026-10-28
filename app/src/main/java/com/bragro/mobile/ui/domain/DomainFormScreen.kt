@@ -2,6 +2,8 @@ package com.bragro.mobile.ui.domain
 
 import android.app.Application
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -93,7 +95,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var offlineNotice = mutableStateOf<String?>(null)
         private set
-    // "Copiar último lançamento" (Task #51/#77) -- só faz sentido ao CRIAR
+    // "Copiar último registro" (Task #51/#77) -- só faz sentido ao CRIAR
     // (recordId == null); guarda o registro mais recente do módulo pra poder
     // pré-preencher o formulário com um toque, mesmo mecanismo genérico do
     // site (data-table.tsx), sem exceção por domínio.
@@ -102,7 +104,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
     // Campos calculados pelo servidor (rateio, vencimento, líquido, status
     // etc.) -- só leitura, NUNCA entram em `fields` (que é o que vai no
     // corpo do save()), mesmo critério do site (record-form.tsx): aparecem
-    // na tela pra consulta, "—" até o primeiro Salvar num lançamento novo,
+    // na tela pra consulta, "—" até o primeiro Salvar num registro novo,
     // mas quem preenche de verdade é o service layer do servidor. Pedido do
     // usuário: "coloque todos os campos até os que são calculados
     // automaticamente na ordem correta da operação em todos os módulos".
@@ -131,9 +133,9 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
 
     val fields = mutableStateMapOf<String, String>()
 
-    /** Vários itens no mesmo lançamento/O.S. (padrão Safra da plataforma,
+    /** Vários itens no mesmo registro/O.S. (padrão Safra da plataforma,
      * MULTI_ITEM em record-form.tsx): o 1º item usa os campos normais; cada
-     * linha extra vira um lançamento com o mesmo cabeçalho ao salvar. */
+     * linha extra vira um registro com o mesmo cabeçalho ao salvar. */
     val itensExtras = androidx.compose.runtime.mutableStateListOf<androidx.compose.runtime.snapshots.SnapshotStateMap<String, String>>()
     fun addItemExtra() { itensExtras.add(mutableStateMapOf()) }
     fun removeItemExtra(i: Int) { if (i in itensExtras.indices) itensExtras.removeAt(i) }
@@ -241,10 +243,10 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
                 // do costume brasileiro). Mostra em DD/MM/AAAA no campo; a
                 // conversão de volta pra ISO só acontece em save().
                 fields[col.key] = when {
-                    // Novo lançamento de Financeiro: campo "Data" já nasce
+                    // Novo registro de Financeiro: campo "Data" já nasce
                     // com hoje, igual ao site (record-form.tsx, domain.id
                     // === "financeiro" && !initial) -- usuário tinha que
-                    // digitar a data toda vez que abria "Novo Lançamento".
+                    // digitar a data toda vez que abria "Novo Registro".
                     col.type == "date" && existing == null && domainId == "financeiro" && col.key == "data" ->
                         millisToBrDate(System.currentTimeMillis())
                     col.type == "date" -> isoDateToBr(isoDateOnly(raw))
@@ -255,7 +257,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
 
             lastRecord.value = if (recordId == null) recordRepository.mostRecent(domainId) else null
 
-            // Preview do próximo número de O.S. num lançamento NOVO (pedido
+            // Preview do próximo número de O.S. num registro NOVO (pedido
             // do usuário: "aplique tambem no app o que foi aplicado na
             // plataforma do preenchimento automático da O.S. posterior") --
             // mesmo critério do site (record-form.tsx): só dispara se o
@@ -355,7 +357,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
         if (value.isNotBlank() && key in missingFields.value) {
             missingFields.value = missingFields.value - key
         }
-        // Troca de fazenda ("local") num lançamento novo: recalcula o
+        // Troca de fazenda ("local") num registro novo: recalcula o
         // próximo número de O.S. NA SEQUÊNCIA DAQUELA FAZENDA (ver
         // refreshOsPreview() acima).
         if (key == "local") {
@@ -440,7 +442,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Preenche todos os campos (exceto computados) com os valores do
-     * lançamento mais recente do módulo -- o usuário ainda pode editar
+     * registro mais recente do módulo -- o usuário ainda pode editar
      * qualquer campo antes de salvar, igual ao site. */
     fun copyFromLastRecord() {
         val last = lastRecord.value ?: return
@@ -462,7 +464,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
      * getClimaHojeAction() no servidor -- nenhuma lógica de clima duplicada
      * aqui) e preenche os campos do formulário; o usuário ainda ajusta
      * fazenda/talhão e confere antes de salvar, igual ao "Copiar último
-     * lançamento" acima -- nada é gravado sozinho. */
+     * registro" acima -- nada é gravado sozinho. */
     fun preencherClimaHoje() {
         climaHojeBusy.value = true
         errorMessage.value = null
@@ -489,7 +491,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
 
     // Campos com o rótulo faltando -- exibido junto do campo em vermelho
     // depois de uma tentativa de salvar sem preenchê-lo (pedido do usuário:
-    // "coloque uma condição para salvar o lançamento, todos os campos
+    // "coloque uma condição para salvar o registro, todos os campos
     // [obrigatórios] terão que ser preenchidos", confirmado como válido em
     // TODOS os módulos, não só Receituários/Cobranças). Servidor já rejeita
     // isso via Zod (registry.ts `required: true`), mas sem aviso nenhum na
@@ -542,7 +544,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             }
             var result = if (recordId == null) recordRepository.createRecord(domainId, snapshot) else recordRepository.updateRecord(domainId, recordId, snapshot)
             // Itens extras: mesmo cabeçalho (O.S./pedido, fazenda, datas...),
-            // só os campos do item trocados -- cada um vira um lançamento.
+            // só os campos do item trocados -- cada um vira um registro.
             if (result !is SaveResult.Failure && multi != null) {
                 for (x in extrasValidos) {
                     val linha = snapshot.toMutableMap()
@@ -574,7 +576,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
  * Os campos "computed" (calculados pelo servidor -- rateio, vencimento,
  * numeracao de O.S. etc.) nao aparecem aqui: so existem depois da
  * sincronizacao, quando o servidor devolve o registro definitivo. */
-/** Vários itens por lançamento -- espelho de MULTI_ITEM (record-form.tsx)
+/** Vários itens por registro -- espelho de MULTI_ITEM (record-form.tsx)
  * da plataforma, estendido a Frota e Cotações (pedido do usuário: "pedidos,
  * cotações, controle interno, frota, safra... como está o padrão na
  * plataforma módulo safra"). sel = listas, inp = números. */
@@ -674,7 +676,6 @@ fun DomainFormScreen(
     val missingFields by viewModel.missingFields
     val previa by viewModel.previa
     val previaDicas by viewModel.previaDicas
-    val previaFalta by viewModel.previaFalta
     // v57 -- prévia dos automáticos ~0,5 s depois de parar de digitar.
     LaunchedEffect(domainId, recordId) {
         @OptIn(kotlinx.coroutines.FlowPreview::class)
@@ -695,7 +696,7 @@ fun DomainFormScreen(
                 },
                 // Título desce uma linha, mesmo padrão já usado em
                 // DomainListScreen/Financeiro/DRE/Análises -- pedido do
-                // usuário ("em novo lançamento em todos os módulos... rebaixe
+                // usuário ("em novo registro em todos os módulos... rebaixe
                 // a seta a esquerda e o título uma linha abaixo").
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
@@ -716,11 +717,11 @@ fun DomainFormScreen(
                         // marquee travando a barra inferior neste mesmo app
                         // (ver StatusStyle.kt, "Reverter marquee dentro de
                         // DropdownMenuItem"). Aqui o texto é sempre um destes
-                        // dois literais curtos e fixos ("Novo lançamento"/
-                        // "Editar lançamento"), nunca precisou de letreiro --
+                        // dois literais curtos e fixos ("Novo registro"/
+                        // "Editar registro"), nunca precisou de letreiro --
                         // Ellipsis é suficiente e nunca vai nem aparecer.
                         Text(
-                            if (recordId == null) "Novo lançamento" else "Editar lançamento",
+                            if (recordId == null) "Novo registro" else "Editar registro",
                             maxLines = 1,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -769,9 +770,9 @@ fun DomainFormScreen(
             // precisar de um parágrafo extra repetindo a mesma informação; o
             // ícone de copiar (TopAppBar) também não precisa mais de legenda
             // -- é auto-explicativo (ícone de copiar + tooltip/contentDescription
-            // "Copiar último lançamento").
+            // "Copiar último registro").
 
-            // "Preencher com foto (IA)" -- só em lançamento NOVO dos módulos
+            // "Preencher com foto (IA)" -- só em registro NOVO dos módulos
             // que declaram `ocrFoto` no registry.ts do site (paridade).
             if (recordId == null && domainId in OCR_FOTO_DOMAINS) {
                 OcrFotoButton(modifier = Modifier.padding(bottom = 12.dp)) { url -> viewModel.aplicarOcrFoto(url) }
@@ -816,7 +817,7 @@ fun DomainFormScreen(
                             }
                         }
                         IconButton(onClick = { if (lastRecord != null) viewModel.copyFromLastRecord() }, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último lançamento", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
+                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último registro", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
                         }
                     }
                 }
@@ -828,7 +829,7 @@ fun DomainFormScreen(
                         val optionLabels = col.lookupCategory?.let { cat -> lookups[cat]?.associate { it.value to it.label } } ?: emptyMap()
                         val temPrevia = previa.containsKey(col.key)
                         val raw = if (temPrevia) previa[col.key] ?: "" else computedValues[col.key] ?: ""
-                        val dica = if (temPrevia) previaDicas[col.key] else if (raw.isBlank()) previaFalta else null
+                        val dica = if (temPrevia) previaDicas[col.key] else null
                         ComputedFieldDisplay(col = col, raw = raw, optionLabels = optionLabels, dica = dica)
                         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
                         return@forEach
@@ -986,7 +987,7 @@ private fun fieldLabel(col: ColumnConfig): String = col.label + if (col.required
 // EstoqueFazendaExtras.kt. Fallback seguro: qualquer erro de parse retorna o
 // raw original (nunca quebra a tela).
 // Não-private -- reutilizada em DomainListScreen.kt (agrupamento de
-// lançamentos NF-e no Financeiro), mesmo pacote (ui.domain).
+// registros NF-e no Financeiro), mesmo pacote (ui.domain).
 internal fun formatItensNf(raw: String): String {
     return try {
         val el = kotlinx.serialization.json.Json.parseToJsonElement(raw)
@@ -1031,45 +1032,53 @@ private fun computedDisplayValue(col: ColumnConfig, raw: String, optionLabels: M
 // visual do site (record-form.tsx: "bg-muted/40" + rótulo "(calculado)").
 @Composable
 private fun ComputedFieldDisplay(col: ColumnConfig, raw: String, optionLabels: Map<String, String>, dica: String? = null) {
+    // v58 (mockup v58, opção A) -- rótulo + etiqueta "auto" e o valor numa
+    // caixa própria, do tamanho dos outros campos: fundo verde-claro, texto
+    // preto/branco do tema (cor só no fundo, sem fonte verde).
+    val cs = MaterialTheme.colorScheme
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            // "(calculado automaticamente)" -> "(automático)" -- pedido do
-            // usuário ("substitua esta palavra... por automático").
-            "${col.label} (automático)",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Text(col.label, style = MaterialTheme.typography.labelMedium, color = cs.onSurfaceVariant)
+            Text(
+                "auto",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                color = cs.onPrimary,
+                modifier = Modifier
+                    .padding(start = 6.dp)
+                    .background(cs.primary, RoundedCornerShape(50))
+                    .padding(horizontal = 6.dp, vertical = 1.dp),
+            )
+        }
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 4.dp)
-                // Preenchimento igual aos campos manuais (appFieldColors, ver
-                // AppCard.kt), sem borda -- pedido do usuário ("tire todas as
-                // bordas de todo app"), revertendo a borda que antes
-                // igualava este campo aos manuais.
-                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
-                .padding(horizontal = 12.dp, vertical = 12.dp),
+                .heightIn(min = 52.dp)
+                .background(cs.primary.copy(alpha = 0.14f), RoundedCornerShape(8.dp))
+                .border(1.dp, cs.primary.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
+                .padding(horizontal = 14.dp, vertical = 14.dp),
+            contentAlignment = androidx.compose.ui.Alignment.CenterStart,
         ) {
-            // Fonte verde -- pedido do usuário ("nos campos que forem
-            // calculados automaticamente coloque a cor da fonte de verde").
             Text(
                 computedDisplayValue(col, raw, optionLabels),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                color = cs.onSurface,
             )
         }
-        // v57 -- dica da prévia (ex.: "saldo anterior R$ 9.680,00") ou o que
-        // falta preencher para calcular.
+        // Dica útil da prévia (ex.: "saldo anterior R$ 9.680,00"). Avisos de
+        // campo obrigatório não aparecem aqui (v58).
         if (!dica.isNullOrBlank()) {
-            Text(dica, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
+            Text(dica, style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
         }
     }
 }
 
 // Tonalidade de verde da marca (mesma da barra inferior de navegação)
-// explícita em TODOS os campos de lançamento -- pedido do usuário ("aplique
+// explícita em TODOS os campos de registro -- pedido do usuário ("aplique
 // a tonalidade de verde da barra inferior de botões em todos os campos de
-// lançamentos"). Usa `colorScheme.primary` (não mais o BrGreen fixo) --
+// registros"). Usa `colorScheme.primary` (não mais o BrGreen fixo) --
 // pedido do usuário ("no modo claro e escuro siga a cor da barra inferior
 // para as listas suspensas dos módulos e dos campos"): BrGreen é uma
 // constante única (0xFF2F6F4F) que não muda com o tema, enquanto a barra

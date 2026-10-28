@@ -19,7 +19,7 @@ import com.bragro.mobile.data.remote.NetworkModule
  * createOrcamentoAction()/extrairRequisicaoOcrAction()/
  * extrairItensOrcamentoOcrAction() no servidor -- mesmo motor que o site
  * usaria. Sem cache offline de propósito (mesmo critério de
- * PedidoMultiItemRepository/NotaMultiItemRepository): é um lançamento com
+ * PedidoMultiItemRepository/NotaMultiItemRepository): é um registro com
  * OCR ao vivo, não um dado de leitura pra tela offline. */
 class OrcamentoRepository(context: Context) {
     private val tokenStore = TokenStore(context)

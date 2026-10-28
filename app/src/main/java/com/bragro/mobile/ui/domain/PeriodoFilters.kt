@@ -88,7 +88,7 @@ fun isDateInRange(value: String?, from: String, to: String): Boolean {
 
 /** Espelho de buildFinanceiroPeriodoWhere (actions.ts): em Pagar/Receber
  * filtra pela janela de VENCIMENTO; nas demais visões, casa pelo início do
- * campo "Periodo" do lançamento (ex.: "MENSAL 2X" cai em "MENSAL"). */
+ * campo "Periodo" do registro (ex.: "MENSAL 2X" cai em "MENSAL"). */
 fun filterByFinanceiroPeriodo(
     records: List<Map<String, String?>>,
     categoria: PeriodoCategoria?,

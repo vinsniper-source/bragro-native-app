@@ -90,7 +90,7 @@ fun RecalcularAreaButton(domainId: String, viewModel: ModuleActionButtonViewMode
                 }
             }
             Text(
-                "Reprocessa a Área (ha) de todo o histórico a partir do cadastro atual de Fazendas -- útil depois de corrigir uma fazenda cadastrada após o lançamento.",
+                "Reprocessa a Área (ha) de todo o histórico a partir do cadastro atual de Fazendas -- útil depois de corrigir uma fazenda cadastrada após o registro.",
                 style = MaterialTheme.typography.bodySmall,
             )
             if (message != null) Text(message!!, style = MaterialTheme.typography.bodySmall)

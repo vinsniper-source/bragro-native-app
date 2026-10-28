@@ -60,12 +60,12 @@ import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
 
-/** "Reconciliação Físico x Fiscal" (Task #603/#607, paridade com
+/** "Ajustar Físico x Fiscal" (Task #603/#607, paridade com
  * reconciliacao-estoque-client.tsx do site): relatório de LEITURA pura,
  * sem input do usuário -- busca em /api/mobile/reconciliacao-estoque
  * (mesma função de serviço do site, nenhum cálculo refeito aqui) e mostra
  * por item o saldo fiscal (só notas fiscais importadas), o saldo físico
- * (todos os lançamentos) e a diferença entre os dois, com um toggle pra
+ * (todos os registros) e a diferença entre os dois, com um toggle pra
  * ver só os itens divergentes ou a lista completa -- mesmo critério do
  * site. Sem cache no Room de propósito (ver ReconciliacaoEstoqueRepository).
  */
@@ -139,7 +139,7 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                 "${formatoNumero(it.diferenca)}${it.unidade?.let { u -> " $u" } ?: ""}",
             )
         }
-        HtmlPrinter.printSimpleTable(context, "Reconciliação Físico x Fiscal", headers, rows)
+        HtmlPrinter.printSimpleTable(context, "Ajustar Físico x Fiscal", headers, rows)
     }
 
     Scaffold(
@@ -251,7 +251,7 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                     },
                     avisos = listOf(divergentes.size, 0, 0),
                     arquivos = {
-                        com.bragro.mobile.ui.domain.ArquivosTabela("Reconciliação Físico x Fiscal", listOf("Item", "Categoria", "Saldo Fiscal", "Saldo Real", "Diferença")) {
+                        com.bragro.mobile.ui.domain.ArquivosTabela("Ajustar Físico x Fiscal", listOf("Item", "Categoria", "Saldo Fiscal", "Saldo Real", "Diferença")) {
                             itens.map { listOf(it.item, it.categoria ?: "", formatoNumero(it.saldoFiscal) + (it.unidade?.let { u -> " $u" } ?: ""), formatoNumero(it.saldoFisico) + (it.unidade?.let { u -> " $u" } ?: ""), formatoNumero(it.diferenca) + (it.unidade?.let { u -> " $u" } ?: "")) }
                         }
                     },

@@ -66,7 +66,7 @@ import com.bragro.mobile.data.repo.PedidoMultiItemRepository
 import com.bragro.mobile.data.repo.RecordRepository
 import kotlinx.coroutines.launch
 
-// "Novo modelo" de Pedidos (vários itens no mesmo lançamento) -- pedido do
+// "Novo modelo" de Pedidos (vários itens no mesmo registro) -- pedido do
 // usuário ("insira o novo modelo dos modulos cotaçoes e pedidos no app
 // native"): réplica da tela web (pedido-multi-item-button.tsx, task #235),
 // que já substituiu o formulário "1 item só" no site -- um Pedido É
@@ -78,7 +78,7 @@ import kotlinx.coroutines.launch
 // createPedidoMultiItemAction() no servidor -- mesmo motor que o site usa.
 // Mesmo padrão de tela/ViewModel já usado em NotaMultiItemScreen.kt.
 //
-// "Copiar último lançamento" (varredura de auditoria, pedido do usuário
+// "Copiar último registro" (varredura de auditoria, pedido do usuário
 // "implemente tudo"): usa RecordRepository.mostRecent("pedidos"), que já lê
 // do cache local (Room) sem precisar de nenhum endpoint novo -- mesmo
 // mecanismo genérico usado no resto do app (Task #51/#77), só que essa tela
@@ -229,7 +229,7 @@ class PedidoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         errorMessage.value = null
     }
 
-    /** "Copiar último lançamento" -- busca o último Pedido lançado (qualquer
+    /** "Copiar último registro" -- busca o último Pedido lançado (qualquer
      * fornecedor/item) no cache local e preenche o cabeçalho + a primeira
      * linha de item, mesmo padrão de preencherComUltimo() em
      * pedido-multi-item-button.tsx (site). */

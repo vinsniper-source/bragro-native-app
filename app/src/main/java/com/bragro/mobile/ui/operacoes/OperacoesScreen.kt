@@ -114,7 +114,7 @@ class OperacoesViewModel(app: Application) : AndroidViewModel(app) {
     // 0 = safra inteira (padrão desde a rodada "um bloco por fazenda").
     var janela = mutableStateOf(0)
         private set
-    // Lançamentos revisados nesta sessão -- o botão Revisar continua
+    // Registros revisados nesta sessão -- o botão Revisar continua
     // habilitado (pedido do usuário), só muda o rótulo pra "Revisada".
     var revisados = mutableStateOf<Set<String>>(emptySet())
         private set
@@ -260,7 +260,7 @@ private fun AreaProgressBar(pct: Int) {
 // do outro (sem rolagem lateral), filtros em listas suspensas (Etapa,
 // Atividade, Talhão, Revisão), responsável/função/frota em destaque em cada
 // card e em cada O.S., e "Revisar e editar" abrindo o formulário de edição
-// do lançamento (mesma rota de edição do módulo) e marcando como revisada.
+// do registro (mesma rota de edição do módulo) e marcando como revisada.
 // Números (área utilizada, % da fazenda, custo/ha) vêm prontos do servidor.
 private val GRUPOS_ATIVIDADE = listOf(
     "Análise de solo", "Preparo do solo", "Dessecação", "Adubação de base", "Tratamento de sementes",
@@ -379,7 +379,7 @@ private fun OperacaoCard(
                             "Desvio x orçado", op.variacaoMedia ?: 0.0, "pct", null, "média das atividades", "Atividades",
                             tom = op.variacaoMedia?.let { if (it > ACIMA_LIMITE) "acima" else "abaixo" },
                         ),
-                        com.bragro.mobile.ui.domain.PainelKpi("Atividades", atividades.size.toDouble(), "numero", null, "${op.timeline.size} lançamentos", "Atividades"),
+                        com.bragro.mobile.ui.domain.PainelKpi("Atividades", atividades.size.toDouble(), "numero", null, "${op.timeline.size} registros", "Atividades"),
                     ),
                     barras = listOf(com.bragro.mobile.ui.domain.PainelBarra("O.S. finalizadas", op.progressoPct.toDouble(), "${op.osConcluidas}/${op.osTotal}")),
                 ),
@@ -465,7 +465,7 @@ private fun OperacaoCard(
                             }
                             Text(tituloAtividade(a), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                             Text(
-                                (if (colheita) "${lista.size} colheita(s)" else "${lista.size} lançamento(s) · $nOS O.S.") +
+                                (if (colheita) "${lista.size} colheita(s)" else "${lista.size} registro(s) · $nOS O.S.") +
                                     " · ${fmtDataCurta(lista.first().data)} a ${fmtDataCurta(lista.last().dataFim ?: lista.last().data)}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -567,7 +567,7 @@ private fun OperacaoCard(
                                             }
                                             Spacer(modifier = Modifier.height(4.dp))
                                             // "Revisar também com a função editar": marca como
-                                            // revisada e abre o formulário de edição do lançamento.
+                                            // revisada e abre o formulário de edição do registro.
                                             androidx.compose.material3.Button(
                                                 onClick = {
                                                     onReview(ev.id, dominio)

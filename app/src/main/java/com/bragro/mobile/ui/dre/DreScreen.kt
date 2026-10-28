@@ -460,7 +460,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
     // Recolher/expandir os blocos do relatório (Totais, Composição, Fazendas)
     // de uma vez -- pedido do usuário ("insira o ícone recolher/expandir os
     // blocos em dre e análises"), mesmo padrão do allExpanded já usado nas
-    // listas de lançamentos (DomainListScreen/FinanceiroScreen). Começa
+    // listas de registros (DomainListScreen/FinanceiroScreen). Começa
     // FECHADO -- pedido do usuário ("sempre aparecer a tela vazia, só
     // expandir quando clicar no ícone"), mesmo critério já usado em
     // allExpanded nos módulos genéricos.
@@ -471,7 +471,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
     // (DRE_EXPORT_COLUMNS/dreExportRecords) já usada em Excel/PDF/Imprimir,
     // sem coluna de ações. Substitui Totais/Composição/cards de fazenda
     // pela grade quando ativa (mesmo critério de troca total já usado nas
-    // listas de lançamento).
+    // listas de registro).
     var tableView by remember { mutableStateOf(false) }
     val tableHScroll = remember { androidx.compose.foundation.ScrollState(0) }
     // Alternância ha/sc/ton no gráfico "Custo por Fazenda" -- espelho do
@@ -507,7 +507,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                 // Nuvem/Imprimir no canto superior direito -- mesmo padrão
                 // já aplicado em todos os outros módulos (ver
                 // DomainListScreen.kt/FinanceiroScreen.kt), pedido do
-                // usuário ("aplique o mesmo padrão... da aba lançamentos").
+                // usuário ("aplique o mesmo padrão... da aba registros").
                 actions = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -644,7 +644,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                 // padrão já usado em todos os outros módulos. Dados/
                 // Operações/Arquivos viraram uma barra oval (pill) que
                 // alterna entre categorias -- pedido do usuário ("aplique o
-                // mesmo padrão... da aba lançamentos com a barra oval e as
+                // mesmo padrão... da aba registros com a barra oval e as
                 // categorias os ícones no topo").
                 DreCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth())
             } } }
@@ -702,7 +702,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                 // Custo por Arroba, GMD, Taxa de Prenhez, Produtividade
                 // @/ha/ano). Espelha o mesmo bloco do site (dre-client.tsx,
                 // IndicadoresPecuariaBlock) -- só aparece quando a org tem
-                // algum lançamento de Pecuária/Pastagem/Custo no período
+                // algum registro de Pecuária/Pastagem/Custo no período
                 // (indicadoresPecuaria null quando não tem, ver dre.ts).
                 data.indicadoresPecuaria?.let { ip ->
                     item {

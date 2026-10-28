@@ -274,7 +274,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
         // Botão flutuante removido (pedido do usuário) -- "+ Voo" fica em Ações.
     ) { padding ->
         // Padrão da plataforma: Painel de monitoramento + Ações (Tipo,
-        // Prestadora, + Voo) + LANÇAMENTOS em cards. A prestadora abre numa
+        // Prestadora, + Voo) + REGISTROS em cards. A prestadora abre numa
         // janela (antes ocupava o topo da tela).
         val filtrados = if (tipoFiltro == null) records else records.filter { it.tipoCaptura == tipoFiltro }
         val area = records.sumOf { it.areaCoberta ?: 0.0 }
@@ -299,11 +299,11 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                             titulo = "Drone",
                             subtitulo = "${records.size} voo(s) · ${records.mapNotNull { it.talhao?.takeIf { t -> t.isNotBlank() } }.toSet().size} talhão(ões)",
                             kpis = listOf(
-                                com.bragro.mobile.ui.domain.PainelKpi("Voos", records.size.toDouble(), "numero", null, "registrados", "Lançamentos"),
-                                com.bragro.mobile.ui.domain.PainelKpi("Área coberta", area, "numero", "ha", "soma dos voos", "Lançamentos"),
+                                com.bragro.mobile.ui.domain.PainelKpi("Voos", records.size.toDouble(), "numero", null, "registrados", "Registros"),
+                                com.bragro.mobile.ui.domain.PainelKpi("Área coberta", area, "numero", "ha", "soma dos voos", "Registros"),
                                 com.bragro.mobile.ui.domain.PainelKpi("NDVI", (porTipo["NDVI_MULTIESPECTRAL"] ?: 0).toDouble(), "numero", null, "multiespectral", "Ver NDVI"),
                                 com.bragro.mobile.ui.domain.PainelKpi("Ortomosaicos", (porTipo["MAPEAMENTO_ORTOMOSAICO"] ?: 0).toDouble(), "numero", null, "mapeamentos", "Ver ortomosaicos"),
-                                com.bragro.mobile.ui.domain.PainelKpi("Fotos e vídeos", fotosVideos.toDouble(), "numero", null, "capturas", "Lançamentos"),
+                                com.bragro.mobile.ui.domain.PainelKpi("Fotos e vídeos", fotosVideos.toDouble(), "numero", null, "capturas", "Registros"),
                             ),
                             barras = emptyList(),
                         ),
@@ -411,9 +411,9 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
             talhoes = talhoes,
             saving = saving,
             error = error,
-            // "Copiar último lançamento" (Task #197) -- pedido do usuário
-            // ("novo lançamento que não tiver o ícone copiar último
-            // lançamento coloque"): Drone tinha sua própria dialog (não
+            // "Copiar último registro" (Task #197) -- pedido do usuário
+            // ("novo registro que não tiver o ícone copiar último
+            // registro coloque"): Drone tinha sua própria dialog (não
             // passa pela DomainFormScreen.kt genérica, que já tinha o
             // ícone), então ficou de fora do rollout anterior (Task #130).
             // Copia só os campos de texto -- o arquivo (foto/vídeo) precisa
@@ -508,7 +508,7 @@ private fun NovoDroneRegistroDialog(
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Novo registro de drone", modifier = Modifier.weight(1f))
-                // "Copiar último lançamento" -- pedido do usuário. Copia só
+                // "Copiar último registro" -- pedido do usuário. Copia só
                 // os campos de texto (Talhão/Tipo/Piloto/Altitude/Área/
                 // Obs); o arquivo em si precisa ser escolhido de novo.
                 if (ultimoRegistro != null) {
@@ -520,7 +520,7 @@ private fun NovoDroneRegistroDialog(
                         area = ultimoRegistro.areaCoberta?.toString() ?: ""
                         obs = ultimoRegistro.observacoes ?: ""
                     }) {
-                        Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último lançamento", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último registro", tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }

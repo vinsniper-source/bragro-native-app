@@ -79,7 +79,7 @@ private fun statusLabel(status: String): String = when (status) {
     "ok" -> "Dentro do planejado"
     "alerta" -> "Atenção: custo se afastando do planejado"
     "risco" -> "Fora do planejado"
-    else -> "Sem lançamento de safra na janela"
+    else -> "Sem registro de safra na janela"
 }
 
 private val ESTAGIO_LABEL: Map<String, String> = mapOf(
@@ -361,14 +361,14 @@ fun CanvasCirclesRow(
         ) {
             fazendas.forEach { f ->
                 val unica = false
-                // areaFiltroHa (área de fato coberta pelos lançamentos da
+                // areaFiltroHa (área de fato coberta pelos registros da
                 // safra/cultura filtrada, ex.: safrinha ocupa menos área
                 // que a safra verão na mesma fazenda) tem prioridade sobre
                 // a área cadastral (areaHa) -- espelho exato de
                 // canvas-view.tsx (site), mesmo pedido do usuário
                 // ("gostaria que o círculo tivesse áreas diferentes da
                 // mesma fazenda dependendo a seleção dos filtros"). Sem
-                // filtro de safra/cultura, ou sem lançamento com hectare
+                // filtro de safra/cultura, ou sem registro com hectare
                 // preenchido ainda, cai de volta pra areaHa.
                 val areaExibida = f.areaFiltroHa ?: f.areaHa
                 val filtroAtivo = f.areaFiltroHa != null
@@ -652,7 +652,7 @@ fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
                 }
             } else {
                 Text(
-                    "Sem lançamentos financeiros dessa fazenda na janela selecionada.",
+                    "Sem registros financeiros dessa fazenda na janela selecionada.",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontStyle = FontStyle.Italic,

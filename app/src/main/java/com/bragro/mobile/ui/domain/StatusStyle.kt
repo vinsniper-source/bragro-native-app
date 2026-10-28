@@ -72,7 +72,7 @@ private val STATUS_TONE: Map<String, Tone> = mapOf(
     // "BOM"/"REGULAR"/"RUIM" -- estado de conservação do Inventário (Ativos)
     // -- achado do usuário ("inventário, badges coloridos").
     "BOM" to Tone.GOOD, "REGULAR" to Tone.WARN, "RUIM" to Tone.BAD,
-    // Origem do lançamento em Estoque (ver ORIGEM_LABELS abaixo) -- badge
+    // Origem do registro em Estoque (ver ORIGEM_LABELS abaixo) -- badge
     // verde só pra indicar "isto chegou sozinho de outro módulo".
     "PEDIDO" to Tone.GOOD, "FROTA" to Tone.GOOD, "SAFRA" to Tone.GOOD, "CONTROLE INTERNO" to Tone.GOOD,
     "NF-E" to Tone.GOOD, "EXTRATO BANCÁRIO" to Tone.GOOD, "SINCRONIZAÇÃO" to Tone.GOOD,
@@ -80,7 +80,7 @@ private val STATUS_TONE: Map<String, Tone> = mapOf(
 
 /** Traduz o código técnico gravado em EstoqueMovimento.origem (id do módulo
  * de origem, ex.: "frota") pro rótulo que o usuário reconhece -- mesmo mapa
- * de ORIGEM_LABELS em data-table.tsx. Um lançamento digitado manualmente em
+ * de ORIGEM_LABELS em data-table.tsx. Um registro digitado manualmente em
  * Estoque não tem origem (fica "—"). */
 private val ORIGEM_LABELS: Map<String, String> = mapOf(
     "manual" to "Manual",
@@ -110,7 +110,7 @@ private val BR_DATE = Regex("^(\\d{2})/(\\d{2})/(\\d{4})$")
 
 /** Converte "AAAA-MM-DD" (formato que o servidor manda/espera) pro formato
  * brasileiro "DD/MM/AAAA" -- pedido do usuário ("dentro do botão de
- * adicionar novo lançamento as datas estão com padrão americano"): o campo
+ * adicionar novo registro as datas estão com padrão americano"): o campo
  * de data do formulário mostrava/pedia AAAA-MM-DD, que embora seja ISO (não
  * literalmente o padrão americano MM/DD/AAAA) tem a ordem ano-mês-dia que o
  * usuário não reconhece como o formato usado no Brasil. Devolve o texto
@@ -532,7 +532,7 @@ fun domainProgressCellInfo(domainId: String, key: String, record: Map<String, St
     return null
 }
 
-/** Barra de progresso dentro de um card de lançamento (RecordFieldLine) --
+/** Barra de progresso dentro de um card de registro (RecordFieldLine) --
  * mesmo "Rótulo: valor" das outras linhas, so que com uma barrinha embaixo
  * em vez de so texto. Cores seguem BarTone (GOOD=primary, WARN=tertiary,
  * BAD=error, NEUTRAL=secondary), mesmo padrao ja usado em

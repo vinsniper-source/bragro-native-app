@@ -36,7 +36,7 @@ private data class TourStep(val icon: androidx.compose.ui.graphics.vector.ImageV
 // de orientação pelas 3 áreas centrais da Início: o Canvas/filtros (onde
 // fica o resumo visual das fazendas), a barra inferior (onde ficam todos os
 // módulos) e a captura rápida (Romaneio/Abastecimento e "Copiar último
-// lançamento", os atalhos que poupam mais tempo no dia a dia).
+// registro", os atalhos que poupam mais tempo no dia a dia).
 private val TOUR_STEPS = listOf(
     TourStep(
         com.bragro.mobile.ui.domain.IconesVazados.Agriculture,
@@ -51,7 +51,7 @@ private val TOUR_STEPS = listOf(
     TourStep(
         com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt,
         "Atalhos que poupam tempo",
-        "Em cada módulo, o botão \"Copiar último lançamento\" pré-preenche um registro novo a partir do anterior. Romaneio Rápido e Abastecimento ficam nos atalhos do topo da Início.",
+        "Em cada módulo, o botão \"Copiar último registro\" pré-preenche um registro novo a partir do anterior. Romaneio Rápido e Abastecimento ficam nos atalhos do topo da Início.",
     ),
 )
 

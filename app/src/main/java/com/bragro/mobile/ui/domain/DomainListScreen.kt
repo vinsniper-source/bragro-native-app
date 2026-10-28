@@ -230,7 +230,7 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Aplica as sugestões da conferência (troca o texto pelo valor exato da
-     * lista) regravando o lançamento inteiro, igual a uma edição comum. */
+     * lista) regravando o registro inteiro, igual a uma edição comum. */
     fun aplicarCorrecoes(domainId: String, correcoes: List<Triple<String, String, String>>) {
         val cfg = config.value ?: return
         viewModelScope.launch {
@@ -255,7 +255,7 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // Ícone Excluir por lançamento -- pedido do usuário. `records` já é
+    // Ícone Excluir por registro -- pedido do usuário. `records` já é
     // observado via Flow (observeRecords, em load()), então a lista na tela
     // atualiza sozinha depois que o Room reflete a exclusão local -- não
     // precisa recarregar nada manualmente aqui.
@@ -424,11 +424,11 @@ fun DomainListScreen(
         }
     }
 
-    // Recolher/expandir todos os LANÇAMENTOS de uma vez -- pedido do usuário
+    // Recolher/expandir todos os REGISTROS de uma vez -- pedido do usuário
     // ("a setinha só mexe nos cards de registro, sem abrir/fechar Filtros,
     // Gráficos, Calculadoras"; "os cards não ocultam" -- antes esse estado só
     // trocava entre resumo/completo, nunca escondia a lista de fato).
-    // `allExpanded = false` esconde a lista inteira de lançamentos (tela
+    // `allExpanded = false` esconde a lista inteira de registros (tela
     // limpa); `true` mostra todos de novo, cada card começando no resumo.
     // Começa fechado -- pedido do usuário ("ao clicar no módulo a tela
     // deverá estar vazia").
@@ -445,8 +445,8 @@ fun DomainListScreen(
     // ScrollState lido por todo mundo mantém colunas alinhadas ao arrastar.
     val tableHScroll = remember(domainId) { androidx.compose.foundation.ScrollState(0) }
     val cardOverrides = remember(domainId) { mutableStateMapOf<String, Boolean>() }
-    // Confirmação antes de excluir um lançamento (ícone Excluir, pedido do
-    // usuário) -- guarda o id do lançamento aguardando confirmação; null =
+    // Confirmação antes de excluir um registro (ícone Excluir, pedido do
+    // usuário) -- guarda o id do registro aguardando confirmação; null =
     // nenhum diálogo aberto.
     var recordPendingDelete by remember(domainId) { mutableStateOf<String?>(null) }
     // v56 -- cobrança cujo Pix (QR + copia e cola) está aberto.
@@ -454,10 +454,10 @@ fun DomainListScreen(
     // "Ver" ganhou ação própria, separada da setinha de expandir -- pedido
     // do usuário ("a setinha será individual pra cada bloco... setinha
     // acima do ícone ver, depois editar e por último excluir"): guarda o id
-    // do lançamento aberto no diálogo de leitura; null = nenhum diálogo.
+    // do registro aberto no diálogo de leitura; null = nenhum diálogo.
     var recordBeingViewed by remember(domainId) { mutableStateOf<String?>(null) }
     // Bloco "Filtros" -- colapsável só pela própria setinha (ModuleIconButton
-    // "filtros"), independente da seta de recolher/expandir lançamentos
+    // "filtros"), independente da seta de recolher/expandir registros
     // acima (que não deve abrir/fechar Filtros, Gráficos ou Calculadoras).
     var filtrosOverride by remember(domainId) { mutableStateOf(false) }
     val filtrosExpanded = filtrosOverride
@@ -493,7 +493,7 @@ fun DomainListScreen(
     // Só conta pendentes que ainda existem na lista carregada (mesmo critério
     // do site, que cruza com registros vivos).
     val pendingVisibleCount = remember(records, pendingReviewIds) { records.count { it["id"] in pendingReviewIds } }
-    // v21 -- "Lançamentos": lista suspensa com os tipos de lançamento do
+    // v21 -- "Registros": lista suspensa com os tipos de registro do
     // módulo (campo Operação/Tipo/Status), montada a partir dos próprios
     // registros -- tipo novo entra sozinho.
     val tipoKey = remember(config) { listOf("operacao", "tipo", "tipoMovimento", "tipoLancamento", "status").firstOrNull { k -> config?.columns?.any { it.key == k } == true } }
@@ -607,7 +607,7 @@ fun DomainListScreen(
         floatingActionButton = {
             // Frota ganha um segundo FAB menor -- "Abastecimento rápido"
             // (espelho de QuickAbastecimentoButton no site), sem substituir
-            // o formulário completo de "Novo lançamento".
+            // o formulário completo de "Novo registro".
             if (domainId == "frota") {
                 Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     FloatingActionButton(
@@ -645,7 +645,7 @@ fun DomainListScreen(
                     // inferior e nas abas ovais de categoria.
                     containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
-                ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
+                ) { Icon(Icons.Outlined.Add, contentDescription = "Novo registro") }
                 }
             } else if (domainId == "romaneios" && onOpenRomaneioQuick != null) {
                 // Romaneio Rápido (leitura da balança) unificado aqui como
@@ -680,7 +680,7 @@ fun DomainListScreen(
                     // inferior e nas abas ovais de categoria.
                     containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
-                ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
+                ) { Icon(Icons.Outlined.Add, contentDescription = "Novo registro") }
                 }
             } else if (domainId == "pragas" && onOpenPragaFoto != null) {
                 // Diagnóstico por Foto (Task #601) unificado como 2º FAB --
@@ -697,7 +697,7 @@ fun DomainListScreen(
                         onClick = onNewRecord,
                         containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
+                    ) { Icon(Icons.Outlined.Add, contentDescription = "Novo registro") }
                 }
             } else if (domainId == "pecuaria") {
                 // Card "Acesso automático via prestadora de serviço"
@@ -715,13 +715,13 @@ fun DomainListScreen(
                         onClick = onNewRecord,
                         containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
+                    ) { Icon(Icons.Outlined.Add, contentDescription = "Novo registro") }
                 }
             } else if (domainId == "colheita" && onOpenColheitaQr != null) {
                 // QR Code de Rastreabilidade (Task #773) unificado como 2º
                 // FAB -- mesmo padrão de "Diagnóstico por foto"/"Reconciliação"
                 // acima. É só um RELATÓRIO (sem formulário), então o FAB
-                // principal continua indo pro "Novo lançamento" normal.
+                // principal continua indo pro "Novo registro" normal.
                 Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     FloatingActionButton(
                         onClick = onOpenColheitaQr,
@@ -733,13 +733,13 @@ fun DomainListScreen(
                         onClick = onNewRecord,
                         containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
+                    ) { Icon(Icons.Outlined.Add, contentDescription = "Novo registro") }
                 }
             } else if (domainId == "estoque" && onOpenReconciliacaoEstoque != null) {
-                // Reconciliação Físico x Fiscal (Task #603) unificada como 2º
+                // Ajustar Físico x Fiscal (Task #603) unificada como 2º
                 // FAB -- mesmo padrão de "Diagnóstico por foto"/"Romaneio
                 // rápido" acima. É só um RELATÓRIO (sem formulário), então o
-                // FAB principal continua indo pro "Novo lançamento" normal.
+                // FAB principal continua indo pro "Novo registro" normal.
                 Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     // Silos cilíndricos / armazenagem de grãos (card de
                     // integração de provedor) -- mesmo padrão dos FABs acima.
@@ -759,7 +759,7 @@ fun DomainListScreen(
                         onClick = onNewRecord,
                         containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
+                    ) { Icon(Icons.Outlined.Add, contentDescription = "Novo registro") }
                 }
             } else {
                 FloatingActionButton(
@@ -773,7 +773,7 @@ fun DomainListScreen(
                     // inferior e nas abas ovais de categoria.
                     containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
-                ) { Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento") }
+                ) { Icon(Icons.Outlined.Add, contentDescription = "Novo registro") }
             }
         },
     ) { padding ->
@@ -784,7 +784,7 @@ fun DomainListScreen(
             }
             return@Scaffold
         }
-        // Conferência de cadastro (Pendentes, v11): lançamentos com campo
+        // Conferência de cadastro (Pendentes, v11): registros com campo
         // vazio, fora da lista, grafia diferente ou números que não batem.
         val lookupsConf by viewModel.lookupsConferencia
         val fazConf by viewModel.fazendasConferencia
@@ -793,13 +793,13 @@ fun DomainListScreen(
         val problemasConf = remember(recordsFaz, lookupsConf, fazConf, cfg) {
             recordsFaz.mapNotNull { r -> val p = conferirRegistro(cfg, r, lookupsConf, fazConf); val id = r["id"]; if (p.isEmpty() || id == null) null else id to p }.toMap()
         }
-        // Divisor tracejado entre lançamentos do MESMO Nº Pedido+Item, só em
+        // Divisor tracejado entre registros do MESMO Nº Pedido+Item, só em
         // Pedidos -- espelho de pedidoItemBoundary (data-table.tsx). Os
         // registros já chegam ordenados por criadoEmMillis DESC (mesmo
         // critério do site: noPedido/item/criadoEm), então checar o
         // (noPedido,item) do próximo registro na lista já visível basta.
         val isPedidos = domainId == "pedidos"
-        // Agrupar lançamentos de Financeiro vindos de NF-e (origem == "nfe")
+        // Agrupar registros de Financeiro vindos de NF-e (origem == "nfe")
         // com o mesmo origemId num único bloco -- espelho de
         // financeiroGroupKeyCol/financeiroGroups em data-table.tsx (site,
         // linhas 1359-1375/2378-2440). DIFERENTE do agrupamento de Safra que
@@ -835,7 +835,7 @@ fun DomainListScreen(
             state = listState,
             contentPadding = PaddingValues(12.dp, padding.calculateTopPadding() + 4.dp, 12.dp, 80.dp),
             // Sem isso os blocos (Gráficos, Calculadoras, Recalcular Área,
-            // Período, cards de lançamento) ficavam grudados um no outro --
+            // Período, cards de registro) ficavam grudados um no outro --
             // pedido do usuário ("em todos módulos gráficos vem primeiro
             // coloque um espaço entre os blocos").
             verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -968,7 +968,7 @@ fun DomainListScreen(
             val useCustomBlocks = domainId in PER_MODULE_BLOCK_DOMAINS
             // Painel de monitoramento -- mesmo cálculo da plataforma
             // (module-panel.ts) com os registros já carregados; tocar num
-            // indicador filtra a lista e rola até os lançamentos.
+            // indicador filtra a lista e rola até os registros.
             val painelBase = calcularPainelModulo(domainId, cfg.label, cfg.columns, recordsFaz, pendentesConferencia = problemasConf.size)
                 ?.let { p -> if (globalFarmField != null && globalFarmSelected != null) p.copy(subtitulo = "⌂ ${FarmSelection.rotuloCurto()} · ${p.subtitulo}") else p }
             if (painelBase != null) {
@@ -1014,8 +1014,8 @@ fun DomainListScreen(
                 )
             }
             item(key = "module-icon-row") { BlocoComFaixa("Ações") { Column(modifier = Modifier.fillMaxWidth()) {
-                // Revisar: linha própria na aba Operações, filtra os lançamentos
-                // importados ainda não conferidos (abrir um lançamento o confirma).
+                // Revisar: linha própria na aba Operações, filtra os registros
+                // importados ainda não conferidos (abrir um registro o confirma).
                 val revisarFooter: (@Composable () -> Unit)? = {
                     LabeledIconButton(
                         icon = Icons.Outlined.FactCheck,
@@ -1377,7 +1377,7 @@ fun DomainListScreen(
                         onClick = { viewModel.refresh(domainId) },
                     )
                     if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
-                        // Só mexe nos cards de lançamento -- não fecha Filtros
+                        // Só mexe nos cards de registro -- não fecha Filtros
                         // nem os outros blocos (Gráficos/Calculadoras/etc.),
                         // pedido do usuário.
                         lancamentosBtn()
@@ -1492,14 +1492,14 @@ fun DomainListScreen(
             }
             if (filteredRecords.isEmpty()) {
                 item(key = "empty") {
-                    val msg = if (records.isEmpty()) "Nenhum lançamento ainda. Toque em + para adicionar." else "Nenhum lançamento neste período."
+                    val msg = if (records.isEmpty()) "Nenhum registro ainda. Toque em + para adicionar." else "Nenhum registro neste período."
                     Text(msg, modifier = Modifier.padding(vertical = 24.dp))
                 }
             } else if (allExpanded) {
                 // Agrupamento visual de Safra (Safra+Cultura+Local+Operação
                 // no mesmo bloco) foi implementado e DESFEITO a pedido do
                 // usuário na mesma sessão -- volta a ser uma lista plana,
-                // cada lançamento seu próprio card, igual aos demais módulos.
+                // cada registro seu próprio card, igual aos demais módulos.
                 // Vista Tabela -- pedido do usuário (achado de auditoria:
                 // "insira tambem o icone e rótulo tabela intercalando com
                 // coluna"): colunas FIXAS (mesmas pra toda linha, não varia
@@ -1523,7 +1523,7 @@ fun DomainListScreen(
                 } else filteredRecords
                 val chavesFull = if (agrupar) listaCards.map { chaveAtividade(domainId, it) } else emptyList()
                 val tamanhoGrupo = chavesFull.filterNotNull().groupingBy { it }.eachCount()
-                // Grupo fechado = só o 1º lançamento entra na lista (desenha o
+                // Grupo fechado = só o 1º registro entra na lista (desenha o
                 // cartão do grupo); assim não sobram itens vazios com espaço.
                 val listaVisivel = if (!agrupar) listaCards else listaCards.filterIndexed { i, _ ->
                     val c = chavesFull[i]
@@ -1578,7 +1578,7 @@ fun DomainListScreen(
                     // Mostra TODAS as colunas visíveis (não só as 4
                     // primeiras) -- pedido do usuário ("mostre o bloco
                     // completo... com todas as informações dos
-                    // lançamentos"), em 2 colunas quando o card está
+                    // registros"), em 2 colunas quando o card está
                     // expandido. Recolhido, continua com um resumo curto (as
                     // mesmas 4 primeiras de antes) pra lista não ficar
                     // gigante por padrão.
@@ -1716,10 +1716,10 @@ fun DomainListScreen(
                                 // plataforma"): na vista Tabela (onView, ver
                                 // RecordTable.kt) o ícone Ver continua igual.
                                 IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
-                                    Icon(Icons.Outlined.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                    Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                                 }
                                 IconButton(onClick = { recordPendingDelete = recordId }, modifier = Modifier.size(28.dp)) {
-                                    Icon(Icons.Outlined.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                                    Icon(Icons.Outlined.Delete, contentDescription = "Excluir registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
                                 }
                             }
                         }
@@ -1735,7 +1735,7 @@ fun DomainListScreen(
     if (recordPendingDelete != null) {
         AlertDialog(
             onDismissRequest = { recordPendingDelete = null },
-            title = { Text("Excluir lançamento?") },
+            title = { Text("Excluir registro?") },
             text = { Text("Essa ação não pode ser desfeita.") },
             confirmButton = {
                 TextButton(onClick = {
@@ -1765,7 +1765,7 @@ fun DomainListScreen(
     }
     // Diálogo de leitura do ícone "Ver" -- pedido do usuário (ver ação
     // 22.: 4 ícones separados no card). Mostra TODOS os campos preenchidos
-    // do lançamento, só leitura, sem precisar expandir o card na lista.
+    // do registro, só leitura, sem precisar expandir o card na lista.
     if (recordBeingViewed != null) {
         // `cfg` (a val local não-nula) só existe dentro do lambda do
         // Scaffold, e este diálogo fica fora dele -- usa `config` (o State
@@ -1777,7 +1777,7 @@ fun DomainListScreen(
             title = { Text(viewedConfig?.label ?: domainId) },
             text = {
                 if (viewedRecord == null || viewedConfig == null) {
-                    Text("Lançamento não encontrado.")
+                    Text("Registro não encontrado.")
                 } else {
                     Column(
                         modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
@@ -1998,7 +1998,7 @@ fun ModuleCategoryTabs(blocks: List<ModuleBlockSpec>, modifier: Modifier = Modif
 }
 
 // "Editado por" + data/hora (pedido do usuário) -- sem `private` porque
-// FinanceiroScreen.kt (mesmo pacote) tem seu próprio card de lançamento e
+// FinanceiroScreen.kt (mesmo pacote) tem seu próprio card de registro e
 // reaproveita esta função em vez de duplicá-la. `createdAt` chega em ISO
 // 8601 UTC (Prisma DateTime.toISOString()); exibido convertido pro fuso do
 // aparelho, formato dd/MM HH:mm (mesmo padrão de formatUpdatedAt no Início).
@@ -2011,7 +2011,7 @@ fun formatAuditEntry(entry: com.bragro.mobile.data.model.AuditEntry): String {
     return "Editado por ${entry.userEmail} em $whenText"
 }
 
-// Uma linha de campo dentro do card de lançamento -- mesmo critério
+// Uma linha de campo dentro do card de registro -- mesmo critério
 // genérico já usado (StatusBadge pra colunas "status-like", texto simples
 // pro resto), com maxLines/ellipsis porque agora divide espaço em 2 colunas
 // quando expandido (sem isso, um valor longo espremia o layout).
@@ -2113,7 +2113,7 @@ private fun RecordFieldPlain(
     }
 }
 
-// Card único pra um GRUPO de lançamentos Financeiro vindos da MESMA NF-e
+// Card único pra um GRUPO de registros Financeiro vindos da MESMA NF-e
 // (mesmo origemId, rateado em >1 fazenda) -- espelho de financeiroGroups em
 // data-table.tsx (site, linhas 1359-1375/2378-2440): cabeçalho com Doc/NF +
 // Entidade + Data + Categoria (do 1º registro do grupo) + badge "{N}
@@ -2184,10 +2184,10 @@ private fun FinanceiroNfeGroupCard(
                         )
                     }
                     IconButton(onClick = { if (recId != null) onEditRecord(recId) }, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Outlined.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                     }
                     IconButton(onClick = { onDeleteRequest(recId) }, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Outlined.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                        Icon(Icons.Outlined.Delete, contentDescription = "Excluir registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
                     }
                 }
             }

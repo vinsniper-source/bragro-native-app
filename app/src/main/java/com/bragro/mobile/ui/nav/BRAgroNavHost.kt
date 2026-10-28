@@ -89,7 +89,7 @@ private object Routes {
     // Financeiro, feature diferente e pré-existente).
     const val NFE = "nfe"
     // Orçamentos -- lista/histórico (Task #710, auditoria de paridade
-    // site-vs-native: só existia o form de lançamento, sem tela pra ver/
+    // site-vs-native: só existia o form de registro, sem tela pra ver/
     // filtrar/conferir orçamentos já lançados). ORCAMENTO_LISTA vira o
     // destino do botão "Orçamentos" na barra inferior; ORCAMENTO_NOVO
     // continua sendo o form (agora aberto pelo FAB "+" dentro da lista).
@@ -212,7 +212,7 @@ fun BRAgroNavHost() {
                     onOpenControleInsumos = { navController.navigate(Routes.CONTROLE_INSUMOS) },
                     onOpenOperacoes = { navController.navigate(Routes.OPERACOES) },
                     // Abre a LISTA primeiro agora (Task #710) -- o form de
-                    // lançamento (ORCAMENTO_NOVO) continua existindo, só que
+                    // registro (ORCAMENTO_NOVO) continua existindo, só que
                     // acessado pelo FAB "+" dentro da lista.
                     onOpenOrcamento = { navController.navigate(Routes.ORCAMENTO_LISTA) },
                     // Dossiê Bancário e Simulador "E se?" (Task #599/#600,
@@ -296,7 +296,7 @@ fun BRAgroNavHost() {
                 // Atalho manual (botão + na aba Máquinas) -- pedido do
                 // usuário: em vez de duplicar o formulário completo de Frota
                 // dentro do FieldView (que só mostra um RESUMO automático
-                // dela), leva direto pro lançamento novo de Frota.
+                // dela), leva direto pro registro novo de Frota.
                 onNavigateToFrota = { navController.navigate(Routes.domainFormNew("frota")) },
                 onOpenPrescricao = { navController.navigate(Routes.PRESCRICAO) },
             )
@@ -317,14 +317,14 @@ fun BRAgroNavHost() {
         }
         // Rota NOTA_MULTI_ITEM removida -- pedido do usuário (achado de
         // auditoria: "não foi inserido no native como está na plataforma o
-        // módulo lançamentos, está faltando adicionar itens na sequência
+        // módulo registros, está faltando adicionar itens na sequência
         // dos campos, como está em plataforma"): a tela separada
         // (NotaMultiItemScreen.kt) já estava desatualizada em relação ao
         // site havia várias rodadas (campos duplicados, "Valor unitário"
         // por item que o site já tinha removido) e não tinha mais nenhum
         // gatilho na UI desde a v1.2.24. Substituída por
         // FinanceiroItensInlineSection, embutida direto na sequência de
-        // campos do Novo Lançamento (ver DomainFormScreen.kt).
+        // campos do Novo Registro (ver DomainFormScreen.kt).
         composable(Routes.CONTROLE_INSUMOS) {
             ControleInsumosScreen(
                 onBack = { navController.popBackStack() },
@@ -442,8 +442,8 @@ fun BRAgroNavHost() {
             // domínio de verdade (não existe FinanceiroRecord filtrado por
             // "gestaofinanceira" no servidor) -- é a MESMA tela/dados de
             // "financeiro", só abrindo direto na visão "Contas a Pagar" com
-            // o dropdown "Gestão Financeira" no lugar do botão "Lançamentos"
-            // (ver startInGestao em FinanceiroScreen.kt). "Novo Lançamento"
+            // o dropdown "Gestão Financeira" no lugar do botão "Registros"
+            // (ver startInGestao em FinanceiroScreen.kt). "Novo Registro"
             // (onNewRecord/onEditRecord) continua indo pro domínio real
             // "financeiro" -- essas 6 visões são só leitura (isQuickView).
             if (domainId == "financeiro" || domainId == "gestaofinanceira") {
@@ -501,7 +501,7 @@ fun BRAgroNavHost() {
         ) { backStackEntry ->
             val domainId = backStackEntry.arguments?.getString("domainId") ?: return@composable
             // "Novo modelo" de Pedidos/Cotações (vários itens no mesmo
-            // lançamento) -- pedido do usuário ("insira o novo modelo dos
+            // registro) -- pedido do usuário ("insira o novo modelo dos
             // modulos cotaçoes e pedidos no app native"), réplica de
             // data-table.tsx no site: pra CRIAR um registro novo nesses 2
             // domínios, a tela de vários itens substitui COMPLETAMENTE o

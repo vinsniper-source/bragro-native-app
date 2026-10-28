@@ -636,7 +636,7 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
         AlertDialog(
             onDismissRequest = { confirmarExclusao = null },
             title = { Text("Excluir nota fiscal?") },
-            text = { Text("Nº ${paraExcluir.numero} -- os lançamentos de Estoque/Financeiro já gerados a partir dela (se houver) não são apagados automaticamente.") },
+            text = { Text("Nº ${paraExcluir.numero} -- os registros de Estoque/Financeiro já gerados a partir dela (se houver) não são apagados automaticamente.") },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.excluir(paraExcluir.id) { erroMsg -> dialogErro = erroMsg }

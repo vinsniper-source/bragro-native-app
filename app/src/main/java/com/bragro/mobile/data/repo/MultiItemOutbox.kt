@@ -102,15 +102,15 @@ class MultiItemOutbox(context: Context) {
                     val r = call { api.cotacaoComparacao(base.copy(accessToken = it, refreshToken = refresh)) }
                     Triple(r.body()?.ok == true, r.body()?.error, r.code())
                 }
-                else -> return Replay.Rejected("Tipo de lançamento desconhecido na fila.")
+                else -> return Replay.Rejected("Tipo de registro desconhecido na fila.")
             }
             when {
                 ok -> Replay.Done
                 httpCode >= 500 || httpCode == 401 || httpCode == 429 -> Replay.Retry
-                else -> Replay.Rejected(erro ?: "O servidor recusou o lançamento (código $httpCode).")
+                else -> Replay.Rejected(erro ?: "O servidor recusou o registro (código $httpCode).")
             }
         } catch (e: Exception) {
-            AppLog.e("MultiItemOutbox", "Falha ao enviar lançamento multi-item da fila (${pending.domainId})", e)
+            AppLog.e("MultiItemOutbox", "Falha ao enviar registro multi-item da fila (${pending.domainId})", e)
             Replay.Retry
         }
     }

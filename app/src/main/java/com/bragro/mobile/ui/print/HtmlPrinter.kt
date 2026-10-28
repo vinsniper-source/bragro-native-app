@@ -52,7 +52,7 @@ object HtmlPrinter {
     }
 
     // Ícone Imprimir de telas que NÃO usam DomainConfig (Prescrição /
-    // Reconciliação Físico x Fiscal -- dados vêm de repositórios próprios,
+    // Ajustar Físico x Fiscal -- dados vêm de repositórios próprios,
     // não do sistema genérico de módulo/coluna). Reaproveita o mesmo HTML de
     // tabela simples (título + data + linhas) e o mesmo diálogo nativo de
     // impressão (print() abaixo), só que a partir de headers/linhas já

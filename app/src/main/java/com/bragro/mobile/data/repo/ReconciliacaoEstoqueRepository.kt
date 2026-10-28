@@ -7,7 +7,7 @@ import com.bragro.mobile.data.model.ReconciliacaoEstoqueRequest
 import com.bragro.mobile.data.model.ReconciliacaoEstoqueResponse
 import com.bragro.mobile.data.remote.NetworkModule
 
-/** Reconciliação Físico x Fiscal de Estoque (Task #603/#607) -- busca em
+/** Ajustar Físico x Fiscal de Estoque (Task #603/#607) -- busca em
  * /api/mobile/reconciliacao-estoque, que reaproveita 100% a MESMA função de
  * serviço (getReconciliacaoEstoque) que a página do site chama, nenhum
  * cálculo duplicado em Kotlin. DE PROPÓSITO SEM CACHE no Room (mesmo

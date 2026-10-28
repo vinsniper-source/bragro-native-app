@@ -179,17 +179,17 @@ fun RecordTableRow(
                 Row {
                     if (onView != null) {
                         IconButton(onClick = onView, modifier = Modifier.size(30.dp)) {
-                            Icon(Icons.Outlined.Visibility, contentDescription = "Ver lançamento completo", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Outlined.Visibility, contentDescription = "Ver registro completo", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                     if (onEdit != null) {
                         IconButton(onClick = onEdit, modifier = Modifier.size(30.dp)) {
-                            Icon(Icons.Outlined.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                     if (onDelete != null) {
                         IconButton(onClick = onDelete, modifier = Modifier.size(30.dp)) {
-                            Icon(Icons.Outlined.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)
+                            Icon(Icons.Outlined.Delete, contentDescription = "Excluir registro", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)
                         }
                     }
                 }

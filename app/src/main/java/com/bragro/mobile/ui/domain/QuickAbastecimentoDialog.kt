@@ -70,7 +70,7 @@ class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
 
     var frotas = mutableStateOf<List<LookupEntity>>(emptyList())
         private set
-    // Nomes de frota REALMENTE registrados (pelo menos um lançamento em
+    // Nomes de frota REALMENTE registrados (pelo menos um registro em
     // FrotaRegistro) -- usado SÓ pra validar o QR escaneado (pedido do
     // usuário: "aceitar apenas dados para o qr que venha da base de
     // dados"), consistente com o mesmo filtro aplicado na geração dos QR
@@ -108,7 +108,7 @@ class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** "Copiar último abastecimento" -- mesmo critério do site (só entre
-     * lançamentos de Frota com operacao=ABASTECIMENTO), calculado sobre os
+     * registros de Frota com operacao=ABASTECIMENTO), calculado sobre os
      * registros já sincronizados no aparelho (Room), sem endpoint novo. */
     fun copyFromLastAbastecimento(onDone: (Boolean) -> Unit) {
         viewModelScope.launch {
@@ -188,7 +188,7 @@ class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
     private fun aplicarTextoQrLido(texto: String) {
         // Pedido do usuário: "aceitar apenas dados para o qr que
         // venha da base de dados" -- restringe a validação do QR às
-        // frotas REALMENTE registradas (pelo menos um lançamento),
+        // frotas REALMENTE registradas (pelo menos um registro),
         // não ao catálogo genérico inteiro. Sem registros ainda
         // (fazenda nova) ou sem conseguir buscar (offline), cai de
         // volta pro catálogo completo -- nunca trava o uso.
@@ -236,7 +236,7 @@ class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
-/** Réplica de QuickAbastecimentoButton (Dialog) -- lançamento rápido de
+/** Réplica de QuickAbastecimentoButton (Dialog) -- registro rápido de
  * combustível em Frota, 2-3 toques (data/unidade/operação já vêm prontos). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -356,9 +356,9 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                     Text("Só o essencial -- data, unidade e operação já ficam prontos automaticamente.", modifier = Modifier.weight(1f))
                     // "Copiar último abastecimento" virou ícone -- pedido do
-                    // usuário ("dentro dos lançamentos rápidos converta
+                    // usuário ("dentro dos registros rápidos converta
                     // apenas a um ícone copiar"), mesmo padrão do ícone de
-                    // copiar em Novo Lançamento (DomainFormScreen.kt).
+                    // copiar em Novo Registro (DomainFormScreen.kt).
                     androidx.compose.material3.IconButton(onClick = {
                         viewModel.copyFromLastAbastecimento { found ->
                             copyMessage = if (found) "Campos preenchidos com o último abastecimento -- confira antes de lançar." else "Nenhum abastecimento lançado ainda para copiar."

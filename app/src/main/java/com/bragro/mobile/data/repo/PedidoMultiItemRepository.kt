@@ -9,7 +9,7 @@ import com.bragro.mobile.data.model.PedidoMultiItemRequest
 import com.bragro.mobile.data.model.PedidoMultiItemResponse
 import com.bragro.mobile.data.remote.NetworkModule
 
-/** Pedidos: "novo modelo" de vários itens no mesmo lançamento -- pedido do
+/** Pedidos: "novo modelo" de vários itens no mesmo registro -- pedido do
  * usuário ("insira o novo modelo dos modulos cotaçoes e pedidos no app
  * native"), réplica de pedido-multi-item-button.tsx no site (task #235).
  * Chama /api/mobile/pedido-multi-item, que chama DIRETO
@@ -17,7 +17,7 @@ import com.bragro.mobile.data.remote.NetworkModule
  * (N linhas de Pedido, Saldo/%/Status cumulativos por Nº Pedido+Item, baixa
  * automática em Estoque quando "Qtd Entregue" é preenchida). Sem cache
  * offline de propósito, mesmo critério do NotaMultiItemRepository: é um
- * lançamento com efeito colateral em Estoque, não um dado de leitura. */
+ * registro com efeito colateral em Estoque, não um dado de leitura. */
 class PedidoMultiItemRepository(context: Context) {
     private val appContext = context.applicationContext
     private val tokenStore = TokenStore(appContext)

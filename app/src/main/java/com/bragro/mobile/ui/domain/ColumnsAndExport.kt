@@ -30,7 +30,7 @@ import java.util.Date
 import java.util.Locale
 
 /** Botão "Colunas" -- espelho do dropdown de checkboxes de data-table.tsx
- * ("Mostrar campos — mesma ordem do Lançamento"), pedido do usuário
+ * ("Mostrar campos — mesma ordem do Registro"), pedido do usuário
  * ("coloque botão colunas como em plataforma para selecionar o cabeçalho
  * que quiser"). Controla tanto a lista na tela quanto o que sai no PDF/CSV
  * (mesmo comportamento do site: Colunas afeta a própria exportação). */

@@ -9,7 +9,7 @@ import java.util.Locale
 // de gerarLcdprTxt (sistema-agro-nextjs/src/lib/services/lcdpr-txt.ts) --
 // mesmo leiaute de registros delimitados por pipe (família SPED/LCDPR, IN
 // RFB 1.848/2018): 0000 (abertura/declarante), 0010 (forma de apuração),
-// 0035 (imóveis), 0040 (contas), Q100 (lançamentos), Q200 (resumo mensal),
+// 0035 (imóveis), 0040 (contas), Q100 (registros), Q200 (resumo mensal),
 // 9900/9999 (contagem/encerramento). Sem runtime compartilhado entre site e
 // app -- qualquer mudança de leiaute em lcdpr-txt.ts precisa ser replicada
 // aqui manualmente.
@@ -70,9 +70,9 @@ private fun regDaLinha(linhaMontada: String): String =
  * Gera o conteúdo do .txt do LCDPR pro ano/filtro já calculados em
  * [resultado] (mesmo objeto que a rota /api/mobile/livro-caixa devolve).
  * Cada IMÓVEL distinto e cada CONTA distinta viram um registro 0035/0040
- * próprio, na ordem em que aparecem nos lançamentos -- os mesmos códigos
+ * próprio, na ordem em que aparecem nos registros -- os mesmos códigos
  * sequenciais (IM001, IM002.../CT001, CT002...) são usados dentro dos
- * registros Q100 pra referenciar o imóvel/conta de cada lançamento.
+ * registros Q100 pra referenciar o imóvel/conta de cada registro.
  */
 fun gerarLcdprTxt(declarante: LcdprDeclarante, resultado: LivroCaixaData): String {
     val linhas = mutableListOf<String>()
@@ -109,7 +109,7 @@ fun gerarLcdprTxt(declarante: LcdprDeclarante, resultado: LivroCaixaData): Strin
         linhas.add(linha(listOf("0040", cod, nome)))
     }
 
-    // Q100 -- lançamentos do Livro Caixa (1 registro por movimento de caixa,
+    // Q100 -- registros do Livro Caixa (1 registro por movimento de caixa,
     // já classificado em regime de caixa/entrada-saída/saldo acumulado pelo
     // servidor). ID_PART (CPF/CNPJ da contraparte) fica em branco -- mesmo
     // limite de escopo do site.

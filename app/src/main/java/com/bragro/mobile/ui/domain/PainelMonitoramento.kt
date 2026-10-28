@@ -53,7 +53,7 @@ import java.text.NumberFormat
 import java.util.Locale
 
 /*
- * Painel de monitoramento + faixas "PAINEL / AÇÕES / LANÇAMENTOS" -- espelho
+ * Painel de monitoramento + faixas "PAINEL / AÇÕES / REGISTROS" -- espelho
  * da plataforma (module-panel.tsx / module-panel.ts / acoes-bloco.tsx),
  * adaptado ao celular: indicadores em 2 colunas, barras uma embaixo da
  * outra, faixa com título preto/branco, linha e setinha no mesmo tom (sem
@@ -69,7 +69,7 @@ data class PainelKpi(
     val sub: String,
     val destino: String,
     val tom: String? = null, // "acima" (laranja) | "abaixo" (verde)
-    /** Filtro aplicado na lista ao tocar no indicador (coluna -> valor). Vazio = só mostra os lançamentos. */
+    /** Filtro aplicado na lista ao tocar no indicador (coluna -> valor). Vazio = só mostra os registros. */
     val filtro: Map<String, String> = emptyMap(),
 )
 
@@ -126,18 +126,18 @@ fun calcularPainelModulo(
     label: String,
     columns: List<ColumnConfig>,
     records: List<Map<String, String?>>,
-    /** Lançamentos com algo a corrigir (Conferencia.kt). Quando informado,
+    /** Registros com algo a corrigir (Conferencia.kt). Quando informado,
      * "Pendentes" passa a ser a conferência de cadastro (v11), não status. */
     pendentesConferencia: Int? = null,
 ): PainelModulo? {
-    // Sem lançamentos: o painel aparece mesmo assim, zerado (padrão v7 --
+    // Sem registros: o painel aparece mesmo assim, zerado (padrão v7 --
     // todo módulo abre com Painel + Ações).
     if (records.isEmpty()) return PainelModulo(
         titulo = label,
-        subtitulo = "nenhum lançamento ainda",
-        kpis = listOf(PainelKpi("Lançamentos", 0.0, "numero", null, "no total", "Lançamentos")) +
-            (columns.firstOrNull { !it.computed && it.type == "number" && it.money }?.let { listOf(PainelKpi(it.label, 0.0, "moeda", null, "no total", "Lançamentos")) } ?: emptyList()) +
-            (if (columns.any { it.key == "status" }) listOf(PainelKpi("Pendentes", 0.0, "numero", null, "nenhum", "Lançamentos")) else emptyList()),
+        subtitulo = "nenhum registro ainda",
+        kpis = listOf(PainelKpi("Registros", 0.0, "numero", null, "no total", "Registros")) +
+            (columns.firstOrNull { !it.computed && it.type == "number" && it.money }?.let { listOf(PainelKpi(it.label, 0.0, "moeda", null, "no total", "Registros")) } ?: emptyList()) +
+            (if (columns.any { it.key == "status" }) listOf(PainelKpi("Pendentes", 0.0, "numero", null, "nenhum", "Registros")) else emptyList()),
         barras = emptyList(),
     )
     val tem = { k: String -> columns.any { it.key == k } }
@@ -162,10 +162,10 @@ fun calcularPainelModulo(
             titulo = label,
             subtitulo = plural(records.size, "registro"),
             kpis = listOf(
-                PainelKpi("Chuva acumulada", Math.round(chuva).toDouble(), "numero", "mm", "todos os registros", "Lançamentos"),
-                PainelKpi("Dias com chuva", dias.toDouble(), "numero", null, "de ${records.size} registros", "Lançamentos"),
-                PainelKpi("Temp. máxima", maxs.maxOrNull() ?: 0.0, "numero", "°C", "maior registrada", "Lançamentos"),
-                PainelKpi("Temp. mínima", mins.minOrNull() ?: 0.0, "numero", "°C", "menor registrada", "Lançamentos"),
+                PainelKpi("Chuva acumulada", Math.round(chuva).toDouble(), "numero", "mm", "todos os registros", "Registros"),
+                PainelKpi("Dias com chuva", dias.toDouble(), "numero", null, "de ${records.size} registros", "Registros"),
+                PainelKpi("Temp. máxima", maxs.maxOrNull() ?: 0.0, "numero", "°C", "maior registrada", "Registros"),
+                PainelKpi("Temp. mínima", mins.minOrNull() ?: 0.0, "numero", "°C", "menor registrada", "Registros"),
             ),
             barras = listOfNotNull(
                 PainelBarra("Dias com chuva", pctDe(dias.toDouble(), records.size.toDouble()), "$dias/${records.size}", neutra = true),
@@ -174,7 +174,7 @@ fun calcularPainelModulo(
         )
     }
 
-    // Safra atual = a que concentra os lançamentos (empate: a mais recente).
+    // Safra atual = a que concentra os registros (empate: a mais recente).
     val safraAtual = if (tem("safra")) {
         records.mapNotNull { it["safra"]?.takeIf { s -> s.isNotBlank() } }
             .groupingBy { it }.eachCount().entries
@@ -213,7 +213,7 @@ fun calcularPainelModulo(
             titulo = titulo,
             subtitulo = "${plural(fazendas, "fazenda")} · ${plural(despesas.size, "despesa")} · ${plural(receitas.size, "receita")}",
             kpis = listOf(
-                PainelKpi("Despesa da safra", totalDesp, "moeda", null, plural(despesas.size, "lançamento"), "Lançamentos$sufixoSafra", filtro = filtroSafra),
+                PainelKpi("Despesa da safra", totalDesp, "moeda", null, plural(despesas.size, "registro"), "Registros$sufixoSafra", filtro = filtroSafra),
                 PainelKpi("Pago", valorPago, "moeda", null, "${fmtPct(pctDe(valorPago, totalDesp))} da despesa", "Já pago/recebido", filtro = filtroSafra),
                 PainelKpi("A vencer (30 dias)", aVencer.sumOf(::valor), "moeda", null, plural(aVencer.size, "parcela"), "Contas a pagar"),
                 PainelKpi(
@@ -221,7 +221,7 @@ fun calcularPainelModulo(
                     if (vencidas.isEmpty()) "nenhuma" else fmtMoeda(vencidas.sumOf(::valor)),
                     "Contas a pagar", tom = if (vencidas.isNotEmpty()) "acima" else null,
                 ),
-                PainelKpi("Receita da safra", totalRec, "moeda", null, plural(receitas.size, "lançamento"), "Contas a receber", filtro = filtroSafra),
+                PainelKpi("Receita da safra", totalRec, "moeda", null, plural(receitas.size, "registro"), "Contas a receber", filtro = filtroSafra),
             ),
             barras = listOf(
                 PainelBarra("Despesas pagas", pctDe(pagas.size.toDouble(), despesas.size.toDouble()), "${pagas.size}/${despesas.size}"),
@@ -238,24 +238,24 @@ fun calcularPainelModulo(
     val pendRows = if (comStatus) daSafra.filter { !it["status"].isNullOrBlank() && it["status"]!!.uppercase() !in STATUS_CONCLUIDO } else emptyList()
 
     val kpis = mutableListOf(
-        PainelKpi("Lançamentos", daSafra.size.toDouble(), "numero", null, safraAtual?.let { "safra $it" } ?: "no total", "Lançamentos$sufixoSafra", filtro = filtroSafra),
+        PainelKpi("Registros", daSafra.size.toDouble(), "numero", null, safraAtual?.let { "safra $it" } ?: "no total", "Registros$sufixoSafra", filtro = filtroSafra),
     )
     if (medidaKey != null && medidaCol != null) {
-        kpis += PainelKpi(medidaCol.label, total, if (medidaCol.money) "moeda" else "numero", unidade, if (fazendas > 0) plural(fazendas, "fazenda") else safraAtual?.let { "safra $it" } ?: "no total", "Lançamentos$sufixoSafra", filtro = filtroSafra)
+        kpis += PainelKpi(medidaCol.label, total, if (medidaCol.money) "moeda" else "numero", unidade, if (fazendas > 0) plural(fazendas, "fazenda") else safraAtual?.let { "safra $it" } ?: "no total", "Registros$sufixoSafra", filtro = filtroSafra)
     }
     if (topFaz != null && localKey != null) {
         kpis += PainelKpi(
             topFaz.first, topFaz.second, if (medidaCol?.money == true) "moeda" else "numero",
             if (medidaKey != null) unidade else "lanç.",
             if (total > 0 && medidaKey != null) "${Math.round(pctDe(topFaz.second, total))}% do total" else "fazenda com mais",
-            "Ver lançamentos da fazenda",
+            "Ver registros da fazenda",
             filtro = filtroSafra + (localKey to topFaz.first),
         )
     }
     if (topCat != null) {
         kpis += PainelKpi(
             topCat.first, topCat.second, if (medidaCol?.money == true) "moeda" else "numero",
-            if (medidaKey != null) unidade else "lanç.", "categoria com mais", "Ver lançamentos da categoria",
+            if (medidaKey != null) unidade else "lanç.", "categoria com mais", "Ver registros da categoria",
             filtro = filtroSafra + ("categoria" to topCat.first),
         )
     }
@@ -273,7 +273,7 @@ fun calcularPainelModulo(
         kpis += PainelKpi(
             "Pendentes", pendRows.size.toDouble(), "numero", null,
             if (pendRows.isNotEmpty()) (topPend?.first?.lowercase() ?: "não concluídos") else "tudo concluído",
-            topPend?.let { "Ver ${it.first.lowercase()}" } ?: "Lançamentos$sufixoSafra",
+            topPend?.let { "Ver ${it.first.lowercase()}" } ?: "Registros$sufixoSafra",
             tom = if (pendRows.isNotEmpty()) "acima" else null,
             filtro = filtroSafra + (topPend?.let { mapOf("status" to it.first) } ?: emptyMap()),
         )
@@ -285,7 +285,7 @@ fun calcularPainelModulo(
     // Participação da fazenda vai no complemento do cartão da fazenda.
     return PainelModulo(
         titulo = titulo,
-        subtitulo = listOfNotNull(if (fazendas > 0) plural(fazendas, "fazenda") else null, plural(daSafra.size, "lançamento")).joinToString(" · "),
+        subtitulo = listOfNotNull(if (fazendas > 0) plural(fazendas, "fazenda") else null, plural(daSafra.size, "registro")).joinToString(" · "),
         kpis = kpis.take(6),
         barras = barras.take(2),
     )
@@ -461,12 +461,12 @@ fun FaixaTitulo(titulo: String, aberto: Boolean, extra: String? = null, onToggle
     }
 }
 
-/** Divisória "LANÇAMENTOS  n ——— v" (sem borda de bloco), igual à plataforma. */
+/** Divisória "REGISTROS  n ——— v" (sem borda de bloco), igual à plataforma. */
 @Composable
-fun CabecalhoLancamentos(total: Int, aberto: Boolean, extra: String? = null, titulo: String = "Lançamentos", rotulo: String? = null, manter: Boolean = false, onToggle: () -> Unit) {
+fun CabecalhoLancamentos(total: Int, aberto: Boolean, extra: String? = null, titulo: String = "Registros", rotulo: String? = null, manter: Boolean = false, onToggle: () -> Unit) {
     // v23 -- divisórias removidas de todo o app (título, traço e L). As
     // listas aparecem já abertas abaixo do bloco Ações; onde existe o botão
-    // Lançamentos, é ele que abre/fecha. `manter = true` só no cartão de
+    // Registros, é ele que abre/fecha. `manter = true` só no cartão de
     // cada operação (Operações), onde o nome é o título do cartão.
     if (!manter) return
     val fg = MaterialTheme.colorScheme.onSurface
@@ -615,9 +615,9 @@ fun BarraPainel(b: PainelBarra) {
 }
 
 /*
- * Cards unificados por atividade (chaveAtividade da plataforma): lançamentos
+ * Cards unificados por atividade (chaveAtividade da plataforma): registros
  * com a mesma chave viram um cartão de grupo com os totais; tocando nele os
- * lançamentos aparecem logo abaixo, cada um com editar/excluir.
+ * registros aparecem logo abaixo, cada um com editar/excluir.
  * Financeiro e Pedidos têm agrupamento próprio e ficam de fora aqui.
  */
 fun chaveAtividade(domainId: String, r: Map<String, String?>): String? {
@@ -734,7 +734,7 @@ fun LinhaGruposAcoes(grupos: List<Pair<String, @Composable () -> Unit>>) {
 
 /**
  * Ações em abas Dados / Operações / Arquivos (v14) -- mesmo padrão dos
- * módulos de lançamento, para as telas próprias (Drone, Pivôs, Talhões e
+ * módulos de registro, para as telas próprias (Drone, Pivôs, Talhões e
  * Mapas, Prescrição, NF-e, Silos, Reconciliação). Ícones de cada aba em
  * células iguais e centralizadas.
  */

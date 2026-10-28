@@ -148,14 +148,14 @@ fun FinanceiroScreen(
     // lado do Extrato bancário.
     onOpenNfeImport: () -> Unit,
     // "Nota com itens" (Task #156) saiu do Financeiro -- agora é um ícone
-    // dentro do formulário "Novo Lançamento" (ver DomainFormScreen.kt/
-    // onOpenNotaMultiItem), pedido do usuário ("em novo lançamento coloque
+    // dentro do formulário "Novo Registro" (ver DomainFormScreen.kt/
+    // onOpenNotaMultiItem), pedido do usuário ("em novo registro coloque
     // nota com itens e exclua de arquivos").
     // "Gestão Financeira" virou uma ENTRADA PRÓPRIA na lista suspensa do
-    // botão Financeiro (BottomNavBar.kt), separada de "Lançamentos" -- pedido
+    // botão Financeiro (BottomNavBar.kt), separada de "Registros" -- pedido
     // do usuário ("na barra inferior do botão financeiro insira, na lista
     // suspensa, um módulo chamado gestão financeira... agora o módulo
-    // lançamento será só ele"). Continua sendo a MESMA tela/ViewModel
+    // registro será só ele"). Continua sendo a MESMA tela/ViewModel
     // (mesmos registros de Financeiro, mesmo bloco Dados/Operações/Arquivos)
     // -- só muda qual seletor de visão aparece e em qual visão a tela abre,
     // ver `view`/Row do seletor abaixo.
@@ -183,8 +183,8 @@ fun FinanceiroScreen(
     LaunchedEffect(recordIdsForAudit) { viewModel.loadAuditInfo("financeiro", recordIdsForAudit) }
 
     // Abre já na 1ª visão de Gestão Financeira (Contas a Pagar) quando vem
-    // da entrada "Gestão Financeira" da lista suspensa; abre em Lançamentos
-    // (TODOS) quando vem da entrada "Lançamentos" normal -- ver comentário
+    // da entrada "Gestão Financeira" da lista suspensa; abre em Registros
+    // (TODOS) quando vem da entrada "Registros" normal -- ver comentário
     // de `startInGestao` acima.
     var view by remember { mutableStateOf(if (startInGestao) FinanceiroView.PAGAR else FinanceiroView.TODOS) }
     val isQuickView = view != FinanceiroView.TODOS
@@ -198,7 +198,7 @@ fun FinanceiroScreen(
     var banco by remember { mutableStateOf<String?>(null) }
     val dateKey = if (view == FinanceiroView.PAGAR || view == FinanceiroView.RECEBER) "vcto" else "data"
 
-    // Recolher/expandir todos os lançamentos de uma vez -- pedido do usuário
+    // Recolher/expandir todos os registros de uma vez -- pedido do usuário
     // ("os cards não ocultam"). ANTES esse estado só trocava o card entre
     // "resumo" (6 campos) e "completo" (todos os campos) -- ele nunca
     // escondia o card de fato, por isso parecia não funcionar. Agora
@@ -217,7 +217,7 @@ fun FinanceiroScreen(
     val cardOverrides = remember { mutableStateMapOf<String, Boolean>() }
     // Confirmação antes de excluir -- mesmo padrão do módulo genérico
     // (DomainListScreen.kt), pedido do usuário ("implemente em todos os
-    // blocos de lançamentos os ícones ver, editar e excluir... como foi
+    // blocos de registros os ícones ver, editar e excluir... como foi
     // aplicado em safra").
     var recordPendingDelete by remember { mutableStateOf<String?>(null) }
     // "Ver" com diálogo de leitura próprio, separado da setinha de
@@ -235,8 +235,8 @@ fun FinanceiroScreen(
     // o subtítulo que ecoava o nome do bloco aberto (ex.: "Gráficos"),
     // já que cada ícone agora mostra seu próprio rótulo embaixo.
 
-    // Revisar (igual à plataforma): filtra os lançamentos importados
-    // (CSV/NF-e/extrato) ainda não conferidos; abrir um lançamento o confirma.
+    // Revisar (igual à plataforma): filtra os registros importados
+    // (CSV/NF-e/extrato) ainda não conferidos; abrir um registro o confirma.
     val pendingReviewIds by viewModel.pendingReviewIds
     var pendingOnly by remember { mutableStateOf(false) }
     val pendingVisibleCount = remember(allRecords, pendingReviewIds) { allRecords.count { it["id"] in pendingReviewIds } }
@@ -256,7 +256,7 @@ fun FinanceiroScreen(
         if (view == FinanceiroView.FLUXO) computeFluxoRows(filtered.sortedBy { it["vcto"] ?: "" }) else null
     }
 
-    // Agrupar lançamentos vindos da MESMA NF-e (origem == "nfe" +
+    // Agrupar registros vindos da MESMA NF-e (origem == "nfe" +
     // mesmo origemId, rateado em >1 fazenda) num único card -- mesma
     // lógica de financeiroGroups já existente (mas órfã, sem efeito)
     // em DomainListScreen.kt (~linhas 696-718/1390-1401): aqui é o
@@ -313,16 +313,16 @@ fun FinanceiroScreen(
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
                         com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.home.domainIcon("financeiro"), contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
-                    // "Lançamentos" (era "Financeiro") só aparece com Todos
+                    // "Registros" (era "Financeiro") só aparece com Todos
                     // selecionado; ao clicar em outro ícone da Gestão
                     // Financeira, o nome da visão substitui a palavra por
                     // completo (não mais "Financeiro — X") -- pedido do
-                    // usuário. Renomeado de "Financeiro" pra "Lançamentos"
+                    // usuário. Renomeado de "Financeiro" pra "Registros"
                     // -- pedido do usuário ("altere o nome do título do
-                    // topo de financeiro para lançamentos"): agora que
+                    // topo de financeiro para registros"): agora que
                     // "Gestão Financeira" é uma entrada própria na lista
                     // suspensa (ver `startInGestao`), esta tela só é aberta
-                    // pela entrada "Lançamentos", então o título devia
+                    // pela entrada "Registros", então o título devia
                     // dizer isso, não mais o nome genérico do setor.
                     // Título desce uma linha de fato -- mesmo padrão do
                     // Início: 1ª linha em branco, texto na linha de baixo.
@@ -334,7 +334,7 @@ fun FinanceiroScreen(
                         // maxLines/ellipsis defensivo -- pedido do usuário
                         // ("adapte ao tamanho da fonte sem cortes e dentro
                         // do limite da tela").
-                        Text(if (isQuickView) view.label else "Lançamentos", maxLines = 2, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface)
+                        Text(if (isQuickView) view.label else "Registros", maxLines = 2, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface)
                     }
                 
                     }
@@ -363,7 +363,7 @@ fun FinanceiroScreen(
         },
         floatingActionButton = {
             // Mesmo critério do site (isQuickView): visões rápidas são só
-            // leitura, sem "Novo Lançamento".
+            // leitura, sem "Novo Registro".
             if (!isQuickView) {
                 FloatingActionButton(
                     onClick = onNewRecord,
@@ -373,7 +373,7 @@ fun FinanceiroScreen(
                     containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) {
-                    Icon(Icons.Outlined.Add, contentDescription = "Novo lançamento")
+                    Icon(Icons.Outlined.Add, contentDescription = "Novo registro")
                 }
             }
         },
@@ -384,11 +384,11 @@ fun FinanceiroScreen(
             // módulo Gestão Financeira, na lista suspensa do botão
             // Financeiro, e realoque Contas a Pagar/Receber, Fluxo,
             // Conciliado, Rateio Direto e Indireto... deixe apenas o módulo
-            // Lançamentos sozinho"): as antigas 2 fileiras de 7 segmentos
+            // Registros sozinho"): as antigas 2 fileiras de 7 segmentos
             // (Todos/Pagar/Receber/Conciliado/Fluxo/RateioDireto/
             // RateioIndireto, ver histórico abaixo) ocupavam permanentemente
             // 2 linhas inteiras de tela só pra alternar de visão. Agora só
-            // "Lançamentos" (era "Todos", ver FinanceiroView.TODOS) fica
+            // "Registros" (era "Todos", ver FinanceiroView.TODOS) fica
             // como botão direto, sozinho -- as outras 6 visões especializadas
             // (status/analíticas) viram itens de uma lista suspensa única
             // "Gestão Financeira" (FinanceiroGestaoDropdownButton abaixo),
@@ -407,17 +407,17 @@ fun FinanceiroScreen(
             // Financeira" migrou desse título pro botão-dropdown atual.
             // Seletor de visão agora depende de QUAL ENTRADA da lista
             // suspensa abriu esta tela (ver `startInGestao` acima) -- pedido
-            // do usuário ("agora o módulo lançamento será só ele"): o módulo
-            // "Lançamentos" não mostra mais o dropdown "Gestão Financeira"
+            // do usuário ("agora o módulo registro será só ele"): o módulo
+            // "Registros" não mostra mais o dropdown "Gestão Financeira"
             // ao lado (ele virou exclusivo da entrada "Gestão Financeira"),
             // e vice-versa -- cada entrada da lista suspensa mostra só o
             // controle que faz sentido pra ela, em vez dos dois lado a lado
             // sempre.
-            // Bloco "Lançamentos" (SingleChoiceSegmentedButtonRow com um
+            // Bloco "Registros" (SingleChoiceSegmentedButtonRow com um
             // único botão sempre selecionado, sem função nenhuma além de
             // repetir a palavra) removido -- pedido do usuário ("exclua o
-            // bloco com a palavra lançamentos"): o título do topo já diz
-            // "Lançamentos" agora (ver TopAppBar acima), então esse botão
+            // bloco com a palavra registros"): o título do topo já diz
+            // "Registros" agora (ver TopAppBar acima), então esse botão
             // era só um texto duplicado ocupando uma linha inteira. Na
             // entrada "Gestão Financeira" (`startInGestao`) o dropdown
             // continua normalmente, só que agora sozinho na linha (sem
@@ -439,7 +439,7 @@ fun FinanceiroScreen(
             // Recalcular Vencimentos que estiverem abertos -- pedido do
             // usuário ("a única função será recolher todos os blocos
             // abertos completamente"), não afeta mais os cards de
-            // lançamento (cada um já tem sua própria setinha).
+            // registro (cada um já tem sua própria setinha).
             // Dados virou o bloco largo do topo (horizontal) -- pedido do
             // usuário no desenho mais recente -- e ganhou o filtro (Banco)
             // que estava em Operações e tinha ficado faltando aqui.
@@ -472,7 +472,7 @@ fun FinanceiroScreen(
                         )
                     }
                     // Função única, esclarecida pelo usuário: só expande/
-                    // recolhe os CARDS DE LANÇAMENTO (não Gráficos/
+                    // recolhe os CARDS DE REGISTRO (não Gráficos/
                     // Calculadoras/Recalcular Vencimentos/Período/nenhum
                     // outro ícone). Mesma ação da setinha ao lado do título
                     // (ver TopAppBar acima) -- pedido do usuário, os dois
@@ -543,10 +543,10 @@ fun FinanceiroScreen(
                         LabeledIconButton(icon = Icons.Outlined.Upload, label = "Extrato", onClick = onOpenBankImport)
                         LabeledIconButton(icon = Icons.Outlined.Description, label = "XML", onClick = onOpenNfeImport)
                         // "Nota c/ itens" saiu daqui -- pedido do usuário
-                        // ("em novo lançamento coloque nota com itens e
+                        // ("em novo registro coloque nota com itens e
                         // exclua de arquivos"): agora é um ícone no topo do
-                        // formulário "Novo Lançamento" (DomainFormScreen.kt),
-                        // ao lado do ícone "Copiar último lançamento".
+                        // formulário "Novo Registro" (DomainFormScreen.kt),
+                        // ao lado do ícone "Copiar último registro".
                     }
                     // Sem mais "&& filtered.isNotEmpty()" -- pedido do
                     // usuário ("force todos os ícones aparecerem").
@@ -583,7 +583,7 @@ fun FinanceiroScreen(
             // padrão aplicado nos demais módulos (DomainListScreen.kt/
             // ModuleCategoryTabs).
             // Ordem da plataforma: primeiro o Painel de monitoramento (só na
-            // visão Lançamentos; cada cartão abre a visão certa), depois Ações.
+            // visão Registros; cada cartão abre a visão certa), depois Ações.
             if (!isQuickView && cfg != null) {
                 val farmSel = FarmSelection.selected.value
                 val painelFin = remember(allRecords, cfg, farmSel) {
@@ -628,12 +628,12 @@ fun FinanceiroScreen(
                         }
                         if (offline) {
                             Text(
-                                "Sem conexão -- não foi possível verificar se há lançamentos salvos no servidor.",
+                                "Sem conexão -- não foi possível verificar se há registros salvos no servidor.",
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.padding(horizontal = 24.dp),
                             )
                         }
-                        Text("Nenhum lançamento nesta visão.", modifier = Modifier.padding(24.dp))
+                        Text("Nenhum registro nesta visão.", modifier = Modifier.padding(24.dp))
                     }
                 }
                 else -> {
@@ -650,7 +650,7 @@ fun FinanceiroScreen(
                             contentPadding = PaddingValues(12.dp, 4.dp, 12.dp, 80.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
-                            // v36 -- lançamentos sempre ocultos até tocar em Lançamentos.
+                            // v36 -- registros sempre ocultos até tocar em Registros.
                             if (allExpanded) {
                                 items(fRows, key = { it.original["id"] ?: it.hashCode().toString() }) { row ->
                                     FluxoCard(row, onClick = { row.original["id"]?.let(onEditRecord) })
@@ -698,7 +698,7 @@ fun FinanceiroScreen(
                                 CabecalhoLancamentos(
                                     total = filtered.size,
                                     aberto = allExpanded,
-                                    titulo = if (isQuickView) view.label else "Lançamentos",
+                                    titulo = if (isQuickView) view.label else "Registros",
                                 ) { allExpanded = !allExpanded; cardOverrides.clear() }
                             }
                             if (allExpanded) {
@@ -740,7 +740,7 @@ fun FinanceiroScreen(
                                 // aplicado ao módulo genérico
                                 // (DomainListScreen.kt): "mostre o bloco
                                 // completo... com todas as informações dos
-                                // lançamentos", em 2 colunas quando expandido.
+                                // registros", em 2 colunas quando expandido.
                                 val allCols = cols.filter { it.key == "conciliar" || !record[it.key].isNullOrBlank() }
                                 val summaryCols = allCols.take(6)
                                 val hasMore = allCols.size > summaryCols.size
@@ -792,10 +792,10 @@ fun FinanceiroScreen(
                                             // (continua existindo na vista Tabela, ver RecordTable.kt,
                                             // que o usuário pediu pra manter).
                                             IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
-                                                Icon(Icons.Outlined.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                                Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                                             }
                                             IconButton(onClick = { recordPendingDelete = recordId }, modifier = Modifier.size(28.dp)) {
-                                                Icon(Icons.Outlined.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                                                Icon(Icons.Outlined.Delete, contentDescription = "Excluir registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
                                             }
                                         }
                                     }
@@ -828,7 +828,7 @@ fun FinanceiroScreen(
     if (recordPendingDelete != null) {
         AlertDialog(
             onDismissRequest = { recordPendingDelete = null },
-            title = { Text("Excluir lançamento?") },
+            title = { Text("Excluir registro?") },
             text = { Text("Essa ação não pode ser desfeita.") },
             confirmButton = {
                 TextButton(onClick = {
@@ -843,15 +843,15 @@ fun FinanceiroScreen(
     }
     // Diálogo de leitura do ícone "Ver" -- mesmo padrão do módulo genérico
     // (DomainListScreen.kt): mostra TODOS os campos preenchidos do
-    // lançamento, só leitura.
+    // registro, só leitura.
     if (recordBeingViewed != null) {
         val viewedRecord = filtered.firstOrNull { it["id"] == recordBeingViewed }
         AlertDialog(
             onDismissRequest = { recordBeingViewed = null },
-            title = { Text(if (isQuickView) view.label else "Lançamentos") },
+            title = { Text(if (isQuickView) view.label else "Registros") },
             text = {
                 if (viewedRecord == null) {
-                    Text("Lançamento não encontrado.")
+                    Text("Registro não encontrado.")
                 } else {
                     Column(
                         modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
@@ -878,7 +878,7 @@ fun FinanceiroScreen(
     }
 }
 
-// Uma linha de campo dentro do card de lançamento do Financeiro -- trata o
+// Uma linha de campo dentro do card de registro do Financeiro -- trata o
 // caso especial "conciliar" (bolinha) + status-like (pill) + o negrito de
 // isFinanceiroBoldColumn, mesmo critério de antes, só que reaproveitado em
 // 1 ou 2 colunas.
@@ -921,7 +921,7 @@ private fun FinanceiroFieldLine(col: com.bragro.mobile.data.model.ColumnConfig, 
     }
 }
 
-// Card único pra um GRUPO de lançamentos vindos da MESMA NF-e (mesmo
+// Card único pra um GRUPO de registros vindos da MESMA NF-e (mesmo
 // origemId, rateado em >1 fazenda) -- réplica adaptada de
 // FinanceiroNfeGroupCard em DomainListScreen.kt (~linha 1842), que ficava
 // órfã lá (o domínio "financeiro" nunca passa por aquele arquivo). Segue o
@@ -994,10 +994,10 @@ private fun FinanceiroNfeGroupCard(
                         )
                     }
                     IconButton(onClick = { if (recId != null) onEditRecord(recId) }, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Outlined.Edit, contentDescription = "Editar lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                     }
                     IconButton(onClick = { onDeleteRequest(recId) }, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Outlined.Delete, contentDescription = "Excluir lançamento", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                        Icon(Icons.Outlined.Delete, contentDescription = "Excluir registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -1022,7 +1022,7 @@ private fun ConciliarDot(conciliado: Boolean) {
 // As 6 visões especializadas agrupadas no dropdown "Gestão Financeira" --
 // pedido do usuário ("crie um módulo Gestão Financeira... e realoque Contas
 // a Pagar/Receber, Fluxo, Conciliado, Rateio Direto e Indireto"). TODOS
-// ("Lançamentos") fica de fora de propósito -- vira o botão sozinho ao lado
+// ("Registros") fica de fora de propósito -- vira o botão sozinho ao lado
 // (ver call site acima), não faz parte deste grupo.
 private val FINANCEIRO_VIEW_GESTAO = listOf(
     FinanceiroView.PAGAR,
@@ -1042,7 +1042,7 @@ private val FINANCEIRO_VIEW_GESTAO = listOf(
 // nesta mesma tela) em vez de ocupar uma linha inteira sempre visível. O
 // rótulo do botão mostra o nome da visão ativa quando é uma destas 6, ou
 // "Gestão Financeira" quando nenhuma está selecionada (visão atual é
-// Lançamentos ou nenhuma ainda escolhida deste grupo).
+// Registros ou nenhuma ainda escolhida deste grupo).
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 private fun FinanceiroGestaoDropdownButton(view: FinanceiroView, onSelect: (FinanceiroView) -> Unit, modifier: Modifier = Modifier) {
@@ -1213,7 +1213,7 @@ private fun FinanceiroCategoryTabs(blocks: List<FinBlockSpec>, modifier: Modifie
  * (inclui "Diário", adicionado em paralelo no site) + um intervalo de datas
  * manual (De/Até), espelho do dropdown Período do site (data-table.tsx). Em
  * Contas a Pagar/Receber as categorias viram janela de Vencimento; nas
- * demais visões casam pelo campo "Periodo" do lançamento. */
+ * demais visões casam pelo campo "Periodo" do registro. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PeriodoDropdown(
@@ -1295,7 +1295,7 @@ private fun PeriodoDropdown(
 
 /** Botão-dropdown "Filtros" (Banco) -- só na visão Conciliado, mesma lista de
  * bancos cadastrados (lookups categoria "bancos") usada no formulário de
- * lançamento. Ícone de filtro em vez do específico de banco -- pedido do
+ * registro. Ícone de filtro em vez do específico de banco -- pedido do
  * usuário ("consolide todos os filtros de coluna num bloco Filtros, só
  * ícone"), mesmo critério do site (data-table.tsx). */
 @OptIn(ExperimentalMaterial3Api::class)

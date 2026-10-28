@@ -65,7 +65,7 @@ object FarmSelection {
     fun farmFieldFor(domainId: String): String? =
         if (FARM_LINKED_DOMAINS.contains(domainId)) (FARM_LINKED_FIELD[domainId] ?: "local") else null
 
-    /** Lançamentos só da fazenda escolhida no topo (painel, conferência e
+    /** Registros só da fazenda escolhida no topo (painel, conferência e
      * gráficos -- v14); sem fazenda escolhida devolve tudo. */
     fun filtrar(records: List<Map<String, String?>>, campo: String?): List<Map<String, String?>> {
         val sel = selected.value ?: return records

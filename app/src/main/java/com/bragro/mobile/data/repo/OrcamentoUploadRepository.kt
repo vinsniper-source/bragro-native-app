@@ -24,7 +24,7 @@ class OrcamentoUploadRepository(private val context: Context) {
 
     /** Retorna a URL pública da foto, ou null se offline/sem sessão/erro
      * (quem chamou deixa o usuário seguir sem foto -- OCR fica desabilitado
-     * pra aquele bloco, mas o lançamento manual continua possível). */
+     * pra aquele bloco, mas o registro manual continua possível). */
     suspend fun uploadFoto(bytes: ByteArray, prefixo: String): String? {
         val tokens = tokenStore.current() ?: return null
         val session = db.sessionDao().get() ?: return null

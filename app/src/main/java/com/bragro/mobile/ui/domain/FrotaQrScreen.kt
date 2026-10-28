@@ -67,12 +67,12 @@ class FrotaQrViewModel(app: Application) : AndroidViewModel(app) {
     init {
         viewModelScope.launch {
             val catalogo = configRepository.lookupsByCategory("frotas")
-            // Só as máquinas que já têm pelo menos um lançamento real
+            // Só as máquinas que já têm pelo menos um registro real
             // (FrotaRegistro), não o catálogo genérico inteiro de Base de
             // Dados > Frotas (pedido do usuário: "esses QRCode foram criados
             // a partir da base de dados ou são ficticios... use como padrao
             // os que tiverem cadastrado na base de dados"). Sem rede/sessão
-            // ou fazenda ainda sem nenhum lançamento, cai de volta pro
+            // ou fazenda ainda sem nenhum registro, cai de volta pro
             // catálogo completo -- nunca fica vazio por causa disso.
             val usadas = frotaRegistradasRepository.fetch()
             frotas.value = if (usadas.isNullOrEmpty()) {

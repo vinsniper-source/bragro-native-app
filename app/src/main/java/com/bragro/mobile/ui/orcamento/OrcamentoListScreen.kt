@@ -106,7 +106,7 @@ import java.util.Locale
  * o usuário conseguia lançar (inclusive via OCR) mas não via/filtrava/
  * conferia orçamentos antigos pelo app, só pelo site, ver orcamento-client.tsx).
  * Reaproveita OrcamentoRepository.listar() (já existia, usado só por
- * "Copiar último lançamento" dentro do form) e o mesmo padrão de
+ * "Copiar último registro" dentro do form) e o mesmo padrão de
  * filtro/período/alternância Tabela-Bloco/impressão do resto do app (ver
  * DomainListScreen.kt) -- só que numa tela própria, já que Orçamentos não é
  * um domínio genérico do registry (tabela própria Orcamento/OrcamentoItem).
@@ -516,7 +516,7 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                 ColumnsPickerButton(ORCAMENTO_COLUMNS, visibleColumnKeys) { visibleColumnKeys = it }
                 LabeledIconButton(
                     icon = com.bragro.mobile.ui.domain.IconesVazados.ViewList,
-                    label = "Lançamentos",
+                    label = "Registros",
                     active = cardsExpanded,
                     onClick = { cardsExpanded = !cardsExpanded },
                 )
@@ -583,10 +583,10 @@ val headers = listOf("Data", "Nº Orçamento", "Requisição", "Autorizado por",
                         titulo = "Orçamentos",
                         subtitulo = "${orcamentos.size} orçamento(s) · $pendentesNf aguardando NF",
                         kpis = listOf(
-                            com.bragro.mobile.ui.domain.PainelKpi("Orçamentos", orcamentos.size.toDouble(), "numero", null, "no total", "Lançamentos"),
-                            com.bragro.mobile.ui.domain.PainelKpi("Valor orçado", orcamentos.sumOf { totalOrcamento(it) }, "moeda", null, "soma dos itens", "Lançamentos"),
-                            com.bragro.mobile.ui.domain.PainelKpi("Pendente NF", pendentesNf.toDouble(), "numero", null, "aguardam a nota mãe", "Lançamentos"),
-                            com.bragro.mobile.ui.domain.PainelKpi("Autorizados", autorizados.toDouble(), "numero", null, "de ${orcamentos.size}", "Lançamentos"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Orçamentos", orcamentos.size.toDouble(), "numero", null, "no total", "Registros"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Valor orçado", orcamentos.sumOf { totalOrcamento(it) }, "moeda", null, "soma dos itens", "Registros"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Pendente NF", pendentesNf.toDouble(), "numero", null, "aguardam a nota mãe", "Registros"),
+                            com.bragro.mobile.ui.domain.PainelKpi("Autorizados", autorizados.toDouble(), "numero", null, "de ${orcamentos.size}", "Registros"),
                         ),
                         barras = if (orcamentos.isEmpty()) emptyList() else listOf(
                             com.bragro.mobile.ui.domain.PainelBarra("Faturados", Math.round((orcamentos.size - pendentesNf) * 100.0 / orcamentos.size).toDouble(), "${orcamentos.size - pendentesNf}/${orcamentos.size}"),

@@ -178,10 +178,10 @@ data class CanvasFazendaCardData(
     val id: String,
     val nome: String,
     val areaHa: Double,
-    // Área de fato coberta pelos lançamentos de Safra que batem no filtro
+    // Área de fato coberta pelos registros de Safra que batem no filtro
     // de safra/cultura selecionado -- espelho exato de areaFiltroHa em
     // lib/services/canvas.ts (site). null = sem filtro de safra/cultura
-    // ativo (ou sem lançamento com hectare preenchido ainda), o círculo cai
+    // ativo (ou sem registro com hectare preenchido ainda), o círculo cai
     // de volta pra areaHa (área cadastral da fazenda inteira).
     val areaFiltroHa: Double? = null,
     val status: String, // "ok" | "alerta" | "risco" | "semdado"
@@ -322,7 +322,7 @@ data class HomeData(
     // mesmo formato do getDashboardBreakdowns() do backend (ver
     // dashboard-breakdown.ts). null quando o backend antigo ainda não manda
     // esse campo (cache offline); cada chave dentro pode ser null quando o
-    // setor não teve lançamento nenhum na janela.
+    // setor não teve registro nenhum na janela.
     val breakdowns: HomeBreakdownsData? = null,
     // 2º/3º/4º KPI por setor -- ja existiam no dashboard web (Task
     // #499-#502) mas nunca tinham sido replicados no app nativo (pedido do
@@ -801,7 +801,7 @@ data class DreResponse(
     val error: String? = null,
 )
 
-// Reconciliação Físico x Fiscal de Estoque (Task #603/#607) -- espelho de
+// Ajustar Físico x Fiscal de Estoque (Task #603/#607) -- espelho de
 // ReconciliacaoEstoqueItem/ReconciliacaoEstoqueResult
 // (lib/services/reconciliacao-estoque.ts). Rota de LEITURA pura (sem
 // input do usuário) -- ver /api/mobile/reconciliacao-estoque/route.ts, que
@@ -866,7 +866,7 @@ data class ColheitaLotesQrResponse(
     val error: String? = null,
 )
 
-// Nomes de frota REALMENTE usados em algum lançamento (FrotaRegistro),
+// Nomes de frota REALMENTE usados em algum registro (FrotaRegistro),
 // diferente do catálogo genérico inteiro de Base de Dados > Frotas --
 // usado pela tela "QR Codes das máquinas" (FrotaQrScreen.kt) pra não gerar
 // QR de equipamento que a fazenda não tem (ver frota-qr-codes-button.tsx no
@@ -1007,7 +1007,7 @@ data class ProdutorRuralResponse(
     val error: String? = null,
 )
 
-// Nota digitada manualmente com mais de um item no mesmo lançamento -- gap
+// Nota digitada manualmente com mais de um item no mesmo registro -- gap
 // encontrado na auditoria módulo-a-módulo (Financeiro, botão "Lançar nota
 // com itens", ver nota-multi-item-button.tsx no site). Chama DIRETO
 // criarNotaComItensAction() via /api/mobile/nota-multi-item (mesmo motor de
@@ -1019,7 +1019,7 @@ data class ProdutorRuralResponse(
 // item proporcional à quantidade só no servidor. /api/mobile/nota-multi-item
 // ainda aceita o payload ANTIGO (item.valorUnitario) de APKs já instalados
 // -- não quebra quem não atualizou -- mas esta tela (embutida no Novo
-// Lançamento, ver FinanceiroItensInlineSection em DomainFormScreen.kt) já
+// Registro, ver FinanceiroItensInlineSection em DomainFormScreen.kt) já
 // manda o payload NOVO.
 @Serializable
 data class NotaMultiItemItemData(
@@ -1069,7 +1069,7 @@ data class NotaMultiItemResponse(
     val savedOffline: Boolean = false,
 )
 
-// Pedidos/Cotações: "novo modelo" de vários itens no mesmo lançamento --
+// Pedidos/Cotações: "novo modelo" de vários itens no mesmo registro --
 // pedido do usuário ("insira o novo modelo dos modulos cotaçoes e pedidos no
 // app native"), réplica de pedido-multi-item-button.tsx/
 // cotacao-multi-item-button.tsx no site (tasks #234/#235). Mesmo critério do
@@ -2445,7 +2445,7 @@ data class SyncModuleIntegrationRequest(
     val accessToken: String, val refreshToken: String, val modulo: String, val action: String = "sync_integration",
 )
 
-// "Editado por" no card de cada lançamento (pedido do usuário: "editado
+// "Editado por" no card de cada registro (pedido do usuário: "editado
 // por + data/hora dentro do card, via histórico de alterações") -- devolve
 // só a última edição de cada recordId pedido, num único lote por tela de
 // lista (ver /api/mobile/audit-info/route.ts).
@@ -2611,7 +2611,7 @@ data class CsvImportRunResponse(
 // -- pedido do usuário com documentação técnica completa de integração
 // OAuth2. Mesmo scaffolding dos demais módulos com integração de
 // fabricante (Frota/Romaneio/Pecuária): cadastro/telemetria/controle 100%
-// funcionais via lançamento manual; sincronização automática real fica
+// funcionais via registro manual; sincronização automática real fica
 // stub até alguma marca aprovar parceria de desenvolvedor (ver
 // lib/services/pivos.ts e provider-integration.ts no site). UMA rota só
 // (/api/mobile/pivos), "action" no corpo decide o que roda no servidor --
