@@ -62,6 +62,7 @@ import androidx.compose.material.icons.outlined.Print
 import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Send
+import androidx.compose.material.icons.outlined.QrCode2
 import androidx.compose.material.icons.outlined.GridOn
 import androidx.compose.material.icons.outlined.TableChart
 import androidx.compose.material.icons.outlined.ViewAgenda
@@ -448,6 +449,8 @@ fun DomainListScreen(
     // usuário) -- guarda o id do lançamento aguardando confirmação; null =
     // nenhum diálogo aberto.
     var recordPendingDelete by remember(domainId) { mutableStateOf<String?>(null) }
+    // v56 -- cobrança cujo Pix (QR + copia e cola) está aberto.
+    var pixCobrancaId by remember(domainId) { mutableStateOf<String?>(null) }
     // "Ver" ganhou ação própria, separada da setinha de expandir -- pedido
     // do usuário ("a setinha será individual pra cada bloco... setinha
     // acima do ícone ver, depois editar e por último excluir"): guarda o id
@@ -1698,6 +1701,11 @@ fun DomainListScreen(
                                         }
                                     }
                                 }
+                                if (domainId == "cobrancas" && recordId != null) {
+                                    IconButton(onClick = { pixCobrancaId = recordId }, modifier = Modifier.size(28.dp)) {
+                                        Icon(androidx.compose.material.icons.Icons.Outlined.QrCode2, contentDescription = "Pix da cobrança", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurface)
+                                    }
+                                }
                                 if (hasMore) {
                                     com.bragro.mobile.ui.domain.CantoL(expanded, onClick = { cardOverrides[recordId ?: ""] = !expanded })
                                 }
@@ -1721,6 +1729,7 @@ fun DomainListScreen(
         }
     }
 
+    pixCobrancaId?.let { id -> PixCobrancaDialog(cobrancaId = id, onDismiss = { pixCobrancaId = null }) }
     // Confirmação antes de excluir -- ação destrutiva, pedido implícito de
     // segurança (excluir não pode ser desfeito depois de sincronizar).
     if (recordPendingDelete != null) {
