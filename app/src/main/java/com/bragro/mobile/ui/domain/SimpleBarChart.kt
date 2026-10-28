@@ -158,6 +158,19 @@ fun SimpleBarChart(
         val altUtil = barsHeight - reservaTopo
         val areaBarras = (colW - (if (modo == ModoRotulo.EM_PE) larguraRotulosEmPe else 0.dp)).coerceAtLeast(barraMin)
         val larguraBarra = ((areaBarras - 2.dp * series.size) / series.size).coerceIn(2.dp, if (series.size > 1) 10.dp else 18.dp)
+        // v62 -- regra geral (todos os módulos): com nome em pé, o valor que
+        // cabe deitado na largura da coluna (sem encostar no vizinho) vai
+        // deitado, centralizado embaixo da base da barra; o que colidiria
+        // continua em pé à direita da barra. Não muda o modo DEITADO.
+        val larguraBarras = (larguraBarra + 2.dp) * series.size
+        val valorEmbaixo = categories.indices.map { i ->
+            if (modo != ModoRotulo.EM_PE || !mostraValor || valores.getOrNull(i).isNullOrEmpty()) false
+            else {
+                val desvio = (lh * nomesEmPe[i].size - lh).coerceAtLeast(0.dp)
+                largura(valores[i]) + folga + desvio <= colW
+            }
+        }
+        val temValorEmbaixo = valorEmbaixo.any { it }
         // Compacto: nome deitado a cada `passo` colunas.
         val passo = if (modo == ModoRotulo.COMPACTO) kotlin.math.ceil(((nomeMax + gap) / (colW + gap)).toDouble()).toInt().coerceAtLeast(1) else 1
 
@@ -201,7 +214,7 @@ fun SimpleBarChart(
                             }
                             // Valor em pé à direita (modo extenso).
                             if (modo == ModoRotulo.EM_PE && mostraValor) {
-                                if (valores[i].isNotEmpty()) TextoEmPe(valores[i], corValor, negrito = true)
+                                if (valores[i].isNotEmpty() && !valorEmbaixo[i]) TextoEmPe(valores[i], corValor, negrito = true)
                                 else Spacer(Modifier.width(lh))
                             }
                         }
@@ -225,6 +238,25 @@ fun SimpleBarChart(
                 }
             }
             Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outlineVariant))
+            // v62 -- valores curtos deitados, centralizados embaixo da barra
+            // (mesma montagem da linha das barras: nome, barras, espaço do valor).
+            if (temValorEmbaixo) {
+                Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(gap)) {
+                    categories.indices.forEach { i ->
+                        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.Center) {
+                            Spacer(Modifier.width(lh * nomesEmPe[i].size))
+                            Box(Modifier.width(larguraBarras), contentAlignment = Alignment.TopCenter) {
+                                if (valorEmbaixo[i]) Text(
+                                    valores[i], style = estilo, color = corValor, maxLines = 1, softWrap = false,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                                    modifier = Modifier.wrapContentWidth(Alignment.CenterHorizontally, unbounded = true),
+                                )
+                            }
+                            Spacer(Modifier.width(lh))
+                        }
+                    }
+                }
+            }
             // Nome deitado na base (modo curto e compacto).
             if (modo != ModoRotulo.EM_PE) {
                 Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(gap)) {

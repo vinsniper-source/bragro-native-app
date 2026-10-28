@@ -637,33 +637,49 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                                 isMoney = true,
                             )
                             HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
-                            Text("Custo/ha por Fazenda — fonte por fonte", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                            Text("De onde vem o custo (ha ou sc) de cada fazenda: Financeiro direto, indireto (rateado), Frota, Safra e Arrendamento.", style = MaterialTheme.typography.bodySmall)
-                            Spacer(modifier = Modifier.height(4.dp))
-                            SingleChoiceSegmentedButtonRow(modifier = Modifier.padding(bottom = 6.dp)) {
-                                listOf("ha" to "R$/ha", "sc" to "R$/sc").forEachIndexed { index, (valor, rotulo) ->
-                                    SegmentedButton(
-                                        selected = unidadeCusto == valor,
-                                        onClick = { unidadeCusto = valor },
-                                        shape = SegmentedButtonDefaults.itemShape(index = index, count = 2),
-                                        label = { Text(rotulo) },
+                            // v62 -- recolhido como os outros gráficos (abre ao tocar).
+                            com.bragro.mobile.ui.domain.BlocoGraficoBarras(
+                                titulo = "Custo/ha por Fazenda — fonte por fonte",
+                                categorias = custoHaExibido.map { it.farmName },
+                                series = listOf(
+                                    "Financeiro direto" to custoHaExibido.map { it.financeiroDiretoHa },
+                                    "Financeiro indireto" to custoHaExibido.map { it.financeiroIndiretoHa },
+                                    "Frota" to custoHaExibido.map { it.frotaHa },
+                                    "Safra" to custoHaExibido.map { it.safraHa },
+                                    "Arrendamento" to custoHaExibido.map { it.arrendamentoHa },
+                                ),
+                                isMoney = true,
+                            ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Text("Custo/ha por Fazenda — fonte por fonte", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                Text("De onde vem o custo (ha ou sc) de cada fazenda: Financeiro direto, indireto (rateado), Frota, Safra e Arrendamento.", style = MaterialTheme.typography.bodySmall)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                SingleChoiceSegmentedButtonRow(modifier = Modifier.padding(bottom = 6.dp)) {
+                                    listOf("ha" to "R$/ha", "sc" to "R$/sc").forEachIndexed { index, (valor, rotulo) ->
+                                        SegmentedButton(
+                                            selected = unidadeCusto == valor,
+                                            onClick = { unidadeCusto = valor },
+                                            shape = SegmentedButtonDefaults.itemShape(index = index, count = 2),
+                                            label = { Text(rotulo) },
+                                        )
+                                    }
+                                }
+                                if (custoHaExibido.isEmpty()) {
+                                    Text("Sem dados suficientes ainda para este cruzamento.", style = MaterialTheme.typography.bodySmall)
+                                } else {
+                                    SimpleBarChart(
+                                        categories = custoHaExibido.map { it.farmName },
+                                        series = listOf(
+                                            BarSeries("Financeiro direto", custoHaExibido.map { it.financeiroDiretoHa }, defaultSeriesColor(0)),
+                                            BarSeries("Financeiro indireto", custoHaExibido.map { it.financeiroIndiretoHa }, defaultSeriesColor(1)),
+                                            BarSeries("Frota", custoHaExibido.map { it.frotaHa }, defaultSeriesColor(2)),
+                                            BarSeries("Safra", custoHaExibido.map { it.safraHa }, defaultSeriesColor(0)),
+                                            BarSeries("Arrendamento", custoHaExibido.map { it.arrendamentoHa }, defaultSeriesColor(1)),
+                                        ),
+                                        isMoney = true,
                                     )
                                 }
                             }
-                            if (custoHaExibido.isEmpty()) {
-                                Text("Sem dados suficientes ainda para este cruzamento.", style = MaterialTheme.typography.bodySmall)
-                            } else {
-                                SimpleBarChart(
-                                    categories = custoHaExibido.map { it.farmName },
-                                    series = listOf(
-                                        BarSeries("Financeiro direto", custoHaExibido.map { it.financeiroDiretoHa }, defaultSeriesColor(0)),
-                                        BarSeries("Financeiro indireto", custoHaExibido.map { it.financeiroIndiretoHa }, defaultSeriesColor(1)),
-                                        BarSeries("Frota", custoHaExibido.map { it.frotaHa }, defaultSeriesColor(2)),
-                                        BarSeries("Safra", custoHaExibido.map { it.safraHa }, defaultSeriesColor(0)),
-                                        BarSeries("Arrendamento", custoHaExibido.map { it.arrendamentoHa }, defaultSeriesColor(1)),
-                                    ),
-                                    isMoney = true,
-                                )
                             }
                             HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                             MiniChart(
