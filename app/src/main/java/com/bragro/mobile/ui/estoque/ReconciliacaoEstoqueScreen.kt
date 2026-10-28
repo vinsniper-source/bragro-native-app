@@ -232,7 +232,7 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
             item(key = "acoes") {
                 com.bragro.mobile.ui.domain.AcoesEmAbas(
                     dados = {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Warning, label = "Divergências", active = soDivergencia, badgeCount = divergentes.size, tint = MaterialTheme.colorScheme.onSurface, onClick = { soDivergencia = true })
+                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Aviso, label = "Divergências", active = soDivergencia, badgeCount = divergentes.size, tint = MaterialTheme.colorScheme.onSurface, onClick = { soDivergencia = true })
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.ViewList, label = "Todos", active = !soDivergencia, onClick = { soDivergencia = false })
                         androidx.compose.foundation.layout.Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
                             com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.FilterAlt, label = fCategoria ?: "Categoria", active = fCategoria != null, onClick = { catMenu = true })

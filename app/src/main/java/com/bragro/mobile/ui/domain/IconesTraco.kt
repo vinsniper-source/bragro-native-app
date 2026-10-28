@@ -100,6 +100,8 @@ object IconesVazados {
             "M8 13h8M8 17h5",
         )
     }
+    // v59 -- triângulo de aviso vazado (Divergências em Ajustar Físico x Fiscal).
+    val Aviso: ImageVector by lazy { iconeTraco("Aviso", "M12 3.5L2.5 20h19z", "M12 10v4.5M12 17.2h0.01") }
     val ViewList: ImageVector by lazy { iconeTraco("ViewList", "M8 6h13M8 12h13M8 18h13", "M3.5 6h0.01M3.5 12h0.01M3.5 18h0.01") }
     val ViewColumn: ImageVector by lazy { iconeTraco("ViewColumn", QUADRO, "M9 3v18M15 3v18") }
     val TableChart: ImageVector by lazy { iconeTraco("TableChart", QUADRO, "M3 9h18M9 9v12") }

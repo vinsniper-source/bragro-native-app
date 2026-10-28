@@ -1039,15 +1039,13 @@ private fun ComputedFieldDisplay(col: ColumnConfig, raw: String, optionLabels: M
     Column(modifier = Modifier.fillMaxWidth()) {
         androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Text(col.label, style = MaterialTheme.typography.labelMedium, color = cs.onSurfaceVariant)
+            // v59 -- "auto" sem fundo, em negrito, na cor normal do texto.
             Text(
                 "auto",
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelMedium,
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                color = cs.onPrimary,
-                modifier = Modifier
-                    .padding(start = 6.dp)
-                    .background(cs.primary, RoundedCornerShape(50))
-                    .padding(horizontal = 6.dp, vertical = 1.dp),
+                color = cs.onSurface,
+                modifier = Modifier.padding(start = 6.dp),
             )
         }
         Box(
