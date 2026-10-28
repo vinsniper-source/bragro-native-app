@@ -72,6 +72,8 @@ import com.bragro.mobile.data.repo.RecordRepository
 import com.bragro.mobile.data.repo.SaveResult
 import com.bragro.mobile.ui.theme.BrGreen
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.doubleOrNull
@@ -105,6 +107,13 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
     // usuário: "coloque todos os campos até os que são calculados
     // automaticamente na ordem correta da operação em todos os módulos".
     var computedValues = mutableStateOf<Map<String, String>>(emptyMap())
+        private set
+    // v57 -- prévia dos campos automáticos (servidor, mesma conta do salvar).
+    var previa = mutableStateOf<Map<String, String>>(emptyMap())
+        private set
+    var previaDicas = mutableStateOf<Map<String, String>>(emptyMap())
+        private set
+    var previaFalta = mutableStateOf<String?>(null)
         private set
 
     // Fazendas reais (cache local, ver ConfigRepository.farms()) -- pedido
@@ -304,6 +313,29 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             if (k in missingFields.value) missingFields.value = missingFields.value - k
         }
         return r.mensagem ?: "${campos.size} campo(s) lido(s) -- confira antes de salvar."
+    }
+
+    /** v57 -- pede ao servidor o resultado dos campos automáticos com o que
+     * já está preenchido (nada é gravado). Sem internet, mantém o último. */
+    fun calcularPrevia(domainId: String, recordId: String?) {
+        val cfg = config.value ?: return
+        if (cfg.columns.none { it.computed }) return
+        val dateKeys = cfg.columns.filter { it.type == "date" }.map { it.key }.toSet()
+        val hiddenKeys = cfg.columns.filter { it.visibleWhenField != null && !isVisible(it) }.map { it.key }.toSet()
+        val snapshot = fields.toMap()
+            .filterKeys { it !in hiddenKeys }
+            .mapValues { (k, v) -> if (k in dateKeys) brDateToIso(v) else v }
+        viewModelScope.launch {
+            val r = com.bragro.mobile.data.repo.PreviaCalculadosRepository(getApplication()).calcular(domainId, recordId, snapshot) ?: return@launch
+            if (r.ok) {
+                previa.value = r.valores
+                previaDicas.value = r.dicas
+                previaFalta.value = null
+            } else {
+                previa.value = emptyMap()
+                previaFalta.value = r.falta
+            }
+        }
     }
 
     fun setField(key: String, value: String) {
@@ -600,9 +632,12 @@ private val SECOES_FORM = listOf(
 )
 private val ITENS_POR_DOMINIO = mapOf("controleinterno" to setOf("ca", "tamanho", "validade", "entrada", "saida", "devolucao"))
 private val QUANDO_POR_DOMINIO = mapOf("pedidos" to setOf("noPedido"))
+// v57 -- Caixa Interno: Entrada/Saída (e Saldo/Status automáticos) em Valores.
+private val VALORES_POR_DOMINIO = mapOf("caixainterno" to setOf("entrada", "saida"))
 private fun secaoDoCampo(k: String, domainId: String): String =
     if (ITENS_POR_DOMINIO[domainId]?.contains(k) == true) "itens"
     else if (QUANDO_POR_DOMINIO[domainId]?.contains(k) == true) "quando"
+    else if (VALORES_POR_DOMINIO[domainId]?.contains(k) == true) "valores"
     else SECOES_FORM.firstOrNull { it.teste(k) }?.id ?: "outros"
 
 /** Domínios com `ocrFoto` em registry.ts (site) -- botão "Preencher com foto
@@ -637,6 +672,17 @@ fun DomainFormScreen(
     val lastRecord by viewModel.lastRecord
     val computedValues by viewModel.computedValues
     val missingFields by viewModel.missingFields
+    val previa by viewModel.previa
+    val previaDicas by viewModel.previaDicas
+    val previaFalta by viewModel.previaFalta
+    // v57 -- prévia dos automáticos ~0,5 s depois de parar de digitar.
+    LaunchedEffect(domainId, recordId) {
+        @OptIn(kotlinx.coroutines.FlowPreview::class)
+        androidx.compose.runtime.snapshotFlow { viewModel.fields.toMap() }
+            .distinctUntilChanged()
+            .debounce(500)
+            .collect { campos -> if (campos.values.any { it.isNotBlank() }) viewModel.calcularPrevia(domainId, recordId) }
+    }
 
     Scaffold(
         topBar = {
@@ -741,11 +787,20 @@ fun DomainFormScreen(
             // O quê e quem / Itens / Valores / Outros; calculados num bloco
             // "Calculado" no fim; vários itens na seção Itens.
             val visiveis = cfg.columns.filter { viewModel.isVisible(it) }
-            val editaveis = visiveis.filter { !it.computed && it.type != "textarea" }
-            val calculados = visiveis.filter { it.computed }
+            // v57 -- automáticos na seção do campo de onde vêm (o campo
+            // editável anterior na ordem do módulo), logo depois dele; sem
+            // bloco "Calculado" separado. Mesma regra da plataforma.
+            val camposForm = visiveis.filter { it.type != "textarea" }
             val textos = visiveis.filter { !it.computed && it.type == "textarea" }
+            fun secaoDe(c: ColumnConfig): String {
+                if (!c.computed) return secaoDoCampo(c.key, domainId)
+                val i = cfg.columns.indexOf(c)
+                val ant = cfg.columns.subList(0, maxOf(i, 0)).lastOrNull { !it.computed && it.type != "textarea" }
+                val dep = cfg.columns.drop(i + 1).firstOrNull { !it.computed && it.type != "textarea" }
+                return (ant ?: dep)?.let { secaoDoCampo(it.key, domainId) } ?: "outros"
+            }
             val grupos = (SECOES_FORM.map { Triple(it.id, it.titulo, it.sub) } + Triple("outros", "Outros dados", ""))
-                .map { g -> g to editaveis.filter { secaoDoCampo(it.key, domainId) == g.first } }
+                .map { g -> g to camposForm.filter { secaoDe(it) == g.first } }
                 .filter { it.second.isNotEmpty() }
             val multi = if (recordId == null) MULTI_ITEM_FORM[domainId] else null
             grupos.forEach { (g, campos) ->
@@ -769,6 +824,15 @@ fun DomainFormScreen(
                 // invertidas: bloco branco, campos em cinza claro.
                 val camposDaSecao: @Composable () -> Unit = {
                 campos.forEach { col ->
+                    if (col.computed) {
+                        val optionLabels = col.lookupCategory?.let { cat -> lookups[cat]?.associate { it.value to it.label } } ?: emptyMap()
+                        val temPrevia = previa.containsKey(col.key)
+                        val raw = if (temPrevia) previa[col.key] ?: "" else computedValues[col.key] ?: ""
+                        val dica = if (temPrevia) previaDicas[col.key] else if (raw.isBlank()) previaFalta else null
+                        ComputedFieldDisplay(col = col, raw = raw, optionLabels = optionLabels, dica = dica)
+                        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
+                        return@forEach
+                    }
                     FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                     androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
                     if (recordId == null && domainId == "financeiro" && col.key == "docNf") {
@@ -801,22 +865,6 @@ fun DomainFormScreen(
                 if (g.first == "itens" && multi != null) {
                     ItensExtrasSection(domainId, multi, cfg.columns, lookups, viewModel)
                 }
-            }
-            if (calculados.isNotEmpty()) {
-                SecaoFormHeader("Calculado", if (recordId == null) "preenchido ao salvar" else "atualiza ao salvar")
-                androidx.compose.material3.Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        calculados.forEach { col ->
-                            val optionLabels = col.lookupCategory?.let { cat -> lookups[cat]?.associate { it.value to it.label } } ?: emptyMap()
-                            ComputedFieldDisplay(col = col, raw = computedValues[col.key] ?: "", optionLabels = optionLabels)
-                        }
-                    }
-                }
-                androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
             }
             textos.forEach { col ->
                 FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
@@ -982,7 +1030,7 @@ private fun computedDisplayValue(col: ColumnConfig, raw: String, optionLabels: M
 // etc.) -- caixa cinza somente-leitura, NUNCA um input, mesmo tratamento
 // visual do site (record-form.tsx: "bg-muted/40" + rótulo "(calculado)").
 @Composable
-private fun ComputedFieldDisplay(col: ColumnConfig, raw: String, optionLabels: Map<String, String>) {
+private fun ComputedFieldDisplay(col: ColumnConfig, raw: String, optionLabels: Map<String, String>, dica: String? = null) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             // "(calculado automaticamente)" -> "(automático)" -- pedido do
@@ -1009,6 +1057,11 @@ private fun ComputedFieldDisplay(col: ColumnConfig, raw: String, optionLabels: M
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
+        }
+        // v57 -- dica da prévia (ex.: "saldo anterior R$ 9.680,00") ou o que
+        // falta preencher para calcular.
+        if (!dica.isNullOrBlank()) {
+            Text(dica, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
         }
     }
 }

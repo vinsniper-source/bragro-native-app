@@ -377,6 +377,10 @@ interface MobileApi {
     @POST("api/mobile/ocr-foto")
     suspend fun ocrFoto(@Body body: com.bragro.mobile.data.model.OcrFotoRequest): Response<com.bragro.mobile.data.model.OcrFotoResponse>
 
+    // v57 -- prévia dos campos automáticos do formulário.
+    @POST("api/mobile/preview-computed")
+    suspend fun previewComputed(@Body body: com.bragro.mobile.data.repo.PreviaCalculadosRequest): Response<com.bragro.mobile.data.repo.PreviaCalculadosResponse>
+
     // v56 -- Pix da cobrança (QR + copia e cola), ver ui/domain/PixCobranca.kt.
     @POST("api/mobile/pix")
     suspend fun pix(@Body body: com.bragro.mobile.ui.domain.PixRequest): Response<com.bragro.mobile.ui.domain.PixResponse>
