@@ -149,16 +149,16 @@ fun ModuleChartsCard(domainId: String, viewModel: ModuleChartsViewModel = viewMo
                             if (generic != null && generic.data.isNotEmpty()) {
                                 BlocoGrafico(
                                     titulo = generic.title,
-                                    onPrint = { HtmlPrinter.printCharts(context, "$domainId - ${generic.title}", listOf(genericToPrintData(generic))) },
-                                    onPdf = { HtmlPrinter.exportChartsPdfDirect(context, "$domainId - ${generic.title}", listOf(genericToPrintData(generic))) },
+                                    onPrint = { HtmlPrinter.printCharts(context, "${rotuloModulo(domainId)} · ${generic.title}", listOf(genericToPrintData(generic))) },
+                                    onPdf = { HtmlPrinter.exportChartsPdfDirect(context, "${rotuloModulo(domainId)} · ${generic.title}", listOf(genericToPrintData(generic))) },
                                 ) { GenericChartBlock(generic) }
                             }
                             extras.forEach { spec ->
                                 val title = when (spec) { is ChartSpec.Bar -> spec.title; is ChartSpec.Table -> spec.title }
                                 BlocoGrafico(
                                     titulo = title,
-                                    onPrint = { HtmlPrinter.printCharts(context, "$domainId - $title", listOf(specToPrintData(spec))) },
-                                    onPdf = { HtmlPrinter.exportChartsPdfDirect(context, "$domainId - $title", listOf(specToPrintData(spec))) },
+                                    onPrint = { HtmlPrinter.printCharts(context, "${rotuloModulo(domainId)} · $title", listOf(specToPrintData(spec))) },
+                                    onPdf = { HtmlPrinter.exportChartsPdfDirect(context, "${rotuloModulo(domainId)} · $title", listOf(specToPrintData(spec))) },
                                 ) {
                                     when (spec) {
                                         is ChartSpec.Bar -> BarChartBlock(spec)
@@ -196,26 +196,50 @@ private fun ChartPrintActions(onPrint: () -> Unit, onPdf: () -> Unit) {
  * na tela (SimpleBarChart) tanto no HTML de impressão quanto no PDF direto.
  * ChartSpec.Table fica de fora (barCategories vazio) -- não é um gráfico de
  * barras na tela também, TableChartBlock já é só uma lista de campos. */
-private fun genericToPrintData(generic: GenericChartData): HtmlPrinter.ChartPrintData =
-    HtmlPrinter.ChartPrintData(
+// v63 -- nome do módulo no título do PDF/impressão (antes saía o id, ex.: "estoque").
+private val ROTULOS_MODULO = mapOf(
+    "financeiro" to "Financeiro", "pedidos" to "Pedidos", "estoque" to "Estoque", "safra" to "Atividades",
+    "planejamentosafra" to "Planejamento de Safra", "colheita" to "Colheita", "romaneios" to "Romaneios",
+    "cotacoesfornecedores" to "Cotações de Fornecedores", "contratos" to "Contratos", "inventario" to "Inventário",
+    "frota" to "Frota", "rh" to "RH", "receituarios" to "Receituários", "pragas" to "Pragas",
+    "controleinterno" to "Controle Interno", "clima" to "Clima", "caixainterno" to "Caixa Interno",
+    "cobrancas" to "Cobranças", "nfse" to "NFS-e", "pecuaria" to "Pecuária", "pastagem" to "Pastagem",
+    "maodeobra" to "Mão de Obra e Familiar", "pivos" to "Pivôs de Irrigação", "silos" to "Silos",
+)
+private fun rotuloModulo(domainId: String): String =
+    ROTULOS_MODULO[domainId] ?: domainId.replaceFirstChar { it.uppercase() }
+
+/** v63 -- número no formato brasileiro (73.276 · 1.234,5); dinheiro com R$.
+ * Gráfico com "(R$)" no nome também é dinheiro. */
+private fun valorBr(v: Double, money: Boolean): String =
+    if (money) formatChartValue(v, true)
+    else if (v == kotlin.math.floor(v)) java.text.NumberFormat.getIntegerInstance(java.util.Locale("pt", "BR")).format(v.toLong())
+    else java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 2 }.format(v)
+
+private fun ehDinheiro(money: Boolean, titulo: String): Boolean = money || titulo.contains("(R$)") || titulo.contains("R$/")
+
+private fun genericToPrintData(generic: GenericChartData): HtmlPrinter.ChartPrintData {
+    val money = ehDinheiro(generic.isMoney, generic.title)
+    return HtmlPrinter.ChartPrintData(
         title = generic.title,
-        headers = listOf("Item", "Valor"),
-        rows = generic.data.map { listOf(it.name, if (generic.isMoney) formatChartValue(it.value, true) else it.value.toString()) },
+        headers = listOf("Item", if (money) "Valor (R$)" else "Quantidade"),
+        rows = generic.data.map { listOf(it.name, valorBr(it.value, money)) },
         barCategories = generic.data.map { it.name },
         barSeries = listOf("Valor" to generic.data.map { it.value }),
-        isMoney = generic.isMoney,
+        isMoney = money,
     )
+}
 
 private fun specToPrintData(spec: ChartSpec): HtmlPrinter.ChartPrintData = when (spec) {
     is ChartSpec.Bar -> HtmlPrinter.ChartPrintData(
         title = spec.title,
         headers = listOf("Categoria") + spec.series.map { it.second },
         rows = spec.categories.mapIndexed { i, cat ->
-            listOf(cat) + spec.series.map { (_, _, values) -> if (spec.money) formatChartValue(values.getOrElse(i) { 0.0 }, true) else values.getOrElse(i) { 0.0 }.toString() }
+            listOf(cat) + spec.series.map { (_, _, values) -> valorBr(values.getOrElse(i) { 0.0 }, ehDinheiro(spec.money, spec.title)) }
         },
         barCategories = spec.categories,
         barSeries = spec.series.map { (_, label, values) -> label to values },
-        isMoney = spec.money,
+        isMoney = ehDinheiro(spec.money, spec.title),
     )
     is ChartSpec.Table -> HtmlPrinter.ChartPrintData(
         title = spec.title,
@@ -231,7 +255,7 @@ private fun GenericChartBlock(data: GenericChartData) {
         SimpleBarChart(
             categories = data.data.map { it.name },
             series = listOf(BarSeries("valor", data.data.map { it.value }, defaultSeriesColor(0))),
-            isMoney = data.isMoney,
+            isMoney = ehDinheiro(data.isMoney, data.title),
         )
     }
 }
@@ -246,7 +270,7 @@ private fun BarChartBlock(spec: ChartSpec.Bar) {
         SimpleBarChart(
             categories = spec.categories,
             series = spec.series.mapIndexed { i, (_, label, values) -> BarSeries(label, values, defaultSeriesColor(i)) },
-            isMoney = spec.money,
+            isMoney = ehDinheiro(spec.money, spec.title),
         )
     }
 }

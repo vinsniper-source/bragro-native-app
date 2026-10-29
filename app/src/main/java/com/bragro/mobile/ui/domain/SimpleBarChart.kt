@@ -144,7 +144,10 @@ fun SimpleBarChart(
         val cabeDeitado = nomeMax + folga <= colW && valorMax + folga <= colW
         // 2/3. em pé: 1 coluna se o nome cabe na altura, senão 2 colunas.
         val linhasNome = if (nomeMax <= barsHeight) 1 else 2
-        val larguraRotulosEmPe = lh * linhasNome + (if (temValor) lh else 0.dp)
+        // v63 -- números curtos sem R$ que cabem deitados na coluna vão para
+        // a base: aí não precisa reservar a faixa do valor em pé.
+        val curtosPossivel = temValor && !isMoney && valores.all { it.isEmpty() || largura(it) + folga <= colW }
+        val larguraRotulosEmPe = lh * linhasNome + (if (temValor && !curtosPossivel) lh else 0.dp)
         val cabeEmPe = colW >= larguraRotulosEmPe + barraMin * series.size + 2.dp
         val modo = when {
             cabeDeitado -> ModoRotulo.DEITADO
@@ -163,17 +166,21 @@ fun SimpleBarChart(
         // deitado, centralizado embaixo da base da barra; o que colidiria
         // continua em pé à direita da barra. Não muda o modo DEITADO.
         val larguraBarras = (larguraBarra + 2.dp) * series.size
-        val valorEmbaixo = categories.indices.map { i ->
-            if (modo != ModoRotulo.EM_PE || !mostraValor || valores.getOrNull(i).isNullOrEmpty()) false
-            else {
-                val desvio = (lh * nomesEmPe[i].size - lh).coerceAtLeast(0.dp)
-                largura(valores[i]) + folga + desvio <= colW
-            }
-        }
+        // v63 -- decisão do gráfico INTEIRO (nunca mistura): só números
+        // curtos sem R$ e só se TODOS couberem na coluna vão para a base.
+        val valoresCurtos = modo == ModoRotulo.EM_PE && mostraValor && curtosPossivel
+        val valorEmbaixo = categories.indices.map { i -> valoresCurtos && !valores.getOrNull(i).isNullOrEmpty() }
         val temValorEmbaixo = valorEmbaixo.any { it }
         // Compacto: nome deitado a cada `passo` colunas.
         val passo = if (modo == ModoRotulo.COMPACTO) kotlin.math.ceil(((nomeMax + gap) / (colW + gap)).toDouble()).toInt().coerceAtLeast(1) else 1
 
+        // v63 -- regra 3: barras que encostariam umas nas outras -> gráfico
+        // horizontal (nome à esquerda, barra deitada, valor no fim). Séries
+        // com linha de total (ex.: balanço hídrico) seguem na vertical.
+        if (modo == ModoRotulo.COMPACTO && linha == null) {
+            BarrasHorizontais(categories, series, valores, maxValue, maxWidth, ::largura, corNome, corValor, estilo)
+            return@BoxWithConstraints
+        }
         Column(modifier = Modifier.fillMaxWidth()) {
             Box(Modifier.fillMaxWidth().height(barsHeight)) {
                 Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(gap)) {
@@ -214,7 +221,8 @@ fun SimpleBarChart(
                             }
                             // Valor em pé à direita (modo extenso).
                             if (modo == ModoRotulo.EM_PE && mostraValor) {
-                                if (valores[i].isNotEmpty() && !valorEmbaixo[i]) TextoEmPe(valores[i], corValor, negrito = true)
+                                if (valoresCurtos) Unit
+                                else if (valores[i].isNotEmpty()) TextoEmPe(valores[i], corValor, negrito = true)
                                 else Spacer(Modifier.width(lh))
                             }
                         }
@@ -252,7 +260,6 @@ fun SimpleBarChart(
                                     modifier = Modifier.wrapContentWidth(Alignment.CenterHorizontally, unbounded = true),
                                 )
                             }
-                            Spacer(Modifier.width(lh))
                         }
                     }
                 }
@@ -285,6 +292,78 @@ fun SimpleBarChart(
                             Spacer(Modifier.width(4.dp))
                             Text(s.label, style = MaterialTheme.typography.labelSmall)
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** v63 -- gráfico de barras HORIZONTAIS (regra 3 da regra geral): uma linha
+ * por item, nome à esquerda (todos aparecem), barra(s) deitada(s) e o valor
+ * no fim da barra (só com série única). */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun BarrasHorizontais(
+    categories: List<String>,
+    series: List<BarSeries>,
+    valores: List<String>,
+    maxValue: Double,
+    larguraTotal: Dp,
+    largura: (String) -> Dp,
+    corNome: Color,
+    corValor: Color,
+    estilo: androidx.compose.ui.text.TextStyle,
+) {
+    val nomeW = (categories.maxOf { largura(it) } + 6.dp).coerceAtMost(larguraTotal * 0.38f)
+    val valorW = if (valores.isEmpty()) 0.dp else (valores.maxOf { largura(it) } + 6.dp).coerceAtMost(larguraTotal * 0.32f)
+    val barraAlt = if (series.size > 1) 6.dp else 11.dp
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        categories.forEachIndexed { i, cat ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    cat, style = estilo, color = corNome, maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                    modifier = Modifier.width(nomeW).padding(end = 6.dp),
+                )
+                androidx.compose.foundation.layout.BoxWithConstraints(Modifier.weight(1f)) {
+                    val util = (maxWidth - valorW).coerceAtLeast(8.dp)
+                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                        series.forEach { s ->
+                            val v = s.values.getOrElse(i) { 0.0 }
+                            val frac = (v / maxValue).coerceIn(0.0, 1.0).toFloat()
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    Modifier
+                                        .width((util * frac).coerceAtLeast(1.dp))
+                                        .height(barraAlt)
+                                        .clip(RoundedCornerShape(topEnd = 2.dp, bottomEnd = 2.dp))
+                                        .background(s.color),
+                                )
+                                if (series.size == 1 && valores.getOrNull(i).orEmpty().isNotEmpty()) {
+                                    Text(
+                                        valores[i], style = estilo, color = corValor, maxLines = 1, softWrap = false,
+                                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                                        modifier = Modifier.padding(start = 4.dp),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (series.size > 1) {
+            androidx.compose.foundation.layout.FlowRow(
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                series.forEach { s ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.width(8.dp).height(8.dp).background(s.color))
+                        Spacer(Modifier.width(4.dp))
+                        Text(s.label, style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }

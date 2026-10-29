@@ -375,12 +375,16 @@ object HtmlPrinter {
         val plotH = 200.0
         val horizontal = nomeMax + 4 <= colW && valMax + 4 <= colW
         val linhas = if (horizontal || nomeMax <= plotH) 1 else 2
-        val rotW = lh * linhas + (if (temValor) lh else 0.0)
+        // v63 -- regra geral do app: números curtos sem R$ embaixo da barra
+        // (todos ou nenhum); barras que encostariam -> gráfico horizontal.
+        val curtos = !isMoney && temValor && textos.all { it.isEmpty() || tw(it) + 4 <= colW }
+        val rotW = lh * linhas + (if (temValor && !curtos) lh else 0.0)
         val emPe = !horizontal && colW >= rotW + 3.0 * series.size + 2
+        if (!horizontal && !emPe) return barrasHorizontaisSvg(categories, series, textos, maxValue)
         val passo = if (horizontal || emPe) 1 else kotlin.math.ceil((nomeMax + 4) / (colW + gap)).toInt().coerceAtLeast(1)
         val topo = if (horizontal && temValor) 16.0 else 6.0
         val baseline = topo + plotH
-        val height = baseline + (if (emPe) 4.0 else 16.0)
+        val height = baseline + (if (emPe && !curtos) 4.0 else 16.0)
         val barW = ((if (emPe) colW - rotW - 2 else colW * 0.72) / series.size).coerceIn(3.0, 48.0)
         val groupW = barW * series.size
         val nomes = categories.map { if (linhas == 2) com.bragro.mobile.ui.domain.quebrarEmDuas(it) else listOf(it) }
@@ -409,7 +413,10 @@ object HtmlPrinter {
                     labels.append("""<text x="${cx.f()}" y="${(baseline + 12).f()}" font-size="9" text-anchor="middle" fill="#333">${escapeHtml(cat)}</text>""")
                     if (texto.isNotEmpty()) bars.append("""<text x="${cx.f()}" y="${(baseline - h0 - 4).f()}" font-size="9" font-weight="600" text-anchor="middle" fill="#111">${escapeHtml(texto)}</text>""")
                 }
-                emPe -> if (texto.isNotEmpty()) bars.append(emPeSvg(texto, x + groupW + 2 + lh - 2.5, "font-weight=\"600\"", "#111"))
+                emPe -> if (texto.isNotEmpty()) {
+                    if (curtos) bars.append("""<text x="${cx.f()}" y="${(baseline + 12).f()}" font-size="9" font-weight="600" text-anchor="middle" fill="#111">${escapeHtml(texto)}</text>""")
+                    else bars.append(emPeSvg(texto, x + groupW + 2 + lh - 2.5, "font-weight=\"600\"", "#111"))
+                }
                 ci % passo == 0 -> labels.append("""<text x="${colX.f()}" y="${(baseline + 12).f()}" font-size="9" fill="#333">${escapeHtml(cat)}</text>""")
             }
         }
@@ -426,6 +433,36 @@ object HtmlPrinter {
             </svg>
             $legend
         """.trimIndent()
+    }
+
+    /** v63 -- gráfico horizontal para impressão (uma linha por item). */
+    private fun barrasHorizontaisSvg(categories: List<String>, series: List<Pair<String, List<Double>>>, textos: List<String>, maxValue: Double): String {
+        val width = 760.0
+        val rowH = 16.0
+        val nomeW = (categories.maxOf { it.length } * 5.2 + 10).coerceAtMost(width * 0.3)
+        val valW = (textos.maxOfOrNull { it.length * 5.2 } ?: 0.0) + 10
+        val util = (width - nomeW - valW).coerceAtLeast(60.0)
+        val bh = ((rowH - 4) / series.size).coerceAtLeast(2.0)
+        val sb = StringBuilder()
+        categories.forEachIndexed { ci, cat ->
+            val y = ci * rowH
+            sb.append("""<text x="${(nomeW - 6).f()}" y="${(y + rowH - 4).f()}" font-size="9" text-anchor="end" fill="#333">${escapeHtml(cat)}</text>""")
+            var fim = nomeW
+            series.forEachIndexed { si, (_, values) ->
+                val w = ((values.getOrElse(ci) { 0.0 } / maxValue).coerceIn(0.0, 1.0) * util).coerceAtLeast(1.0)
+                sb.append("""<rect x="${nomeW.f()}" y="${(y + 2 + si * bh).f()}" width="${w.f()}" height="${(bh - 0.5).f()}" fill="${PRINT_SERIES_COLORS[si % PRINT_SERIES_COLORS.size]}" />""")
+                fim = maxOf(fim, nomeW + w)
+            }
+            val t = textos.getOrElse(ci) { "" }
+            if (t.isNotEmpty()) sb.append("""<text x="${(fim + 4).f()}" y="${(y + rowH - 4).f()}" font-size="9" font-weight="600" fill="#111">${escapeHtml(t)}</text>""")
+        }
+        val h = categories.size * rowH + 4
+        val legend = if (series.size > 1) {
+            "<div class=\"chart-legend\">" + series.mapIndexed { i, (label, _) ->
+                "<span><i style=\"background:${PRINT_SERIES_COLORS[i % PRINT_SERIES_COLORS.size]}\"></i>${escapeHtml(label)}</span>"
+            }.joinToString("") + "</div>"
+        } else ""
+        return """<svg viewBox="0 0 ${width.f()} ${h.f()}" width="100%" height="${(h * 0.82).f()}" xmlns="http://www.w3.org/2000/svg">$sb</svg>$legend"""
     }
 
     private fun Double.f(): String = String.format(java.util.Locale.US, "%.1f", this)
@@ -515,6 +552,34 @@ object HtmlPrinter {
             return linhas
         }
 
+        fun desenharHorizontais(chart: ChartPrintData, textos: List<String>, maxValue: Double) {
+            val rowH = 13f
+            val nomePaint = Paint(barLabelPaint).apply { textAlign = Paint.Align.RIGHT }
+            val valPaint = Paint(valueLabelPaint).apply { textAlign = Paint.Align.LEFT; isFakeBoldText = true }
+            val nomeW = (chart.barCategories.maxOf { nomePaint.measureText(it) } + 8f).coerceAtMost(contentW * 0.3f)
+            val valW = (textos.maxOfOrNull { valPaint.measureText(it) } ?: 0f) + 8f
+            val util = (contentW - nomeW - valW).coerceAtLeast(40f)
+            val n = chart.barSeries.size.coerceAtLeast(1)
+            val bh = ((rowH - 3f) / n).coerceAtLeast(2f)
+            y += 6f
+            chart.barCategories.forEachIndexed { ci, cat ->
+                newPageIfNeeded(rowH)
+                canvas.drawText(cat, margin + nomeW - 6f, y + rowH - 3.5f, nomePaint)
+                var fim = margin + nomeW
+                chart.barSeries.forEachIndexed { si, (_, values) ->
+                    val v = values.getOrElse(ci) { 0.0 }
+                    val w = ((v / maxValue).coerceIn(0.0, 1.0) * util).toFloat().coerceAtLeast(1f)
+                    val by = y + 1.5f + si * bh
+                    canvas.drawRect(margin + nomeW, by, margin + nomeW + w, by + bh - 0.5f, barPaints[si % barPaints.size])
+                    fim = maxOf(fim, margin + nomeW + w)
+                }
+                val t = textos.getOrElse(ci) { "" }
+                if (t.isNotEmpty()) canvas.drawText(t, fim + 4f, y + rowH - 3.5f, valPaint)
+                y += rowH
+            }
+            y += 10f
+        }
+
         fun drawBars(chart: ChartPrintData) {
             val all = chart.barSeries.flatMap { it.second }
             val maxValue = (all.maxOrNull() ?: 0.0).coerceAtLeast(0.0).let { if (it <= 0.0) 1.0 else it }
@@ -538,13 +603,21 @@ object HtmlPrinter {
             val horizontal = maxNomeW + 4f <= colWidth && maxValW + 4f <= colWidth
             val linhasNome = if (horizontal || maxNomeW <= plotHeight) 1 else 2
             val nomes = chart.barCategories.map { if (linhasNome == 2) com.bragro.mobile.ui.domain.quebrarEmDuas(it) else listOf(it) }
-            val rotulosW = alturaTexto * linhasNome + (if (temValor) alturaTexto else 0f)
+            // v63 -- regra geral do app: números curtos sem R$ que cabem na
+            // coluna vão deitados embaixo da barra (todos ou nenhum).
+            val curtos = !chart.isMoney && temValor && textos.all { it.isEmpty() || valueLabelPaint.measureText(it) + 4f <= colWidth }
+            val rotulosW = alturaTexto * linhasNome + (if (temValor && !curtos) alturaTexto else 0f)
             val emPe = !horizontal && colWidth >= rotulosW + 3f * seriesCount + 2f
+            if (!horizontal && !emPe) {
+                // v63 -- barras que encostariam: gráfico horizontal.
+                desenharHorizontais(chart, textos, maxValue)
+                return
+            }
             val passo = if (horizontal || emPe) 1 else kotlin.math.ceil((maxNomeW + 4f) / (colWidth + gapCol)).toInt().coerceAtLeast(1)
             val barWidth = ((if (emPe) colWidth - rotulosW - 2f else colWidth * 0.72f) / seriesCount).coerceIn(2f, 40f)
             val groupW = barWidth * seriesCount
             val folgaTopo = if (horizontal && temValor) 12f else 0f
-            val labelArea = if (emPe) 6f else 14f
+            val labelArea = if (emPe && !curtos) 6f else 14f
             val legendArea = if (chart.barSeries.size > 1) 14f else 0f
             val top = y + 12f + folgaTopo
             val baseline = top + plotHeight
@@ -586,7 +659,10 @@ object HtmlPrinter {
                         canvas.drawText(cat, cx, baseline + 11f, barLabelPaint)
                         if (texto.isNotEmpty()) canvas.drawText(texto, cx, topo0 - 3f, valueLabelPaint)
                     }
-                    emPe -> if (texto.isNotEmpty()) emPeTexto(texto, x + groupW + 2f + alturaTexto - 2.5f, valorEmPePaint)
+                    emPe -> if (texto.isNotEmpty()) {
+                        if (curtos) canvas.drawText(texto, cx, baseline + 11f, Paint(valueLabelPaint).apply { textAlign = Paint.Align.CENTER })
+                        else emPeTexto(texto, x + groupW + 2f + alturaTexto - 2.5f, valorEmPePaint)
+                    }
                     ci % passo == 0 -> if (colX + nomeEsqPaint.measureText(cat) <= margin + contentW) canvas.drawText(cat, colX, baseline + 11f, nomeEsqPaint)
                 }
             }
