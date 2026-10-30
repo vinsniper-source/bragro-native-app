@@ -325,7 +325,7 @@ fun NfeImportScreen(onBack: () -> Unit, viewModel: NfeImportViewModel = viewMode
             // Nota em papel (sem XML) -- IA lê a foto e monta a mesma
             // pré-visualização; nada é gravado até confirmar (paridade site).
             item {
-                com.bragro.mobile.ui.domain.OcrFotoButton(label = "Ler nota em papel por foto (IA)") { url ->
+                com.bragro.mobile.ui.domain.OcrFotoButton(label = "Ler nota em papel por foto") { url ->
                     viewModel.lerNotaPapel(url)
                 }
             }

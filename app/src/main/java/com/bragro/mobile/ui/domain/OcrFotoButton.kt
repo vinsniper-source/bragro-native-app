@@ -44,7 +44,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 
 /**
- * Botão reutilizável "Preencher com foto (IA)" (paridade com o site, Task
+ * Botão reutilizável "Preencher com foto" (paridade com o site, Task
  * #889-895): abre a câmera (mesmo fluxo de permissão/forçar abertura de
  * PragaFotoScreen), comprime a foto (maior lado 1600px, JPEG 75), sobe pro
  * Storage e entrega a URL pública pra [onFotoUrl], que chama a leitura por IA
@@ -55,7 +55,7 @@ import java.io.File
 @Composable
 fun OcrFotoButton(
     modifier: Modifier = Modifier,
-    label: String = "Preencher com foto (IA)",
+    label: String = "Preencher com foto",
     onFotoUrl: suspend (String) -> String?,
 ) {
     val context = LocalContext.current

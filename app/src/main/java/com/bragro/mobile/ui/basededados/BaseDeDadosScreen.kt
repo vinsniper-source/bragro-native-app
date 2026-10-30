@@ -891,14 +891,14 @@ private fun FarmsCard(
         // da tela em vez de uma largura fixa que não cabe em aparelhos
         // estreitos.
         Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-            // "Preencher com foto (IA)" -- paridade com o cadastro de fazenda
+            // "Preencher com foto" -- paridade com o cadastro de fazenda
             // do site (Task #895): lê CCIR/CAR/matrícula/escritura e
             // pré-preenche Nome, Área e coordenadas; usuário confere antes de
             // clicar em Adicionar.
             val ocrContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
             com.bragro.mobile.ui.domain.OcrFotoButton(
                 modifier = Modifier.padding(bottom = 8.dp),
-                label = "Preencher com foto do documento (IA)",
+                label = "Preencher com foto do documento",
             ) { url ->
                 val r = com.bragro.mobile.data.repo.OcrFotoRepository(ocrContext).lerFazenda(url)
                 val f = r.fazenda

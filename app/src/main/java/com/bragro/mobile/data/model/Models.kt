@@ -1422,7 +1422,7 @@ data class PragaIaResponse(
     val error: String? = null,
 )
 
-// "Preencher com foto (IA)" genérico (site Task #889-895) -- ver rota
+// "Preencher com foto" genérico (site Task #889-895) -- ver rota
 // /api/mobile/ocr-foto. Uma única request/response atende os 4 usos
 // (generico, fazenda, nota_papel, nota_papel_confirmar).
 @Serializable

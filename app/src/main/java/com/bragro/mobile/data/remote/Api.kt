@@ -396,7 +396,7 @@ interface MobileApi {
     @POST("api/mobile/pragas-ia")
     suspend fun pragaIa(@Body body: PragaIaRequest): Response<PragaIaResponse>
 
-    // "Preencher com foto (IA)" genérico -- ver OcrFotoRequest (Models.kt).
+    // "Preencher com foto" genérico -- ver OcrFotoRequest (Models.kt).
     @POST("api/mobile/ocr-foto")
     suspend fun ocrFoto(@Body body: com.bragro.mobile.data.model.OcrFotoRequest): Response<com.bragro.mobile.data.model.OcrFotoResponse>
 

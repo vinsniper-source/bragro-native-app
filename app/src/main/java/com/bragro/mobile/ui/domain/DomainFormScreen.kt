@@ -316,7 +316,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** "Preencher com foto (IA)" -- paridade com o botão do site (Task
+    /** "Preencher com foto" -- paridade com o botão do site (Task
      * #889-893, generic-ocr.ts). Lê a foto no servidor e pré-preenche os campos
      * que a IA conseguiu ler; o usuário confere antes de salvar (nada é
      * gravado sozinho). Devolve a mensagem de status pro botão mostrar. */
@@ -819,7 +819,7 @@ fun DomainFormScreen(
             // -- é auto-explicativo (ícone de copiar + tooltip/contentDescription
             // "Copiar último registro").
 
-            // "Preencher com foto (IA)" -- só em registro NOVO dos módulos
+            // "Preencher com foto" -- só em registro NOVO dos módulos
             // que declaram `ocrFoto` no registry.ts do site (paridade).
             if (recordId == null && domainId in OCR_FOTO_DOMAINS) {
                 OcrFotoButton(modifier = Modifier.padding(bottom = 12.dp)) { url -> viewModel.aplicarOcrFoto(url) }

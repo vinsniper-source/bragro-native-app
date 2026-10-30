@@ -1,38 +1,20 @@
-@file:OptIn(ExperimentalTextApi::class)
-
 package com.bragro.mobile.ui.theme
 
 import com.bragro.mobile.R
 import androidx.compose.material3.Typography
-import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.googlefonts.Font
-import androidx.compose.ui.text.googlefonts.GoogleFont
 
-// Fonte Geist -- pedido do usuario ("implemente a fonte Geist no app"),
-// mesma fonte que o site ja usa (Geist Sans via next/font/google, ver
-// layout.tsx). Baixada em tempo de execucao pelo provedor de fontes do
-// Google Play Services (Downloadable Fonts API) em vez de arquivos .ttf
-// empacotados no APK -- precisa de res/values/font_certs.xml (certificados
-// publicos do app "Google Play services", copiados da amostra oficial do
-// Google) e da dependencia "androidx.compose.ui:ui-text-google-fonts" (ver
-// app/build.gradle.kts). Se o Play Services nao estiver disponivel no
-// aparelho (ex.: emulador sem Google APIs), o Compose cai sozinho pra fonte
-// padrao do sistema -- nao quebra o app, so nao mostra a Geist.
-private val geistFontProvider = GoogleFont.Provider(
-    providerAuthority = "com.google.android.gms.fonts",
-    providerPackage = "com.google.android.gms",
-    certificates = R.array.com_google_android_gms_fonts_certs,
-)
-
-private fun geistFont(weight: FontWeight) = Font(googleFont = GoogleFont("Geist"), fontProvider = geistFontProvider, weight = weight)
-
+// Fonte Geist -- mesma do site. v73 -- os arquivos agora vão DENTRO do app
+// (res/font, licença SIL Open Font 1.1, Vercel/basement.studio), em vez de
+// baixados do Google Play Services na hora: abre igual sem internet e em
+// aparelhos sem Google Play, sem depender de serviço de fora.
 val GeistFontFamily = FontFamily(
-    geistFont(FontWeight.Normal),
-    geistFont(FontWeight.Medium),
-    geistFont(FontWeight.SemiBold),
-    geistFont(FontWeight.Bold),
+    Font(R.font.geist_regular, FontWeight.Normal),
+    Font(R.font.geist_medium, FontWeight.Medium),
+    Font(R.font.geist_semibold, FontWeight.SemiBold),
+    Font(R.font.geist_bold, FontWeight.Bold),
 )
 
 // Aplica a Geist em TODOS os estilos do Typography padrao do Material3

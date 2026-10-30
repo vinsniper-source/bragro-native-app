@@ -184,7 +184,7 @@ internal object IdiomaExtra {
         "Editar pivô" to "Editar pivote",
         "Lançar talhão manualmente" to "Registrar lote manualmente",
         "Lançar máquina manualmente (Frota)" to "Registrar máquina manualmente (Flota)",
-        "Preencher com foto (IA)" to "Completar con foto (IA)",
+        "Preencher com foto" to "Completar con foto",
         "Selecione ou confirme o diagnóstico" to "Seleccione o confirme el diagnóstico",
         "Imprimir este gráfico" to "Imprimir este gráfico",
         "Imprimir só este gráfico" to "Imprimir solo este gráfico",

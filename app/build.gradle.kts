@@ -45,8 +45,8 @@ android {
         // ja estava em 1.3.83, entao qualquer envio seria recusado pelo Play.
         // Salto deliberado para ficar acima de tudo que ja foi publicado.
         // v48 -- 1.3.88 (201): primeira versao publicada pelo GitHub Releases.
-        versionCode = 214
-        versionName = "1.4.1"
+        versionCode = 215
+        versionName = "1.4.2"
 
         // URLs do backend (o MESMO backend do site publicado -- ver
         // native-app/README.md). Trocaveis por variante/ambiente sem
@@ -213,7 +213,6 @@ dependencies {
     // next/font). Evita empacotar arquivos .ttf binarios no APK -- o Android
     // baixa e faz cache da fonte pelo provedor do Google Play Services,
     // precisando so das credenciais em res/values/font_certs.xml.
-    implementation("androidx.compose.ui:ui-text-google-fonts:1.6.8")
 
     // Carregamento de imagem por URL (logo da organização/avatar do usuário
     // no cabeçalho do Início, ver ui/home/HomeScreen.kt) -- única biblioteca

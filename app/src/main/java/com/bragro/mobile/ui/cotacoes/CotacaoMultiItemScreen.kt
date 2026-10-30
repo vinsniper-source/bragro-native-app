@@ -241,7 +241,7 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         grupos[gi].propostas.add(PropostaLinha())
     }
 
-    /** "Preencher com foto (IA)": lê a proposta do fornecedor e preenche o
+    /** "Preencher com foto": lê a proposta do fornecedor e preenche o
      * primeiro item/proposta (ou o primeiro ainda vazio). Só pré-preenche. */
     suspend fun aplicarOcrFoto(fotoUrl: String): String? {
         val r = com.bragro.mobile.data.repo.OcrFotoRepository(getApplication()).lerGenerico("cotacoesfornecedores", fotoUrl)
@@ -697,7 +697,7 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                 )
             }
             item {
-                com.bragro.mobile.ui.domain.OcrFotoButton(label = "Preencher com foto da proposta (IA)") { url -> viewModel.aplicarOcrFoto(url) }
+                com.bragro.mobile.ui.domain.OcrFotoButton(label = "Preencher com foto da proposta") { url -> viewModel.aplicarOcrFoto(url) }
             }
             if (errorMessage != null) {
                 item { Text(errorMessage ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }

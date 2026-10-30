@@ -8,7 +8,7 @@ import com.bragro.mobile.data.model.OcrFotoRequest
 import com.bragro.mobile.data.model.OcrFotoResponse
 import com.bragro.mobile.data.remote.NetworkModule
 
-/** "Preencher com foto (IA)" -- paridade com o site (Task #889-895). Chama
+/** "Preencher com foto" -- paridade com o site (Task #889-895). Chama
  * /api/mobile/ocr-foto, que chama DIRETO as mesmas Server Actions do site
  * (nenhum prompt/IA duplicado aqui). Mesmo padrão de retry em 401 do
  * PragaIaRepository. */
