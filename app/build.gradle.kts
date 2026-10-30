@@ -317,7 +317,7 @@ dependencies {
     // normal, nao exige o arquivo pra COMPILAR -- sem ele, o Firebase
     // simplesmente nao inicializa em tempo de execucao (nenhum crash
     // reportado, nenhum erro visivel, comportamento identico a hoje).
-    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+    implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
     implementation("com.google.firebase:firebase-crashlytics")
 
     // Sentry -- relato de travamentos/ANR no MESMO projeto Sentry do site,
