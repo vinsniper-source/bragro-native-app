@@ -254,7 +254,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
     // Sincronizacao em segundo plano quando a conexao voltar.
-    implementation("androidx.work:work-runtime-ktx:2.9.1")
+    implementation("androidx.work:work-runtime-ktx:2.12.0")
 
     // Mapa nativo do FieldView (Task #110) -- osmdroid renderiza tiles do
     // OpenStreetMap (MAPNIK, via HTTPS, compativel com usesCleartextTraffic
