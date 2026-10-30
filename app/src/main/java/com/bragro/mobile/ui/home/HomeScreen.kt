@@ -1908,7 +1908,8 @@ private fun HomeShortcutsRow(
             .background(MaterialTheme.colorScheme.surface)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
     ) {
-        com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth()) {
+        // v64 -- uma moldura só (a do Box) e divisórias curtas no meio.
+        com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth(), divisoriasCurtas = true) {
             if (showDestaques) com.bragro.mobile.ui.domain.LabeledIconButton(realce = true, icon = Icons.Outlined.StarOutline, label = "Destaques", onClick = { onDestaquesChange(true) })
             if (showAlertas) com.bragro.mobile.ui.domain.LabeledIconButton(realce = true, icon = Icons.Outlined.WarningAmber, label = "Alertas", badgeCount = data.alerts.size, onClick = { open = "alertas" })
             if (showMonitor) com.bragro.mobile.ui.domain.LabeledIconButton(realce = true, icon = IconesVazados.OfflineBolt, label = "Monitor", badgeCount = data.recentActivity.size, onClick = { open = "monitor" })

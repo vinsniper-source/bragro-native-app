@@ -76,8 +76,10 @@ private val BottomNavColors: androidx.compose.material3.NavigationBarItemColors
         selectedIconColor = MaterialTheme.colorScheme.onSurface,
         selectedTextColor = MaterialTheme.colorScheme.onSurface,
         indicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
-        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+        // v64 -- ícone e rótulo na mesma cor do texto da lista suspensa
+        // (onSurface: preto no claro, branco no escuro), sem o cinza.
+        unselectedIconColor = MaterialTheme.colorScheme.onSurface,
+        unselectedTextColor = MaterialTheme.colorScheme.onSurface,
     )
 
 // Pedido do usuário: "os botões inferiores devem aparecer uma lista
@@ -742,7 +744,7 @@ fun BRAgroBottomBar(
                         // ele lê por dentro) só dentro deste escopo, via
                         // MaterialTheme(colorScheme = ...) -- API estável desde
                         // sempre no Material3, sem risco de incompatibilidade.
-                        MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(surface = MaterialTheme.colorScheme.background)) {
+                        MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(surface = MaterialTheme.colorScheme.background, surfaceTint = androidx.compose.ui.graphics.Color.Transparent)) {
                         DropdownMenu(expanded = openTabId == tab.id, onDismissRequest = { openTabId = null }) {
                             // Cada aba-grupo agora É a antiga categoria (ver
                             // comentário no topo de BOTTOM_TABS) -- os itens não
@@ -833,7 +835,7 @@ fun BRAgroBottomBar(
             // com `background` pra pegar o verde forte, já que o container
             // padrão do DropdownMenu (Material3 1.2.1) lê `surface`, que
             // agora é o tom mais claro dos Cards (ver Theme.kt).
-            MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(surface = MaterialTheme.colorScheme.background)) {
+            MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(surface = MaterialTheme.colorScheme.background, surfaceTint = androidx.compose.ui.graphics.Color.Transparent)) {
             DropdownMenu(expanded = openTabId == "sistema", onDismissRequest = { openTabId = null }) {
                 menuSistemaLinks.forEach { link ->
                     DropdownMenuItem(

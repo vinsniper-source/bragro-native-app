@@ -377,6 +377,10 @@ interface MobileApi {
     @POST("api/mobile/ocr-foto")
     suspend fun ocrFoto(@Body body: com.bragro.mobile.data.model.OcrFotoRequest): Response<com.bragro.mobile.data.model.OcrFotoResponse>
 
+    // v64 -- listas que dependem do campo anterior.
+    @POST("api/mobile/sugestoes")
+    suspend fun sugestoes(@Body body: com.bragro.mobile.data.repo.SugestoesRequest): Response<com.bragro.mobile.data.repo.SugestoesResponse>
+
     // v57 -- prévia dos campos automáticos do formulário.
     @POST("api/mobile/preview-computed")
     suspend fun previewComputed(@Body body: com.bragro.mobile.data.repo.PreviaCalculadosRequest): Response<com.bragro.mobile.data.repo.PreviaCalculadosResponse>

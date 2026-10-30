@@ -81,6 +81,9 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
+/** v64 -- valor reservado da linha "Mostrar todas (N)" das listas dependentes. */
+const val OPCAO_TODAS = "__todas__"
+
 class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
     private val configRepository = ConfigRepository(app)
     private val recordRepository = RecordRepository(app)
@@ -189,12 +192,27 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // v64 -- sugestões das listas dependentes e campos com "Mostrar todas".
+    var sugestoes = mutableStateOf<Map<String, Map<String, Map<String, List<String>>>>>(emptyMap())
+        private set
+    var mostrarTodas = mutableStateOf<Set<String>>(emptySet())
+        private set
+
+    fun liberarTodas(key: String) {
+        mostrarTodas.value = mostrarTodas.value + key
+    }
+
     fun load(domainId: String, recordId: String?) {
         currentDomainId = domainId
         currentRecordId = recordId
         viewModelScope.launch {
             val cfg = configRepository.domainConfig(domainId) ?: return@launch
             config.value = cfg
+            if (cfg.columns.any { it.sugeridoPor.isNotEmpty() }) {
+                launch {
+                    com.bragro.mobile.data.repo.SugestoesRepository(getApplication()).carregar(domainId)?.let { sugestoes.value = it }
+                }
+            }
 
             // Categorias de TODO campo: as diretas (lookupCategory) e, pra
             // campos dependentes (dependsOn + lookupCategoryByValue, ver
@@ -342,6 +360,10 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setField(key: String, value: String) {
         fields[key] = value
+        // v64 -- trocou o campo-pai: as listas que dependem dele voltam a filtrar.
+        config.value?.columns?.filter { key in it.sugeridoPor }?.map { it.key }?.let { filhos ->
+            if (filhos.isNotEmpty()) mostrarTodas.value = mostrarTodas.value - filhos.toSet()
+        }
         // Campos que dependem deste (dependsOn, ver ColumnConfig em
         // Models.kt) têm a seleção atual limpa -- ela pode não existir mais
         // na lista filtrada pra o novo valor (mesmo comportamento do site,
@@ -438,7 +460,32 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
         if (col.key == "fazenda") {
             return farms.value.sortedBy { it.name }.map { LookupEntity("locais", it.name, it.name, 0) }
         }
-        return effectiveLookupCategory(col)?.let { lookups[it] }
+        val todas = effectiveLookupCategory(col)?.let { lookups[it] } ?: return null
+        return filtrarSugeridas(col, todas)
+    }
+
+    private fun normSug(s: String): String =
+        java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD).replace(Regex("\\p{Mn}+"), "").trim().uppercase()
+
+    /** v64 -- mesma regra de filtrarSugeridas (record-form.tsx): com o
+     * campo-pai preenchido, mostra só as opções que combinam com ele e deixa
+     * "Mostrar todas (N)" no fim. */
+    private fun filtrarSugeridas(col: ColumnConfig, todas: List<LookupEntity>): List<LookupEntity> {
+        if (col.sugeridoPor.isEmpty() || col.key in mostrarTodas.value) return todas
+        val porPai = sugestoes.value[col.key] ?: return todas
+        val permitidas = mutableSetOf<String>()
+        var achou = false
+        for (pai in col.sugeridoPor) {
+            val vp = fields[pai]?.takeIf { it.isNotBlank() } ?: continue
+            val lista = porPai[pai]?.get(normSug(vp))
+            if (!lista.isNullOrEmpty()) { achou = true; lista.forEach { permitidas.add(normSug(it)) } }
+        }
+        if (!achou) return todas
+        val atual = fields[col.key]
+        val filtradas = todas.filter { normSug(it.value) in permitidas || it.value == atual }
+        if (filtradas.isEmpty() || filtradas.size >= todas.size) return todas
+        val cat = todas.firstOrNull()?.category ?: ""
+        return filtradas + LookupEntity(cat, OPCAO_TODAS, "Mostrar todas (${todas.size})", Int.MAX_VALUE)
     }
 
     /** Preenche todos os campos (exceto computados) com os valores do
@@ -1167,7 +1214,7 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
             var query by remember(value) { mutableStateOf(optionLabels[value] ?: value) }
             val filtered = remember(query, allOptions) {
                 val q = query.trim()
-                if (q.isEmpty()) allOptions else allOptions.filter { it.second.contains(q, ignoreCase = true) }
+                if (q.isEmpty()) allOptions else allOptions.filter { it.first == OPCAO_TODAS || it.second.contains(q, ignoreCase = true) }
             }
             // "+Criar" -- paridade nativa do pedido do usuário ("em todas as
             // listas suspensas da plataforma coloque a opção criar na
@@ -1276,6 +1323,12 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                         DropdownMenuItem(text = { Text("Nenhum resultado", color = MaterialTheme.colorScheme.onSurfaceVariant) }, onClick = {}, enabled = false)
                     }
                     for ((optValue, optLabel) in filtered) {
+                        if (optValue == OPCAO_TODAS) {
+                            DropdownMenuItem(text = { Text(optLabel, fontWeight = FontWeight.Bold) }, onClick = {
+                                viewModel.liberarTodas(col.key)
+                            })
+                            continue
+                        }
                         DropdownMenuItem(text = { Text(optLabel) }, onClick = {
                             try {
                                 viewModel.setField(col.key, optValue)

@@ -28,6 +28,9 @@ data class ColumnConfig(
     // se o irmao nao tem valor ainda ou o valor nao esta no mapa).
     val dependsOn: String? = null,
     val lookupCategoryByValue: Map<String, String>? = null,
+    // v64 -- espelha sugeridoPor de types.ts: campos-pai cujo valor filtra
+    // primeiro as opções deste campo (tabela padrão + histórico da org).
+    val sugeridoPor: List<String> = emptyList(),
     val staticOptions: List<String>? = null,
     val hideInTable: Boolean = false,
     val hint: String? = null,

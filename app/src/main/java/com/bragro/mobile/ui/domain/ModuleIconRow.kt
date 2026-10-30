@@ -224,7 +224,8 @@ fun LabeledIconButton(
     Column(
         modifier = modifier
             .widthIn(min = 42.dp)
-            .then(if (realcado) Modifier.padding(2.dp).border(1.dp, MaterialTheme.colorScheme.outlineVariant, androidx.compose.foundation.shape.RoundedCornerShape(8.dp)) else Modifier)
+            // v64 -- sem moldura própria: o bloco do Início tem uma só por fora.
+            .then(if (realcado) Modifier.padding(2.dp) else Modifier)
             .clickable(enabled = !loading) {
                 when {
                     realce || active -> onClick()
@@ -312,7 +313,7 @@ fun ModuleIconRow(items: List<ModuleIconItem>, onClick: (String) -> Unit) {
  * realmente vieram e divide a largura igualmente entre eles.
  */
 @Composable
-fun EqualWidthBlockRow(modifier: Modifier = Modifier, drawBackground: Boolean = true, content: @Composable () -> Unit) {
+fun EqualWidthBlockRow(modifier: Modifier = Modifier, drawBackground: Boolean = true, divisoriasCurtas: Boolean = false, content: @Composable () -> Unit) {
     // Retângulo reto (SEM cantos arredondados) com fundo preenchido -- pedido
     // do usuário (achado de auditoria: "retire as bordas redondas e torne um
     // retângulo com borda bem leve na tonalidade do retângulo inteiro").
@@ -343,7 +344,9 @@ fun EqualWidthBlockRow(modifier: Modifier = Modifier, drawBackground: Boolean = 
         modifier = modifier
             .fillMaxWidth()
             .then(if (drawBackground && !solto) Modifier.background(blockBg) else Modifier)
-            .then(if (solto) Modifier else Modifier.border(1.dp, dividerColor))
+            // v64 -- divisoriasCurtas: sem borda própria (quem usa já tem a
+            // moldura por fora) e linhas curtas centralizadas entre os itens.
+            .then(if (solto || divisoriasCurtas) Modifier else Modifier.border(1.dp, dividerColor))
             .drawBehind {
                 if (solto) return@drawBehind
                 val n = itemCount.intValue
@@ -352,7 +355,8 @@ fun EqualWidthBlockRow(modifier: Modifier = Modifier, drawBackground: Boolean = 
                     val strokeWidthPx = 1.dp.toPx()
                     for (i in 1 until n) {
                         val x = itemWidthPx * i
-                        drawLine(dividerColor, Offset(x, 0f), Offset(x, size.height), strokeWidth = strokeWidthPx)
+                        if (divisoriasCurtas) drawLine(dividerColor, Offset(x, size.height * 0.25f), Offset(x, size.height * 0.75f), strokeWidth = strokeWidthPx)
+                        else drawLine(dividerColor, Offset(x, 0f), Offset(x, size.height), strokeWidth = strokeWidthPx)
                     }
                 }
             },
