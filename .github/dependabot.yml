@@ -1,0 +1,9 @@
+# v72b -- aviso semanal de bibliotecas com falha de segurança conhecida.
+version: 2
+updates:
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5

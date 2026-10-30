@@ -13,11 +13,23 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.bragro.mobile.sync.SyncWorker
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import com.bragro.mobile.ui.nav.BRAgroNavHost
 import com.bragro.mobile.ui.theme.BRAgroTheme
 
 class MainActivity : ComponentActivity() {
     private val pedirNotificacao = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { }
+    // v72b -- Android 7/8 (sem BiometricPrompt): tela de senha do próprio sistema.
+    private val senhaDoSistema = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { r ->
+        if (r.resultCode == RESULT_OK) com.bragro.mobile.ui.seguranca.AppLock.travado.value = false
+    }
+    private fun pedirSenhaDoSistema() {
+        val km = getSystemService(KEYGUARD_SERVICE) as android.app.KeyguardManager
+        @Suppress("DEPRECATION")
+        km.createConfirmDeviceCredentialIntent("Desbloquear o BRAgro", "Use a senha do celular")?.let { senhaDoSistema.launch(it) }
+    }
+    private suspend fun sessaoAtiva() = com.bragro.mobile.data.repo.AuthRepository(this).isLoggedIn()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Precisa ser chamado ANTES de super.onCreate() (Task #38, contrato
@@ -59,10 +71,17 @@ class MainActivity : ComponentActivity() {
         ) {
             pedirNotificacao.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         }
+        // v72b -- bloqueio por digital/rosto ao abrir o app.
+        lifecycleScope.launch { com.bragro.mobile.ui.seguranca.AppLock.aoAbrir(this@MainActivity, sessaoAtiva()) }
         setContent {
             BRAgroTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    BRAgroNavHost()
+                    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
+                        BRAgroNavHost()
+                        if (com.bragro.mobile.ui.seguranca.AppLock.travado.value) {
+                            com.bragro.mobile.ui.seguranca.TelaBloqueio(pedirSenhaAntiga = { pedirSenhaDoSistema() })
+                        }
+                    }
                 }
             }
         }
@@ -74,6 +93,21 @@ class MainActivity : ComponentActivity() {
         // primeiro plano -- cobre o caso comum de campo: usuario lancou
         // dados sem sinal, saiu do app, e quando volta ja esta com internet.
         SyncWorker.enqueue(this)
+        // v72b -- volta do segundo plano: bloqueio por tempo parado e aviso
+        // de uso deste aparelho (desconectado remotamente = sai da conta).
+        lifecycleScope.launch {
+            val ativa = sessaoAtiva()
+            com.bragro.mobile.ui.seguranca.AppLock.aoVoltar(this@MainActivity, ativa)
+            if (ativa && com.bragro.mobile.data.repo.AparelhoRepository(this@MainActivity).avisarUso() == true) {
+                com.bragro.mobile.data.repo.AuthRepository(this@MainActivity).logout()
+                recreate()
+            }
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        com.bragro.mobile.ui.seguranca.AppLock.aoSair(this)
     }
 
     // O Android às vezes devolve a barra de status sozinho (ex.: usuário

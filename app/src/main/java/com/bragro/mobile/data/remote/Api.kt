@@ -168,6 +168,29 @@ interface SupabaseAuthApi {
         @Body body: SupabaseLoginRequest,
     ): Response<SupabaseLoginResponse>
 
+    // v72b -- verificação em 2 etapas (fatores TOTP do Supabase Auth).
+    @GET("auth/v1/user")
+    suspend fun user(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") bearer: String,
+    ): Response<kotlinx.serialization.json.JsonObject>
+
+    @POST("auth/v1/factors/{id}/challenge")
+    suspend fun mfaChallenge(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") bearer: String,
+        @retrofit2.http.Path("id") factorId: String,
+        @Body body: Map<String, String> = emptyMap(),
+    ): Response<kotlinx.serialization.json.JsonObject>
+
+    @POST("auth/v1/factors/{id}/verify")
+    suspend fun mfaVerify(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") bearer: String,
+        @retrofit2.http.Path("id") factorId: String,
+        @Body body: Map<String, String>,
+    ): Response<SupabaseLoginResponse>
+
     @POST("auth/v1/token")
     suspend fun refresh(
         @Query("grant_type") grantType: String,
@@ -376,6 +399,10 @@ interface MobileApi {
     // "Preencher com foto (IA)" genérico -- ver OcrFotoRequest (Models.kt).
     @POST("api/mobile/ocr-foto")
     suspend fun ocrFoto(@Body body: com.bragro.mobile.data.model.OcrFotoRequest): Response<com.bragro.mobile.data.model.OcrFotoResponse>
+
+    // v72b -- último acesso deste aparelho / desconectado remotamente.
+    @POST("api/mobile/aparelho")
+    suspend fun aparelho(@Body body: com.bragro.mobile.data.repo.AparelhoRequest): Response<com.bragro.mobile.data.repo.AparelhoResponse>
 
     // v64 -- listas que dependem do campo anterior.
     @POST("api/mobile/sugestoes")

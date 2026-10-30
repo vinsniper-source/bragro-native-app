@@ -1,5 +1,9 @@
 package com.bragro.mobile.data.repo
 
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import android.content.Context
 import com.bragro.mobile.BuildConfig
 import com.bragro.mobile.data.AppLog
@@ -11,6 +15,8 @@ import com.bragro.mobile.data.remote.NetworkModule
 sealed class LoginResult {
     data object Success : LoginResult()
     data class Failure(val message: String) : LoginResult()
+    /** v72b -- senha certa, falta o código do app autenticador (2 etapas). */
+    data class PrecisaCodigo(val factorId: String, val accessToken: String, val refreshToken: String) : LoginResult()
 }
 
 /** Login/logout -- fala DIRETO com o Supabase Auth (REST), sem passar pelo
@@ -35,7 +41,55 @@ class AuthRepository(private val context: Context) {
                 val msg = body?.errorDescription ?: body?.msg ?: "E-mail ou senha invalidos."
                 return LoginResult.Failure(msg)
             }
-            tokenStore.save(body.accessToken, body.refreshToken, email)
+            // v72b -- quem ativou 2 etapas digita o código antes de entrar.
+            fatorPendente(body.accessToken)?.let { return LoginResult.PrecisaCodigo(it, body.accessToken, body.refreshToken) }
+            concluirLogin(email, password, body.accessToken, body.refreshToken)
+        } catch (e: Exception) {
+            falhaLogin(email, password, e)
+        }
+    }
+
+    /** v72b -- confere o código do app autenticador e termina o login. */
+    suspend fun verificarCodigo(email: String, password: String, pendente: LoginResult.PrecisaCodigo, codigo: String): LoginResult {
+        return try {
+            val auth = NetworkModule.supabaseAuthApi
+            val bearer = "Bearer ${pendente.accessToken}"
+            val ch = auth.mfaChallenge(BuildConfig.SUPABASE_ANON_KEY, bearer, pendente.factorId)
+            val challengeId = ch.body()?.get("id")?.jsonPrimitive?.contentOrNull
+                ?: return LoginResult.Failure("Não foi possível pedir o código. Tente de novo.")
+            val v = auth.mfaVerify(BuildConfig.SUPABASE_ANON_KEY, bearer, pendente.factorId, mapOf("challenge_id" to challengeId, "code" to codigo.trim()))
+            val b = v.body()
+            if (!v.isSuccessful || b?.accessToken == null || b.refreshToken == null) return LoginResult.Failure("Código inválido ou vencido.")
+            concluirLogin(email, password, b.accessToken, b.refreshToken)
+        } catch (e: Exception) {
+            falhaLogin(email, password, e)
+        }
+    }
+
+    /** Fator TOTP verificado e sessão ainda em aal1 = precisa do código. */
+    private suspend fun fatorPendente(accessToken: String): String? = try {
+        val aal = runCatching {
+            val payload = accessToken.split(".")[1]
+            val json = String(android.util.Base64.decode(payload, android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP))
+            kotlinx.serialization.json.Json.parseToJsonElement(json).jsonObject["aal"]?.jsonPrimitive?.contentOrNull
+        }.getOrNull()
+        if (aal == "aal2") null else {
+            val r = NetworkModule.supabaseAuthApi.user(BuildConfig.SUPABASE_ANON_KEY, "Bearer $accessToken")
+            r.body()?.get("factors")?.jsonArray?.firstOrNull {
+                val o = it.jsonObject
+                o["factor_type"]?.jsonPrimitive?.contentOrNull == "totp" && o["status"]?.jsonPrimitive?.contentOrNull == "verified"
+            }?.jsonObject?.get("id")?.jsonPrimitive?.contentOrNull
+        }
+    } catch (e: Exception) {
+        null
+    }
+
+    private suspend fun concluirLogin(email: String, password: String, accessToken: String, refreshToken: String): LoginResult {
+        return try {
+            tokenStore.save(accessToken, refreshToken, email)
+            // v72b -- próximo aviso de uso registra este aparelho de novo.
+            com.bragro.mobile.ui.seguranca.SegurancaPrefs.setAposLogin(context, true)
+            com.bragro.mobile.ui.seguranca.SegurancaPrefs.setUltimoHeartbeat(context, 0L)
 
             // Task #124 (isolamento de cache por organizacao) -- assim que o
             // bootstrap souber o orgId recem-autenticado (mas ANTES dele
@@ -49,7 +103,7 @@ class AuthRepository(private val context: Context) {
             // organizacao nova. Organizacao IGUAL (ou nenhuma anterior
             // conhecida, ou seja, primeiro login neste aparelho) = nao faz
             // nada, preserva a fila exatamente como hoje.
-            val bootstrapOk = configRepository.bootstrapAndCacheConfig(body.accessToken, body.refreshToken) { newOrgId ->
+            val bootstrapOk = configRepository.bootstrapAndCacheConfig(accessToken, refreshToken) { newOrgId ->
                 val lastOrgId = tokenStore.getLastOrgId()
                 if (lastOrgId != null && lastOrgId != newOrgId) {
                     db.recordDao().clearAll()
@@ -74,6 +128,11 @@ class AuthRepository(private val context: Context) {
             db.sessionDao().get()?.let { vault.save(email, password, it) }
             LoginResult.Success
         } catch (e: Exception) {
+            falhaLogin(email, password, e)
+        }
+    }
+
+    private suspend fun falhaLogin(email: String, password: String, e: Exception): LoginResult {
             AppLog.e("AuthRepository", "Falha ao fazer login/bootstrap para email=$email", e)
             // Antes reportava "sem conexão" pra QUALQUER excecao (senha
             // errada tratada em outro lugar, mas timeout/erro de servidor/
@@ -90,8 +149,7 @@ class AuthRepository(private val context: Context) {
             } else {
                 "Sem conexão com o servidor. Verifique sua internet e tente novamente."
             }
-            LoginResult.Failure(msg)
-        }
+            return LoginResult.Failure(msg)
     }
 
     /** Login SEM internet: confere e-mail+senha contra o cofre (guardado no

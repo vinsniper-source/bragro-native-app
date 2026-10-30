@@ -1,5 +1,12 @@
 package com.bragro.mobile.ui.settings
 
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.Switch
 import androidx.compose.material.icons.outlined.Settings
 import android.app.Application
 import androidx.compose.foundation.clickable
@@ -211,6 +218,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = viewModel(
             // (src/app/(app)/configuracoes/configuracoes-client.tsx),
             // replicados aqui de verdade (não é redirecionamento), mesmo
             // padrão das outras seções desta tela.
+            item(key = "seguranca-app") { SegurancaAppCard() }
             item(key = "app-android") { AppMobileAndroidCard(data?.get("appRelease")?.jsonObject) }
             item(key = "app-ios") { AppMobileIosCard() }
             item(key = "org") { OrgCard(org, saving) { name, tolerancia, onDone -> viewModel.saveOrg(name, tolerancia, onDone) } }
@@ -466,6 +474,57 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
 // permite instalar um .apk (isso é coisa de Android); a única forma sem
 // custo e sem Mac/conta de desenvolvedor Apple é o PWA via Safari
 // ("Adicionar à Tela de Início"). Mesmo texto/passo a passo do site.
+/** v72b -- segurança do app neste celular (cada usuário escolhe). */
+@Composable
+private fun SegurancaAppCard() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val S = com.bragro.mobile.ui.seguranca.SegurancaPrefs
+    val protegido = remember { com.bragro.mobile.ui.seguranca.AppLock.aparelhoProtegido(context) }
+    var bloqueio by remember { mutableStateOf(S.bloqueioAtivo(context)) }
+    var minutos by remember { mutableStateOf(S.minutos(context)) }
+    var prints by remember { mutableStateOf(S.esconderPrints(context)) }
+    var menu by remember { mutableStateOf(false) }
+    CollapsibleCard("Segurança do app", icon = { Icon(Icons.Outlined.Lock, contentDescription = null) }) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.weight(1f)) {
+                Text("Digital ou rosto ao abrir", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    if (protegido) "Também aceita a senha do celular." else "Cadastre uma senha ou digital no celular para usar.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Switch(checked = bloqueio && protegido, enabled = protegido, onCheckedChange = { bloqueio = it; S.setBloqueioAtivo(context, it) })
+        }
+        if (bloqueio && protegido) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                Text("Pedir de novo após", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                Box {
+                    TextButton(onClick = { menu = true }) { Text("$minutos min", fontWeight = FontWeight.Bold) }
+                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                        listOf(1, 5, 15, 30, 60).forEach { m ->
+                            DropdownMenuItem(text = { Text("$m min") }, onClick = { minutos = m; S.setMinutos(context, m); menu = false })
+                        }
+                    }
+                }
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            Column(Modifier.weight(1f)) {
+                Text("Esconder Financeiro e Pix em prints", style = MaterialTheme.typography.bodyMedium)
+                Text("A tela fica preta em prints e na lista de apps abertos.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Switch(checked = prints, onCheckedChange = { prints = it; S.setEsconderPrints(context, it) })
+        }
+        Text(
+            "A sessão fica criptografada neste celular e nada do app vai para backup. Aparelhos conectados, 2 etapas e seus dados ficam no site, em Meus dados e aparelhos.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+    }
+}
+
 @Composable
 private fun AppMobileIosCard() {
     CollapsibleCard("Aplicativo mobile (iPhone/iPad)", icon = { Icon(Icons.Outlined.Smartphone, contentDescription = null) }) {

@@ -122,6 +122,7 @@ private val MOTIVOS = mapOf(
 @Composable
 fun PixCobrancaDialog(cobrancaId: String, onDismiss: () -> Unit) {
     val context = LocalContext.current
+    com.bragro.mobile.ui.seguranca.ProtegerDePrints()
     var carregando by remember(cobrancaId) { mutableStateOf(true) }
     var pix by remember(cobrancaId) { mutableStateOf<PixDados?>(null) }
     var qr by remember(cobrancaId) { mutableStateOf<Bitmap?>(null) }

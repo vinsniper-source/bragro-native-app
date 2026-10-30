@@ -163,6 +163,8 @@ fun FinanceiroScreen(
     viewModel: DomainListViewModel = viewModel(),
     filtersViewModel: FinanceiroFiltersViewModel = viewModel(),
 ) {
+    // v72b -- opção "Esconder Financeiro e Pix em prints".
+    com.bragro.mobile.ui.seguranca.ProtegerDePrints()
     LaunchedEffect(Unit) {
         viewModel.load("financeiro")
         filtersViewModel.load()

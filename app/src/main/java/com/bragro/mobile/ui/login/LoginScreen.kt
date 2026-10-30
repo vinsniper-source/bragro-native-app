@@ -54,6 +54,27 @@ class LoginViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var errorMessage = mutableStateOf<String?>(null)
         private set
+    // v72b -- 2 etapas: senha conferida, falta o código do autenticador.
+    var pendente = mutableStateOf<LoginResult.PrecisaCodigo?>(null)
+        private set
+
+    fun verificarCodigo(email: String, password: String, codigo: String, onSuccess: () -> Unit) {
+        val p = pendente.value ?: return
+        if (codigo.length != 6) {
+            errorMessage.value = "Digite os 6 números do app autenticador."
+            return
+        }
+        loading.value = true
+        errorMessage.value = null
+        viewModelScope.launch {
+            when (val r = authRepository.verificarCodigo(email.trim(), password, p, codigo)) {
+                is LoginResult.Success -> { pendente.value = null; onSuccess() }
+                is LoginResult.Failure -> errorMessage.value = r.message
+                is LoginResult.PrecisaCodigo -> Unit
+            }
+            loading.value = false
+        }
+    }
 
     fun login(email: String, password: String, onSuccess: () -> Unit) {
         if (email.isBlank() || password.isBlank()) {
@@ -66,6 +87,7 @@ class LoginViewModel(app: Application) : AndroidViewModel(app) {
             when (val result = authRepository.login(email.trim(), password)) {
                 is LoginResult.Success -> onSuccess()
                 is LoginResult.Failure -> errorMessage.value = result.message
+                is LoginResult.PrecisaCodigo -> pendente.value = result
             }
             loading.value = false
         }
@@ -181,6 +203,22 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
             colors = appFieldColors(),
         )
 
+        // v72b -- verificação em 2 etapas.
+        val pendente by viewModel.pendente
+        var codigo2 by remember { mutableStateOf("") }
+        if (pendente != null) {
+            androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 12.dp))
+            OutlinedTextField(
+                value = codigo2,
+                onValueChange = { codigo2 = it.filter(Char::isDigit).take(6) },
+                label = { Text("Código do app autenticador") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = appFieldColors(),
+            )
+        }
+
         if (error != null) {
             androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 8.dp))
             Text(error!!, color = androidx.compose.material3.MaterialTheme.colorScheme.error)
@@ -188,7 +226,10 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
 
         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 20.dp))
         Button(
-            onClick = { viewModel.login(email, password, onLoggedIn) },
+            onClick = {
+                if (viewModel.pendente.value != null) viewModel.verificarCodigo(email, password, codigo2, onLoggedIn)
+                else viewModel.login(email, password, onLoggedIn)
+            },
             enabled = !loading,
             modifier = Modifier.fillMaxWidth(),
         ) {

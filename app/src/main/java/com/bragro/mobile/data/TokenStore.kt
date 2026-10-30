@@ -27,25 +27,26 @@ class TokenStore(private val context: Context) {
     // depois de um logout/login normal na MESMA conta.
     private val keyLastOrgId = stringPreferencesKey("last_org_id")
 
-    val accessTokenFlow: Flow<String?> = context.dataStore.data.map { it[keyAccess] }
+    val accessTokenFlow: Flow<String?> = context.dataStore.data.map { CofreChaves.decifrar(it[keyAccess]) }
     val emailFlow: Flow<String?> = context.dataStore.data.map { it[keyEmail] }
 
     suspend fun save(accessToken: String, refreshToken: String, email: String) {
         context.dataStore.edit {
-            it[keyAccess] = accessToken
-            it[keyRefresh] = refreshToken
+            // v72b -- sessão criptografada com chave do Android Keystore.
+            it[keyAccess] = CofreChaves.cifrar(accessToken)
+            it[keyRefresh] = CofreChaves.cifrar(refreshToken)
             it[keyEmail] = email
         }
     }
 
     suspend fun updateAccessToken(accessToken: String) {
-        context.dataStore.edit { it[keyAccess] = accessToken }
+        context.dataStore.edit { it[keyAccess] = CofreChaves.cifrar(accessToken) }
     }
 
     suspend fun current(): Pair<String, String>? {
         val prefs = context.dataStore.data.first()
-        val access = prefs[keyAccess] ?: return null
-        val refresh = prefs[keyRefresh] ?: return null
+        val access = CofreChaves.decifrar(prefs[keyAccess]) ?: return null
+        val refresh = CofreChaves.decifrar(prefs[keyRefresh]) ?: return null
         return access to refresh
     }
 

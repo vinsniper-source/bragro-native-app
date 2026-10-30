@@ -7,11 +7,21 @@
      ha motivo pra guardar credencial de sessao fora do aparelho onde ela
      foi criada. O cache offline dos lancamentos (Room) e as configuracoes
      do app continuam sendo salvos normalmente. -->
+<!-- v72b: nada do app vai para backup nem para outro aparelho (sessão,
+     registros offline e configurações ficam só neste celular). -->
 <data-extraction-rules>
     <cloud-backup>
-        <exclude domain="file" path="datastore/bragro_tokens.preferences_pb" />
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
     </cloud-backup>
     <device-transfer>
-        <exclude domain="file" path="datastore/bragro_tokens.preferences_pb" />
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
     </device-transfer>
 </data-extraction-rules>
