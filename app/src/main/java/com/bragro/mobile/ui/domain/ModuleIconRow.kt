@@ -333,7 +333,9 @@ fun EqualWidthBlockRow(modifier: Modifier = Modifier, drawBackground: Boolean = 
     // sem fundo, borda nem divisórias -- só centralizados em células iguais.
     val solto = LocalAcoesEncaixadas.current
     val blockBg = MaterialTheme.colorScheme.surface
-    val dividerColor = darkerBorderColor(blockBg)
+    // v69 -- no tema escuro escurecer um fundo quase preto deixava a linha
+    // invisível: clareia em vez de escurecer quando o fundo é escuro.
+    val dividerColor = if (blockBg.luminance() < 0.5f) androidx.compose.ui.graphics.lerp(blockBg, Color.White, 0.28f) else darkerBorderColor(blockBg)
     // Contagem de células só é conhecida durante a medição (measurables.size
     // abaixo) -- guardada aqui pra o drawBehind (fase de desenho, que roda
     // DEPOIS da medição desse mesmo nó, no mesmo frame) saber onde

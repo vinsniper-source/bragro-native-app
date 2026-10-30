@@ -1790,7 +1790,7 @@ data class OperacoesResponse(
 // e especifico de organizacao) -- unica das rotas /api/mobile/* sem
 // accessToken/refreshToken no corpo.
 @Serializable
-data class WeatherForecastDay(val date: String, val maxC: Double, val minC: Double, val icon: String, val precipMm: Double)
+data class WeatherForecastDay(val date: String, val maxC: Double, val minC: Double, val icon: String, val precipMm: Double, val precipProb: Double? = null)
 
 @Serializable
 data class WeatherData(
@@ -1800,7 +1800,31 @@ data class WeatherData(
     val todayMinC: Double,
     val todayPrecipMm: Double,
     val forecast: List<WeatherForecastDay> = emptyList(),
+    // v69 -- mesmas informações do bloco Clima da plataforma (weather.ts).
+    val condicao: String? = null,
+    val sensacaoC: Double? = null,
+    val todayPrecipProb: Double? = null,
+    val umidade: Double? = null,
+    val ventoKmH: Double? = null,
+    val dirVento: String? = null,
+    val rajadasKmH: Double? = null,
+    val nuvensPct: Double? = null,
+    val orvalhoC: Double? = null,
+    val pressaoHpa: Double? = null,
+    val uvMax: Double? = null,
+    val visibilidadeKm: Double? = null,
+    val et0Mm: Double? = null,
+    val insolacaoH: Double? = null,
+    val nascerSol: String? = null,
+    val porSol: String? = null,
+    val spray: SprayResumo? = null,
 )
+
+@Serializable
+data class JanelaHoras(val inicio: String, val fim: String)
+
+@Serializable
+data class SprayResumo(val favoravelAgora: Boolean = false, val motivoAgora: String? = null, val proximaJanela: JanelaHoras? = null)
 
 // usdVariacaoPct/eurVariacaoPct -- pedido do usuário ("kpi câmbio, na linha
 // dólar e na linha euro adicione ícone de variação e porcentagem"), mesmo

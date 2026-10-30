@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.home
 
+import kotlin.math.roundToInt
 import com.bragro.mobile.ui.domain.IconesVazados
 
 import android.app.Application
@@ -2593,61 +2594,117 @@ private fun MiniCardHeaderWithRefresh(
 
 @Composable
 private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
+    // v69b -- mesmas informações do bloco Clima da plataforma, compactas
+    // para a largura inteira: topo, 12 indicadores em 4 colunas (3 linhas),
+    // previsão de 6 dias e linha de pulverização + fonte.
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    val br = Locale("pt", "BR")
+    fun n(v: Double?, dec: Int = 0): String? = v?.let { String.format(br, "%.${dec}f", it) }
     Card(modifier = modifier) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MiniCardHeaderWithRefresh("Clima", Icons.Outlined.WbSunny, BrYellow, MaterialTheme.typography.titleMedium, onRefresh)
-            // Temperatura atual centralizada, máx/mín centralizado na linha
-            // debaixo -- pedido do usuário ("kpi clima colocar °C
-            // centralizado e max °C/ min ºC na linha debaixo centralizado").
-            Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    "${clima.currentIcon} ${clima.currentTempC.toInt()}°C",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    "máx ${clima.todayMaxC.toInt()}° / mín ${clima.todayMinC.toInt()}°",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(clima.currentIcon, style = MaterialTheme.typography.headlineSmall)
+                Spacer(Modifier.width(8.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("${clima.currentTempC.roundToInt()}°C", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    val sub = listOfNotNull(clima.condicao, clima.sensacaoC?.let { "sensação ${it.roundToInt()}°" }).joinToString(" · ")
+                    if (sub.isNotEmpty()) Text(sub, style = MaterialTheme.typography.labelSmall, color = muted)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("máx ${clima.todayMaxC.roundToInt()}° / mín ${clima.todayMinC.roundToInt()}°", style = MaterialTheme.typography.labelSmall, color = muted)
+                    Text(
+                        "💧 ${n(clima.todayPrecipMm, 1)} mm hoje" + (clima.todayPrecipProb?.let { " · ${it.roundToInt()}%" } ?: ""),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = muted,
+                    )
+                }
             }
-            // Previsão da semana -- pedido do usuário ("coloque o kpi clima
-            // da semana"): o backend já mandava clima.forecast (mesmo dado
-            // que o site usa em dashboard/page.tsx, "weather.forecast.slice
-            // (0, 5)"), só não era desenhado aqui no app. Faixa compacta
-            // (dia da semana + ícone + máx/mín), mesmo padrão visual do
-            // site, encaixada abaixo do "agora" e acima do rodapé de fonte.
-            if (clima.forecast.isNotEmpty()) {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    clima.forecast.take(5).forEach { d ->
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            val dia = runCatching {
-                                val parsed = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(d.date)
-                                SimpleDateFormat("EEE", Locale("pt", "BR")).format(parsed!!).replace(".", "")
-                            }.getOrDefault("—")
-                            Text(dia, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(d.icon, style = MaterialTheme.typography.bodyMedium)
+            val uv = clima.uvMax?.let { u ->
+                "${u.roundToInt()} " + when { u < 3 -> "baixo"; u < 6 -> "mod."; u < 8 -> "alto"; u < 11 -> "m. alto"; else -> "extr." }
+            }
+            val itens = listOf(
+                "Umid." to n(clima.umidade)?.let { "$it%" },
+                "Vento" to clima.ventoKmH?.let { "${it.roundToInt()}" + (clima.dirVento?.let { d -> " $d" } ?: "") },
+                "Rajada" to n(clima.rajadasKmH),
+                "Nuvens" to n(clima.nuvensPct)?.let { "$it%" },
+                "Orvalho" to n(clima.orvalhoC)?.let { "$it°" },
+                "Pressão" to n(clima.pressaoHpa),
+                "UV" to uv,
+                "Visib." to n(clima.visibilidadeKm)?.let { "$it km" },
+                "ET0" to n(clima.et0Mm, 1)?.let { "$it mm" },
+                "Sol" to n(clima.insolacaoH, 1)?.let { "$it h" },
+                "Nascer" to clima.nascerSol,
+                "Pôr" to clima.porSol,
+            )
+            if (itens.any { it.second != null }) {
+                HorizontalDivider()
+                itens.chunked(4).forEach { linha ->
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        linha.forEach { (rot, valor) ->
                             Text(
-                                "${d.maxC.toInt()}°/${d.minC.toInt()}°",
+                                androidx.compose.ui.text.buildAnnotatedString {
+                                    pushStyle(androidx.compose.ui.text.SpanStyle(color = muted))
+                                    append("$rot ")
+                                    pop()
+                                    pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.SemiBold))
+                                    append(valor ?: "—")
+                                    pop()
+                                },
                                 style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
+                                modifier = Modifier.weight(1f),
                             )
                         }
                     }
                 }
             }
-            // Periodicidade + fonte -- pedido do usuário ("coloque a
-            // periodicidade que é atualizado e a fonte"). Valor real do
-            // backend (getWeather em weather.ts): revalidate 1800s = 30
-            // min, Open-Meteo.
+            if (clima.forecast.isNotEmpty()) {
+                HorizontalDivider()
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    clima.forecast.take(6).forEach { d ->
+                        Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                            val dia = runCatching {
+                                val parsed = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(d.date)
+                                SimpleDateFormat("EEE", br).format(parsed!!).replace(".", "")
+                            }.getOrDefault("—")
+                            Text("$dia ${d.icon}", style = MaterialTheme.typography.labelSmall, color = muted, maxLines = 1, softWrap = false)
+                            Text("${d.maxC.roundToInt()}°/${d.minC.roundToInt()}°", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium, maxLines = 1, softWrap = false)
+                            Text(
+                                "💧${d.precipMm.roundToInt()}" + (d.precipProb?.let { " · ${it.roundToInt()}%" } ?: ""),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = muted,
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                        }
+                    }
+                }
+            }
+            HorizontalDivider()
             Text(
-                "Atualizado a cada 30 min · Fonte: Open-Meteo",
+                androidx.compose.ui.text.buildAnnotatedString {
+                    clima.spray?.let { sp ->
+                        append("Pulverização ")
+                        if (sp.favoravelAgora) {
+                            pushStyle(androidx.compose.ui.text.SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)); append("favorável"); pop()
+                        } else {
+                            pushStyle(androidx.compose.ui.text.SpanStyle(color = com.bragro.mobile.ui.domain.corAtencao(), fontWeight = FontWeight.Bold)); append("desfavorável"); pop()
+                            sp.proximaJanela?.let { j ->
+                                append(" · janela ")
+                                pushStyle(androidx.compose.ui.text.SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold))
+                                append("${j.inicio.take(2)}–${j.fim.take(2)}h"); pop()
+                            }
+                        }
+                        append(" · ")
+                    }
+                    pushStyle(androidx.compose.ui.text.SpanStyle(color = muted)); append("Open-Meteo, 30 min"); pop()
+                },
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
         }
     }
