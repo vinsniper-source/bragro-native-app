@@ -296,7 +296,7 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
         if (finishedId == -1L || finishedId != downloadId) return
         downloading = false
         downloadId = null
-        android.widget.Toast.makeText(context, "Download concluído -- abrindo instalador...", android.widget.Toast.LENGTH_SHORT).show()
+        android.widget.Toast.makeText(context, "Download concluído. Abrindo instalador...", android.widget.Toast.LENGTH_SHORT).show()
         com.bragro.mobile.ui.util.openApkInstaller(context, downloadManager, finishedId)
     }
     androidx.compose.runtime.DisposableEffect(Unit) {
@@ -348,7 +348,7 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
                             android.app.DownloadManager.STATUS_FAILED -> {
                                 downloading = false
                                 downloadId = null
-                                android.widget.Toast.makeText(context, "Falha no download -- toque em Baixar pra tentar de novo.", android.widget.Toast.LENGTH_LONG).show()
+                                android.widget.Toast.makeText(context, "Falha no download. Toque em Baixar para tentar de novo.", android.widget.Toast.LENGTH_LONG).show()
                                 return@LaunchedEffect
                             }
                         }
@@ -391,7 +391,7 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
         )
         if (!versaoServidor.isNullOrBlank() && versaoServidor != instalada) {
             Text(
-                "Desatualizado -- a versão mais recente publicada é $versaoServidor. Baixe e instale abaixo, e desinstale o app antigo antes.",
+                "Desatualizado. A versão mais recente publicada é $versaoServidor. Baixe e instale abaixo, e desinstale o app antigo antes.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(top = 2.dp),
@@ -431,7 +431,7 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
                         Text(notas, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 2.dp))
                     }
                     Text(
-                        if (downloading) "Baixando... você recebe uma notificação quando terminar." else "Toque em Baixar (fora da Play Store, pode pedir pra permitir \"fontes desconhecidas\").",
+                        if (downloading) "Baixando... você recebe uma notificação quando terminar." else "Toque em Baixar (fora da Play Store, pode pedir para permitir \"fontes desconhecidas\").",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 4.dp),
@@ -475,10 +475,10 @@ private fun AppMobileIosCard() {
         )
         Column(modifier = Modifier.padding(top = 8.dp)) {
             listOf(
-                "Abra o sistema no Safari (precisa ser o Safari -- outros navegadores no iPhone não mostram essa opção).",
+                "Abra o sistema no Safari (precisa ser o Safari. Outros navegadores no iPhone não mostram essa opção).",
                 "Toque no ícone de Compartilhar, na barra inferior.",
                 "Role a lista e toque em \"Adicionar à Tela de Início\".",
-                "Toque em Adicionar -- o ícone aparece na tela como um app, com uso offline.",
+                "Toque em Adicionar. O ícone aparece na tela como um app, com uso offline.",
             ).forEachIndexed { i, step ->
                 Row(modifier = Modifier.padding(top = if (i == 0) 0.dp else 6.dp)) {
                     Text("${i + 1}.", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.padding(end = 6.dp))
@@ -536,14 +536,14 @@ private fun AssinaturaCard(org: JsonObject?, stripeAtivo: Boolean, onCheckout: (
                 androidx.compose.material3.Button(onClick = onPortal, modifier = Modifier.padding(top = 8.dp)) { Text("Gerenciar assinatura") }
             }
             Text(
-                "Abre a página segura do Stripe pra pagamento -- é a única etapa deste app que sai pro navegador (exigência do próprio Stripe).",
+                "Abre a página de pagamento no navegador.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 8.dp),
             )
         } else {
             Text(
-                "Cobrança automática via Stripe ainda não configurada nesta instalação. Faturas continuam sendo lançadas manualmente pelo suporte.",
+                "Cobrança automática ainda não ativada. As faturas são lançadas pelo suporte.",
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 8.dp),
             )
@@ -577,7 +577,7 @@ private fun NotificacoesCard(
 
     CollapsibleCard("Notificações automáticas") {
         Text(
-            "Avisos automáticos de revisão de frota, fechamento diário de Romaneios e estoque mínimo. O sino do app sempre recebe; Telegram/WhatsApp são opcionais.",
+            "Revisão de frota, romaneios do dia e estoque mínimo. Telegram e WhatsApp são opcionais.",
             style = MaterialTheme.typography.bodySmall,
         )
 

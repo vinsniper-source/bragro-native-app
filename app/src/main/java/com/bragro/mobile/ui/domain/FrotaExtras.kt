@@ -55,7 +55,7 @@ class ModuleActionButtonViewModel(app: Application) : AndroidViewModel(app) {
             val result = repo.run(action)
             running.value = false
             AcaoEmAndamento.ativo.value = false
-            resultMessage.value = if (result != null) successMessage else "Sem conexão -- não foi possível executar agora."
+            resultMessage.value = if (result != null) successMessage else "Sem conexão. Não foi possível executar agora."
         }
     }
 }
@@ -90,7 +90,7 @@ fun RecalcularAreaButton(domainId: String, viewModel: ModuleActionButtonViewMode
                 }
             }
             Text(
-                "Reprocessa a Área (ha) de todo o histórico a partir do cadastro atual de Fazendas -- útil depois de corrigir uma fazenda cadastrada após o registro.",
+                "Recalcula a área do histórico com o cadastro atual das fazendas.",
                 style = MaterialTheme.typography.bodySmall,
             )
             if (message != null) Text(message!!, style = MaterialTheme.typography.bodySmall)
@@ -173,7 +173,7 @@ fun FleetEfficiencyCard(viewModel: FleetEfficiencyViewModel = viewModel()) {
             Text("Eficiência de Frota (L/h)", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
             when {
                 !loaded -> Text("Carregando...", style = MaterialTheme.typography.bodySmall)
-                data == null -> Text("Sem conexão -- não foi possível carregar.", style = MaterialTheme.typography.bodySmall)
+                data == null -> Text("Sem conexão. Não foi possível carregar.", style = MaterialTheme.typography.bodySmall)
                 else -> {
                     val maquinas = data!!["maquinas"]?.jsonArray.orEmpty().mapNotNull { it as? JsonObject }
                     val mediaGeral = data!!["mediaGeral"]?.jsonPrimitive?.doubleOrNull ?: 0.0

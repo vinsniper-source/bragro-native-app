@@ -202,7 +202,7 @@ class LivroCaixaViewModel(app: Application) : AndroidViewModel(app) {
     fun exportarLcdpr(context: android.content.Context, onError: (String) -> Unit) {
         val data = resultado.value
         if (data == null || data.lancamentos.isEmpty()) {
-            onError("Sem registros no período pra exportar.")
+            onError("Sem registros no período para exportar.")
             return
         }
         viewModelScope.launch {
@@ -485,7 +485,7 @@ private fun ProdutorRuralCard(
             com.bragro.mobile.ui.domain.TituloRecolhivel("Produtor Rural / IRPF", aberto) { aberto = !aberto }
             if (aberto) {
             Text(
-                "Dados usados na apuração do Livro Caixa da Atividade Rural (LCDPR) -- confira com seu contador antes de declarar.",
+                "Dados usados na apuração do Livro Caixa da Atividade Rural (LCDPR). Confira com seu contador antes de declarar.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -507,7 +507,7 @@ private fun ProdutorRuralCard(
                 }
             }
             Text(
-                "Só metadado p/ controle de vencimento -- o arquivo .pfx/.p12 nunca é enviado aqui.",
+                "Só controla o vencimento. O certificado não é enviado.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

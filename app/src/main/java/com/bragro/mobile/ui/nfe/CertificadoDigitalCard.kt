@@ -59,7 +59,7 @@ fun CertificadoDigitalCard(modifier: Modifier = Modifier) {
                 validade = isoDateToBr(cfg.certificadoDigitalValidade.orEmpty())
                 carregado = true
             } else {
-                mensagem = "Não foi possível carregar o certificado -- verifique a conexão."
+                mensagem = "Não foi possível carregar o certificado. Verifique a conexão."
             }
         }
     }
@@ -105,7 +105,7 @@ fun CertificadoDigitalCard(modifier: Modifier = Modifier) {
                     colors = appFieldColors(),
                 )
                 Text(
-                    "Só metadado p/ controle de vencimento -- o arquivo .pfx/.p12 nunca é enviado aqui.",
+                    "Só controla o vencimento. O certificado não é enviado.",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -129,7 +129,7 @@ fun CertificadoDigitalCard(modifier: Modifier = Modifier) {
                                 validade = isoDateToBr(saved.certificadoDigitalValidade.orEmpty())
                                 mensagem = "Certificado salvo."
                             } else {
-                                mensagem = "Não foi possível salvar -- confira a data (DD/MM/AAAA) e a conexão."
+                                mensagem = "Não foi possível salvar. Confira a data (DD/MM/AAAA) e a conexão."
                             }
                         }
                     },

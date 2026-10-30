@@ -44,8 +44,8 @@ object NetworkStatus {
      * confundindo quem via a mensagem com wifi/dados ligados. */
     fun failureMessage(context: Context): String =
         if (isOnline(context)) {
-            "Não foi possível conectar ao servidor -- mostrando o último resultado salvo neste aparelho. Tente novamente em alguns instantes."
+            "Não foi possível conectar ao servidor. Mostrando o último resultado salvo neste aparelho. Tente novamente em alguns instantes."
         } else {
-            "Sem conexão -- mostrando o último resultado salvo neste aparelho."
+            "Sem conexão. Mostrando o último resultado salvo neste aparelho."
         }
 }

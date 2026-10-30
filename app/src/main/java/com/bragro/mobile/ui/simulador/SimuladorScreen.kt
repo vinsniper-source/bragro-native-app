@@ -89,7 +89,7 @@ class SimuladorViewModel(app: Application) : AndroidViewModel(app) {
             val resultado = repository.fetchBase()
             carregando.value = false
             if (resultado == null) {
-                erro.value = "Sem conexão -- não foi possível carregar a base do simulador agora."
+                erro.value = "Sem conexão. Não foi possível carregar a base do simulador agora."
                 return@launch
             }
             base.value = resultado
@@ -201,7 +201,7 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
         ) {
             item {
                 Text(
-                    "Varie preço, produtividade e câmbio e veja o resultado projetado na hora -- nada aqui é salvo, é só uma calculadora em cima dos dados reais da sua operação.",
+                    "Simule preço, produtividade e câmbio. Nada é salvo.",
                     style = MaterialTheme.typography.labelSmall,
                 )
             }
@@ -265,7 +265,7 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
                             )
                         }
                         Text(
-                            "Fatia do seu custo em insumo importado/indexado ao dólar (fertilizante, defensivo). Estimativa sua -- ajuste conforme sua realidade.",
+                            "Fatia do seu custo em insumo importado/indexado ao dólar (fertilizante, defensivo). Estimativa sua. Ajuste conforme sua realidade.",
                             style = MaterialTheme.typography.labelSmall,
                         )
                     }

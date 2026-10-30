@@ -72,13 +72,13 @@ fun OcrFotoButton(
             val bytes = withContext(Dispatchers.IO) { comprimirFotoOcr(context, uri) }
             if (bytes == null) {
                 busy = false
-                mensagem = "Não foi possível processar a foto -- tente novamente ou preencha manualmente."
+                mensagem = "Não foi possível processar a foto. Tente novamente ou preencha manualmente."
                 return@launch
             }
             val url = OrcamentoUploadRepository(context).uploadFoto(bytes, "ocr")
             if (url == null) {
                 busy = false
-                mensagem = "Sem conexão -- não foi possível enviar a foto agora. Preencha manualmente."
+                mensagem = "Sem conexão. Não foi possível enviar a foto agora. Preencha manualmente."
                 return@launch
             }
             mensagem = try {
@@ -100,7 +100,7 @@ fun OcrFotoButton(
     fun launchCamera() {
         if (!temAppDeCameraDisponivel(context)) {
             avisarSemAppDeCamera(context)
-            mensagem = "Não foi possível abrir a câmera neste aparelho -- preencha manualmente."
+            mensagem = "Não foi possível abrir a câmera neste aparelho. Preencha manualmente."
             return
         }
         try {
@@ -111,7 +111,7 @@ fun OcrFotoButton(
             takePicture.launch(uri)
         } catch (e: Exception) {
             AppLog.e("OcrFotoButton", "Falha ao abrir a câmera", e)
-            mensagem = "Não foi possível abrir a câmera neste aparelho -- preencha manualmente."
+            mensagem = "Não foi possível abrir a câmera neste aparelho. Preencha manualmente."
         }
     }
 
@@ -125,7 +125,7 @@ fun OcrFotoButton(
             val activity = context as? android.app.Activity
             permanentementeNegada = activity != null &&
                 !ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.CAMERA)
-            mensagem = "Permissão da câmera negada -- preencha manualmente."
+            mensagem = "Permissão da câmera negada. Preencha manualmente."
         }
     }
 
@@ -156,7 +156,7 @@ fun OcrFotoButton(
         }
         if (permanentementeNegada) {
             Text(
-                "Permissão da câmera bloqueada pelo sistema -- toque abaixo pra liberar.",
+                "Permissão da câmera bloqueada pelo sistema. Toque abaixo para liberar.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.error,
             )

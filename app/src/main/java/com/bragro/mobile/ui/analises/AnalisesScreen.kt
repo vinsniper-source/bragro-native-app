@@ -708,7 +708,7 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                                 HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                                 MiniChart(
                                     "Margem por tonelada",
-                                    "Custo/ton x Receita/ton, por Safra/Cultura -- mesma conta de Margem por saca, em toneladas.",
+                                    "Custo/ton x Receita/ton, por Safra/Cultura. Mesma conta de Margem por saca, em toneladas.",
                                     margemPorTon, "label",
                                     listOf(
                                         serieDe(margemPorTon, "Custo/ton", "custoPorTon", defaultSeriesColor(2)),

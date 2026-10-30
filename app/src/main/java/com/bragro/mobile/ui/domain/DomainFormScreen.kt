@@ -332,7 +332,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             fields[k] = if (col.type == "date") isoDateToBr(isoDateOnly(v)) else v
             if (k in missingFields.value) missingFields.value = missingFields.value - k
         }
-        return r.mensagem ?: "${campos.size} campo(s) lido(s) -- confira antes de salvar."
+        return r.mensagem ?: "${campos.size} campo(s) lido(s). Confira antes de salvar."
     }
 
     /** v57 -- pede ao servidor o resultado dos campos automáticos com o que
@@ -586,7 +586,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             val extrasValidos = if (recordId == null && multi != null) itensExtras.filter { x -> !x[multi.chaveItem].isNullOrBlank() }.map { it.toMap() } else emptyList()
             if (extrasValidos.isNotEmpty() && multi?.chave != null && snapshot[multi.chave].isNullOrBlank()) {
                 saving.value = false
-                errorMessage.value = "Informe o número do pedido -- ele une todos os itens."
+                errorMessage.value = "Informe o número do pedido. Ele une todos os itens."
                 return@launch
             }
             var result = if (recordId == null) recordRepository.createRecord(domainId, snapshot) else recordRepository.updateRecord(domainId, recordId, snapshot)
@@ -609,7 +609,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             when (result) {
                 is SaveResult.SavedOnline -> onDone()
                 is SaveResult.SavedOffline -> {
-                    offlineNotice.value = "Sem conexão -- salvo no aparelho, sincroniza sozinho quando a internet voltar."
+                    offlineNotice.value = "Salvo no aparelho. Envia quando a internet voltar."
                     onDone()
                 }
                 is SaveResult.Failure -> errorMessage.value = result.message

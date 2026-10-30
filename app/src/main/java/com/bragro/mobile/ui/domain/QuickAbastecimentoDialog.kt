@@ -150,13 +150,13 @@ class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
                 val barcodes = scanner.process(image).await()
                 val texto = barcodes.firstOrNull { it.valueType == Barcode.TYPE_TEXT || it.rawValue != null }?.rawValue
                 if (texto == null) {
-                    qrMensagem.value = "Nenhum QR Code encontrado na foto -- tente novamente com mais luz e foco."
+                    qrMensagem.value = "Nenhum QR Code encontrado na foto. Tente novamente com mais luz e foco."
                     return@launch
                 }
                 aplicarTextoQrLido(texto)
             } catch (e: Exception) {
                 AppLog.e("QuickAbastecimentoDialog", "Falha ao ler QR Code do abastecimento", e)
-                qrMensagem.value = "Falha ao ler o QR Code -- tente novamente ou escolha manualmente."
+                qrMensagem.value = "Falha ao ler o QR Code. Tente novamente ou escolha manualmente."
             } finally {
                 lendoQr.value = false
             }
@@ -171,7 +171,7 @@ class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
      * [onQrPhotoTaken], só pulando a etapa de decodificar bitmap. */
     fun onQrTextoLidoExterno(texto: String?) {
         if (texto.isNullOrBlank()) {
-            qrMensagem.value = "Nenhum QR Code lido -- tente novamente ou escolha manualmente."
+            qrMensagem.value = "Nenhum QR Code lido. Tente novamente ou escolha manualmente."
             return
         }
         lendoQr.value = true
@@ -209,7 +209,7 @@ class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
     // simplesmente não tinha acesso, sem explicação nem alternativa.
     fun onQrPhotoCancelled() {
         lendoQr.value = false
-        qrMensagem.value = "Nenhuma foto do QR Code capturada -- tente novamente ou escolha a máquina manualmente."
+        qrMensagem.value = "Nenhuma foto do QR Code capturada. Tente novamente ou escolha a máquina manualmente."
     }
 
     fun submit(onDone: (SaveResult) -> Unit) {
@@ -343,7 +343,7 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
             onCancelado = { viewModel.onQrPhotoCancelled() },
             onFalha = { e ->
                 AppLog.e("QuickAbastecimentoDialog", "Falha ao abrir o leitor de QR nativo do aparelho", e)
-                android.widget.Toast.makeText(context, "Não foi possível abrir o leitor de QR do aparelho -- use o botão de foto.", android.widget.Toast.LENGTH_LONG).show()
+                android.widget.Toast.makeText(context, "Não foi possível abrir o leitor de QR do aparelho. Use o botão de foto.", android.widget.Toast.LENGTH_LONG).show()
             },
         )
     }
@@ -354,14 +354,14 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                    Text("Só o essencial -- data, unidade e operação já ficam prontos automaticamente.", modifier = Modifier.weight(1f))
+                    Text("Só o essencial. Data, unidade e operação já ficam prontos automaticamente.", modifier = Modifier.weight(1f))
                     // "Copiar último abastecimento" virou ícone -- pedido do
                     // usuário ("dentro dos registros rápidos converta
                     // apenas a um ícone copiar"), mesmo padrão do ícone de
                     // copiar em Novo Registro (DomainFormScreen.kt).
                     androidx.compose.material3.IconButton(onClick = {
                         viewModel.copyFromLastAbastecimento { found ->
-                            copyMessage = if (found) "Campos preenchidos com o último abastecimento -- confira antes de lançar." else "Nenhum abastecimento lançado ainda para copiar."
+                            copyMessage = if (found) "Preenchido com o último abastecimento. Confira." else "Nenhum abastecimento lançado ainda para copiar."
                         }
                     }) {
                         androidx.compose.material3.Icon(
@@ -401,14 +401,14 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
                     }
                 }
                 Text(
-                    "Câmera lê por foto -- leitor do aparelho usa o app de QR nativo (melhor em celulares mais antigos).",
+                    "Câmera lê por foto. Leitor do aparelho usa o app de QR nativo (melhor em celulares mais antigos).",
                     style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
                     color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (qrMensagem != null) Text(qrMensagem ?: "", style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
                 if (cameraPermanentementeNegada) {
                     Text(
-                        "Permissão da câmera bloqueada pelo sistema -- toque abaixo pra liberar.",
+                        "Permissão da câmera bloqueada pelo sistema. Toque abaixo para liberar.",
                         style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
                         color = androidx.compose.material3.MaterialTheme.colorScheme.error,
                     )

@@ -202,13 +202,13 @@ class OrcamentoViewModel(app: Application) : AndroidViewModel(app) {
             val bytes = compressPhoto(context, uri)
             if (bytes == null) {
                 uploadingRequisicao.value = false
-                ocrMensagemRequisicao.value = "Não foi possível processar a foto -- tente novamente."
+                ocrMensagemRequisicao.value = "Não foi possível processar a foto. Tente novamente."
                 return@launch
             }
             val url = uploadRepository.uploadFoto(bytes, "requisicao")
             if (url == null) {
                 uploadingRequisicao.value = false
-                ocrMensagemRequisicao.value = "Sem conexão -- não foi possível enviar a foto agora."
+                ocrMensagemRequisicao.value = "Sem conexão. Não foi possível enviar a foto agora."
                 return@launch
             }
             fotoRequisicaoUrl.value = url
@@ -217,9 +217,9 @@ class OrcamentoViewModel(app: Application) : AndroidViewModel(app) {
             if (resultado?.ok == true && resultado.campos != null) {
                 resultado.campos.requisicao?.let { if (it.isNotBlank()) requisicao = it }
                 resultado.campos.autorizadoPorNomeLido?.let { if (it.isNotBlank()) autorizadoPorNome = it }
-                ocrMensagemRequisicao.value = "Campos pré-preenchidos automaticamente -- confira antes de lançar."
+                ocrMensagemRequisicao.value = "Campos pré-preenchidos automaticamente. Confira antes de lançar."
             } else {
-                ocrMensagemRequisicao.value = "Foto enviada, mas não foi possível ler automaticamente -- preencha manualmente."
+                ocrMensagemRequisicao.value = "Foto enviada, mas não foi possível ler automaticamente. Preencha manualmente."
             }
         }
     }
@@ -232,13 +232,13 @@ class OrcamentoViewModel(app: Application) : AndroidViewModel(app) {
             val bytes = compressPhoto(context, uri)
             if (bytes == null) {
                 uploadingComprovante.value = false
-                ocrMensagemItens.value = "Não foi possível processar a foto -- tente novamente."
+                ocrMensagemItens.value = "Não foi possível processar a foto. Tente novamente."
                 return@launch
             }
             val url = uploadRepository.uploadFoto(bytes, "comprovante")
             if (url == null) {
                 uploadingComprovante.value = false
-                ocrMensagemItens.value = "Sem conexão -- não foi possível enviar a foto agora."
+                ocrMensagemItens.value = "Sem conexão. Não foi possível enviar a foto agora."
                 return@launch
             }
             fotoComprovanteUrl.value = url
@@ -256,9 +256,9 @@ class OrcamentoViewModel(app: Application) : AndroidViewModel(app) {
                     linha.fazendaId = lido.fazendaIdSugerido ?: encontrarFazendaPorNome(farms.value, lido.fazendaNomeLido)
                     linhas.add(linha)
                 }
-                ocrMensagemItens.value = "${itensLidos.size} item(ns) lido(s) automaticamente -- confira antes de lançar."
+                ocrMensagemItens.value = "${itensLidos.size} item(ns) lido(s) automaticamente. Confira antes de lançar."
             } else {
-                ocrMensagemItens.value = "Foto enviada, mas não foi possível ler os itens -- preencha manualmente."
+                ocrMensagemItens.value = "Foto enviada, mas não foi possível ler os itens. Preencha manualmente."
             }
         }
     }
@@ -310,7 +310,7 @@ class OrcamentoViewModel(app: Application) : AndroidViewModel(app) {
     // o motivo nem oferecer alternativa. Agora avisa e deixa claro que dá
     // pra lançar sem foto, mesmo padrão de Romaneio/Pragas.
     fun onPhotoCancelled() {
-        ocrMensagemRequisicao.value = "Nenhuma foto capturada -- você pode lançar sem foto ou tentar de novo."
+        ocrMensagemRequisicao.value = "Nenhuma foto capturada. Você pode lançar sem foto ou tentar de novo."
     }
 
     /** "Copiar último registro" -- busca o último Orçamento lançado no
@@ -758,7 +758,7 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                     }
                     if (cameraPermanentementeNegada) {
                         Text(
-                            "Permissão da câmera bloqueada pelo sistema -- toque abaixo pra liberar em Configurações.",
+                            "Permissão da câmera bloqueada pelo sistema. Toque abaixo para liberar em Configurações.",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.error,
                         )

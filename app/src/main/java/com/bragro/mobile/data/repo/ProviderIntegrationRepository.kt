@@ -124,7 +124,7 @@ class ProviderIntegrationRepository(context: Context, private val module: Integr
 
     suspend fun sync(): IntegrationSyncResult {
         val tokens = tokenStore.current()
-            ?: return IntegrationSyncResult(false, "Sessão expirada -- faça login novamente.")
+            ?: return IntegrationSyncResult(false, "Sessão expirada. Faça login novamente.")
         var (accessToken, refreshToken) = tokens
         return try {
             var response = callSync(accessToken, refreshToken)
@@ -137,13 +137,13 @@ class ProviderIntegrationRepository(context: Context, private val module: Integr
             }
             val body = response.body()
             if (!response.isSuccessful || body == null) {
-                IntegrationSyncResult(false, "Falha ao sincronizar -- confira a conexão e tente de novo.")
+                IntegrationSyncResult(false, "Falha ao sincronizar. Confira a conexão e tente de novo.")
             } else {
                 IntegrationSyncResult(body.ok, body.mensagem ?: "Sincronização concluída.")
             }
         } catch (e: Exception) {
             AppLog.e("ProviderIntegrationRepository", "Falha ao sincronizar integração de provedor ($module)", e)
-            IntegrationSyncResult(false, "Falha ao sincronizar -- confira a conexão e tente de novo.")
+            IntegrationSyncResult(false, "Falha ao sincronizar. Confira a conexão e tente de novo.")
         }
     }
 

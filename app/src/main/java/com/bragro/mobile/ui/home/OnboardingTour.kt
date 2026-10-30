@@ -41,17 +41,17 @@ private val TOUR_STEPS = listOf(
     TourStep(
         com.bragro.mobile.ui.domain.IconesVazados.Agriculture,
         "Bem-vindo ao BRAgro",
-        "Na tela Início você vê o resumo visual das suas fazendas (Canvas) e pode filtrar por Fazenda, Safra ou Cultura a qualquer momento -- toque nos filtros logo abaixo do slogan.",
+        "O Início resume suas fazendas. Filtre por Fazenda, Safra ou Cultura no topo.",
     ),
     TourStep(
         Icons.Outlined.Groups,
         "Todos os módulos, num toque",
-        "A barra inferior leva pra Financeiro, Safra, Estoque, Frota e todos os outros módulos. O menu (ícone de grade) mostra a lista completa quando precisar de algo que não está fixo ali.",
+        "A barra inferior leva aos módulos. O menu de grade mostra todos.",
     ),
     TourStep(
         com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt,
         "Atalhos que poupam tempo",
-        "Em cada módulo, o botão \"Copiar último registro\" pré-preenche um registro novo a partir do anterior. Romaneio Rápido e Abastecimento ficam nos atalhos do topo da Início.",
+        "\"Copiar último registro\" preenche o novo a partir do anterior. Romaneio e Abastecimento ficam nos atalhos do Início.",
     ),
 )
 

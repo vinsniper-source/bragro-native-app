@@ -131,7 +131,7 @@ private fun parseIsoXmlBytes(bytes: ByteArray): List<ZonaTaxaVra> {
     if (zonas.isEmpty()) {
         throw IsoXmlSemZonasException(
             if (temGrd)
-                "Este ISO-XML usa mapa de grade/raster (<GRD>), que ainda não é suportado -- só arquivos com zonas de tratamento por polígono (<TZN>)."
+                "Este ISO-XML usa mapa de grade/raster (<GRD>), que ainda não é suportado. Só arquivos com zonas de tratamento por polígono (<TZN>)."
             else
                 "Nenhuma zona de tratamento (<TZN>) encontrada neste arquivo."
         )

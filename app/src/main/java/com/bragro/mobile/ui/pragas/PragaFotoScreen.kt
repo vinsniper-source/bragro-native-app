@@ -188,11 +188,11 @@ class PragaFotoViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun onPhotoCancelled() {
-        mensagemFoto.value = "Nenhuma foto capturada -- tire a foto pra rodar o diagnóstico automático, ou lance manualmente escolhendo o Alvo."
+        mensagemFoto.value = "Nenhuma foto capturada. Tire a foto para rodar o diagnóstico automático, ou lance manualmente escolhendo o Alvo."
     }
 
     fun onCameraLaunchFailed() {
-        mensagemFoto.value = "Não foi possível abrir a câmera neste aparelho -- lance manualmente escolhendo o Alvo."
+        mensagemFoto.value = "Não foi possível abrir a câmera neste aparelho. Lance manualmente escolhendo o Alvo."
     }
 
     /** Mesma sequência de RomaneioQuickViewModel.onPhotoTaken: comprime,
@@ -209,13 +209,13 @@ class PragaFotoViewModel(app: Application) : AndroidViewModel(app) {
             val bytes = compressPhoto(context, uri)
             if (bytes == null) {
                 enviandoFoto.value = false
-                mensagemFoto.value = "Não foi possível processar a foto -- tente novamente ou lance manualmente."
+                mensagemFoto.value = "Não foi possível processar a foto. Tente novamente ou lance manualmente."
                 return@launch
             }
             val url = uploadRepository.uploadFoto(bytes)
             if (url == null) {
                 enviandoFoto.value = false
-                mensagemFoto.value = "Sem conexão -- não foi possível enviar a foto agora. Lance manualmente escolhendo o Alvo."
+                mensagemFoto.value = "Sem conexão. Não foi possível enviar a foto agora. Lance manualmente escolhendo o Alvo."
                 return@launch
             }
             fotoUrl.value = url
@@ -223,7 +223,7 @@ class PragaFotoViewModel(app: Application) : AndroidViewModel(app) {
             val resultado = iaRepository.diagnosticar(url)
             enviandoFoto.value = false
             if (resultado == null) {
-                mensagemFoto.value = "Foto enviada, mas sem conexão para rodar o diagnóstico -- confira antes de enviar de novo, ou escolha o Alvo manualmente."
+                mensagemFoto.value = "Foto enviada, mas sem conexão para rodar o diagnóstico. Confira antes de enviar de novo, ou escolha o Alvo manualmente."
                 return@launch
             }
             diagnosticoStatus.value = resultado.status
@@ -305,7 +305,7 @@ class PragaFotoViewModel(app: Application) : AndroidViewModel(app) {
                     savedOk.value = true
                 }
                 is SaveResult.SavedOffline -> {
-                    resultMessage.value = "Sem conexão — registro salvo neste aparelho. Sincroniza sozinho quando a internet voltar."
+                    resultMessage.value = "Salvo no aparelho. Envia quando a internet voltar."
                     savedOk.value = true
                 }
                 is SaveResult.Failure -> {
@@ -497,7 +497,7 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
         ) {
             item {
                 Text(
-                    "Tire uma foto da planta/folha/inseto -- a IA sugere o que pode ser, mas quem decide o Alvo (praga/doença) real é você.",
+                    "Fotografe. A IA sugere, você confirma o Alvo.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -517,7 +517,7 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
                     }
                     if (cameraPermanentementeNegada) {
                         Text(
-                            "Permissão da câmera bloqueada pelo sistema -- toque abaixo pra liberar.",
+                            "Permissão da câmera bloqueada pelo sistema. Toque abaixo para liberar.",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.error,
                         )
@@ -540,7 +540,7 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
                             Text("Diagnóstico da IA", style = MaterialTheme.typography.labelLarge)
                             Text(diagnosticoTexto ?: "", style = MaterialTheme.typography.bodySmall)
                             Text(
-                                "Só uma triagem -- confira antes de confiar. Escolha o Alvo abaixo.",
+                                "Só uma triagem. Confira antes de confiar. Escolha o Alvo abaixo.",
                                 style = MaterialTheme.typography.labelSmall,
                             )
                         }

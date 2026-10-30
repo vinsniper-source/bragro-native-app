@@ -292,7 +292,7 @@ class PedidoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
                 return@launch
             }
             successMessage.value = if (resultado.savedOffline) {
-                "Sem internet: pedido ${noPedido.trim()} salvo no aparelho (${validas.size} item(ns)). Será lançado sozinho quando a conexão voltar."
+                "Pedido ${noPedido.trim()} salvo no aparelho (${validas.size} item(ns)). Envia quando a internet voltar."
             } else {
                 "${resultado.count ?: validas.size} item(ns) lançado(s) no pedido ${noPedido.trim()}."
             }

@@ -292,7 +292,7 @@ fun CsvImportScreen(onBack: () -> Unit, viewModel: CsvImportViewModel = viewMode
         ) {
             item {
                 Text(
-                    "Importe registros de uma planilha exportada de outra plataforma. Valores de listas suspensas e fazendas já cadastrados são reaproveitados; o que não existir é criado em CAIXA ALTA.",
+                    "Importe a planilha de outro sistema. O que faltar nas listas é cadastrado.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }

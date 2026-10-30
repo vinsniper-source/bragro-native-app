@@ -95,7 +95,7 @@ class ReconciliacaoEstoqueViewModel(app: Application) : AndroidViewModel(app) {
             carregando.value = false
             offline.value = resultado == null
             if (resultado == null) {
-                erro.value = "Sem conexão -- não foi possível carregar a reconciliação agora."
+                erro.value = "Sem conexão. Não foi possível carregar a reconciliação agora."
                 return@launch
             }
             itens.value = resultado.itens
@@ -267,7 +267,7 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
             if (listaAberta && visiveis.isEmpty()) {
                 item {
                     Text(
-                        if (soDivergencia) "Nenhuma divergência encontrada -- todo o estoque com nota fiscal bate com o físico."
+                        if (soDivergencia) "Nenhuma divergência encontrada. Todo o estoque com nota fiscal bate com o físico."
                         else "Nenhum item com movimento registrado ainda.",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(12.dp),

@@ -171,7 +171,7 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
             val url = uploadRepo.uploadFoto(bytes)
             if (url == null) {
                 uploadingFoto.value = false
-                errorMessage.value = "Sem conexão -- não foi possível enviar a foto agora."
+                errorMessage.value = "Sem conexão. Não foi possível enviar a foto agora."
                 return@launch
             }
             addLookup(category, value, fotoUrl = url) { ok ->
@@ -456,7 +456,7 @@ fun BaseDeDadosScreen(
                 title = { Text("Importar dados padrão?") },
                 text = {
                     Column {
-                        Text("Isso vai trazer $missingCount item(ns) padrão que ainda não existem nesta organização. Valores que você já excluiu de propósito não são repostos.")
+                        Text("Adiciona $missingCount item(ns) padrão. Os que você excluiu não voltam.")
                         if (missingSummary.isNotBlank()) {
                             Text(missingSummary, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
                         }
@@ -479,7 +479,7 @@ fun BaseDeDadosScreen(
                 title = { Text("Recusar estes $missingCount item(ns) padrão?") },
                 text = {
                     Column {
-                        Text("O aviso de importação para de aparecer para estes itens específicos. Nada é apagado do que já existe — e você pode trazer qualquer um deles de volta depois, cadastrando manualmente.")
+                        Text("Esses itens deixam de ser sugeridos. Nada é apagado.")
                         if (missingSummary.isNotBlank()) {
                             Text(missingSummary, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
                         }

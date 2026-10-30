@@ -415,7 +415,7 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                             )
                         }
                         Text(
-                            "Mostra a oferta diária de água (lâmina aplicada pelo pivô + chuva do pluviômetro; nos dias sem pluviômetro, entra a chuva lançada no módulo Clima da fazenda do pivô). Não calcula a necessidade hídrica da cultura (evapotranspiração) -- esse cruzamento depende de um coeficiente de cultura que este módulo ainda não modela.",
+                            "Água por dia: lâmina do pivô + chuva. Não calcula a necessidade da cultura.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -829,7 +829,7 @@ private fun ControleDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    "Sem comando real pro equipamento -- não há parceria com nenhum fabricante ainda. O que você escolher aqui fica registrado como o estado desejado do pivô.",
+                    "Só registra o estado desejado. Ainda não liga o pivô de verdade.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

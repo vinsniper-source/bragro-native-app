@@ -192,7 +192,7 @@ class PrescricaoNovoViewModel(app: Application) : AndroidViewModel(app) {
 
     fun salvar() {
         if (nome.isBlank()) {
-            errorMessage.value = "Informe um nome pra prescrição."
+            errorMessage.value = "Informe um nome para prescrição."
             return
         }
         if (zonas.value.isEmpty()) {

@@ -134,7 +134,7 @@ fun ModuleChartsCard(domainId: String, viewModel: ModuleChartsViewModel = viewMo
                     if (domainId == "frota") FleetEfficiencyCard()
                     when {
                         loading && !loaded -> Text("Carregando gráficos...", style = MaterialTheme.typography.bodySmall)
-                        data == null -> Text("Sem conexão -- não foi possível carregar os gráficos.", style = MaterialTheme.typography.bodySmall)
+                        data == null -> Text("Sem conexão. Não foi possível carregar os gráficos.", style = MaterialTheme.typography.bodySmall)
                         else -> {
                             if (generic == null && extras.isEmpty() && domainId != "frota") {
                                 Text("Nenhum gráfico disponível para este módulo ainda.", style = MaterialTheme.typography.bodySmall)

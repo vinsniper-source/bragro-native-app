@@ -798,7 +798,7 @@ fun HomeScreen(
                                         onClick = {
                                             configMenuOpen = false
                                             com.bragro.mobile.ui.util.enqueueApkDownload(logoScreenContext, apkUrl, apkVersao ?: "?")
-                                            android.widget.Toast.makeText(logoScreenContext, "Download iniciado -- você recebe uma notificação quando terminar.", android.widget.Toast.LENGTH_SHORT).show()
+                                            android.widget.Toast.makeText(logoScreenContext, "Download iniciado. Você recebe uma notificação quando terminar.", android.widget.Toast.LENGTH_SHORT).show()
                                         },
                                     )
                                 } else {
@@ -1607,7 +1607,7 @@ private fun PendingSyncDialog(items: List<PendingSyncEntity>, onDismiss: () -> U
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     Text(
-                        "Esses registros foram salvos neste aparelho, mas ainda não foram confirmados pelo servidor -- geralmente por falta de conexão, mas também pode ser sessão expirada ou algum erro no envio (ver abaixo).",
+                        "Salvos no aparelho, ainda não enviados. O motivo aparece em cada um.",
                         style = MaterialTheme.typography.bodySmall,
                     )
                     items.forEach { item ->

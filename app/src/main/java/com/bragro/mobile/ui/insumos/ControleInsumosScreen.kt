@@ -558,7 +558,7 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
             title = { Text("Controle interno (EPI, uniforme, ferramenta)") },
             text = {
                 Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
-                    Text("Consumo por categoria -- não é alocado a uma fazenda/talhão.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Consumo por categoria. Não é alocado a uma fazenda/talhão.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(6.dp))
                     data!!.arvoreControleInterno.forEach { ramo -> RamoNode(ramo, 0) }
                 }

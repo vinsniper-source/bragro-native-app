@@ -799,7 +799,7 @@ fun NuvemButton() {
         icon = if (online) androidx.compose.material.icons.Icons.Outlined.Cloud else androidx.compose.material.icons.Icons.Outlined.CloudOff,
         label = "Nuvem",
         onClick = {
-            val msg = if (!com.bragro.mobile.data.NetworkStatus.isOnline(context)) com.bragro.mobile.data.NetworkStatus.failureMessage(context) else "Conectado -- dados sincronizados com o servidor."
+            val msg = if (!com.bragro.mobile.data.NetworkStatus.isOnline(context)) com.bragro.mobile.data.NetworkStatus.failureMessage(context) else "Conectado. Dados sincronizados com o servidor."
             android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
         },
     )

@@ -142,7 +142,7 @@ class DroneViewModel(app: Application) : AndroidViewModel(app) {
         integrationMessage.value = null
         viewModelScope.launch {
             val ok = integrationRepository.save(provedor, apiKey)
-            integrationMessage.value = if (ok) "Credencial salva." else "Falha ao salvar credencial -- confira a conexão e tente de novo."
+            integrationMessage.value = if (ok) "Credencial salva." else "Falha ao salvar credencial. Confira a conexão e tente de novo."
             if (ok) integration.value = integrationRepository.get()
             integrationBusy.value = null
         }
@@ -157,7 +157,7 @@ class DroneViewModel(app: Application) : AndroidViewModel(app) {
                 integration.value = integrationRepository.get()
                 integrationMessage.value = "Integração desconectada."
             } else {
-                integrationMessage.value = "Falha ao desconectar -- confira a conexão e tente de novo."
+                integrationMessage.value = "Falha ao desconectar. Confira a conexão e tente de novo."
             }
             integrationBusy.value = null
         }
@@ -182,7 +182,7 @@ class DroneViewModel(app: Application) : AndroidViewModel(app) {
     ) {
         val iso = brDateToIsoOrNull(dataBr)
         if (iso == null) {
-            errorMessage.value = "Data inválida -- use DD/MM/AAAA."
+            errorMessage.value = "Data inválida. Use DD/MM/AAAA."
             onDone(false)
             return
         }
@@ -192,7 +192,7 @@ class DroneViewModel(app: Application) : AndroidViewModel(app) {
             val uploaded = uploadRepository.upload(fileBytes, fileName, mimeType, talhao)
             if (uploaded == null) {
                 saving.value = false
-                errorMessage.value = "Falha ao subir o arquivo -- confira a conexão e tente de novo."
+                errorMessage.value = "Falha ao subir o arquivo. Confira a conexão e tente de novo."
                 onDone(false)
                 return@launch
             }
@@ -286,7 +286,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
         ) {
             item {
                 Text(
-                    "Registro de voos e capturas (foto, NDVI, ortomosaico, vídeo). Arquivos ficam no Supabase Storage (até 50MB).",
+                    "Voos e capturas (foto, NDVI, ortomosaico, vídeo). Arquivos até 50 MB.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -392,7 +392,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                 Column(modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
                     ProviderIntegrationCard(
                         providers = listOf("DJI Cloud", "DJI Terra", "Outro", "Pix4Dfields", "XAG One"),
-                        descricao = "Hoje os voos são registrados manualmente com upload de arquivo. Credencial salva com segurança abaixo.",
+                        descricao = "Lançamento manual por enquanto. A conexão automática depende de parceria com o fabricante.",
                         integration = integration,
                         busy = integrationBusy,
                         syncMessage = integrationMessage,

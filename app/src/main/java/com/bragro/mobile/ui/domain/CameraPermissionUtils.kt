@@ -75,7 +75,7 @@ fun temAppDeCameraDisponivel(context: Context): Boolean {
 }
 
 fun avisarSemAppDeCamera(context: Context) {
-    Toast.makeText(context, "Nenhum app de câmera encontrado neste aparelho -- verifique se há um app de câmera instalado e habilitado.", Toast.LENGTH_LONG).show()
+    Toast.makeText(context, "Nenhum app de câmera encontrado neste aparelho. Verifique se há um app de câmera instalado e habilitado.", Toast.LENGTH_LONG).show()
 }
 
 /** "Colocar a condição de acessar o QR nativo do celular, pq existem

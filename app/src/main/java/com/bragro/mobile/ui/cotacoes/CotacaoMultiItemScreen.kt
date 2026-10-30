@@ -261,7 +261,7 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         v("condicaoPagamento")?.let { p.condicaoPagamento = it }
         v("validadeProposta")?.let { p.validadeProposta = com.bragro.mobile.ui.domain.isoDateToBr(com.bragro.mobile.ui.domain.isoDateOnly(it)) }
         v("observacoes")?.let { observacoes = it }
-        return r.mensagem ?: "${c.size} campo(s) lido(s) -- confira antes de salvar."
+        return r.mensagem ?: "${c.size} campo(s) lido(s). Confira antes de salvar."
     }
 
     fun removeProposta(gi: Int, pi: Int) {
@@ -336,7 +336,7 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
                 return@launch
             }
             successMessage.value = if (offline) {
-                "Sem internet: $total proposta(s) salva(s) no aparelho. Serão lançadas sozinhas quando a conexão voltar."
+                "$total proposta(s) salva(s) no aparelho. Envia quando a internet voltar."
             } else if (validos.size > 1) {
                 "$total proposta(s) lançada(s) em ${validos.size} itens."
             } else {
@@ -692,7 +692,7 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
         ) {
             item {
                 Text(
-                    "Descreva cada item que está cotando uma vez e lance o preço de cada fornecedor que cotou ele -- dá pra comparar quantos fornecedores quiser por item, e adicionar mais de um item na mesma submissão.",
+                    "Um item por linha, um preço por fornecedor.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }

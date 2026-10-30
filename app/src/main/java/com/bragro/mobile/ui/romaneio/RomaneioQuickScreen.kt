@@ -145,14 +145,14 @@ class RomaneioQuickViewModel(app: Application) : AndroidViewModel(app) {
      * disponivel -- a foto e so opcional, entao isso nunca bloqueia o
      * lancamento, so avisa o motivo em vez de nao acontecer nada visivel. */
     fun onPhotoCancelled() {
-        ocrMensagem.value = "Nenhuma foto capturada -- você pode lançar sem foto ou tentar de novo."
+        ocrMensagem.value = "Nenhuma foto capturada. Você pode lançar sem foto ou tentar de novo."
     }
 
     /** Chamado pela tela quando launchCamera() falha ao abrir a câmera
      * (ActivityNotFoundException/SecurityException etc. -- ver comentário
      * completo em launchCamera() abaixo). */
     fun onCameraLaunchFailed() {
-        ocrMensagem.value = "Não foi possível abrir a câmera neste aparelho -- você pode lançar sem foto."
+        ocrMensagem.value = "Não foi possível abrir a câmera neste aparelho. Você pode lançar sem foto."
     }
 
     /** Chamado depois que a foto ja foi tirada e salva no Uri temporario
@@ -277,7 +277,7 @@ class RomaneioQuickViewModel(app: Application) : AndroidViewModel(app) {
                     savedOk.value = true
                 }
                 is SaveResult.SavedOffline -> {
-                    resultMessage.value = "Sem conexão — romaneio salvo neste aparelho. Sincroniza sozinho quando a internet voltar."
+                    resultMessage.value = "Salvo no aparelho. Envia quando a internet voltar."
                     savedOk.value = true
                 }
                 is SaveResult.Failure -> {
@@ -516,7 +516,7 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
                     }
                     if (cameraPermanentementeNegada) {
                         Text(
-                            "Permissão da câmera bloqueada pelo sistema -- toque abaixo pra liberar.",
+                            "Permissão da câmera bloqueada pelo sistema. Toque abaixo para liberar.",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.error,
                         )

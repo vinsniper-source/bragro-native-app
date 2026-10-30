@@ -230,7 +230,7 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
 
         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 4.dp))
         Text(
-            "Precisa de internet na primeira vez. Depois de logar, o app continua funcionando sem conexao.",
+            "Precisa de internet só no primeiro acesso.",
             style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),

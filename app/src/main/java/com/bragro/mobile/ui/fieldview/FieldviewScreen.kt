@@ -171,7 +171,7 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
         integrationMessage.value = null
         viewModelScope.launch {
             val ok = integrationRepository.save(provedor, apiKey)
-            integrationMessage.value = if (ok) "Credencial salva." else "Falha ao salvar credencial -- confira a conexão e tente de novo."
+            integrationMessage.value = if (ok) "Credencial salva." else "Falha ao salvar credencial. Confira a conexão e tente de novo."
             if (ok) integration.value = integrationRepository.get()
             integrationBusy.value = null
         }
@@ -186,7 +186,7 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
                 integration.value = integrationRepository.get()
                 integrationMessage.value = "Integração desconectada."
             } else {
-                integrationMessage.value = "Falha ao desconectar -- confira a conexão e tente de novo."
+                integrationMessage.value = "Falha ao desconectar. Confira a conexão e tente de novo."
             }
             integrationBusy.value = null
         }
@@ -208,7 +208,7 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
         ndviIntegrationMessage.value = null
         viewModelScope.launch {
             val ok = ndviIntegrationRepository.save(provedor, apiKey)
-            ndviIntegrationMessage.value = if (ok) "Credencial salva." else "Falha ao salvar credencial -- confira a conexão e tente de novo."
+            ndviIntegrationMessage.value = if (ok) "Credencial salva." else "Falha ao salvar credencial. Confira a conexão e tente de novo."
             if (ok) ndviIntegration.value = ndviIntegrationRepository.get()
             ndviIntegrationBusy.value = null
         }
@@ -223,7 +223,7 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
                 ndviIntegration.value = ndviIntegrationRepository.get()
                 ndviIntegrationMessage.value = "Integração desconectada."
             } else {
-                ndviIntegrationMessage.value = "Falha ao desconectar -- confira a conexão e tente de novo."
+                ndviIntegrationMessage.value = "Falha ao desconectar. Confira a conexão e tente de novo."
             }
             ndviIntegrationBusy.value = null
         }
@@ -257,7 +257,7 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
             if (ok) {
                 data.value = repository.fetch()
             } else {
-                importError.value = "Falha ao importar o contorno -- confira a conexão e tente de novo."
+                importError.value = "Falha ao importar o contorno. Confira a conexão e tente de novo."
             }
             importing.value = false
             onDone(ok)
@@ -284,7 +284,7 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
             if (ok) {
                 data.value = repository.fetch()
             } else {
-                importError.value = "Falha ao lançar o talhão -- confira a conexão e tente de novo."
+                importError.value = "Falha ao lançar o talhão. Confira a conexão e tente de novo."
             }
             importing.value = false
             onDone(ok)
@@ -570,7 +570,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                 loading -> Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator(modifier = Modifier.padding(top = 24.dp))
                 }
-                data == null -> Text("Sem conexão -- não foi possível carregar.", modifier = Modifier.padding(16.dp))
+                data == null -> Text("Sem conexão. Não foi possível carregar.", modifier = Modifier.padding(16.dp))
                 else -> when (tab) {
                     0 -> TalhaoStatusList(data!!.talhaoStatus)
                     1 -> MaquinaStatusList(data!!.maquinaStatus)
@@ -596,7 +596,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                     if (prestadoraAberta == 1) ProviderIntegrationCard(
                         providers = listOf("Climate FieldView", "John Deere Operations Center", "Outro", "Trimble Ag Software"),
                         titulo = "Acesso automático via prestadora (talhões/KML)",
-                        descricao = "Hoje os limites de talhão são importados manualmente por KML/KMZ. Credencial salva com segurança abaixo.",
+                        descricao = "Talhões importados por KML/KMZ. A conexão automática depende de parceria com o fabricante.",
                         integration = integration,
                         busy = integrationBusy,
                         syncMessage = integrationMessage,
@@ -606,7 +606,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                     ) else ProviderIntegrationCard(
                         providers = listOf("Sentinel Hub", "Planet", "EOS Data Analytics", "Outro"),
                         titulo = "Acesso automático via satélite (NDVI)",
-                        descricao = "NDVI por talhão depende de assinatura com um provedor de imagens de satélite. Credencial salva com segurança abaixo (Sentinel Hub: CLIENT_ID|CLIENT_SECRET; Planet: chave de API).",
+                        descricao = "NDVI depende de assinatura de imagens de satélite (Sentinel Hub: CLIENT_ID|CLIENT_SECRET; Planet: chave).",
                         integration = ndviIntegration,
                         busy = ndviIntegrationBusy,
                         syncMessage = ndviIntegrationMessage,
@@ -776,7 +776,7 @@ private fun isDatePast(iso: String): Boolean {
 @Composable
 private fun BoundariesList(boundaries: List<FieldBoundaryDto>, modifier: Modifier = Modifier) {
     if (boundaries.isEmpty()) {
-        Text("Nenhum talhão com contorno importado ainda -- toque em \"Importar KML/KMZ\" acima.", modifier = modifier.padding(16.dp))
+        Text("Nenhum talhão com contorno importado ainda. Toque em \"Importar KML/KMZ\" acima.", modifier = modifier.padding(16.dp))
         return
     }
     LazyColumn(modifier = modifier, contentPadding = PaddingValues(16.dp)) {
@@ -1133,7 +1133,7 @@ private fun ImportBoundaryDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
-                    "Contorno com ${polygon.points.size} pontos -- confirme o nome do talhão (chave usada pra cruzar com Safra/Frota).",
+                    "Contorno com ${polygon.points.size} pontos. Confirme o nome do talhão (chave usada para cruzar com Safra/Frota).",
                     style = MaterialTheme.typography.bodySmall,
                 )
                 OutlinedTextField(

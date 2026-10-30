@@ -63,7 +63,7 @@ class AuthRepository(private val context: Context) {
                 tokenStore.setLastOrgId(newOrgId)
             }
             if (!bootstrapOk) {
-                return LoginResult.Failure("Login feito, mas nao foi possivel carregar os dados da organizacao. Tente novamente.")
+                return LoginResult.Failure("Não foi possível carregar a organização. Tente de novo.")
             }
             // Pre-carrega os registros de todos os modulos pro uso offline
             // (pedido do usuario: o app nao precisa ter sido aberto em cada

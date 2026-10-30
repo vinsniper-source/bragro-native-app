@@ -106,7 +106,7 @@ class DossieViewModel(app: Application) : AndroidViewModel(app) {
             val resultado = repository.fetch(ano.value)
             carregando.value = false
             if (resultado == null) {
-                erro.value = "Sem conexão -- não foi possível carregar o dossiê agora."
+                erro.value = "Sem conexão. Não foi possível carregar o dossiê agora."
                 return@launch
             }
             dados.value = resultado
@@ -339,7 +339,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
             var n = 0
             item {
                 Text(
-                    "Relatório único pra anexar num pedido de crédito rural ou apresentar a um investidor — junta DRE, Livro Caixa, Contratos ativos e Patrimônio.",
+                    "DRE, Livro Caixa, Contratos e Patrimônio num relatório para o banco.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

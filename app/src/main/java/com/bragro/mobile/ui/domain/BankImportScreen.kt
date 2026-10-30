@@ -116,14 +116,14 @@ class BankImportViewModel(app: Application) : AndroidViewModel(app) {
             val roles = guessColumnRoles(header)
             val parsed = parseBankRows(body, roles)
             if (parsed.isEmpty()) {
-                errorMessage.value = "Nenhum registro reconhecido nesse arquivo -- confira se é um extrato bancário em CSV."
+                errorMessage.value = "Nenhum registro reconhecido nesse arquivo. Confira se é um extrato bancário em CSV."
                 busy.value = false
                 return@launch
             }
 
             val signatures = repository.signatures(banco.trim())
             if (signatures == null) {
-                errorMessage.value = "Sem conexão -- não foi possível checar duplicados. Tente novamente."
+                errorMessage.value = "Sem conexão. Não foi possível checar duplicados. Tente novamente."
                 busy.value = false
                 return@launch
             }
@@ -246,7 +246,7 @@ fun BankImportScreen(onBack: () -> Unit, viewModel: BankImportViewModel = viewMo
         ) {
             item {
                 Text(
-                    "Envie um CSV exportado do internet banking. Detectamos delimitador, formato de número/data e possíveis duplicados automaticamente -- você confirma o que será lançado no Financeiro.",
+                    "Envie o CSV do banco. Você confere antes de lançar no Financeiro.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }

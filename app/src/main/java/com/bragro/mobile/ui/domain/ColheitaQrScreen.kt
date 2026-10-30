@@ -74,7 +74,7 @@ class ColheitaQrViewModel(app: Application) : AndroidViewModel(app) {
             val resultado = repository.fetch()
             carregando.value = false
             if (resultado == null) {
-                erro.value = "Sem conexão -- não foi possível carregar os lotes agora."
+                erro.value = "Sem conexão. Não foi possível carregar os lotes agora."
                 return@launch
             }
             lotes.value = resultado.lotes

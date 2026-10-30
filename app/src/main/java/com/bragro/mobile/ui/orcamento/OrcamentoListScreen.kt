@@ -140,7 +140,7 @@ class OrcamentoListViewModel(app: Application) : AndroidViewModel(app) {
             val resposta = repository.listar()
             carregando.value = false
             if (resposta == null || !resposta.ok) {
-                erro.value = resposta?.error ?: "Sem conexão -- não foi possível carregar os orçamentos agora."
+                erro.value = resposta?.error ?: "Sem conexão. Não foi possível carregar os orçamentos agora."
                 return@launch
             }
             orcamentos.value = resposta.orcamentos ?: emptyList()
@@ -599,7 +599,7 @@ val headers = listOf("Data", "Nº Orçamento", "Requisição", "Autorizado por",
                 ModuleCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth())
             }
             Text(
-                "${filtered.size} orçamento(s)${if (filtered.size != orcamentos.size) " de ${orcamentos.size}" else ""}. Pendente NF aguarda a nota mãe pra conciliação.",
+                "${filtered.size} orçamento(s)${if (filtered.size != orcamentos.size) " de ${orcamentos.size}" else ""}. Pendente NF aguarda a nota mãe para conciliação.",
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
             )

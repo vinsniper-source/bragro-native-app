@@ -117,7 +117,7 @@ class ModuleActionsRepository(context: Context) {
      *    processando -> HTTP 2xx com result.ok=false e result.mensagem
      *    explicando o motivo. */
     suspend fun emitirNfse(id: String): Pair<Boolean, String> {
-        val tokens = tokenStore.current() ?: return false to "Sem sessão -- faça login novamente."
+        val tokens = tokenStore.current() ?: return false to "Sem sessão. Faça login novamente."
         var (accessToken, refreshToken) = tokens
         fun buildRequest(token: String) = ModuleActionRequest(token, refreshToken, "emitir-nfse", id = id)
         return try {

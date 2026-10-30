@@ -105,7 +105,7 @@ class NfeViewModel(app: Application) : AndroidViewModel(app) {
             val resposta = repository.listar()
             carregando.value = false
             if (resposta == null || !resposta.ok) {
-                erro.value = resposta?.error ?: "Sem conexão -- não foi possível carregar as notas fiscais agora."
+                erro.value = resposta?.error ?: "Sem conexão. Não foi possível carregar as notas fiscais agora."
                 return@launch
             }
             invoices.value = resposta.invoices ?: emptyList()
@@ -174,7 +174,7 @@ class NfeViewModel(app: Application) : AndroidViewModel(app) {
             val resultado = repository.baixarLote(inicio, fim)
             pendingAction.value = null
             if (resultado == null || !resultado.ok || resultado.base64.isNullOrBlank()) {
-                onDone(null, resultado?.error ?: "Sem conexão -- não foi possível baixar os XMLs agora.")
+                onDone(null, resultado?.error ?: "Sem conexão. Não foi possível baixar os XMLs agora.")
                 return@launch
             }
             try {
@@ -402,7 +402,7 @@ private fun BaixarXmlLoteDialog(pending: Boolean, onDismiss: () -> Unit, onConfi
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    "Baixa um .zip com o XML de cada nota fiscal recebida e enviada (autorizada ou importada) no período. Deixe em branco pra baixar todas.",
+                    "Baixa um .zip com o XML de cada nota fiscal recebida e enviada (autorizada ou importada) no período. Deixe em branco para baixar todas.",
                     style = MaterialTheme.typography.bodySmall,
                 )
                 OutlinedTextField(value = inicio, onValueChange = { inicio = it }, label = { Text("De") }, placeholder = { Text("AAAA-MM-DD, opcional") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
@@ -636,7 +636,7 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
         AlertDialog(
             onDismissRequest = { confirmarExclusao = null },
             title = { Text("Excluir nota fiscal?") },
-            text = { Text("Nº ${paraExcluir.numero} -- os registros de Estoque/Financeiro já gerados a partir dela (se houver) não são apagados automaticamente.") },
+            text = { Text("Nº ${paraExcluir.numero}. Estoque e Financeiro gerados por ela continuam.") },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.excluir(paraExcluir.id) { erroMsg -> dialogErro = erroMsg }

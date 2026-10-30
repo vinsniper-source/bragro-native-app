@@ -363,7 +363,7 @@ fun FinanceiroItensInlineSection(
         // divida os campos"): a versão anterior já tinha sido encurtada uma
         // vez (ver comentário acima), mas ainda cabia num só sentido direto.
         Text(
-            "Só pra compras com produto/Estoque. Cada item vira entrada; o total vira Financeiro (não relance).",
+            "Só para compras com produto/Estoque. Cada item vira entrada; o total vira Financeiro (não relance).",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

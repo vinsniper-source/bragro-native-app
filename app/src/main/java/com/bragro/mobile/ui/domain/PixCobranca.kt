@@ -156,7 +156,7 @@ fun PixCobrancaDialog(cobrancaId: String, onDismiss: () -> Unit) {
                         androidx.compose.material3.Text(p.codigo.orEmpty(), fontFamily = FontFamily.Monospace, fontSize = 10.sp, modifier = Modifier.fillMaxWidth())
                     }
                     Text(
-                        "Pix estático: o dinheiro cai direto na conta, mas o sistema não fica sabendo. Quando cair, marque a cobrança como PAGO.",
+                        "O sistema não vê o pagamento. Quando cair, marque como PAGO.",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

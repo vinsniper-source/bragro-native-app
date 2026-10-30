@@ -140,7 +140,7 @@ class EstoqueFazendaViewModel(app: Application) : AndroidViewModel(app) {
                 "estoque-transferir", item = item, unidade = unidade.ifBlank { null },
                 quantidade = quantidade, fazendaOrigemId = fazendaOrigemId, fazendaDestinoId = fazendaDestinoId,
             )
-            message.value = if (result != null) "Transferência registrada." else "Não foi possível transferir -- confira os dados e a conexão."
+            message.value = if (result != null) "Transferência registrada." else "Não foi possível transferir. Confira os dados e a conexão."
             if (result != null) load()
             onDone(result != null)
         }
@@ -149,7 +149,7 @@ class EstoqueFazendaViewModel(app: Application) : AndroidViewModel(app) {
     fun devolver(transferenciaEntradaId: String, quantidade: Double, onDone: (Boolean) -> Unit) {
         viewModelScope.launch {
             val result = repo.run("estoque-devolver", quantidade = quantidade, transferenciaEntradaId = transferenciaEntradaId)
-            message.value = if (result != null) "Devolução registrada." else "Não foi possível devolver -- confira os dados e a conexão."
+            message.value = if (result != null) "Devolução registrada." else "Não foi possível devolver. Confira os dados e a conexão."
             if (result != null) load()
             onDone(result != null)
         }
@@ -164,7 +164,7 @@ class EstoqueFazendaViewModel(app: Application) : AndroidViewModel(app) {
                 "estoque-saida", item = item, unidade = unidade.ifBlank { null },
                 quantidade = quantidade, fazendaOrigemId = fazendaOrigemId, motivo = motivo.ifBlank { null },
             )
-            message.value = if (result != null) "Saída registrada." else "Não foi possível registrar a saída -- confira os dados e a conexão."
+            message.value = if (result != null) "Saída registrada." else "Não foi possível registrar a saída. Confira os dados e a conexão."
             if (result != null) load()
             onDone(result != null)
         }
@@ -180,7 +180,7 @@ class EstoqueFazendaViewModel(app: Application) : AndroidViewModel(app) {
                 "estoque-ajuste", item = item, unidade = unidade.ifBlank { null },
                 quantidade = quantidade, fazendaOrigemId = fazendaOrigemId, tipo = tipo, motivo = motivo,
             )
-            message.value = if (result != null) "Ajuste manual registrado." else "Não foi possível registrar o ajuste -- confira os dados e a conexão."
+            message.value = if (result != null) "Ajuste manual registrado." else "Não foi possível registrar o ajuste. Confira os dados e a conexão."
             if (result != null) load()
             onDone(result != null)
         }
@@ -335,7 +335,7 @@ private fun TransferirFazendaDialog(farms: List<FazendaOpt>, itens: List<LookupE
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Transferir pra fazenda") },
+        title = { Text("Transferir para fazenda") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Sai do depósito de origem e entra na fazenda de destino.", style = MaterialTheme.typography.bodySmall)
@@ -382,7 +382,7 @@ private fun SaidaFazendaDialog(farms: List<FazendaOpt>, itens: List<LookupEntity
         title = { Text("Saída de estoque") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Baixa manual do item (consumo, perda, quebra etc.) -- não é transferência pra outra fazenda.", style = MaterialTheme.typography.bodySmall)
+                Text("Baixa manual do item (consumo, perda, quebra etc.). Não é transferência para outra fazenda.", style = MaterialTheme.typography.bodySmall)
                 ItemDropdown("Item *", itens, "Selecione", item) { item = it }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(value = quantidade, onValueChange = { quantidade = it }, label = { Text("Quantidade *") }, modifier = Modifier.weight(1f), colors = appFieldColors())
@@ -391,7 +391,7 @@ private fun SaidaFazendaDialog(farms: List<FazendaOpt>, itens: List<LookupEntity
                 FazendaDropdown("Origem", farms, "Depósito Central", fazendaId) { fazendaId = it }
                 OutlinedTextField(
                     value = motivo, onValueChange = { motivo = it }, label = { Text("Motivo") },
-                    placeholder = { Text("Opcional -- ex.: consumo, perda, quebra") }, modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Opcional. Ex.: consumo, perda, quebra") }, modifier = Modifier.fillMaxWidth(),
                     colors = appFieldColors(),
                 )
             }
@@ -452,7 +452,7 @@ private fun AjusteManualFazendaDialog(farms: List<FazendaOpt>, itens: List<Looku
                 FazendaDropdown("Origem", farms, "Depósito Central", fazendaId) { fazendaId = it }
                 OutlinedTextField(
                     value = motivo, onValueChange = { motivo = it }, label = { Text("Motivo *") },
-                    placeholder = { Text("Obrigatório -- justifique o ajuste") }, modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Obrigatório. Justifique o ajuste") }, modifier = Modifier.fillMaxWidth(),
                     colors = appFieldColors(),
                 )
             }

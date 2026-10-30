@@ -131,7 +131,7 @@ class PrescricaoViewModel(app: Application) : AndroidViewModel(app) {
             val resultado = repository.exportarShp(id)
             exportandoId.value = null
             if (resultado == null || !resultado.ok || resultado.base64.isNullOrBlank()) {
-                onResult(null, resultado?.error ?: "Sem conexão -- não foi possível exportar agora.", "")
+                onResult(null, resultado?.error ?: "Sem conexão. Não foi possível exportar agora.", "")
                 return@launch
             }
             try {
@@ -151,7 +151,7 @@ class PrescricaoViewModel(app: Application) : AndroidViewModel(app) {
             val resultado = repository.exportarIsoXml(id)
             exportandoId.value = null
             if (resultado == null || !resultado.ok || resultado.xml.isNullOrBlank()) {
-                onResult(null, resultado?.error ?: "Sem conexão -- não foi possível exportar agora.", "")
+                onResult(null, resultado?.error ?: "Sem conexão. Não foi possível exportar agora.", "")
                 return@launch
             }
             onResult(resultado.xml, null, resultado.filename ?: "TASKDATA.xml")
@@ -168,7 +168,7 @@ class PrescricaoViewModel(app: Application) : AndroidViewModel(app) {
             carregando.value = false
             offline.value = resultado == null
             if (resultado == null) {
-                erro.value = "Sem conexão -- não foi possível carregar as prescrições agora."
+                erro.value = "Sem conexão. Não foi possível carregar as prescrições agora."
                 return@launch
             }
             erro.value = null
@@ -404,7 +404,7 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                 com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = prescricoes.size, aberto = lancAberto, titulo = "Prescrições") { lancAberto = !lancAberto }
             }
             if (prescricoes.isEmpty()) item {
-                Text("Nenhuma prescrição de taxa variável salva ainda -- toque em + Nova pra importar um ISO-XML, ou crie pelo site (SHP/ISO-XML).", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 16.dp))
+                Text("Nenhuma prescrição de taxa variável salva ainda. Toque em + Nova para importar um ISO-XML, ou crie pelo site (SHP/ISO-XML).", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 16.dp))
             }
             if (lancAberto) items(prescricoes) { p ->
                 PrescricaoCard(

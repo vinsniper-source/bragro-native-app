@@ -403,7 +403,7 @@ fun NfeImportScreen(onBack: () -> Unit, viewModel: NfeImportViewModel = viewMode
                     }
                     item {
                         Text(
-                            "Confirmar cria a nota, os registros de Estoque e o registro no Financeiro (com rateio) automaticamente -- confira os itens antes de continuar.",
+                            "Cria a nota, o Estoque e o Financeiro. Confira os itens.",
                             style = MaterialTheme.typography.labelSmall,
                         )
                     }
