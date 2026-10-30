@@ -1,4 +1,4 @@
-# v72b -- aviso semanal de bibliotecas com falha de segurança conhecida.
+# v72b -- só PRs de SEGURANÇA (biblioteca com falha conhecida).
 version: 2
 updates:
   - package-ecosystem: "gradle"
@@ -6,4 +6,7 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
