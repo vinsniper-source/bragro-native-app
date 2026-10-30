@@ -280,7 +280,7 @@ dependencies {
     // (com.google.mlkit.vision.text.*), nenhuma mudanca no codigo. Pedido do
     // usuario: diminuir o tamanho do APK para nao estourar a transferencia
     // do plano gratuito do Supabase (cada atualizacao baixa o APK inteiro).
-    implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.2")
     // QR Code no abastecimento (paridade com o site, quick-abastecimento-button.tsx
     // + frota-qr-codes-button.tsx, Task #602): ML Kit Barcode Scanning pra LER
     // o QR de uma foto tirada (mesmo padrao "foto, nao camera ao vivo" do OCR
