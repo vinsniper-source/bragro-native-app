@@ -45,8 +45,8 @@ android {
         // ja estava em 1.3.83, entao qualquer envio seria recusado pelo Play.
         // Salto deliberado para ficar acima de tudo que ja foi publicado.
         // v48 -- 1.3.88 (201): primeira versao publicada pelo GitHub Releases.
-        versionCode = 216
-        versionName = "1.4.3"
+        versionCode = 217
+        versionName = "1.4.4"
 
         // URLs do backend (o MESMO backend do site publicado -- ver
         // native-app/README.md). Trocaveis por variante/ambiente sem
@@ -119,7 +119,11 @@ android {
             // precisa de obfuscacao imediata, desligar minify/shrink aqui e
             // manter o build totalmente funcional e reprodutivel e a solucao mais
             // segura e menos agressiva do que forcar mais Xmx sem RAM fisica.
-            isMinifyEnabled = false
+            // v75 (1.4.4) -- R8 religado (proteção do código do app; aparece
+            // como "App com código embaralhado" no Painel do dono). Se o build
+            // faltar memória ou algo travar só no release, gere sem ele:
+            //   .\gradlew.bat assembleRelease -Pbragro.minify=false
+            isMinifyEnabled = (project.findProperty("bragro.minify") as String?)?.toBoolean() ?: true
             isShrinkResources = false
             // Pedido do usuario ("corrija a lentidao do assemble release") --
             // trocado de "proguard-android-optimize.txt" pra

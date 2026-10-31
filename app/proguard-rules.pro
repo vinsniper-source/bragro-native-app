@@ -172,3 +172,25 @@
 # Todos artefatos AndroidX modernos, cada um com seu proprio consumer-rules.pro
 # cobrindo a respectiva infraestrutura interna -- nenhuma regra manual
 # necessaria pro uso feito neste app (Composables, ViewModel, NavHost, etc.).
+
+# ---------------------------------------------------------------------------
+# v75 (1.4.4) -- R8 religado. Regras amplas para não quebrar em tempo de
+# execução: classes @Serializable de QUALQUER pacote do app (não só
+# data/model -- há modelos em data/repo e ui/domain), todos os Workers do
+# WorkManager (instanciados por reflexão), osmdroid (mapa) e ML Kit.
+# ---------------------------------------------------------------------------
+-keep,includedescriptorclasses class com.bragro.mobile.**$$serializer { *; }
+-keepclassmembers class com.bragro.mobile.** {
+    *** Companion;
+}
+-keepclasseswithmembers class com.bragro.mobile.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+-keep class * extends androidx.work.ListenableWorker {
+    <init>(android.content.Context, androidx.work.WorkerParameters);
+}
+-keep class org.osmdroid.** { *; }
+-dontwarn org.osmdroid.**
+-dontwarn com.google.mlkit.**
+-dontwarn com.google.android.gms.**
+-dontwarn org.json.**
