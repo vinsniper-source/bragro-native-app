@@ -42,6 +42,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Add
@@ -2653,46 +2654,50 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh
                     }
                 }
             }
-            // v76 -- igual à plataforma: indicadores em 4 colunas, sem linhas
-            // horizontais, divisórias verticais curtas e centralizadas; valores
-            // curtos para caber na largura do celular.
+            // v76g -- igual à plataforma: só ícones (nome ao tocar e segurar),
+            // 6 colunas alinhadas com a previsão; ícone e valor começam na mesma
+            // margem em cada coluna; divisórias verticais curtas.
             val uv = clima.uvMax?.let { u ->
                 "${u.roundToInt()} " + when { u < 3 -> "baixo"; u < 6 -> "mod."; u < 11 -> "alto"; else -> "extr." }
             }
             val itens: List<Triple<androidx.compose.ui.graphics.vector.ImageVector, String, String?>> = listOf(
-                Triple(Icons.Outlined.WaterDrop, "Umid.", n(clima.umidade)?.let { "$it%" }),
+                Triple(Icons.Outlined.WaterDrop, "Umidade", n(clima.umidade)?.let { "$it%" }),
                 Triple(Icons.Outlined.Air, "Vento", clima.ventoKmH?.let { "${it.roundToInt()}" + (clima.dirVento?.let { d -> " $d" } ?: "") }),
-                Triple(Icons.Outlined.Air, "Rajada", n(clima.rajadasKmH)),
+                Triple(Icons.Outlined.Storm, "Rajadas", n(clima.rajadasKmH)),
                 Triple(Icons.Outlined.Cloud, "Nuvens", n(clima.nuvensPct)?.let { "$it%" }),
                 Triple(Icons.Outlined.DeviceThermostat, "Orvalho", n(clima.orvalhoC)?.let { "$it°" }),
                 Triple(Icons.Outlined.Speed, "Pressão", n(clima.pressaoHpa)),
-                Triple(Icons.Outlined.WbSunny, "UV", uv),
-                Triple(Icons.Outlined.Visibility, "Visib.", n(clima.visibilidadeKm)?.let { "$it km" }),
+                Triple(Icons.Outlined.LightMode, "UV", uv),
+                Triple(Icons.Outlined.Visibility, "Visibilidade", n(clima.visibilidadeKm)?.let { "$it km" }),
                 Triple(Icons.Outlined.Eco, "ET0", n(clima.et0Mm, 1)?.let { "${it}mm" }),
-                Triple(Icons.Outlined.WbSunny, "Sol", n(clima.insolacaoH, 1)?.let { "${it}h" }),
-                Triple(Icons.Outlined.WbTwilight, "Nascer", clima.nascerSol),
-                Triple(Icons.Outlined.WbTwilight, "Pôr", clima.porSol),
+                Triple(Icons.Outlined.HourglassEmpty, "Sol (horas)", n(clima.insolacaoH, 1)?.let { "${it}h" }),
+                Triple(Icons.Outlined.WbTwilight, "Nascer do sol", clima.nascerSol),
+                Triple(Icons.Outlined.NightsStay, "Pôr do sol", clima.porSol),
             )
             if (itens.any { it.third != null }) {
                 HorizontalDivider(color = linha)
                 Column {
-                    itens.chunked(4).forEach { quatro ->
+                    itens.chunked(6).forEach { seis ->
                         Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
-                            quatro.forEachIndexed { ci, (icone, rot, valor) ->
+                            seis.forEachIndexed { ci, (icone, rot, valor) ->
                                 if (ci > 0) VerticalDivider(color = linha, modifier = Modifier.fillMaxHeight(0.5f))
-                                Row(
-                                    modifier = Modifier.weight(1f).padding(
-                                        start = if (ci == 0) 0.dp else 5.dp,
-                                        end = if (ci == 3) 0.dp else 5.dp,
-                                        top = 4.dp,
-                                        bottom = 4.dp,
-                                    ),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Icon(icone, contentDescription = null, tint = verde, modifier = Modifier.size(11.dp))
-                                    Spacer(Modifier.width(2.dp))
-                                    Text(rot, fontSize = 10.sp, color = muted, maxLines = 1, softWrap = false, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f))
-                                    Text(valor ?: "—", fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                                // Tocar e segurar mostra o nome do indicador.
+                                Box(modifier = Modifier.weight(1f)) {
+                                    @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+                                    androidx.compose.material3.TooltipBox(
+                                        positionProvider = androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                                        tooltip = { PlainTooltip { Text("$rot: ${valor ?: "—"}") } },
+                                        state = androidx.compose.material3.rememberTooltipState(),
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().padding(start = if (ci == 0) 0.dp else 4.dp, top = 4.dp, bottom = 4.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            Icon(icone, contentDescription = rot, tint = verde, modifier = Modifier.size(12.dp))
+                                            Spacer(Modifier.width(2.dp))
+                                            Text(valor ?: "—", fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false, overflow = TextOverflow.Clip)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -2700,37 +2705,30 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh
                 }
             }
             if (clima.forecast.isNotEmpty()) {
-                // v76 -- os 6 dias numa linha só: nuvem à esquerda e 2 linhas ao
-                // lado (dia + temperatura; chuva + chance).
+                // v76g -- 6 dias nas mesmas colunas: nuvem + dia, temperatura,
+                // chuva e chance, tudo alinhado à esquerda.
                 HorizontalDivider(color = linha)
                 Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
                     clima.forecast.take(6).forEachIndexed { i, d ->
                         if (i > 0) VerticalDivider(color = linha, modifier = Modifier.fillMaxHeight(0.6f))
-                        Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f).padding(start = if (i == 0) 0.dp else 4.dp)) {
                             val dia = runCatching {
                                 val parsed = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(d.date)
                                 SimpleDateFormat("EEE", br).format(parsed!!).replace(".", "").replaceFirstChar { it.uppercase() }
                             }.getOrDefault("—")
-                            Icon(iconeClima(d.icon), contentDescription = null, tint = verde, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(2.dp))
-                            Column {
-                                Text(
-                                    androidx.compose.ui.text.buildAnnotatedString {
-                                        pushStyle(androidx.compose.ui.text.SpanStyle(color = muted)); append("$dia "); pop()
-                                        pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold)); append("${d.maxC.roundToInt()}/${d.minC.roundToInt()}°"); pop()
-                                    },
-                                    fontSize = 9.5.sp,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                )
-                                Text(
-                                    "${d.precipMm.roundToInt()}mm" + (d.precipProb?.let { " ${it.roundToInt()}%" } ?: ""),
-                                    fontSize = 9.sp,
-                                    color = muted,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(iconeClima(d.icon), contentDescription = null, tint = verde, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(2.dp))
+                                Text(dia, fontSize = 10.sp, color = muted, maxLines = 1, softWrap = false)
                             }
+                            Text("${d.maxC.roundToInt()}/${d.minC.roundToInt()}°", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                            Text(
+                                "${d.precipMm.roundToInt()}mm" + (d.precipProb?.let { " ${it.roundToInt()}%" } ?: ""),
+                                fontSize = 9.5.sp,
+                                color = muted,
+                                maxLines = 1,
+                                softWrap = false,
+                            )
                         }
                     }
                 }
