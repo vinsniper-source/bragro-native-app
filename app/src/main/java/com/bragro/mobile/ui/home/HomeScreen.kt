@@ -2972,8 +2972,9 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: 
             // backend (getFxRates em quotes.ts): revalidate 900s = 15 min,
             // AwesomeAPI (com fallback pra exchangerate-api.com só se a
             // AwesomeAPI falhar).
+            // v83 -- desde a v80 o dólar e o euro vêm da PTAX do Banco Central.
             Text(
-                "Atualizado a cada 15 min · Fonte: AwesomeAPI",
+                "Cotação oficial · Fonte: Banco Central (PTAX)",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -3146,7 +3147,7 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             // Renomeado -- pedido do usuário ("altere o kpi cotações
             // agrícolas para cotações grãos").
-            MiniCardHeaderWithRefresh("Cotações Grãos", IconesVazados.Agriculture, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
+            MiniCardHeaderWithRefresh("Cotações Grãos", IconesVazados.Trigo, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
             val itens = listOfNotNull(com.soja, com.milho, com.sorgo)
             // Quantidade (unidade "sc" = saca) + variação/porcentagem do dia
             // ao lado do preço -- pedido do usuário ("insira a quantidade de

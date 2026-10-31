@@ -84,6 +84,21 @@ object IconesVazados {
     private const val CIRCULO = "M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20z"
     private const val QUADRO = "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"
 
+    // v83 -- trigo (Cotações Grãos), igual ao ícone da plataforma.
+    val Trigo: ImageVector by lazy {
+        iconeTraco(
+            "Trigo",
+            "M2 22 16 8",
+            "M3.5 12.5 5 11l1.5 1.5a3.5 3.5 0 0 1 0 5L5 19l-1.5-1.5a3.5 3.5 0 0 1 0-5z",
+            "M7.5 8.5 9 7l1.5 1.5a3.5 3.5 0 0 1 0 5L9 15l-1.5-1.5a3.5 3.5 0 0 1 0-5z",
+            "M11.5 4.5 13 3l1.5 1.5a3.5 3.5 0 0 1 0 5L13 11l-1.5-1.5a3.5 3.5 0 0 1 0-5z",
+            "M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4z",
+            "M11.47 17.47 13 19l-1.5 1.5a3.5 3.5 0 0 1-5 0L5 19l1.5-1.5a3.5 3.5 0 0 1 5 0z",
+            "M15.47 13.47 17 15l-1.5 1.5a3.5 3.5 0 0 1-5 0L9 15l1.5-1.5a3.5 3.5 0 0 1 5 0z",
+            "M19.47 9.47 21 11l-1.5 1.5a3.5 3.5 0 0 1-5 0L13 11l1.5-1.5a3.5 3.5 0 0 1 5 0z",
+        )
+    }
+
     val Print: ImageVector by lazy {
         iconeTraco(
             "Print",

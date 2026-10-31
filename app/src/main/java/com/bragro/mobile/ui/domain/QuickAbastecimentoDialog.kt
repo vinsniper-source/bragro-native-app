@@ -215,6 +215,12 @@ class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
     // a permissão CAMERA era negada (ou a câmera falhava ao abrir), essa
     // função só zerava o spinner sem dizer nada -- parecia que o app
     // simplesmente não tinha acesso, sem explicação nem alternativa.
+    /** v83 -- sem permissão de câmera não dá para ler o QR. */
+    fun onPermissaoCameraNegada() {
+        lendoQr.value = false
+        qrMensagem.value = "Permita o acesso à câmera para ler o QR Code, ou escolha a máquina na lista."
+    }
+
     fun onQrPhotoCancelled() {
         lendoQr.value = false
         qrMensagem.value = "Nenhuma foto do QR Code capturada. Tente novamente ou escolha a máquina manualmente."
@@ -344,7 +350,7 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
             val activity = context as? android.app.Activity
             cameraPermanentementeNegada = activity != null &&
                 !androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.CAMERA)
-            viewModel.onQrPhotoCancelled()
+            viewModel.onPermissaoCameraNegada()
         }
     }
     fun launchQrExterno() {
@@ -359,6 +365,7 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
     }
     if (mostrarLeitorAoVivo) {
         LeitorQrCameraDialog(
+            onLerDeFoto = { mostrarLeitorAoVivo = false; launchQrCamera() },
             identificar = { texto -> viewModel.identificarFrotaQr(texto) },
             onConfirmado = { frota ->
                 viewModel.aplicarFrotaQr(frota)
@@ -397,29 +404,23 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
                     androidx.compose.foundation.layout.Box(modifier = Modifier.weight(1f)) {
                         LookupDropdown("Máquina/Frota *", frotas, viewModel.frota) { viewModel.frota = it }
                     }
-                    androidx.compose.material3.IconButton(onClick = { launchQrCameraComPermissao() }, enabled = !lendoQr) {
+                    // v83 (mockup v83 aprovado) -- um botão só: o leitor ao vivo
+                    // do BRAgro (LeitorQrCamera.kt), verde como os outros ícones.
+                    // A leitura por foto virou reserva dentro do próprio leitor.
+                    androidx.compose.material3.IconButton(onClick = { launchQrExterno() }, enabled = !lendoQr) {
                         if (lendoQr) {
                             CircularProgressIndicator(modifier = Modifier)
                         } else {
                             androidx.compose.material3.Icon(
-                                Icons.Outlined.QrCodeScanner,
-                                contentDescription = "Ler QR Code da máquina (foto)",
+                                Icons.Outlined.CenterFocusWeak,
+                                contentDescription = "Ler QR Code da máquina",
                                 tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                             )
                         }
                     }
-                    // 2º botão -- leitor de QR ao vivo (próprio do BRAgro,
-                    // LeitorQrCamera.kt), alternativa ao botão de foto acima.
-                    androidx.compose.material3.IconButton(onClick = { launchQrExterno() }, enabled = !lendoQr) {
-                        androidx.compose.material3.Icon(
-                            Icons.Outlined.CenterFocusWeak,
-                            contentDescription = "Ler QR Code com a câmera ao vivo",
-                            tint = androidx.compose.material3.MaterialTheme.colorScheme.secondary,
-                        )
-                    }
                 }
                 Text(
-                    "Câmera lê por foto. O leitor ao vivo lê o QR direto pela câmera, sem tirar foto.",
+                    "O leitor do BRAgro lê o QR direto pela câmera, sem tirar foto.",
                     style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
                     color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                 )

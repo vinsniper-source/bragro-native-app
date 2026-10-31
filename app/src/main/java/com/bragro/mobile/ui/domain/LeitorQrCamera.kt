@@ -93,6 +93,8 @@ import kotlinx.coroutines.delay
  */
 @Composable
 fun LeitorQrCameraDialog(
+    /** v83 -- reserva: se a câmera ao vivo não abrir, ler de uma foto. */
+    onLerDeFoto: (() -> Unit)? = null,
     identificar: (String) -> String?,
     onConfirmado: (String) -> Unit,
     onFechar: () -> Unit,
@@ -171,10 +173,18 @@ fun LeitorQrCameraDialog(
                         if (erroCamera) "Não foi possível abrir a câmera" else "Aponte para o QR Code",
                         color = Color.White, fontSize = 15.sp,
                     )
-                    Text(
-                        if (erroCamera) "Feche e use o botão de foto." else "A leitura é automática",
-                        color = Color.White.copy(alpha = 0.7f), fontSize = 12.5.sp,
-                    )
+                    if (erroCamera && onLerDeFoto != null) {
+                        Spacer(Modifier.size(12.dp))
+                        TextButton(
+                            onClick = onLerDeFoto,
+                            modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(Color.White),
+                        ) { Text("Ler de uma foto", color = Color.Black, fontSize = 13.sp) }
+                    } else {
+                        Text(
+                            if (erroCamera) "Feche e escolha a máquina na lista." else "A leitura é automática",
+                            color = Color.White.copy(alpha = 0.7f), fontSize = 12.5.sp,
+                        )
+                    }
                     aviso?.let {
                         Spacer(Modifier.size(10.dp))
                         Surface(shape = RoundedCornerShape(999.dp), color = corAtencao()) {
