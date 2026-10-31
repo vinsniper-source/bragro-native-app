@@ -108,7 +108,6 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Polygon as OsmPolygon
@@ -446,7 +445,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
     // cada entrada na tela, mas e idempotente/barata).
     LaunchedEffect(Unit) {
         Configuration.getInstance().apply {
-            userAgentValue = context.packageName
+            userAgentValue = "BRAgro/${com.bragro.mobile.BuildConfig.VERSION_NAME} (${context.packageName})"
             osmdroidBasePath = context.cacheDir
         }
     }
@@ -987,7 +986,7 @@ private fun BoundariesMap(
         modifier = Modifier.matchParentSize().clipToBounds(),
         factory = { ctx ->
             MapView(ctx).apply {
-                setTileSource(TileSourceFactory.MAPNIK)
+                setTileSource(MapaBRAgro.fonte)
                 setMultiTouchControls(true)
                 zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
                 isHorizontalMapRepetitionEnabled = false

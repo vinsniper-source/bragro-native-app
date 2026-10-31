@@ -69,7 +69,6 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Polygon as OsmPolygon
@@ -242,7 +241,7 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
     val context = LocalContext.current
     LaunchedEffect(Unit) {
         Configuration.getInstance().apply {
-            userAgentValue = context.packageName
+            userAgentValue = "BRAgro/${com.bragro.mobile.BuildConfig.VERSION_NAME} (${context.packageName})"
             osmdroidBasePath = context.cacheDir
         }
     }
@@ -507,7 +506,7 @@ private fun PrescricaoMap(p: PrescricaoData) {
         modifier = Modifier.fillMaxWidth().height(280.dp).padding(vertical = 8.dp),
         factory = { ctx ->
             MapView(ctx).apply {
-                setTileSource(TileSourceFactory.MAPNIK)
+                setTileSource(MapaBRAgro.fonte)
                 setMultiTouchControls(true)
                 controller.setZoom(15.0)
             }
