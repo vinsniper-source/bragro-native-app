@@ -100,7 +100,7 @@
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules">
         <!-- v78: OCR vai dentro do APK e o QR é lido pelo próprio app
-             (ZXing) -- não há mais modelo para o Play Services baixar. -->
+             (ZXing): não há mais modelo para o Play Services baixar. -->
 
 
         <activity
