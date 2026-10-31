@@ -99,11 +99,8 @@
         android:usesCleartextTraffic="false"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules">
-        <!-- v48: OCR e leitor de QR "unbundled": o Play Services baixa os
-             modelos junto com a instalacao do app, em vez de virem no APK. -->
-        <meta-data
-            android:name="com.google.mlkit.vision.DEPENDENCIES"
-            android:value="ocr,barcode" />
+        <!-- v78: OCR vai dentro do APK e o QR é lido pelo próprio app
+             (ZXing) -- não há mais modelo para o Play Services baixar. -->
 
 
         <activity

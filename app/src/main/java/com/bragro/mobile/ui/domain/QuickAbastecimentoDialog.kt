@@ -50,12 +50,8 @@ import com.bragro.mobile.data.repo.ConfigRepository
 import com.bragro.mobile.data.repo.FrotaRegistradasRepository
 import com.bragro.mobile.data.repo.RecordRepository
 import com.bragro.mobile.data.repo.SaveResult
-import com.google.mlkit.vision.barcode.BarcodeScanning
-import com.google.mlkit.vision.barcode.common.Barcode
-import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -132,7 +128,7 @@ class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
 
     /** QR Code no abastecimento (Task #602) -- lê o payload "BRAGRO:FROTA:<valor>"
      * de uma FOTO (mesmo padrão "foto, não câmera ao vivo" já usado no app
-     * pra Romaneio/Pragas) via ML Kit Barcode Scanning, e casa contra a lista
+     * pra Romaneio/Pragas) com o leitor próprio (LeitorQr, ZXing), e casa contra a lista
      * REAL de frotas cadastradas (parseFrotaQrPayload) -- nunca aceita um
      * valor não reconhecido. */
     fun onQrPhotoTaken(context: Context, uri: Uri) {
@@ -145,10 +141,8 @@ class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
                     qrMensagem.value = "Não foi possível ler a foto do QR Code."
                     return@launch
                 }
-                val image = InputImage.fromBitmap(bitmap, 0)
-                val scanner = BarcodeScanning.getClient()
-                val barcodes = scanner.process(image).await()
-                val texto = barcodes.firstOrNull { it.valueType == Barcode.TYPE_TEXT || it.rawValue != null }?.rawValue
+                // v78 -- leitor próprio (ZXing), fora da thread principal.
+                val texto = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { LeitorQr.lerDaFoto(bitmap) }
                 if (texto == null) {
                     qrMensagem.value = "Nenhum QR Code encontrado na foto. Tente novamente com mais luz e foco."
                     return@launch

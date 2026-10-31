@@ -277,7 +277,10 @@ dependencies {
     // (com.google.mlkit.vision.text.*), nenhuma mudanca no codigo. Pedido do
     // usuario: diminuir o tamanho do APK para nao estourar a transferencia
     // do plano gratuito do Supabase (cada atualizacao baixa o APK inteiro).
-    implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
+    // v78 -- volta a ir DENTRO do APK (versão "bundled", ~4 MB a mais só
+    // para arm64): funciona em celular sem Google Play e sem internet, sem
+    // esperar o Play Services baixar o leitor. Mesma API, código igual.
+    implementation("com.google.mlkit:text-recognition:16.0.1")
     // QR Code no abastecimento (paridade com o site, quick-abastecimento-button.tsx
     // + frota-qr-codes-button.tsx, Task #602): ML Kit Barcode Scanning pra LER
     // o QR de uma foto tirada (mesmo padrao "foto, nao camera ao vivo" do OCR
@@ -286,7 +289,8 @@ dependencies {
     // frota como Bitmap/impressao -- nao tem gerador no ML Kit, so leitura.
     // v48 -- tambem "unbundled": tira ~5,5MB (libbarhopper_v3.so + modelos)
     // do APK; mesma API com.google.mlkit.vision.barcode.*.
-    implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
+    // v78 -- leitura de QR por foto agora é PRÓPRIA (LeitorQr.kt, ZXing,
+    // abaixo); sai o ML Kit Barcode Scanning do Play Services.
     implementation("com.google.zxing:core:3.5.3")
     // Leitor de QR NATIVO do aparelho (Task #883/#896): a action antiga
     // "com.google.zxing.client.android.SCAN" (app ZXing "Barcode Scanner")
