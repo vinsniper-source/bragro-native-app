@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -116,6 +118,9 @@ import org.osmdroid.views.overlay.Polygon as OsmPolygon
 // KML/KMZ importado), status de Safra por talhão e status de Frota por
 // máquina, mapa nativo (osmdroid) e importação nativa de KML/KMZ direto
 // no aparelho (ver data/kml/KmlParser.kt), sem depender mais do site.
+/** v80 -- imagem NDVI de um talhão para sobrepor no mapa. */
+data class CamadaNdvi(val id: String, val imagem: android.graphics.Bitmap, val sul: Double, val oeste: Double, val norte: Double, val leste: Double, val data: String)
+
 class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
     private val repository = FieldviewRepository(app)
     private val configRepository = ConfigRepository(app)
@@ -153,6 +158,38 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var ndviIntegrationMessage = mutableStateOf<String?>(null)
         private set
+
+    // v80 -- NDVI próprio por talhão (null = calculando) e camadas no mapa.
+    var ndvi = mutableStateOf<Map<String, com.bragro.mobile.data.model.NdviTalhaoDto?>>(emptyMap())
+        private set
+    var camadasNdvi = mutableStateOf<List<CamadaNdvi>>(emptyList())
+        private set
+    var mostrarNdvi = mutableStateOf(false)
+    private var ndviJob: kotlinx.coroutines.Job? = null
+
+    /** Calcula um talhão de cada vez (cada um lê imagens de satélite). */
+    fun calcularNdvi(ids: List<String>) {
+        if (ndviJob?.isActive == true) return
+        ndviJob = viewModelScope.launch {
+            for (id in ids) {
+                if (ndvi.value[id] != null) continue
+                ndvi.value = ndvi.value + (id to null)
+                val r = repository.ndvi(id)
+                ndvi.value = ndvi.value + (id to r)
+            }
+        }
+    }
+
+    fun verNdviNoMapa(id: String, r: com.bragro.mobile.data.model.NdviResultadoDto): Boolean {
+        val png = r.png ?: return false
+        val lim = r.limites?.takeIf { it.size == 2 && it.all { p -> p.size == 2 } } ?: return false
+        val bytes = runCatching { android.util.Base64.decode(png, android.util.Base64.DEFAULT) }.getOrNull() ?: return false
+        val bmp = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return false
+        val camada = CamadaNdvi(id, bmp, sul = lim[0][0], oeste = lim[0][1], norte = lim[1][0], leste = lim[1][1], data = r.cena.data)
+        camadasNdvi.value = camadasNdvi.value.filter { it.id != id } + camada
+        mostrarNdvi.value = true
+        return true
+    }
 
     fun load() {
         loading.value = true
@@ -460,6 +497,10 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
     val ndviIntegration by viewModel.ndviIntegration
     val ndviIntegrationBusy by viewModel.ndviIntegrationBusy
     val ndviIntegrationMessage by viewModel.ndviIntegrationMessage
+    val ndviTalhoes by viewModel.ndvi
+    val camadasNdvi by viewModel.camadasNdvi
+    val mostrarNdvi by viewModel.mostrarNdvi
+    var contaSateliteAberta by remember { mutableStateOf(false) }
     var tab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Talhões", "Máquinas", "Fazendas/KML")
     var pendingPolygons by remember { mutableStateOf<List<ParsedPolygon>>(emptyList()) }
@@ -550,7 +591,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                     )
                     com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.EditLocationAlt, label = "+ Talhão", onClick = { manualDialogOpen = true })
                     com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, label = "Prestadora", active = integration != null, onClick = { prestadoraAberta = 1 })
-                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Public, label = "NDVI", active = ndviIntegration != null, onClick = { prestadoraAberta = 2 })
+                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Public, label = "NDVI", active = camadasNdvi.isNotEmpty(), onClick = { prestadoraAberta = 2 })
                 },
                 arquivos = {
                     com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Map, label = "Prescrição", onClick = onOpenPrescricao)
@@ -576,6 +617,9 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                     else -> FazendasKmlTab(
                         boundaries = data!!.boundaries,
                         farms = farms,
+                        camadasNdvi = camadasNdvi,
+                        mostrarNdvi = mostrarNdvi,
+                        onMostrarNdvi = { viewModel.mostrarNdvi.value = it },
                         onPolygonDrawn = { poly -> pendingPolygons = listOf(poly); pendingIndex = 0 },
                     )
                 }
@@ -589,7 +633,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
             onDismissRequest = { prestadoraAberta = 0 },
             modifier = Modifier.fillMaxWidth(0.96f),
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-            title = { Text(if (prestadoraAberta == 1) "Prestadora (talhões/KML)" else "Satélite (NDVI)") },
+            title = { Text(if (prestadoraAberta == 1) "Prestadora (talhões/KML)" else "NDVI dos talhões") },
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     if (prestadoraAberta == 1) ProviderIntegrationCard(
@@ -602,10 +646,39 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                         onSave = { provedor, apiKey -> viewModel.saveIntegration(provedor, apiKey) },
                         onDisconnect = { viewModel.disconnectIntegration() },
                         onSync = { viewModel.syncIntegration() },
-                    ) else ProviderIntegrationCard(
+                    ) else {
+                        // v80 (mockup v80 aprovado) -- NDVI próprio de cada talhão.
+                        val bs = data?.boundaries.orEmpty()
+                        LaunchedEffect(bs.map { it.id }) {
+                            viewModel.calcularNdvi(bs.filter { temContorno(it) }.map { it.id })
+                        }
+                        NdviLista(
+                            boundaries = bs,
+                            culturaDoTalhao = { t ->
+                                data?.talhaoStatus.orEmpty().firstOrNull { (it["talhao"] as? kotlinx.serialization.json.JsonPrimitive)?.content == t }
+                                    ?.let { (it["cultura"] as? kotlinx.serialization.json.JsonPrimitive)?.content }
+                            },
+                            estados = ndviTalhoes,
+                            onVerNoMapa = { id, r ->
+                                if (viewModel.verNdviNoMapa(id, r)) {
+                                    prestadoraAberta = 0
+                                    tab = 2
+                                    listaAberta = true
+                                }
+                            },
+                        )
+                        androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clickable { contaSateliteAberta = !contaSateliteAberta }.padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("Já tem conta no Sentinel Hub ou Planet? (opcional)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                            Text(if (contaSateliteAberta) "Fechar ‹" else "Conectar ›", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        if (contaSateliteAberta) ProviderIntegrationCard(
                         providers = listOf("Sentinel Hub", "Planet", "EOS Data Analytics", "Outro"),
-                        titulo = "Acesso automático via satélite (NDVI)",
-                        descricao = "NDVI depende de assinatura de imagens de satélite (Sentinel Hub: CLIENT_ID|CLIENT_SECRET; Planet: chave).",
+                        titulo = "Conta própria de satélite (opcional)",
+                        descricao = "O NDVI acima já é calculado pelo BRAgro sem conta. Se tiver assinatura própria: Sentinel Hub (CLIENT_ID|CLIENT_SECRET) ou Planet (chave).",
                         integration = ndviIntegration,
                         busy = ndviIntegrationBusy,
                         syncMessage = ndviIntegrationMessage,
@@ -613,6 +686,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                         onDisconnect = { viewModel.disconnectNdviIntegration() },
                         onSync = { viewModel.syncNdviIntegration() },
                     )
+                    }
                 }
             },
             confirmButton = { androidx.compose.material3.TextButton(onClick = { prestadoraAberta = 0 }) { Text("Fechar") } },
@@ -814,6 +888,9 @@ private fun BoundariesList(boundaries: List<FieldBoundaryDto>, modifier: Modifie
 private fun FazendasKmlTab(
     boundaries: List<FieldBoundaryDto>,
     farms: List<FarmEntity>,
+    camadasNdvi: List<CamadaNdvi> = emptyList(),
+    mostrarNdvi: Boolean = false,
+    onMostrarNdvi: (Boolean) -> Unit = {},
     onPolygonDrawn: (ParsedPolygon) -> Unit = {},
 ) {
     // Desenho direto no mapa (paridade com a ferramenta de polígono do site,
@@ -856,7 +933,28 @@ private fun FazendasKmlTab(
         // visível tanto em Talhões quanto em Fazendas/KML agora, sem
         // duplicar nesta aba.
         FarmMapLinksRow(boundaries, farms, onDesenhar = { drawing = true; draft = emptyList() })
-        BoundariesMap(boundaries, drawing = drawing, draft = draft, onTap = { draft = draft + it })
+        if (camadasNdvi.isNotEmpty()) {
+            // v80 -- Ruas / NDVI (mockup v80).
+            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.End) {
+                val dataUnica = camadasNdvi.singleOrNull()?.data?.let { "${it.substring(8, 10)}/${it.substring(5, 7)}" }.orEmpty()
+                listOf(false to "Ruas", true to "NDVI $dataUnica".trim()).forEach { (valor, rotulo) ->
+                    val ativo = mostrarNdvi == valor
+                    Text(
+                        rotulo,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (ativo) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                            .background(if (ativo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                            .clickable { onMostrarNdvi(valor) }
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                }
+            }
+        }
+        BoundariesMap(boundaries, drawing = drawing, draft = draft, onTap = { draft = draft + it }, camadasNdvi = if (mostrarNdvi) camadasNdvi else emptyList())
+        if (mostrarNdvi && camadasNdvi.isNotEmpty()) LegendaNdvi()
         BoundariesList(boundaries, modifier = Modifier.weight(1f))
     }
 }
@@ -963,6 +1061,7 @@ private fun BoundariesMap(
     drawing: Boolean = false,
     draft: List<GeoPoint> = emptyList(),
     onTap: (GeoPoint) -> Unit = {},
+    camadasNdvi: List<CamadaNdvi> = emptyList(),
 ) {
     val strokeColor = MaterialTheme.colorScheme.primary.toArgb()
     val onTapState = androidx.compose.runtime.rememberUpdatedState(onTap)
@@ -1019,12 +1118,21 @@ private fun BoundariesMap(
             }
         },
         update = { mv ->
-            val assinatura = Triple(boundaries.map { it.id }, draft.toList(), strokeColor)
+            val assinatura = listOf(boundaries.map { it.id }, draft.toList(), strokeColor, camadasNdvi.map { it.id + it.data })
             if (estadoMapa[0] == assinatura) return@AndroidView
             estadoMapa[0] = assinatura
             // mantém o 1º overlay (eventos de toque) e refaz só os polígonos
             while (mv.overlays.size > 1) mv.overlays.removeAt(mv.overlays.size - 1)
             val allPoints = mutableListOf<GeoPoint>()
+            // v80 -- camada NDVI (por baixo dos contornos).
+            camadasNdvi.forEach { c ->
+                mv.overlays.add(
+                    org.osmdroid.views.overlay.GroundOverlay().apply {
+                        setImage(c.imagem)
+                        setPosition(GeoPoint(c.norte, c.oeste), GeoPoint(c.sul, c.leste))
+                    },
+                )
+            }
             boundaries.forEach { boundary ->
                 val points = geoJsonPolygonToGeoPoints(boundary.geojson)
                 if (points.size >= 3) {
@@ -1032,7 +1140,7 @@ private fun BoundariesMap(
                     polygon.setPoints(points)
                     polygon.setStrokeColor(strokeColor)
                     polygon.setStrokeWidth(3f)
-                    polygon.setFillColor((strokeColor and 0x00FFFFFF) or 0x33000000)
+                    polygon.setFillColor(if (camadasNdvi.isNotEmpty()) 0 else (strokeColor and 0x00FFFFFF) or 0x33000000)
                     mv.overlays.add(polygon)
                     allPoints.addAll(points)
                 }
@@ -1046,6 +1154,12 @@ private fun BoundariesMap(
                 mv.overlays.add(d)
             }
             MapaBRAgro.credito(mv)
+            if (camadasNdvi.isNotEmpty()) {
+                val c = camadasNdvi.last()
+                mv.controller.setZoom(15.0)
+                mv.controller.setCenter(GeoPoint((c.norte + c.sul) / 2, (c.leste + c.oeste) / 2))
+                estadoMapa[1] = true
+            }
             // Centraliza nos talhões UMA vez; depois o zoom é do usuário.
             if (estadoMapa[1] != true && allPoints.isNotEmpty()) {
                 estadoMapa[1] = true
@@ -1242,5 +1356,137 @@ private fun OptionalFarmDropdown(farms: List<FarmEntity>, selected: FarmEntity?,
         options = remember(farms) { farms.map { it.id to it.name } },
         onSelect = { id -> onSelect(farms.firstOrNull { it.id == id }) },
         emptyOptionLabel = "Nenhuma",
+    )
+}
+
+
+// ---------------------------------------------------------------------------
+// v80 -- NDVI próprio (mockup v80 aprovado)
+// ---------------------------------------------------------------------------
+
+private val CORES_NDVI = listOf(
+    androidx.compose.ui.graphics.Color(0xFFA67C52) to "Solo/palha <0,2",
+    androidx.compose.ui.graphics.Color(0xFFD9822B) to "Baixo 0,2–0,4",
+    androidx.compose.ui.graphics.Color(0xFFE8C448) to "Médio 0,4–0,6",
+    androidx.compose.ui.graphics.Color(0xFF6EAA50) to "Bom 0,6–0,8",
+    androidx.compose.ui.graphics.Color(0xFF24683E) to "Muito alto >0,8",
+)
+private val CURTO_NDVI = listOf("solo", "baixo", "médio", "bom", "muito alto")
+
+private fun temContorno(b: FieldBoundaryDto): Boolean = geoJsonPolygonToGeoPoints(b.geojson).size >= 3
+
+@Composable
+private fun NdviLista(
+    boundaries: List<FieldBoundaryDto>,
+    culturaDoTalhao: (String) -> String?,
+    estados: Map<String, com.bragro.mobile.data.model.NdviTalhaoDto?>,
+    onVerNoMapa: (String, com.bragro.mobile.data.model.NdviResultadoDto) -> Unit,
+) {
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    val verde = MaterialTheme.colorScheme.primary
+    val laranja = com.bragro.mobile.ui.domain.corAtencao()
+    val br = java.util.Locale("pt", "BR")
+    fun n2(v: Double) = String.format(br, "%.2f", v)
+    fun dataBr(d: String) = if (d.length >= 10) "${d.substring(8, 10)}/${d.substring(5, 7)}" else d
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            "Calculado pelo BRAgro com imagens abertas do satélite Sentinel-2 (10 m, nova imagem a cada ~5 dias). Nuvem e sombra são descartadas.",
+            style = MaterialTheme.typography.labelSmall,
+            color = muted,
+        )
+        if (boundaries.isEmpty()) Text("Nenhum talhão cadastrado ainda.", style = MaterialTheme.typography.bodySmall, color = muted)
+        boundaries.forEach { b ->
+            androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+            val cultura = culturaDoTalhao(b.talhao)
+            val titulo = "Talhão ${b.talhao}" + (cultura?.let { " · $it" } ?: "")
+            if (!temContorno(b)) {
+                Text(titulo, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                Text("Importe o KML ou desenhe o contorno no mapa para calcular.", style = MaterialTheme.typography.labelSmall, color = muted)
+                return@forEach
+            }
+            val st = estados[b.id]
+            val a = st?.atual
+            when {
+                st == null -> Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(titulo, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    Text("calculando…", style = MaterialTheme.typography.labelSmall, color = muted)
+                }
+                a == null -> {
+                    Text(titulo, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                    Text(st.erro ?: "Não foi possível calcular agora.", style = MaterialTheme.typography.labelSmall, color = laranja)
+                }
+                else -> {
+                    val fx = when { a.media < 0.2 -> 0; a.media < 0.4 -> 1; a.media < 0.6 -> 2; a.media < 0.8 -> 3; else -> 4 }
+                    Row(verticalAlignment = Alignment.Top) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(titulo, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                            Text("imagem de ${dataBr(a.cena.data)} · ${a.validoPct}% sem nuvem", style = MaterialTheme.typography.labelSmall, color = muted)
+                            st.anterior?.let { ant ->
+                                val dif = a.media - ant.media
+                                val (txt, cor) = when {
+                                    dif > 0.01 -> "↑ +${n2(dif)} melhorando" to verde
+                                    dif < -0.01 -> "↓ −${n2(-dif)} piorando" to laranja
+                                    else -> "estável" to muted
+                                }
+                                Row {
+                                    Text("Antes (${dataBr(ant.data)}): ${n2(ant.media)} · ", style = MaterialTheme.typography.labelSmall, color = muted)
+                                    Text(txt, style = MaterialTheme.typography.labelSmall, color = cor, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(n2(a.media), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Text(
+                                CURTO_NDVI[fx],
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (fx >= 3) verde else if (fx == 2) muted else laranja,
+                                fontWeight = if (fx <= 1) FontWeight.Bold else FontWeight.Normal,
+                            )
+                        }
+                    }
+                    Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp).height(8.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(50))) {
+                        a.faixasPct.forEachIndexed { i, p ->
+                            if (p > 0) Box(Modifier.weight(p.toFloat()).fillMaxHeight().background(CORES_NDVI.getOrNull(i)?.first ?: muted))
+                        }
+                    }
+                    Row(modifier = Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        if (a.png != null && a.limites != null) {
+                            Button(onClick = { onVerNoMapa(b.id, a) }, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp), modifier = Modifier.height(30.dp)) {
+                                Text("Ver no mapa", style = MaterialTheme.typography.labelMedium)
+                            }
+                            Spacer(Modifier.width(8.dp))
+                        }
+                        Text(
+                            a.faixasPct.mapIndexed { i, p -> "$p% ${CURTO_NDVI.getOrElse(i) { "" }}" }.joinToString(" · "),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = muted,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LegendaNdvi() {
+    @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+    androidx.compose.foundation.layout.FlowRow(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        (CORES_NDVI + (androidx.compose.ui.graphics.Color(0xFFC8C8C8) to "Nuvem")).forEach { (cor, rotulo) ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(10.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(2.dp)).background(cor))
+                Spacer(Modifier.width(3.dp))
+                Text(rotulo, style = MaterialTheme.typography.labelSmall)
+            }
+        }
+    }
+    Text(
+        "Contém dados Copernicus Sentinel modificados.",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp),
     )
 }

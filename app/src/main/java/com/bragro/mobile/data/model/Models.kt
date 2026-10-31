@@ -874,6 +874,9 @@ data class ColheitaLotesQrResponse(
 // usado pela tela "QR Codes das máquinas" (FrotaQrScreen.kt) pra não gerar
 // QR de equipamento que a fazenda não tem (ver frota-qr-codes-button.tsx no
 // site pro mesmo fix, e /api/mobile/frota-registradas no servidor).
+// 1.4.9 -- faltava @Serializable: o app não conseguia montar o pedido
+// ("Unable to create @Body converter", registro de erros próprio).
+@Serializable
 data class FrotasRegistradasRequest(
     val accessToken: String,
     val refreshToken: String,
@@ -1818,6 +1821,38 @@ data class WeatherData(
     val nascerSol: String? = null,
     val porSol: String? = null,
     val spray: SprayResumo? = null,
+    // v80 -- informações calculadas pelo BRAgro e alertas do INMET (clima-agro.ts).
+    val agro: ClimaAgro? = null,
+)
+
+@Serializable
+data class RiscoGeada(val nivel: String = "nenhum", val dia: String? = null, val minC: Double? = null)
+
+@Serializable
+data class Molhamento(val horas: Int = 0, val horasFavoraveis: Int = 0, val risco: String = "baixo")
+
+@Serializable
+data class BalancoHidrico(val chuvaMm: Double = 0.0, val et0Mm: Double = 0.0, val saldoMm: Double = 0.0)
+
+@Serializable
+data class AlertaInmet(
+    val titulo: String = "Alerta",
+    val severidade: String = "",
+    val nivel: Int = 1,
+    val inicio: String = "",
+    val fim: String = "",
+    val riscos: List<String> = emptyList(),
+    val instrucoes: List<String> = emptyList(),
+)
+
+@Serializable
+data class ClimaAgro(
+    val deltaT: Double? = null,
+    val deltaTNivel: String? = null,
+    val geada: RiscoGeada = RiscoGeada(),
+    val molhamento: Molhamento = Molhamento(),
+    val balanco: BalancoHidrico = BalancoHidrico(),
+    val alertas: List<AlertaInmet> = emptyList(),
 )
 
 @Serializable
@@ -2338,6 +2373,39 @@ data class SimuladorResponse(
 
 @Serializable
 data class FieldviewRequest(val accessToken: String, val refreshToken: String)
+
+// v80 -- NDVI próprio do talhão (mesma rota, "action" = "ndvi").
+@Serializable
+data class FieldviewNdviRequest(val accessToken: String, val refreshToken: String, val boundaryId: String, val action: String = "ndvi")
+
+@Serializable
+data class NdviCenaDto(val id: String = "", val data: String = "", val nuvemPct: Double? = null)
+
+@Serializable
+data class NdviResultadoDto(
+    val cena: NdviCenaDto = NdviCenaDto(),
+    val media: Double = 0.0,
+    val p10: Double? = null,
+    val p90: Double? = null,
+    val faixasPct: List<Int> = emptyList(),
+    val validoPct: Int = 0,
+    val png: String? = null,
+    val limites: List<List<Double>>? = null,
+)
+
+@Serializable
+data class NdviAnteriorDto(val data: String, val media: Double)
+
+@Serializable
+data class NdviTalhaoDto(
+    val atual: NdviResultadoDto? = null,
+    val anterior: NdviAnteriorDto? = null,
+    val credito: String? = null,
+    val erro: String? = null,
+)
+
+@Serializable
+data class FieldviewNdviResponse(val ok: Boolean = false, val ndvi: NdviTalhaoDto? = null, val error: String? = null)
 
 @Serializable
 data class FieldviewResponse(

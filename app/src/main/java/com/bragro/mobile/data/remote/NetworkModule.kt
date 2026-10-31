@@ -15,14 +15,14 @@ import java.util.concurrent.TimeUnit
 object NetworkModule {
     private val json = Json { ignoreUnknownKeys = true; explicitNulls = false }
 
-    private fun httpClient(): OkHttpClient {
+    private fun httpClient(segundos: Long = 20): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
         }
         return OkHttpClient.Builder()
             .addInterceptor(logging)
             .connectTimeout(20, TimeUnit.SECONDS)
-            .readTimeout(20, TimeUnit.SECONDS)
+            .readTimeout(segundos, TimeUnit.SECONDS)
             .writeTimeout(20, TimeUnit.SECONDS)
             .build()
     }
@@ -31,6 +31,17 @@ object NetworkModule {
         Retrofit.Builder()
             .baseUrl(BuildConfig.API_BASE_URL + "/")
             .client(httpClient())
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .build()
+            .create(MobileApi::class.java)
+    }
+
+    /** v80 -- mesma API, com espera de até 70 s (NDVI próprio: o servidor
+     * lê imagens de satélite na primeira vez de cada talhão). */
+    val mobileApiLongo: MobileApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(BuildConfig.API_BASE_URL + "/")
+            .client(httpClient(70))
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
             .create(MobileApi::class.java)

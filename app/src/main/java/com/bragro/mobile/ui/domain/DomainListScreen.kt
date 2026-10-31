@@ -70,6 +70,7 @@ import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material.icons.outlined.Air
+import androidx.compose.material.icons.outlined.DeviceThermostat
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
@@ -172,6 +173,8 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
     // Composable do card (SprayAlertCard) igual ao padrão de "clima-hoje"
     // em DomainFormScreen.kt.
     var sprayAlert = mutableStateOf<kotlinx.serialization.json.JsonObject?>(null)
+    // v81 -- graus-dia e chuva desde o plantio (módulo Clima).
+    var grausDia = mutableStateOf<kotlinx.serialization.json.JsonObject?>(null)
         private set
 
     // "Editado por" + data/hora dentro do card (pedido do usuário, ver
@@ -225,6 +228,7 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
         if (domainId == "clima") {
             viewModelScope.launch { weather.value = weatherRepository.fetch() }
             viewModelScope.launch { sprayAlert.value = moduleActionsRepository.run("spray-alert") }
+            viewModelScope.launch { grausDia.value = moduleActionsRepository.run("graus-dia") }
         }
         refresh(domainId)
     }
@@ -335,6 +339,7 @@ fun DomainListScreen(
     val offline by viewModel.offline
     val weather by viewModel.weather
     val sprayAlert by viewModel.sprayAlert
+    val grausDia by viewModel.grausDia
     val auditInfo by viewModel.auditInfo
     val pendingReviewIds by viewModel.pendingReviewIds
     var pendingOnly by remember(domainId) { mutableStateOf(false) }
@@ -1158,6 +1163,9 @@ fun DomainListScreen(
                             ModuleIconButton(
                                 ModuleIconItem("clima-spray", Icons.Outlined.Air, "Pulverização", active = expandedBlocks["clima-spray"] == true),
                             ) { expandedBlocks["clima-spray"] = expandedBlocks["clima-spray"] != true }
+                            ModuleIconButton(
+                                ModuleIconItem("clima-gdd", androidx.compose.material.icons.Icons.Outlined.DeviceThermostat, "Graus-dia", active = expandedBlocks["clima-gdd"] == true),
+                            ) { expandedBlocks["clima-gdd"] = expandedBlocks["clima-gdd"] != true }
                         }
                         // Bomba de combustível saiu daqui e virou um FAB
                         // próprio (acima do botão +) -- pedido do usuário
@@ -1333,6 +1341,9 @@ fun DomainListScreen(
                         ModuleIconButton(
                             ModuleIconItem("clima-spray", Icons.Outlined.Air, "Pulverização", active = expandedBlocks["clima-spray"] == true),
                         ) { expandedBlocks["clima-spray"] = expandedBlocks["clima-spray"] != true }
+                        ModuleIconButton(
+                            ModuleIconItem("clima-gdd", androidx.compose.material.icons.Icons.Outlined.DeviceThermostat, "Graus-dia", active = expandedBlocks["clima-gdd"] == true),
+                        ) { expandedBlocks["clima-gdd"] = expandedBlocks["clima-gdd"] != true }
                     }
                     if (showEstoqueFazenda) {
                         ModuleIconButton(
@@ -1430,6 +1441,9 @@ fun DomainListScreen(
             }
             if (showClima && expandedBlocks["clima-spray"] == true) {
                 item(key = "clima-spray") { SprayAlertCard(sprayAlert, showHeader = false) }
+            }
+            if (showClima && expandedBlocks["clima-gdd"] == true) {
+                item(key = "clima-gdd") { GrausDiaCard(grausDia) }
             }
             if (showEstoqueFazenda && expandedBlocks["estoque-fazenda"] == true) {
                 item(key = "estoque-fazenda") { TransferenciasFazendaCard(showHeader = false) }
@@ -2271,6 +2285,54 @@ private fun ClimaForecastCard(weather: WeatherResponse?, showHeader: Boolean = t
  * (action "spray-alert" via ModuleActionsRepository) -- parseado aqui
  * direto, sem um data class dedicado (mesmo critério usado nos outros
  * consumidores de ModuleActionsRepository.run() neste arquivo). */
+/** v81 (mockup v81 aprovado) -- graus-dia e chuva desde o plantio, por
+ * talhão (mesma função da plataforma: lib/services/graus-dia.ts). */
+@Composable
+private fun GrausDiaCard(dados: kotlinx.serialization.json.JsonObject?) {
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    val laranja = corAtencao()
+    fun kotlinx.serialization.json.JsonObject.txt(k: String) = (this[k] as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNullSafe()
+    fun dm(d: String?) = if (d != null && d.length >= 10) "${d.substring(8, 10)}/${d.substring(5, 7)}" else "—"
+    val linhas = (dados?.get("linhas") as? kotlinx.serialization.json.JsonArray)?.mapNotNull { it as? kotlinx.serialization.json.JsonObject }.orEmpty()
+    Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(androidx.compose.material.icons.Icons.Outlined.DeviceThermostat, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Graus-dia e chuva desde o plantio", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+            }
+            Text("Calor acumulado pela lavoura (Tmédia − temperatura-base da cultura), somado dia a dia. Plantio = lançamento de Safra com operação Plantio/Semeadura.", style = MaterialTheme.typography.labelSmall, color = muted)
+            if (dados == null) Text("Carregando…", style = MaterialTheme.typography.bodySmall, color = muted)
+            else if (linhas.isEmpty()) Text("Nenhum plantio lançado em Safra nos últimos 300 dias.", style = MaterialTheme.typography.bodySmall, color = muted)
+            linhas.forEach { l ->
+                HorizontalDivider()
+                val cultura = l.txt("cultura").orEmpty().lowercase().replaceFirstChar { it.uppercase() }
+                val diasDado = l.txt("diasComDado")?.toIntOrNull() ?: 0
+                val inicio = l.txt("inicioDados")
+                val plantio = l.txt("plantio")
+                Row(verticalAlignment = Alignment.Top) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Talhão ${l.txt("talhao").orEmpty()} · $cultura", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                        Text("plantio ${dm(plantio)} · ${l.txt("diasDesdePlantio") ?: "—"} dias · base ${l.txt("tBase") ?: "—"}°", style = MaterialTheme.typography.labelSmall, color = muted)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(if (diasDado > 0) "${l.txt("grausDia")} °C·dia" else "—", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            "${l.txt("chuvaMm") ?: "0"} mm " + if (l.txt("chuvaFonte") == "pluviometro") "pluviômetro" else "previsão",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = muted,
+                        )
+                    }
+                }
+                if (diasDado == 0) Text("sem histórico ainda", style = MaterialTheme.typography.labelSmall, color = laranja)
+                else if (inicio != null && plantio != null && inicio > plantio) Text("desde ${dm(inicio)} (início do registro)", style = MaterialTheme.typography.labelSmall, color = laranja)
+            }
+        }
+    }
+}
+
+private fun kotlinx.serialization.json.JsonPrimitive.contentOrNullSafe(): String? = if (this is kotlinx.serialization.json.JsonNull) null else content
+
 @Composable
 private fun SprayAlertCard(alerta: kotlinx.serialization.json.JsonObject?, showHeader: Boolean = true) {
     var open by remember { mutableStateOf(!showHeader) }

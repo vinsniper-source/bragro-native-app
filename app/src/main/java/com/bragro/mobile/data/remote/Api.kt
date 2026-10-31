@@ -38,6 +38,8 @@ import com.bragro.mobile.data.model.DroneListResponse
 import com.bragro.mobile.data.model.FrotasRegistradasRequest
 import com.bragro.mobile.data.model.FrotasRegistradasResponse
 import com.bragro.mobile.data.model.FieldviewImportRequest
+import com.bragro.mobile.data.model.FieldviewNdviRequest
+import com.bragro.mobile.data.model.FieldviewNdviResponse
 import com.bragro.mobile.data.model.FieldviewImportResponse
 import com.bragro.mobile.data.model.FieldviewRequest
 import com.bragro.mobile.data.model.FieldviewResponse
@@ -460,6 +462,10 @@ interface MobileApi {
     // do JSON, ver comentario em FieldviewImportRequest/Models.kt).
     @POST("api/mobile/fieldview")
     suspend fun importFieldBoundary(@Body body: FieldviewImportRequest): Response<FieldviewImportResponse>
+
+    // v80 -- NDVI próprio do talhão (mesma URL, "action" = "ndvi").
+    @POST("api/mobile/fieldview")
+    suspend fun fieldviewNdvi(@Body body: FieldviewNdviRequest): Response<FieldviewNdviResponse>
 
     // Card "Acesso automático via prestadora de serviço" (Task #341/#54) --
     // 4 ações novas na mesma rota /api/mobile/fieldview, distinguidas pelo

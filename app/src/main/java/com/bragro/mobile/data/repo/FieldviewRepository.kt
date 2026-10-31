@@ -36,6 +36,28 @@ class FieldviewRepository(context: Context) {
         }
     }
 
+    /** v80 -- NDVI próprio do talhão (calculado no servidor do BRAgro com
+     * imagens abertas do Sentinel-2). Erro de rede vira mensagem. */
+    suspend fun ndvi(boundaryId: String): com.bragro.mobile.data.model.NdviTalhaoDto {
+        val tokens = tokenStore.current() ?: return com.bragro.mobile.data.model.NdviTalhaoDto(erro = "Faça login novamente.")
+        var (accessToken, refreshToken) = tokens
+        return try {
+            var response = NetworkModule.mobileApiLongo.fieldviewNdvi(com.bragro.mobile.data.model.FieldviewNdviRequest(accessToken, refreshToken, boundaryId))
+            if (response.code() == 401) {
+                val newAccess = TokenRefresher.refreshAccessToken(tokenStore, refreshToken)
+                if (newAccess != null) {
+                    accessToken = newAccess
+                    response = NetworkModule.mobileApiLongo.fieldviewNdvi(com.bragro.mobile.data.model.FieldviewNdviRequest(accessToken, refreshToken, boundaryId))
+                }
+            }
+            val body = response.body()
+            body?.ndvi ?: com.bragro.mobile.data.model.NdviTalhaoDto(erro = body?.error ?: "Não foi possível calcular agora. Tente de novo mais tarde.")
+        } catch (e: Exception) {
+            AppLog.e("FieldviewRepository", "Falha ao buscar o NDVI do talhão", e)
+            com.bragro.mobile.data.model.NdviTalhaoDto(erro = "Sem conexão. Tente de novo mais tarde.")
+        }
+    }
+
     /** Importa um talhão (contorno + área) parseado de um KML/KMZ no
      * aparelho -- upsert por [orgId, talhao] no servidor (mesma convenção
      * talhao-por-nome de Safra/Frota). Retorna true em caso de sucesso. */

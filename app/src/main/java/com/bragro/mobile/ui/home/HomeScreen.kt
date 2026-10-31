@@ -2625,6 +2625,9 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             MiniCardHeaderWithRefresh("Clima", Icons.Outlined.WbSunny, verde, MaterialTheme.typography.titleMedium, onRefresh)
+            // v80 (mockup v80 aprovado) -- alerta oficial do INMET que cobre a
+            // fazenda; tocar abre os riscos e o que fazer.
+            clima.agro?.alertas?.takeIf { it.isNotEmpty() }?.let { AlertaInmetAviso(it) }
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Icon(iconeClima(clima.currentIcon), contentDescription = null, tint = verde, modifier = Modifier.size(36.dp))
                 Spacer(Modifier.width(10.dp))
@@ -2734,16 +2737,28 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh
                     }
                 }
             }
+            clima.agro?.let { AgroLinha(it, linha) }
             clima.spray?.let { sp ->
                 HorizontalDivider(color = linha)
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.Sanitizer, contentDescription = null, tint = verde, modifier = Modifier.size(15.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Pulverização", style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
+                    Text("Pulverização", style = MaterialTheme.typography.labelMedium)
                     val (txt, cor) = if (sp.favoravelAgora) "favorável" to verde else "desfavorável" to com.bragro.mobile.ui.domain.corAtencao()
-                    sp.proximaJanela?.takeIf { !sp.favoravelAgora }?.let { j ->
-                        Text("janela ${j.inicio.take(2)}–${j.fim.take(2)}h  ", style = MaterialTheme.typography.labelSmall, color = muted)
-                    }
+                    // v80 -- motivo curto (ex.: "Delta T alto (9,4)") + próxima janela.
+                    val detalhe = if (sp.favoravelAgora) "" else listOfNotNull(
+                        sp.motivoAgora?.substringBefore(" — "),
+                        sp.proximaJanela?.let { j -> "janela ${j.inicio.take(2)}–${j.fim.take(2)}h" },
+                    ).joinToString(" · ")
+                    Text(
+                        "$detalhe  ",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = muted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                        modifier = Modifier.weight(1f),
+                    )
                     Text(
                         txt,
                         style = MaterialTheme.typography.labelMedium,
@@ -2754,6 +2769,134 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh
                             .background(cor.copy(alpha = 0.14f))
                             .padding(horizontal = 10.dp, vertical = 2.dp),
                     )
+                }
+            }
+        }
+    }
+}
+
+/** v80 -- aviso do INMET no topo do bloco Clima (mockup v80). */
+@Composable
+private fun AlertaInmetAviso(alertas: List<com.bragro.mobile.data.model.AlertaInmet>) {
+    val laranja = com.bragro.mobile.ui.domain.corAtencao()
+    var aberto by remember { mutableStateOf(false) }
+    val a = alertas.first()
+    fun quando(t: String): String {
+        if (t.length < 16) return t
+        val hoje = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(java.util.Date())
+        val amanha = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(java.util.Date(System.currentTimeMillis() + 86_400_000L))
+        val d = t.take(10)
+        val dia = when (d) {
+            hoje -> "hoje"
+            amanha -> "amanhã"
+            else -> runCatching { SimpleDateFormat("EEE", Locale("pt", "BR")).format(SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(d)!!).replace(".", "") }.getOrDefault(d)
+        }
+        return "$dia ${t.substring(11, 16)}"
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(9.dp))
+            .background(laranja.copy(alpha = 0.12f))
+            .clickable { aberto = true }
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Icon(Icons.Outlined.WarningAmber, contentDescription = null, tint = laranja, modifier = Modifier.size(15.dp))
+        Spacer(Modifier.width(6.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                "INMET · ${a.titulo} · ${a.severidade}" + if (alertas.size > 1) "  +${alertas.size - 1}" else "",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                "${quando(a.inicio)} até ${quando(a.fim)}" + (a.riscos.firstOrNull()?.substringBefore(".")?.let { " · ${it.lowercase()}" } ?: ""),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Text("ver ›", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = laranja)
+    }
+    if (aberto) {
+        AlertDialog(
+            onDismissRequest = { aberto = false },
+            confirmButton = { TextButton(onClick = { aberto = false }) { Text("Fechar") } },
+            title = { Text("Alerta do INMET") },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    alertas.forEach { x ->
+                        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Text("${x.titulo} · ${x.severidade}", fontWeight = FontWeight.Bold)
+                            Text("${quando(x.inicio)} até ${quando(x.fim)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (x.riscos.isNotEmpty()) Text("Riscos: " + x.riscos.joinToString(" "), style = MaterialTheme.typography.bodySmall)
+                            if (x.instrucoes.isNotEmpty()) {
+                                Text("O que fazer:", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                                x.instrucoes.forEach { Text("• ${it.trim()}", style = MaterialTheme.typography.bodySmall) }
+                            }
+                        }
+                    }
+                }
+            },
+        )
+    }
+}
+
+/** v80 -- Delta T, geada, molhamento foliar e balanço hídrico (calculados
+ * pelo servidor do BRAgro), em 4 colunas -- igual à plataforma. Tocar e
+ * segurar mostra a explicação. */
+@Composable
+private fun AgroLinha(g: com.bragro.mobile.data.model.ClimaAgro, linha: androidx.compose.ui.graphics.Color) {
+    val verde = MaterialTheme.colorScheme.primary
+    val laranja = com.bragro.mobile.ui.domain.corAtencao()
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    val br = Locale("pt", "BR")
+    fun dia(d: String?): String = d?.let {
+        runCatching { SimpleDateFormat("EEE", br).format(SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it)!!).replace(".", "") }.getOrDefault("")
+    } ?: ""
+    val dt = mapOf("bom" to ("bom" to true), "baixo" to ("baixo" to false), "alto" to ("alto" to false), "nao_aplicar" to ("não aplicar" to false))
+    val geada = mapOf("nenhum" to ("sem risco" to true), "atencao" to ("atenção" to false), "risco" to ("risco" to false), "forte" to ("geada forte" to false))
+    val molh = mapOf("baixo" to ("risco baixo" to true), "medio" to ("risco médio" to false), "alto" to ("risco alto" to false))
+    val saldo = g.balanco.saldoMm.roundToInt()
+    data class Cel(val rot: String, val dica: String, val valor: String, val sub: String, val ok: Boolean?)
+    val celulas = listOf(
+        Cel("Delta T", "2 a 8 = bom para aplicar; abaixo de 2 a gota escorre/deriva; acima de 8 evapora antes do alvo",
+            g.deltaT?.let { String.format(br, "%.1f", it) } ?: "—", dt[g.deltaTNivel]?.first ?: "", dt[g.deltaTNivel]?.second),
+        Cel("Geada · 7 dias", "Menor temperatura prevista nos próximos 7 dias",
+            g.geada.minC?.let { "${it.roundToInt()}° ${dia(g.geada.dia)}".trim() } ?: "—", geada[g.geada.nivel]?.first ?: "", geada[g.geada.nivel]?.second),
+        Cel("Molhamento · 24 h", "Horas seguidas de folha molhada (umidade ≥ 90%) com 15 a 28 °C: 6 h ou mais = risco médio de ferrugem e manchas; 10 h ou mais = alto",
+            "${g.molhamento.horasFavoraveis} h", molh[g.molhamento.risco]?.first ?: "", molh[g.molhamento.risco]?.second),
+        Cel("Balanço · 7 dias", "Chuva prevista menos a água que a lavoura perde (ET0). Negativo = falta de água",
+            (if (saldo > 0) "+" else if (saldo < 0) "−" else "") + "${kotlin.math.abs(saldo)} mm",
+            "${g.balanco.chuvaMm.roundToInt()} chuva · ${g.balanco.et0Mm.roundToInt()} ET0", null),
+    )
+    HorizontalDivider(color = linha)
+    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
+        celulas.forEachIndexed { i, c ->
+            if (i > 0) VerticalDivider(color = linha, modifier = Modifier.fillMaxHeight(0.6f))
+            Box(modifier = Modifier.weight(1f)) {
+                @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+                androidx.compose.material3.TooltipBox(
+                    positionProvider = androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                    tooltip = { PlainTooltip { Text("${c.rot}: ${c.dica}") } },
+                    state = androidx.compose.material3.rememberTooltipState(),
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 1.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(c.rot, fontSize = 9.5.sp, color = muted, maxLines = 1, softWrap = false)
+                        Text(c.valor, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                        Text(
+                            c.sub,
+                            fontSize = 9.5.sp,
+                            color = when (c.ok) { null -> muted; true -> verde; false -> laranja },
+                            fontWeight = if (c.ok == false) FontWeight.Bold else FontWeight.Normal,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
                 }
             }
         }
