@@ -249,6 +249,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var suaMediaCarregada = mutableStateOf(false)
         private set
+    // v87 -- histórico de cotações (soja/milho/sorgo/dolar -> {inicio, pontos}).
+    var historicoCotacoes = mutableStateOf<kotlinx.serialization.json.JsonObject?>(null)
+        private set
     private val moduleActionsRepository = com.bragro.mobile.data.repo.ModuleActionsRepository(app)
 
     init {
@@ -290,7 +293,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         }
         viewModelScope.launch { weather.value = weatherRepository.fetch() }
         viewModelScope.launch {
-            val r = moduleActionsRepository.run("sua-media")
+            // v87 -- "Sua média" + histórico de cotações num pedido só.
+            val r = moduleActionsRepository.run("cotacoes-extra")
+            historicoCotacoes.value = r?.get("historico") as? kotlinx.serialization.json.JsonObject
             val media = r?.get("media")
             suaMedia.value = media as? kotlinx.serialization.json.JsonObject
             // Sem acesso ao Financeiro o servidor manda media = null: aí o bloco não aparece.
@@ -1504,7 +1509,7 @@ fun HomeScreen(
             // substitui as cotacoes brasileiras (Grao Direto / CEPEA).
             if (!com.bragro.mobile.ui.i18n.Idioma.argentina && data.hasWidget("inicio.cotacoes")) {
             item(key = "cotacoes") {
-                weather?.commodities?.let { CotacoesCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth(), suaMedia = viewModel.suaMedia.value, mostrarSuaMedia = viewModel.suaMediaCarregada.value) }
+                weather?.commodities?.let { CotacoesCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth(), suaMedia = viewModel.suaMedia.value, mostrarSuaMedia = viewModel.suaMediaCarregada.value, historico = viewModel.historicoCotacoes.value) }
             }
             }
             // Cotações Pecuária (Boi Gordo/CEPEA) -- pedido do usuário
@@ -3191,7 +3196,9 @@ private fun SuaMediaGrao(m: kotlinx.serialization.json.JsonObject?, cotacao: Dou
 // sem negrito seguido do valor em negrito, cada um na sua própria linha.
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth(), suaMedia: kotlinx.serialization.json.JsonObject? = null, mostrarSuaMedia: Boolean = false) {
+private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth(), suaMedia: kotlinx.serialization.json.JsonObject? = null, mostrarSuaMedia: Boolean = false, historico: kotlinx.serialization.json.JsonObject? = null) {
+    var serieAberta by remember { mutableStateOf<String?>(null) }
+    serieAberta?.let { inicial -> HistoricoCotacoesDialog(historico, suaMedia, inicial) { serieAberta = null } }
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             // Renomeado -- pedido do usuário ("altere o kpi cotações
@@ -3313,6 +3320,8 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
                                 modifier = Modifier.basicMarquee(),
                             )
                         }
+                        // v87 -- linha dos últimos 12 meses (toque abre o histórico).
+                        MiniHistoricoGrao(historico?.get(chaves.getOrNull(index) ?: "") as? kotlinx.serialization.json.JsonObject) { serieAberta = chaves.getOrNull(index) ?: "soja" }
                         if (mostrarSuaMedia) SuaMediaGrao(suaMedia?.get(chaves.getOrNull(index) ?: "") as? kotlinx.serialization.json.JsonObject, q.valor)
                     }
                 }
@@ -3331,6 +3340,15 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
             // conteudo interno que sobrava). Com a legenda cabendo numa
             // linha so, os dois cards voltam a ficar com a mesma altura de
             // conteudo.
+            if (historico != null) {
+                Text(
+                    "Ver histórico ›",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable { serieAberta = "soja" }.padding(vertical = 2.dp),
+                )
+            }
             val dataFonte = itens.firstNotNullOfOrNull { it.atualizadoEm }
             Text(
                 if (dataFonte != null) "Fonte: Grão Direto ($dataFonte)" else "Fonte: Grão Direto",
