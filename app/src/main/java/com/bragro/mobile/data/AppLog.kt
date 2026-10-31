@@ -11,7 +11,9 @@ package com.bragro.mobile.data
 object AppLog {
     fun e(tag: String, msg: String, err: Throwable? = null) {
         android.util.Log.e(tag, msg, err)
-        if (err != null) runCatching { ErroReporter.registrar(tag, msg, err) }
+        // 1.5.0 -- "Job was cancelled" não é erro: é o app cancelando uma busca
+        // porque a pessoa saiu da tela. Não vai para o registro de erros.
+        if (err != null && err !is kotlinx.coroutines.CancellationException) runCatching { ErroReporter.registrar(tag, msg, err) }
     }
 
     fun w(tag: String, msg: String, err: Throwable? = null) {
