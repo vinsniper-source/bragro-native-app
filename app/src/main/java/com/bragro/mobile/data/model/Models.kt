@@ -64,7 +64,12 @@ data class ColumnConfig(
     val visibleWhenAll: List<VisibleWhenAllRule>? = null,
     // v85 -- aviso do Agrofit (registro no MAPA) embaixo do campo de item.
     val agrofit: AgrofitConfig? = null,
+    // v86 -- guia de pragas embaixo do campo Alvo.
+    val guiaPraga: GuiaPragaConfig? = null,
 )
+
+@Serializable
+data class GuiaPragaConfig(val culturaField: String)
 
 @Serializable
 data class AgrofitConfig(

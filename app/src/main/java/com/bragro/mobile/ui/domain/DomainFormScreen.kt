@@ -1488,6 +1488,8 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
     }
     // v85 -- aviso do Agrofit (registro no MAPA) embaixo do item.
     col.agrofit?.let { AgrofitAviso(it, viewModel.fields[col.key], viewModel.fields) }
+    // v86 -- guia de pragas embaixo do Alvo.
+    col.guiaPraga?.let { GuiaPraga(cultura = viewModel.fields[it.culturaField], alvo = viewModel.fields[col.key]) }
 }
 
 // Conversão pro DatePicker (Material3) -- ele trabalha em epoch millis UTC,
