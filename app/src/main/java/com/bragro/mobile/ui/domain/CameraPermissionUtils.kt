@@ -78,42 +78,5 @@ fun avisarSemAppDeCamera(context: Context) {
     Toast.makeText(context, "Nenhum app de câmera encontrado neste aparelho. Verifique se há um app de câmera instalado e habilitado.", Toast.LENGTH_LONG).show()
 }
 
-/** "Colocar a condição de acessar o QR nativo do celular, pq existem
- * celulares mais antigos que o QR code é separado da câmera" (pedido do
- * usuário): em vez de SEMPRE depender do fluxo "tira foto -> decodifica com
- * ML Kit" (que exige boa resolução/foco de perto da câmera do app, nem
- * sempre bom em aparelhos antigos), chama o leitor de QR NATIVO de verdade
- * do Android moderno -- a Code Scanner API do Google Play Services
- * (GmsBarcodeScanning). Investigação anterior (#883) tentou um Intent
- * implícito pra "com.google.zxing.client.android.SCAN" (a action do antigo
- * app "ZXing Barcode Scanner"), mas o usuário confirmou com screenshot do
- * próprio aparelho que NENHUM app moderno responde mais a essa action --
- * causa raiz real do "QR ainda não abre" que persistia mesmo depois da
- * action ter sido declarada em <queries> (#896). A Code Scanner API não é
- * um Intent de terceiros: é uma chamada de API direta que abre um
- * bottomsheet pronto do próprio sistema ("Scan QR code"), funciona em
- * qualquer aparelho com Google Play Services (a imensa maioria), e não
- * exige a permissão CAMERA do nosso app (quem acessa a câmera é o próprio
- * Play Services, isolado do app chamador). */
-fun iniciarLeitorQrNativo(
-    context: Context,
-    onSucesso: (String) -> Unit,
-    onCancelado: () -> Unit,
-    onFalha: (Exception) -> Unit,
-) {
-    val options = com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions.Builder()
-        .setBarcodeFormats(com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE)
-        .build()
-    val scanner = com.google.mlkit.vision.codescanner.GmsBarcodeScanning.getClient(context, options)
-    scanner.startScan()
-        .addOnSuccessListener { barcode ->
-            val texto = barcode.rawValue ?: barcode.displayValue
-            if (texto.isNullOrBlank()) {
-                onFalha(IllegalStateException("QR Code lido sem conteúdo de texto"))
-            } else {
-                onSucesso(texto)
-            }
-        }
-        .addOnCanceledListener { onCancelado() }
-        .addOnFailureListener { e -> onFalha(e) }
-}
+// v78 -- iniciarLeitorQrNativo (tela pronta do Google Play Services) saiu:
+// o leitor de QR ao vivo agora é próprio do BRAgro (LeitorQrCamera.kt).

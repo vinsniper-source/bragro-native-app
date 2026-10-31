@@ -179,6 +179,20 @@ class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** v78 -- leitor ao vivo próprio: só confere se o QR é de uma frota
+     * cadastrada (mesma regra de [aplicarTextoQrLido]), sem aplicar ainda. */
+    fun identificarFrotaQr(texto: String): String? {
+        val registradas = frotasRegistradas
+        val valoresValidos = if (registradas.isNullOrEmpty()) frotas.value.map { it.value } else registradas
+        return parseFrotaQrPayload(texto, valoresValidos)
+    }
+
+    fun aplicarFrotaQr(match: String) {
+        frota = match
+        qrMensagem.value = null
+        lendoQr.value = false
+    }
+
     private fun aplicarTextoQrLido(texto: String) {
         // Pedido do usuário: "aceitar apenas dados para o qr que
         // venha da base de dados" -- restringe a validação do QR às
@@ -318,27 +332,39 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
         }
     }
 
-    // "Colocar a condição de acessar o QR nativo do celular, pq existem
-    // celulares mais antigos que o QR code é separado da câmera" (pedido do
-    // usuário): o fluxo acima (foto + ML Kit) depende da câmera do app saber
-    // focar de perto o suficiente pra decodificar um QR Code -- em aparelhos
-    // mais antigos/ROMs customizadas isso nem sempre funciona bem. Este
-    // segundo botão usa o leitor de QR NATIVO de verdade do Android moderno
-    // (Code Scanner API do Google Play Services, GmsBarcodeScanning --
-    // ver comentário completo em iniciarLeitorQrNativo/CameraPermissionUtils.kt):
-    // diferente da 1ª tentativa (#883, Intent implícito pra action do antigo
-    // ZXing, confirmado pelo usuário que NÃO existe mais em celular nenhum),
-    // esta é uma chamada de API direta que abre um bottomsheet pronto do
-    // próprio sistema, sem precisar da permissão CAMERA do nosso próprio app.
+    // v78 -- leitor de QR AO VIVO próprio do BRAgro (LeitorQrCamera.kt,
+    // mockup v78 aprovado), no lugar da tela pronta do Google Play Services
+    // (GmsBarcodeScanning). Usa a mesma permissão CAMERA do botão de foto.
+    var mostrarLeitorAoVivo by remember { mutableStateOf(false) }
+    val permissaoLeitorAoVivo = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedida ->
+        if (concedida) {
+            cameraPermanentementeNegada = false
+            mostrarLeitorAoVivo = true
+        } else {
+            val activity = context as? android.app.Activity
+            cameraPermanentementeNegada = activity != null &&
+                !androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.CAMERA)
+            viewModel.onQrPhotoCancelled()
+        }
+    }
     fun launchQrExterno() {
-        iniciarLeitorQrNativo(
-            context = context,
-            onSucesso = { texto -> viewModel.onQrTextoLidoExterno(texto) },
-            onCancelado = { viewModel.onQrPhotoCancelled() },
-            onFalha = { e ->
-                AppLog.e("QuickAbastecimentoDialog", "Falha ao abrir o leitor de QR nativo do aparelho", e)
-                android.widget.Toast.makeText(context, "Não foi possível abrir o leitor de QR do aparelho. Use o botão de foto.", android.widget.Toast.LENGTH_LONG).show()
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            mostrarLeitorAoVivo = true
+        } else if (cameraPermanentementeNegada) {
+            openAppSettings(context)
+        } else {
+            marcarCameraPermissaoJaPedida(context)
+            permissaoLeitorAoVivo.launch(Manifest.permission.CAMERA)
+        }
+    }
+    if (mostrarLeitorAoVivo) {
+        LeitorQrCameraDialog(
+            identificar = { texto -> viewModel.identificarFrotaQr(texto) },
+            onConfirmado = { frota ->
+                viewModel.aplicarFrotaQr(frota)
+                mostrarLeitorAoVivo = false
             },
+            onFechar = { mostrarLeitorAoVivo = false },
         )
     }
 
@@ -382,20 +408,18 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
                             )
                         }
                     }
-                    // 2º botão -- leitor de QR NATIVO do aparelho (câmera ao
-                    // vivo do app de QR/câmera de fábrica), alternativa ao
-                    // botão de foto acima pra celulares mais antigos onde o
-                    // leitor de QR é separado da câmera (pedido do usuário).
+                    // 2º botão -- leitor de QR ao vivo (próprio do BRAgro,
+                    // LeitorQrCamera.kt), alternativa ao botão de foto acima.
                     androidx.compose.material3.IconButton(onClick = { launchQrExterno() }, enabled = !lendoQr) {
                         androidx.compose.material3.Icon(
                             Icons.Outlined.CenterFocusWeak,
-                            contentDescription = "Ler QR Code com o leitor do aparelho",
+                            contentDescription = "Ler QR Code com a câmera ao vivo",
                             tint = androidx.compose.material3.MaterialTheme.colorScheme.secondary,
                         )
                     }
                 }
                 Text(
-                    "Câmera lê por foto. Leitor do aparelho usa o app de QR nativo (melhor em celulares mais antigos).",
+                    "Câmera lê por foto. O leitor ao vivo lê o QR direto pela câmera, sem tirar foto.",
                     style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
                     color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                 )

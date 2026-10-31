@@ -2663,7 +2663,7 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh
             val itens: List<Triple<androidx.compose.ui.graphics.vector.ImageVector, String, String?>> = listOf(
                 Triple(Icons.Outlined.WaterDrop, "Umidade", n(clima.umidade)?.let { "$it%" }),
                 Triple(Icons.Outlined.Air, "Vento", clima.ventoKmH?.let { "${it.roundToInt()}" + (clima.dirVento?.let { d -> " $d" } ?: "") }),
-                Triple(Icons.Outlined.Storm, "Rajadas", n(clima.rajadasKmH)),
+                Triple(Icons.Outlined.Storm, "Rajadas (estimadas)", n(clima.rajadasKmH)),
                 Triple(Icons.Outlined.Cloud, "Nuvens", n(clima.nuvensPct)?.let { "$it%" }),
                 Triple(Icons.Outlined.DeviceThermostat, "Orvalho", n(clima.orvalhoC)?.let { "$it°" }),
                 Triple(Icons.Outlined.Speed, "Pressão", n(clima.pressaoHpa)),

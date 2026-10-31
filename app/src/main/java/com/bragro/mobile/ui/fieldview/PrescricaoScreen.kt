@@ -529,6 +529,7 @@ private fun PrescricaoMap(p: PrescricaoData) {
                 allPoints.addAll(points)
             }
             if (allPoints.isNotEmpty()) mv.controller.setCenter(allPoints.first())
+            MapaBRAgro.credito(mv)
             mv.invalidate()
         },
         onRelease = { mapView -> mapView.onDetach() },

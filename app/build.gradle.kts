@@ -301,7 +301,8 @@ dependencies {
     // ("Scan QR code"), SEM pedir permissão CAMERA do nosso app e SEM
     // depender de resolver nenhum Intent implícito de terceiros -- é uma
     // chamada de API direta (GmsBarcodeScanning), ver CameraPermissionUtils.kt.
-    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
+    // v78 -- SAIU: o leitor ao vivo agora é próprio (LeitorQrCamera.kt, câmera
+    // do Android + ZXing), sem Google Play Services.
     // Ponte suspend/await para as Task<> do Google Play Services (ML Kit
     // devolve Task<Text>, nao uma suspend fun) -- sem isso, `.await()" nao
     // compila.

@@ -987,6 +987,7 @@ private fun BoundariesMap(
         factory = { ctx ->
             MapView(ctx).apply {
                 setTileSource(MapaBRAgro.fonte)
+                MapaBRAgro.credito(this)
                 setMultiTouchControls(true)
                 zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
                 isHorizontalMapRepetitionEnabled = false
@@ -1044,6 +1045,7 @@ private fun BoundariesMap(
                 d.setFillColor(if (draft.size >= 3) 0x33E65100 else 0)
                 mv.overlays.add(d)
             }
+            MapaBRAgro.credito(mv)
             // Centraliza nos talhões UMA vez; depois o zoom é do usuário.
             if (estadoMapa[1] != true && allPoints.isNotEmpty()) {
                 estadoMapa[1] = true
