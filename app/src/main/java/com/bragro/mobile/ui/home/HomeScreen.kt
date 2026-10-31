@@ -2655,8 +2655,8 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh
                 }
             }
             // v76g -- igual à plataforma: só ícones (nome ao tocar e segurar),
-            // 6 colunas alinhadas com a previsão; ícone e valor começam na mesma
-            // margem em cada coluna; divisórias verticais curtas.
+            // 6 colunas alinhadas com a previsão; conteúdo centralizado em cada
+            // divisória; divisórias verticais curtas.
             val uv = clima.uvMax?.let { u ->
                 "${u.roundToInt()} " + when { u < 3 -> "baixo"; u < 6 -> "mod."; u < 11 -> "alto"; else -> "extr." }
             }
@@ -2690,7 +2690,8 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh
                                         state = androidx.compose.material3.rememberTooltipState(),
                                     ) {
                                         Row(
-                                            modifier = Modifier.fillMaxWidth().padding(start = if (ci == 0) 0.dp else 4.dp, top = 4.dp, bottom = 4.dp),
+                                            modifier = Modifier.fillMaxWidth().padding(horizontal = 1.dp, vertical = 4.dp),
+                                            horizontalArrangement = Arrangement.Center,
                                             verticalAlignment = Alignment.CenterVertically,
                                         ) {
                                             Icon(icone, contentDescription = rot, tint = verde, modifier = Modifier.size(12.dp))
@@ -2711,7 +2712,7 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh
                 Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
                     clima.forecast.take(6).forEachIndexed { i, d ->
                         if (i > 0) VerticalDivider(color = linha, modifier = Modifier.fillMaxHeight(0.6f))
-                        Column(modifier = Modifier.weight(1f).padding(start = if (i == 0) 0.dp else 4.dp)) {
+                        Column(modifier = Modifier.weight(1f).padding(horizontal = 1.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             val dia = runCatching {
                                 val parsed = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(d.date)
                                 SimpleDateFormat("EEE", br).format(parsed!!).replace(".", "").replaceFirstChar { it.uppercase() }
