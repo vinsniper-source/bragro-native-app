@@ -45,8 +45,8 @@ android {
         // ja estava em 1.3.83, entao qualquer envio seria recusado pelo Play.
         // Salto deliberado para ficar acima de tudo que ja foi publicado.
         // v48 -- 1.3.88 (201): primeira versao publicada pelo GitHub Releases.
-        versionCode = 215
-        versionName = "1.4.2"
+        versionCode = 216
+        versionName = "1.4.3"
 
         // URLs do backend (o MESMO backend do site publicado -- ver
         // native-app/README.md). Trocaveis por variante/ambiente sem
@@ -54,12 +54,6 @@ android {
         buildConfigField("String", "API_BASE_URL", "\"https://sistema-agro-bra.vercel.app\"")
         buildConfigField("String", "SUPABASE_URL", "\"https://njmycnbahhvodlhwqnfw.supabase.co\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"sb_publishable_DTtsVk2VEVJjOzSFV8iANg_mE_7JBGt\"")
-        // Sentry (travamentos e erros do app) -- MESMO projeto Sentry do site
-        // (sistema-agro-bra), entao os erros do app aparecem automaticamente
-        // no bloco "Erros abertos" do Painel BRAgro (/admin), marcados com
-        // environment "android". DSN e publico por design (so permite ENVIAR
-        // eventos, nao ler), igual ao NEXT_PUBLIC_SENTRY_DSN do site.
-        buildConfigField("String", "SENTRY_DSN", "\"https://ee1eea5f170d295fc59cf3706ecb7dee@o4511776072007681.ingest.us.sentry.io/4511776148226053\"")
 
         // Restringe as bibliotecas nativas (.so) do ML Kit (OCR do Romaneio
         // Rapido) so pra arm64-v8a -- sem isso, o APK carrega 4 copias
@@ -310,48 +304,10 @@ dependencies {
     // sozinho pra OCR, mas a compressao manual abaixo nao).
     implementation("androidx.exifinterface:exifinterface:1.3.7")
 
-    // Fase 3: relato de erros (Crashlytics) -- so funciona de verdade
-    // depois que existir um app/google-services.json (ver bloco no fim
-    // deste arquivo e README). A dependencia em si e so uma biblioteca
-    // normal, nao exige o arquivo pra COMPILAR -- sem ele, o Firebase
-    // simplesmente nao inicializa em tempo de execucao (nenhum crash
-    // reportado, nenhum erro visivel, comportamento identico a hoje).
-    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
-    implementation("com.google.firebase:firebase-crashlytics")
-
-    // Sentry -- relato de travamentos/ANR no MESMO projeto Sentry do site,
-    // pra aparecer no Painel BRAgro do /admin (o Crashlytics nao tem API de
-    // leitura). Convive com o Crashlytics acima (os dois capturam o mesmo
-    // crash, cada um no seu console). "-core" de proposito: sem o modulo
-    // NDK (.so nativos), pra nao aumentar o APK (limite de 50MB do bucket).
-    // Versao 7.14.0 (ago/2024) escolhida por ser da mesma epoca do resto do
-    // projeto (AGP 8.5 / compileSdk 34 / Kotlin 1.9) -- as 8.x mais novas
-    // podem exigir compileSdk maior.
-    implementation("io.sentry:sentry-android-core:7.14.0")
+    // v74 -- sem Firebase Crashlytics e sem Sentry: o registro de erros é
+    // próprio (data/ErroReporter.kt -> /api/public/erros da plataforma).
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
 }
-
-// Fase 3: so aplica o plugin do google-services (que GERA os recursos que o
-// Firebase precisa pra inicializar sozinho, a partir do json) quando o
-// arquivo de verdade existir -- aplicar esse plugin sem o json quebraria a
-// configuracao do Gradle pra QUALQUER build (ate "assembleDebug"), entao
-// nao pode ser incondicional enquanto nem todo mundo (CI incluso) tem esse
-// arquivo. Ver keystore.properties acima pro mesmo padrao aplicado a
-// assinatura de release.
-if (file("google-services.json").exists()) {
-    apply(plugin = "com.google.gms.google-services")
-    // Task #749: precisa vir junto com o google-services -- sem este plugin,
-    // a dependencia "firebase-crashlytics" (acima) compila normal mas
-    // DERRUBA o app em runtime (ver comentario detalhado no build.gradle.kts
-    // raiz). Ambos os plugins juntos == Crashlytics funcionando de verdade.
-    apply(plugin = "com.google.firebase.crashlytics")
-}
-
-
-
-
-
-
