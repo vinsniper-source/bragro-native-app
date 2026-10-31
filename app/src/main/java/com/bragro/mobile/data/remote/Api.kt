@@ -560,6 +560,13 @@ interface MobileApi {
     @GET("api/mobile/weather")
     suspend fun weather(): Response<WeatherResponse>
 
+    // v85 -- aviso do Agrofit nos formulários (rota pública, dado aberto do MAPA).
+    @GET("api/public/agrofit")
+    suspend fun agrofit(
+        @retrofit2.http.Query("produto") produto: String,
+        @retrofit2.http.Query("cultura") cultura: String,
+    ): Response<com.bragro.mobile.data.model.AgrofitConsulta>
+
     @POST("api/offline-sync")
     suspend fun sync(@Body body: SyncRequest): Response<SyncResponse>
 }

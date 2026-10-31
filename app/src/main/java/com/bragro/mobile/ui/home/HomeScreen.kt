@@ -244,6 +244,12 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     // usuário ("implemente também em destaques atualização: data e hora").
     var lastUpdatedAt = mutableStateOf<Long?>(null)
         private set
+    // v85 -- "Sua média" das Cotações Grãos (null quando o usuário não vê o Financeiro).
+    var suaMedia = mutableStateOf<kotlinx.serialization.json.JsonObject?>(null)
+        private set
+    var suaMediaCarregada = mutableStateOf(false)
+        private set
+    private val moduleActionsRepository = com.bragro.mobile.data.repo.ModuleActionsRepository(app)
 
     init {
         viewModelScope.launch { recordRepository.observePendingCount().collectLatest { pendingCount.value = it } }
@@ -283,6 +289,13 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             loading.value = false
         }
         viewModelScope.launch { weather.value = weatherRepository.fetch() }
+        viewModelScope.launch {
+            val r = moduleActionsRepository.run("sua-media")
+            val media = r?.get("media")
+            suaMedia.value = media as? kotlinx.serialization.json.JsonObject
+            // Sem acesso ao Financeiro o servidor manda media = null: aí o bloco não aparece.
+            if (r != null) suaMediaCarregada.value = media is kotlinx.serialization.json.JsonObject
+        }
         // Listas suspensas/módulos/fazendas -- pedido do usuário ("atualiza
         // todas as listas suspensas de todos os módulos... faça para que
         // quando apagar desapareça também das listas suspensas
@@ -1491,7 +1504,7 @@ fun HomeScreen(
             // substitui as cotacoes brasileiras (Grao Direto / CEPEA).
             if (!com.bragro.mobile.ui.i18n.Idioma.argentina && data.hasWidget("inicio.cotacoes")) {
             item(key = "cotacoes") {
-                weather?.commodities?.let { CotacoesCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth()) }
+                weather?.commodities?.let { CotacoesCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth(), suaMedia = viewModel.suaMedia.value, mostrarSuaMedia = viewModel.suaMediaCarregada.value) }
             }
             }
             // Cotações Pecuária (Boi Gordo/CEPEA) -- pedido do usuário
@@ -3135,6 +3148,42 @@ private fun FxVariacaoTag(pct: Double?) {
     }
 }
 
+/** v85 (mockup v85 aprovado) -- "Sua média": preço médio que a fazenda
+ * recebeu (vendas do Financeiro ÷ sacas dos Romaneios, mesma função da
+ * plataforma: lib/services/sua-media.ts). Verde acima da cotação, laranja abaixo. */
+@Composable
+private fun SuaMediaGrao(m: kotlinx.serialization.json.JsonObject?, cotacao: Double) {
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    fun txt(k: String) = (m?.get(k) as? kotlinx.serialization.json.JsonPrimitive)?.let { if (it.isString) it.content else it.toString() }
+    Column(modifier = Modifier.padding(top = 4.dp)) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Spacer(Modifier.height(3.dp))
+        val media = txt("mediaRsSc")?.toDoubleOrNull()
+        if (m == null || media == null) {
+            Text("Sua média", style = MaterialTheme.typography.labelSmall, color = muted)
+            Text("—", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, color = muted)
+            Text("sem vendas lançadas", style = MaterialTheme.typography.labelSmall, color = muted)
+            return@Column
+        }
+        Text("Sua média · ${txt("safra").orEmpty()}", style = MaterialTheme.typography.labelSmall, color = muted, maxLines = 1)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("R$ ${formatMoneyNumberOnly(media)}", style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"), fontWeight = FontWeight.SemiBold, maxLines = 1)
+            if (cotacao > 0) {
+                val dif = Math.round((media - cotacao) / cotacao * 1000) / 10.0
+                val cor = if (dif >= 0) MaterialTheme.colorScheme.primary else com.bragro.mobile.ui.domain.corAtencao()
+                Text(
+                    " " + (if (dif >= 0) "+" else "−") + String.format(java.util.Locale("pt", "BR"), "%.1f", kotlin.math.abs(dif)) + "%",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = cor,
+                    maxLines = 1,
+                )
+            }
+        }
+        val sacas = txt("sacas")?.toDoubleOrNull()?.toLong() ?: 0L
+        Text("${java.text.NumberFormat.getIntegerInstance(java.util.Locale("pt", "BR")).format(sacas)} sc vendidas", style = MaterialTheme.typography.labelSmall, color = muted, maxLines = 1)
+    }
+}
+
 // Cotações e Destaques agora replicam o MESMO layout/tamanho de fonte do
 // Câmbio -- pedido do usuário ("use o layout de câmbio para aplicar nos kpis
 // cotações e destaques pulando uma linha, alternando com negrito e sem
@@ -3142,13 +3191,15 @@ private fun FxVariacaoTag(pct: Double?) {
 // sem negrito seguido do valor em negrito, cada um na sua própria linha.
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
+private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth(), suaMedia: kotlinx.serialization.json.JsonObject? = null, mostrarSuaMedia: Boolean = false) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             // Renomeado -- pedido do usuário ("altere o kpi cotações
             // agrícolas para cotações grãos").
             MiniCardHeaderWithRefresh("Cotações Grãos", IconesVazados.Trigo, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
             val itens = listOfNotNull(com.soja, com.milho, com.sorgo)
+            // v85 -- chave de cada coluna para achar a "Sua média" do grão.
+            val chaves = listOfNotNull(com.soja?.let { "soja" }, com.milho?.let { "milho" }, com.sorgo?.let { "sorgo" })
             // Quantidade (unidade "sc" = saca) + variação/porcentagem do dia
             // ao lado do preço -- pedido do usuário ("insira a quantidade de
             // cada sc, os ícones de variações e a porcentagem"), mesmo
@@ -3262,6 +3313,7 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
                                 modifier = Modifier.basicMarquee(),
                             )
                         }
+                        if (mostrarSuaMedia) SuaMediaGrao(suaMedia?.get(chaves.getOrNull(index) ?: "") as? kotlinx.serialization.json.JsonObject, q.valor)
                     }
                 }
             }

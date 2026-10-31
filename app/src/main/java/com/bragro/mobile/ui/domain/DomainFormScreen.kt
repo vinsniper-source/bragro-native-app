@@ -1486,6 +1486,8 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
     if (col.hint != null) {
         Text(col.hint, style = MaterialTheme.typography.bodySmall)
     }
+    // v85 -- aviso do Agrofit (registro no MAPA) embaixo do item.
+    col.agrofit?.let { AgrofitAviso(it, viewModel.fields[col.key], viewModel.fields) }
 }
 
 // Conversão pro DatePicker (Material3) -- ele trabalha em epoch millis UTC,

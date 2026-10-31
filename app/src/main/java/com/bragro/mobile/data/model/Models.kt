@@ -62,6 +62,38 @@ data class ColumnConfig(
     // pra a aplicação real, espelhando isFieldVisible() de record-form.tsx.
     val visibleWhenRoles: List<String>? = null,
     val visibleWhenAll: List<VisibleWhenAllRule>? = null,
+    // v85 -- aviso do Agrofit (registro no MAPA) embaixo do campo de item.
+    val agrofit: AgrofitConfig? = null,
+)
+
+@Serializable
+data class AgrofitConfig(
+    val culturaField: String? = null,
+    val quando: VisibleWhenAllRule? = null,
+)
+
+/** v85 -- resposta de /api/public/agrofit (lib/services/agrofit.ts). */
+@Serializable
+data class AgrofitProduto(
+    val marca: String = "",
+    val registro: String = "",
+    val classe: String = "",
+    val ingrediente: String = "",
+    val toxicologica: String = "",
+    val ambiental: String = "",
+    val organico: Boolean = false,
+    val situacao: String = "",
+    val culturas: List<String> = emptyList(),
+)
+
+@Serializable
+data class AgrofitConsulta(
+    val ok: Boolean = false,
+    val encontrado: Boolean = false,
+    val produto: AgrofitProduto? = null,
+    val registradoNaCultura: Boolean? = null,
+    val cultura: String? = null,
+    val alvos: List<String>? = null,
 )
 
 @Serializable
