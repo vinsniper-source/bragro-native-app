@@ -3160,6 +3160,11 @@ private fun FxVariacaoTag(pct: Double?) {
 /** v85 (mockup v85 aprovado) -- "Sua média": preço médio que a fazenda
  * recebeu (vendas do Financeiro ÷ sacas dos Romaneios, mesma função da
  * plataforma: lib/services/sua-media.ts). Verde acima da cotação, laranja abaixo. */
+// v90 -- dentro do CotacoesCard o parâmetro "com" esconde o pacote "com.",
+// então a cor de atenção vem por aqui.
+@Composable
+private fun corAtencaoHome() = com.bragro.mobile.ui.domain.corAtencao()
+
 @Composable
 private fun SuaMediaGrao(m: kotlinx.serialization.json.JsonObject?, cotacao: Double) {
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
@@ -3314,7 +3319,27 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
                         }
                         // Praça de referência por extenso, sem abreviar --
                         // mesmo campo "praca" que o site exibe (Grão Direto).
-                        if (q.praca.isNotBlank()) {
+                        // v90 (mockup v90) -- igual à plataforma: Grão Direto há
+                        // mais de 15 dias sem atualizar este grão -> aviso laranja
+                        // no lugar da praça, pra ninguém tomar o preço antigo por atual.
+                        val corAtencaoGraos = corAtencaoHome()
+                        val parada = q.atualizadoEm?.let { d ->
+                            Regex("""^(\d{2})/(\d{2})/(\d{4})$""").find(d)?.groupValues?.let { g ->
+                                val cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
+                                cal.clear()
+                                cal.set(g[3].toInt(), g[2].toInt() - 1, g[1].toInt())
+                                val dias = (System.currentTimeMillis() - cal.timeInMillis) / 86_400_000.0
+                                if (dias > 15) "${g[1]}/${g[2]}" else null
+                            }
+                        }
+                        if (parada != null) {
+                            Text(
+                                "sem atualização desde $parada",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = corAtencaoGraos,
+                                maxLines = 2,
+                            )
+                        } else if (q.praca.isNotBlank()) {
                             Text(
                                 q.praca,
                                 style = MaterialTheme.typography.labelSmall,
