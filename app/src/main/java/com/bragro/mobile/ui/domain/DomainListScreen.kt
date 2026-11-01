@@ -212,6 +212,8 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
     // Listas suspensas + fazendas pra conferência de cadastro (Pendentes, v11).
     var lookupsConferencia = mutableStateOf<Map<String, List<com.bragro.mobile.data.local.LookupEntity>>>(emptyMap())
     var fazendasConferencia = mutableStateOf<List<com.bragro.mobile.data.local.FarmEntity>>(emptyList())
+    // v97 -- "CULTURA|SAFRA" com romaneio (checagem "sem romaneio" do Financeiro).
+    var romaneiosConferencia = mutableStateOf<Set<String>?>(null)
 
     fun load(domainId: String) {
         viewModelScope.launch {
@@ -220,6 +222,14 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
                 val cats = cfg.columns.flatMap { c -> listOfNotNull(c.lookupCategory) + c.lookupCategoryByValue?.values.orEmpty() }.toSet()
                 lookupsConferencia.value = cats.associateWith { configRepository.lookupsByCategory(it) }
                 fazendasConferencia.value = configRepository.farms()
+            }
+            if (domainId == "financeiro") {
+                // Só confere "sem romaneio" se o app já tem os romaneios guardados.
+                val roms = kotlinx.coroutines.withTimeoutOrNull(2_000) { recordRepository.observeRecords("romaneios").first() }.orEmpty()
+                romaneiosConferencia.value = roms
+                    .mapNotNull { r -> val c = r["cultura"]; val sf = r["safra"]; if (c.isNullOrBlank() || sf.isNullOrBlank()) null else "${normalizarTexto(c)}|${normalizarTexto(sf)}" }
+                    .toSet()
+                    .takeIf { it.isNotEmpty() }
             }
             recordRepository.observeRecords(domainId).collectLatest { records.value = it }
         }
@@ -801,10 +811,11 @@ fun DomainListScreen(
         // vazio, fora da lista, grafia diferente ou números que não batem.
         val lookupsConf by viewModel.lookupsConferencia
         val fazConf by viewModel.fazendasConferencia
+        val romConf by viewModel.romaneiosConferencia
         // Só a fazenda escolhida no topo (v14) -- painel e conferência.
         val recordsFaz = remember(records, globalFarmField, globalFarmSelected) { FarmSelection.filtrar(records, globalFarmField) }
-        val problemasConf = remember(recordsFaz, lookupsConf, fazConf, cfg) {
-            recordsFaz.mapNotNull { r -> val p = conferirRegistro(cfg, r, lookupsConf, fazConf); val id = r["id"]; if (p.isEmpty() || id == null) null else id to p }.toMap()
+        val problemasConf = remember(recordsFaz, lookupsConf, fazConf, romConf, cfg) {
+            recordsFaz.mapNotNull { r -> val p = conferirRegistro(cfg, r, lookupsConf, fazConf, romConf); val id = r["id"]; if (p.isEmpty() || id == null) null else id to p }.toMap()
         }
         // Divisor tracejado entre registros do MESMO Nº Pedido+Item, só em
         // Pedidos -- espelho de pedidoItemBoundary (data-table.tsx). Os

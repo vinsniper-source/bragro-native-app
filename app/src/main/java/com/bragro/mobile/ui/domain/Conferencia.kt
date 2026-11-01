@@ -36,7 +36,11 @@ data class ProblemaCampo(
     val mensagem: String,
 )
 
-val ROTULO_PROBLEMA = mapOf("vazio" to "Campo vazio", "lista" to "Fora da lista", "grafia" to "Acento / maiúscula", "divergencia" to "Divergência")
+val ROTULO_PROBLEMA = mapOf(
+    "vazio" to "Campo vazio", "lista" to "Fora da lista", "grafia" to "Acento / maiúscula", "divergencia" to "Divergência",
+    // v97 -- checagens de coerência (espelho de conferencia.ts).
+    "naoCombina" to "Não combina", "dataFutura" to "Data futura", "semRomaneio" to "Sem romaneio",
+)
 
 private val MARCAS = Regex("\\p{M}+")
 private val ESPACOS = Regex("\\s+")
@@ -68,7 +72,14 @@ private fun opcoesDo(col: ColumnConfig, r: Map<String, String?>, lookups: Map<St
     return if (col.key == "local" && base.isNotEmpty()) base + nomes else base
 }
 
-fun conferirRegistro(cfg: DomainConfig, r: Map<String, String?>, lookups: Map<String, List<LookupEntity>>, farms: List<FarmEntity>): List<ProblemaCampo> {
+fun conferirRegistro(
+    cfg: DomainConfig,
+    r: Map<String, String?>,
+    lookups: Map<String, List<LookupEntity>>,
+    farms: List<FarmEntity>,
+    // v97 -- "CULTURA|SAFRA" com romaneio; null = não confere "sem romaneio".
+    romaneiosCulturaSafra: Set<String>? = null,
+): List<ProblemaCampo> {
     val out = mutableListOf<ProblemaCampo>()
     for (col in cfg.columns) {
         if (col.computed || col.type == "checkbox") continue
@@ -120,7 +131,47 @@ fun conferirRegistro(cfg: DomainConfig, r: Map<String, String?>, lookups: Map<St
             out += ProblemaCampo("hectare", "Hectare", "divergencia", mensagem = "Hectare ${nf.format(ha)} maior que a área da fazenda (${nf.format(faz.areaHa)} ha)")
         }
     }
+    conferirCoerencia(cfg, r, lookups, romaneiosCulturaSafra, out)
     return out
+}
+
+// v97 (mockup v97) -- coerência entre campos e módulos, espelho de
+// conferirCoerencia em lib/domains/conferencia.ts da plataforma.
+private val GRAOS_ROMANEIO = setOf("SOJA", "MILHO", "SORGO", "TRIGO", "FEIJAO", "ARROZ", "AVEIA", "CEVADA", "GIRASSOL", "AMENDOIM", "ALGODAO", "CAFE")
+private val DATA_REAL = mapOf("romaneios" to "data", "colheita" to "dataInicio", "safra" to "dataInicio", "financeiro" to "data")
+
+private fun conferirCoerencia(cfg: DomainConfig, r: Map<String, String?>, lookups: Map<String, List<LookupEntity>>, romaneios: Set<String>?, out: MutableList<ProblemaCampo>) {
+    val tem = { k: String -> cfg.columns.any { it.key == k } }
+    val venda = cfg.id == "financeiro" && (normalizarTexto(r["operacao"].orEmpty()) == "VENDA" || normalizarTexto(r["categoria"].orEmpty()) == "VENDA SAFRA")
+    val cultura = r["cultura"]?.takeIf { it.isNotBlank() }
+    val subcat = r["subcategoria"]?.takeIf { it.isNotBlank() }
+    if (tem("cultura") && tem("subcategoria") && cultura != null && subcat != null) {
+        val c = normalizarTexto(cultura)
+        val palavras = normalizarTexto(subcat).split(Regex("[^A-Z0-9]+"))
+        val achada = lookups["culturas"].orEmpty().map { it.value }.firstOrNull { o ->
+            val n = normalizarTexto(o)
+            n.length >= 3 && n != c && !n.contains(" ") && n in palavras
+        }
+        if (achada != null && c !in palavras) {
+            out += ProblemaCampo("cultura", "Cultura", "naoCombina", cultura, achada, "Subcategoria $subcat com Cultura $cultura")
+        }
+    }
+    val campoData = DATA_REAL[cfg.id]
+    if (campoData != null && tem(campoData) && (cfg.id != "financeiro" || venda)) {
+        val iso = r[campoData]?.take(10).orEmpty()
+        val hoje = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(java.util.Date(System.currentTimeMillis() + 86_400_000L))
+        if (iso.length == 10 && iso > hoje) {
+            val rot = cfg.columns.firstOrNull { it.key == campoData }?.label ?: "Data"
+            out += ProblemaCampo(campoData, rot, "dataFutura", mensagem = "$rot ${isoDateToBr(iso)} está no futuro — " + if (cfg.id == "financeiro") "confira se não é a data do vencimento" else "confira a data")
+        }
+    }
+    val safra = r["safra"]?.takeIf { it.isNotBlank() }
+    if (venda && romaneios != null && cultura != null && safra != null) {
+        val c = normalizarTexto(cultura)
+        if (c in GRAOS_ROMANEIO && "$c|${normalizarTexto(safra)}" !in romaneios) {
+            out += ProblemaCampo("cultura", "Cultura", "semRomaneio", mensagem = "Venda de $cultura $safra sem nenhum romaneio dessa cultura nessa safra — a Sua média e o custo por saca ficam sem as sacas")
+        }
+    }
 }
 
 /** Lista da conferência (abre ao tocar em "Pendentes"). */
@@ -139,6 +190,11 @@ fun ConferenciaCard(
     fun titulo(id: String): String {
         val r = records.firstOrNull { it["id"] == id } ?: return "Registro"
         val data = (r["data"] ?: r["dataInicio"] ?: r["dataEmissao"])?.take(10)?.let { isoDateToBr(it) }
+        // v97 -- Financeiro: data · entidade · NF · valor (igual à plataforma).
+        if (r.containsKey("bruto") && r.containsKey("entidade")) {
+            val valor = r["bruto"]?.toDoubleOrNull()?.let { "R$ " + nf.format(it) }
+            return listOfNotNull(data, r["entidade"]?.takeIf { it.isNotBlank() }, r["docNf"]?.takeIf { it.isNotBlank() }?.let { "NF $it" }, valor).joinToString(" · ").ifBlank { "Registro" }
+        }
         return listOfNotNull(r["os"]?.takeIf { it.isNotBlank() }?.let { "O.S. $it" }, (r["local"] ?: r["fazenda"] ?: r["item"] ?: r["descricao"])?.takeIf { it.isNotBlank() }, data).joinToString(" · ").ifBlank { "Registro" }
     }
     val corrigiveis = problemas.flatMap { (id, ps) -> ps.filter { (it.tipo == "grafia" || it.tipo == "lista") && it.sugestao != null }.map { Triple(id, it, titulo(id)) } }
@@ -164,6 +220,7 @@ fun ConferenciaCard(
                     if (p.atual != null && p.sugestao != null) {
                         Text(
                             androidx.compose.ui.text.buildAnnotatedString {
+                                if (p.tipo == "naoCombina") append("${p.mensagem} → ")
                                 append("${p.rotulo}: ")
                                 pushStyle(androidx.compose.ui.text.SpanStyle(color = cs.onSurfaceVariant, textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)); append(p.atual); pop()
                                 append(" → ")

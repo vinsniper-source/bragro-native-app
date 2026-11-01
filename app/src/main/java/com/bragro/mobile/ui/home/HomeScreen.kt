@@ -252,6 +252,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     // v87 -- histórico de cotações (soja/milho/sorgo/dolar -> {inicio, pontos}).
     var historicoCotacoes = mutableStateOf<kotlinx.serialization.json.JsonObject?>(null)
         private set
+    // v97 -- custo por saca do DRE (soja/milho/sorgo -> {safra, custoPorSc, custoPorHa, sacas}).
+    var custoSaca = mutableStateOf<kotlinx.serialization.json.JsonObject?>(null)
+        private set
     private val moduleActionsRepository = com.bragro.mobile.data.repo.ModuleActionsRepository(app)
 
     init {
@@ -300,6 +303,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             // v87 -- "Sua média" + histórico de cotações num pedido só.
             val r = moduleActionsRepository.run("cotacoes-extra")
             historicoCotacoes.value = r?.get("historico") as? kotlinx.serialization.json.JsonObject
+            custoSaca.value = r?.get("custo") as? kotlinx.serialization.json.JsonObject
             val media = r?.get("media")
             suaMedia.value = media as? kotlinx.serialization.json.JsonObject
             // Sem acesso ao Financeiro o servidor manda media = null: aí o bloco não aparece.
@@ -1513,7 +1517,7 @@ fun HomeScreen(
             // substitui as cotacoes brasileiras (Grao Direto / CEPEA).
             if (!com.bragro.mobile.ui.i18n.Idioma.argentina && data.hasWidget("inicio.cotacoes")) {
             item(key = "cotacoes") {
-                weather?.commodities?.let { CotacoesCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth(), suaMedia = viewModel.suaMedia.value, mostrarSuaMedia = viewModel.suaMediaCarregada.value, historico = viewModel.historicoCotacoes.value) }
+                weather?.commodities?.let { CotacoesCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth(), suaMedia = viewModel.suaMedia.value, mostrarSuaMedia = viewModel.suaMediaCarregada.value, historico = viewModel.historicoCotacoes.value, custoSaca = viewModel.custoSaca.value) }
             }
             }
             // Cotações Pecuária (Boi Gordo/CEPEA) -- pedido do usuário
@@ -3160,6 +3164,46 @@ private fun FxVariacaoTag(pct: Double?) {
 /** v85 (mockup v85 aprovado) -- "Sua média": preço médio que a fazenda
  * recebeu (vendas do Financeiro ÷ sacas dos Romaneios, mesma função da
  * plataforma: lib/services/sua-media.ts). Verde acima da cotação, laranja abaixo. */
+/** v97 (mockup v97 aprovado) -- custo por saca da safra (mesmo número do
+ * DRE da plataforma: lib/services/custo-saca.ts) e a margem da cotação. */
+@Composable
+private fun CustoGrao(k: kotlinx.serialization.json.JsonObject?, cotacao: Double) {
+    if (k == null) return
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    fun txt(c: String) = (k[c] as? kotlinx.serialization.json.JsonPrimitive)?.let { if (it.isString) it.content else it.toString() }
+    val safra = txt("safra").orEmpty()
+    val porSc = txt("custoPorSc")?.toDoubleOrNull()
+    val porHa = txt("custoPorHa")?.toDoubleOrNull()
+    if (porSc == null && porHa == null) return
+    Column(modifier = Modifier.padding(top = 4.dp)) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Spacer(Modifier.height(3.dp))
+        if (porSc == null) {
+            Text("Custo · $safra", style = MaterialTheme.typography.labelSmall, color = muted, maxLines = 1)
+            Text("R$ ${java.text.NumberFormat.getIntegerInstance(java.util.Locale("pt", "BR")).format(porHa!!.toLong())}/ha", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
+            Text("sem colheita lançada", style = MaterialTheme.typography.labelSmall, color = muted, maxLines = 1)
+            return@Column
+        }
+        Text("Custo · $safra (DRE)", style = MaterialTheme.typography.labelSmall, color = muted, maxLines = 1)
+        Text("R$ ${formatMoneyNumberOnly(porSc)}/sc", style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"), fontWeight = FontWeight.SemiBold, maxLines = 1)
+        if (cotacao > 0) {
+            val mg = Math.round((cotacao - porSc) / porSc * 1000) / 10.0
+            Text(
+                "margem " + (if (mg >= 0) "+" else "−") + String.format(java.util.Locale("pt", "BR"), "%.1f", kotlin.math.abs(mg)) + "%",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (mg >= 0) MaterialTheme.colorScheme.primary else corAtencaoHome(),
+                maxLines = 1,
+            )
+            Text(
+                if (cotacao >= porSc) "sobra R$ ${formatMoneyNumberOnly(cotacao - porSc)}/sc hoje" else "cotação abaixo do custo",
+                style = MaterialTheme.typography.labelSmall,
+                color = muted,
+                maxLines = 2,
+            )
+        }
+    }
+}
+
 // v90 -- dentro do CotacoesCard o parâmetro "com" esconde o pacote "com.",
 // então a cor de atenção vem por aqui.
 @Composable
@@ -3205,7 +3249,7 @@ private fun SuaMediaGrao(m: kotlinx.serialization.json.JsonObject?, cotacao: Dou
 // sem negrito seguido do valor em negrito, cada um na sua própria linha.
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth(), suaMedia: kotlinx.serialization.json.JsonObject? = null, mostrarSuaMedia: Boolean = false, historico: kotlinx.serialization.json.JsonObject? = null) {
+private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth(), suaMedia: kotlinx.serialization.json.JsonObject? = null, mostrarSuaMedia: Boolean = false, historico: kotlinx.serialization.json.JsonObject? = null, custoSaca: kotlinx.serialization.json.JsonObject? = null) {
     var serieAberta by remember { mutableStateOf<String?>(null) }
     serieAberta?.let { inicial -> HistoricoCotacoesDialog(historico, suaMedia, inicial) { serieAberta = null } }
     Card(modifier = modifier) {
@@ -3352,6 +3396,8 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
                         // v87 -- linha dos últimos 12 meses (toque abre o histórico).
                         MiniHistoricoGrao(historico?.get(chaves.getOrNull(index) ?: "") as? kotlinx.serialization.json.JsonObject) { serieAberta = chaves.getOrNull(index) ?: "soja" }
                         if (mostrarSuaMedia) SuaMediaGrao(suaMedia?.get(chaves.getOrNull(index) ?: "") as? kotlinx.serialization.json.JsonObject, q.valor)
+                        // v97 -- ponto de equilíbrio (custo por saca do DRE x cotação).
+                        CustoGrao(custoSaca?.get(chaves.getOrNull(index) ?: "") as? kotlinx.serialization.json.JsonObject, q.valor)
                     }
                 }
             }
