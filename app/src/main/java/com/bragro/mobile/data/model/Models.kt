@@ -656,6 +656,8 @@ data class SettingsRequest(
     val notifEstoqueMinimo: Boolean? = null,
     val channel: String? = null,
     val plano: String? = null,
+    // v98 -- avisos do clima da fazenda.
+    val notifClima: Boolean? = null,
 )
 
 @Serializable

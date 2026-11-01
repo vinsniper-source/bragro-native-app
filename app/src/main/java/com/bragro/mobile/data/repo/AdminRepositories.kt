@@ -39,6 +39,7 @@ class SettingsRepository(context: Context) {
         notifEstoqueMinimo: Boolean? = null,
         channel: String? = null,
         plano: String? = null,
+        notifClima: Boolean? = null,
     ): Result<JsonElement?> {
         val tokens = tokenStore.current() ?: return Result.failure(IllegalStateException("Sessão expirada. Entre novamente."))
         var (accessToken, refreshToken) = tokens
@@ -47,7 +48,7 @@ class SettingsRepository(context: Context) {
             notifTelegramBotToken, notifTelegramChatId, notifWhatsappPhoneId, notifWhatsappToken, notifWhatsappTo,
             notifChannelPush, notifChannelTelegram, notifChannelWhatsapp,
             notifFrotaManutencao, notifRomaneioDiario, notifEstoqueMinimo,
-            channel, plano,
+            channel, plano, notifClima = notifClima,
         )
         return try {
             var response = NetworkModule.mobileApi.settings(body())

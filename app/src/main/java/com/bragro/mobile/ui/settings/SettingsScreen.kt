@@ -104,6 +104,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         whatsappPhoneId: String, whatsappToken: String, whatsappTo: String,
         channelPush: Boolean, channelTelegram: Boolean, channelWhatsapp: Boolean,
         frotaManutencao: Boolean, romaneioDiario: Boolean, estoqueMinimo: Boolean,
+        clima: Boolean,
         onDone: (Boolean) -> Unit,
     ) {
         saving.value = true
@@ -114,6 +115,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                 notifWhatsappPhoneId = whatsappPhoneId, notifWhatsappToken = whatsappToken, notifWhatsappTo = whatsappTo,
                 notifChannelPush = channelPush, notifChannelTelegram = channelTelegram, notifChannelWhatsapp = channelWhatsapp,
                 notifFrotaManutencao = frotaManutencao, notifRomaneioDiario = romaneioDiario, notifEstoqueMinimo = estoqueMinimo,
+                notifClima = clima,
             )
             saving.value = false
             result.onSuccess { load(); onDone(true) }.onFailure { errorMessage.value = it.message; onDone(false) }
@@ -234,8 +236,8 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = viewModel(
                 NotificacoesCard(
                     org = org,
                     saving = saving,
-                    onSave = { t1, t2, w1, w2, w3, cp, ct, cw, fm, rd, em, onDone ->
-                        viewModel.saveNotifications(t1, t2, w1, w2, w3, cp, ct, cw, fm, rd, em, onDone)
+                    onSave = { t1, t2, w1, w2, w3, cp, ct, cw, fm, rd, em, cl, onDone ->
+                        viewModel.saveNotifications(t1, t2, w1, w2, w3, cp, ct, cw, fm, rd, em, cl, onDone)
                     },
                     onSendTest = { channel, onResult -> viewModel.sendTest(channel, onResult) },
                 )
@@ -614,7 +616,7 @@ private fun AssinaturaCard(org: JsonObject?, stripeAtivo: Boolean, onCheckout: (
 private fun NotificacoesCard(
     org: JsonObject?,
     saving: Boolean,
-    onSave: (String, String, String, String, String, Boolean, Boolean, Boolean, Boolean, Boolean, Boolean, (Boolean) -> Unit) -> Unit,
+    onSave: (String, String, String, String, String, Boolean, Boolean, Boolean, Boolean, Boolean, Boolean, Boolean, (Boolean) -> Unit) -> Unit,
     onSendTest: (String, (String?, Boolean) -> Unit) -> Unit,
 ) {
     fun str(key: String) = org?.get(key)?.jsonPrimitive?.contentOrNull ?: ""
@@ -631,6 +633,8 @@ private fun NotificacoesCard(
     var frotaManutencao by remember(org) { mutableStateOf(bool("notifFrotaManutencao", true)) }
     var romaneioDiario by remember(org) { mutableStateOf(bool("notifRomaneioDiario", true)) }
     var estoqueMinimo by remember(org) { mutableStateOf(bool("notifEstoqueMinimo", true)) }
+    // v98 -- avisos do clima da fazenda (INMET, geada, pulverização amanhã).
+    var clima by remember(org) { mutableStateOf(bool("notifClima", true)) }
     var testingChannel by remember { mutableStateOf<String?>(null) }
     var testResult by remember { mutableStateOf<String?>(null) }
 
@@ -644,6 +648,7 @@ private fun NotificacoesCard(
             CheckboxRow("Manutenção de frota", frotaManutencao) { frotaManutencao = it }
             CheckboxRow("Fechamento diário de Romaneios", romaneioDiario) { romaneioDiario = it }
             CheckboxRow("Itens de Estoque abaixo do mínimo", estoqueMinimo) { estoqueMinimo = it }
+            CheckboxRow("Clima da fazenda (alerta do INMET, risco de geada e janela de pulverização de amanhã)", clima) { clima = it }
         }
 
         Column(modifier = Modifier.padding(top = 12.dp)) {
@@ -705,7 +710,7 @@ private fun NotificacoesCard(
             onClick = {
                 onSave(
                     telegramBotToken, telegramChatId, whatsappPhoneId, whatsappToken, whatsappTo,
-                    channelPush, channelTelegram, channelWhatsapp, frotaManutencao, romaneioDiario, estoqueMinimo,
+                    channelPush, channelTelegram, channelWhatsapp, frotaManutencao, romaneioDiario, estoqueMinimo, clima,
                 ) { }
             },
             enabled = !saving,
