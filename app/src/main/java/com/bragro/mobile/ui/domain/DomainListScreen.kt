@@ -129,6 +129,7 @@ import com.bragro.mobile.data.repo.WeatherRepository
 import com.bragro.mobile.ui.print.HtmlPrinter
 import com.bragro.mobile.ui.theme.BrGreen
 import com.bragro.mobile.ui.theme.BrYellow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.contentOrNull
@@ -226,7 +227,14 @@ class DomainListViewModel(app: Application) : AndroidViewModel(app) {
             recordRepository.observePendingReviewIds(domainId).collectLatest { pendingReviewIds.value = it }
         }
         if (domainId == "clima") {
-            viewModelScope.launch { weather.value = weatherRepository.fetch() }
+            viewModelScope.launch {
+                // v89 -- mesma coordenada do clima do Início (fazenda
+                // selecionada), lida do último Início salvo.
+                val h = kotlinx.coroutines.withTimeoutOrNull(2_000) {
+                    com.bragro.mobile.data.repo.HomeRepository(getApplication()).observeCached().first()
+                }
+                weather.value = weatherRepository.fetch(h?.climaLat, h?.climaLon)
+            }
             viewModelScope.launch { sprayAlert.value = moduleActionsRepository.run("spray-alert") }
             viewModelScope.launch { grausDia.value = moduleActionsRepository.run("graus-dia") }
         }

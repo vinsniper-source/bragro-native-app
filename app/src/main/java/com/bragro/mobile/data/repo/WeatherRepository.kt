@@ -11,9 +11,9 @@ import com.bragro.mobile.data.remote.NetworkModule
  * ou "clima agora" desatualizado seria mais confuso que util, entao esta
  * tela so mostra o dado quando consegue buscar ao vivo. */
 class WeatherRepository {
-    suspend fun fetch(): WeatherResponse? {
+    suspend fun fetch(lat: Double? = null, lon: Double? = null): WeatherResponse? {
         return try {
-            val response = NetworkModule.mobileApi.weather()
+            val response = NetworkModule.mobileApi.weather(lat, lon)
             val body = response.body()
             if (!response.isSuccessful || body?.ok != true) null else body
         } catch (e: Exception) {

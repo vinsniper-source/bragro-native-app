@@ -290,8 +290,12 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                 lastUpdatedAt.value = System.currentTimeMillis()
             }
             loading.value = false
+            // v89 -- clima do Início na coordenada da fazenda selecionada
+            // (vem do /api/mobile/home, mesma regra do site); sem rede,
+            // usa a do último Início salvo.
+            val h = fetched ?: home.value
+            weather.value = weatherRepository.fetch(h?.climaLat, h?.climaLon)
         }
-        viewModelScope.launch { weather.value = weatherRepository.fetch() }
         viewModelScope.launch {
             // v87 -- "Sua média" + histórico de cotações num pedido só.
             val r = moduleActionsRepository.run("cotacoes-extra")

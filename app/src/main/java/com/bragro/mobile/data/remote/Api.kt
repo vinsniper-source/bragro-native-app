@@ -558,7 +558,11 @@ interface MobileApi {
 
     // Rota publica, sem token (ver comentario em WeatherResponse/route.ts).
     @GET("api/mobile/weather")
-    suspend fun weather(): Response<WeatherResponse>
+    suspend fun weather(
+        // v89 -- coordenada da fazenda (null = padrão do servidor).
+        @retrofit2.http.Query("lat") lat: Double? = null,
+        @retrofit2.http.Query("lon") lon: Double? = null,
+    ): Response<WeatherResponse>
 
     // v85 -- aviso do Agrofit nos formulários (rota pública, dado aberto do MAPA).
     @GET("api/public/agrofit")

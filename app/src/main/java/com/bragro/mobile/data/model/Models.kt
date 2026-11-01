@@ -324,6 +324,9 @@ data class QualidadeEventoData(
 @Serializable
 data class HomeData(
     val orgName: String,
+    // v89 -- coordenada do clima do Início (fazenda selecionada; mesma regra do site).
+    val climaLat: Double? = null,
+    val climaLon: Double? = null,
     val saldoFinanceiroAberto: Double,
     val itensEstoque: Int,
     val safrasAtivas: Int,
