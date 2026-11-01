@@ -179,7 +179,7 @@ class FinanceiroItensInlineViewModel(app: Application) : AndroidViewModel(app) {
                 // só vira ISO aqui, na hora de montar o corpo pro servidor.
                 dataEmissao = brDateToIso(data),
                 fazendaDestino = local,
-                periodo = periodo.ifBlank { "A VISTA" },
+                periodo = periodo.ifBlank { "À VISTA" },
                 safra = safra.ifBlank { null },
                 cultura = cultura.ifBlank { null },
                 setor = setor.ifBlank { null },
