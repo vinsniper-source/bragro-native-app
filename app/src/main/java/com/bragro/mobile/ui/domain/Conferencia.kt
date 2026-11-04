@@ -40,6 +40,8 @@ val ROTULO_PROBLEMA = mapOf(
     "vazio" to "Campo vazio", "lista" to "Fora da lista", "grafia" to "Acento / maiúscula", "divergencia" to "Divergência",
     // v97 -- checagens de coerência (espelho de conferencia.ts).
     "naoCombina" to "Não combina", "dataFutura" to "Data futura", "semRomaneio" to "Sem romaneio",
+    // v99
+    "saldoInicial" to "Saldo inicial repetido", "foraFaixa" to "Fora da faixa",
 )
 
 private val MARCAS = Regex("\\p{M}+")
@@ -79,6 +81,8 @@ fun conferirRegistro(
     farms: List<FarmEntity>,
     // v97 -- "CULTURA|SAFRA" com romaneio; null = não confere "sem romaneio".
     romaneiosCulturaSafra: Set<String>? = null,
+    // v99 -- Estoque: item (normalizado) -> id do 1º lançamento do item.
+    primeiroDoItem: Map<String, String>? = null,
 ): List<ProblemaCampo> {
     val out = mutableListOf<ProblemaCampo>()
     for (col in cfg.columns) {
@@ -132,6 +136,7 @@ fun conferirRegistro(
         }
     }
     conferirCoerencia(cfg, r, lookups, romaneiosCulturaSafra, out)
+    conferirFaixas(cfg, r, primeiroDoItem, out)
     return out
 }
 
@@ -220,7 +225,7 @@ fun ConferenciaCard(
                     if (p.atual != null && p.sugestao != null) {
                         Text(
                             androidx.compose.ui.text.buildAnnotatedString {
-                                if (p.tipo == "naoCombina") append("${p.mensagem} → ")
+                                if (p.tipo == "naoCombina" || p.tipo == "saldoInicial") append("${p.mensagem} → ")
                                 append("${p.rotulo}: ")
                                 pushStyle(androidx.compose.ui.text.SpanStyle(color = cs.onSurfaceVariant, textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)); append(p.atual); pop()
                                 append(" → ")
@@ -250,5 +255,25 @@ fun ConferenciaCard(
             confirmButton = { androidx.compose.material3.TextButton(onClick = { confirmar = false; onAplicar(corrigiveis.map { (id, p, _) -> Triple(id, p.campo, p.sugestao!!) }) }) { Text("Confirmar") } },
             dismissButton = { androidx.compose.material3.TextButton(onClick = { confirmar = false }) { Text("Cancelar") } },
         )
+    }
+}
+
+// v99 (mockup v99, itens 9 e 10) -- espelho das regras de conferencia.ts.
+private fun conferirFaixas(cfg: DomainConfig, r: Map<String, String?>, primeiroDoItem: Map<String, String>?, out: MutableList<ProblemaCampo>) {
+    if (cfg.id == "estoque" && primeiroDoItem != null) {
+        val item = r["item"]?.takeIf { it.isNotBlank() }
+        val ini = r["inicial"]?.replace(",", ".")?.toDoubleOrNull() ?: 0.0
+        val primeiro = item?.let { primeiroDoItem[normalizarTexto(it)] }
+        if (ini > 0 && primeiro != null && primeiro != r["id"]) {
+            out += ProblemaCampo("inicial", "Inicial", "saldoInicial", nf.format(ini), "0", "Saldo inicial repetido: só o primeiro lançamento do item leva saldo inicial (repetir soma o saldo de novo)")
+        }
+    }
+    if (cfg.id == "colheita") {
+        val um = r["umidade"]?.replace(",", ".")?.toDoubleOrNull()
+        if (um != null && um > 40) out += ProblemaCampo("umidade", "Umidade (%)", "foraFaixa", mensagem = "Umidade ${nf.format(um)}% — grão costuma ser colhido entre 12% e 25%")
+        val prod = r["produtividade"]?.replace(",", ".")?.toDoubleOrNull()
+        if (prod != null && prod > 150 && normalizarTexto(r["cultura"].orEmpty()) in GRAOS_ROMANEIO) {
+            out += ProblemaCampo("produtividade", "Produtividade (sc/ha)", "foraFaixa", mensagem = "Produtividade ${nf.format(prod)} sc/ha — confira Colhida (kg) e Hectare")
+        }
     }
 }

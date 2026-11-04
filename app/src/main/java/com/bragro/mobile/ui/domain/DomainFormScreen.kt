@@ -155,6 +155,8 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
      * domainId mandar quickCreateLookupItemAction -- currentDomainId em si
      * continua privado (setado só por load()), esta é só a leitura pública. */
     val domainId: String? get() = currentDomainId
+    // v99 -- registro em edição (null = novo).
+    val recordIdAtual: String? get() = currentRecordId
 
     /** Mescla um item recém-criado via "+Criar" na categoria correspondente
      * de lookupsByCategory -- feedback imediato na lista sem precisar
@@ -1490,6 +1492,10 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
     col.agrofit?.let { AgrofitAviso(it, viewModel.fields[col.key], viewModel.fields) }
     // v86 -- guia de pragas embaixo do Alvo.
     col.guiaPraga?.let { GuiaPraga(cultura = viewModel.fields[it.culturaField], alvo = viewModel.fields[col.key]) }
+    // v99 -- Frota: última leitura do veículo embaixo de Km/Odômetro e Horímetro.
+    if (viewModel.domainId == "frota" && (col.key == "kmOdometro" || col.key == "horimetro")) {
+        UltimaLeituraFrotaHint(viewModel.fields["frota"], viewModel.recordIdAtual, if (col.key == "kmOdometro") "km" else "horas")
+    }
 }
 
 // Conversão pro DatePicker (Material3) -- ele trabalha em epoch millis UTC,
@@ -1618,4 +1624,30 @@ private fun ItensExtrasSection(
         }
         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 6.dp))
     }
+}
+
+/** v99 (mockup v99, item 1) -- "Última leitura deste veículo", igual à plataforma
+ * (components/domain/ultima-leitura-frota.tsx); o custo por km/hora usa a diferença. */
+@Composable
+private fun UltimaLeituraFrotaHint(frota: String?, editingId: String?, tipo: String) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val f = frota.orEmpty().trim()
+    var leitura by remember(f, editingId) { mutableStateOf<kotlinx.serialization.json.JsonObject?>(null) }
+    LaunchedEffect(f, editingId) {
+        if (f.isBlank()) { leitura = null; return@LaunchedEffect }
+        kotlinx.coroutines.delay(300)
+        val r = com.bragro.mobile.data.repo.ModuleActionsRepository(context.applicationContext).run("ultima-leitura-frota", item = f, id = editingId)
+        leitura = r?.get("leitura") as? kotlinx.serialization.json.JsonObject
+    }
+    val l = leitura ?: return
+    fun txt(k: String) = (l[k] as? kotlinx.serialization.json.JsonPrimitive)?.let { if (it.isString) it.content else it.toString() }?.takeIf { it != "null" }
+    val valor = txt(if (tipo == "km") "km" else "horas")?.toDoubleOrNull() ?: return
+    val nfmt = java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR"))
+    val data = txt("data")?.let { if (it.length >= 10) " em ${it.substring(8, 10)}/${it.substring(5, 7)}" else "" }.orEmpty()
+    val os = txt("os")?.let { " (O.S. $it)" }.orEmpty()
+    Text(
+        "Última leitura deste veículo: ${nfmt.format(valor)} ${if (tipo == "km") "km$data$os" else "h"} — o custo por ${if (tipo == "km") "km" else "hora"} usa a diferença.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }

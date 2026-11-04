@@ -814,8 +814,16 @@ fun DomainListScreen(
         val romConf by viewModel.romaneiosConferencia
         // Só a fazenda escolhida no topo (v14) -- painel e conferência.
         val recordsFaz = remember(records, globalFarmField, globalFarmSelected) { FarmSelection.filtrar(records, globalFarmField) }
-        val problemasConf = remember(recordsFaz, lookupsConf, fazConf, romConf, cfg) {
-            recordsFaz.mapNotNull { r -> val p = conferirRegistro(cfg, r, lookupsConf, fazConf, romConf); val id = r["id"]; if (p.isEmpty() || id == null) null else id to p }.toMap()
+        // v99 -- Estoque: 1º lançamento de cada item (saldo inicial repetido).
+        val primeiroDoItem = remember(records, domainId) {
+            if (domainId != "estoque") null
+            else records.filter { !it["item"].isNullOrBlank() && it["id"] != null }
+                .sortedWith(compareBy({ it["data"].orEmpty().take(10) }, { it["criadoEm"].orEmpty() }))
+                .groupBy { normalizarTexto(it["item"]!!) }
+                .mapValues { it.value.first()["id"]!! }
+        }
+        val problemasConf = remember(recordsFaz, lookupsConf, fazConf, romConf, primeiroDoItem, cfg) {
+            recordsFaz.mapNotNull { r -> val p = conferirRegistro(cfg, r, lookupsConf, fazConf, romConf, primeiroDoItem); val id = r["id"]; if (p.isEmpty() || id == null) null else id to p }.toMap()
         }
         // Divisor tracejado entre registros do MESMO Nº Pedido+Item, só em
         // Pedidos -- espelho de pedidoItemBoundary (data-table.tsx). Os

@@ -295,7 +295,8 @@ fun FieldHighlight(
     if (displayValue.isBlank() || displayValue == "—") return false
     val cs = MaterialTheme.colorScheme
     val good = cs.primary.copy(alpha = 0.15f) to cs.primary
-    val info = cs.tertiary.copy(alpha = 0.15f) to cs.tertiary
+    // v99 -- Local/Operação/Cultura/Safra em cor normal (azul parecia link), igual ao site.
+    val info = cs.onSurface.copy(alpha = 0.08f) to cs.onSurface
     val warn = cs.secondaryContainer to cs.onSecondaryContainer
     val bad = cs.error.copy(alpha = 0.15f) to cs.error
     val neutral = cs.onSurface.copy(alpha = 0.08f) to cs.onSurfaceVariant
@@ -392,9 +393,23 @@ fun CotacaoAvaliacaoBadge(rawValue: String) {
         Text(rawValue, style = MaterialTheme.typography.bodyMedium)
         return
     }
-    val tone = if (rawValue.contains("MELHOR CUSTO-BENEFÍCIO", ignoreCase = true) ||
-        rawValue.contains("Única cotação", ignoreCase = true)
-    ) Tone.GOOD else Tone.BAD
+    // v99 -- "MENOR PREÇO · R$ 3,00 mais barato (−21%) · entrega 30 dias mais lenta":
+    // etiqueta verde + detalhe; demais propostas em laranja só com o detalhe.
+    val partes = rawValue.split(" · ")
+    val etiqueta = partes.first().takeIf { Regex("^(MELHOR CUSTO|MENOR PREÇO|Única cotação)", RegexOption.IGNORE_CASE).containsMatchIn(it) }
+    if (etiqueta != null) {
+        val verde = MaterialTheme.colorScheme.primary
+        androidx.compose.foundation.layout.Column {
+            Text(
+                etiqueta, style = MaterialTheme.typography.labelSmall, color = verde, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                modifier = Modifier.background(verde.copy(alpha = 0.15f), RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 1.dp),
+            )
+            val detalhe = if (etiqueta.startsWith("MELHOR", ignoreCase = true)) "preço + prazo de entrega" else partes.drop(1).joinToString(" · ")
+            if (detalhe.isNotBlank()) Text(detalhe, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        return
+    }
+    val tone = Tone.BAD
     val (bg, fg) = when (tone) {
         Tone.GOOD -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) to MaterialTheme.colorScheme.primary
         Tone.WARN -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
