@@ -20,6 +20,32 @@ object MapaBRAgro {
         "© OpenStreetMap contributors",
     )
 
+    /** v1.6.4 (mockup v105, item 8) -- satélite (Esri World Imagery) pelo
+     * servidor do BRAgro, igual à plataforma (/api/public/satelite/img). */
+    val satelite: OnlineTileSourceBase = XYTileSource(
+        "BRAgroSat", 0, 19, 256, ".jpg",
+        arrayOf("${BuildConfig.API_BASE_URL}/api/public/satelite/img/"),
+        "Imagem © Esri, Maxar, Earthstar Geographics",
+    )
+    private val rotulos: OnlineTileSourceBase = XYTileSource(
+        "BRAgroRotulos", 0, 19, 256, ".png",
+        arrayOf("${BuildConfig.API_BASE_URL}/api/public/satelite/rotulos/"),
+        "",
+    )
+
+    /** Satélite + camada de nomes por cima (cidades, divisas). */
+    fun aplicarSatelite(mapa: MapView) {
+        mapa.setTileSource(satelite)
+        if (mapa.overlays.none { it is org.osmdroid.views.overlay.TilesOverlay }) {
+            val provider = org.osmdroid.tileprovider.MapTileProviderBasic(mapa.context, rotulos)
+            val camada = org.osmdroid.views.overlay.TilesOverlay(provider, mapa.context).apply {
+                loadingBackgroundColor = android.graphics.Color.TRANSPARENT
+                loadingLineColor = android.graphics.Color.TRANSPARENT
+            }
+            mapa.overlays.add(0, camada)
+        }
+    }
+
     /** Crédito obrigatório da licença do OpenStreetMap ("© OpenStreetMap
      * contributors"), em texto pequeno no canto de baixo do mapa. Chamar
      * depois de desenhar os talhões, para o texto ficar por cima deles. */

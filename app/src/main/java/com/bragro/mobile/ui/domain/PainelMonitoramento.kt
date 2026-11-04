@@ -646,7 +646,27 @@ fun chaveAtividade(domainId: String, r: Map<String, String?>): String? {
 
 /** Título legível da chave ("PLANTIO|SOJA" -> "Plantio · Soja"). */
 fun tituloChave(chave: String): String = chave.split("|").filter { it.isNotBlank() }
-    .joinToString(" · ") { s -> s.lowercase().replaceFirstChar { it.uppercase() } }
+    .joinToString(" · ") { s -> tituloProprio(s) }
+
+// v1.6.4 (mockup v105, item 3) -- mesma regra da plataforma (tituloProprio em card-spec.ts):
+// inicial maiúscula, siglas inteiras (CCB, CPR, NF...), códigos com número como estão e "de/da/do" minúsculas.
+private val SIGLAS_APP = setOf("CCB", "CPR", "NF", "NFE", "ITR", "DRE", "EPI", "ADM", "CNH", "ASO", "RH", "CT", "CTE", "PIX", "TED", "DOC", "NPK", "KCL", "MAP", "SSP", "CAR", "CCIR", "SIGEF", "INSS", "FGTS", "IRRF", "ICMS", "IPI", "PIS", "COFINS", "CNPJ", "CPF", "PJ", "PF", "MG", "SP", "GO", "MT", "MS", "PR", "BA", "TO", "RS", "SC", "UN", "KG", "LT", "TON", "HA", "PPR", "PLR", "EUA")
+private val MINUSC_APP = setOf("de", "da", "do", "das", "dos", "e", "em", "na", "no", "para", "por", "a", "o", "com")
+fun tituloProprio(v: String?): String {
+    val s = v?.trim().orEmpty()
+    if (s.isEmpty()) return ""
+    var i = 0
+    return Regex("[A-Za-zÀ-ÿ0-9.]+").replace(s) { m ->
+        val w = m.value
+        val pos = i++
+        val up = w.uppercase()
+        when {
+            w.any { it.isDigit() } || up.removeSuffix(".") in SIGLAS_APP -> up
+            pos > 0 && w.lowercase() in MINUSC_APP -> w.lowercase()
+            else -> w.lowercase().replaceFirstChar { it.uppercase() }
+        }
+    }
+}
 
 /** Medida somada no cartão de grupo (mesma do painel). */
 fun medidaDoModulo(domainId: String, columns: List<ColumnConfig>): ColumnConfig? {
@@ -763,11 +783,12 @@ fun numerosGrupoColheita(rows: List<Map<String, String?>>): List<Pair<String, St
     val um = media("umidade"); val imp = media("impureza")
     val fin = rows.count { it["status"]?.trim()?.uppercase() == "FINALIZADO" }
     return listOf(
+        // v1.6.4 -- os 3 primeiros aparecem com o bloco fechado.
         "Área" to "${nf.format(ha)} ha",
+        "Produtividade" to if (ha > 0) "${nf.format(kg / 60 / ha)} sc/ha" else "—",
+        "% colhido" to if (plan > 0) "${nf.format(kg / plan * 100)}%" else "—",
         "Talhões" to rows.mapNotNull { it["talhao"]?.takeIf { t -> t.isNotBlank() } }.distinct().size.toString(),
         "Planejado" to if (plan > 0) "${nf.format(plan)} kg" else "—",
-        "% colhido" to if (plan > 0) "${nf.format(kg / plan * 100)}%" else "—",
-        "Produtividade" to if (ha > 0) "${nf.format(kg / 60 / ha)} sc/ha" else "—",
         "Quebra" to if (quebra > 0) "${nf.format(quebra)} kg" else "—",
         "Peso líquido" to if (liq > 0) "${nf.format(liq)} kg" else "—",
         "Toneladas" to "${nf.format(kg / 1000)} t",

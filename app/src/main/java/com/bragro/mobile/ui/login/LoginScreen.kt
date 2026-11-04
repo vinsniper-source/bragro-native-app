@@ -279,11 +279,16 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
     }
     // País e idioma -- mesmo menu do login do site (CurrencyMenu), canto
     // superior direito. Saiu de Configurações (pedido do usuário).
-    LoginIdiomaMenu(
+    // v1.6.4 (mockup v105, item 2) -- + tema (Automático/Claro/Escuro), igual ao login do site.
+    androidx.compose.foundation.layout.Row(
         modifier = Modifier
             .align(Alignment.TopEnd)
             .padding(top = 8.dp, end = 8.dp),
-    )
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        LoginIdiomaMenu()
+        com.bragro.mobile.ui.theme.ThemeToggle()
+    }
     }
 }
 

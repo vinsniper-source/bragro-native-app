@@ -342,6 +342,13 @@ interface MobileApi {
     @POST("api/mobile/pivos")
     suspend fun pivoList(@Body body: PivoListRequest): Response<PivoListResponse>
 
+    // v1.6.4 -- excluir leitura (Histórico de pivôs e silos).
+    @POST("api/mobile/pivos")
+    suspend fun pivoDeleteLeitura(@Body body: com.bragro.mobile.data.model.LeituraDeleteRequest): Response<PivoGenericResponse>
+
+    @POST("api/mobile/silos")
+    suspend fun siloDeleteLeitura(@Body body: com.bragro.mobile.data.model.LeituraDeleteRequest): Response<PivoGenericResponse>
+
     @POST("api/mobile/pivos")
     suspend fun pivoListFarms(@Body body: PivoListRequest): Response<PivoFarmsResponse>
 

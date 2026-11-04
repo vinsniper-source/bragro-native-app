@@ -136,6 +136,16 @@ class SilosViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Histórico de leituras (últimos 60 dias) de um silo. */
+    /** v1.6.4 -- exclui uma leitura (Histórico). */
+    fun excluirLeitura(siloId: String, leituraId: String) {
+        viewModelScope.launch {
+            if (com.bragro.mobile.data.repo.PivosRepository(getApplication()).excluirLeitura(false, leituraId)) {
+                carregarLeituras(siloId)
+                recarregar()
+            }
+        }
+    }
+
     fun carregarLeituras(siloId: String) {
         leituras.value = emptyList()
         leiturasLoading.value = true
@@ -246,7 +256,9 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
     val farms by viewModel.farms
     // v14: só a fazenda escolhida no topo.
     val silos = remember(silosTodos, farms, farmSel) {
-        if (farmSel == null) silosTodos else silosTodos.filter { x -> farms.firstOrNull { it.id == x.farmId }?.name?.let { com.bragro.mobile.ui.domain.normalizarTexto(it) } == com.bragro.mobile.ui.domain.normalizarTexto(farmSel) }
+        // v1.6.4 (mockup v105, item 7) -- fazenda do topo que não existe mais: mostra todos.
+        val existe = farmSel != null && farms.any { com.bragro.mobile.ui.domain.normalizarTexto(it.name) == com.bragro.mobile.ui.domain.normalizarTexto(farmSel) }
+        if (farmSel == null || (farms.isNotEmpty() && !existe)) silosTodos else silosTodos.filter { x -> farms.firstOrNull { it.id == x.farmId }?.name?.let { com.bragro.mobile.ui.domain.normalizarTexto(it) } == com.bragro.mobile.ui.domain.normalizarTexto(farmSel) }
     }
     val estoque by viewModel.estoque
     val loading by viewModel.loading
@@ -472,7 +484,7 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
     }
 
     historicoSilo?.let { silo ->
-        HistoricoLeiturasDialog(silo.nome, leituras, leiturasLoading) { historicoSilo = null }
+        HistoricoLeiturasDialog(silo.nome, leituras, leiturasLoading, onExcluir = { id -> viewModel.excluirLeitura(silo.id, id) }) { historicoSilo = null }
     }
 }
 
@@ -491,7 +503,7 @@ private fun KpiBox(titulo: String, valor: String, modifier: Modifier = Modifier,
 }
 
 @Composable
-private fun HistoricoLeiturasDialog(siloNome: String, leituras: List<SiloLeituraData>, loading: Boolean, onDismiss: () -> Unit) {
+private fun HistoricoLeiturasDialog(siloNome: String, leituras: List<SiloLeituraData>, loading: Boolean, onExcluir: (String) -> Unit = {}, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Histórico -- $siloNome") },
@@ -501,13 +513,19 @@ private fun HistoricoLeiturasDialog(siloNome: String, leituras: List<SiloLeitura
                     loading -> CircularProgressIndicator(modifier = Modifier.padding(12.dp))
                     leituras.isEmpty() -> Text("Nenhuma leitura nos últimos 60 dias.", style = MaterialTheme.typography.bodySmall)
                     else -> leituras.forEach { l ->
-                        Text(
-                            "${l.recordedAt.take(10)} · ${l.nivelPct.toInt()}%" +
-                                (l.quantidadeT?.let { " · ${"%.1f".format(Locale("pt", "BR"), it)} t" } ?: "") +
-                                (l.temperaturaC?.let { " · $it °C" } ?: "") +
-                                (l.umidadePct?.let { " · $it %" } ?: ""),
-                            style = MaterialTheme.typography.bodySmall,
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                "${l.recordedAt.take(10).split("-").reversed().joinToString("/")} · ${l.nivelPct.toInt()}%" +
+                                    (l.quantidadeT?.let { " · ${"%.1f".format(Locale("pt", "BR"), it)} t" } ?: "") +
+                                    (l.temperaturaC?.let { " · $it °C" } ?: "") +
+                                    (l.umidadePct?.let { " · $it %" } ?: ""),
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.weight(1f),
+                            )
+                            IconButton(onClick = { onExcluir(l.id) }) {
+                                Icon(Icons.Outlined.Delete, contentDescription = "Excluir leitura", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(18.dp))
+                            }
+                        }
                     }
                 }
             }
@@ -625,7 +643,8 @@ private fun SiloCard(
                 }
             }
             Text(
-                silo.ultimaLeituraEm?.let { "Última leitura: ${it.take(10)}" } ?: "Sem leituras registradas.",
+                // v1.6.4 (mockup v105, item 7) -- "Manual" como na plataforma.
+                "Manual · " + (silo.ultimaLeituraEm?.let { "última leitura ${it.take(10).split("-").reversed().joinToString("/")}" } ?: "nenhuma leitura ainda"),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp),
@@ -648,7 +667,7 @@ private fun SiloCard(
                         Text(rotulo, fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = cor, maxLines = 1)
                     }
                 }
-                botao(Icons.Outlined.Thermostat, "Temp./umid.", cs.onSurface, onLeitura, Modifier.weight(1f))
+                botao(Icons.Outlined.Thermostat, "Lançar leitura", cs.primary, onLeitura, Modifier.weight(1.3f))
                 botao(Icons.Outlined.History, "Histórico", cs.onSurface, onHistorico, Modifier.weight(1f))
                 botao(Icons.Outlined.Edit, "Editar", cs.onSurface, onEdit, Modifier.weight(1f))
                 botao(Icons.Outlined.Archive, "Arquivar", com.bragro.mobile.ui.domain.corAtencao(), onArchive, Modifier.weight(1f))

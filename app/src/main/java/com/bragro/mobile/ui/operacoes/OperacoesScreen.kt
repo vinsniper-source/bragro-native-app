@@ -73,6 +73,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
@@ -487,10 +488,16 @@ private fun OperacaoCard(
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         Icon(Icons.Outlined.Person, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text(" $nome", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                                        // v1.6.4 (mockup v105, item 6) -- responsável · função · frota numa linha.
+                                        Text(
+                                            androidx.compose.ui.text.buildAnnotatedString {
+                                                withStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold)) { append(" $nome") }
+                                                listOf(func, frota).filter { it.isNotBlank() && it != "—" && !it.startsWith("Não lan") }.forEach { append(" · $it") }
+                                            },
+                                            style = MaterialTheme.typography.labelLarge,
+                                            modifier = Modifier.weight(1f),
+                                        )
                                     }
-                                    com.bragro.mobile.ui.domain.RotuloValorLinha(rotulo = "Função", valor = func, estilo = MaterialTheme.typography.labelSmall)
-                                    com.bragro.mobile.ui.domain.RotuloValorLinha(rotulo = "Frota", valor = frota, estilo = MaterialTheme.typography.labelSmall)
                                 }
                             }
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

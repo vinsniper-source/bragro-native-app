@@ -1113,7 +1113,11 @@ private fun SectorCard(
             var newValue by remember(category) { mutableStateOf("") }
             val temFoto = categoriaTemFoto(category)
 
-            Text(category, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp))
+            // v1.6.4 (mockup v105, item 1) -- nome legível (vem do servidor) e aviso de lista vazia.
+            Text(cat["label"]?.jsonPrimitive?.contentOrNull ?: category, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp))
+            if (values == null || values.isEmpty()) {
+                Text("Nenhum valor ainda · digite abaixo e toque em + para incluir", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             values?.forEach { vEl ->
                 val v = vEl.jsonObject
                 val id = v["id"]?.jsonPrimitive?.contentOrNull ?: return@forEach

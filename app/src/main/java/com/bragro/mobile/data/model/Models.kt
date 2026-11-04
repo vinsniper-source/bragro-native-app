@@ -2769,6 +2769,8 @@ data class PivoData(
     val laminaAtualMm: Double? = null,
     val pressaoPsi: Double? = null,
     val ultimaSincronizacaoEm: String? = null,
+    // v1.6.4 -- data da última leitura lançada (rodapé "Manual · última leitura").
+    val ultimaLeituraEm: String? = null,
 )
 
 @Serializable
@@ -2842,6 +2844,19 @@ data class PivoControleRequest(
     val status: String,
     val laminaAtualMm: Double? = null,
     val sentido: String? = null,
+    // v1.6.4 (mockup v105, item 7) -- leitura manual completa.
+    val anguloAtual: Double? = null,
+    val pressaoPsi: Double? = null,
+)
+
+/** v1.6.4 -- exclui uma leitura (pivô: logId · silo: leituraId). */
+@Serializable
+data class LeituraDeleteRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val action: String,
+    val logId: String? = null,
+    val leituraId: String? = null,
 )
 
 @Serializable

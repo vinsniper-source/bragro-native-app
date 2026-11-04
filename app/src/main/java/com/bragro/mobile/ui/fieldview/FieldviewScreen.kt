@@ -937,7 +937,7 @@ private fun FazendasKmlTab(
             // v80 -- Ruas / NDVI (mockup v80).
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.End) {
                 val dataUnica = camadasNdvi.singleOrNull()?.data?.let { "${it.substring(8, 10)}/${it.substring(5, 7)}" }.orEmpty()
-                listOf(false to "Ruas", true to "NDVI $dataUnica".trim()).forEach { (valor, rotulo) ->
+                listOf(false to "Satélite", true to "NDVI $dataUnica".trim()).forEach { (valor, rotulo) ->
                     val ativo = mostrarNdvi == valor
                     Text(
                         rotulo,
@@ -953,7 +953,24 @@ private fun FazendasKmlTab(
                 }
             }
         }
-        BoundariesMap(boundaries, drawing = drawing, draft = draft, onTap = { draft = draft + it }, camadasNdvi = if (mostrarNdvi) camadasNdvi else emptyList())
+        val ctxMapa = androidx.compose.ui.platform.LocalContext.current.applicationContext
+        var centroFazendas by remember { mutableStateOf<GeoPoint?>(null) }
+        LaunchedEffect(Unit) {
+            val r = com.bragro.mobile.data.repo.ModuleActionsRepository(ctxMapa).run("fazendas-coord")
+            val lista = (r?.get("fazendas") as? kotlinx.serialization.json.JsonArray).orEmpty().mapNotNull { e ->
+                val o = e as? kotlinx.serialization.json.JsonObject ?: return@mapNotNull null
+                val lat = (o["latitude"] as? kotlinx.serialization.json.JsonPrimitive)?.content?.toDoubleOrNull()
+                val lon = (o["longitude"] as? kotlinx.serialization.json.JsonPrimitive)?.content?.toDoubleOrNull()
+                if (lat != null && lon != null) GeoPoint(lat, lon) else null
+            }
+            if (lista.isNotEmpty()) centroFazendas = GeoPoint(lista.map { it.latitude }.average(), lista.map { it.longitude }.average())
+        }
+        BoundariesMap(
+            boundaries, drawing = drawing, draft = draft, onTap = { draft = draft + it },
+            camadasNdvi = if (mostrarNdvi) camadasNdvi else emptyList(),
+            centroFazendas = centroFazendas,
+            onDesenhar = { drawing = true; draft = emptyList() },
+        )
         if (mostrarNdvi && camadasNdvi.isNotEmpty()) LegendaNdvi()
         BoundariesList(boundaries, modifier = Modifier.weight(1f))
     }
@@ -1062,6 +1079,9 @@ private fun BoundariesMap(
     draft: List<GeoPoint> = emptyList(),
     onTap: (GeoPoint) -> Unit = {},
     camadasNdvi: List<CamadaNdvi> = emptyList(),
+    // v1.6.4 (mockup v105, item 8) -- abre nas fazendas com coordenada e botão Desenhar talhão.
+    centroFazendas: GeoPoint? = null,
+    onDesenhar: (() -> Unit)? = null,
 ) {
     val strokeColor = MaterialTheme.colorScheme.primary.toArgb()
     val onTapState = androidx.compose.runtime.rememberUpdatedState(onTap)
@@ -1085,7 +1105,8 @@ private fun BoundariesMap(
         modifier = Modifier.matchParentSize().clipToBounds(),
         factory = { ctx ->
             MapView(ctx).apply {
-                setTileSource(MapaBRAgro.fonte)
+                // v1.6.4 (mockup v105, item 8) -- satélite igual à plataforma.
+                MapaBRAgro.aplicarSatelite(this)
                 MapaBRAgro.credito(this)
                 setMultiTouchControls(true)
                 zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
@@ -1118,11 +1139,12 @@ private fun BoundariesMap(
             }
         },
         update = { mv ->
-            val assinatura = listOf(boundaries.map { it.id }, draft.toList(), strokeColor, camadasNdvi.map { it.id + it.data })
+            val assinatura = listOf(boundaries.map { it.id }, draft.toList(), strokeColor, camadasNdvi.map { it.id + it.data }, centroFazendas)
             if (estadoMapa[0] == assinatura) return@AndroidView
             estadoMapa[0] = assinatura
-            // mantém o 1º overlay (eventos de toque) e refaz só os polígonos
-            while (mv.overlays.size > 1) mv.overlays.removeAt(mv.overlays.size - 1)
+            // mantém os overlays fixos (nomes do satélite + eventos de toque) e refaz só os polígonos
+            val fixos = mv.overlays.count { it is org.osmdroid.views.overlay.TilesOverlay || it is org.osmdroid.views.overlay.MapEventsOverlay }
+            while (mv.overlays.size > fixos) mv.overlays.removeAt(mv.overlays.size - 1)
             val allPoints = mutableListOf<GeoPoint>()
             // v80 -- camada NDVI (por baixo dos contornos).
             camadasNdvi.forEach { c ->
@@ -1165,11 +1187,22 @@ private fun BoundariesMap(
                 estadoMapa[1] = true
                 mv.controller.setZoom(14.0)
                 mv.controller.setCenter(allPoints.first())
+            } else if (estadoMapa[1] != true && centroFazendas != null) {
+                estadoMapa[1] = true
+                mv.controller.setZoom(14.0)
+                mv.controller.setCenter(centroFazendas)
             }
             mv.invalidate()
         },
         onRelease = { mapView -> mapView.onDetach() },
     )
+        if (onDesenhar != null && !drawing) {
+            Button(
+                onClick = onDesenhar,
+                modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+            ) { Text("⬠ Desenhar talhão", style = MaterialTheme.typography.labelMedium) }
+        }
         // Zoom por botões (pinçar continua funcionando).
         Column(
             modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),

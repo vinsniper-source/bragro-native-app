@@ -269,11 +269,24 @@ fun StatusBadge(rawValue: String) {
         displayValue,
         style = MaterialTheme.typography.labelMedium,
         color = fg,
+        // v1.6.4 (mockup v105, item 5) -- etiqueta nunca quebra em duas linhas.
+        maxLines = 1,
+        softWrap = false,
         modifier = Modifier
             .clip(RoundedCornerShape(50))
             .background(bg)
             .padding(horizontal = 10.dp, vertical = 3.dp),
     )
+}
+
+/** v1.6.4 (mockup v105, item 4) -- nome curto da etiqueta (RH: Férias/ASO/CNH/Ação RH). */
+fun rotuloEtiqueta(key: String, label: String): String? = when (key) {
+    "status" -> null
+    "statusFerias" -> "Férias"
+    "statusAso" -> "ASO"
+    "cnhStatus" -> "CNH"
+    "acaoRh" -> "Ação RH"
+    else -> label.replace(Regex("^Status\\s+(d[aeo]s?\\s+)?", RegexOption.IGNORE_CASE), "").replace(Regex("\\s*\\(.*\\)$"), "").ifBlank { null }
 }
 
 // Destaque genérico por TIPO de campo (espelho de highlightFor/HighlightCell em
@@ -519,7 +532,9 @@ fun domainProgressCellInfo(domainId: String, key: String, record: Map<String, St
         if (total == null || total == 0.0) return null
         val pago = num("valorPago") ?: 0.0
         val value = (pago / total) * 100
-        return DomainProgressInfo(value, budgetBarTone(value))
+        // v1.6.4 (mockup v105, item 3) -- mostra o valor em R$ junto da %.
+        val brl = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("pt", "BR")).format(pago)
+        return DomainProgressInfo(value, budgetBarTone(value), label = "$brl · ${Math.round(value)}%")
     }
     if (domainId == "frota" && key == "proxRevisao") {
         val entradaRaw = record["entrada"] ?: return null

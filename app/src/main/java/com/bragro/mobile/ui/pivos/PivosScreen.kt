@@ -7,6 +7,9 @@ import androidx.compose.foundation.border
 import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.ViewList
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.StopCircle
 import androidx.compose.material.icons.outlined.Refresh
@@ -34,6 +37,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Opacity
@@ -228,6 +232,41 @@ class PivosViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** v1.6.4 (mockup v105, item 7) -- leitura manual completa, igual à plataforma. */
+    fun lancarLeitura(pivo: PivoData, dataBr: String, status: String, sentido: String, angulo: String, lamina: String, pressao: String, horas: String, chuva: String, onDone: (Boolean) -> Unit) {
+        fun d(v: String) = v.trim().replace(",", ".").takeIf { it.isNotEmpty() }?.toDoubleOrNull()
+        val iso = brDateToIsoOrNull(dataBr)
+        if (iso == null) { errorMessage.value = "Data inválida."; onDone(false); return }
+        busy.value = true
+        viewModelScope.launch {
+            val r = repo.registrarControle(pivo.id, status, d(lamina), sentido, d(angulo), d(pressao))
+            var ok = r?.ok == true
+            if (ok && ((d(lamina) ?: 0.0) > 0 || (d(chuva) ?: 0.0) > 0 || d(horas) != null)) {
+                val agora = SimpleDateFormat("HH:mm:ss", Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date())
+                ok = repo.lancarTelemetria(pivo.id, d(lamina) ?: 0.0, d(chuva) ?: 0.0, d(horas), "${iso}T$agora.000Z")?.ok == true
+            }
+            busy.value = false
+            if (ok) {
+                pivos.value = repo.listar()?.pivos ?: pivos.value
+                refreshBalanco(null)
+                onDone(true)
+            } else {
+                errorMessage.value = r?.error ?: "Falha ao lançar a leitura."
+                onDone(false)
+            }
+        }
+    }
+
+    fun excluirLeitura(pivoId: String, logId: String) {
+        viewModelScope.launch {
+            if (repo.excluirLeitura(true, logId)) {
+                carregarHistorico(pivoId)
+                pivos.value = repo.listar()?.pivos ?: pivos.value
+                refreshBalanco(null)
+            } else errorMessage.value = "Não foi possível excluir a leitura."
+        }
+    }
+
     fun lancarTelemetria(pivoId: String, waterAppliedMm: String, rainGaugeMm: String, dataBr: String, onDone: (Boolean) -> Unit) {
         val iso = brDateToIsoOrNull(dataBr)
         val lamina = waterAppliedMm.toDoubleOrNull()
@@ -261,7 +300,9 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
     val farms by viewModel.farms
     // v14: só a fazenda escolhida no topo.
     val pivos = remember(pivosTodos, farms, farmSel) {
-        if (farmSel == null) pivosTodos else pivosTodos.filter { x -> farms.firstOrNull { it.id == x.farmId }?.name?.let { com.bragro.mobile.ui.domain.normalizarTexto(it) } == com.bragro.mobile.ui.domain.normalizarTexto(farmSel) }
+        // v1.6.4 (mockup v105, item 7) -- fazenda do topo que não existe mais: mostra todos.
+        val existe = farmSel != null && farms.any { com.bragro.mobile.ui.domain.normalizarTexto(it.name) == com.bragro.mobile.ui.domain.normalizarTexto(farmSel) }
+        if (farmSel == null || (farms.isNotEmpty() && !existe)) pivosTodos else pivosTodos.filter { x -> farms.firstOrNull { it.id == x.farmId }?.name?.let { com.bragro.mobile.ui.domain.normalizarTexto(it) } == com.bragro.mobile.ui.domain.normalizarTexto(farmSel) }
     }
     // v53 -- só os últimos 30 dias de verdade: nada depois de hoje.
     val balancoBruto by viewModel.balanco
@@ -505,30 +546,18 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
     }
 
     telemetriaPivo?.let { pivo ->
-        TelemetriaDialog(
-            pivoNome = pivo.nome,
+        LeituraPivoDialog(
+            pivo = pivo,
             busy = busy,
-            error = error,
             onDismiss = { telemetriaPivo = null },
-            onSubmit = { water, rain, dataBr ->
-                viewModel.lancarTelemetria(pivo.id, water, rain, dataBr) { ok -> if (ok) telemetriaPivo = null }
-            },
-        )
-    }
-
-    desligarPivo?.let { pivo ->
-        DesligarDialog(
-            pivoNome = pivo.nome,
-            busy = busy,
-            onDismiss = { desligarPivo = null },
-            onSubmit = { lamina, horas ->
-                viewModel.desligar(pivo, lamina, horas) { ok -> if (ok) desligarPivo = null }
+            onSubmit = { dataBr, status, sentido, angulo, lamina, pressao, horas, chuva ->
+                viewModel.lancarLeitura(pivo, dataBr, status, sentido, angulo, lamina, pressao, horas, chuva) { ok -> if (ok) telemetriaPivo = null }
             },
         )
     }
 
     historicoPivo?.let { pivo ->
-        HistoricoTelemetriaDialog(pivo.nome, historico, historicoLoading) { historicoPivo = null }
+        HistoricoTelemetriaDialog(pivo.nome, historico, historicoLoading, onExcluir = { logId -> viewModel.excluirLeitura(pivo.id, logId) }) { historicoPivo = null }
     }
 
     controlePivo?.let { pivo ->
@@ -545,7 +574,7 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
 }
 
 @Composable
-private fun HistoricoTelemetriaDialog(pivoNome: String, logs: List<PivoTelemetriaLogData>, loading: Boolean, onDismiss: () -> Unit) {
+private fun HistoricoTelemetriaDialog(pivoNome: String, logs: List<PivoTelemetriaLogData>, loading: Boolean, onExcluir: (String) -> Unit = {}, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Histórico -- $pivoNome") },
@@ -555,11 +584,17 @@ private fun HistoricoTelemetriaDialog(pivoNome: String, logs: List<PivoTelemetri
                     loading -> CircularProgressIndicator(modifier = Modifier.padding(12.dp))
                     logs.isEmpty() -> Text("Nenhuma telemetria nos últimos 60 dias.", style = MaterialTheme.typography.bodySmall)
                     else -> logs.forEach { l ->
-                        Text(
-                            "${l.recordedAt.take(10)} · lâmina ${l.waterAppliedMm} mm · chuva ${l.rainGaugeMm} mm" +
-                                (l.operatingHours?.let { " · $it h" } ?: ""),
-                            style = MaterialTheme.typography.bodySmall,
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                "${dataHoraBr(l.recordedAt)} · lâmina ${l.waterAppliedMm} mm · chuva ${l.rainGaugeMm} mm" +
+                                    (l.operatingHours?.let { " · $it h" } ?: ""),
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.weight(1f),
+                            )
+                            IconButton(onClick = { onExcluir(l.id) }) {
+                                Icon(Icons.Outlined.Delete, contentDescription = "Excluir leitura", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(18.dp))
+                            }
+                        }
                     }
                 }
             }
@@ -637,7 +672,8 @@ private fun PivoCard(
                 }
                 Text(
                     (pivo.raioM?.let { "Raio ${it.toInt()} m · ${"%.1f".format(Locale("pt", "BR"), Math.PI * it * it / 10000)} ha · " } ?: "") +
-                        (pivo.ultimaSincronizacaoEm?.let { "Atualizado em ${dataHoraBr(it)}" } ?: "Lançado manualmente"),
+                        (pivo.ultimaSincronizacaoEm?.let { "Atualizado pelo fabricante em ${dataHoraBr(it)}" }
+                            ?: ("Manual · " + (pivo.ultimaLeituraEm?.let { "última leitura ${dataHoraBr(it)}" } ?: "nenhuma leitura ainda"))),
                     fontSize = 10.5.sp, color = cs.onSurfaceVariant,
                 )
             }
@@ -656,8 +692,9 @@ private fun PivoCard(
                 // v53 -- Ligar/Desligar neutro (cor só para status).
                 if (ligado) botao(com.bragro.mobile.ui.domain.IconesVazados.StopCircle, "Desligar", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onDesligar, Modifier.weight(1f))
                 else botao(com.bragro.mobile.ui.domain.IconesVazados.PlayCircle, "Ligar", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onLigar, Modifier.weight(1f))
-                botao(com.bragro.mobile.ui.domain.IconesVazados.Opacity, "Telemetria", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onTelemetria, Modifier.weight(1f))
-                botao(Icons.Outlined.Speed, "Controle", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onControle, Modifier.weight(1f))
+                // v1.6.4 (mockup v105, item 7) -- Lançar leitura e Histórico, iguais à plataforma.
+                botao(Icons.Outlined.Add, "Lançar leitura", androidx.compose.ui.graphics.Color.Transparent, cs.primary, onTelemetria, Modifier.weight(1.3f))
+                botao(Icons.Outlined.History, "Histórico", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onHistorico, Modifier.weight(1f))
                 botao(Icons.Outlined.Edit, "Editar", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onEdit, Modifier.weight(1f))
                 botao(Icons.Outlined.Archive, "Arquivar", androidx.compose.ui.graphics.Color.Transparent, com.bragro.mobile.ui.domain.corAtencao(), onArchive, Modifier.weight(1f))
             }
@@ -870,4 +907,55 @@ private fun dataHoraBr(iso: String): String = runCatching {
 }.getOrElse {
     val d = iso.take(10).split("-")
     if (d.size == 3) "${d[2]}/${d[1]}/${d[0]}" + (iso.drop(11).take(5).takeIf { it.length == 5 }?.let { " $it" } ?: "") else iso
+}
+
+/** v1.6.4 (mockup v105, item 7) -- uma janela só para a leitura do pivô (igual à plataforma). */
+@Composable
+private fun LeituraPivoDialog(
+    pivo: PivoData,
+    busy: Boolean,
+    onDismiss: () -> Unit,
+    onSubmit: (dataBr: String, status: String, sentido: String, angulo: String, lamina: String, pressao: String, horas: String, chuva: String) -> Unit,
+) {
+    var dataBr by remember { mutableStateOf(todayBr()) }
+    var status by remember { mutableStateOf(pivo.status ?: "STOPPED") }
+    var sentido by remember { mutableStateOf(pivo.sentido ?: SENTIDO_OPTIONS[0].first) }
+    var angulo by remember { mutableStateOf(pivo.anguloAtual?.toInt()?.toString().orEmpty()) }
+    var pressao by remember { mutableStateOf(pivo.pressaoPsi?.toInt()?.toString().orEmpty()) }
+    var lamina by remember { mutableStateOf("") }
+    var horas by remember { mutableStateOf("") }
+    var chuva by remember { mutableStateOf("0") }
+    @Composable
+    fun campo(v: String, set: (String) -> Unit, rotulo: String, mod: Modifier) =
+        androidx.compose.material3.OutlinedTextField(v, set, label = { Text(rotulo) }, singleLine = true, modifier = mod,
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal))
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Lançar leitura · ${pivo.nome}") },
+        text = {
+            Column(Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                androidx.compose.material3.OutlinedTextField(dataBr, { dataBr = it }, label = { Text("Data (dd/mm/aaaa)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                Text("Situação", style = MaterialTheme.typography.labelMedium)
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    STATUS_OPTIONS.forEach { (v, l) -> androidx.compose.material3.FilterChip(selected = status == v, onClick = { status = v }, label = { Text(l) }) }
+                }
+                Text("Sentido", style = MaterialTheme.typography.labelMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    SENTIDO_OPTIONS.forEach { (v, l) -> androidx.compose.material3.FilterChip(selected = sentido == v, onClick = { sentido = v }, label = { Text(l) }) }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    campo(angulo, { angulo = it }, "Posição (°)", Modifier.weight(1f))
+                    campo(lamina, { lamina = it }, "Lâmina (mm)", Modifier.weight(1f))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    campo(pressao, { pressao = it }, "Pressão (psi)", Modifier.weight(1f))
+                    campo(horas, { horas = it }, "Horas ligado", Modifier.weight(1f))
+                }
+                campo(chuva, { chuva = it }, "Chuva no pluviômetro (mm)", Modifier.fillMaxWidth())
+                Text("A lâmina e a chuva entram no Balanço hídrico.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+        confirmButton = { androidx.compose.material3.Button(enabled = !busy, onClick = { onSubmit(dataBr, status, sentido, angulo, lamina, pressao, horas, chuva) }) { Text("Salvar") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+    )
 }

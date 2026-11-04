@@ -607,7 +607,8 @@ fun DomainListScreen(
                         // longos (ex.: "Transferências entre Fazendas") sem
                         // isso podiam quebrar linha e cortar embaixo, já
                         // que a AppBar tem altura fixa.
-                        Text(config?.label ?: domainId, maxLines = 2, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface)
+                        // v1.6.4 (mockup v105, item 9) -- uma linha só: a fonte diminui até caber.
+                        com.bragro.mobile.ui.domain.ValorUmaLinha(config?.label ?: domainId, MaterialTheme.colorScheme.onSurface, maxSp = 22f, minSp = 14f)
                     }
                 
                     }
@@ -1336,6 +1337,8 @@ fun DomainListScreen(
                                 onInterval = { from, to -> intervalFrom = from; intervalTo = to; if (from.isNotBlank() || to.isNotBlank()) periodo = null },
                             )
                         }
+                        // v1.6.4 (mockup v105, item 12) -- Pix na barra da tela de Cobranças.
+                        LabeledIconButton(icon = androidx.compose.material.icons.Icons.Outlined.QrCode2, label = "Pix", onClick = { pixConfigAberto = true })
                         com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                     }
                     val arquivosBlockCobrancas = ModuleBlockSpec("Arquivos", vertical = false) {
@@ -1633,7 +1636,8 @@ fun DomainListScreen(
                                 gruposSoPend[chaveGrupo] = ligar
                                 if (ligar) gruposAbertos[chaveGrupo] = true
                             },
-                            numeros = if (domainId == "colheita") numerosGrupoColheita(doGrupo) else emptyList(),
+                            // v1.6.4 (mockup v105, item 11) -- fechado: só os 3 números principais.
+                            numeros = if (domainId == "colheita") numerosGrupoColheita(doGrupo).let { if (abertoGrupo) it else it.take(3) } else emptyList(),
                             selo = seloGrupo(domainId, doGrupo),
                         )
                         return@itemsIndexed
@@ -2131,7 +2135,13 @@ private fun RecordFieldLine(
     if (progress != null) {
         DomainProgressCell(col.label, progress)
     } else if (isStatusLikeColumn(col.key)) {
-        StatusBadge(value)
+        val rot = rotuloEtiqueta(col.key, col.label)
+        if (rot != null) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("$rot: ", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                StatusBadge(value)
+            }
+        } else StatusBadge(value)
     } else if (domainId == "financeiro" && col.key == "operacao") {
         // Pill colorido pro campo "Operacao" (COMPRA/VENDA/PAGAMENTO...) --
         // mesmo tratamento visual ja aplicado ao Bruto/Liquido, agora tambem

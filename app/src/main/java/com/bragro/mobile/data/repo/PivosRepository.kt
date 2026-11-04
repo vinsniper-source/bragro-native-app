@@ -124,13 +124,14 @@ class PivosRepository(context: Context) {
     /** Painel de "controle" -- SEM comando real pro equipamento (não há
      * parceria com nenhum fabricante ainda). Só registra o estado
      * desejado, igual a um registro manual. */
-    suspend fun registrarControle(id: String, status: String, laminaAtualMm: Double?, sentido: String?): PivoGenericResponse? {
+    suspend fun registrarControle(id: String, status: String, laminaAtualMm: Double?, sentido: String?, anguloAtual: Double? = null, pressaoPsi: Double? = null): PivoGenericResponse? {
         val tokens = tokenStore.current() ?: return null
         var (accessToken, refreshToken) = tokens
         return try {
             fun buildRequest() = PivoControleRequest(
                 accessToken = accessToken, refreshToken = refreshToken, id = id,
                 status = status, laminaAtualMm = laminaAtualMm, sentido = sentido,
+                anguloAtual = anguloAtual, pressaoPsi = pressaoPsi,
             )
             var response = NetworkModule.mobileApi.pivoControle(buildRequest())
             if (response.code() == 401) {
@@ -144,6 +145,29 @@ class PivosRepository(context: Context) {
         } catch (e: Exception) {
             AppLog.e("PivosRepository", "Falha ao registrar controle", e)
             PivoGenericResponse(ok = false, error = "Sem conexão. Tente novamente.")
+        }
+    }
+
+    /** v1.6.4 -- exclui uma leitura (pivô: delete_telemetria · silo: delete_leitura). */
+    suspend fun excluirLeitura(pivo: Boolean, id: String): Boolean {
+        val tokens = tokenStore.current() ?: return false
+        var (accessToken, refreshToken) = tokens
+        fun body() = com.bragro.mobile.data.model.LeituraDeleteRequest(
+            accessToken, refreshToken,
+            action = if (pivo) "delete_telemetria" else "delete_leitura",
+            logId = if (pivo) id else null, leituraId = if (pivo) null else id,
+        )
+        suspend fun chamar() = if (pivo) NetworkModule.mobileApi.pivoDeleteLeitura(body()) else NetworkModule.mobileApi.siloDeleteLeitura(body())
+        return try {
+            var r = chamar()
+            if (r.code() == 401) {
+                val novo = TokenRefresher.refreshAccessToken(tokenStore, refreshToken)
+                if (novo != null) { accessToken = novo; r = chamar() }
+            }
+            r.body()?.ok == true
+        } catch (e: Exception) {
+            AppLog.e("PivosRepository", "Falha ao excluir leitura", e)
+            false
         }
     }
 
