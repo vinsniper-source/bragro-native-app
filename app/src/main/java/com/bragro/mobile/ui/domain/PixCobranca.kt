@@ -47,6 +47,7 @@ import com.bragro.mobile.ui.i18n.Text
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.text.NumberFormat
 import java.util.Locale
@@ -59,7 +60,17 @@ import java.util.Locale
  */
 
 @Serializable
-data class PixRequest(val accessToken: String, val refreshToken: String, val cobrancaId: String)
+data class PixRequest(
+    val accessToken: String,
+    val refreshToken: String,
+    val cobrancaId: String? = null,
+    /** v1.6.0 -- "config" lê / "salvar" grava a chave Pix (botão Pix da barra Ações). */
+    val acao: String? = null,
+    val config: PixConfig? = null,
+)
+
+@Serializable
+data class PixConfig(val tipoChave: String = "CPF/CNPJ", val chave: String = "", val nome: String = "", val cidade: String = "")
 
 @Serializable
 data class PixDados(
@@ -75,7 +86,7 @@ data class PixDados(
 )
 
 @Serializable
-data class PixResponse(val ok: Boolean, val pix: PixDados? = null, val error: String? = null)
+data class PixResponse(val ok: Boolean, val pix: PixDados? = null, val config: PixConfig? = null, val error: String? = null)
 
 class PixRepository(context: Context) {
     private val tokenStore = TokenStore(context)
@@ -99,6 +110,39 @@ class PixRepository(context: Context) {
             null
         }
     }
+}
+
+/** v1.6.0 -- lê/grava a chave Pix da organização (mesma regra da plataforma). */
+class PixConfigRepository(context: Context) {
+    private val tokenStore = TokenStore(context)
+
+    private suspend fun chamar(acao: String, config: PixConfig? = null): Pair<PixConfig?, String?> {
+        val tokens = tokenStore.current() ?: return null to "Sessão expirada. Entre de novo."
+        var (accessToken, refreshToken) = tokens
+        return try {
+            var response = NetworkModule.mobileApi.pix(PixRequest(accessToken, refreshToken, acao = acao, config = config))
+            if (response.code() == 401) {
+                val novo = TokenRefresher.refreshAccessToken(tokenStore, refreshToken)
+                if (novo != null) {
+                    accessToken = novo
+                    response = NetworkModule.mobileApi.pix(PixRequest(accessToken, refreshToken, acao = acao, config = config))
+                }
+            }
+            val body = response.body()
+            if (response.isSuccessful && body?.ok == true) body.config to null
+            else {
+                val erro = runCatching { response.errorBody()?.string() }.getOrNull()
+                    ?.let { Regex("\"error\"\\s*:\\s*\"([^\"]+)\"").find(it)?.groupValues?.get(1) }
+                null to (erro ?: "Não foi possível salvar a chave Pix.")
+            }
+        } catch (e: Exception) {
+            AppLog.e("PixConfigRepository", "Falha na chave Pix", e)
+            null to "Sem conexão. Tente de novo."
+        }
+    }
+
+    suspend fun ler() = chamar("config")
+    suspend fun salvar(c: PixConfig) = chamar("salvar", c)
 }
 
 private fun qrBitmap(payload: String, tamanho: Int = 512): Bitmap {
@@ -185,5 +229,79 @@ fun PixCobrancaDialog(cobrancaId: String, onDismiss: () -> Unit) {
             }
         },
         dismissButton = if (p?.ok == true) ({ TextButton(onClick = onDismiss) { Text("Fechar") } }) else null,
+    )
+}
+
+private val TIPOS_PIX = listOf("CPF/CNPJ", "E-mail", "Telefone", "Aleatória")
+
+/** v1.6.0 (mockup v101, item 13) -- "Recebimento por Pix": a mesma tela da
+ * plataforma (Ferramentas → Pix). Com a chave, cada cobrança ganha o QR. */
+@Composable
+fun PixConfigDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val repo = remember { PixConfigRepository(context) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var carregando by remember { mutableStateOf(true) }
+    var salvando by remember { mutableStateOf(false) }
+    var erro by remember { mutableStateOf<String?>(null) }
+    var tipo by remember { mutableStateOf(TIPOS_PIX[0]) }
+    var chave by remember { mutableStateOf("") }
+    var nome by remember { mutableStateOf("") }
+    var cidade by remember { mutableStateOf("") }
+    var tipoAberto by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        val (c, e) = repo.ler()
+        if (c != null) { tipo = c.tipoChave.ifBlank { TIPOS_PIX[0] }; chave = c.chave; nome = c.nome; cidade = c.cidade }
+        erro = e
+        carregando = false
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Recebimento por Pix", fontWeight = FontWeight.Bold) },
+        text = {
+            if (carregando) {
+                Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box {
+                        androidx.compose.material3.OutlinedTextField(
+                            value = tipo, onValueChange = {}, readOnly = true, label = { Text("Tipo da chave") },
+                            trailingIcon = { TextButton(onClick = { tipoAberto = true }) { Text("Trocar") } },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        androidx.compose.material3.DropdownMenu(expanded = tipoAberto, onDismissRequest = { tipoAberto = false }) {
+                            TIPOS_PIX.forEach { t -> androidx.compose.material3.DropdownMenuItem(text = { Text(t) }, onClick = { tipo = t; tipoAberto = false }) }
+                        }
+                    }
+                    androidx.compose.material3.OutlinedTextField(value = chave, onValueChange = { chave = it }, label = { Text("Chave") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    androidx.compose.material3.OutlinedTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome do recebedor") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    androidx.compose.material3.OutlinedTextField(value = cidade, onValueChange = { cidade = it }, label = { Text("Cidade") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    Text(
+                        "Com a chave cadastrada, cada cobrança ganha o QR e o código Pix. Alterar a chave pede confirmação (aba Proteção).",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    erro?.let { Text(it, color = corAtencao(), style = MaterialTheme.typography.bodySmall) }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = !carregando && !salvando,
+                onClick = {
+                    salvando = true
+                    erro = null
+                    scope.launch {
+                        val (c, e) = repo.salvar(PixConfig(tipo, chave, nome, cidade))
+                        salvando = false
+                        if (c != null) {
+                            Toast.makeText(context, "Chave Pix salva.", Toast.LENGTH_SHORT).show()
+                            onDismiss()
+                        } else erro = e
+                    }
+                },
+            ) { Text(if (salvando) "Salvando…" else "Salvar") }
+        },
+        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancelar") } },
     )
 }

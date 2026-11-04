@@ -474,6 +474,8 @@ fun DomainListScreen(
     var recordPendingDelete by remember(domainId) { mutableStateOf<String?>(null) }
     // v56 -- cobrança cujo Pix (QR + copia e cola) está aberto.
     var pixCobrancaId by remember(domainId) { mutableStateOf<String?>(null) }
+    // v1.6.0 (mockup v101, item 13) -- botão Pix na barra Ações (chave Pix).
+    var pixConfigAberto by remember(domainId) { mutableStateOf(false) }
     // "Ver" ganhou ação própria, separada da setinha de expandir -- pedido
     // do usuário ("a setinha será individual pra cada bloco... setinha
     // acima do ícone ver, depois editar e por último excluir"): guarda o id
@@ -1101,6 +1103,9 @@ fun DomainListScreen(
                                 onInterval = { from, to -> intervalFrom = from; intervalTo = to; if (from.isNotBlank() || to.isNotBlank()) periodo = null },
                             )
                         }
+                        if (domainId == "cobrancas") {
+                            LabeledIconButton(icon = androidx.compose.material.icons.Icons.Outlined.QrCode2, label = "Pix", onClick = { pixConfigAberto = true })
+                        }
                         com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                     }
                     // Ícones compactos (36dp, mesma referência do
@@ -1391,6 +1396,10 @@ fun DomainListScreen(
                             ModuleIconItem("filtros", com.bragro.mobile.ui.domain.IconesVazados.FilterAlt, "Filtros", active = filtrosExpanded, badgeCount = activeFilterCountGeneric),
                         ) { filtrosOverride = !filtrosExpanded }
                     }
+                    if (domainId == "cobrancas") {
+                        // v1.6.0 (mockup v101, item 13) -- Pix na barra Ações, igual à plataforma.
+                        LabeledIconButton(icon = androidx.compose.material.icons.Icons.Outlined.QrCode2, label = "Pix", onClick = { pixConfigAberto = true })
+                    }
                     if (dateCol != null) {
                         GenericPeriodoDropdown(
                             periodo = periodo,
@@ -1568,7 +1577,7 @@ fun DomainListScreen(
                 // cartão do grupo); assim não sobram itens vazios com espaço.
                 val listaVisivel = if (!agrupar) listaCards else listaCards.filterIndexed { i, _ ->
                     val c = chavesFull[i]
-                    c == null || (tamanhoGrupo[c] ?: 0) <= 1 || gruposAbertos[c] == true || i == 0 || chavesFull[i - 1] != c
+                    c == null || gruposAbertos[c] == true || i == 0 || chavesFull[i - 1] != c
                 }
                 val chavesCards = if (agrupar) listaVisivel.map { chaveAtividade(domainId, it) } else emptyList()
                 val medidaGrupo = medidaDoModulo(domainId, cfg.columns)
@@ -1580,8 +1589,9 @@ fun DomainListScreen(
                     listaVisivel.forEachIndexed { i, _ ->
                         val c = chavesCards.getOrNull(i)
                         val q = c?.let { tamanhoGrupo[it] } ?: 0
-                        if (c != null && q > 1 && (i == 0 || chavesCards[i - 1] != c)) add(Pair(c, q))
-                        if (c == null || q <= 1 || gruposAbertos[c] == true) add(i)
+                        // v1.6.0 (mockup v101, itens 3-5 e 11) -- lançamento sozinho na categoria também vira bloco.
+                        if (c != null && q >= 1 && (i == 0 || chavesCards[i - 1] != c)) add(Pair(c, q))
+                        if (c == null || gruposAbertos[c] == true) add(i)
                     }
                 }
                 lancTail[0] = entradas.size + if (tableView && tableColumns.isNotEmpty()) 1 else 0
@@ -1771,6 +1781,7 @@ fun DomainListScreen(
     }
 
     pixCobrancaId?.let { id -> PixCobrancaDialog(cobrancaId = id, onDismiss = { pixCobrancaId = null }) }
+    if (pixConfigAberto) PixConfigDialog(onDismiss = { pixConfigAberto = false })
     // Confirmação antes de excluir -- ação destrutiva, pedido implícito de
     // segurança (excluir não pode ser desfeito depois de sincronizar).
     if (recordPendingDelete != null) {
