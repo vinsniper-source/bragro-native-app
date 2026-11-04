@@ -2,6 +2,7 @@ package com.bragro.mobile.ui.domain
 
 import android.app.Application
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
@@ -419,7 +420,25 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
      * de antes desta função existir. */
     var currentRole: String? = null
 
+    // v1.6.1 (mockup v102, item 1) -- Frota: km ou horímetro conforme o veículo.
+    var leituraFrota by androidx.compose.runtime.mutableStateOf<kotlinx.serialization.json.JsonObject?>(null)
+    var frotaAmbas by androidx.compose.runtime.mutableStateOf(false)
+    // v1.6.1 (mockup v102, item 5) -- Estoque: data do 1º lançamento do item (Inicial bloqueado).
+    var inicialJaLancadoEm by androidx.compose.runtime.mutableStateOf<String?>(null)
+
+    fun medidaFrota(): String? = (leituraFrota?.get("medida") as? kotlinx.serialization.json.JsonPrimitive)
+        ?.takeIf { it.isString }?.content
+
     fun isVisible(col: ColumnConfig): Boolean {
+        if (domainId == "frota" && !frotaAmbas) {
+            val esconder = when (medidaFrota()) {
+                "km" -> listOf("horimetro", "custoPorHora")
+                "horas" -> listOf("kmOdometro", "custoPorKm")
+                else -> emptyList()
+            }
+            val vazio = fields[esconder.firstOrNull() ?: ""].let { it.isNullOrBlank() || it.replace(",", ".").toDoubleOrNull() == 0.0 }
+            if (col.key in esconder && vazio) return false
+        }
         // Camada 1 (legado, vale pra TODOS os papéis) -- mesmo critério de
         // sempre, preservado.
         val triggerField = col.visibleWhenField
@@ -673,8 +692,8 @@ val MULTI_ITEM_FORM: Map<String, MultiItemCfg> = mapOf(
 )
 
 /** Seções do formulário -- mesmas da plataforma (SECOES_FORM). */
-private data class SecaoForm(val id: String, val titulo: String, val sub: String, val teste: (String) -> Boolean)
-private val SECOES_FORM = listOf(
+internal data class SecaoForm(val id: String, val titulo: String, val sub: String, val teste: (String) -> Boolean)
+internal val SECOES_FORM = listOf(
     SecaoForm("quando", "Quando", "número e datas") { k -> k == "os" || Regex("^data|vencimento|competencia|^hora|^periodo$|^parcelas?$|^dias$", RegexOption.IGNORE_CASE).containsMatchIn(k) },
     SecaoForm("onde", "Onde", "safra, fazenda e área") { k -> Regex("^(safra|cultura|local|talhao|hectare|area|fazenda|setor|pivo|silo|lote|destino|origem)", RegexOption.IGNORE_CASE).containsMatchIn(k) },
     SecaoForm("quem", "O quê e quem", "atividade e pessoas") { k -> Regex("^(operacao|responsavel|funcao|frota|colaborador|motorista|operador|entidade|fornecedor|cliente|comprador|maquina|placa|tipo)", RegexOption.IGNORE_CASE).containsMatchIn(k) },
@@ -685,7 +704,7 @@ private val ITENS_POR_DOMINIO = mapOf("controleinterno" to setOf("ca", "tamanho"
 private val QUANDO_POR_DOMINIO = mapOf("pedidos" to setOf("noPedido"))
 // v57 -- Caixa Interno: Entrada/Saída (e Saldo/Status automáticos) em Valores.
 private val VALORES_POR_DOMINIO = mapOf("caixainterno" to setOf("entrada", "saida"))
-private fun secaoDoCampo(k: String, domainId: String): String =
+internal fun secaoDoCampo(k: String, domainId: String): String =
     if (ITENS_POR_DOMINIO[domainId]?.contains(k) == true) "itens"
     else if (QUANDO_POR_DOMINIO[domainId]?.contains(k) == true) "quando"
     else if (VALORES_POR_DOMINIO[domainId]?.contains(k) == true) "valores"
@@ -836,6 +855,30 @@ fun DomainFormScreen(
             // Formulário em seções (padrão da plataforma): Quando / Onde /
             // O quê e quem / Itens / Valores / Outros; calculados num bloco
             // "Calculado" no fim; vários itens na seção Itens.
+            if (domainId == "frota") {
+                val frotaSel = viewModel.fields["frota"].orEmpty().trim()
+                val ctxApp = androidx.compose.ui.platform.LocalContext.current.applicationContext
+                LaunchedEffect(frotaSel) {
+                    if (frotaSel.isBlank()) { viewModel.leituraFrota = null; return@LaunchedEffect }
+                    kotlinx.coroutines.delay(300)
+                    val r = com.bragro.mobile.data.repo.ModuleActionsRepository(ctxApp).run("ultima-leitura-frota", item = frotaSel, id = viewModel.recordIdAtual)
+                    viewModel.leituraFrota = r?.get("leitura") as? kotlinx.serialization.json.JsonObject
+                }
+            }
+            if (domainId == "estoque") {
+                val itemSel = viewModel.fields["item"].orEmpty().trim()
+                val dataSel = viewModel.fields["data"].orEmpty()
+                val ctxApp = androidx.compose.ui.platform.LocalContext.current.applicationContext
+                LaunchedEffect(itemSel, dataSel) {
+                    if (itemSel.isBlank()) { viewModel.inicialJaLancadoEm = null; return@LaunchedEffect }
+                    kotlinx.coroutines.delay(400)
+                    val iso = brDateToIso(dataSel)
+                    val r = com.bragro.mobile.data.repo.ModuleActionsRepository(ctxApp).run("inicial-ja-lancado", item = itemSel, id = viewModel.recordIdAtual, category = iso)
+                    val ant = r?.get("anterior") as? kotlinx.serialization.json.JsonObject
+                    viewModel.inicialJaLancadoEm = (ant?.get("data") as? kotlinx.serialization.json.JsonPrimitive)?.takeIf { it.isString }?.content
+                    if (viewModel.inicialJaLancadoEm != null) viewModel.setField("inicial", "0")
+                }
+            }
             val visiveis = cfg.columns.filter { viewModel.isVisible(it) }
             // v57 -- automáticos na seção do campo de onde vêm (o campo
             // editável anterior na ordem do módulo), logo depois dele; sem
@@ -1492,9 +1535,19 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
     col.agrofit?.let { AgrofitAviso(it, viewModel.fields[col.key], viewModel.fields) }
     // v86 -- guia de pragas embaixo do Alvo.
     col.guiaPraga?.let { GuiaPraga(cultura = viewModel.fields[it.culturaField], alvo = viewModel.fields[col.key]) }
+    // v1.6.1 (mockup v102, item 5) -- Estoque: Inicial só no 1º lançamento do item.
+    if (viewModel.domainId == "estoque" && col.key == "inicial") {
+        viewModel.inicialJaLancadoEm?.let { d ->
+            Text(
+                "🔒 Saldo inicial deste item já lançado em ${d.split("-").reversed().joinToString("/")}. Só o 1º lançamento de cada item tem saldo inicial.",
+                style = MaterialTheme.typography.bodySmall,
+                color = corAtencao(),
+            )
+        }
+    }
     // v99 -- Frota: última leitura do veículo embaixo de Km/Odômetro e Horímetro.
     if (viewModel.domainId == "frota" && (col.key == "kmOdometro" || col.key == "horimetro")) {
-        UltimaLeituraFrotaHint(viewModel.fields["frota"], viewModel.recordIdAtual, if (col.key == "kmOdometro") "km" else "horas")
+        LeituraFrotaAuto(viewModel, if (col.key == "kmOdometro") "km" else "horas")
     }
 }
 
@@ -1628,26 +1681,44 @@ private fun ItensExtrasSection(
 
 /** v99 (mockup v99, item 1) -- "Última leitura deste veículo", igual à plataforma
  * (components/domain/ultima-leitura-frota.tsx); o custo por km/hora usa a diferença. */
+/** v1.6.1 (mockup v102, item 1) -- "Última leitura" e "Rodado" (automáticos) embaixo de Km e Horímetro. */
 @Composable
-private fun UltimaLeituraFrotaHint(frota: String?, editingId: String?, tipo: String) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val f = frota.orEmpty().trim()
-    var leitura by remember(f, editingId) { mutableStateOf<kotlinx.serialization.json.JsonObject?>(null) }
-    LaunchedEffect(f, editingId) {
-        if (f.isBlank()) { leitura = null; return@LaunchedEffect }
-        kotlinx.coroutines.delay(300)
-        val r = com.bragro.mobile.data.repo.ModuleActionsRepository(context.applicationContext).run("ultima-leitura-frota", item = f, id = editingId)
-        leitura = r?.get("leitura") as? kotlinx.serialization.json.JsonObject
+private fun LeituraFrotaAuto(viewModel: DomainFormViewModel, tipo: String) {
+    val l = viewModel.leituraFrota
+    fun txt(k: String) = (l?.get(k) as? kotlinx.serialization.json.JsonPrimitive)?.let { if (it.isString) it.content else it.toString() }?.takeIf { it != "null" }
+    if (viewModel.fields["frota"].isNullOrBlank()) return
+    val nfmt = java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 1 }
+    val ultima = txt(if (tipo == "km") "km" else "horas")?.toDoubleOrNull()
+    val quando = txt(if (tipo == "km") "data" else "dataHoras")?.let { if (it.length >= 10) " · ${it.substring(8, 10)}/${it.substring(5, 7)}" else "" }.orEmpty()
+    val os = if (tipo == "km") txt("os")?.let { " · O.S. $it" }.orEmpty() else ""
+    val atual = viewModel.fields[if (tipo == "km") "kmOdometro" else "horimetro"]?.replace(".", "")?.replace(",", ".")?.toDoubleOrNull()
+    val diff = if (ultima != null && atual != null && atual > 0) atual - ultima else null
+    val un = if (tipo == "km") "km" else "h"
+    Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.weight(1f).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 5.dp)) {
+            Text(if (tipo == "km") "Última leitura (km) · auto" else "Último horímetro · auto", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(if (ultima != null) "${nfmt.format(ultima)} $un$quando$os" else "— primeira leitura", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
+        }
+        Column(Modifier.weight(1f).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 5.dp)) {
+            Text(if (tipo == "km") "Km rodados · auto" else "Horas trabalhadas · auto", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                when {
+                    diff == null -> "—"
+                    diff < 0 -> "menor que a última — confira"
+                    else -> "${nfmt.format(diff)} $un"
+                },
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Bold,
+                color = if (diff != null && diff < 0) corAtencao() else MaterialTheme.colorScheme.onSurface,
+            )
+        }
     }
-    val l = leitura ?: return
-    fun txt(k: String) = (l[k] as? kotlinx.serialization.json.JsonPrimitive)?.let { if (it.isString) it.content else it.toString() }?.takeIf { it != "null" }
-    val valor = txt(if (tipo == "km") "km" else "horas")?.toDoubleOrNull() ?: return
-    val nfmt = java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR"))
-    val data = txt("data")?.let { if (it.length >= 10) " em ${it.substring(8, 10)}/${it.substring(5, 7)}" else "" }.orEmpty()
-    val os = txt("os")?.let { " (O.S. $it)" }.orEmpty()
-    Text(
-        "Última leitura deste veículo: ${nfmt.format(valor)} ${if (tipo == "km") "km$data$os" else "h"} — o custo por ${if (tipo == "km") "km" else "hora"} usa a diferença.",
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
+    if (viewModel.medidaFrota() != null && !viewModel.frotaAmbas) {
+        Text(
+            if (tipo == "km") "Usar horímetro neste lançamento" else "Usar km neste lançamento",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(top = 2.dp).clickable { viewModel.frotaAmbas = true },
+        )
+    }
 }

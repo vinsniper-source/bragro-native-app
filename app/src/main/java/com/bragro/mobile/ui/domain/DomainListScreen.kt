@@ -63,6 +63,7 @@ import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material.icons.outlined.QrCode2
+import androidx.compose.material.icons.outlined.Balance
 import androidx.compose.material.icons.outlined.GridOn
 import androidx.compose.material.icons.outlined.TableChart
 import androidx.compose.material.icons.outlined.ViewAgenda
@@ -476,6 +477,8 @@ fun DomainListScreen(
     var pixCobrancaId by remember(domainId) { mutableStateOf<String?>(null) }
     // v1.6.0 (mockup v101, item 13) -- botão Pix na barra Ações (chave Pix).
     var pixConfigAberto by remember(domainId) { mutableStateOf(false) }
+    // v1.6.1 (mockup v102, item 4) -- prioridade das cotações (preço x prazo).
+    var prioridadeAberta by remember(domainId) { mutableStateOf(false) }
     // "Ver" ganhou ação própria, separada da setinha de expandir -- pedido
     // do usuário ("a setinha será individual pra cada bloco... setinha
     // acima do ícone ver, depois editar e por último excluir"): guarda o id
@@ -499,6 +502,8 @@ fun DomainListScreen(
     var conferenciaAberta by remember(domainId) { mutableStateOf(false) }
     var kpiFiltroAtivo by remember(domainId) { mutableStateOf<Map<String, String>>(emptyMap()) }
     val gruposAbertos = remember(domainId) { mutableStateMapOf<String, Boolean>() }
+    // v1.6.1 (mockup v102, item 2) -- blocos mostrando só os pendentes.
+    val gruposSoPend = remember(domainId) { mutableStateMapOf<String, Boolean>() }
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val lancTail = remember { intArrayOf(0) }
@@ -1106,6 +1111,9 @@ fun DomainListScreen(
                         if (domainId == "cobrancas") {
                             LabeledIconButton(icon = androidx.compose.material.icons.Icons.Outlined.QrCode2, label = "Pix", onClick = { pixConfigAberto = true })
                         }
+                        if (domainId == "cotacoesfornecedores") {
+                            LabeledIconButton(icon = androidx.compose.material.icons.Icons.Outlined.Balance, label = "Prioridade", onClick = { prioridadeAberta = true })
+                        }
                         com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                     }
                     // Ícones compactos (36dp, mesma referência do
@@ -1591,7 +1599,7 @@ fun DomainListScreen(
                         val q = c?.let { tamanhoGrupo[it] } ?: 0
                         // v1.6.0 (mockup v101, itens 3-5 e 11) -- lançamento sozinho na categoria também vira bloco.
                         if (c != null && q >= 1 && (i == 0 || chavesCards[i - 1] != c)) add(Pair(c, q))
-                        if (c == null || gruposAbertos[c] == true) add(i)
+                        if (c == null || (gruposAbertos[c] == true && (gruposSoPend[c] != true || statusPendente(listaVisivel[i]["status"])))) add(i)
                     }
                 }
                 lancTail[0] = entradas.size + if (tableView && tableColumns.isNotEmpty()) 1 else 0
@@ -1608,6 +1616,7 @@ fun DomainListScreen(
                             val soma = doGrupo.sumOf { painelNum(it[m.key]) }
                             if (soma == 0.0) null else if (m.money) fmtMoeda(soma) else java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 1 }.format(soma)
                         }
+                        val pendGrupo = doGrupo.count { statusPendente(it["status"]) }
                         CartaoGrupo(
                             titulo = tituloChave(chaveGrupo),
                             qtd = qtdGrupo,
@@ -1615,7 +1624,15 @@ fun DomainListScreen(
                             total = total,
                             totalRotulo = medidaGrupo?.label,
                             aberto = abertoGrupo,
-                            onToggle = { gruposAbertos[chaveGrupo] = !abertoGrupo },
+                            onToggle = { gruposAbertos[chaveGrupo] = !abertoGrupo; if (abertoGrupo) gruposSoPend.remove(chaveGrupo) },
+                            pendentes = pendGrupo,
+                            soPendentes = abertoGrupo && gruposSoPend[chaveGrupo] == true,
+                            onPendentes = {
+                                val ligar = !(abertoGrupo && gruposSoPend[chaveGrupo] == true)
+                                gruposSoPend[chaveGrupo] = ligar
+                                if (ligar) gruposAbertos[chaveGrupo] = true
+                            },
+                            numeros = if (domainId == "colheita") numerosGrupoColheita(doGrupo) else emptyList(),
                         )
                         return@itemsIndexed
                     }
@@ -1782,6 +1799,7 @@ fun DomainListScreen(
 
     pixCobrancaId?.let { id -> PixCobrancaDialog(cobrancaId = id, onDismiss = { pixCobrancaId = null }) }
     if (pixConfigAberto) PixConfigDialog(onDismiss = { pixConfigAberto = false })
+    if (prioridadeAberta) PrioridadeCotacaoDialog(onDismiss = { prioridadeAberta = false }, onSalvo = { viewModel.refresh(domainId) })
     // Confirmação antes de excluir -- ação destrutiva, pedido implícito de
     // segurança (excluir não pode ser desfeito depois de sincronizar).
     if (recordPendingDelete != null) {
@@ -1835,7 +1853,34 @@ fun DomainListScreen(
                         modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        viewedConfig.columns.filter { !it.hideInTable && !viewedRecord[it.key].isNullOrBlank() }.forEach { col ->
+                        // v1.6.1 (mockup v102, item 3) -- mesmo padrão do Editar: seções e
+                        // automáticos no lugar deles, com "auto".
+                        val ordem = viewedConfig.columns.filter { it.type != "textarea" }
+                        val visiveis = ordem.filter { !it.hideInTable && !viewedRecord[it.key].isNullOrBlank() }
+                        fun secaoDe(c: com.bragro.mobile.data.model.ColumnConfig): String {
+                            if (!c.computed) return secaoDoCampo(c.key, domainId)
+                            val i = ordem.indexOf(c)
+                            val ant = ordem.subList(0, maxOf(i, 0)).lastOrNull { !it.computed }
+                            val dep = ordem.drop(i + 1).firstOrNull { !it.computed }
+                            return (ant ?: dep)?.let { secaoDoCampo(it.key, domainId) } ?: "outros"
+                        }
+                        (SECOES_FORM.map { it.id to it.titulo } + ("outros" to "Outros dados")).forEach { (id, titulo) ->
+                            val campos = visiveis.filter { secaoDe(it) == id }
+                            if (campos.isNotEmpty()) {
+                                Text(titulo.uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
+                                campos.forEach { col ->
+                                    Column(
+                                        Modifier.fillMaxWidth()
+                                            .background(if (col.computed) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f) else androidx.compose.ui.graphics.Color.Transparent, RoundedCornerShape(8.dp))
+                                            .padding(horizontal = if (col.computed) 8.dp else 0.dp, vertical = if (col.computed) 4.dp else 0.dp),
+                                    ) {
+                                        if (col.computed) Text("auto", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        RecordFieldLine(col, viewedRecord[col.key]!!, viewedRecord, domainId)
+                                    }
+                                }
+                            }
+                        }
+                        viewedConfig.columns.filter { it.type == "textarea" && !viewedRecord[it.key].isNullOrBlank() }.forEach { col ->
                             RecordFieldLine(col, viewedRecord[col.key]!!, viewedRecord, domainId)
                         }
                         auditInfo[recordBeingViewed]?.let { entry ->
@@ -2604,4 +2649,59 @@ private fun linkedDomainIcon(domainId: String) = when (domainId) {
     "cobrancas" -> Icons.Outlined.Receipt
     "nfse" -> Icons.Outlined.Description
     else -> Icons.Outlined.Description
+}
+
+private val PRIORIDADES_COTACAO = listOf(
+    Triple("preco", "Só preço", "Ganha a proposta mais barata."),
+    Triple("preco60", "Preço (60/40)", "Preço pesa 60% e prazo 40% (padrão)."),
+    Triple("equilibrado", "Equilibrado (50/50)", "Preço e prazo pesam igual."),
+    Triple("prazo60", "Prazo (60/40)", "Prazo pesa 60% e preço 40%."),
+    Triple("prazo", "Só prazo", "Ganha quem entrega mais rápido."),
+)
+
+/** v1.6.1 (mockup v102, item 4) -- mesma escolha da plataforma (botão Prioridade). */
+@Composable
+private fun PrioridadeCotacaoDialog(onDismiss: () -> Unit, onSalvo: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current.applicationContext
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var atual by remember { mutableStateOf<String?>(null) }
+    var salvando by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        val r = com.bragro.mobile.data.repo.ModuleActionsRepository(context).run("cotacao-prioridade")
+        atual = (r?.get("prioridade") as? kotlinx.serialization.json.JsonPrimitive)?.content ?: "preco60"
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Prioridade das cotações") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("Escolha o que pesa mais para definir a melhor proposta. Vale para todas as cotações.", style = MaterialTheme.typography.bodySmall)
+                PRIORIDADES_COTACAO.forEach { (v, l, d) ->
+                    val sel = atual == v
+                    Column(
+                        Modifier.fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (sel) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                            .clickable(enabled = salvando == null) {
+                                salvando = v
+                                scope.launch {
+                                    val r = com.bragro.mobile.data.repo.ModuleActionsRepository(context).run("cotacao-prioridade", item = v)
+                                    salvando = null
+                                    if (r != null) {
+                                        atual = v
+                                        android.widget.Toast.makeText(context, "Prioridade salva. Cotações recalculadas.", android.widget.Toast.LENGTH_SHORT).show()
+                                        onSalvo()
+                                    }
+                                }
+                            }
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                    ) {
+                        Text(l + if (sel) "  · ATUAL" else if (salvando == v) "  · salvando…" else "", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                        Text(d, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar") } },
+    )
 }

@@ -664,9 +664,15 @@ fun CartaoGrupo(
     totalRotulo: String?,
     aberto: Boolean,
     onToggle: () -> Unit,
+    // v1.6.1 (mockup v102, item 2) -- "N PENDENTES" clicável e totais do bloco.
+    pendentes: Int = 0,
+    soPendentes: Boolean = false,
+    onPendentes: (() -> Unit)? = null,
+    numeros: List<Pair<String, String>> = emptyList(),
 ) {
     val primary = MaterialTheme.colorScheme.primary
     com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { onToggle() }) {
+    Column {
     Row(
         modifier = Modifier.fillMaxWidth().padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -687,7 +693,75 @@ fun CartaoGrupo(
         }
         CantoL(aberto, onClick = onToggle)
     }
+    if (pendentes > 0 && onPendentes != null) {
+        Text(
+            "$pendentes PENDENTE${if (pendentes > 1) "S" else ""} ▾",
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            color = corAtencao(),
+            modifier = Modifier
+                .padding(start = 12.dp, bottom = 6.dp)
+                .clip(RoundedCornerShape(50))
+                .background(corAtencao().copy(alpha = if (soPendentes) 0.28f else 0.14f))
+                .clickable { onPendentes() }
+                .padding(horizontal = 8.dp, vertical = 2.dp),
+        )
     }
+    if (numeros.isNotEmpty()) {
+        Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            numeros.chunked(3).forEach { linha ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    linha.forEach { (l, v) ->
+                        Column(Modifier.weight(1f)) {
+                            Text(l, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(v, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                    repeat(3 - linha.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
+        }
+    }
+    if (soPendentes) {
+        Row(
+            Modifier.fillMaxWidth().background(corAtencao().copy(alpha = 0.10f)).padding(horizontal = 12.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text("Mostrando só os $pendentes pendente${if (pendentes > 1) "s" else ""}", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = corAtencao())
+            Text("Ver todos", fontSize = 11.5.sp, color = primary, modifier = Modifier.clickable { onPendentes?.invoke() })
+        }
+    }
+    }
+    }
+}
+
+private val STATUS_PEND_APP = setOf("ATRASADO", "VENCIDO", "PENDENTE", "EM ABERTO", "REPOR", "ANDAMENTO", "PARCIAL", "A VENCER", "ABERTO", "EM CONTROLE", "SALDO NEGATIVO")
+/** Mesmo critério de tomDoStatus (card-spec.ts) para "pendente". */
+fun statusPendente(v: String?): Boolean = v?.trim()?.uppercase() in STATUS_PEND_APP
+
+/** v1.6.1 (mockup v102, item 2) -- totais do bloco da Colheita (mesmos da plataforma). */
+fun numerosGrupoColheita(rows: List<Map<String, String?>>): List<Pair<String, String>> {
+    val nf = java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 1 }
+    fun soma(k: String) = rows.sumOf { painelNum(it[k]) }
+    fun media(k: String): Double? = rows.mapNotNull { it[k]?.replace(",", ".")?.toDoubleOrNull() }.takeIf { it.isNotEmpty() }?.average()
+    val ha = rows.mapNotNull { r -> r["talhao"]?.let { t -> t to painelNum(r["hectare"]) } }.distinctBy { it.first }.sumOf { it.second }
+        .takeIf { it > 0 } ?: soma("hectare")
+    val kg = soma("colhida"); val plan = soma("qtd"); val quebra = soma("naoColhida"); val liq = soma("pesoLiq")
+    val um = media("umidade"); val imp = media("impureza")
+    val fin = rows.count { it["status"]?.trim()?.uppercase() == "FINALIZADO" }
+    return listOf(
+        "Área" to "${nf.format(ha)} ha",
+        "Talhões" to rows.mapNotNull { it["talhao"]?.takeIf { t -> t.isNotBlank() } }.distinct().size.toString(),
+        "Planejado" to if (plan > 0) "${nf.format(plan)} kg" else "—",
+        "% colhido" to if (plan > 0) "${nf.format(kg / plan * 100)}%" else "—",
+        "Produtividade" to if (ha > 0) "${nf.format(kg / 60 / ha)} sc/ha" else "—",
+        "Quebra" to if (quebra > 0) "${nf.format(quebra)} kg" else "—",
+        "Peso líquido" to if (liq > 0) "${nf.format(liq)} kg" else "—",
+        "Toneladas" to "${nf.format(kg / 1000)} t",
+        "Umidade média" to (um?.let { "${nf.format(it)}%" } ?: "—"),
+        "Impureza média" to (imp?.let { "${nf.format(it)}%" } ?: "—"),
+        "Finalizados" to "$fin de ${rows.size}",
+    )
 }
 
 /**
