@@ -246,9 +246,9 @@ private fun AreaProgressBar(pct: Int) {
     val fracao = (pct / 100.0).coerceIn(0.0, 1.0).toFloat()
     val cor = when {
         pct > 100 -> MaterialTheme.colorScheme.error
-        pct >= 90 -> MaterialTheme.colorScheme.tertiary
-        MaterialTheme.colorScheme.background.luminance() < 0.5f -> androidx.compose.ui.graphics.Color(0xFF2F6B4A)
-        else -> MaterialTheme.colorScheme.secondary
+        // v1.6.5 (mockup v106b, item 4) -- sem azul: atenção amarelo, em dia verde.
+        pct >= 90 -> MaterialTheme.colorScheme.secondary
+        else -> com.bragro.mobile.ui.domain.progressGreen()
     }
     Box(modifier = Modifier.fillMaxWidth().height(6.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(3.dp))) {
         Box(modifier = Modifier.fillMaxWidth(fracao).height(6.dp).background(cor, RoundedCornerShape(3.dp)))

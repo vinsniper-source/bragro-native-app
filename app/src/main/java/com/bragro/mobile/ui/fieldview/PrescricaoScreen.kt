@@ -183,7 +183,7 @@ class PrescricaoViewModel(app: Application) : AndroidViewModel(app) {
 private fun corPorTaxa(taxa: Double?, minTaxa: Double, maxTaxa: Double): Int {
     if (taxa == null || !taxa.isFinite() || maxTaxa <= minTaxa) return android.graphics.Color.parseColor("#94a3b8")
     val t = max(0.0, min(1.0, (taxa - minTaxa) / (maxTaxa - minTaxa)))
-    val hue = (120 - t * 120).toFloat()
+    val hue = (120 - t * 92).toFloat() // v1.6.5 -- verde .. amarelo .. laranja (sem vermelho)
     // android.graphics.Color só tem HSVToColor (value=brilho), o site usa
     // hsl(hue,70%,45%) (lightness) -- converte manualmente pra não
     // distorcer as cores usando os mesmos números num espaço diferente.
@@ -506,7 +506,8 @@ private fun PrescricaoMap(p: PrescricaoData) {
         modifier = Modifier.fillMaxWidth().height(280.dp).padding(vertical = 8.dp),
         factory = { ctx ->
             MapView(ctx).apply {
-                setTileSource(MapaBRAgro.fonte)
+                // v1.6.5 (mockup v106c, item 10) -- satélite Esri, igual a Talhões.
+                setTileSource(MapaBRAgro.satelite)
                 setMultiTouchControls(true)
                 controller.setZoom(15.0)
             }

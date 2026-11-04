@@ -209,6 +209,8 @@ fun CanvasCirclesRow(
     onSelect: (String) -> Unit,
     safra: String? = null,
     cultura: String? = null,
+    // v1.6.5 (mockup v106c, item 9) -- o círculo abre o mapa de Talhões e Mapas (não mais o Google Earth).
+    onAbrirMapa: () -> Unit = {},
 ) {
     val filtroLabel = labelFiltro(safra, cultura)
     val context = LocalContext.current
@@ -329,7 +331,7 @@ fun CanvasCirclesRow(
                         .clip(CircleShape)
                         .then(if (!temMapa) Modifier.background(MaterialTheme.colorScheme.surface) else Modifier)
                         .border(width = 1.5.dp, color = statusColor(f.status), shape = CircleShape)
-                        .clickable { openUrl(googleEarthUrl(f.latitude, f.longitude, f.nome)) },
+                        .clickable { onAbrirMapa() },
                     contentAlignment = Alignment.Center,
                 ) {
                     if (temMapa) {
@@ -342,7 +344,7 @@ fun CanvasCirclesRow(
                         Box(modifier = Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.38f)))
                     } else {
                         Text(
-                            "Google Earth",
+                            "ver mapa",
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                             color = statusColor(f.status),
                             textAlign = TextAlign.Center,
@@ -425,7 +427,7 @@ fun CanvasCirclesRow(
                                 // sendo que ao clicar no círculo será
                                 // direcionado para o google earth para kml").
                                 if (unica) {
-                                    openUrl(googleEarthUrl(f.latitude, f.longitude, f.nome))
+                                    onAbrirMapa()
                                 } else {
                                     onSelect(f.id)
                                 }

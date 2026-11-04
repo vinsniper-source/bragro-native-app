@@ -695,62 +695,64 @@ fun CartaoGrupo(
     val primary = MaterialTheme.colorScheme.primary
     com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { onToggle() }) {
     Column {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        // v13: nome à esquerda, quantidade no meio, valor à direita. O valor
-        // tem largura fixa e a fonte diminui até caber -- nunca passa do card.
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            // v1.6.3 (mockup v104, item 4) -- sem palavra cortada: o texto quebra em linhas.
-            Text(titulo, fontWeight = FontWeight.Bold, fontSize = 14.5.sp)
-            if (!onde.isNullOrBlank()) Text(onde, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (selo != null && !(pendentes > 0 && onPendentes != null)) {
+    // v1.6.5 (mockup v106, item 8) -- bloco homogêneo: título na largura
+    // toda, embaixo local + etiqueta, e por último uma faixa de números em
+    // células iguais (Lançamentos, total do módulo e os demais números).
+    Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 10.dp)) {
+        Row(verticalAlignment = Alignment.Top) {
+            Text(titulo, fontWeight = FontWeight.Bold, fontSize = 14.5.sp, modifier = Modifier.weight(1f))
+            CantoL(aberto, onClick = onToggle)
+        }
+        Row(
+            Modifier.padding(top = 3.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            if (!onde.isNullOrBlank()) Text(onde, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f, fill = false))
+            if (pendentes > 0 && onPendentes != null) {
+                Text(
+                    "$pendentes PENDENTE${if (pendentes > 1) "S" else ""} ▾",
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = corAtencao(),
+                    maxLines = 1,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(corAtencao().copy(alpha = if (soPendentes) 0.28f else 0.14f))
+                        .clickable { onPendentes() }
+                        .padding(horizontal = 7.dp, vertical = 1.dp),
+                )
+            } else if (selo != null) {
                 val cor = when (selo.second) { "ok" -> primary; "pend" -> corAtencao(); else -> MaterialTheme.colorScheme.onSurfaceVariant }
                 Text(
                     selo.first,
                     fontSize = 9.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = cor,
+                    maxLines = 1,
                     modifier = Modifier.clip(RoundedCornerShape(50)).background(cor.copy(alpha = 0.14f)).padding(horizontal = 7.dp, vertical = 1.dp),
                 )
             }
         }
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(46.dp)) {
-            Text(qtd.toString(), fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1)
-            Text("lanç.", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-        }
-        Column(horizontalAlignment = Alignment.End, modifier = Modifier.width(104.dp).padding(end = 4.dp)) {
-            ValorUmaLinha(total ?: "—", MaterialTheme.colorScheme.onSurface, maxSp = 14f, minSp = 8.5f)
-            if (!totalRotulo.isNullOrBlank()) Text(totalRotulo, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.End)
-        }
-        CantoL(aberto, onClick = onToggle)
-    }
-    if (pendentes > 0 && onPendentes != null) {
-        Text(
-            "$pendentes PENDENTE${if (pendentes > 1) "S" else ""} ▾",
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            color = corAtencao(),
-            modifier = Modifier
-                .padding(start = 12.dp, bottom = 6.dp)
-                .clip(RoundedCornerShape(50))
-                .background(corAtencao().copy(alpha = if (soPendentes) 0.28f else 0.14f))
-                .clickable { onPendentes() }
-                .padding(horizontal = 8.dp, vertical = 2.dp),
-        )
-    }
-    if (numeros.isNotEmpty()) {
-        Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            numeros.chunked(3).forEach { linha ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    linha.forEach { (l, v) ->
-                        Column(Modifier.weight(1f)) {
-                            Text(l, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(v, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
+        val celulas = buildList {
+            add("Lançamentos" to qtd.toString())
+            if (total != null) add((totalRotulo?.takeIf { it.isNotBlank() } ?: "Total") to total)
+            addAll(numeros)
+            if (size == 1 && pendentes > 0) add("Pendentes" to "$pendentes de $qtd")
+        }.let { if (aberto) it else it.take(3) }
+        val linha = MaterialTheme.colorScheme.outlineVariant
+        HorizontalDivider(Modifier.padding(top = 8.dp, bottom = 6.dp), color = linha)
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            celulas.chunked(3).forEach { fila ->
+                Row(Modifier.fillMaxWidth().height(androidx.compose.foundation.layout.IntrinsicSize.Min)) {
+                    fila.forEachIndexed { i, (l, v) ->
+                        if (i > 0) Box(Modifier.width(1.dp).fillMaxHeight().background(linha))
+                        Column(Modifier.weight(1f).padding(start = if (i > 0) 7.dp else 0.dp, end = 4.dp)) {
+                            Text(l, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
+                            ValorUmaLinha(v, MaterialTheme.colorScheme.onSurface, maxSp = 13.5f, minSp = 9f)
                         }
                     }
-                    repeat(3 - linha.size) { Spacer(Modifier.weight(1f)) }
+                    repeat(3 - fila.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
         }

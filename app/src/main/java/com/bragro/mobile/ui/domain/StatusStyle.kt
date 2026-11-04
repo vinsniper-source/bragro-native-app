@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import com.bragro.mobile.ui.i18n.Text
@@ -265,19 +267,37 @@ fun StatusBadge(rawValue: String) {
         Tone.WARN -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
         Tone.BAD -> MaterialTheme.colorScheme.error.copy(alpha = 0.15f) to MaterialTheme.colorScheme.error
     }
-    Text(
-        displayValue,
-        style = MaterialTheme.typography.labelMedium,
-        color = fg,
-        // v1.6.4 (mockup v105, item 5) -- etiqueta nunca quebra em duas linhas.
-        maxLines = 1,
-        softWrap = false,
+    // v1.6.5 (mockup v106, item 1) -- o ⚠️ colorido vira um triângulo de
+    // traço fino na mesma cor do texto (ícone minimalista).
+    val aviso = AVISO_RE.containsMatchIn(displayValue)
+    val texto = if (aviso) displayValue.replace(AVISO_RE, "") else displayValue
+    androidx.compose.foundation.layout.Row(
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
         modifier = Modifier
             .clip(RoundedCornerShape(50))
             .background(bg)
             .padding(horizontal = 10.dp, vertical = 3.dp),
-    )
+    ) {
+        if (aviso) {
+            androidx.compose.material3.Icon(
+                androidx.compose.material.icons.Icons.Outlined.WarningAmber,
+                contentDescription = null,
+                tint = fg,
+                modifier = Modifier.padding(end = 4.dp).size(14.dp),
+            )
+        }
+        Text(
+            texto,
+            style = MaterialTheme.typography.labelMedium,
+            color = fg,
+            // v1.6.4 (mockup v105, item 5) -- etiqueta nunca quebra em duas linhas.
+            maxLines = 1,
+            softWrap = false,
+        )
+    }
 }
+
+private val AVISO_RE = Regex("^\\s*⚠\uFE0F?\\s*")
 
 /** v1.6.4 (mockup v105, item 4) -- nome curto da etiqueta (RH: Férias/ASO/CNH/Ação RH). */
 fun rotuloEtiqueta(key: String, label: String): String? = when (key) {
@@ -573,9 +593,10 @@ fun DomainProgressCell(colLabel: String, info: DomainProgressInfo) {
     val fracao = (info.value / 100.0).coerceIn(0.0, 1.0).toFloat()
     val cor = when (info.barTone) {
         BarTone.GOOD -> progressGreen()
-        BarTone.WARN -> MaterialTheme.colorScheme.tertiary
+        // v1.6.5 (mockup v106b, item 4) -- sem azul: verde / amarelo / laranja.
+        BarTone.WARN -> MaterialTheme.colorScheme.secondary
         BarTone.BAD -> MaterialTheme.colorScheme.error
-        BarTone.NEUTRAL -> MaterialTheme.colorScheme.secondary
+        BarTone.NEUTRAL -> progressGreen()
     }
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
         Text(

@@ -256,7 +256,7 @@ private fun buildDossieHtml(d: DossieResponse, ano: Int): String {
 /** v34 (item 9): célula da grade de atalhos do Dossiê (texto ou ícone). */
 private const val CELULA_IMPRIMIR_PDF = "__imprimir_pdf__"
 
-private class CelulaDossie(val rotulo: String, val icone: androidx.compose.ui.graphics.vector.ImageVector?, val acao: () -> Unit)
+private class CelulaDossie(val rotulo: String, val icone: androidx.compose.ui.graphics.vector.ImageVector?, val id: String? = null, val acao: () -> Unit)
 
 @Composable
 private fun AnoDropdown(ano: Int, onSelect: (Int) -> Unit) {
@@ -324,7 +324,8 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
         // Seções em divisórias (padrão da plataforma), recolhíveis; o botão
         // "Seções" em Ações rola direto pra cada uma.
         val abertas = remember { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
-        fun aberta(id: String) = abertas[id] != false
+        // v1.6.5 (mockup v106, item 2) -- seções começam recolhidas (igual à plataforma).
+        fun aberta(id: String) = abertas[id] == true
         val listState = androidx.compose.foundation.lazy.rememberLazyListState()
         val scope = androidx.compose.runtime.rememberCoroutineScope()
         val indiceSecao = remember { mutableMapOf<String, Int>() }
@@ -414,9 +415,10 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                         // v34 (item 9): Imprimir e PDF viram botões separados, na mesma
                         // grade de atalhos (3 por linha), igual aos demais atalhos.
                         val celulas = atalhos.map { (id, rotulo) ->
-                            CelulaDossie(rotulo, null) {
-                                abertas[id] = true
-                                indiceSecao[id]?.let { i -> scope.launch { listState.animateScrollToItem(i) } }
+                            CelulaDossie(rotulo, null, id) {
+                                val abrir = !aberta(id)
+                                abertas[id] = abrir
+                                if (abrir) indiceSecao[id]?.let { i -> scope.launch { listState.animateScrollToItem(i) } }
                             }
                         } + listOf(
                             // v46 -- Imprimir e PDF numa célula só, com divisória no meio.
@@ -432,16 +434,20 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                                         rotulos = false,
                                         compacto = true,
                                         preencher = true,
-                                    ) else Box(
+                                    ) else {
+                                        val ligado = c.id != null && aberta(c.id)
+                                        Box(
                                         modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
-                                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                                            .background(if (ligado) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent)
+                                            .border(1.dp, if (ligado) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
                                             .clickable { c.acao() }
                                             .padding(vertical = 8.dp),
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         val icone = c.icone
                                         if (icone != null) Icon(icone, contentDescription = c.rotulo, modifier = Modifier.size(18.dp))
-                                        else Text(c.rotulo, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                                        else Text(c.rotulo, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, color = if (ligado) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)
+                                    }
                                     }
                                 }
                                 repeat(3 - linha.size) { Spacer(Modifier.weight(1f)) }

@@ -1741,7 +1741,11 @@ fun DomainListScreen(
                                         texto = { col -> "${col.label}: " + record[col.key]!!.let { v -> if (col.money) formatMoneyValue(v) else displayValueFor(col.key, v, col.type) } },
                                     ) { col -> RecordFieldLine(col, record[col.key]!!, record, domainId) }
                                 } else {
-                                    colsToShow.forEach { col -> RecordFieldLine(col, record[col.key]!!, record, domainId) }
+                                    // v1.6.5 (mockup v106, item 8) -- resumo também em duas colunas.
+                                    CamposDuasColunas(
+                                        itens = colsToShow,
+                                        texto = { col -> "${col.label}: " + record[col.key]!!.let { v -> if (col.money) formatMoneyValue(v) else displayValueFor(col.key, v, col.type) } },
+                                    ) { col -> RecordFieldLine(col, record[col.key]!!, record, domainId) }
                                 }
                                 // "Editado por" + data/hora (pedido do
                                 // usuário) -- só aparece quando já existe
@@ -2118,6 +2122,7 @@ fun formatAuditEntry(entry: com.bragro.mobile.data.model.AuditEntry): String {
 // genérico já usado (StatusBadge pra colunas "status-like", texto simples
 // pro resto), com maxLines/ellipsis porque agora divide espaço em 2 colunas
 // quando expandido (sem isso, um valor longo espremia o layout).
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun RecordFieldLine(
     col: com.bragro.mobile.data.model.ColumnConfig,
@@ -2137,8 +2142,10 @@ private fun RecordFieldLine(
     } else if (isStatusLikeColumn(col.key)) {
         val rot = rotuloEtiqueta(col.key, col.label)
         if (rot != null) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("$rot: ", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            // v1.6.5 (mockup v106, item 1) -- se a etiqueta não couber ao lado
+            // do rótulo, desce para a linha de baixo (nunca é cortada).
+            androidx.compose.foundation.layout.FlowRow(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("$rot: ", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.align(Alignment.CenterVertically))
                 StatusBadge(value)
             }
         } else StatusBadge(value)

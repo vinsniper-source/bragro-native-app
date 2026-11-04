@@ -43,6 +43,9 @@ import androidx.compose.material.icons.outlined.EditLocationAlt
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.NearMe
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material.icons.outlined.Pentagon
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material3.AlertDialog
@@ -356,6 +359,8 @@ private val RAW_FIELD_LABELS: Map<String, String> = mapOf(
     "data" to "Data",
     "entrada" to "Entrada",
     "proxRevisao" to "Próxima Revisão",
+    "horasDesdeRevisao" to "Horas desde a revisão",
+    "saida" to "Saída",
     "cultura" to "Cultura",
     "safra" to "Safra",
     "local" to "Local",
@@ -418,7 +423,7 @@ private val RAW_CHECKBOX_KEYS = setOf("revisaoVencida", "emEstoque", "alertaEsto
  * frente, quebrando em quantas linhas precisar (nada cortado); textos longos
  * ocupam a largura toda; R$ 00.000,00 e números no padrão brasileiro. */
 @Composable
-private fun RawRecordFields(obj: JsonObject) {
+private fun RawRecordFields(obj: JsonObject, ocultar: Set<String> = emptySet()) {
     val ptBr = java.util.Locale("pt", "BR")
     val itens = obj.entries
         .filter { (k, v) -> k !in IGNORED_KEYS && (v as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull?.isNotBlank() == true }
@@ -439,37 +444,30 @@ private fun RawRecordFields(obj: JsonObject) {
             }
             Triple(k, label, valor)
         }
-    val status = itens.firstOrNull { it.first == "status" }
-    val longos = itens.filter { it.first in RAW_LONG_KEYS || (it.first != "status" && it.third.length > 40) }
-    val curtos = itens.filter { it != status && it !in longos }
-    val mut = MaterialTheme.colorScheme.onSurfaceVariant
-    @Composable
-    fun celula(label: String, valor: String, mod: Modifier) {
-        Text(
-            androidx.compose.ui.text.buildAnnotatedString {
-                pushStyle(androidx.compose.ui.text.SpanStyle(color = mut)); append("$label: "); pop()
-                append(valor)
-            },
-            style = MaterialTheme.typography.bodySmall,
-            modifier = mod,
-        )
+    // v1.6.5 (mockup v106, item 5) -- mesmo modelo dos blocos: rótulo cinza,
+    // valor em negrito, duas colunas sem buracos; campos zerados e os que já
+    // estão no título do bloco (ocultar) não aparecem.
+    val visiveis = itens.filter { (k, _, v) ->
+        k !in ocultar && !(k in RAW_ZERO_OCULTO && (v.filter { it.isDigit() }.trimStart('0').isEmpty()))
     }
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        curtos.chunked(2).forEach { par ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                celula(par[0].second, par[0].third, Modifier.weight(1f))
-                if (par.size > 1) celula(par[1].second, par[1].third, Modifier.weight(1f)) else Spacer(Modifier.weight(1f))
+    val longos = visiveis.filter { it.first in RAW_LONG_KEYS || (it.first != "status" && it.third.length > 40) }
+    val curtos = visiveis.filter { it !in longos }
+    com.bragro.mobile.ui.domain.CamposDuasColunas(
+        itens = curtos,
+        texto = { "${it.second}: ${it.third}" },
+    ) { (k, label, valor) ->
+        if (k == "status") {
+            androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
+                Text("$label: ", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                StatusBadge(valor)
             }
-        }
-        if (status != null) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Status: ", style = MaterialTheme.typography.bodySmall, color = mut)
-                StatusBadge(status.third)
-            }
-        }
-        longos.forEach { celula(it.second, it.third, Modifier.fillMaxWidth()) }
+        } else com.bragro.mobile.ui.domain.RotuloValorLinha(label, valor, Modifier.padding(vertical = 2.dp))
     }
+    longos.forEach { com.bragro.mobile.ui.domain.RotuloValorLinha(it.second, it.third, Modifier.padding(vertical = 2.dp)) }
 }
+
+/** v1.6.5 -- campos que somem do bloco quando estão zerados. */
+private val RAW_ZERO_OCULTO = setOf("kmOdometro", "horimetro", "custoPorKm", "custoPorHora", "horasDesdeRevisao", "dias", "acumFrota")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -808,7 +806,18 @@ private fun MaquinaStatusList(rows: List<JsonObject>) {
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(Icons.Outlined.DirectionsCar, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
-                        Text("Máquina", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                        // v1.6.5 (mockup v106, item 5) -- título = a máquina; embaixo O.S. · operação · data.
+                        val r = rows[i]
+                        fun cpo(k: String) = r[k]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
+                        Column(Modifier.weight(1f)) {
+                            Text(cpo("frota") ?: "Máquina", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                            val sub = listOfNotNull(
+                                cpo("os")?.let { "O.S. $it" },
+                                cpo("operacao"),
+                                (cpo("saida") ?: cpo("data") ?: cpo("entrada"))?.let { displayValueFor("data", it, "date") },
+                            ).joinToString(" · ")
+                            if (sub.isNotBlank()) Text(sub, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                         if (!proxRevisaoIso.isNullOrBlank()) {
                             Text(
                                 if (vencida) "Revisão vencida" else "Revisão em dia",
@@ -825,7 +834,7 @@ private fun MaquinaStatusList(rows: List<JsonObject>) {
                         }
                         com.bragro.mobile.ui.domain.CantoL(open)
                     }
-                    if (open) RawRecordFields(rows[i])
+                    if (open) RawRecordFields(rows[i], ocultar = setOf("frota", "os", "operacao"))
                 }
             }
         }
@@ -849,7 +858,7 @@ private fun isDatePast(iso: String): Boolean {
 @Composable
 private fun BoundariesList(boundaries: List<FieldBoundaryDto>, modifier: Modifier = Modifier) {
     if (boundaries.isEmpty()) {
-        Text("Nenhum talhão com contorno importado ainda. Toque em \"Importar KML/KMZ\" acima.", modifier = modifier.padding(16.dp))
+        Text("Nenhum talhão ainda. Desenhe no mapa ou importe KML/KMZ em Operações.", modifier = modifier.padding(16.dp))
         return
     }
     LazyColumn(modifier = modifier, contentPadding = PaddingValues(16.dp)) {
@@ -899,40 +908,8 @@ private fun FazendasKmlTab(
     var drawing by remember { mutableStateOf(false) }
     var draft by remember { mutableStateOf<List<GeoPoint>>(emptyList()) }
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (!drawing) {
-                // v42 -- "Desenhar" entrou na fileira de ícones do Mapa/KML
-                // (ver FarmMapLinksRow abaixo); aqui fica só o modo de desenho.
-            } else {
-                Text("${draft.size} pontos", style = MaterialTheme.typography.labelSmall, modifier = Modifier.weight(1f))
-                TextButton(onClick = { draft = draft.dropLast(1) }, enabled = draft.isNotEmpty()) { Text("Desfazer") }
-                TextButton(onClick = { drawing = false; draft = emptyList() }) { Text("Cancelar") }
-                Button(
-                    enabled = draft.size >= 3,
-                    onClick = {
-                        onPolygonDrawn(ParsedPolygon(null, draft.map { it.latitude to it.longitude }))
-                        drawing = false
-                        draft = emptyList()
-                    },
-                ) { Text("Concluir") }
-            }
-        }
-        if (drawing) {
-            Text(
-                "Toque no mapa para marcar os vértices do talhão (mínimo 3).",
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.padding(horizontal = 16.dp),
-            )
-        }
-        // Botão "Importar KML/KMZ" que existia aqui foi promovido pra cima
-        // (fileira comum acima das abas, ver FieldviewScreen) -- fica
-        // visível tanto em Talhões quanto em Fazendas/KML agora, sem
-        // duplicar nesta aba.
-        FarmMapLinksRow(boundaries, farms, onDesenhar = { drawing = true; draft = emptyList() })
+        // v1.6.5 (mockup v106b, item 7) -- a fileira Maps/Earth/Desenhar e a
+        // barra de pontos saíram: tudo fica dentro do mapa (BoundariesMap).
         if (camadasNdvi.isNotEmpty()) {
             // v80 -- Ruas / NDVI (mockup v80).
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.End) {
@@ -955,13 +932,17 @@ private fun FazendasKmlTab(
         }
         val ctxMapa = androidx.compose.ui.platform.LocalContext.current.applicationContext
         var centroFazendas by remember { mutableStateOf<GeoPoint?>(null) }
+        var destinoCoord by remember { mutableStateOf<Pair<GeoPoint, String>?>(null) }
         LaunchedEffect(Unit) {
             val r = com.bragro.mobile.data.repo.ModuleActionsRepository(ctxMapa).run("fazendas-coord")
             val lista = (r?.get("fazendas") as? kotlinx.serialization.json.JsonArray).orEmpty().mapNotNull { e ->
                 val o = e as? kotlinx.serialization.json.JsonObject ?: return@mapNotNull null
                 val lat = (o["latitude"] as? kotlinx.serialization.json.JsonPrimitive)?.content?.toDoubleOrNull()
                 val lon = (o["longitude"] as? kotlinx.serialization.json.JsonPrimitive)?.content?.toDoubleOrNull()
-                if (lat != null && lon != null) GeoPoint(lat, lon) else null
+                if (lat != null && lon != null) {
+                    if (destinoCoord == null) destinoCoord = GeoPoint(lat, lon) to ((o["name"] as? kotlinx.serialization.json.JsonPrimitive)?.content ?: "Fazenda")
+                    GeoPoint(lat, lon)
+                } else null
             }
             if (lista.isNotEmpty()) centroFazendas = GeoPoint(lista.map { it.latitude }.average(), lista.map { it.longitude }.average())
         }
@@ -970,6 +951,14 @@ private fun FazendasKmlTab(
             camadasNdvi = if (mostrarNdvi) camadasNdvi else emptyList(),
             centroFazendas = centroFazendas,
             onDesenhar = { drawing = true; draft = emptyList() },
+            onDesfazer = { draft = draft.dropLast(1) },
+            onCancelar = { drawing = false; draft = emptyList() },
+            onConcluir = {
+                onPolygonDrawn(ParsedPolygon(null, draft.map { it.latitude to it.longitude }))
+                drawing = false
+                draft = emptyList()
+            },
+            destino = destinoCoord ?: farms.firstNotNullOfOrNull { f -> farmCentroid(boundaries, f.id)?.let { it to f.name } },
         )
         if (mostrarNdvi && camadasNdvi.isNotEmpty()) LegendaNdvi()
         BoundariesList(boundaries, modifier = Modifier.weight(1f))
@@ -1009,69 +998,12 @@ private fun googleEarthUrl(point: GeoPoint?, fallbackQuery: String): String =
     if (point != null) "https://earth.google.com/web/@${point.latitude},${point.longitude},1000a,1000d,35y,0h,0t,0r"
     else "https://earth.google.com/web/search/${Uri.encode(fallbackQuery)}"
 
-@OptIn(ExperimentalFoundationApi::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-@Composable
-private fun FarmMapLinksRow(
-    boundaries: List<FieldBoundaryDto>,
-    farms: List<FarmEntity>,
-    onDesenhar: () -> Unit,
-) {
-    val context = LocalContext.current
-    fun openUrl(url: String) {
-        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-    }
-    // v42 -- o que ficava solto aqui embaixo virou uma fileira de ícones, no
-    // mesmo padrão do bloco Ações: Maps, Earth e Desenhar. Os botões de
-    // fazenda só aparecem depois de tocar em Maps ou em Earth.
-    var destino by remember { mutableStateOf<String?>(null) }
-    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            com.bragro.mobile.ui.domain.LabeledIconButton(
-                icon = Icons.Outlined.Map,
-                label = "Maps",
-                active = destino == "maps",
-                modifier = Modifier.weight(1f),
-                onClick = { destino = if (destino == "maps") null else "maps" },
-            )
-            com.bragro.mobile.ui.domain.LabeledIconButton(
-                icon = Icons.Outlined.Public,
-                label = "Earth",
-                active = destino == "earth",
-                modifier = Modifier.weight(1f),
-                onClick = { destino = if (destino == "earth") null else "earth" },
-            )
-            com.bragro.mobile.ui.domain.LabeledIconButton(
-                icon = Icons.Outlined.EditLocationAlt,
-                label = "Desenhar",
-                modifier = Modifier.weight(1f),
-                onClick = onDesenhar,
-            )
-        }
-        if (destino != null && farms.isNotEmpty()) {
-            androidx.compose.foundation.layout.FlowRow(
-                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                for (farm in farms) {
-                    val ponto = farmCentroid(boundaries, farm.id)
-                    OutlinedButton(
-                        onClick = { openUrl(if (destino == "earth") googleEarthUrl(ponto, farm.name) else googleMapsUrl(ponto, farm.name)) },
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                    ) {
-                        Text(farm.name, style = MaterialTheme.typography.labelSmall, maxLines = 2, overflow = TextOverflow.Clip)
-                    }
-                }
-            }
-        }
-    }
-}
-
 /** Mapa nativo (osmdroid, MAPNIK -- OpenStreetMap, sem chave de API)
  * mostrando o contorno de cada talhão já importado. Sem overlays.clear()
  * + re-adicionar tudo a cada "update" seria mais eficiente diffar, mas a
  * lista de talhões de uma organização é pequena (poucas dezenas no
  * máximo) -- não vale a complexidade. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BoundariesMap(
     boundaries: List<FieldBoundaryDto>,
@@ -1082,8 +1014,38 @@ private fun BoundariesMap(
     // v1.6.4 (mockup v105, item 8) -- abre nas fazendas com coordenada e botão Desenhar talhão.
     centroFazendas: GeoPoint? = null,
     onDesenhar: (() -> Unit)? = null,
+    // v1.6.5 (mockup v106b, item 7) -- barra de desenho e rota dentro do mapa.
+    onDesfazer: () -> Unit = {},
+    onCancelar: () -> Unit = {},
+    onConcluir: () -> Unit = {},
+    destino: Pair<GeoPoint, String>? = null,
 ) {
     val strokeColor = MaterialTheme.colorScheme.primary.toArgb()
+    val contexto = LocalContext.current
+    var rota by remember { mutableStateOf<RotaEstado?>(null) }
+    @Suppress("MissingPermission", "DEPRECATION")
+    fun pegarPosicao() {
+        rota = RotaEstado(null)
+        val lm = contexto.getSystemService(android.content.Context.LOCATION_SERVICE) as? android.location.LocationManager
+        if (lm == null) { rota = RotaEstado(null, "Localização indisponível neste aparelho."); return }
+        try {
+            val provs = listOf(android.location.LocationManager.GPS_PROVIDER, android.location.LocationManager.NETWORK_PROVIDER).filter { lm.isProviderEnabled(it) }
+            if (provs.isEmpty()) { rota = RotaEstado(null, "Ligue a localização do celular."); return }
+            val ultima = provs.mapNotNull { lm.getLastKnownLocation(it) }.maxByOrNull { it.time }
+            if (ultima != null) rota = RotaEstado(GeoPoint(ultima.latitude, ultima.longitude))
+            lm.requestSingleUpdate(provs.first(), object : android.location.LocationListener {
+                override fun onLocationChanged(l: android.location.Location) { if (rota != null) rota = RotaEstado(GeoPoint(l.latitude, l.longitude)) }
+                @Deprecated("") override fun onStatusChanged(p: String?, s: Int, e: android.os.Bundle?) {}
+                override fun onProviderEnabled(p: String) {}
+                override fun onProviderDisabled(p: String) {}
+            }, android.os.Looper.getMainLooper())
+        } catch (e: Exception) {
+            rota = RotaEstado(null, "Não foi possível obter sua localização.")
+        }
+    }
+    val permissaoLocal = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { ok ->
+        if (ok) pegarPosicao() else rota = RotaEstado(null, "Permita o acesso à localização para ver a rota.")
+    }
     val onTapState = androidx.compose.runtime.rememberUpdatedState(onTap)
     val drawingState = androidx.compose.runtime.rememberUpdatedState(drawing)
     // v44 -- mapa estável: altura fixa, recortado no próprio quadro (não
@@ -1139,7 +1101,7 @@ private fun BoundariesMap(
             }
         },
         update = { mv ->
-            val assinatura = listOf(boundaries.map { it.id }, draft.toList(), strokeColor, camadasNdvi.map { it.id + it.data }, centroFazendas)
+            val assinatura = listOf(boundaries.map { it.id }, draft.toList(), strokeColor, camadasNdvi.map { it.id + it.data }, centroFazendas, rota?.de)
             if (estadoMapa[0] == assinatura) return@AndroidView
             estadoMapa[0] = assinatura
             // mantém os overlays fixos (nomes do satélite + eventos de toque) e refaz só os polígonos
@@ -1175,6 +1137,24 @@ private fun BoundariesMap(
                 d.setFillColor(if (draft.size >= 3) 0x33E65100 else 0)
                 mv.overlays.add(d)
             }
+            // v1.6.5 -- rota: linha tracejada até a fazenda e o ponto "você".
+            val de = rota?.de
+            if (de != null && destino != null) {
+                mv.overlays.add(org.osmdroid.views.overlay.Polyline(mv).apply {
+                    setPoints(listOf(de, destino.first))
+                    outlinePaint.color = android.graphics.Color.WHITE
+                    outlinePaint.strokeWidth = 7f
+                    outlinePaint.pathEffect = android.graphics.DashPathEffect(floatArrayOf(22f, 16f), 0f)
+                })
+                mv.overlays.add(OsmPolygon(mv).apply {
+                    setPoints(OsmPolygon.pointsAsCircle(de, 40.0))
+                    setFillColor(strokeColor)
+                    setStrokeColor(android.graphics.Color.WHITE)
+                    setStrokeWidth(5f)
+                })
+                mv.zoomToBoundingBox(org.osmdroid.util.BoundingBox.fromGeoPoints(listOf(de, destino.first)).increaseByScale(1.4f), false)
+                estadoMapa[1] = true
+            }
             MapaBRAgro.credito(mv)
             if (camadasNdvi.isNotEmpty()) {
                 val c = camadasNdvi.last()
@@ -1196,31 +1176,120 @@ private fun BoundariesMap(
         },
         onRelease = { mapView -> mapView.onDetach() },
     )
-        if (onDesenhar != null && !drawing) {
-            Button(
-                onClick = onDesenhar,
-                modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-            ) { Text("⬠ Desenhar talhão", style = MaterialTheme.typography.labelMedium) }
-        }
-        // Zoom por botões (pinçar continua funcionando).
+        // v1.6.5 (mockup v106b, item 7) -- só ícones, na vertical, no canto
+        // direito: + e − (zoom), polígono (desenhar talhão) e rota.
         Column(
             modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            listOf("+" to true, "−" to false).forEach { (rotulo, mais) ->
+            @Composable
+            fun botao(ativo: Boolean, descricao: String, onClick: () -> Unit, conteudo: @Composable () -> Unit) {
                 Box(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surface)
+                        .background(if (ativo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface)
                         .border(1.dp, MaterialTheme.colorScheme.outlineVariant, androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
-                        .clickable { mapaRef?.let { if (mais) it.controller.zoomIn() else it.controller.zoomOut() } },
+                        .combinedClickable(
+                            onClick = onClick,
+                            onLongClick = { android.widget.Toast.makeText(contexto, descricao, android.widget.Toast.LENGTH_SHORT).show() },
+                        ),
                     contentAlignment = Alignment.Center,
-                ) { Text(rotulo, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface) }
+                ) { conteudo() }
+            }
+            listOf("+" to true, "−" to false).forEach { (rotulo, mais) ->
+                botao(false, if (mais) "Aproximar" else "Afastar", { mapaRef?.let { if (mais) it.controller.zoomIn() else it.controller.zoomOut() } }) {
+                    Text(rotulo, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                }
+            }
+            if (onDesenhar != null) {
+                botao(drawing, "Desenhar talhão", { if (drawing) onCancelar() else { rota = null; onDesenhar() } }) {
+                    Icon(Icons.Outlined.Pentagon, contentDescription = "Desenhar talhão", modifier = Modifier.size(19.dp), tint = if (drawing) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)
+                }
+            }
+            botao(rota != null, "Rota até a fazenda", {
+                if (rota != null) rota = null
+                else if (destino == null) rota = RotaEstado(null, "Cadastre a latitude e a longitude da fazenda em Base de Dados.")
+                else if (androidx.core.content.ContextCompat.checkSelfPermission(contexto, android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED) pegarPosicao()
+                else permissaoLocal.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
+            }) {
+                Icon(Icons.Outlined.NearMe, contentDescription = "Rota até a fazenda", modifier = Modifier.size(19.dp), tint = if (rota != null) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)
+            }
+        }
+        if (drawing) {
+            Text(
+                "Toque no mapa para marcar os cantos do talhão (mínimo 3).",
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(start = 8.dp, top = 8.dp, end = 52.dp)
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.92f))
+                    .padding(horizontal = 8.dp, vertical = 5.dp),
+            )
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(8.dp)
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = 10.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("${draft.size} pontos", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                TextButton(onClick = onDesfazer, enabled = draft.isNotEmpty()) { Text("Desfazer") }
+                TextButton(onClick = onCancelar) { Text("Cancelar") }
+                Button(enabled = draft.size >= 3, onClick = onConcluir, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp)) { Text("Concluir") }
+            }
+        } else rota?.let { r ->
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(8.dp)
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val de = r.de
+                if (r.erro != null || de == null || destino == null) {
+                    Text(r.erro ?: "Buscando sua localização…", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                } else {
+                    val km = de.distanceToAsDouble(destino.first) / 1000.0
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            androidx.compose.ui.text.buildAnnotatedString {
+                                pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold))
+                                append(java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 1 }.format(km) + " km")
+                                pop()
+                                append(" em linha reta · " + rumoTexto(de.bearingTo(destino.first)))
+                            },
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                        Text("até ${destino.second}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Button(
+                        onClick = {
+                            val url = "https://www.google.com/maps/dir/?api=1&origin=${de.latitude},${de.longitude}&destination=${destino.first.latitude},${destino.first.longitude}"
+                            contexto.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                        },
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
+                    ) { Text("Navegar") }
+                }
+                Text("✕", modifier = Modifier.padding(start = 8.dp).clickable { rota = null }, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
+}
+
+/** v1.6.5 -- rota dentro do mapa: posição atual (ou erro). */
+private data class RotaEstado(val de: GeoPoint?, val erro: String? = null)
+
+private fun rumoTexto(graus: Double): String {
+    val nomes = listOf("Norte", "Nordeste", "Leste", "Sudeste", "Sul", "Sudoeste", "Oeste", "Noroeste")
+    return nomes[(((graus % 360 + 360) % 360 + 22.5) / 45).toInt() % 8]
 }
 
 
@@ -1423,7 +1492,7 @@ private fun NdviLista(
     fun dataBr(d: String) = if (d.length >= 10) "${d.substring(8, 10)}/${d.substring(5, 7)}" else d
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
-            "Calculado pelo BRAgro com imagens abertas do satélite Sentinel-2 (10 m, nova imagem a cada ~5 dias). Nuvem e sombra são descartadas.",
+            "Fundo do mapa: foto de satélite Esri. NDVI: calculado pelo BRAgro com o satélite Sentinel-2, que tem a faixa infravermelha que a foto não tem (10 m, imagem nova a cada ~5 dias, sem nuvem nem sombra).",
             style = MaterialTheme.typography.labelSmall,
             color = muted,
         )

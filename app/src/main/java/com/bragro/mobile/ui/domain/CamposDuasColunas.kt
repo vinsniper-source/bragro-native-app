@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -54,28 +53,36 @@ fun <T> CamposDuasColunas(
             val valorInteiro = if (valor.isBlank()) 0 else largura(valor, true)
             maiorPalavra > meia || valorInteiro > meia
         }
-        // Agrupa em linhas: dois campos de meia largura ou um de largura inteira.
-        val linhas = mutableListOf<List<Int>>()
-        var pendente: Int? = null
-        itens.indices.forEach { i ->
-            if (inteiro[i]) {
-                pendente?.let { linhas += listOf(it) }; pendente = null
-                linhas += listOf(i)
-            } else if (pendente == null) {
-                pendente = i
-            } else {
-                linhas += listOf(pendente!!, i); pendente = null
+        // v1.6.5 (mockup v106, item 6) -- sem buracos: entre dois campos de
+        // largura inteira, cada coluna é preenchida de cima para baixo e o
+        // próximo campo entra na coluna que terminou mais acima (estimativa
+        // em linhas). Assim uma etiqueta sobe para o vão ao lado de um campo
+        // que quebrou em duas linhas, e o texto de baixo sobe junto.
+        val alturas = itens.indices.map { i ->
+            if (inteiro[i]) 0f else {
+                val t = texto(itens[i])
+                val corte = t.indexOf(": ")
+                val valor = if (corte >= 0) t.substring(corte + 2) else t
+                if (largura(t, false) <= meia) 1f
+                else 1f + kotlin.math.ceil(largura(valor, true).toFloat() / meia).coerceAtLeast(1f)
             }
         }
-        pendente?.let { linhas += listOf(it) }
+        val blocos = mutableListOf<Pair<Boolean, List<Int>>>() // (inteiro?, índices)
+        val seg = mutableListOf<Int>()
+        fun fechaSeg() { if (seg.isNotEmpty()) { blocos += false to seg.toList(); seg.clear() } }
+        itens.indices.forEach { i -> if (inteiro[i]) { fechaSeg(); blocos += true to listOf(i) } else seg += i }
+        fechaSeg()
         Column(Modifier.fillMaxWidth()) {
-            linhas.forEach { linha ->
-                if (linha.size == 1 && inteiro[linha[0]]) {
-                    Column(Modifier.fillMaxWidth()) { campo(itens[linha[0]]) }
+            blocos.forEach { (cheio, idx) ->
+                if (cheio) {
+                    Column(Modifier.fillMaxWidth()) { campo(itens[idx[0]]) }
                 } else {
+                    val esq = mutableListOf<Int>(); val dir = mutableListOf<Int>()
+                    var he = 0f; var hd = 0f
+                    idx.forEach { i -> if (he <= hd) { esq += i; he += alturas[i] } else { dir += i; hd += alturas[i] } }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap)) {
-                        linha.forEach { i -> Column(Modifier.weight(1f)) { campo(itens[i]) } }
-                        if (linha.size == 1) Spacer(Modifier.weight(1f))
+                        Column(Modifier.weight(1f)) { esq.forEach { campo(itens[it]) } }
+                        Column(Modifier.weight(1f)) { dir.forEach { campo(itens[it]) } }
                     }
                 }
             }

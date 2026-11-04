@@ -1382,6 +1382,7 @@ fun HomeScreen(
                         onSelect = { id -> selecionadaFazendaId = id },
                         safra = SafraSelection.selected.value,
                         cultura = CulturaSelection.selected.value,
+                        onAbrirMapa = onOpenFieldview,
                     )
                 }
                 val fazendaSelecionada = canvas.fazendas.find { it.id == selecionadaFazendaId }
