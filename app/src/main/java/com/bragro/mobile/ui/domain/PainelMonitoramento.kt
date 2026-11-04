@@ -669,6 +669,8 @@ fun CartaoGrupo(
     soPendentes: Boolean = false,
     onPendentes: (() -> Unit)? = null,
     numeros: List<Pair<String, String>> = emptyList(),
+    // v1.6.3 (mockup v104, item 5) -- etiqueta de situação (texto, "ok"/"pend"/"neutro").
+    selo: Pair<String, String>? = null,
 ) {
     val primary = MaterialTheme.colorScheme.primary
     com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { onToggle() }) {
@@ -680,8 +682,19 @@ fun CartaoGrupo(
         // v13: nome à esquerda, quantidade no meio, valor à direita. O valor
         // tem largura fixa e a fonte diminui até caber -- nunca passa do card.
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(titulo, fontWeight = FontWeight.Bold, fontSize = 14.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (!onde.isNullOrBlank()) Text(onde, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            // v1.6.3 (mockup v104, item 4) -- sem palavra cortada: o texto quebra em linhas.
+            Text(titulo, fontWeight = FontWeight.Bold, fontSize = 14.5.sp)
+            if (!onde.isNullOrBlank()) Text(onde, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (selo != null && !(pendentes > 0 && onPendentes != null)) {
+                val cor = when (selo.second) { "ok" -> primary; "pend" -> corAtencao(); else -> MaterialTheme.colorScheme.onSurfaceVariant }
+                Text(
+                    selo.first,
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = cor,
+                    modifier = Modifier.clip(RoundedCornerShape(50)).background(cor.copy(alpha = 0.14f)).padding(horizontal = 7.dp, vertical = 1.dp),
+                )
+            }
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(46.dp)) {
             Text(qtd.toString(), fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1)
@@ -689,7 +702,7 @@ fun CartaoGrupo(
         }
         Column(horizontalAlignment = Alignment.End, modifier = Modifier.width(104.dp).padding(end = 4.dp)) {
             ValorUmaLinha(total ?: "—", MaterialTheme.colorScheme.onSurface, maxSp = 14f, minSp = 8.5f)
-            if (!totalRotulo.isNullOrBlank()) Text(totalRotulo, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (!totalRotulo.isNullOrBlank()) Text(totalRotulo, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.End)
         }
         CantoL(aberto, onClick = onToggle)
     }
@@ -713,8 +726,8 @@ fun CartaoGrupo(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     linha.forEach { (l, v) ->
                         Column(Modifier.weight(1f)) {
-                            Text(l, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(v, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(l, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(v, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
                     repeat(3 - linha.size) { Spacer(Modifier.weight(1f)) }
@@ -900,5 +913,56 @@ fun AcoesIcones(content: @Composable () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         androidx.compose.runtime.CompositionLocalProvider(LocalSomenteIcone provides true) { content() }
+    }
+}
+
+/**
+ * v1.6.3 (mockup v104, item 5) -- etiqueta do bloco, igual à plataforma
+ * (grupoSpec/seloSemStatus em card-spec.ts): pelo Status; nos módulos sem
+ * Status, pela situação própria (frete, orçamento, seguro, melhor proposta, geada).
+ */
+fun seloGrupo(domainId: String, rows: List<Map<String, String?>>): Pair<String, String>? {
+    fun up(v: String?) = java.text.Normalizer.normalize(v.orEmpty().trim().uppercase(), java.text.Normalizer.Form.NFD).replace(Regex("\\p{M}"), "")
+    val comStatus = rows.filter { !it["status"].isNullOrBlank() }
+    if (comStatus.isNotEmpty()) {
+        val pend = rows.count { statusPendente(it["status"]) }
+        return if (pend > 0) "$pend PENDENTE${if (pend > 1) "S" else ""}" to "pend"
+        else (if (domainId == "financeiro") "QUITADO" else "FINALIZADO") to "ok"
+    }
+    fun contar(k: String, re: Regex) = rows.count { re.containsMatchIn(up(it[k])) }
+    return when (domainId) {
+        "romaneios" -> {
+            val p = contar("statusFrete", Regex("PENDENTE|ABERTO|ATRASADO|A PAGAR"))
+            if (p > 0) "$p FRETE${if (p > 1) "S" else ""} PENDENTE${if (p > 1) "S" else ""}" to "pend"
+            else rows.mapNotNull { it["statusFrete"]?.takeIf { s -> s.isNotBlank() } }.distinct().let { st ->
+                if (st.isEmpty()) null else (if (st.size == 1) st[0].uppercase() else "FRETES EM DIA") to "ok"
+            }
+        }
+        "planejamentosafra" -> when {
+            contar("statusOrcamento", Regex("ACIMA|ESTOUR")) > 0 -> "ACIMA DO ORÇADO" to "pend"
+            contar("statusOrcamento", Regex("DENTRO|ABAIXO")) > 0 -> "DENTRO DO ORÇAMENTO" to "ok"
+            else -> null
+        }
+        "inventario" -> {
+            val v = contar("statusSeguro", Regex("^VENCIDO"))
+            when {
+                v > 0 -> (if (v > 1) "$v SEGUROS VENCIDOS" else "SEGURO VENCIDO") to "pend"
+                contar("statusSeguro", Regex("PROX")) > 0 -> "SEGURO PRÓX VENC" to "pend"
+                contar("statusSeguro", Regex("VALIDO|EM DIA")) > 0 -> "SEGURO VÁLIDO" to "ok"
+                else -> null
+            }
+        }
+        "cotacoesfornecedores" -> rows.firstOrNull { up(it["melhorOpcao"]) in setOf("SIM", "TRUE") }?.get("fornecedor")
+            ?.takeIf { it.isNotBlank() }?.let { "MELHOR: ${it.uppercase()}" to "ok" }
+        "clima" -> {
+            val hoje = System.currentTimeMillis() / 86_400_000L
+            val geada = rows.any { r ->
+                val d = r["data"]?.take(10)?.split("-")?.mapNotNull { it.toIntOrNull() }
+                val dia = if (d != null && d.size == 3) java.util.GregorianCalendar(java.util.TimeZone.getTimeZone("UTC")).apply { clear(); set(d[0], d[1] - 1, d[2]) }.timeInMillis / 86_400_000L else null
+                dia != null && hoje - dia <= 3 && (r["tempMinC"]?.replace(",", ".")?.toDoubleOrNull() ?: 99.0) <= 3.0
+            }
+            (if (geada) "RISCO DE GEADA" else "SEM ALERTA") to (if (geada) "pend" else "ok")
+        }
+        else -> null
     }
 }

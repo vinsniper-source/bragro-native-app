@@ -273,6 +273,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
                     col.type == "date" -> isoDateToBr(isoDateOnly(raw))
                     else -> raw
                 }
+                if (col.key == "kmOdometro" || col.key == "horimetro") camposOriginais[col.key] = raw
             }
             computedValues.value = computed
 
@@ -422,7 +423,8 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
 
     // v1.6.1 (mockup v102, item 1) -- Frota: km ou horímetro conforme o veículo.
     var leituraFrota by androidx.compose.runtime.mutableStateOf<kotlinx.serialization.json.JsonObject?>(null)
-    var frotaAmbas by androidx.compose.runtime.mutableStateOf(false)
+    // Valores de Km/Horímetro como vieram do registro (edição) -- para não esconder um campo já preenchido.
+    val camposOriginais = mutableMapOf<String, String?>()
     // v1.6.1 (mockup v102, item 5) -- Estoque: data do 1º lançamento do item (Inicial bloqueado).
     var inicialJaLancadoEm by androidx.compose.runtime.mutableStateOf<String?>(null)
 
@@ -430,14 +432,18 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
         ?.takeIf { it.isString }?.content
 
     fun isVisible(col: ColumnConfig): Boolean {
-        if (domainId == "frota" && !frotaAmbas) {
-            val esconder = when (medidaFrota()) {
-                "km" -> listOf("horimetro", "custoPorHora")
-                "horas" -> listOf("kmOdometro", "custoPorKm")
+        // v1.6.3 (mockup v104, item 3) -- só a medida do veículo; implemento sem medidor não mostra nenhuma.
+        if (domainId == "frota") {
+            val grupos = when (medidaFrota()) {
+                "km" -> listOf(listOf("horimetro", "custoPorHora"))
+                "horas" -> listOf(listOf("kmOdometro", "custoPorKm"))
+                "nenhum" -> listOf(listOf("horimetro", "custoPorHora"), listOf("kmOdometro", "custoPorKm"))
                 else -> emptyList()
             }
-            val vazio = fields[esconder.firstOrNull() ?: ""].let { it.isNullOrBlank() || it.replace(",", ".").toDoubleOrNull() == 0.0 }
-            if (col.key in esconder && vazio) return false
+            for (g in grupos) {
+                val vazio = (camposOriginais[g[0]] ?: fields[g[0]]).let { it.isNullOrBlank() || it.replace(",", ".").toDoubleOrNull() == 0.0 }
+                if (col.key in g && vazio) return false
+            }
         }
         // Camada 1 (legado, vale pra TODOS os papéis) -- mesmo critério de
         // sempre, preservado.
@@ -863,6 +869,14 @@ fun DomainFormScreen(
                     kotlinx.coroutines.delay(300)
                     val r = com.bragro.mobile.data.repo.ModuleActionsRepository(ctxApp).run("ultima-leitura-frota", item = frotaSel, id = viewModel.recordIdAtual)
                     viewModel.leituraFrota = r?.get("leitura") as? kotlinx.serialization.json.JsonObject
+                    // v1.6.3 -- lançamento novo: o campo atual já vem com a última leitura.
+                    if (viewModel.recordIdAtual == null) {
+                        val l = viewModel.leituraFrota
+                        fun v(k: String) = (l?.get(k) as? kotlinx.serialization.json.JsonPrimitive)?.takeIf { !it.isString && it.content != "null" }?.content?.toDoubleOrNull()
+                        val nf = java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 1; isGroupingUsed = false }
+                        v("km")?.let { if (viewModel.fields["kmOdometro"].isNullOrBlank() || viewModel.fields["kmOdometro"] == "0") viewModel.setField("kmOdometro", nf.format(it)) }
+                        v("horas")?.let { if (viewModel.fields["horimetro"].isNullOrBlank() || viewModel.fields["horimetro"] == "0") viewModel.setField("horimetro", nf.format(it)) }
+                    }
                 }
             }
             if (domainId == "estoque") {
@@ -1133,7 +1147,7 @@ private fun ComputedFieldDisplay(col: ColumnConfig, raw: String, optionLabels: M
             Text(col.label, style = MaterialTheme.typography.labelMedium, color = cs.onSurfaceVariant)
             // v59 -- "auto" sem fundo, em negrito, na cor normal do texto.
             Text(
-                "auto",
+                "AUTO",
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                 color = cs.onSurface,
@@ -1539,7 +1553,7 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
     if (viewModel.domainId == "estoque" && col.key == "inicial") {
         viewModel.inicialJaLancadoEm?.let { d ->
             Text(
-                "🔒 Saldo inicial deste item já lançado em ${d.split("-").reversed().joinToString("/")}. Só o 1º lançamento de cada item tem saldo inicial.",
+                "🔒 Saldo inicial deste item já lançado em ${d.split("-").reversed().joinToString("/")}. Para corrigir, edite aquele lançamento.",
                 style = MaterialTheme.typography.bodySmall,
                 color = corAtencao(),
             )
@@ -1696,11 +1710,11 @@ private fun LeituraFrotaAuto(viewModel: DomainFormViewModel, tipo: String) {
     val un = if (tipo == "km") "km" else "h"
     Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Column(Modifier.weight(1f).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 5.dp)) {
-            Text(if (tipo == "km") "Última leitura (km) · auto" else "Último horímetro · auto", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(if (tipo == "km") "Última leitura (km) · AUTO" else "Último horímetro · AUTO", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(if (ultima != null) "${nfmt.format(ultima)} $un$quando$os" else "— primeira leitura", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
         }
         Column(Modifier.weight(1f).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 5.dp)) {
-            Text(if (tipo == "km") "Km rodados · auto" else "Horas trabalhadas · auto", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(if (tipo == "km") "Km rodados · AUTO" else "Horas trabalhadas · AUTO", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(
                 when {
                     diff == null -> "—"
@@ -1712,13 +1726,5 @@ private fun LeituraFrotaAuto(viewModel: DomainFormViewModel, tipo: String) {
                 color = if (diff != null && diff < 0) corAtencao() else MaterialTheme.colorScheme.onSurface,
             )
         }
-    }
-    if (viewModel.medidaFrota() != null && !viewModel.frotaAmbas) {
-        Text(
-            if (tipo == "km") "Usar horímetro neste lançamento" else "Usar km neste lançamento",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(top = 2.dp).clickable { viewModel.frotaAmbas = true },
-        )
     }
 }

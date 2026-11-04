@@ -824,7 +824,8 @@ fun DomainListScreen(
         // v99 -- Estoque: 1º lançamento de cada item (saldo inicial repetido).
         val primeiroDoItem = remember(records, domainId) {
             if (domainId != "estoque") null
-            else records.filter { !it["item"].isNullOrBlank() && it["id"] != null }
+            // v1.6.3 (mockup v104) -- 1º lançamento do item QUE TEM saldo inicial.
+            else records.filter { !it["item"].isNullOrBlank() && it["id"] != null && (it["inicial"]?.replace(",", ".")?.toDoubleOrNull() ?: 0.0) != 0.0 }
                 .sortedWith(compareBy({ it["data"].orEmpty().take(10) }, { it["criadoEm"].orEmpty() }))
                 .groupBy { normalizarTexto(it["item"]!!) }
                 .mapValues { it.value.first()["id"]!! }
@@ -1633,6 +1634,7 @@ fun DomainListScreen(
                                 if (ligar) gruposAbertos[chaveGrupo] = true
                             },
                             numeros = if (domainId == "colheita") numerosGrupoColheita(doGrupo) else emptyList(),
+                            selo = seloGrupo(domainId, doGrupo),
                         )
                         return@itemsIndexed
                     }
@@ -1874,7 +1876,7 @@ fun DomainListScreen(
                                             .background(if (col.computed) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f) else androidx.compose.ui.graphics.Color.Transparent, RoundedCornerShape(8.dp))
                                             .padding(horizontal = if (col.computed) 8.dp else 0.dp, vertical = if (col.computed) 4.dp else 0.dp),
                                     ) {
-                                        if (col.computed) Text("auto", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        if (col.computed) Text("AUTO", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         RecordFieldLine(col, viewedRecord[col.key]!!, viewedRecord, domainId)
                                     }
                                 }

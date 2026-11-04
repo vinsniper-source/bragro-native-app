@@ -265,7 +265,7 @@ private fun conferirFaixas(cfg: DomainConfig, r: Map<String, String?>, primeiroD
         val ini = r["inicial"]?.replace(",", ".")?.toDoubleOrNull() ?: 0.0
         val primeiro = item?.let { primeiroDoItem[normalizarTexto(it)] }
         if (ini > 0 && primeiro != null && primeiro != r["id"]) {
-            out += ProblemaCampo("inicial", "Inicial", "saldoInicial", nf.format(ini), "0", "Saldo inicial repetido: só o primeiro lançamento do item leva saldo inicial (repetir soma o saldo de novo)")
+            out += ProblemaCampo("inicial", "Inicial", "saldoInicial", nf.format(ini), "0", "Saldo inicial repetido: este item já tem saldo inicial em outro lançamento (repetir soma o saldo de novo)")
         }
     }
     if (cfg.id == "colheita") {
