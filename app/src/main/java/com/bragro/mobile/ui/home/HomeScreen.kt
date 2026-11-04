@@ -648,6 +648,8 @@ fun HomeScreen(
     var selecionadaFazendaId by remember(canvasFazendas) {
         mutableStateOf(canvasFazendas?.firstOrNull()?.id)
     }
+    // v1.6.6 (mockup v107b) -- mapa de Talhões dentro do bloco do Canvas.
+    var mapaCanvasAberto by remember { mutableStateOf(false) }
 
     // Refaz o fetch já com os filtros globais (Fazenda/Safra/Cultura)
     // carregados do SharedPreferences -- o refresh() do init{} do ViewModel
@@ -1382,8 +1384,25 @@ fun HomeScreen(
                         onSelect = { id -> selecionadaFazendaId = id },
                         safra = SafraSelection.selected.value,
                         cultura = CulturaSelection.selected.value,
-                        onAbrirMapa = onOpenFieldview,
+                        onAbrirMapa = { mapaCanvasAberto = !mapaCanvasAberto },
                     )
+                }
+                if (!mapaCanvasAberto && canvas.fazendas.size > 1) {
+                    item(key = "canvas-mapa-botao") {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                            androidx.compose.material3.TextButton(onClick = { mapaCanvasAberto = true }) { Text("Mapa dos talhões") }
+                        }
+                    }
+                }
+                if (mapaCanvasAberto) {
+                    item(key = "canvas-mapa") {
+                        com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                            com.bragro.mobile.ui.fieldview.MapaTalhoesEmbutido(
+                                fazendaPadraoId = canvas.fazendas.singleOrNull()?.id ?: selecionadaFazendaId,
+                                onFechar = { mapaCanvasAberto = false },
+                            )
+                        }
+                    }
                 }
                 val fazendaSelecionada = canvas.fazendas.find { it.id == selecionadaFazendaId }
                 if (fazendaSelecionada != null) {

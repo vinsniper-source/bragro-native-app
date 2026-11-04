@@ -901,13 +901,17 @@ private fun FazendasKmlTab(
     mostrarNdvi: Boolean = false,
     onMostrarNdvi: (Boolean) -> Unit = {},
     onPolygonDrawn: (ParsedPolygon) -> Unit = {},
+    // v1.6.6 (mockup v107b) -- dentro do bloco do Canvas (Início): sem a lista
+    // de talhões e sem ocupar a tela toda (fica dentro de uma lista rolável).
+    embutido: Boolean = false,
 ) {
     // Desenho direto no mapa (paridade com a ferramenta de polígono do site,
     // Task #832): toque no mapa adiciona vértices; "Concluir" entrega o
     // polígono pro mesmo diálogo de confirmação do KML (nome + fazenda).
     var drawing by remember { mutableStateOf(false) }
     var draft by remember { mutableStateOf<List<GeoPoint>>(emptyList()) }
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = if (embutido) Modifier.fillMaxWidth() else Modifier.fillMaxSize()) {
+        Text(AJUDA_DESENHO, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
         // v1.6.5 (mockup v106b, item 7) -- a fileira Maps/Earth/Desenhar e a
         // barra de pontos saíram: tudo fica dentro do mapa (BoundariesMap).
         if (camadasNdvi.isNotEmpty()) {
@@ -961,7 +965,78 @@ private fun FazendasKmlTab(
             destino = destinoCoord ?: farms.firstNotNullOfOrNull { f -> farmCentroid(boundaries, f.id)?.let { it to f.name } },
         )
         if (mostrarNdvi && camadasNdvi.isNotEmpty()) LegendaNdvi()
-        BoundariesList(boundaries, modifier = Modifier.weight(1f))
+        if (!embutido) BoundariesList(boundaries, modifier = Modifier.weight(1f))
+    }
+}
+
+/** v1.6.6 (mockup v107b) -- texto de ajuda acima do mapa (igual à plataforma). */
+const val AJUDA_DESENHO = "Toque no ícone do polígono (canto direito do mapa) e marque os cantos da área sobre a imagem de satélite. Ao fechar o desenho, você escolhe o nome e a fazenda antes de salvar."
+
+/**
+ * v1.6.6 (mockup v107b) -- o mesmo mapa da tela Talhões e Mapas dentro do
+ * bloco do Canvas (Início): Importar KML, desenho com Desfazer/Cancelar/
+ * Concluir e a mesma janela de salvar, com a fazenda do bloco já escolhida.
+ */
+@Composable
+fun MapaTalhoesEmbutido(fazendaPadraoId: String?, onFechar: () -> Unit, viewModel: FieldviewViewModel = viewModel()) {
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        Configuration.getInstance().apply {
+            userAgentValue = "BRAgro/${com.bragro.mobile.BuildConfig.VERSION_NAME} (${context.packageName})"
+            osmdroidBasePath = context.cacheDir
+        }
+        viewModel.load()
+    }
+    val data by viewModel.data
+    val farms by viewModel.farms
+    val importing by viewModel.importing
+    val importError by viewModel.importError
+    var pendentes by remember { mutableStateOf<List<ParsedPolygon>>(emptyList()) }
+    var indice by remember { mutableStateOf(0) }
+    val kmlPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+        if (uri != null) {
+            val parsed = parseKmlOrKmz(context, uri)
+            if (parsed.isNotEmpty()) { pendentes = parsed; indice = 0 }
+        }
+    }
+    Column(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Map, label = "Mapa", active = true, onClick = {})
+            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.UploadFile, label = "Importar KML", onClick = { kmlPicker.launch(arrayOf("*/*")) })
+            Spacer(Modifier.weight(1f))
+            TextButton(onClick = onFechar) { Text("✕ Fechar mapa") }
+        }
+        val d = data
+        if (d == null) {
+            CircularProgressIndicator(modifier = Modifier.padding(16.dp).align(Alignment.CenterHorizontally))
+        } else {
+            FazendasKmlTab(
+                boundaries = d.boundaries,
+                farms = farms,
+                onPolygonDrawn = { poly -> pendentes = listOf(poly); indice = 0 },
+                embutido = true,
+            )
+        }
+    }
+    val atual = pendentes.getOrNull(indice)
+    if (atual != null) {
+        ImportBoundaryDialog(
+            polygon = atual,
+            index = indice,
+            total = pendentes.size,
+            saving = importing,
+            error = importError,
+            farms = farms,
+            onDismiss = { pendentes = emptyList(); indice = 0 },
+            onConfirm = { talhao, farmId ->
+                viewModel.importBoundary(talhao, atual, farmId) { ok ->
+                    if (ok) {
+                        if (indice + 1 < pendentes.size) indice += 1 else { pendentes = emptyList(); indice = 0 }
+                    }
+                }
+            },
+            farmIdPadrao = fazendaPadraoId,
+        )
     }
 }
 
@@ -1334,12 +1409,13 @@ private fun ImportBoundaryDialog(
     farms: List<FarmEntity>,
     onDismiss: () -> Unit,
     onConfirm: (talhao: String, farmId: String?) -> Unit,
+    farmIdPadrao: String? = null,
 ) {
     var talhao by remember(polygon) { mutableStateOf(polygon.name ?: "") }
     // Vínculo opcional com o cadastro de Fazendas (Task farmId em
     // /api/mobile/fieldview, action=import_boundary) -- null enquanto
     // nenhuma fazenda é escolhida, mesmo comportamento opcional do backend.
-    var selectedFarm by remember(polygon) { mutableStateOf<FarmEntity?>(null) }
+    var selectedFarm by remember(polygon) { mutableStateOf<FarmEntity?>(farms.firstOrNull { it.id == farmIdPadrao }) }
 
     AlertDialog(
         onDismissRequest = { if (!saving) onDismiss() },
