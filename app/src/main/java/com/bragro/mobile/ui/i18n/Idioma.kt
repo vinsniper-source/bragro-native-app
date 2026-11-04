@@ -269,7 +269,7 @@ object Idioma {
     "Emitente:" to "Emisor:",
     "Número/Série:" to "Número/Serie:",
     "Valor total:" to "Valor total:",
-    "Qtd" to "Cant.",
+    "Quantidade" to "Cant.",
     "Orçamentos" to "Presupuestos",
     "Todos os períodos" to "Todos los períodos",
     "Requisição" to "Requisición",

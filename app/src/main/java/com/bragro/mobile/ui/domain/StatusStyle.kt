@@ -146,6 +146,10 @@ fun brDateToIso(br: String): String {
  * tem o ColumnConfig à mão (StatusBadge não tem -- por isso é opcional e
  * default null, sem alterar esse outro uso). */
 fun displayValueFor(key: String, rawValue: String, colType: String? = null): String {
+    // v1.6.7 (mockup v108, item 7) -- ano sem ponto de milhar (2021, não 2.021).
+    if (key.startsWith("ano", ignoreCase = true) && rawValue.trim().removeSuffix(".0").toIntOrNull()?.let { it in 1900..2200 } == true) {
+        return rawValue.trim().removeSuffix(".0")
+    }
     if (key == "origem") {
         ORIGEM_LABELS[rawValue.lowercase()]?.let { return it }
     }
@@ -270,7 +274,8 @@ fun StatusBadge(rawValue: String) {
     // v1.6.5 (mockup v106, item 1) -- o ⚠️ colorido vira um triângulo de
     // traço fino na mesma cor do texto (ícone minimalista).
     val aviso = AVISO_RE.containsMatchIn(displayValue)
-    val texto = if (aviso) displayValue.replace(AVISO_RE, "") else displayValue
+    // v1.6.7 (mockup v108, item 7) -- sem abreviação na etiqueta.
+    val texto = (if (aviso) displayValue.replace(AVISO_RE, "") else displayValue).let { if (it.trim().equals("PROX VENC", ignoreCase = true)) "VENCE EM BREVE" else it }
     androidx.compose.foundation.layout.Row(
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
         modifier = Modifier

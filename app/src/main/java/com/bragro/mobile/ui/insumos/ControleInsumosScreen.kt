@@ -283,17 +283,27 @@ private fun ItemCriticoCard(i: InsumoSaldoData, onPedidoRapido: () -> Unit) {
                 Text(i.item, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 StatusPill(i.status)
             }
-            Row { Text("Saldo: ", style = MaterialTheme.typography.labelSmall); Text(fmtNum(i.saldo), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
-            Row { Text("Mínimo: ", style = MaterialTheme.typography.labelSmall); Text(fmtNum(i.minimo), style = MaterialTheme.typography.labelSmall) }
-            Text(
-                if (i.diasRestantes == null) "Sem consumo recente p/ estimar" else "Previsão de ruptura: ~${i.diasRestantes} dia(s)",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            OutlinedButton(onClick = onPedidoRapido, modifier = Modifier.padding(top = 4.dp)) {
-                Icon(Icons.Outlined.ShoppingCart, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.size(4.dp))
-                Text("Pedido rápido", style = MaterialTheme.typography.labelSmall)
+            // v1.6.7 (mockup v108, item 5) -- Saldo · Mínimo · Ruptura · Pedir em uma linha só.
+            Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                @Composable
+                fun par(r: String, v: String) {
+                    Text(
+                        androidx.compose.ui.text.buildAnnotatedString {
+                            pushStyle(androidx.compose.ui.text.SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)); append("$r "); pop()
+                            pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold)); append(v); pop()
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                    )
+                }
+                par("Saldo", fmtNum(i.saldo))
+                par("Mínimo", fmtNum(i.minimo))
+                par("Ruptura", when (val d = i.diasRestantes) { null -> "sem consumo"; 0 -> "hoje"; 1 -> "1 dia"; else -> "$d dias" })
+                OutlinedButton(onClick = onPedidoRapido, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 0.dp), modifier = Modifier.height(30.dp)) {
+                    Icon(Icons.Outlined.ShoppingCart, contentDescription = null, modifier = Modifier.size(15.dp))
+                    Spacer(modifier = Modifier.size(4.dp))
+                    Text("Pedir", style = MaterialTheme.typography.labelSmall)
+                }
             }
         }
     }

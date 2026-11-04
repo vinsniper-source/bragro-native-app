@@ -703,12 +703,15 @@ fun CartaoGrupo(
             Text(titulo, fontWeight = FontWeight.Bold, fontSize = 14.5.sp, modifier = Modifier.weight(1f))
             CantoL(aberto, onClick = onToggle)
         }
+        // v1.6.7 (mockup v108, item 4) -- 2ª linha única: local · etiqueta ·
+        // lançamentos · total, distribuídos por igual. Os demais números do
+        // grupo aparecem só com o grupo aberto.
         Row(
-            Modifier.padding(top = 3.dp),
+            Modifier.fillMaxWidth().padding(top = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            if (!onde.isNullOrBlank()) Text(onde, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f, fill = false))
+            if (!onde.isNullOrBlank()) Text(onde, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f, fill = false).padding(end = 6.dp))
             if (pendentes > 0 && onPendentes != null) {
                 Text(
                     "$pendentes PENDENTE${if (pendentes > 1) "S" else ""} ▾",
@@ -733,26 +736,33 @@ fun CartaoGrupo(
                     modifier = Modifier.clip(RoundedCornerShape(50)).background(cor.copy(alpha = 0.14f)).padding(horizontal = 7.dp, vertical = 1.dp),
                 )
             }
+            Text(
+                androidx.compose.ui.text.buildAnnotatedString {
+                    pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp)); append(qtd.toString()); pop()
+                    append(if (qtd == 1) " lançamento" else " lançamentos")
+                },
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                modifier = Modifier.padding(horizontal = 6.dp),
+            )
+            if (total != null) Text(total, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
         }
-        val celulas = buildList {
-            add("Lançamentos" to qtd.toString())
-            if (total != null) add((totalRotulo?.takeIf { it.isNotBlank() } ?: "Total") to total)
-            addAll(numeros)
-            if (size == 1 && pendentes > 0) add("Pendentes" to "$pendentes de $qtd")
-        }.let { if (aberto) it else it.take(3) }
-        val linha = MaterialTheme.colorScheme.outlineVariant
-        HorizontalDivider(Modifier.padding(top = 8.dp, bottom = 6.dp), color = linha)
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            celulas.chunked(3).forEach { fila ->
-                Row(Modifier.fillMaxWidth().height(androidx.compose.foundation.layout.IntrinsicSize.Min)) {
-                    fila.forEachIndexed { i, (l, v) ->
-                        if (i > 0) Box(Modifier.width(1.dp).fillMaxHeight().background(linha))
-                        Column(Modifier.weight(1f).padding(start = if (i > 0) 7.dp else 0.dp, end = 4.dp)) {
-                            Text(l, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
-                            ValorUmaLinha(v, MaterialTheme.colorScheme.onSurface, maxSp = 13.5f, minSp = 9f)
+        if (aberto && numeros.isNotEmpty()) {
+            val linha = MaterialTheme.colorScheme.outlineVariant
+            HorizontalDivider(Modifier.padding(top = 8.dp, bottom = 6.dp), color = linha)
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                numeros.chunked(3).forEach { fila ->
+                    Row(Modifier.fillMaxWidth().height(androidx.compose.foundation.layout.IntrinsicSize.Min)) {
+                        fila.forEachIndexed { i, (l, v) ->
+                            if (i > 0) Box(Modifier.width(1.dp).fillMaxHeight().background(linha))
+                            Column(Modifier.weight(1f).padding(start = if (i > 0) 7.dp else 0.dp, end = 4.dp)) {
+                                Text(l, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
+                                ValorUmaLinha(v, MaterialTheme.colorScheme.onSurface, maxSp = 13.5f, minSp = 9f)
+                            }
                         }
+                        repeat(3 - fila.size) { Spacer(Modifier.weight(1f)) }
                     }
-                    repeat(3 - fila.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
         }

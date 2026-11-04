@@ -393,7 +393,7 @@ private val RAW_FIELD_LABELS: Map<String, String> = mapOf(
     "subcategoria" to "Subcategoria",
     "item" to "Item",
     "unidade" to "Unidade",
-    "qtd" to "Qtd",
+    "qtd" to "Quantidade",
     "unitario" to "Unitário",
     "produtividadeScTon" to "Produtividade (sc/t)",
     "observacoes" to "Observações",
@@ -1180,8 +1180,10 @@ private fun BoundariesMap(
             if (estadoMapa[0] == assinatura) return@AndroidView
             estadoMapa[0] = assinatura
             // mantém os overlays fixos (nomes do satélite + eventos de toque) e refaz só os polígonos
-            val fixos = mv.overlays.count { it is org.osmdroid.views.overlay.TilesOverlay || it is org.osmdroid.views.overlay.MapEventsOverlay }
-            while (mv.overlays.size > fixos) mv.overlays.removeAt(mv.overlays.size - 1)
+            // v1.6.7 (mockup v108, item 1) -- antes removia do fim da lista e
+            // levava junto a camada de toques (ela ficava depois do crédito),
+            // e tocar no mapa para desenhar não fazia nada.
+            mv.overlays.removeAll { it !is org.osmdroid.views.overlay.TilesOverlay && it !is org.osmdroid.views.overlay.MapEventsOverlay }
             val allPoints = mutableListOf<GeoPoint>()
             // v80 -- camada NDVI (por baixo dos contornos).
             camadasNdvi.forEach { c ->

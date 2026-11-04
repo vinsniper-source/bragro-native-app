@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -217,6 +218,8 @@ fun CanvasCirclesRow(
     fun openUrl(url: String) {
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     }
+    val escuroCanvas = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val corTextoCanvas = if (escuroCanvas) Color(0xFF111111) else Color.White
     // Forma/cor do bloco -- pedido do usuario ("bloco 3 [cantos assimetricos]
     // com estilo do 4 [cor cheia], a cor tem que seguir o modo
     // escuro/claro"): colorScheme.primary/onPrimary ja tem par
@@ -228,7 +231,9 @@ fun CanvasCirclesRow(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(topStart = 36.dp, topEnd = 8.dp, bottomEnd = 36.dp, bottomStart = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = com.bragro.mobile.ui.theme.VerdeBarra, contentColor = MaterialTheme.colorScheme.onPrimary),
+        // v1.6.7 (mockup v108, item 3) -- modo claro: verde + texto branco;
+        // modo escuro: verde-claro + texto preto.
+        colors = CardDefaults.cardColors(containerColor = if (escuroCanvas) Color(0xFF6FA98C) else com.bragro.mobile.ui.theme.VerdeBarra, contentColor = corTextoCanvas),
         border = BorderStroke(0.dp, Color.Transparent),
     ) {
         Column {
@@ -236,7 +241,7 @@ fun CanvasCirclesRow(
             Text(
                 "Nenhuma fazenda ativa cadastrada ainda.",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+                color = corTextoCanvas.copy(alpha = 0.7f),
                 modifier = Modifier.padding(16.dp),
             )
         } else {
@@ -279,7 +284,7 @@ fun CanvasCirclesRow(
                     Text(
                         "${NumberFormat.getNumberInstance(Locale("pt", "BR")).format(areaExibida)} ha",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White,
+                        color = corTextoCanvas,
                     )
                     // Com filtro ativo, filtroLabel já junta safra+cultura
                     // ("SAFRINHA 26 · SORGO") -- mostrar culturaAtual/
@@ -290,12 +295,12 @@ fun CanvasCirclesRow(
                     // reportou de volta ("insira a informação da safra e
                     // cultura"). Mostra um OU outro.
                     if (filtroAtivo) {
-                        Text(filtroLabel, style = MaterialTheme.typography.labelSmall, color = Color.White)
+                        Text(filtroLabel, style = MaterialTheme.typography.labelSmall, color = corTextoCanvas)
                     } else {
                         Text(
                             f.culturaAtual ?: "Sem cultura registrada na janela",
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color.White,
+                            color = corTextoCanvas,
                         )
                         if (!f.safraAtual.isNullOrBlank()) {
                             Text(
@@ -305,7 +310,7 @@ fun CanvasCirclesRow(
                                 // ou "Safrinha 24").
                                 f.safraAtual ?: "",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.White,
+                                color = corTextoCanvas,
                             )
                         }
                     }

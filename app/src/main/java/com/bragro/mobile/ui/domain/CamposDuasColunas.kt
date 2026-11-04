@@ -67,11 +67,13 @@ fun <T> CamposDuasColunas(
                 else 1f + kotlin.math.ceil(largura(valor, true).toFloat() / meia).coerceAtLeast(1f)
             }
         }
+        // v1.6.7 (mockup v108, item 4) -- os campos curtos vão primeiro, em
+        // duas colunas equilibradas, e os de largura inteira ficam no fim:
+        // assim não sobra vazio entre um campo longo e outro.
         val blocos = mutableListOf<Pair<Boolean, List<Int>>>() // (inteiro?, índices)
-        val seg = mutableListOf<Int>()
-        fun fechaSeg() { if (seg.isNotEmpty()) { blocos += false to seg.toList(); seg.clear() } }
-        itens.indices.forEach { i -> if (inteiro[i]) { fechaSeg(); blocos += true to listOf(i) } else seg += i }
-        fechaSeg()
+        val curtos = itens.indices.filter { !inteiro[it] }
+        if (curtos.isNotEmpty()) blocos += false to curtos
+        itens.indices.filter { inteiro[it] }.forEach { blocos += true to listOf(it) }
         Column(Modifier.fillMaxWidth()) {
             blocos.forEach { (cheio, idx) ->
                 if (cheio) {
