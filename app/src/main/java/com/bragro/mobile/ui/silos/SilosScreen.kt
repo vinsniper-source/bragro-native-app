@@ -600,13 +600,14 @@ private fun SiloCard(
             }
             if (estimado && silo.movimentos.isNotEmpty()) {
                 Text(
-                    "Leitura real + ${"%.1f".format(Locale("pt", "BR"), silo.movimentos.sumOf { it.toneladas })} t em romaneios desde a última leitura:",
+                    "Base + ${"%.1f".format(Locale("pt", "BR"), silo.movimentos.sumOf { it.toneladas })} t em romaneios (entradas − saídas):",
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.padding(top = 6.dp),
                 )
                 silo.movimentos.forEach { m ->
                     Text(
-                        "Romaneio ${m.noRomaneio} · +${"%.1f".format(Locale("pt", "BR"), m.toneladas)} t · ${m.data.take(10)}" +
+                        // v1.6.2 -- romaneio com Silo de Origem = saída (negativo).
+                        "Romaneio ${m.noRomaneio} · ${if (m.toneladas < 0) "saída " else "entrada +"}${"%.1f".format(Locale("pt", "BR"), m.toneladas)} t · ${m.data.take(10)}" +
                             (if (m.editadoPor != null && m.editadoEm != null) " · por ${m.editadoPor} em ${m.editadoEm.take(16).replace('T', ' ')}" else ""),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
