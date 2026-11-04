@@ -50,6 +50,8 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.zIndex
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -300,9 +302,17 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
     val farms by viewModel.farms
     // v14: só a fazenda escolhida no topo.
     val pivos = remember(pivosTodos, farms, farmSel) {
-        // v1.6.4 (mockup v105, item 7) -- fazenda do topo que não existe mais: mostra todos.
-        val existe = farmSel != null && farms.any { com.bragro.mobile.ui.domain.normalizarTexto(it.name) == com.bragro.mobile.ui.domain.normalizarTexto(farmSel) }
-        if (farmSel == null || (farms.isNotEmpty() && !existe)) pivosTodos else pivosTodos.filter { x -> farms.firstOrNull { it.id == x.farmId }?.name?.let { com.bragro.mobile.ui.domain.normalizarTexto(it) } == com.bragro.mobile.ui.domain.normalizarTexto(farmSel) }
+        // v1.6.8 (mockup v109b) -- nunca esconde pivôs da conta: pivô cuja
+        // fazenda não está no cadastro guardado no celular entra na lista, e
+        // se o filtro deixaria a lista vazia, mostra todos.
+        if (farmSel == null) pivosTodos else {
+            val alvo = com.bragro.mobile.ui.domain.normalizarTexto(farmSel)
+            val filtrados = pivosTodos.filter { x ->
+                val nome = farms.firstOrNull { it.id == x.farmId }?.name
+                nome == null || com.bragro.mobile.ui.domain.normalizarTexto(nome) == alvo
+            }
+            filtrados.ifEmpty { pivosTodos }
+        }
     }
     // v53 -- só os últimos 30 dias de verdade: nada depois de hoje.
     val balancoBruto by viewModel.balanco
@@ -312,7 +322,7 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
     val busy by viewModel.busy
     val error by viewModel.errorMessage
     var showNovo by remember { mutableStateOf(false) }
-    var balancoOpen by remember { mutableStateOf(false) }
+    var balancoOpen by remember { mutableStateOf(true) } // v1.6.8 -- só Pivôs e Balanço, já abertos
     var graficosOpen by remember { mutableStateOf(false) }
     var pivosOpen by remember { mutableStateOf(true) } // v44: abre na lista, igual à plataforma (Visão: Pivôs)
     var prestadoraAberta by remember { mutableStateOf(false) }
@@ -353,118 +363,26 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                     } },
             )
         },
-        // Botão flutuante removido -- "+ Pivô" fica em Ações (padrão v7).
+        // v1.6.8 (mockup v109b) -- sem o bloco Ações: cadastrar pivô pelo +.
+        floatingActionButton = {
+            androidx.compose.material3.FloatingActionButton(onClick = { editing = null; showNovo = true }, containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) {
+                Icon(Icons.Outlined.Add, contentDescription = "Novo pivô")
+            }
+        },
     ) { padding ->
+        // v1.6.8 -- puxar a tela para baixo atualiza (substitui o botão Atualizar).
+        val puxar = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
+        if (puxar.isRefreshing) LaunchedEffect(Unit) { viewModel.load() }
+        LaunchedEffect(loading) { if (!loading && puxar.isRefreshing) puxar.endRefresh() }
+        Box(Modifier.fillMaxSize().padding(padding).nestedScroll(puxar.nestedScrollConnection)) {
+        androidx.compose.material3.pulltorefresh.PullToRefreshContainer(state = puxar, modifier = Modifier.align(Alignment.TopCenter).zIndex(1f))
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
             contentPadding = PaddingValues(top = 8.dp, bottom = 40.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            item(key = "painel") {
-                val ligados = pivos.count { it.status == "RUNNING_WATER" || it.status == "RUNNING_DRY" }
-                val areaHa = pivos.sumOf { p -> p.raioM?.let { Math.PI * it * it / 10000 } ?: 0.0 }
-                val lamina = balanco.sumOf { it.laminaMm }
-                val chuva = balanco.sumOf { it.chuvaMm + it.chuvaClimaMm }
-                val diasIrr = balanco.count { it.laminaMm > 0 }
-                com.bragro.mobile.ui.domain.PainelMonitoramento(
-                    com.bragro.mobile.ui.domain.PainelModulo(
-                        titulo = "Pivôs · últimos 30 dias",
-                        subtitulo = "${pivos.size} pivô(s) · ${pivos.mapNotNull { it.farmId }.toSet().size} fazenda(s)",
-                        kpis = listOf(
-                            com.bragro.mobile.ui.domain.PainelKpi("Pivôs", pivos.size.toDouble(), "numero", null, "$ligados ligado(s) agora", "Pivôs"),
-                            com.bragro.mobile.ui.domain.PainelKpi("Área irrigada", Math.round(areaHa).toDouble(), "numero", "ha", "pelo raio", "Pivôs"),
-                            com.bragro.mobile.ui.domain.PainelKpi("Lâmina", Math.round(lamina).toDouble(), "numero", "mm", "30 dias", "Balanço"),
-                            com.bragro.mobile.ui.domain.PainelKpi("Chuva", Math.round(chuva).toDouble(), "numero", "mm", "pluviômetro + Clima", "Balanço"),
-                        ),
-                        barras = if (pivos.isEmpty()) emptyList() else listOf(
-                            com.bragro.mobile.ui.domain.PainelBarra("Pivôs ligados", Math.round(ligados * 100.0 / pivos.size).toDouble(), "$ligados/${pivos.size}"),
-                            com.bragro.mobile.ui.domain.PainelBarra("Dias c/ irrigação", if (balanco.isEmpty()) 0.0 else Math.round(diasIrr * 100.0 / balanco.size).toDouble(), "$diasIrr/${balanco.size}", neutra = true),
-                        ),
-                    ),
-                    onKpi = { k -> if (k.destino == "Balanço") balancoOpen = true else pivosOpen = true },
-                )
-            }
-            item(key = "acoes") {
-                    // v14: abas Dados / Operações / Arquivos, iguais aos outros módulos.
-                    com.bragro.mobile.ui.domain.AcoesEmAbas(
-                        dados = {
-                            Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
-                                com.bragro.mobile.ui.domain.LabeledIconButton(
-                                    icon = com.bragro.mobile.ui.domain.IconesVazados.FilterAlt,
-                                    label = pivos.firstOrNull { it.id == filtroPivo }?.nome ?: "Pivô",
-                                    active = filtroPivo != null,
-                                    onClick = { filtroMenu = true },
-                                )
-                                androidx.compose.material3.DropdownMenu(expanded = filtroMenu, onDismissRequest = { filtroMenu = false }) {
-                                    androidx.compose.material3.DropdownMenuItem(text = { Text("Todos os pivôs") }, onClick = { filtroPivo = null; filtroMenu = false; viewModel.refreshBalanco(null) })
-                                    pivos.forEach { p ->
-                                        androidx.compose.material3.DropdownMenuItem(text = { Text((if (p.id == filtroPivo) "✓ " else "") + p.nome) }, onClick = { filtroPivo = p.id; filtroMenu = false; balancoOpen = true; viewModel.refreshBalanco(p.id) })
-                                    }
-                                }
-                            }
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Opacity, label = "Balanço", active = balancoOpen, onClick = { balancoOpen = !balancoOpen })
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.ViewList, label = "Pivôs", active = pivosOpen, onClick = { pivosOpen = !pivosOpen })
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconeGraficos, label = "Gráficos", onClick = { graficosOpen = true })
-                        },
-                        operacoes = {
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.WaterDrop, label = "+ Pivô", onClick = { editing = null; showNovo = true })
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.load() })
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, label = "Fabricante", onClick = { prestadoraAberta = true })
-                            com.bragro.mobile.ui.domain.NuvemButton()
-                        },
-                        arquivos = {
-                            com.bragro.mobile.ui.domain.ArquivosTabela("Pivôs de Irrigação", listOf("Pivô", "Fazenda", "Marca", "Status", "Ângulo", "Lâmina (mm)", "Pressão (psi)", "Raio (m)")) {
-                                pivos.map { p ->
-                                    listOf(p.nome, farms.firstOrNull { it.id == p.farmId }?.name.orEmpty(), p.marca, statusLabel(p.status), p.anguloAtual?.toInt()?.toString().orEmpty(), p.laminaAtualMm?.toString().orEmpty(), p.pressaoPsi?.toInt()?.toString().orEmpty(), p.raioM?.toInt()?.toString().orEmpty())
-                                }
-                            }
-                        },
-                    )
-            }
-            // Balanço Hídrico -- lâmina aplicada + chuva (pluviômetro) por dia.
-            item(key = "balanco-header") {
-                com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = 0, aberto = balancoOpen, titulo = "Balanço hídrico", rotulo = "30 dias") { balancoOpen = !balancoOpen }
-            }
-            if (balancoOpen) item(key = "balanco") {
-                com.bragro.mobile.ui.domain.BlocoGraficoBarras(
-                    titulo = "Balanço hídrico (30 dias)",
-                    categorias = balanco.map { com.bragro.mobile.ui.domain.diaMesBr(it.data) },
-                    series = listOf("Lâmina aplicada" to balanco.map { it.laminaMm }, "Chuva (pluviômetro)" to balanco.map { it.chuvaMm }, "Chuva (módulo Clima, automática)" to balanco.map { it.chuvaClimaMm }, "Total (oferta de água)" to balanco.map { it.laminaMm + it.chuvaMm + it.chuvaClimaMm }),
-                    isMoney = false,
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        // v44 -- igual à plataforma: título com o recorte, barras
-                        // por fonte de água, linha do total e a nota explicativa.
-                        Row(verticalAlignment = Alignment.Bottom) {
-                            Text("Balanço hídrico · últimos 30 dias", style = MaterialTheme.typography.titleSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
-                            Spacer(Modifier.size(6.dp))
-                            Text(pivos.firstOrNull { it.id == filtroPivo }?.nome ?: "todos os pivôs", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        if (balanco.isEmpty()) {
-                            Text("Sem registros de telemetria no período.", style = MaterialTheme.typography.bodySmall)
-                        } else {
-                            SimpleBarChart(
-                                categories = balanco.map { com.bragro.mobile.ui.domain.diaMesBr(it.data) },
-                                series = listOf(
-                                    BarSeries("Lâmina aplicada", balanco.map { it.laminaMm }, COR_LAMINA),
-                                    BarSeries("Chuva (pluviômetro)", balanco.map { it.chuvaMm }, COR_CHUVA),
-                                    BarSeries("Chuva (módulo Clima, automática)", balanco.map { it.chuvaClimaMm }, COR_CHUVA_CLIMA),
-                                ),
-                                isMoney = false,
-                                barsHeight = 170.dp,
-                                linha = BarSeries("Total (oferta de água)", balanco.map { it.laminaMm + it.chuvaMm + it.chuvaClimaMm }, MaterialTheme.colorScheme.onSurface),
-                            )
-                        }
-                        Text(
-                            "Água por dia: lâmina do pivô + chuva. Não calcula a necessidade da cultura.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
-            item(key = "pivos_cab") {
-                com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = pivos.size, aberto = pivosOpen, titulo = "Pivôs") { pivosOpen = !pivosOpen }
+            item(key = "subtitulo") {
+                Text("Funciona sem fabricante: cadastre os pivôs e lance telemetria e controle manualmente.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             when {
                 !pivosOpen -> {}
@@ -508,6 +426,46 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                     )
                 }
             }
+            // Balanço Hídrico -- lâmina aplicada + chuva (pluviômetro) por dia.
+            if (balancoOpen) item(key = "balanco") {
+                com.bragro.mobile.ui.domain.BlocoGraficoBarras(
+                    titulo = "Balanço hídrico (30 dias)",
+                    categorias = balanco.map { com.bragro.mobile.ui.domain.diaMesBr(it.data) },
+                    series = listOf("Lâmina aplicada" to balanco.map { it.laminaMm }, "Chuva (pluviômetro)" to balanco.map { it.chuvaMm }, "Chuva (módulo Clima, automática)" to balanco.map { it.chuvaClimaMm }, "Total (oferta de água)" to balanco.map { it.laminaMm + it.chuvaMm + it.chuvaClimaMm }),
+                    isMoney = false,
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        // v44 -- igual à plataforma: título com o recorte, barras
+                        // por fonte de água, linha do total e a nota explicativa.
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text("Balanço hídrico · últimos 30 dias", style = MaterialTheme.typography.titleSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                            Spacer(Modifier.size(6.dp))
+                            Text(pivos.firstOrNull { it.id == filtroPivo }?.nome ?: "todos os pivôs", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        if (balanco.isEmpty()) {
+                            Text("Sem registros de telemetria no período.", style = MaterialTheme.typography.bodySmall)
+                        } else {
+                            SimpleBarChart(
+                                categories = balanco.map { com.bragro.mobile.ui.domain.diaMesBr(it.data) },
+                                series = listOf(
+                                    BarSeries("Lâmina aplicada", balanco.map { it.laminaMm }, COR_LAMINA),
+                                    BarSeries("Chuva (pluviômetro)", balanco.map { it.chuvaMm }, COR_CHUVA),
+                                    BarSeries("Chuva (módulo Clima, automática)", balanco.map { it.chuvaClimaMm }, COR_CHUVA_CLIMA),
+                                ),
+                                isMoney = false,
+                                barsHeight = 170.dp,
+                                linha = BarSeries("Total (oferta de água)", balanco.map { it.laminaMm + it.chuvaMm + it.chuvaClimaMm }, MaterialTheme.colorScheme.onSurface),
+                            )
+                        }
+                        Text(
+                            "Água por dia: lâmina do pivô + chuva. Não calcula a necessidade da cultura.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
         }
     }
 
@@ -691,7 +649,7 @@ private fun PivoCard(
                 }
                 // v53 -- Ligar/Desligar neutro (cor só para status).
                 if (ligado) botao(com.bragro.mobile.ui.domain.IconesVazados.StopCircle, "Desligar", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onDesligar, Modifier.weight(1f))
-                else botao(com.bragro.mobile.ui.domain.IconesVazados.PlayCircle, "Ligar", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onLigar, Modifier.weight(1f))
+                else botao(com.bragro.mobile.ui.domain.IconesVazados.PlayCircle, "Ligar", cs.primary, cs.onPrimary, onLigar, Modifier.weight(1f)) // v1.6.8 -- verde cheio, igual à plataforma
                 // v1.6.4 (mockup v105, item 7) -- Lançar leitura e Histórico, iguais à plataforma.
                 botao(Icons.Outlined.Add, "Lançar leitura", androidx.compose.ui.graphics.Color.Transparent, cs.primary, onTelemetria, Modifier.weight(1.3f))
                 botao(Icons.Outlined.History, "Histórico", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onHistorico, Modifier.weight(1f))
