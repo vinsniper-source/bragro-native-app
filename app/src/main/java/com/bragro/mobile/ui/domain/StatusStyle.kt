@@ -275,7 +275,7 @@ fun StatusBadge(rawValue: String) {
     // traço fino na mesma cor do texto (ícone minimalista).
     val aviso = AVISO_RE.containsMatchIn(displayValue)
     // v1.6.7 (mockup v108, item 7) -- sem abreviação na etiqueta.
-    val texto = (if (aviso) displayValue.replace(AVISO_RE, "") else displayValue).let { if (it.trim().equals("PROX VENC", ignoreCase = true)) "VENCE EM BREVE" else it }
+    val texto = (if (aviso) displayValue.replace(AVISO_RE, "") else displayValue).let { if (it.trim().equals("PROX VENC", ignoreCase = true)) "VENCE EM BREVE" else it }.replace("ORCAMENT", "ORÇAMENT")
     androidx.compose.foundation.layout.Row(
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
         modifier = Modifier
@@ -291,13 +291,17 @@ fun StatusBadge(rawValue: String) {
                 modifier = Modifier.padding(end = 4.dp).size(14.dp),
             )
         }
+        // v1.6.9 (mockup v110, item 1) -- nunca corta: se não couber, a
+        // letra diminui até a etiqueta caber inteira numa linha.
+        val base = MaterialTheme.typography.labelMedium
+        val escala = androidx.compose.runtime.remember(texto) { androidx.compose.runtime.mutableFloatStateOf(1f) }
         Text(
             texto,
-            style = MaterialTheme.typography.labelMedium,
+            style = base.copy(fontSize = base.fontSize * escala.floatValue),
             color = fg,
-            // v1.6.4 (mockup v105, item 5) -- etiqueta nunca quebra em duas linhas.
             maxLines = 1,
             softWrap = false,
+            onTextLayout = { r -> if (r.didOverflowWidth && escala.floatValue > 0.6f) escala.floatValue = escala.floatValue * 0.9f },
         )
     }
 }

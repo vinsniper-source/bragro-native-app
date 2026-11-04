@@ -380,12 +380,15 @@ fun BlocoComFaixa(
     inicialAberto: Boolean = true,
     content: @Composable () -> Unit,
 ) {
+    // v1.6.9 (mockup v110b, item 2) -- só a borda de cima; sem laterais nem embaixo.
+    val linhaTopo = MaterialTheme.colorScheme.outlineVariant
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .border(0.75.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surface),
+            .drawWithContent {
+                drawContent()
+                drawRect(linhaTopo, size = androidx.compose.ui.geometry.Size(size.width, 1.dp.toPx()))
+            },
     ) {
         androidx.compose.runtime.CompositionLocalProvider(LocalAcoesEncaixadas provides true) { content() }
     }
@@ -399,37 +402,30 @@ fun BlocoComFaixa(
 @Composable
 fun AbasEncaixadas(titulos: List<String>, selecionada: Int, avisos: List<Int> = emptyList(), onSelect: (Int) -> Unit) {
     val cs = MaterialTheme.colorScheme
-    val faixa = cs.onSurface.copy(alpha = 0.05f).compositeOver(cs.surface)
     val amarelo = if (cs.background.luminance() < 0.5f) com.bragro.mobile.ui.theme.BrYellow else Color(0xFFB8860B)
+    // v1.6.9 (mockup v110b, item 2) -- sem faixa nem moldura: traços
+    // verticais curtos e centralizados entre as abas; a aba ativa fica em
+    // verde negrito; linha horizontal centralizada (sem encostar nas
+    // laterais) separa as abas dos ícones.
     Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().background(faixa)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             titulos.forEachIndexed { i, t ->
-                if (i > 0) Box(Modifier.width(1.dp).height(34.dp).background(cs.outlineVariant))
+                if (i > 0) Box(Modifier.width(1.dp).height(16.dp).background(cs.outlineVariant))
                 val ativa = i == selecionada
                 val aviso = (avisos.getOrNull(i) ?: 0) > 0
                 Box(
-                    modifier = Modifier.weight(1f).height(34.dp)
-                        // v18 -- aba com aviso: sem fundo amarelo; nome e
-                        // traço em amarelo.
-                        .background(if (ativa) cs.surface else Color.Transparent)
-                        .clickable { onSelect(i) }
-                        .drawWithContent {
-                            drawContent()
-                            if (ativa || aviso) drawRect(if (aviso) amarelo else cs.primary, topLeft = androidx.compose.ui.geometry.Offset(0f, size.height - 2.dp.toPx()), size = androidx.compose.ui.geometry.Size(size.width, 2.dp.toPx()))
-                        },
+                    modifier = Modifier.weight(1f).height(36.dp).clickable { onSelect(i) },
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        Idioma.tr(t), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        Idioma.tr(t), fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                         fontWeight = if (ativa) FontWeight.ExtraBold else FontWeight.SemiBold,
-                        // v42 -- só a barra embaixo marca a aba atual; o rótulo fica na cor padrão.
-                        // v43 -- o nome nunca muda de cor; só o traço fica amarelo com aviso.
-                        color = cs.onSurface,
+                        color = when { aviso -> amarelo; ativa -> corSucesso(); else -> cs.onSurfaceVariant },
                     )
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(cs.outlineVariant))
+        Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(1.dp).background(cs.outlineVariant))
     }
 }
 

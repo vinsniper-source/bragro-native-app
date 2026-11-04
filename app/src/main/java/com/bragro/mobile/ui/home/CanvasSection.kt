@@ -23,6 +23,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Agriculture
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.ChevronRight
@@ -326,7 +327,8 @@ fun CanvasCirclesRow(
                             statusLabel(f.status),
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                             fontWeight = FontWeight.Medium,
-                            color = Color.White,
+                            // v1.6.9 (mockup v110, item 3) -- era branco sobre fundo branco.
+                            color = statusColor(f.status),
                         )
                     }
                 }
@@ -348,12 +350,12 @@ fun CanvasCirclesRow(
                         )
                         Box(modifier = Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.38f)))
                     } else {
-                        Text(
-                            "ver mapa",
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                            color = statusColor(f.status),
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 6.dp),
+                        // v1.6.9 (mockup v110, item 3) -- ícone de mapa da plataforma, sem texto.
+                        androidx.compose.material3.Icon(
+                            androidx.compose.material.icons.Icons.Outlined.Map,
+                            contentDescription = "Ver mapa",
+                            tint = statusColor(f.status),
+                            modifier = Modifier.size(30.dp),
                         )
                     }
                 }
