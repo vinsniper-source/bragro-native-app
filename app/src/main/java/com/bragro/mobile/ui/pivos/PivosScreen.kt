@@ -363,12 +363,7 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                     } },
             )
         },
-        // v1.6.8 (mockup v109b) -- sem o bloco Ações: cadastrar pivô pelo +.
-        floatingActionButton = {
-            androidx.compose.material3.FloatingActionButton(onClick = { editing = null; showNovo = true }, containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) {
-                Icon(Icons.Outlined.Add, contentDescription = "Novo pivô")
-            }
-        },
+        // v1.6.10 -- bloco Ações de volta (padrão do app); + Pivô fica em Operações.
     ) { padding ->
         // v1.6.8 -- puxar a tela para baixo atualiza (substitui o botão Atualizar).
         val puxar = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
@@ -383,6 +378,29 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
         ) {
             item(key = "subtitulo") {
                 Text("Funciona sem fabricante: cadastre os pivôs e lance telemetria e controle manualmente.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            item(key = "acoes") {
+                    // v14: abas Dados / Operações / Arquivos, iguais aos outros módulos.
+                    com.bragro.mobile.ui.domain.AcoesEmAbas(
+                        dados = {
+                            // v1.6.10 -- só Pivôs e Balanço no Dados (pedido do usuário).
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.ViewList, label = "Pivôs", active = pivosOpen, onClick = { pivosOpen = !pivosOpen })
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Opacity, label = "Balanço", active = balancoOpen, onClick = { balancoOpen = !balancoOpen })
+                        },
+                        operacoes = {
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.WaterDrop, label = "+ Pivô", onClick = { editing = null; showNovo = true })
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.load() })
+                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, label = "Fabricante", onClick = { prestadoraAberta = true })
+                            com.bragro.mobile.ui.domain.NuvemButton()
+                        },
+                        arquivos = {
+                            com.bragro.mobile.ui.domain.ArquivosTabela("Pivôs de Irrigação", listOf("Pivô", "Fazenda", "Marca", "Status", "Ângulo", "Lâmina (mm)", "Pressão (psi)", "Raio (m)")) {
+                                pivos.map { p ->
+                                    listOf(p.nome, farms.firstOrNull { it.id == p.farmId }?.name.orEmpty(), p.marca, statusLabel(p.status), p.anguloAtual?.toInt()?.toString().orEmpty(), p.laminaAtualMm?.toString().orEmpty(), p.pressaoPsi?.toInt()?.toString().orEmpty(), p.raioM?.toInt()?.toString().orEmpty())
+                                }
+                            }
+                        },
+                    )
             }
             when {
                 !pivosOpen -> {}
