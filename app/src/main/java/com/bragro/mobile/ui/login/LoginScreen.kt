@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
@@ -299,7 +300,7 @@ private fun LoginIdiomaMenu(modifier: Modifier = Modifier) {
     val idioma = com.bragro.mobile.ui.i18n.Idioma
     androidx.compose.foundation.layout.Box(modifier) {
         androidx.compose.material3.TextButton(onClick = { aberto = true }) {
-            Icon(Icons.Outlined.AttachMoney, contentDescription = "País e idioma", modifier = Modifier.height(18.dp))
+            Icon(com.bragro.mobile.ui.domain.IconeMoedas, contentDescription = "País, idioma e moeda", modifier = Modifier.size(18.dp)) // v1.6.11 (mockup v112b) -- mesmo ícone da plataforma
             Text(
                 if (idioma.argentina) "ARS" else "BRL",
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,

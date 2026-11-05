@@ -349,6 +349,13 @@ fun CanvasCirclesRow(
                             modifier = Modifier.matchParentSize(),
                         )
                         Box(modifier = Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.38f)))
+                        // v1.6.11 (mockup v111c) -- ícone de mapa sempre no centro, branco sobre a foto.
+                        androidx.compose.material3.Icon(
+                            androidx.compose.material.icons.Icons.Outlined.Map,
+                            contentDescription = "Ver mapa",
+                            tint = Color.White,
+                            modifier = Modifier.size(30.dp),
+                        )
                     } else {
                         // v1.6.9 (mockup v110, item 3) -- ícone de mapa da plataforma, sem texto.
                         androidx.compose.material3.Icon(

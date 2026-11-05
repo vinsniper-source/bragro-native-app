@@ -420,7 +420,7 @@ fun AbasEncaixadas(titulos: List<String>, selecionada: Int, avisos: List<Int> = 
                     Text(
                         Idioma.tr(t), fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                         fontWeight = if (ativa) FontWeight.ExtraBold else FontWeight.SemiBold,
-                        color = when { aviso -> amarelo; ativa -> corSucesso(); else -> cs.onSurfaceVariant },
+                        color = when { aviso -> amarelo; ativa -> com.bragro.mobile.ui.theme.VerdeBarra; else -> cs.onSurfaceVariant }, // v1.6.11 (mockup v112b) -- só a aba selecionada no verde do botão +
                     )
                 }
             }
