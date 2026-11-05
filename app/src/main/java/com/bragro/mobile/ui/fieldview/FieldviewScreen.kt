@@ -433,7 +433,7 @@ private fun RawRecordFields(obj: JsonObject, ocultar: Set<String> = emptySet()) 
             val n = raw.toDoubleOrNull()
             val valor = when {
                 k == "status" -> raw
-                k in RAW_MONEY_KEYS && n != null -> java.text.NumberFormat.getCurrencyInstance(ptBr).format(n).replace('\u00A0', ' ')
+                k in RAW_MONEY_KEYS && n != null -> com.bragro.mobile.ui.i18n.MoedaApp.formatar(n)
                 k == "hectare" || k == "areaTotal" -> if (n != null) "${java.text.NumberFormat.getNumberInstance(ptBr).format(n)} ha" else raw
                 k in RAW_NUMBER_KEYS && n != null -> java.text.NumberFormat.getNumberInstance(ptBr).format(n)
                 else -> displayValueFor(k, raw, when {

@@ -209,7 +209,7 @@ fun formatMoneyValue(rawValue: String): String {
     // decimal e não pode ser removido (senão "1234.56" viraria "123456").
     val normalized = if (stripped.contains(",")) stripped.replace(".", "").replace(",", ".") else stripped
     val n = normalized.toDoubleOrNull()
-    return if (n == null) rawValue else NumberFormat.getCurrencyInstance(PT_BR_MONEY).format(n)
+    return if (n == null) rawValue else com.bragro.mobile.ui.i18n.MoedaApp.formatar(n)
 }
 
 private val VENC_KEY = Regex("^(vcto|vencimento|prazo|dataVencimento)", RegexOption.IGNORE_CASE)
@@ -562,7 +562,7 @@ fun domainProgressCellInfo(domainId: String, key: String, record: Map<String, St
         val pago = num("valorPago") ?: 0.0
         val value = (pago / total) * 100
         // v1.6.4 (mockup v105, item 3) -- mostra o valor em R$ junto da %.
-        val brl = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("pt", "BR")).format(pago)
+        val brl = com.bragro.mobile.ui.i18n.MoedaApp.formatar(pago)
         return DomainProgressInfo(value, budgetBarTone(value), label = "$brl · ${Math.round(value)}%")
     }
     if (domainId == "frota" && key == "proxRevisao") {

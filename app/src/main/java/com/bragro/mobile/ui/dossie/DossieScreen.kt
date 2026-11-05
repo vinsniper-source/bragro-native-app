@@ -115,7 +115,7 @@ class DossieViewModel(app: Application) : AndroidViewModel(app) {
 }
 
 private fun formatMoneyBrl(value: Double): String =
-    NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(value)
+    com.bragro.mobile.ui.i18n.MoedaApp.formatar(value)
 
 private fun formatArea(value: Double): String {
     val nf = NumberFormat.getNumberInstance(Locale("pt", "BR"))

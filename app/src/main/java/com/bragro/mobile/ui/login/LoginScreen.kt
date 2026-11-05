@@ -294,35 +294,4 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
 }
 
 @Composable
-private fun LoginIdiomaMenu(modifier: Modifier = Modifier) {
-    val ctx = androidx.compose.ui.platform.LocalContext.current
-    var aberto by remember { mutableStateOf(false) }
-    val idioma = com.bragro.mobile.ui.i18n.Idioma
-    androidx.compose.foundation.layout.Box(modifier) {
-        androidx.compose.material3.TextButton(onClick = { aberto = true }) {
-            Icon(com.bragro.mobile.ui.domain.IconeMoedas, contentDescription = "País, idioma e moeda", modifier = Modifier.size(18.dp)) // v1.6.11 (mockup v112b) -- mesmo ícone da plataforma
-            Text(
-                if (idioma.argentina) "ARS" else "BRL",
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                modifier = Modifier.padding(start = 4.dp),
-            )
-        }
-        androidx.compose.material3.DropdownMenu(expanded = aberto, onDismissRequest = { aberto = false }) {
-            Text("País", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
-            listOf("BR" to "Brasil (pt-BR · R$)", "AR" to "Argentina (es · ARS)").forEach { (cod, nome) ->
-                androidx.compose.material3.DropdownMenuItem(
-                    text = { Text(nome + if (idioma.pais == cod) " ✓" else "") },
-                    onClick = { if (idioma.pais != cod) idioma.definirPais(ctx, cod); aberto = false },
-                )
-            }
-            androidx.compose.material3.HorizontalDivider()
-            Text("Idioma", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
-            listOf("pt" to "Português (Brasil)", "es" to "Español").forEach { (cod, nome) ->
-                androidx.compose.material3.DropdownMenuItem(
-                    text = { Text(nome + if (idioma.codigo == cod) " ✓" else "") },
-                    onClick = { if (idioma.codigo != cod) idioma.definir(ctx, cod); aberto = false },
-                )
-            }
-        }
-    }
-}
+private fun LoginIdiomaMenu(modifier: Modifier = Modifier) = com.bragro.mobile.ui.i18n.MenuPaisIdiomaMoeda(modifier) // v1.6.13 (mockup v114)

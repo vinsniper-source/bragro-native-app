@@ -43,7 +43,7 @@ private val PT_BR = Locale("pt", "BR")
 
 private fun fmtChartValue(v: Double, isMoney: Boolean): String {
     return if (isMoney) {
-        NumberFormat.getCurrencyInstance(PT_BR).format(v)
+        com.bragro.mobile.ui.i18n.MoedaApp.formatar(v)
     } else {
         NumberFormat.getNumberInstance(PT_BR).apply { maximumFractionDigits = 1 }.format(v)
     }

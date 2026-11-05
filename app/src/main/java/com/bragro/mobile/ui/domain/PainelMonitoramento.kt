@@ -303,18 +303,22 @@ fun barraFiltroAtivo(records: List<Map<String, String?>>, filtro: Map<String, St
 
 // Moeda sempre R$ 00.000,00 (pedido do usuário, app e plataforma).
 private val moedaFmt: NumberFormat = NumberFormat.getCurrencyInstance(Locale("pt", "BR")).apply { minimumFractionDigits = 2; maximumFractionDigits = 2 }
-fun fmtMoeda(v: Double): String = moedaFmt.format(v)
+fun fmtMoeda(v: Double): String = com.bragro.mobile.ui.i18n.MoedaApp.formatar(v) // v1.6.13 -- moeda de exibição
 fun fmtPct(v: Double): String = "${NumberFormat.getNumberInstance(Locale("pt", "BR")).apply { maximumFractionDigits = 1 }.format(v)}%"
 /** Número curto pros cartões (R$ 2,42 mi / R$ 846 mil), igual à plataforma. */
-fun abrev(v: Double, moeda: Boolean): String {
+fun abrev(v0: Double, moeda: Boolean): String {
+    // v1.6.13 -- valores em dinheiro na moeda de exibição escolhida.
+    val m = com.bragro.mobile.ui.i18n.MoedaApp
+    val conv = if (moeda && m.codigo != "BRL") m.converter(v0, "BRL", m.codigo) else null
+    val v = conv ?: v0
     val a = Math.abs(v)
-    val pre = if (moeda) "R$ " else ""
+    val pre = if (!moeda) "" else if (conv != null) (if (m.codigo == "USD") "U\$D " else "ARS ") else "R$ "
     val sinal = if (v < 0) "-" else ""
     fun nf(x: Double, d: Int) = NumberFormat.getNumberInstance(Locale("pt", "BR")).apply { maximumFractionDigits = d }.format(x)
     return when {
         a >= 1_000_000 -> "$sinal$pre${nf(a / 1_000_000, 2)} mi"
         a >= 10_000 -> "$sinal$pre${nf(a / 1_000, 0)} mil"
-        moeda -> fmtMoeda(v)
+        moeda -> fmtMoeda(v0)
         else -> nf(v, 1)
     }
 }

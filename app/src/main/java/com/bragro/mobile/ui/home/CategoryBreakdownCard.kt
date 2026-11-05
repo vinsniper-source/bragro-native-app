@@ -48,7 +48,7 @@ private val moneyFmt = NumberFormat.getCurrencyInstance(Locale("pt", "BR")).appl
     minimumFractionDigits = 2
     maximumFractionDigits = 2
 }
-private fun formatMoneyCategoryCard(v: Double): String = moneyFmt.format(v)
+private fun formatMoneyCategoryCard(v: Double): String = com.bragro.mobile.ui.i18n.MoedaApp.formatar(v)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

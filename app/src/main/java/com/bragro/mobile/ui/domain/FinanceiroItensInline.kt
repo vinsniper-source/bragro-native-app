@@ -74,7 +74,7 @@ private fun parseDecimalLocal(s: String): Double =
         ?: 0.0
 
 private fun formatMoneyBrlLocal(value: Double): String =
-    NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(value)
+    com.bragro.mobile.ui.i18n.MoedaApp.formatar(value)
 
 /** Uma linha de item -- só Item/Unidade/Quantidade (SEM valor unitário: a
  * nota inteira usa o total do campo "Bruto (R$)" do formulário acima, ver

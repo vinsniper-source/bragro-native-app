@@ -234,7 +234,7 @@ class NfeImportViewModel(app: Application) : AndroidViewModel(app) {
 }
 
 private fun formatMoneyBrl(value: Double): String =
-    NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(value)
+    com.bragro.mobile.ui.i18n.MoedaApp.formatar(value)
 
 @Composable
 private fun FarmDropdown(value: String?, options: List<String>, onSelect: (String) -> Unit) {

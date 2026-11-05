@@ -515,11 +515,7 @@ private fun HomeData?.hasWidget(id: String): Boolean {
 // kpi financeiro tem que aparecer... o duas casas ,00 depois da vírgula"),
 // garante ",00" mesmo em valores redondos independente do locale/ICU do
 // aparelho (antes dependia só do padrão do NumberFormat de moeda).
-private fun formatMoneyBrl(value: Double): String =
-    NumberFormat.getCurrencyInstance(Locale("pt", "BR")).apply {
-        minimumFractionDigits = 2
-        maximumFractionDigits = 2
-    }.format(value)
+private fun formatMoneyBrl(value: Double): String = com.bragro.mobile.ui.i18n.MoedaApp.formatar(value) // v1.6.13 -- moeda de exibição
 
 // So o numero, sem o prefixo "R$" -- usado no KPI Cotações Grãos (ver
 // CotacoesCard) pra separar o "R$" num Text de largura fixa proprio,
@@ -611,6 +607,11 @@ fun HomeScreen(
 ) {
     val home by viewModel.home
     val weather by viewModel.weather
+    // v1.6.13 (mockup v114) -- guarda a cotação do dia para "Exibir valores em" (U$D/ARS).
+    val ctxMoeda = androidx.compose.ui.platform.LocalContext.current
+    androidx.compose.runtime.LaunchedEffect(weather?.fx) {
+        weather?.fx?.let { com.bragro.mobile.ui.i18n.MoedaApp.atualizarTaxas(ctxMoeda, it.usdBrl, it.arsBrl) }
+    }
     val pending by viewModel.pendingCount
     val pendingItems by viewModel.pendingItems
     var pendingDialogOpen by remember { mutableStateOf(false) }

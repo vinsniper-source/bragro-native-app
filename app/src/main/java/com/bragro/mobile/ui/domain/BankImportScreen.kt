@@ -191,7 +191,7 @@ class BankImportViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
-private fun formatMoneyBrl(value: Double): String = NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(value)
+private fun formatMoneyBrl(value: Double): String = com.bragro.mobile.ui.i18n.MoedaApp.formatar(value)
 
 private fun formatDateBr(iso: String): String {
     val parts = iso.split("-")

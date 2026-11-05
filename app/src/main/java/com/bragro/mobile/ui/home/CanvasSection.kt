@@ -183,7 +183,7 @@ private fun tendenciaSeta(t: String?): String? = when (t) {
 private val BREAKDOWN_COLORS = listOf(BrGreen, BrBlue, BrYellow, Color(0xFF9E9E9E))
 
 private val moneyFmt = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
-private fun formatMoney(v: Double): String = moneyFmt.format(v)
+private fun formatMoney(v: Double): String = com.bragro.mobile.ui.i18n.MoedaApp.formatar(v)
 
 // Texto do rótulo abaixo da área do círculo quando areaFiltroHa != null --
 // espelho exato de labelFiltro() em canvas-view.tsx (site), mesmo pedido do
@@ -298,8 +298,9 @@ fun CanvasCirclesRow(
                     if (filtroAtivo) {
                         Text(filtroLabel, style = MaterialTheme.typography.labelSmall, color = corTextoCanvas)
                     } else {
-                        Text(
-                            f.culturaAtual ?: "Sem cultura registrada na janela",
+                        // v1.6.13 (mockup v113) -- sem lançamento, a linha some.
+                        if (!f.culturaAtual.isNullOrBlank()) Text(
+                            f.culturaAtual,
                             style = MaterialTheme.typography.labelSmall,
                             color = corTextoCanvas,
                         )
@@ -405,14 +406,15 @@ fun CanvasCirclesRow(
                 // build.gradle.kts). Precisa de latitude/longitude
                 // cadastrada (Base de Dados, 6ª exceção de schema); sem
                 // isso cai de volta pro preenchimento de cor de sempre.
-                val temMapa = unica && f.latitude != null && f.longitude != null
+                // v1.6.13 (mockup v113) -- foto também quando há várias fazendas.
+                val temMapa = f.latitude != null && f.longitude != null
                 // Texto (fazenda, área, safra, cultura) saiu de DENTRO do
                 // círculo pra BAIXO dele -- pedido do usuário ("retire as
                 // informações dentro do círculo e coloque abaixo de cada
                 // um, fazenda, area, safra e cultura"), mesmo redesign já
                 // aplicado no site (canvas-view.tsx). Sem filtro ativo
                 // mostra culturaAtual/safraAtual (sem prefixo "Safra").
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(112.dp)) {
                 Box(contentAlignment = Alignment.TopEnd) {
                     Box(
                         modifier = Modifier
@@ -460,6 +462,13 @@ fun CanvasCirclesRow(
                             // imagem, precisa de contraste garantido).
                             Box(modifier = Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.38f)))
                         }
+                        // v1.6.13 (mockup v113) -- ícone de mapa sempre no centro.
+                        androidx.compose.material3.Icon(
+                            androidx.compose.material.icons.Icons.Outlined.Map,
+                            contentDescription = null,
+                            tint = if (temMapa) Color.White else statusColor(f.status),
+                            modifier = Modifier.size(24.dp),
+                        )
                     }
                     if (seta != null) {
                         Box(
@@ -484,33 +493,20 @@ fun CanvasCirclesRow(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         f.nome,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = corTextoCanvas,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 6.dp),
                     )
                     Text(
                         "${NumberFormat.getNumberInstance(Locale("pt", "BR")).format(areaExibida)} ha",
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
+                        color = corTextoCanvas,
                     )
-                    if (filtroAtivo) {
-                        Text(
-                            filtroLabel,
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                            color = Color.White,
-                        )
-                    } else {
-                        Text(
-                            (f.culturaAtual ?: "Sem cultura") + (f.safraAtual?.let { " · $it" } ?: ""),
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                            color = Color.White,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                    // v1.6.13 (mockup v113) -- sem lançamento, a linha "Sem cultura" some.
+                    val linha = if (filtroAtivo) filtroLabel else listOfNotNull(f.culturaAtual, f.safraAtual).joinToString(" · ")
+                    if (linha.isNotBlank()) {
+                        Text(linha, style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp), color = corTextoCanvas, textAlign = TextAlign.Center)
                     }
                 }
                 }
@@ -694,4 +690,4 @@ private val ESTAGIO_SUGESTAO: Map<String, Sugestao> = mapOf(
 
 /** R$ 00.000,00 -- v17. */
 private fun fmtBrlCanvas(v: Double): String =
-    java.text.NumberFormat.getCurrencyInstance(java.util.Locale("pt", "BR")).format(v).replace('\u00A0', ' ')
+    com.bragro.mobile.ui.i18n.MoedaApp.formatar(v).replace('\u00A0', ' ')

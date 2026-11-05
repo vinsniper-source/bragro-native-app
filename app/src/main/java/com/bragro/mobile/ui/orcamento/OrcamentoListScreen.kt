@@ -169,7 +169,7 @@ private val ORCAMENTO_COLUMNS = listOf(
 )
 
 private fun formatoMoeda(valor: Double): String =
-    NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(valor)
+    com.bragro.mobile.ui.i18n.MoedaApp.formatar(valor)
 
 private fun totalOrcamento(o: OrcamentoData): Double = o.itens.sumOf { it.quantidade * it.valorUnitario }
 

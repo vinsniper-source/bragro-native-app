@@ -166,7 +166,7 @@ class OperacoesViewModel(app: Application) : AndroidViewModel(app) {
 
 private val JANELAS = listOf(0, 30, 60, 90, 180)
 private val PT_BR = Locale("pt", "BR")
-private fun fmtMoney(v: Double): String = NumberFormat.getCurrencyInstance(PT_BR).format(v)
+private fun fmtMoney(v: Double): String = com.bragro.mobile.ui.i18n.MoedaApp.formatar(v)
 private fun fmtNum(v: Double): String = NumberFormat.getNumberInstance(PT_BR).apply { maximumFractionDigits = 2 }.format(v)
 private fun fmtDataCurta(iso: String): String =
     try {

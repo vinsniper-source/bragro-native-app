@@ -15,6 +15,7 @@ class BRAgroApplication : Application() {
         // v74 -- registro de erros próprio (no lugar do Sentry/Crashlytics).
         com.bragro.mobile.data.ErroReporter.instalar(this)
         com.bragro.mobile.ui.i18n.Idioma.init(this)
+        com.bragro.mobile.ui.i18n.MoedaApp.init(this)
         // Tenta esvaziar a fila de sincronizacao pendente toda vez que o app
         // abre (o WorkManager so executa de fato quando ha rede, ver
         // SyncWorker) -- cobre o caso comum de campo: usuario lancou dados

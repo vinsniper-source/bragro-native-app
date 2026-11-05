@@ -195,7 +195,11 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = viewModel(
                 } },
                 actions = { Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            // v1.6.13 (mockup v114) -- País, idioma e moeda também aqui.
+                            com.bragro.mobile.ui.i18n.MenuPaisIdiomaMoeda()
+                            com.bragro.mobile.ui.domain.HomeNavButton()
+                        }
                     } },
             )
         },

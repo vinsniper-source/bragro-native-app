@@ -188,7 +188,7 @@ class NfeViewModel(app: Application) : AndroidViewModel(app) {
 }
 
 private fun formatoMoeda(valor: Double): String =
-    NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(valor)
+    com.bragro.mobile.ui.i18n.MoedaApp.formatar(valor)
 
 /** Inverso de parseValor() (ver NovaNotaDialog abaixo) -- usado só pra
  * pré-preencher o campo "Valor total" a partir de um Double vindo do

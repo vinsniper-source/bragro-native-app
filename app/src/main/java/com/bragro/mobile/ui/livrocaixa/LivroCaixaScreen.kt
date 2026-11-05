@@ -231,7 +231,7 @@ class LivroCaixaViewModel(app: Application) : AndroidViewModel(app) {
 }
 
 private fun formatMoneyBrl(value: Double): String =
-    NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(value)
+    com.bragro.mobile.ui.i18n.MoedaApp.formatar(value)
 
 private fun formatDataBr(iso: String): String = try {
     val d = java.time.OffsetDateTime.parse(iso)

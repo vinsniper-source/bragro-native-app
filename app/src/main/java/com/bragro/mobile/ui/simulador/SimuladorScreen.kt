@@ -144,7 +144,7 @@ private fun calcularResultado(
 }
 
 private fun formatMoneyBrl(value: Double): String =
-    NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(value)
+    com.bragro.mobile.ui.i18n.MoedaApp.formatar(value)
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
