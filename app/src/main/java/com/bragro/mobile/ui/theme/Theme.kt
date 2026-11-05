@@ -116,7 +116,8 @@ private val LightColors = lightColorScheme(
     // 22% sobre o branco quase puro do site -- verde-sálvia claramente
     // visível. A barra inferior usa esta MESMA cor (ver BottomNavBar.kt,
     // containerColor = colorScheme.background, não mais .surface).
-    background = Color(0xFFF5F7F6),
+    // v1.6.16 (mockup v118c, opção K) -- fundo cinza limpo #FAFAFA, sem tom verde.
+    background = Color(0xFFFAFAFA),
     // "surface" (cor dos Cards -- AppCard.kt/CardDefaults.cardColors() usam
     // este token, não "background") virou uma cor DIFERENTE do fundo --
     // pedido do usuário ("os blocos não tem contorno e não se destacam por
@@ -132,13 +133,15 @@ private val LightColors = lightColorScheme(
     // sem defini-los ficavam no cinza/roxo padrão do Material3.
     surfaceContainerLowest = Color(0xFFFFFFFF),
     surfaceContainerLow = Color(0xFFFFFFFF),
-    surfaceContainer = Color(0xFFFFFFFF),
+    // v1.6.16 (mockup v119) -- listas suspensas na cor de onde abrem: fora
+    // de bloco, na cor do fundo; dentro de um Card, o Card troca para a cor dele.
+    surfaceContainer = Color(0xFFFAFAFA),
     // Janelas (AlertDialog/DatePicker): verde-acinzentado claro, um degrau
     // abaixo do campo (EFF1EE) -- campos se destacam dentro da janela,
     // igual ao Abastecimento rápido aprovado.
     surfaceContainerHigh = Color(0xFFFFFFFF),
-    surfaceContainerHighest = Color(0xFFF5F7F6),
-    surfaceDim = Color(0xFFF5F7F6),
+    surfaceContainerHighest = Color(0xFFFAFAFA),
+    surfaceDim = Color(0xFFFAFAFA),
     surfaceBright = Color(0xFFFFFFFF),
     outline = Color(0xFFC7C7C7),
     outlineVariant = Color(0xFFD4D4D4),
@@ -177,7 +180,7 @@ private val DarkColors = darkColorScheme(
     // sem defini-los ficavam no cinza/roxo padrão do Material3.
     surfaceContainerLowest = Color(0xFF161917),
     surfaceContainerLow = Color(0xFF161917),
-    surfaceContainer = Color(0xFF161917),
+    surfaceContainer = Color(0xFF0E100F),
     // Janelas: verde-musgo mais claro que o campo (3E4A3F) -- padrão do
     // Abastecimento rápido no escuro.
     surfaceContainerHigh = Color(0xFF1C201D),

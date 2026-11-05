@@ -159,7 +159,11 @@ fun Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = border,
         content = {
-            androidx.compose.runtime.CompositionLocalProvider(LocalInsideCard provides true, com.bragro.mobile.ui.domain.LocalCantoHost provides cantoHost) { content() }
+            val csMenu = MaterialTheme.colorScheme
+            // v1.6.16 (mockup v119) -- lista suspensa aberta dentro do bloco usa a cor do bloco.
+            MaterialTheme(colorScheme = csMenu.copy(surfaceContainer = resolved.containerColor)) {
+                androidx.compose.runtime.CompositionLocalProvider(LocalInsideCard provides true, com.bragro.mobile.ui.domain.LocalCantoHost provides cantoHost) { content() }
+            }
         },
     )
 }
@@ -190,7 +194,11 @@ fun Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = border,
         content = {
-            androidx.compose.runtime.CompositionLocalProvider(LocalInsideCard provides true, com.bragro.mobile.ui.domain.LocalCantoHost provides cantoHost) { content() }
+            val csMenu = MaterialTheme.colorScheme
+            // v1.6.16 (mockup v119) -- lista suspensa aberta dentro do bloco usa a cor do bloco.
+            MaterialTheme(colorScheme = csMenu.copy(surfaceContainer = resolved.containerColor)) {
+                androidx.compose.runtime.CompositionLocalProvider(LocalInsideCard provides true, com.bragro.mobile.ui.domain.LocalCantoHost provides cantoHost) { content() }
+            }
         },
     )
 }

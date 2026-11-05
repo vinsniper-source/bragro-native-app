@@ -425,8 +425,9 @@ fun AbasEncaixadas(titulos: List<String>, selecionada: Int, avisos: List<Int> = 
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        Idioma.tr(t), fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        fontWeight = FontWeight.Normal,
+                        // v1.6.16 (mockup v119) -- abas em maiúsculo e negrito.
+                        Idioma.tr(t).uppercase(), fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        fontWeight = FontWeight.ExtraBold,
                         color = when { aviso -> amarelo; ativa -> cs.onSurface.copy(alpha = 0.38f); else -> cs.onSurface },
                     )
                 }
