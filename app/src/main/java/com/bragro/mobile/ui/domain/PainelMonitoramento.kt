@@ -411,6 +411,9 @@ fun AbasEncaixadas(titulos: List<String>, selecionada: Int, avisos: List<Int> = 
     // verticais curtos e centralizados entre as abas; a aba ativa fica em
     // verde negrito; linha horizontal centralizada (sem encostar nas
     // laterais) separa as abas dos ícones.
+    // v1.6.15 (mockup v116c) -- abas sem negrito e com a mesma cor; a
+    // selecionada fica com a letra apagada e a linha verde embaixo. Embaixo
+    // de cada aba, uma linha fina centralizada (cinza; verde na selecionada).
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             titulos.forEachIndexed { i, t ->
@@ -423,13 +426,24 @@ fun AbasEncaixadas(titulos: List<String>, selecionada: Int, avisos: List<Int> = 
                 ) {
                     Text(
                         Idioma.tr(t), fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        fontWeight = if (ativa) FontWeight.ExtraBold else FontWeight.SemiBold,
-                        color = when { aviso -> amarelo; ativa -> com.bragro.mobile.ui.theme.VerdeBarra; else -> cs.onSurfaceVariant }, // v1.6.11 (mockup v112b) -- só a aba selecionada no verde do botão +
+                        fontWeight = FontWeight.Normal,
+                        color = when { aviso -> amarelo; ativa -> cs.onSurface.copy(alpha = 0.38f); else -> cs.onSurface },
                     )
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(1.dp).background(cs.outlineVariant))
+        Row(Modifier.fillMaxWidth()) {
+            titulos.forEachIndexed { i, _ ->
+                if (i > 0) Spacer(Modifier.width(1.dp))
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    val ativa = i == selecionada
+                    Box(
+                        Modifier.fillMaxWidth(0.76f).height(if (ativa) 2.dp else 1.dp)
+                            .background(if (ativa) com.bragro.mobile.ui.theme.VerdeBarra else cs.outlineVariant),
+                    )
+                }
+            }
+        }
     }
 }
 
