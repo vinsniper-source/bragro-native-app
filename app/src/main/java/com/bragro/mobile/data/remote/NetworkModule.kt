@@ -13,7 +13,10 @@ import java.util.concurrent.TimeUnit
  * api/offline-sync) e outro pro Supabase Auth (login direto). Singletons
  * simples (sem framework de DI) pra manter o projeto enxuto na Fase 1. */
 object NetworkModule {
-    private val json = Json { ignoreUnknownKeys = true; explicitNulls = false }
+    // v1.6.12 -- encodeDefaults: sem isso, campos com valor padrão (ex.: action = "list")
+    // não iam no corpo da requisição, e o servidor respondia "Campos obrigatórios
+    // ausentes" (Pivôs vazio no app). explicitNulls = false continua omitindo nulos.
+    private val json = Json { ignoreUnknownKeys = true; explicitNulls = false; encodeDefaults = true }
 
     private fun httpClient(segundos: Long = 20): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
