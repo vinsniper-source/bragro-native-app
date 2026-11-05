@@ -611,8 +611,9 @@ private fun DevicesCard(devices: kotlinx.serialization.json.JsonArray?) {
             val userAgent = d["userAgent"]?.jsonPrimitive?.contentOrNull ?: ""
             val lastSeenAt = d["lastSeenAt"]?.jsonPrimitive?.contentOrNull
             Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                Text(deviceId, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-                Text(userAgent, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                // v1.6.14 (mockup v115, item 5) -- nome fácil do aparelho; o código técnico fica pequeno embaixo.
+                Text(nomeAparelho(userAgent), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                Text("$deviceId · $userAgent", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                 Text("Visto pela última vez: ${formatIso(lastSeenAt)}", style = MaterialTheme.typography.labelSmall)
             }
         }
@@ -648,5 +649,20 @@ private fun formatIso(iso: String?): String {
         fmt.format(date)
     } catch (e: Exception) {
         iso
+    }
+}
+
+/** v1.6.14 -- traduz o "user agent" para um nome que a pessoa reconhece. */
+private fun nomeAparelho(ua: String): String {
+    val u = ua.lowercase()
+    return when {
+        u.startsWith("okhttp") || u.startsWith("bragro") -> "App BRAgro · Android"
+        u.contains("iphone") || u.contains("ipad") -> "iPhone/iPad · navegador"
+        u.contains("android") -> "Celular · Android · navegador"
+        u.contains("windows") -> "Computador · Windows · " + when { u.contains("edg/") -> "Edge"; u.contains("firefox") -> "Firefox"; u.contains("chrome") -> "Chrome"; else -> "navegador" }
+        u.contains("mac os") -> "Computador · Mac · " + when { u.contains("chrome") -> "Chrome"; u.contains("firefox") -> "Firefox"; else -> "Safari" }
+        u.contains("linux") -> "Computador · Linux · navegador"
+        ua.isBlank() -> "Aparelho desconhecido"
+        else -> "Outro aparelho"
     }
 }

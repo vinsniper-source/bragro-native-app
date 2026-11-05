@@ -3404,16 +3404,8 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
                                 color = corAtencaoGraos,
                                 maxLines = 2,
                             )
-                        } else if (q.praca.isNotBlank()) {
-                            Text(
-                                q.praca,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Clip,
-                                modifier = Modifier.basicMarquee(),
-                            )
                         }
+                        // v1.6.14 (mockup v115, item 2) -- a praça saiu daqui (ficava cortada) e foi para o rodapé.
                         // v87 -- linha dos últimos 12 meses (toque abre o histórico).
                         MiniHistoricoGrao(historico?.get(chaves.getOrNull(index) ?: "") as? kotlinx.serialization.json.JsonObject) { serieAberta = chaves.getOrNull(index) ?: "soja" }
                         if (mostrarSuaMedia) SuaMediaGrao(suaMedia?.get(chaves.getOrNull(index) ?: "") as? kotlinx.serialization.json.JsonObject, q.valor)
@@ -3447,7 +3439,7 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
             }
             val dataFonte = itens.firstNotNullOfOrNull { it.atualizadoEm }
             Text(
-                if (dataFonte != null) "Fonte: Grão Direto ($dataFonte)" else "Fonte: Grão Direto",
+                listOfNotNull("Fonte: Grão Direto", itens.map { it.praca }.firstOrNull { it.isNotBlank() }).joinToString(" · ") + (if (dataFonte != null) " ($dataFonte)" else ""),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

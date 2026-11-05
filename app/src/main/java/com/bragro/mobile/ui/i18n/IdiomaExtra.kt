@@ -79,7 +79,7 @@ internal object IdiomaExtra {
         "Dentro do planejado" to "Dentro de lo planificado",
         "Fora do planejado" to "Fuera de lo planificado",
         "Atenção: custo se afastando do planejado" to "Atención: el costo se aleja de lo planificado",
-        "Sem registro de safra na janela" to "Sin asientos de zafra en el período",
+        "Sem lançamentos nesta safra" to "Sin asientos de zafra en el período",
         "Estável em relação ao período anterior" to "Estable respecto al período anterior",
         "(vs. período anterior de mesmo tamanho)" to "(vs. período anterior del mismo tamaño)",
         "Convergindo com o planejado (vs. período anterior)" to "Acercándose a lo planificado (vs. período anterior)",

@@ -83,20 +83,23 @@ fun MiniHistoricoGrao(h: JsonObject?, onClick: () -> Unit) {
     val verde = MaterialTheme.colorScheme.primary
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     Column(Modifier.padding(top = 3.dp).clickable(onClick = onClick)) {
-        if (pts.size >= 2) {
+        // v1.6.14 (mockup v115, item 2) -- minigráfico na largura toda (antes,
+        // com pouco histórico, virava um risco solto no canto) e só com 3+ dias.
+        val corLinha = if (pts.last().second >= pts.first().second) verde else com.bragro.mobile.ui.theme.BrOrange
+        if (pts.size >= 3) {
             Canvas(Modifier.fillMaxWidth().height(24.dp)) {
                 val vals = pts.map { it.second }
                 val mn = vals.min(); val mx = vals.max()
-                val t0 = pts.first().first.toFloat(); val t1 = hoje().toFloat()
-                val x0 = if (curto) size.width * 0.75f else 0f
-                val largura = if (curto) size.width * 0.25f else size.width
+                val t0 = pts.first().first.toFloat(); val t1 = pts.last().first.toFloat()
+                val x0 = 0f
+                val largura = size.width
                 val path = Path()
                 pts.forEachIndexed { i, (d, v) ->
                     val x = x0 + ((d - t0) / maxOf(1f, t1 - t0)) * largura
                     val y = if (mx == mn) size.height / 2 else size.height - 3f - ((v - mn) / (mx - mn)).toFloat() * (size.height - 6f)
                     if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
                 }
-                drawPath(path, verde, style = Stroke(width = 1.6.dp.toPx()))
+                drawPath(path, corLinha, style = Stroke(width = 1.6.dp.toPx()))
             }
         }
         val vals = pts.map { it.second }

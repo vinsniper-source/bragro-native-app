@@ -81,7 +81,7 @@ private fun statusLabel(status: String): String = when (status) {
     "ok" -> "Dentro do planejado"
     "alerta" -> "Atenção: custo se afastando do planejado"
     "risco" -> "Fora do planejado"
-    else -> "Sem registro de safra na janela"
+    else -> "Sem lançamentos nesta safra"
 }
 
 private val ESTAGIO_LABEL: Map<String, String> = mapOf(
@@ -553,10 +553,9 @@ fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(fazenda.nome, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    Text(
-                        fazenda.culturaAtual ?: "Sem cultura registrada na janela",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
+                    // v1.6.14 (mockup v115, item 1) -- cultura · safra, sem a frase "Sem cultura...".
+                    val cs = listOfNotNull(fazenda.culturaAtual, fazenda.safraAtual).joinToString(" · ")
+                    if (cs.isNotBlank()) Text(cs, style = MaterialTheme.typography.bodySmall)
                     val seta = tendenciaSeta(fazenda.tendencia)
                     if (fazenda.tendencia != null) {
                         Text(

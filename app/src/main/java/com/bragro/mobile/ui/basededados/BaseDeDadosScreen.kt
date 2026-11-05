@@ -33,6 +33,10 @@ import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
@@ -636,6 +640,7 @@ private fun FarmsCard(
     // lista suspensa (parceria, comodato, própria, arrendo)".
     var newSituacaoTerra by remember { mutableStateOf("") }
 
+    @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
     CollapsibleCard("Fazendas (${farms?.size ?: 0})", initiallyOpen = false) { // v44: entra fechado
         farms?.forEach { el ->
             val f = el.jsonObject
@@ -694,6 +699,37 @@ private fun FarmsCard(
                 shape = MaterialTheme.shapes.small,
             ) {
                 Column(modifier = Modifier.fillMaxWidth().padding(6.dp)) {
+                    // v1.6.14 (mockup v115, item 4) -- linha compacta igual à
+                    // plataforma: nome, etiquetas (cultura, situação da terra,
+                    // hectares), 📍 se tem localização, editar (✎) e remover (✕).
+                    if (!blocoAberto) {
+                        @Composable
+                        fun etiqueta(t: String, cheia: Boolean = false) = Text(
+                            t, style = MaterialTheme.typography.labelSmall, maxLines = 1,
+                            modifier = Modifier.padding(start = 4.dp)
+                                .background(if (cheia) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f) else androidx.compose.ui.graphics.Color.Transparent, MaterialTheme.shapes.extraSmall)
+                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.extraSmall)
+                                .padding(horizontal = 6.dp, vertical = 1.dp),
+                        )
+                        androidx.compose.foundation.layout.FlowRow(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            Text(name, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.weight(1f).align(Alignment.CenterVertically).padding(end = 4.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (culturaTotal.isNotBlank()) etiqueta(culturaTotal)
+                                if (situacaoTerraText.isNotBlank()) etiqueta(situacaoTerraText)
+                                etiqueta("${areaText.toDoubleOrNull()?.let { java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).format(it) } ?: areaText} hectares", cheia = true)
+                                if (fLat != null && fLon != null) Icon(Icons.Outlined.Place, contentDescription = "Localização cadastrada", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 4.dp).size(16.dp))
+                                IconButton(onClick = { blocoAberto = true }, modifier = Modifier.size(32.dp)) {
+                                    Icon(Icons.Outlined.Edit, contentDescription = "Editar fazenda", modifier = Modifier.size(16.dp))
+                                }
+                                IconButton(onClick = { onDelete(id) }, enabled = !busy, modifier = Modifier.size(32.dp)) {
+                                    Icon(Icons.Outlined.Close, contentDescription = "Remover fazenda", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(18.dp))
+                                }
+                            }
+                        }
+                    } else
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         // Nome editável (era Text estático com marquee) --
                         // pedido do usuário ("coloque para editar também o
