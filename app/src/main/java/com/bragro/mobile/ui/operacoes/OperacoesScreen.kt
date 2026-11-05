@@ -300,7 +300,7 @@ private fun FiltroLista(label: String, valor: String, opcoes: List<Pair<String, 
                 Text(opcoes.firstOrNull { it.first == valor }?.second ?: valor, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                 Icon(Icons.Outlined.ExpandMore, contentDescription = null, modifier = Modifier.size(16.dp))
             }
-            androidx.compose.material3.DropdownMenu(expanded = aberto, onDismissRequest = { aberto = false }) {
+            com.bragro.mobile.ui.theme.MenuSuspenso(expanded = aberto, onDismissRequest = { aberto = false }) {
                 opcoes.forEach { (v, l) ->
                     androidx.compose.material3.DropdownMenuItem(
                         text = { Text(l, style = MaterialTheme.typography.bodySmall, fontWeight = if (v == valor) FontWeight.Bold else FontWeight.Normal) },

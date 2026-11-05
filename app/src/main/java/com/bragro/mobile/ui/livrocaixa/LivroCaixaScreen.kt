@@ -287,7 +287,7 @@ private fun CampoListaSuspensa(label: String, valorTexto: String, opcoes: List<P
             modifier = Modifier.fillMaxWidth().menuAnchor(),
             colors = appFieldColors(),
         )
-        androidx.compose.material3.DropdownMenu(expanded = aberto, onDismissRequest = { aberto = false }) {
+        com.bragro.mobile.ui.theme.MenuSuspenso(expanded = aberto, onDismissRequest = { aberto = false }) {
             opcoes.forEach { (v, l) ->
                 androidx.compose.material3.DropdownMenuItem(text = { Text(l) }, onClick = { onSelect(v); aberto = false })
             }

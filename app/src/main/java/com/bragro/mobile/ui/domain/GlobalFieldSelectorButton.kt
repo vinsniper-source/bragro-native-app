@@ -128,7 +128,7 @@ fun GlobalFieldSelectorButton(
             Icon(icon, contentDescription = "Filtrar por $label: ${selected ?: "todas"}", tint = MaterialTheme.colorScheme.onSurface)
         }
     }
-    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+    com.bragro.mobile.ui.theme.MenuSuspenso(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
         BasicText(
             text = "Filtrar por $label",
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),

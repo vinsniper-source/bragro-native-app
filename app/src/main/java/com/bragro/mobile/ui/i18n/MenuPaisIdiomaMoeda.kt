@@ -41,11 +41,12 @@ fun MenuPaisIdiomaMoeda(modifier: Modifier = Modifier) {
     val idioma = Idioma
     val moeda = MoedaApp
     Box(modifier) {
-        TextButton(onClick = { aberto = true }) {
+        // v1.6.17 (mockup v120) -- ícone e sigla em preto (claro) / branco (escuro).
+        TextButton(onClick = { aberto = true }, colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = androidx.compose.material3.MaterialTheme.colorScheme.onBackground)) {
             Icon(com.bragro.mobile.ui.domain.IconeMoedas, contentDescription = "País, idioma e moeda", modifier = Modifier.size(18.dp))
             androidx.compose.material3.Text(moeda.sigla, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 4.dp))
         }
-        DropdownMenu(expanded = aberto, onDismissRequest = { aberto = false }) {
+        com.bragro.mobile.ui.theme.MenuSuspenso(expanded = aberto, onDismissRequest = { aberto = false }) {
             @Composable
             fun titulo(t: String) = androidx.compose.material3.Text(t, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
             titulo("País")

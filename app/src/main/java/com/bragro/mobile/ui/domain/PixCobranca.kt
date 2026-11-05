@@ -269,7 +269,7 @@ fun PixConfigDialog(onDismiss: () -> Unit) {
                             trailingIcon = { TextButton(onClick = { tipoAberto = true }) { Text("Trocar") } },
                             modifier = Modifier.fillMaxWidth(),
                         )
-                        androidx.compose.material3.DropdownMenu(expanded = tipoAberto, onDismissRequest = { tipoAberto = false }) {
+                        com.bragro.mobile.ui.theme.MenuSuspenso(expanded = tipoAberto, onDismissRequest = { tipoAberto = false }) {
                             TIPOS_PIX.forEach { t -> androidx.compose.material3.DropdownMenuItem(text = { Text(t) }, onClick = { tipo = t; tipoAberto = false }) }
                         }
                     }

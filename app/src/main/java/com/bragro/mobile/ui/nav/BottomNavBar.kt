@@ -745,7 +745,7 @@ fun BRAgroBottomBar(
                         // MaterialTheme(colorScheme = ...) -- API estável desde
                         // sempre no Material3, sem risco de incompatibilidade.
                         MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(surface = MaterialTheme.colorScheme.background, surfaceContainer = MaterialTheme.colorScheme.background, surfaceTint = androidx.compose.ui.graphics.Color.Transparent)) {
-                        DropdownMenu(expanded = openTabId == tab.id, onDismissRequest = { openTabId = null }) {
+                        com.bragro.mobile.ui.theme.MenuSuspenso(expanded = openTabId == tab.id, onDismissRequest = { openTabId = null }) {
                             // Cada aba-grupo agora É a antiga categoria (ver
                             // comentário no topo de BOTTOM_TABS) -- os itens não
                             // carregam mais "category" nenhuma, então "groups"
@@ -836,7 +836,7 @@ fun BRAgroBottomBar(
             // padrão do DropdownMenu (Material3 1.2.1) lê `surface`, que
             // agora é o tom mais claro dos Cards (ver Theme.kt).
             MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(surface = MaterialTheme.colorScheme.background, surfaceContainer = MaterialTheme.colorScheme.background, surfaceTint = androidx.compose.ui.graphics.Color.Transparent)) {
-            DropdownMenu(expanded = openTabId == "sistema", onDismissRequest = { openTabId = null }) {
+            com.bragro.mobile.ui.theme.MenuSuspenso(expanded = openTabId == "sistema", onDismissRequest = { openTabId = null }) {
                 menuSistemaLinks.forEach { link ->
                     DropdownMenuItem(
                         text = {

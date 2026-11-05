@@ -504,7 +504,7 @@ private fun SegurancaAppCard() {
                 Text("Pedir de novo após", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                 Box {
                     TextButton(onClick = { menu = true }) { Text("$minutos min", fontWeight = FontWeight.Bold) }
-                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    com.bragro.mobile.ui.theme.MenuSuspenso(expanded = menu, onDismissRequest = { menu = false }) {
                         listOf(1, 5, 15, 30, 60).forEach { m ->
                             DropdownMenuItem(text = { Text("$m min") }, onClick = { minutos = m; S.setMinutos(context, m); menu = false })
                         }

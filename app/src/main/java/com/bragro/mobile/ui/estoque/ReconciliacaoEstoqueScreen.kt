@@ -236,7 +236,7 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.ViewList, label = "Todos", active = !soDivergencia, onClick = { soDivergencia = false })
                         androidx.compose.foundation.layout.Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
                             com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.FilterAlt, label = fCategoria ?: "Categoria", active = fCategoria != null, onClick = { catMenu = true })
-                            androidx.compose.material3.DropdownMenu(expanded = catMenu, onDismissRequest = { catMenu = false }) {
+                            com.bragro.mobile.ui.theme.MenuSuspenso(expanded = catMenu, onDismissRequest = { catMenu = false }) {
                                 androidx.compose.material3.DropdownMenuItem(text = { Text("Todas") }, onClick = { fCategoria = null; catMenu = false })
                                 categorias.forEach { c ->
                                     androidx.compose.material3.DropdownMenuItem(text = { Text(c) }, onClick = { fCategoria = c; catMenu = false })

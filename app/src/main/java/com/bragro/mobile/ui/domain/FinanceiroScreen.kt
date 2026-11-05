@@ -1077,7 +1077,7 @@ private fun FinanceiroGestaoDropdownButton(view: FinanceiroView, onSelect: (Fina
         // Item ativo ganha destaque (verde mais escuro) dentro da lista;
         // ícone/texto brancos em toda a lista pra manter contraste sobre o
         // fundo verde.
-        DropdownMenu(
+        com.bragro.mobile.ui.theme.MenuSuspenso(
             expanded = expanded,
             onDismissRequest = { expanded = false },
         ) {
@@ -1247,7 +1247,7 @@ private fun PeriodoDropdown(
             // usuario ("tire o fundo verde de todos os blocos individuais").
             onClick = { expanded = true },
         )
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        com.bragro.mobile.ui.theme.MenuSuspenso(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(text = { Text("Todos os períodos") }, onClick = { onPeriodo(null); expanded = false })
             HorizontalDivider()
             Text(
@@ -1316,7 +1316,7 @@ private fun BancoDropdown(banco: String?, options: List<LookupEntity>, onSelect:
             // usuario ("tire o fundo verde de todos os blocos individuais").
             onClick = { expanded = true },
         )
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        com.bragro.mobile.ui.theme.MenuSuspenso(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(text = { Text("Todos os bancos") }, onClick = { onSelect(null); expanded = false })
             HorizontalDivider()
             Text("Filtrar por banco", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))

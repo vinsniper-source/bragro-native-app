@@ -556,7 +556,7 @@ fun DomainListScreen(
                 active = allExpanded,
                 onClick = { if (allExpanded) { allExpanded = false; cardOverrides.clear() } else lancMenu = true },
             )
-            DropdownMenu(expanded = lancMenu, onDismissRequest = { lancMenu = false }) {
+            com.bragro.mobile.ui.theme.MenuSuspenso(expanded = lancMenu, onDismissRequest = { lancMenu = false }) {
                 fun ultima(lista: List<Map<String, String?>>): String {
                     val k = dateCol?.key ?: return ""
                     val d = lista.mapNotNull { it[k]?.take(10) }.maxOrNull() ?: return ""
@@ -2575,7 +2575,7 @@ private fun GenericPeriodoDropdown(
             // branco/preto"). O tint=primary fixo de antes foi removido.
             onClick = { expanded = true },
         )
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        com.bragro.mobile.ui.theme.MenuSuspenso(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(text = { Text("Todos os períodos") }, onClick = { onPeriodo(null); expanded = false })
             HorizontalDivider()
             PeriodoCategoria.values().forEach { cat ->
@@ -2644,7 +2644,7 @@ private fun ColumnFilterRow(
             OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
                 Text(selected.ifBlank { "Todos" }, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier)
             }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            com.bragro.mobile.ui.theme.MenuSuspenso(expanded = expanded, onDismissRequest = { expanded = false }) {
                 DropdownMenuItem(text = { Text("Todos") }, onClick = { onSelect(""); expanded = false })
                 if (options.isNotEmpty()) HorizontalDivider()
                 options.forEach { opt ->

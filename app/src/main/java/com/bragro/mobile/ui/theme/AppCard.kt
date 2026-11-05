@@ -159,11 +159,9 @@ fun Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = border,
         content = {
-            val csMenu = MaterialTheme.colorScheme
             // v1.6.16 (mockup v119) -- lista suspensa aberta dentro do bloco usa a cor do bloco.
-            MaterialTheme(colorScheme = csMenu.copy(surfaceContainer = resolved.containerColor)) {
-                androidx.compose.runtime.CompositionLocalProvider(LocalInsideCard provides true, com.bragro.mobile.ui.domain.LocalCantoHost provides cantoHost) { content() }
-            }
+            val viewMenu = androidx.compose.ui.platform.LocalView.current
+            androidx.compose.runtime.CompositionLocalProvider(LocalInsideCard provides true, com.bragro.mobile.ui.domain.LocalCantoHost provides cantoHost, LocalCorMenu provides (viewMenu to resolved.containerColor)) { content() }
         },
     )
 }
@@ -194,11 +192,9 @@ fun Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = border,
         content = {
-            val csMenu = MaterialTheme.colorScheme
             // v1.6.16 (mockup v119) -- lista suspensa aberta dentro do bloco usa a cor do bloco.
-            MaterialTheme(colorScheme = csMenu.copy(surfaceContainer = resolved.containerColor)) {
-                androidx.compose.runtime.CompositionLocalProvider(LocalInsideCard provides true, com.bragro.mobile.ui.domain.LocalCantoHost provides cantoHost) { content() }
-            }
+            val viewMenu = androidx.compose.ui.platform.LocalView.current
+            androidx.compose.runtime.CompositionLocalProvider(LocalInsideCard provides true, com.bragro.mobile.ui.domain.LocalCantoHost provides cantoHost, LocalCorMenu provides (viewMenu to resolved.containerColor)) { content() }
         },
     )
 }
@@ -307,7 +303,7 @@ fun SearchableDropdownField(
         // âncora) pra poder passar properties = PopupProperties(focusable =
         // false) -- mesmo fix e mesmo motivo do select genérico em
         // DomainFormScreen.kt (ver comentário lá).
-        DropdownMenu(
+        com.bragro.mobile.ui.theme.MenuSuspenso(
             expanded = expanded,
             modifier = Modifier.exposedDropdownSize(),
             properties = androidx.compose.ui.window.PopupProperties(focusable = false),

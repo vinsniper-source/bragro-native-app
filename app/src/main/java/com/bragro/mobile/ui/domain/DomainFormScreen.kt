@@ -1326,7 +1326,7 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                 // edição acontece por baixo, mas o campo não repinta o
                 // cursor. O campo de Data nunca teve esse problema porque não
                 // usa nenhum popup desse tipo.
-                DropdownMenu(
+                com.bragro.mobile.ui.theme.MenuSuspenso(
                     expanded = expanded,
                     modifier = Modifier.exposedDropdownSize(),
                     properties = androidx.compose.ui.window.PopupProperties(focusable = false),
