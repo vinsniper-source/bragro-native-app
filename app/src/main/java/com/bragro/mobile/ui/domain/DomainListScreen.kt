@@ -473,6 +473,7 @@ fun DomainListScreen(
     // usuário) -- guarda o id do registro aguardando confirmação; null =
     // nenhum diálogo aberto.
     var recordPendingDelete by remember(domainId) { mutableStateOf<String?>(null) }
+    var osPendingDelete by remember(domainId) { mutableStateOf<OsDaOperacao?>(null) }
     // v56 -- cobrança cujo Pix (QR + copia e cola) está aberto.
     var pixCobrancaId by remember(domainId) { mutableStateOf<String?>(null) }
     // v1.6.0 (mockup v101, item 13) -- botão Pix na barra Ações (chave Pix).
@@ -1602,12 +1603,28 @@ fun DomainListScreen(
                         val c = chavesCards.getOrNull(i)
                         val q = c?.let { tamanhoGrupo[it] } ?: 0
                         // v1.6.0 (mockup v101, itens 3-5 e 11) -- lançamento sozinho na categoria também vira bloco.
-                        if (c != null && q >= 1 && (i == 0 || chavesCards[i - 1] != c)) add(Pair(c, q))
-                        if (c == null || (gruposAbertos[c] == true && (gruposSoPend[c] != true || statusPendente(listaVisivel[i]["status"])))) add(i)
+                        if (c != null && q >= 1 && (i == 0 || chavesCards[i - 1] != c)) {
+                            add(Pair(c, q))
+                            // v1.6.18 (mockup v122) -- Safra aberta: uma entrada por O.S.
+                            if (domainId == "safra" && gruposAbertos[c] == true && gruposSoPend[c] != true) {
+                                addAll(agruparPorOs(listaCards.filterIndexed { j, _ -> chavesFull[j] == c }))
+                            }
+                        }
+                        val osAgrupa = domainId == "safra" && c != null && gruposSoPend[c] != true
+                        if (!osAgrupa && (c == null || (gruposAbertos[c] == true && (gruposSoPend[c] != true || statusPendente(listaVisivel[i]["status"]))))) add(i)
                     }
                 }
                 lancTail[0] = entradas.size + if (tableView && tableColumns.isNotEmpty()) 1 else 0
-                itemsIndexed(entradas, key = { _, e -> if (e is Pair<*, *>) "grupo:${e.first}" else listaVisivel[e as Int].let { it["id"] ?: it.hashCode().toString() } }) { _, entrada ->
+                itemsIndexed(entradas, key = { _, e -> if (e is Pair<*, *>) "grupo:${e.first}" else if (e is OsDaOperacao) "os:${e.chave}:${e.itens.firstOrNull()?.get("id")}" else listaVisivel[e as Int].let { it["id"] ?: it.hashCode().toString() } }) { _, entrada ->
+                    if (entrada is OsDaOperacao) {
+                        CartaoOs(
+                            os = entrada,
+                            onEdit = { entrada.itens.firstOrNull()?.get("id")?.let { onEditRecord(it) } },
+                            onDelete = { osPendingDelete = entrada },
+                            onVerItem = { r -> recordBeingViewed = r["id"] },
+                        )
+                        return@itemsIndexed
+                    }
                     if (entrada is Pair<*, *>) {
                         val chaveGrupo = entrada.first as String
                         val qtdGrupo = entrada.second as Int
@@ -1639,6 +1656,7 @@ fun DomainListScreen(
                             // v1.6.4 (mockup v105, item 11) -- fechado: só os 3 números principais.
                             numeros = if (domainId == "colheita") numerosGrupoColheita(doGrupo).let { if (abertoGrupo) it else it.take(3) } else emptyList(),
                             selo = seloGrupo(domainId, doGrupo),
+                            qtdOs = if (domainId == "safra") doGrupo.map { "${it["os"]?.trim().orEmpty()}|${it["local"].orEmpty()}" }.distinct().size else null,
                         )
                         return@itemsIndexed
                     }
@@ -1812,6 +1830,20 @@ fun DomainListScreen(
     if (prioridadeAberta) PrioridadeCotacaoDialog(onDismiss = { prioridadeAberta = false }, onSalvo = { viewModel.refresh(domainId) })
     // Confirmação antes de excluir -- ação destrutiva, pedido implícito de
     // segurança (excluir não pode ser desfeito depois de sincronizar).
+    osPendingDelete?.let { os ->
+        AlertDialog(
+            onDismissRequest = { osPendingDelete = null },
+            title = { Text("Excluir ${os.titulo}?") },
+            text = { Text("Os ${os.itens.size} itens desta O.S. serão excluídos, e o Estoque volta a ter o que saiu por eles.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    os.itens.mapNotNull { it["id"] }.forEach { viewModel.deleteRecord(domainId, it) }
+                    osPendingDelete = null
+                }) { Text("Excluir") }
+            },
+            dismissButton = { TextButton(onClick = { osPendingDelete = null }) { Text("Cancelar") } },
+        )
+    }
     if (recordPendingDelete != null) {
         AlertDialog(
             onDismissRequest = { recordPendingDelete = null },

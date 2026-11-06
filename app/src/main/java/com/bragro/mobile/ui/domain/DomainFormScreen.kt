@@ -142,7 +142,14 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
      * linha extra vira um registro com o mesmo cabeçalho ao salvar. */
     val itensExtras = androidx.compose.runtime.mutableStateListOf<androidx.compose.runtime.snapshots.SnapshotStateMap<String, String>>()
     fun addItemExtra() { itensExtras.add(mutableStateMapOf()) }
-    fun removeItemExtra(i: Int) { if (i in itensExtras.indices) itensExtras.removeAt(i) }
+    // v1.6.18 (mockup v122) -- itens já gravados da mesma O.S. (editar) e os removidos.
+    val itensRemovidos = mutableListOf<String>()
+    fun removeItemExtra(i: Int) {
+        if (i in itensExtras.indices) {
+            itensExtras[i][ID_EXTRA]?.takeIf { it.isNotBlank() }?.let { itensRemovidos.add(it) }
+            itensExtras.removeAt(i)
+        }
+    }
 
     // Guarda domainId/recordId da carga atual -- preview de O.S. (ver
     // refreshOsPreview()) precisa deles fora de load() pra poder ser
@@ -278,6 +285,26 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             computedValues.value = computed
 
             lastRecord.value = if (recordId == null) recordRepository.mostRecent(domainId) else null
+
+            // v1.6.18 (mockup v122) -- editar uma O.S. de Safra traz os
+            // demais itens dela (mesmo nº, fazenda, operação e safra).
+            if (recordId != null && existing != null && domainId in OS_EDITA_ITENS && itensExtras.isEmpty()) {
+                val m = MULTI_ITEM_FORM[domainId]
+                val os = existing["os"]?.trim().orEmpty()
+                if (m != null && os.isNotBlank()) {
+                    val irmaos = recordRepository.recordsOnce(domainId).filter {
+                        it["id"] != recordId && it["os"]?.trim() == os && it["local"] == existing["local"] &&
+                            it["operacao"] == existing["operacao"] && it["safra"] == existing["safra"]
+                    }
+                    itensRemovidos.clear()
+                    irmaos.forEach { r ->
+                        val mapa = mutableStateMapOf<String, String>()
+                        (m.sel.map { it.first } + m.inp.map { it.first }).forEach { c -> mapa[c] = r[c].orEmpty() }
+                        mapa[ID_EXTRA] = r["id"].orEmpty()
+                        itensExtras.add(mapa)
+                    }
+                }
+            }
 
             // Preview do próximo número de O.S. num registro NOVO (pedido
             // do usuário: "aplique tambem no app o que foi aplicado na
@@ -610,7 +637,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
                 .filterKeys { it !in hiddenKeys }
                 .mapValues { (key, value) -> if (key in dateKeys) brDateToIso(value) else value }
             val multi = MULTI_ITEM_FORM[domainId]
-            val extrasValidos = if (recordId == null && multi != null) itensExtras.filter { x -> !x[multi.chaveItem].isNullOrBlank() }.map { it.toMap() } else emptyList()
+            val extrasValidos = if ((recordId == null || domainId in OS_EDITA_ITENS) && multi != null) itensExtras.filter { x -> !x[multi.chaveItem].isNullOrBlank() }.map { it.toMap() } else emptyList()
             if (extrasValidos.isNotEmpty() && multi?.chave != null && snapshot[multi.chave].isNullOrBlank()) {
                 saving.value = false
                 errorMessage.value = "Informe o número do pedido. Ele une todos os itens."
@@ -626,9 +653,14 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
                         val v = x[campo]
                         if (!v.isNullOrBlank()) linha[campo] = v else linha.remove(campo)
                     }
-                    val r = recordRepository.createRecord(domainId, linha)
+                    val idExtra = x[ID_EXTRA]?.takeIf { it.isNotBlank() }
+                    val r = if (idExtra != null) recordRepository.updateRecord(domainId, idExtra, linha) else recordRepository.createRecord(domainId, linha)
                     if (r is SaveResult.Failure) { result = r; break }
                     if (r is SaveResult.SavedOffline) result = r
+                }
+                if (result !is SaveResult.Failure && recordId != null) {
+                    itensRemovidos.forEach { recordRepository.deleteRecord(domainId, it) }
+                    itensRemovidos.clear()
                 }
                 if (result !is SaveResult.Failure) itensExtras.clear()
             }
@@ -654,6 +686,11 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
  * da plataforma, estendido a Frota e Cotações (pedido do usuário: "pedidos,
  * cotações, controle interno, frota, safra... como está o padrão na
  * plataforma módulo safra"). sel = listas, inp = números. */
+/** v1.6.18 (mockup v122) -- módulos em que EDITAR abre a O.S. inteira. */
+val OS_EDITA_ITENS = setOf("safra")
+/** Chave interna (não vai ao servidor) com o id do item já gravado. */
+const val ID_EXTRA = "__id"
+
 data class MultiItemCfg(
     val sel: List<Pair<String, String>>,
     val inp: List<Pair<String, String>>,
@@ -909,7 +946,7 @@ fun DomainFormScreen(
             val grupos = (SECOES_FORM.map { Triple(it.id, it.titulo, it.sub) } + Triple("outros", "Outros dados", ""))
                 .map { g -> g to camposForm.filter { secaoDe(it) == g.first } }
                 .filter { it.second.isNotEmpty() }
-            val multi = if (recordId == null) MULTI_ITEM_FORM[domainId] else null
+            val multi = if (recordId == null || domainId in OS_EDITA_ITENS) MULTI_ITEM_FORM[domainId] else null
             grupos.forEach { (g, campos) ->
                 // v20 -- Clima de hoje / Copiar último como ícones sem rótulo
                 // no canto direito da primeira seção (QUANDO).

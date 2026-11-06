@@ -12,6 +12,7 @@ import com.bragro.mobile.data.model.SyncResponse
 import com.bragro.mobile.data.remote.NetworkModule
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -54,6 +55,10 @@ class RecordRepository(private val context: Context) {
     // banner "N registros aguardando conexão" do Início abrir um diálogo
     // com o detalhe de cada pendência.
     fun observePending(): Flow<List<PendingSyncEntity>> = db.pendingSyncDao().observeAll()
+
+    /** v1.6.18 -- registros do módulo em cache, uma vez só. */
+    suspend fun recordsOnce(domainId: String): List<Map<String, String?>> =
+        db.recordDao().observeByDomain(domainId).first().map { jsonStringToMap(it.fieldsJson) }
 
     suspend fun getRecord(domainId: String, id: String): Map<String, String?>? =
         db.recordDao().byId(domainId, id)?.let { jsonStringToMap(it.fieldsJson) }

@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.PictureAsPdf
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.CloudOff
@@ -706,6 +708,8 @@ fun CartaoGrupo(
     numeros: List<Pair<String, String>> = emptyList(),
     // v1.6.3 (mockup v104, item 5) -- etiqueta de situação (texto, "ok"/"pend"/"neutro").
     selo: Pair<String, String>? = null,
+    // v1.6.18 (mockup v122) -- Safra: "N O.S. · M itens" no lugar de "N lançamentos".
+    qtdOs: Int? = null,
 ) {
     val primary = MaterialTheme.colorScheme.primary
     com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { onToggle() }) {
@@ -753,8 +757,13 @@ fun CartaoGrupo(
             }
             Text(
                 androidx.compose.ui.text.buildAnnotatedString {
-                    pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp)); append(qtd.toString()); pop()
-                    append(if (qtd == 1) " lançamento" else " lançamentos")
+                    if (qtdOs != null) {
+                        pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp)); append(qtdOs.toString()); pop()
+                        append(" O.S. · $qtd ${if (qtd == 1) "item" else "itens"}")
+                    } else {
+                        pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp)); append(qtd.toString()); pop()
+                        append(if (qtd == 1) " lançamento" else " lançamentos")
+                    }
                 },
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1012,5 +1021,86 @@ fun seloGrupo(domainId: String, rows: List<Map<String, String?>>): Pair<String, 
             (if (geada) "RISCO DE GEADA" else "SEM ALERTA") to (if (geada) "pend" else "ok")
         }
         else -> null
+    }
+}
+
+
+/** v1.6.18 (mockup v122) -- uma O.S. de Safra dentro do bloco da operação. */
+data class OsDaOperacao(val chave: String, val titulo: String, val sub: String, val total: Double, val itens: List<Map<String, String?>>)
+
+private fun dataIsoMillis(v: String?): Long? = v?.takeIf { it.length >= 10 }?.let {
+    runCatching { java.time.LocalDate.parse(it.substring(0, 10)).toEpochDay() * 86_400_000L }.getOrNull()
+}
+private fun ddMm(ms: Long): String {
+    val d = java.time.LocalDate.ofEpochDay(ms / 86_400_000L)
+    return "%02d/%02d".format(d.dayOfMonth, d.monthValue)
+}
+
+/** Agrupa os itens de um bloco de Safra por O.S. (mesmo nº + fazenda). */
+fun agruparPorOs(rows: List<Map<String, String?>>): List<OsDaOperacao> {
+    val nf = java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 2 }
+    return rows.groupBy { "${it["os"]?.trim().orEmpty().ifBlank { "—" }}|${it["local"].orEmpty()}" }
+        .map { (chave, itens) ->
+            val r0 = itens.first()
+            val ini = itens.mapNotNull { dataIsoMillis(it["dataInicio"]) }.minOrNull()
+            val fim = itens.mapNotNull { dataIsoMillis(it["dataFim"]) ?: dataIsoMillis(it["dataInicio"]) }.maxOrNull()
+            val dias = if (ini != null && fim != null) ((fim - ini) / 86_400_000L).toInt() + 1 else null
+            val ha = painelNum(r0["hectare"]).takeIf { it > 0 } ?: painelNum(r0["areaTotal"])
+            val os = r0["os"]?.trim().orEmpty()
+            val periodo = when {
+                ini == null -> ""
+                fim != null && fim != ini -> "${ddMm(ini)} a ${ddMm(fim)}"
+                else -> ddMm(ini)
+            }
+            OsDaOperacao(
+                chave = chave,
+                titulo = listOf(if (os.isNotBlank()) "O.S. $os" else "Sem O.S.", r0["local"].orEmpty()).filter { it.isNotBlank() }.joinToString(" · "),
+                sub = listOfNotNull(periodo.takeIf { it.isNotBlank() }, dias?.let { "$it ${if (it == 1) "dia" else "dias"}" }, ha.takeIf { it > 0 }?.let { "${nf.format(it)} ha" }).joinToString(" · "),
+                total = itens.sumOf { painelNum(it["realizado"]) },
+                itens = itens,
+            ) to (ini ?: Long.MAX_VALUE)
+        }
+        .sortedBy { it.second }
+        .map { it.first }
+}
+
+/** Linha de item dentro da O.S.: "ITEM · 300 LT". */
+fun itemDaOs(r: Map<String, String?>): String {
+    val nf = java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 2 }
+    val qtd = r["qtd"]?.replace(",", ".")?.toDoubleOrNull()?.let { nf.format(it) }
+    return listOf(r["item"]?.uppercase().orEmpty().ifBlank { "Sem item" }, listOfNotNull(qtd, r["unidade"]?.takeIf { it.isNotBlank() }).joinToString(" ")).filter { it.isNotBlank() }.joinToString(" · ")
+}
+
+@Composable
+fun CartaoOs(os: OsDaOperacao, onEdit: () -> Unit, onDelete: () -> Unit, onVerItem: (Map<String, String?>) -> Unit) {
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(start = 10.dp, top = 2.dp, bottom = 2.dp)) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 9.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(os.titulo, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    if (os.sub.isNotBlank()) Text(os.sub, fontSize = 11.5.sp, color = muted)
+                }
+                Text(fmtMoeda(os.total), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                androidx.compose.material3.IconButton(onClick = onEdit, modifier = Modifier.size(30.dp)) {
+                    androidx.compose.material3.Icon(Icons.Outlined.Edit, contentDescription = "Editar O.S.", modifier = Modifier.size(17.dp))
+                }
+                androidx.compose.material3.IconButton(onClick = onDelete, modifier = Modifier.size(30.dp)) {
+                    androidx.compose.material3.Icon(Icons.Outlined.Delete, contentDescription = "Excluir O.S.", tint = corAtencao(), modifier = Modifier.size(17.dp))
+                }
+            }
+            val linha = MaterialTheme.colorScheme.outlineVariant
+            os.itens.forEach { it ->
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 3.dp).height(androidx.compose.foundation.layout.IntrinsicSize.Min).clickable { onVerItem(it) },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(Modifier.width(2.dp).fillMaxHeight().background(linha))
+                    Text(itemDaOs(it), fontSize = 11.5.sp, color = muted, modifier = Modifier.weight(1f).padding(start = 8.dp))
+                    val v = painelNum(it["realizado"])
+                    if (v != 0.0) Text(fmtMoeda(v), fontSize = 11.5.sp, color = muted)
+                }
+            }
+        }
     }
 }
