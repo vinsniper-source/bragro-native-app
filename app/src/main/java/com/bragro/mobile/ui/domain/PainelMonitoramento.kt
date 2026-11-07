@@ -657,6 +657,8 @@ fun chaveAtividade(domainId: String, r: Map<String, String?>): String? {
         "maodeobra" -> k(ou(r["categoriaAtividade"], r["tarefa"]))
         "contratos" -> k(ou(r["tipo"], r["categoria"]))
         "receituarios" -> k(r["produto"])
+        // v1.6.19 (mockup v123) -- um bloco por pedido.
+        "pedidos" -> k(r["noPedido"])
         else -> null
     }
 }
@@ -710,6 +712,8 @@ fun CartaoGrupo(
     selo: Pair<String, String>? = null,
     // v1.6.18 (mockup v122) -- Safra: "N O.S. · M itens" no lugar de "N lançamentos".
     qtdOs: Int? = null,
+    // v1.6.19 (mockup v123) -- texto pronto no lugar de "N lançamentos" (Pedidos).
+    rotuloQtd: String? = null,
 ) {
     val primary = MaterialTheme.colorScheme.primary
     com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { onToggle() }) {
@@ -757,7 +761,9 @@ fun CartaoGrupo(
             }
             Text(
                 androidx.compose.ui.text.buildAnnotatedString {
-                    if (qtdOs != null) {
+                    if (rotuloQtd != null) {
+                        append(rotuloQtd)
+                    } else if (qtdOs != null) {
                         pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp)); append(qtdOs.toString()); pop()
                         append(" O.S. · $qtd ${if (qtd == 1) "item" else "itens"}")
                     } else {
@@ -1099,6 +1105,83 @@ fun CartaoOs(os: OsDaOperacao, onEdit: () -> Unit, onDelete: () -> Unit, onVerIt
                     Text(itemDaOs(it), fontSize = 11.5.sp, color = muted, modifier = Modifier.weight(1f).padding(start = 8.dp))
                     val v = painelNum(it["realizado"])
                     if (v != 0.0) Text(fmtMoeda(v), fontSize = 11.5.sp, color = muted)
+                }
+            }
+        }
+    }
+}
+
+
+/** v1.6.19 (mockup v123) -- resumo do pedido: itens (pedida/entregue/saldo/
+ * status) e os lançamentos (pedido completo e remessas). */
+data class ItemPedidoResumo(val item: String, val unidade: String, val pedida: Double, val entregue: Double) {
+    val saldo: Double get() = Math.round((pedida - entregue) * 100) / 100.0
+    val status: String get() = if (entregue >= pedida && pedida > 0) "ATENDIDO" else if (entregue > 0) "PARCIAL" else "PENDENTE"
+}
+data class LancPedido(val chave: String, val completo: Boolean, val titulo: String, val sub: String, val linhas: List<Map<String, String?>>)
+data class ResumoPedido(val chave: String, val itens: List<ItemPedidoResumo>, val lancamentos: List<LancPedido>) {
+    val remessas: Int get() = lancamentos.count { !it.completo }
+}
+
+fun resumoPedido(chave: String, rows: List<Map<String, String?>>): ResumoPedido {
+    val itens = LinkedHashMap<String, ItemPedidoResumo>()
+    rows.forEach { r ->
+        val k = r["item"]?.uppercase()?.trim().orEmpty()
+        if (k.isBlank()) return@forEach
+        val a = itens[k] ?: ItemPedidoResumo(k, r["unidade"].orEmpty(), 0.0, 0.0)
+        itens[k] = a.copy(pedida = maxOf(a.pedida, painelNum(r["qtdPedida"])), entregue = a.entregue + painelNum(r["qtdEntregue"]), unidade = a.unidade.ifBlank { r["unidade"].orEmpty() })
+    }
+    val lanc = rows.groupBy { "${it["nf"].orEmpty()}|${it["dataEntrega"]?.take(10).orEmpty()}" }.map { (k, linhas) ->
+        val r0 = linhas.first()
+        val completo = linhas.any { painelNum(it["qtdPedida"]) > 0 }
+        val data = r0["dataEntrega"]?.take(10)?.let { d -> if (d.length == 10) "${d.substring(8, 10)}/${d.substring(5, 7)}" else "" }.orEmpty()
+        LancPedido(
+            chave = k,
+            completo = completo,
+            titulo = if (completo) "Pedido completo" + (r0["nf"]?.takeIf { it.isNotBlank() }?.let { " · $it" } ?: "") else (r0["nf"]?.takeIf { it.isNotBlank() } ?: "Remessa"),
+            sub = listOf(data, r0["fase"].orEmpty(), r0["local"].orEmpty(), "${linhas.size} ${if (linhas.size == 1) "item" else "itens"}").filter { it.isNotBlank() }.joinToString(" · "),
+            linhas = linhas,
+        ) to (r0["dataEntrega"].orEmpty())
+    }.sortedWith(compareBy({ !it.first.completo }, { it.second })).map { it.first }
+    return ResumoPedido(chave, itens.values.toList(), lanc)
+}
+
+@Composable
+fun CartaoResumoPedido(res: ResumoPedido, onEdit: (String) -> Unit, onDelete: (LancPedido) -> Unit, onVer: (String) -> Unit) {
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    val nf = java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 2 }
+    com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(start = 10.dp, top = 2.dp, bottom = 2.dp)) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 9.dp)) {
+            Row(Modifier.fillMaxWidth()) {
+                listOf("ITEM" to 2.2f, "PEDIDA" to 1.2f, "ENTREGUE" to 1f, "SALDO" to 0.9f).forEach { (t, w) ->
+                    Text(t, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = muted, modifier = Modifier.weight(w))
+                }
+            }
+            res.itens.forEach { it ->
+                Row(Modifier.fillMaxWidth().padding(top = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(2.2f)) {
+                        Text(it.item, fontSize = 11.5.sp)
+                        val cor = if (it.status == "ATENDIDO") MaterialTheme.colorScheme.primary else corAtencao()
+                        Text(it.status, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = cor)
+                    }
+                    Text("${nf.format(it.pedida)} ${it.unidade}", fontSize = 11.5.sp, modifier = Modifier.weight(1.2f))
+                    Text(nf.format(it.entregue), fontSize = 11.5.sp, modifier = Modifier.weight(1f))
+                    Text(nf.format(it.saldo), fontSize = 11.5.sp, modifier = Modifier.weight(0.9f))
+                }
+            }
+            HorizontalDivider(Modifier.padding(vertical = 6.dp), color = MaterialTheme.colorScheme.outlineVariant)
+            res.lancamentos.forEach { l ->
+                Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f).clickable { l.linhas.firstOrNull()?.get("id")?.let(onVer) }) {
+                        Text(l.titulo, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text(l.sub, fontSize = 11.sp, color = muted)
+                    }
+                    androidx.compose.material3.IconButton(onClick = { l.linhas.firstOrNull()?.get("id")?.let(onEdit) }, modifier = Modifier.size(30.dp)) {
+                        androidx.compose.material3.Icon(Icons.Outlined.Edit, contentDescription = "Editar", modifier = Modifier.size(17.dp))
+                    }
+                    androidx.compose.material3.IconButton(onClick = { onDelete(l) }, modifier = Modifier.size(30.dp)) {
+                        androidx.compose.material3.Icon(Icons.Outlined.Delete, contentDescription = "Excluir", tint = corAtencao(), modifier = Modifier.size(17.dp))
+                    }
                 }
             }
         }

@@ -290,11 +290,17 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             // demais itens dela (mesmo nº, fazenda, operação e safra).
             if (recordId != null && existing != null && domainId in OS_EDITA_ITENS && itensExtras.isEmpty()) {
                 val m = MULTI_ITEM_FORM[domainId]
-                val os = existing["os"]?.trim().orEmpty()
+                val os = if (domainId == "pedidos") existing["noPedido"]?.trim().orEmpty() else existing["os"]?.trim().orEmpty()
                 if (m != null && os.isNotBlank()) {
                     val irmaos = recordRepository.recordsOnce(domainId).filter {
-                        it["id"] != recordId && it["os"]?.trim() == os && it["local"] == existing["local"] &&
-                            it["operacao"] == existing["operacao"] && it["safra"] == existing["safra"]
+                        if (domainId == "pedidos") {
+                            // v1.6.19 -- mesmo lançamento = mesmo Nº, NF e Data Entrega.
+                            it["id"] != recordId && it["noPedido"]?.trim() == os && it["nf"].orEmpty() == existing["nf"].orEmpty() &&
+                                it["dataEntrega"]?.take(10).orEmpty() == existing["dataEntrega"]?.take(10).orEmpty()
+                        } else {
+                            it["id"] != recordId && it["os"]?.trim() == os && it["local"] == existing["local"] &&
+                                it["operacao"] == existing["operacao"] && it["safra"] == existing["safra"]
+                        }
                     }
                     itensRemovidos.clear()
                     irmaos.forEach { r ->
@@ -687,7 +693,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
  * cotações, controle interno, frota, safra... como está o padrão na
  * plataforma módulo safra"). sel = listas, inp = números. */
 /** v1.6.18 (mockup v122) -- módulos em que EDITAR abre a O.S. inteira. */
-val OS_EDITA_ITENS = setOf("safra")
+val OS_EDITA_ITENS = setOf("safra", "pedidos")
 /** Chave interna (não vai ao servidor) com o id do item já gravado. */
 const val ID_EXTRA = "__id"
 

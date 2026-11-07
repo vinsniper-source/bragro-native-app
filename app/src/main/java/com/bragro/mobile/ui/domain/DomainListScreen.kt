@@ -474,6 +474,7 @@ fun DomainListScreen(
     // nenhum diálogo aberto.
     var recordPendingDelete by remember(domainId) { mutableStateOf<String?>(null) }
     var osPendingDelete by remember(domainId) { mutableStateOf<OsDaOperacao?>(null) }
+    var lancPedidoPendingDelete by remember(domainId) { mutableStateOf<LancPedido?>(null) }
     // v56 -- cobrança cujo Pix (QR + copia e cola) está aberto.
     var pixCobrancaId by remember(domainId) { mutableStateOf<String?>(null) }
     // v1.6.0 (mockup v101, item 13) -- botão Pix na barra Ações (chave Pix).
@@ -1577,7 +1578,8 @@ fun DomainListScreen(
                 }
                 // Cards unificados por atividade (chaveAtividade da
                 // plataforma) -- só na vista Bloco; Tabela segue linha a linha.
-                val agrupar = !tableView && domainId != "financeiro" && domainId != "pedidos"
+                // v1.6.19 (mockup v123) -- Pedidos também em bloco (um por pedido).
+                val agrupar = !tableView && domainId != "financeiro"
                 val chaves = if (agrupar) filteredRecords.map { chaveAtividade(domainId, it) } else emptyList()
                 val listaCards = if (agrupar && chaves.any { it != null }) {
                     val ordem = LinkedHashMap<String, MutableList<Int>>()
@@ -1609,13 +1611,25 @@ fun DomainListScreen(
                             if (domainId == "safra" && gruposAbertos[c] == true && gruposSoPend[c] != true) {
                                 addAll(agruparPorOs(listaCards.filterIndexed { j, _ -> chavesFull[j] == c }))
                             }
+                            if (domainId == "pedidos" && gruposAbertos[c] == true && gruposSoPend[c] != true) {
+                                add(resumoPedido(c, listaCards.filterIndexed { j, _ -> chavesFull[j] == c }))
+                            }
                         }
-                        val osAgrupa = domainId == "safra" && c != null && gruposSoPend[c] != true
+                        val osAgrupa = (domainId == "safra" || domainId == "pedidos") && c != null && gruposSoPend[c] != true
                         if (!osAgrupa && (c == null || (gruposAbertos[c] == true && (gruposSoPend[c] != true || statusPendente(listaVisivel[i]["status"]))))) add(i)
                     }
                 }
                 lancTail[0] = entradas.size + if (tableView && tableColumns.isNotEmpty()) 1 else 0
-                itemsIndexed(entradas, key = { _, e -> if (e is Pair<*, *>) "grupo:${e.first}" else if (e is OsDaOperacao) "os:${e.chave}:${e.itens.firstOrNull()?.get("id")}" else listaVisivel[e as Int].let { it["id"] ?: it.hashCode().toString() } }) { _, entrada ->
+                itemsIndexed(entradas, key = { _, e -> if (e is Pair<*, *>) "grupo:${e.first}" else if (e is ResumoPedido) "ped:${e.chave}" else if (e is OsDaOperacao) "os:${e.chave}:${e.itens.firstOrNull()?.get("id")}" else listaVisivel[e as Int].let { it["id"] ?: it.hashCode().toString() } }) { _, entrada ->
+                    if (entrada is ResumoPedido) {
+                        CartaoResumoPedido(
+                            res = entrada,
+                            onEdit = { onEditRecord(it) },
+                            onDelete = { l -> lancPedidoPendingDelete = l },
+                            onVer = { recordBeingViewed = it },
+                        )
+                        return@itemsIndexed
+                    }
                     if (entrada is OsDaOperacao) {
                         CartaoOs(
                             os = entrada,
@@ -1657,6 +1671,7 @@ fun DomainListScreen(
                             numeros = if (domainId == "colheita") numerosGrupoColheita(doGrupo).let { if (abertoGrupo) it else it.take(3) } else emptyList(),
                             selo = seloGrupo(domainId, doGrupo),
                             qtdOs = if (domainId == "safra") doGrupo.map { "${it["os"]?.trim().orEmpty()}|${it["local"].orEmpty()}" }.distinct().size else null,
+                            rotuloQtd = if (domainId == "pedidos") resumoPedido(chaveGrupo, doGrupo).let { r -> "${r.itens.size} itens · ${r.remessas} ${if (r.remessas == 1) "remessa" else "remessas"}" } else null,
                         )
                         return@itemsIndexed
                     }
@@ -1830,6 +1845,20 @@ fun DomainListScreen(
     if (prioridadeAberta) PrioridadeCotacaoDialog(onDismiss = { prioridadeAberta = false }, onSalvo = { viewModel.refresh(domainId) })
     // Confirmação antes de excluir -- ação destrutiva, pedido implícito de
     // segurança (excluir não pode ser desfeito depois de sincronizar).
+    lancPedidoPendingDelete?.let { l ->
+        AlertDialog(
+            onDismissRequest = { lancPedidoPendingDelete = null },
+            title = { Text("Excluir ${l.titulo}?") },
+            text = { Text("Os ${l.linhas.size} itens deste lançamento serão excluídos, junto com as entradas deles no Estoque.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    l.linhas.mapNotNull { it["id"] }.forEach { viewModel.deleteRecord(domainId, it) }
+                    lancPedidoPendingDelete = null
+                }) { Text("Excluir") }
+            },
+            dismissButton = { TextButton(onClick = { lancPedidoPendingDelete = null }) { Text("Cancelar") } },
+        )
+    }
     osPendingDelete?.let { os ->
         AlertDialog(
             onDismissRequest = { osPendingDelete = null },
