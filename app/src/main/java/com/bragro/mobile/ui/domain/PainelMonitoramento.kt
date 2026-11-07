@@ -644,11 +644,13 @@ fun chaveAtividade(domainId: String, r: Map<String, String?>): String? {
     }
     fun ou(a: String?, b: String?) = if (!a.isNullOrBlank()) a else b
     return when (domainId) {
-        "safra" -> k(r["operacao"])
+        // v1.6.21 (mockup v126b) -- um bloco por FAZENDA; fases dentro.
+        "safra" -> k(r["local"])
         "colheita" -> k(r["cultura"], r["local"], r["safra"])
         "frota" -> k(r["frota"])
         "estoque" -> k(r["categoria"])
-        "romaneios" -> k(ou(r["noContrato"], r["compradorDestino"]))
+        // v1.6.21 -- entrada no silo (sem contrato/comprador) agrupa pelo silo.
+        "romaneios" -> k(ou(r["noContrato"], r["compradorDestino"])) ?: r["armazemDestino"]?.takeIf { it.isNotBlank() }?.let { k("ENTRADA", it) }
         "pecuaria" -> k(r["operacao"])
         "caixainterno", "controleinterno", "inventario" -> k(r["categoria"])
         "clima", "pragas" -> k(r["fazenda"], r["talhao"])
@@ -1170,12 +1172,22 @@ fun CartaoResumoPedido(res: ResumoPedido, onEdit: (String) -> Unit, onDelete: (L
     val nf = java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 2 }
     com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(start = 10.dp, top = 2.dp, bottom = 2.dp)) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 9.dp)) {
+            // v1.6.21 (mockup v126) -- fase aberta: o quadro mostra só os produtos dela.
+            var faseAberta by androidx.compose.runtime.saveable.rememberSaveable(res.chave) { mutableStateOf<String?>(null) }
+            val daFase = faseAberta?.let { fa -> res.fases.firstOrNull { it.fase == fa }?.entregas?.flatMap { e -> e.linhas.map { it["item"]?.uppercase().orEmpty() } }?.toSet() }
+            val itensVis = if (daFase != null) res.itens.filter { it.item in daFase } else res.itens
+            if (faseAberta != null) {
+                Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)).padding(horizontal = 6.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Mostrando: $faseAberta · ${itensVis.size} de ${res.itens.size} itens", fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Text("ver todos", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickable { faseAberta = null })
+                }
+            }
             Row(Modifier.fillMaxWidth()) {
                 listOf("ITEM" to 2.2f, "PEDIDA" to 1.2f, "ENTREGUE" to 1f, "SALDO" to 0.9f).forEach { (t, w) ->
                     Text(t, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = muted, modifier = Modifier.weight(w))
                 }
             }
-            res.itens.forEach { it ->
+            itensVis.forEach { it ->
                 Row(Modifier.fillMaxWidth().padding(top = 3.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(2.2f)) {
                         Text(it.item, fontSize = 11.5.sp)
@@ -1209,7 +1221,6 @@ fun CartaoResumoPedido(res: ResumoPedido, onEdit: (String) -> Unit, onDelete: (L
             Text("PEDIDO COMPLETO", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = muted)
             res.lancamentos.filter { it.completo }.forEach { linhaLanc(it, false) }
             // v1.6.20 (mockup v125) -- entregas por fase; só uma fase aberta por vez.
-            var faseAberta by androidx.compose.runtime.saveable.rememberSaveable(res.chave) { mutableStateOf<String?>(null) }
             if (res.fases.isNotEmpty()) {
                 HorizontalDivider(Modifier.padding(vertical = 6.dp), color = MaterialTheme.colorScheme.outlineVariant)
                 Text("ENTREGAS POR FASE", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = muted)
@@ -1230,6 +1241,55 @@ fun CartaoResumoPedido(res: ResumoPedido, onEdit: (String) -> Unit, onDelete: (L
                     Text("Total da fase: ${f.total}", fontSize = 11.sp, color = muted)
                 }
                 if (aberta) Column(Modifier.padding(start = 10.dp)) { f.entregas.forEach { linhaLanc(it, true) } }
+            }
+        }
+    }
+}
+
+
+/** v1.6.21 (mockup v126b) -- Safra: bloco da fazenda com as fases dentro. */
+data class FaseSafra(val fase: String, val titulo: String, val os: List<OsDaOperacao>, val total: Double, val periodo: String)
+data class FasesDaFazenda(val chave: String, val fases: List<FaseSafra>)
+
+fun agruparFasesSafra(rows: List<Map<String, String?>>): List<FaseSafra> =
+    rows.groupBy { it["operacao"]?.trim()?.uppercase().orEmpty().ifBlank { "SEM OPERAÇÃO" } }.map { (fase, itens) ->
+        val os = agruparPorOs(itens)
+        val ini = itens.mapNotNull { it["dataInicio"]?.take(10)?.takeIf { d -> d.length == 10 } }.minOrNull()
+        val fim = itens.mapNotNull { (it["dataFim"] ?: it["dataInicio"])?.take(10)?.takeIf { d -> d.length == 10 } }.maxOrNull()
+        fun dm(d: String) = "${d.substring(8, 10)}/${d.substring(5, 7)}"
+        FaseSafra(
+            fase = fase,
+            titulo = tituloProprio(fase),
+            os = os,
+            total = itens.sumOf { painelNum(it["realizado"]) },
+            periodo = when { ini == null -> ""; fim != null && fim != ini -> "${dm(ini)} a ${dm(fim)}"; else -> dm(ini) },
+        ) to (ini ?: "9999")
+    }.sortedBy { it.second }.map { it.first }
+
+@Composable
+fun CartaoFasesSafra(dados: FasesDaFazenda, onEdit: (String) -> Unit, onDelete: (OsDaOperacao) -> Unit, onVer: (String) -> Unit) {
+    var aberta by androidx.compose.runtime.saveable.rememberSaveable(dados.chave) { mutableStateOf<String?>(null) }
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    Column(Modifier.fillMaxWidth()) {
+        dados.fases.forEach { f ->
+            val estaAberta = aberta == f.fase
+            com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(start = 10.dp, top = 2.dp, bottom = 2.dp).clickable { aberta = if (estaAberta) null else f.fase }) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        androidx.compose.ui.text.buildAnnotatedString {
+                            pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold)); append(f.titulo); pop()
+                            val oss = if (f.os.size == 1) f.os[0].titulo.substringBefore(" · ") else "${f.os.size} O.S."
+                            append(" · $oss${if (f.periodo.isNotBlank()) " · ${f.periodo}" else ""} · ${fmtMoeda(f.total)}")
+                        },
+                        fontSize = 12.5.sp, modifier = Modifier.weight(1f),
+                    )
+                    Text(if (estaAberta) "▾" else "▸", color = muted)
+                }
+            }
+            if (estaAberta) Column(Modifier.padding(start = 12.dp)) {
+                f.os.forEach { os ->
+                    CartaoOs(os = os, onEdit = { os.itens.firstOrNull()?.get("id")?.let(onEdit) }, onDelete = { onDelete(os) }, onVerItem = { r -> r["id"]?.let(onVer) })
+                }
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.outlined.ViewList
 import android.app.Application
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -531,7 +532,10 @@ fun DomainListScreen(
     val tipoKey = remember(config) { listOf("operacao", "tipo", "tipoMovimento", "tipoLancamento", "status").firstOrNull { k -> config?.columns?.any { it.key == k } == true } }
     var tipoLanc by remember(domainId) { mutableStateOf<String?>(null) }
     var lancMenu by remember { mutableStateOf(false) }
-    val filteredRecords = remember(records, periodo, intervalFrom, intervalTo, dateCol, columnFilters.toMap(), pendingOnly, pendingReviewIds, tipoLanc, tipoKey) {
+    // v1.6.21 (mockup v126b) -- ordem pela data do módulo, CRESCENTE por
+    // padrão; a setinha ao lado de "DATA" troca para decrescente.
+    var dataDesc by androidx.compose.runtime.saveable.rememberSaveable(domainId) { mutableStateOf(false) }
+    val filteredRecords = remember(records, periodo, intervalFrom, intervalTo, dateCol, columnFilters.toMap(), pendingOnly, pendingReviewIds, tipoLanc, tipoKey, dataDesc) {
         var result = records
         if (pendingOnly) result = result.filter { it["id"] in pendingReviewIds }
         if (tipoKey != null && tipoLanc != null) result = result.filter { it[tipoKey] == tipoLanc }
@@ -546,6 +550,11 @@ fun DomainListScreen(
         }
         columnFilters.forEach { (key, value) ->
             if (value.isNotBlank()) result = result.filter { it[key] == value }
+        }
+        val kData = dateCol?.key
+        if (kData != null) {
+            val cmp = compareBy<Map<String, String?>>({ it[kData].orEmpty().take(10) }, { it["criadoEm"].orEmpty() })
+            result = if (dataDesc) result.sortedWith(cmp.reversed()) else result.sortedWith(cmp)
         }
         result
     }
@@ -1571,6 +1580,17 @@ fun DomainListScreen(
                 // ficarem sempre alinhados -- mesmo critério de
                 // ColumnsPickerButton/exportXlsx (visibleKeys).
                 val tableColumns = cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }
+                if (dateCol != null) {
+                    item(key = "ordem-data") {
+                        Row(Modifier.fillMaxWidth().padding(bottom = 2.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                            Text(dateCol.label.uppercase(), fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Box(
+                                Modifier.padding(start = 5.dp).size(22.dp).clip(RoundedCornerShape(6.dp)).background(MaterialTheme.colorScheme.primary).clickable { dataDesc = !dataDesc },
+                                contentAlignment = Alignment.Center,
+                            ) { Text(if (dataDesc) "↓" else "↑", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+                        }
+                    }
+                }
                 if (tableView && tableColumns.isNotEmpty()) {
                     item(key = "table-header") {
                         RecordTableHeader(tableColumns, tableHScroll)
@@ -1609,7 +1629,7 @@ fun DomainListScreen(
                             add(Pair(c, q))
                             // v1.6.18 (mockup v122) -- Safra aberta: uma entrada por O.S.
                             if (domainId == "safra" && gruposAbertos[c] == true && gruposSoPend[c] != true) {
-                                addAll(agruparPorOs(listaCards.filterIndexed { j, _ -> chavesFull[j] == c }))
+                                add(FasesDaFazenda(c, agruparFasesSafra(listaCards.filterIndexed { j, _ -> chavesFull[j] == c })))
                             }
                             if (domainId == "pedidos" && gruposAbertos[c] == true && gruposSoPend[c] != true) {
                                 add(resumoPedido(c, listaCards.filterIndexed { j, _ -> chavesFull[j] == c }))
@@ -1620,12 +1640,21 @@ fun DomainListScreen(
                     }
                 }
                 lancTail[0] = entradas.size + if (tableView && tableColumns.isNotEmpty()) 1 else 0
-                itemsIndexed(entradas, key = { _, e -> if (e is Pair<*, *>) "grupo:${e.first}" else if (e is ResumoPedido) "ped:${e.chave}" else if (e is OsDaOperacao) "os:${e.chave}:${e.itens.firstOrNull()?.get("id")}" else listaVisivel[e as Int].let { it["id"] ?: it.hashCode().toString() } }) { _, entrada ->
+                itemsIndexed(entradas, key = { _, e -> if (e is Pair<*, *>) "grupo:${e.first}" else if (e is ResumoPedido) "ped:${e.chave}" else if (e is FasesDaFazenda) "faz:${e.chave}" else if (e is OsDaOperacao) "os:${e.chave}:${e.itens.firstOrNull()?.get("id")}" else listaVisivel[e as Int].let { it["id"] ?: it.hashCode().toString() } }) { _, entrada ->
                     if (entrada is ResumoPedido) {
                         CartaoResumoPedido(
                             res = entrada,
                             onEdit = { onEditRecord(it) },
                             onDelete = { l -> lancPedidoPendingDelete = l },
+                            onVer = { recordBeingViewed = it },
+                        )
+                        return@itemsIndexed
+                    }
+                    if (entrada is FasesDaFazenda) {
+                        CartaoFasesSafra(
+                            dados = entrada,
+                            onEdit = { onEditRecord(it) },
+                            onDelete = { os -> osPendingDelete = os },
                             onVer = { recordBeingViewed = it },
                         )
                         return@itemsIndexed
@@ -1670,8 +1699,12 @@ fun DomainListScreen(
                             // v1.6.4 (mockup v105, item 11) -- fechado: só os 3 números principais.
                             numeros = if (domainId == "colheita") numerosGrupoColheita(doGrupo).let { if (abertoGrupo) it else it.take(3) } else emptyList(),
                             selo = seloGrupo(domainId, doGrupo),
-                            qtdOs = if (domainId == "safra") doGrupo.map { "${it["os"]?.trim().orEmpty()}|${it["local"].orEmpty()}" }.distinct().size else null,
-                            rotuloQtd = if (domainId == "pedidos") resumoPedido(chaveGrupo, doGrupo).let { r -> "${r.itens.size} itens · ${r.fases.size} ${if (r.fases.size == 1) "fase" else "fases"} · ${r.remessas} ${if (r.remessas == 1) "entrega" else "entregas"}" } else null,
+                            qtdOs = null,
+                            rotuloQtd = if (domainId == "safra") run {
+                                val nF = doGrupo.map { it["operacao"]?.trim()?.uppercase().orEmpty() }.distinct().size
+                                val nO = doGrupo.map { "${it["os"]?.trim().orEmpty()}|${it["local"].orEmpty()}" }.distinct().size
+                                "$nF ${if (nF == 1) "fase" else "fases"} · $nO O.S. · ${doGrupo.size} ${if (doGrupo.size == 1) "item" else "itens"}"
+                            } else if (domainId == "pedidos") resumoPedido(chaveGrupo, doGrupo).let { r -> "${r.itens.size} itens · ${r.fases.size} ${if (r.fases.size == 1) "fase" else "fases"} · ${r.remessas} ${if (r.remessas == 1) "entrega" else "entregas"}" } else null,
                         )
                         return@itemsIndexed
                     }
