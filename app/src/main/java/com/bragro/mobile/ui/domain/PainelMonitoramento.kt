@@ -1119,8 +1119,26 @@ data class ItemPedidoResumo(val item: String, val unidade: String, val pedida: D
     val status: String get() = if (entregue >= pedida && pedida > 0) "ATENDIDO" else if (entregue > 0) "PARCIAL" else "PENDENTE"
 }
 data class LancPedido(val chave: String, val completo: Boolean, val titulo: String, val sub: String, val linhas: List<Map<String, String?>>)
+data class FasePedido(val fase: String, val entregas: List<LancPedido>, val periodo: String, val total: String)
 data class ResumoPedido(val chave: String, val itens: List<ItemPedidoResumo>, val lancamentos: List<LancPedido>) {
     val remessas: Int get() = lancamentos.count { !it.completo }
+    /** v1.6.20 (mockup v125) -- entregas agrupadas por Fase. */
+    val fases: List<FasePedido> get() {
+        val nf = java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 2 }
+        return lancamentos.filter { !it.completo }.groupBy { it.linhas.firstOrNull()?.get("fase")?.trim().orEmpty().ifBlank { "SEM FASE" } }
+            .map { (fase, ent) ->
+                val tot = LinkedHashMap<String, Pair<Double, String>>()
+                ent.forEach { e -> e.linhas.forEach { r ->
+                    val k = r["item"]?.uppercase().orEmpty()
+                    val a = tot[k] ?: (0.0 to r["unidade"].orEmpty())
+                    tot[k] = (a.first + painelNum(r["qtdEntregue"])) to a.second
+                } }
+                fun dd(l: LancPedido) = l.linhas.firstOrNull()?.get("dataEntrega")?.take(10)?.let { d -> if (d.length == 10) "${d.substring(8, 10)}/${d.substring(5, 7)}" else "" }.orEmpty()
+                val d1 = ent.firstOrNull()?.let(::dd).orEmpty(); val d2 = ent.lastOrNull()?.let(::dd).orEmpty()
+                FasePedido(fase, ent, if (d1.isNotBlank() && d2.isNotBlank() && d1 != d2) "$d1 a $d2" else d1,
+                    tot.entries.joinToString(" · ") { (k, v) -> "$k ${nf.format(v.first)} ${v.second}".trim() })
+            }
+    }
 }
 
 fun resumoPedido(chave: String, rows: List<Map<String, String?>>): ResumoPedido {
@@ -1138,8 +1156,8 @@ fun resumoPedido(chave: String, rows: List<Map<String, String?>>): ResumoPedido 
         LancPedido(
             chave = k,
             completo = completo,
-            titulo = if (completo) "Pedido completo" + (r0["nf"]?.takeIf { it.isNotBlank() }?.let { " · $it" } ?: "") else (r0["nf"]?.takeIf { it.isNotBlank() } ?: "Remessa"),
-            sub = listOf(data, r0["fase"].orEmpty(), r0["local"].orEmpty(), "${linhas.size} ${if (linhas.size == 1) "item" else "itens"}").filter { it.isNotBlank() }.joinToString(" · "),
+            titulo = listOf(data, r0["nf"]?.takeIf { it.isNotBlank() } ?: if (completo) "Pedido completo" else "Remessa").filter { it.isNotBlank() }.joinToString(" · "),
+            sub = if (completo) "${linhas.size} itens (só quantidade pedida)" + (r0["local"]?.takeIf { it.isNotBlank() }?.let { " · $it" } ?: "") else listOf(r0["local"].orEmpty(), "${linhas.size} ${if (linhas.size == 1) "item" else "itens"}").filter { it.isNotBlank() }.joinToString(" · "),
             linhas = linhas,
         ) to (r0["dataEntrega"].orEmpty())
     }.sortedWith(compareBy({ !it.first.completo }, { it.second })).map { it.first }
@@ -1169,8 +1187,8 @@ fun CartaoResumoPedido(res: ResumoPedido, onEdit: (String) -> Unit, onDelete: (L
                     Text(nf.format(it.saldo), fontSize = 11.5.sp, modifier = Modifier.weight(0.9f))
                 }
             }
-            HorizontalDivider(Modifier.padding(vertical = 6.dp), color = MaterialTheme.colorScheme.outlineVariant)
-            res.lancamentos.forEach { l ->
+            @Composable
+            fun linhaLanc(l: LancPedido, comItens: Boolean) {
                 Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f).clickable { l.linhas.firstOrNull()?.get("id")?.let(onVer) }) {
                         Text(l.titulo, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
@@ -1183,6 +1201,35 @@ fun CartaoResumoPedido(res: ResumoPedido, onEdit: (String) -> Unit, onDelete: (L
                         androidx.compose.material3.Icon(Icons.Outlined.Delete, contentDescription = "Excluir", tint = corAtencao(), modifier = Modifier.size(17.dp))
                     }
                 }
+                if (comItens) l.linhas.forEach { r ->
+                    Text("${r["item"]?.uppercase().orEmpty()} · ${nf.format(painelNum(r["qtdEntregue"]))} ${r["unidade"].orEmpty()}", fontSize = 11.sp, color = muted, modifier = Modifier.padding(start = 8.dp))
+                }
+            }
+            HorizontalDivider(Modifier.padding(vertical = 6.dp), color = MaterialTheme.colorScheme.outlineVariant)
+            Text("PEDIDO COMPLETO", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = muted)
+            res.lancamentos.filter { it.completo }.forEach { linhaLanc(it, false) }
+            // v1.6.20 (mockup v125) -- entregas por fase; só uma fase aberta por vez.
+            var faseAberta by androidx.compose.runtime.saveable.rememberSaveable(res.chave) { mutableStateOf<String?>(null) }
+            if (res.fases.isNotEmpty()) {
+                HorizontalDivider(Modifier.padding(vertical = 6.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                Text("ENTREGAS POR FASE", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = muted)
+            }
+            res.fases.forEach { f ->
+                val aberta = faseAberta == f.fase
+                Column(Modifier.fillMaxWidth().clickable { faseAberta = if (aberta) null else f.fase }.padding(vertical = 5.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            androidx.compose.ui.text.buildAnnotatedString {
+                                pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold)); append(f.fase); pop()
+                                append(" · ${f.entregas.size} ${if (f.entregas.size == 1) "entrega" else "entregas"}${if (f.periodo.isNotBlank()) " · ${f.periodo}" else ""}")
+                            },
+                            fontSize = 12.sp, modifier = Modifier.weight(1f),
+                        )
+                        Text(if (aberta) "▾" else "▸", color = muted)
+                    }
+                    Text("Total da fase: ${f.total}", fontSize = 11.sp, color = muted)
+                }
+                if (aberta) Column(Modifier.padding(start = 10.dp)) { f.entregas.forEach { linhaLanc(it, true) } }
             }
         }
     }

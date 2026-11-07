@@ -1671,7 +1671,7 @@ fun DomainListScreen(
                             numeros = if (domainId == "colheita") numerosGrupoColheita(doGrupo).let { if (abertoGrupo) it else it.take(3) } else emptyList(),
                             selo = seloGrupo(domainId, doGrupo),
                             qtdOs = if (domainId == "safra") doGrupo.map { "${it["os"]?.trim().orEmpty()}|${it["local"].orEmpty()}" }.distinct().size else null,
-                            rotuloQtd = if (domainId == "pedidos") resumoPedido(chaveGrupo, doGrupo).let { r -> "${r.itens.size} itens · ${r.remessas} ${if (r.remessas == 1) "remessa" else "remessas"}" } else null,
+                            rotuloQtd = if (domainId == "pedidos") resumoPedido(chaveGrupo, doGrupo).let { r -> "${r.itens.size} itens · ${r.fases.size} ${if (r.fases.size == 1) "fase" else "fases"} · ${r.remessas} ${if (r.remessas == 1) "entrega" else "entregas"}" } else null,
                         )
                         return@itemsIndexed
                     }
