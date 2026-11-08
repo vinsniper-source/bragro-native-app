@@ -1584,10 +1584,11 @@ fun DomainListScreen(
                     item(key = "ordem-data") {
                         Row(Modifier.fillMaxWidth().padding(bottom = 2.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                             Text(dateCol.label.uppercase(), fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            // v1.6.22 -- só a seta, na cor do texto, sem fundo.
                             Box(
-                                Modifier.padding(start = 5.dp).size(22.dp).clip(RoundedCornerShape(6.dp)).background(MaterialTheme.colorScheme.primary).clickable { dataDesc = !dataDesc },
+                                Modifier.padding(start = 3.dp).size(22.dp).clickable { dataDesc = !dataDesc },
                                 contentAlignment = Alignment.Center,
-                            ) { Text(if (dataDesc) "↓" else "↑", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+                            ) { Text(if (dataDesc) "↓" else "↑", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 14.sp) }
                         }
                     }
                 }

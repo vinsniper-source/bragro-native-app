@@ -142,6 +142,18 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
      * linha extra vira um registro com o mesmo cabeçalho ao salvar. */
     val itensExtras = androidx.compose.runtime.mutableStateListOf<androidx.compose.runtime.snapshots.SnapshotStateMap<String, String>>()
     fun addItemExtra() { itensExtras.add(mutableStateMapOf()) }
+    // v1.6.22 (mockup v127) -- ⧉ Copiar: duplica o item (principal ou extra) logo abaixo, sem o id gravado.
+    fun copiarItemExtra(i: Int) {
+        if (i !in itensExtras.indices) return
+        val m = mutableStateMapOf<String, String>()
+        itensExtras[i].forEach { (k, v) -> if (k != ID_EXTRA) m[k] = v }
+        itensExtras.add(i + 1, m)
+    }
+    fun copiarItemPrincipal(chaves: List<String>) {
+        val m = mutableStateMapOf<String, String>()
+        chaves.forEach { k -> fields[k]?.takeIf { it.isNotBlank() }?.let { m[k] = it } }
+        itensExtras.add(0, m)
+    }
     // v1.6.18 (mockup v122) -- itens já gravados da mesma O.S. (editar) e os removidos.
     val itensRemovidos = mutableListOf<String>()
     fun removeItemExtra(i: Int) {
@@ -1661,6 +1673,15 @@ private fun ItensExtrasSection(
     val sel = multi.sel.filter { porChave.containsKey(it.first) }
     val inp = multi.inp.filter { porChave.containsKey(it.first) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // v1.6.22 (mockup v127) -- ⧉ Copiar o item principal para uma nova linha.
+        androidx.compose.material3.TextButton(
+            onClick = { viewModel.copiarItemPrincipal((multi.sel + multi.inp).map { it.first }) },
+            modifier = Modifier.align(Alignment.End),
+        ) {
+            Icon(Icons.Outlined.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+            androidx.compose.foundation.layout.Spacer(Modifier.size(6.dp))
+            Text("Copiar item")
+        }
         if (viewModel.itensExtras.isNotEmpty()) {
             Text(
                 if (domainId == "pedidos") "MAIS ITENS DESTE PEDIDO" else "MAIS ITENS",
@@ -1673,6 +1694,9 @@ private fun ItensExtrasSection(
                 Column(modifier = Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Item ${i + 2}", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        IconButton(onClick = { viewModel.copiarItemExtra(i) }, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", modifier = Modifier.size(18.dp))
+                        }
                         IconButton(onClick = { viewModel.removeItemExtra(i) }, modifier = Modifier.size(32.dp)) {
                             Icon(Icons.Outlined.Close, contentDescription = "Remover item")
                         }
@@ -1703,7 +1727,16 @@ private fun ItensExtrasSection(
                         inp.forEach { (k, rotulo) ->
                             OutlinedTextField(
                                 value = x[k] ?: "",
-                                onValueChange = { v -> x[k] = v.replace(',', '.').filter { ch -> ch.isDigit() || ch == '.' } },
+                                onValueChange = { v ->
+                                    x[k] = v.replace(',', '.').filter { ch -> ch.isDigit() || ch == '.' }
+                                    // v1.6.22 -- Safra: Qtd sugerida = Dose/ha × Hectare da O.S.
+                                    if (domainId == "safra" && k == "vazaoDose") {
+                                        val d = x[k]?.toDoubleOrNull()
+                                        val hs = viewModel.fields["hectare"].orEmpty()
+                                        val ha = (if (hs.contains(',')) hs.replace(".", "").replace(",", ".") else hs).toDoubleOrNull()
+                                        if (d != null && ha != null && ha > 0) x["qtd"] = "%.2f".format(java.util.Locale.US, d * ha).trimEnd('0').trimEnd('.')
+                                    }
+                                },
                                 label = { Text(rotulo, maxLines = 1) },
                                 singleLine = true,
                                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),

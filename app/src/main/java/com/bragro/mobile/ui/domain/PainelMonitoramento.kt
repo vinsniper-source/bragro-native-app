@@ -724,27 +724,19 @@ fun CartaoGrupo(
     // toda, embaixo local + etiqueta, e por último uma faixa de números em
     // células iguais (Lançamentos, total do módulo e os demais números).
     Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 10.dp)) {
+        // v1.6.22 (mockup v127b) -- 1ª linha: título (uma linha) + situação à
+        // direita; 2ª: local/safra · período · contagem; 3ª: valor principal.
         Row(verticalAlignment = Alignment.Top) {
-            Text(titulo, fontWeight = FontWeight.Bold, fontSize = 14.5.sp, modifier = Modifier.weight(1f))
-            CantoL(aberto, onClick = onToggle)
-        }
-        // v1.6.7 (mockup v108, item 4) -- 2ª linha única: local · etiqueta ·
-        // lançamentos · total, distribuídos por igual. Os demais números do
-        // grupo aparecem só com o grupo aberto.
-        Row(
-            Modifier.fillMaxWidth().padding(top = 5.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            if (!onde.isNullOrBlank()) Text(onde, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f, fill = false).padding(end = 6.dp))
+            Text(titulo, fontWeight = FontWeight.Bold, fontSize = 14.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
             if (pendentes > 0 && onPendentes != null) {
                 Text(
-                    "$pendentes PENDENTE${if (pendentes > 1) "S" else ""} ▾",
+                    "$pendentes PENDENTE${if (pendentes > 1) "S" else ""}",
                     fontSize = 9.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = corAtencao(),
                     maxLines = 1,
                     modifier = Modifier
+                        .padding(start = 6.dp)
                         .clip(RoundedCornerShape(50))
                         .background(corAtencao().copy(alpha = if (soPendentes) 0.28f else 0.14f))
                         .clickable { onPendentes() }
@@ -758,27 +750,24 @@ fun CartaoGrupo(
                     fontWeight = FontWeight.Bold,
                     color = cor,
                     maxLines = 1,
-                    modifier = Modifier.clip(RoundedCornerShape(50)).background(cor.copy(alpha = 0.14f)).padding(horizontal = 7.dp, vertical = 1.dp),
+                    modifier = Modifier.padding(start = 6.dp).clip(RoundedCornerShape(50)).background(cor.copy(alpha = 0.14f)).padding(horizontal = 7.dp, vertical = 1.dp),
                 )
             }
-            Text(
-                androidx.compose.ui.text.buildAnnotatedString {
-                    if (rotuloQtd != null) {
-                        append(rotuloQtd)
-                    } else if (qtdOs != null) {
-                        pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp)); append(qtdOs.toString()); pop()
-                        append(" O.S. · $qtd ${if (qtd == 1) "item" else "itens"}")
-                    } else {
-                        pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp)); append(qtd.toString()); pop()
-                        append(if (qtd == 1) " lançamento" else " lançamentos")
-                    }
-                },
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                modifier = Modifier.padding(horizontal = 6.dp),
-            )
-            if (total != null) Text(total, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        }
+        val contagem = rotuloQtd ?: if (qtdOs != null) "$qtdOs O.S. · $qtd ${if (qtd == 1) "item" else "itens"}" else "$qtd ${if (qtd == 1) "lançamento" else "lançamentos"}"
+        Text(
+            listOfNotNull(onde?.takeIf { it.isNotBlank() }, contagem).joinToString(" · "),
+            fontSize = 11.5.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 3.dp),
+        )
+        if (total != null) {
+            Row(Modifier.fillMaxWidth().padding(top = 5.dp), verticalAlignment = Alignment.Bottom) {
+                Text(totalRotulo.orEmpty(), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, modifier = Modifier.weight(1f))
+                Text(kgCurtoApp(total), fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            }
         }
         if (aberto && numeros.isNotEmpty()) {
             val linha = MaterialTheme.colorScheme.outlineVariant
@@ -789,8 +778,8 @@ fun CartaoGrupo(
                         fila.forEachIndexed { i, (l, v) ->
                             if (i > 0) Box(Modifier.width(1.dp).fillMaxHeight().background(linha))
                             Column(Modifier.weight(1f).padding(start = if (i > 0) 7.dp else 0.dp, end = 4.dp)) {
-                                Text(l, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
-                                ValorUmaLinha(v, MaterialTheme.colorScheme.onSurface, maxSp = 13.5f, minSp = 9f)
+                                Text(l, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                ValorUmaLinha(kgCurtoApp(v), MaterialTheme.colorScheme.onSurface, maxSp = 13.5f, minSp = 9f)
                             }
                         }
                         repeat(3 - fila.size) { Spacer(Modifier.weight(1f)) }
@@ -798,6 +787,14 @@ fun CartaoGrupo(
                 }
             }
         }
+    }
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+    Row(
+        Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)).clickable { onToggle() }.padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(if (aberto) "Recolher" else "$qtd ${if (qtd == 1) "lançamento" else "lançamentos"} ▸ abrir", fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+        CantoL(aberto, onClick = onToggle)
     }
     if (soPendentes) {
         Row(
@@ -831,13 +828,12 @@ fun numerosGrupoColheita(rows: List<Map<String, String?>>): List<Pair<String, St
         "Área" to "${nf.format(ha)} ha",
         "Produtividade" to if (ha > 0) "${nf.format(kg / 60 / ha)} sc/ha" else "—",
         "% colhido" to if (plan > 0) "${nf.format(kg / plan * 100)}%" else "—",
-        "Talhões" to rows.mapNotNull { it["talhao"]?.takeIf { t -> t.isNotBlank() } }.distinct().size.toString(),
-        "Planejado" to if (plan > 0) "${nf.format(plan)} kg" else "—",
-        "Quebra" to if (quebra > 0) "${nf.format(quebra)} kg" else "—",
-        "Peso líquido" to if (liq > 0) "${nf.format(liq)} kg" else "—",
-        "Toneladas" to "${nf.format(kg / 1000)} t",
-        "Umidade média" to (um?.let { "${nf.format(it)}%" } ?: "—"),
-        "Impureza média" to (imp?.let { "${nf.format(it)}%" } ?: "—"),
+        // v1.6.22 (mockup v127b) -- em t e numa linha só.
+        "Planejado" to if (plan > 0) "${nf.format(plan / 1000)} t" else "—",
+        "Peso líquido" to if (liq > 0) "${nf.format(liq / 1000)} t" else "—",
+        "Quebra" to if (quebra != 0.0) "${nf.format(-quebra / 1000)} t" else "—",
+        "Umidade" to (um?.let { "${nf.format(it)}%" } ?: "—"),
+        "Impureza" to (imp?.let { "${nf.format(it)}%" } ?: "—"),
         "Finalizados" to "$fin de ${rows.size}",
     )
 }
@@ -1293,4 +1289,13 @@ fun CartaoFasesSafra(dados: FasesDaFazenda, onEdit: (String) -> Unit, onDelete: 
             }
         }
     }
+}
+
+
+/** v1.6.22 (mockup v127b) -- "752.277 kg" vira "752,3 t" (número grande em kg). */
+fun kgCurtoApp(v: String): String {
+    val m = Regex("""^(-?[\d.]+(?:,\d+)?) kg$""").find(v.trim()) ?: return v
+    val kg = m.groupValues[1].replace(".", "").replace(",", ".").toDoubleOrNull() ?: return v
+    if (kotlin.math.abs(kg) < 10000) return v
+    return "%,.1f t".format(java.util.Locale("pt", "BR"), kg / 1000)
 }
