@@ -553,11 +553,7 @@ fun DomainListScreen(
         }
         val kData = dateCol?.key
         if (kData != null) {
-            // v1.6.24 (mockup v129, item 1) -- desempate pelo número (romaneio,
-            // O.S., pedido...), comparando como número quando dá.
-            val kNum = listOf("noRomaneio", "os", "noPedido", "numero", "documento").firstOrNull { k -> k != kData && config?.columns?.any { it.key == k } == true }
-            fun numDe(r: Map<String, String?>): Double = kNum?.let { r[it]?.filter { ch -> ch.isDigit() }?.toDoubleOrNull() } ?: 0.0
-            val cmp = compareBy<Map<String, String?>>({ it[kData].orEmpty().take(10) }, { numDe(it) }, { it["criadoEm"].orEmpty() })
+            val cmp = compareBy<Map<String, String?>>({ it[kData].orEmpty().take(10) }, { it["criadoEm"].orEmpty() })
             result = if (dataDesc) result.sortedWith(cmp.reversed()) else result.sortedWith(cmp)
         }
         result

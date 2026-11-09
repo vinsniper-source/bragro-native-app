@@ -644,7 +644,7 @@ private fun SiloCard(
                     }
                     Spacer(Modifier.width(16.dp))
                 }
-                val cmpRom = compareBy<com.bragro.mobile.data.model.SiloMovimentoData>({ it.data.take(10) }, { it.noRomaneio.filter { c -> c.isDigit() }.toLongOrNull() ?: 0L })
+                val cmpRom = compareBy<com.bragro.mobile.data.model.SiloMovimentoData> { it.data.take(10) }
                 (if (romAsc) silo.movimentos.sortedWith(cmpRom) else silo.movimentos.sortedWith(cmpRom.reversed())).forEach { m ->
                     val estilo = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum")
                     Row(Modifier.fillMaxWidth().clickable { onAbrirRomaneio(m.romaneioId) }.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
