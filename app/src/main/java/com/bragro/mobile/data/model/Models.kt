@@ -528,6 +528,9 @@ data class ModuleActionRequest(
     // botão "Emitir NFS-e" da tabela genérica do site (data-table.tsx,
     // domain.id === "nfse").
     val id: String? = null,
+    // v1.6.25 -- quick-create-lookup: Categoria/Subcategoria do lançamento (item novo na lista certa).
+    val categoria: String? = null,
+    val subcategoria: String? = null,
     // Só usado por "preview-next-os" -- qual domínio (safra/frota/
     // controleinterno) pedir o próximo número de O.S. (previewNextOsAction,
     // mesma Server Action do site).

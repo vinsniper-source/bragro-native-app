@@ -77,6 +77,8 @@ class ModuleActionsRepository(context: Context) {
         rawValue: String? = null,
         // v99 -- "ultima-leitura-frota": registro em edição (fica de fora da busca).
         id: String? = null,
+        categoria: String? = null,
+        subcategoria: String? = null,
     ): JsonObject? {
         val tokens = tokenStore.current() ?: return null
         var (accessToken, refreshToken) = tokens
@@ -87,6 +89,7 @@ class ModuleActionsRepository(context: Context) {
             transferenciaEntradaId = transferenciaEntradaId,
             motivo = motivo, tipo = tipo, domainId = domainId, local = local,
             category = category, rawValue = rawValue, id = id,
+            categoria = categoria, subcategoria = subcategoria,
         )
         return try {
             var response = NetworkModule.mobileApi.moduleActions(buildRequest(accessToken))

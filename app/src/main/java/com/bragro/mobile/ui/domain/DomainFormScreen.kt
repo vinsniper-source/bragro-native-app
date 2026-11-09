@@ -203,6 +203,8 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val result = ModuleActionsRepository(getApplication()).run(
                 "quick-create-lookup", domainId = domainId, category = category, rawValue = rawValue,
+                categoria = fields["categoria"]?.takeIf { it.isNotBlank() },
+                subcategoria = (fields["subcategoria"] ?: fields["subcategoriaVariedade"])?.takeIf { it.isNotBlank() },
             )
             val value = (result?.get("value") as? JsonPrimitive)?.contentOrNull
             if (!value.isNullOrBlank()) {

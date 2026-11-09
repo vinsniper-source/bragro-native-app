@@ -96,6 +96,7 @@ private val MEDIDA_PREFERIDA = mapOf(
     "frota" to "total",
     "estoque" to "entrada",
     "colheita" to "colhida",
+    "financeiro" to "liquido", // v1.6.25 -- soma das parcelas, não o bruto repetido
 )
 val STATUS_CONCLUIDO = setOf(
     "PAGO", "RECEBIDO", "FINALIZADO", "CONCLUIDO", "CONCLUÍDO", "ENTREGUE", "ATENDIDO", "OK", "APROVADO",
@@ -199,7 +200,7 @@ fun calcularPainelModulo(
         cal.add(java.util.Calendar.DAY_OF_YEAR, 30)
         val em30 = iso.format(cal.time)
         fun isReceita(r: Map<String, String?>) = r["operacao"].orEmpty().uppercase() in RECEITA_OPS
-        fun valor(r: Map<String, String?>) = painelNum(r["bruto"])
+        fun valor(r: Map<String, String?>) = painelNum(r["liquido"]?.takeIf { it.isNotBlank() } ?: r["bruto"]) // v1.6.25 -- parcela conta pelo valor dela
         fun pago(r: Map<String, String?>) = !r["dataPgto"].isNullOrBlank() || r["status"].orEmpty().uppercase() == "PAGO"
         fun vcto(r: Map<String, String?>) = r["vcto"]?.take(10)?.takeIf { it.length == 10 }
         val despesas = daSafra.filterNot(::isReceita)
