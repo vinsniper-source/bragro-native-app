@@ -1122,6 +1122,7 @@ private fun BoundariesMap(
         if (ok) pegarPosicao() else rota = RotaEstado(null, "Permita o acesso à localização para ver a rota.")
     }
     val onTapState = androidx.compose.runtime.rememberUpdatedState(onTap)
+    val onConcluirState = androidx.compose.runtime.rememberUpdatedState(onConcluir)
     val drawingState = androidx.compose.runtime.rememberUpdatedState(drawing)
     // v44 -- mapa estável: altura fixa, recortado no próprio quadro (não
     // cobre mais os ícones), sem repetir o mundo nem "soltar" para fora,
@@ -1202,6 +1203,9 @@ private fun BoundariesMap(
                     polygon.setStrokeColor(strokeColor)
                     polygon.setStrokeWidth(3f)
                     polygon.setFillColor(if (camadasNdvi.isNotEmpty()) 0 else (strokeColor and 0x00FFFFFF) or 0x33000000)
+                    // v1.6.23 -- sem balão vazio; enquanto desenha, o toque passa para o mapa.
+                    polygon.setInfoWindow(null)
+                    polygon.setOnClickListener { _, _, _ -> !drawingState.value }
                     mv.overlays.add(polygon)
                     allPoints.addAll(points)
                 }
@@ -1212,7 +1216,35 @@ private fun BoundariesMap(
                 d.setStrokeColor(0xFFE65100.toInt())
                 d.setStrokeWidth(4f)
                 d.setFillColor(if (draft.size >= 3) 0x33E65100 else 0)
+                // v1.6.23 (mockup v128c, item 5) -- sem o balão branco vazio e
+                // sem "engolir" o toque: tocar dentro do desenho marca ponto.
+                d.setInfoWindow(null)
+                d.setOnClickListener { _, _, _ -> false }
                 mv.overlays.add(d)
+                // Quadradinho em cada canto (como na plataforma); o 1º canto
+                // é maior e laranja -- tocar nele fecha o polígono.
+                val dens = mv.context.resources.displayMetrics.density
+                fun quadrado(ladoDp: Float, fundo: Int, borda: Int): android.graphics.drawable.Drawable {
+                    val lado = (ladoDp * dens).toInt()
+                    return android.graphics.drawable.GradientDrawable().apply {
+                        shape = android.graphics.drawable.GradientDrawable.RECTANGLE
+                        setColor(fundo)
+                        setStroke((2 * dens).toInt(), borda)
+                        setSize(lado, lado)
+                    }
+                }
+                draft.forEachIndexed { i, pt ->
+                    mv.overlays.add(org.osmdroid.views.overlay.Marker(mv).apply {
+                        position = pt
+                        setAnchor(org.osmdroid.views.overlay.Marker.ANCHOR_CENTER, org.osmdroid.views.overlay.Marker.ANCHOR_CENTER)
+                        icon = if (i == 0) quadrado(16f, 0xFFE65100.toInt(), android.graphics.Color.WHITE) else quadrado(11f, android.graphics.Color.WHITE, 0xFF2F6B4A.toInt())
+                        setInfoWindow(null)
+                        setOnMarkerClickListener { _, _ ->
+                            if (i == 0 && draft.size >= 3) onConcluirState.value()
+                            true
+                        }
+                    })
+                }
             }
             // v1.6.5 -- rota: linha tracejada até a fazenda e o ponto "você".
             val de = rota?.de
@@ -1295,7 +1327,7 @@ private fun BoundariesMap(
         }
         if (drawing) {
             Text(
-                "Toque no mapa para marcar os cantos do talhão (mínimo 3).",
+                "Toque no mapa para marcar os cantos do talhão (mínimo 3). Toque no 1º canto (laranja) para fechar.",
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier
                     .align(Alignment.TopStart)

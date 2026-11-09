@@ -1580,21 +1580,20 @@ fun DomainListScreen(
                 // ficarem sempre alinhados -- mesmo critério de
                 // ColumnsPickerButton/exportXlsx (visibleKeys).
                 val tableColumns = cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }
-                if (dateCol != null) {
+                if (dateCol != null && !tableView) {
                     item(key = "ordem-data") {
                         Row(Modifier.fillMaxWidth().padding(bottom = 2.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                            Text(dateCol.label.uppercase(), fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            // v1.6.22 -- só a seta, na cor do texto, sem fundo.
+                            // v1.6.23 (mockup v128b, item 2) -- só o ícone, sem o rótulo.
                             Box(
                                 Modifier.padding(start = 3.dp).size(22.dp).clickable { dataDesc = !dataDesc },
                                 contentAlignment = Alignment.Center,
-                            ) { Text(if (dataDesc) "↓" else "↑", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 14.sp) }
+                            ) { Text(if (dataDesc) "↓" else "↑", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 17.sp) }
                         }
                     }
                 }
                 if (tableView && tableColumns.isNotEmpty()) {
                     item(key = "table-header") {
-                        RecordTableHeader(tableColumns, tableHScroll)
+                        RecordTableHeader(tableColumns, tableHScroll, colunaData = dateCol?.key, dataDesc = dataDesc, onTrocarOrdem = { dataDesc = !dataDesc })
                     }
                 }
                 // Cards unificados por atividade (chaveAtividade da
@@ -1955,13 +1954,15 @@ fun DomainListScreen(
                     Text("Registro não encontrado.")
                 } else {
                     Column(
-                        modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
+                        modifier = Modifier.heightIn(max = 560.dp).verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         // v1.6.1 (mockup v102, item 3) -- mesmo padrão do Editar: seções e
                         // automáticos no lugar deles, com "auto".
                         val ordem = viewedConfig.columns.filter { it.type != "textarea" }
-                        val visiveis = ordem.filter { !it.hideInTable && !viewedRecord[it.key].isNullOrBlank() }
+                        // v1.6.23 (mockup v128c, item 4) -- todos os campos preenchidos (inclusive os
+                        // que não aparecem na tabela), em duas colunas.
+                        val visiveis = ordem.filter { !viewedRecord[it.key].isNullOrBlank() }
                         fun secaoDe(c: com.bragro.mobile.data.model.ColumnConfig): String {
                             if (!c.computed) return secaoDoCampo(c.key, domainId)
                             val i = ordem.indexOf(c)
@@ -1973,20 +1974,58 @@ fun DomainListScreen(
                             val campos = visiveis.filter { secaoDe(it) == id }
                             if (campos.isNotEmpty()) {
                                 Text(titulo.uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
-                                campos.forEach { col ->
-                                    Column(
-                                        Modifier.fillMaxWidth()
-                                            .background(if (col.computed) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f) else androidx.compose.ui.graphics.Color.Transparent, RoundedCornerShape(8.dp))
-                                            .padding(horizontal = if (col.computed) 8.dp else 0.dp, vertical = if (col.computed) 4.dp else 0.dp),
-                                    ) {
-                                        if (col.computed) Text("AUTO", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        RecordFieldLine(col, viewedRecord[col.key]!!, viewedRecord, domainId)
+                                campos.chunked(2).forEach { par ->
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        par.forEach { col ->
+                                            Column(
+                                                Modifier.weight(1f)
+                                                    .background(if (col.computed) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f) else androidx.compose.ui.graphics.Color.Transparent, RoundedCornerShape(8.dp))
+                                                    .padding(horizontal = if (col.computed) 6.dp else 0.dp, vertical = if (col.computed) 3.dp else 0.dp),
+                                            ) {
+                                                if (col.computed) Text("AUTO", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                RecordFieldLine(col, viewedRecord[col.key]!!, viewedRecord, domainId)
+                                            }
+                                        }
+                                        if (par.size == 1) Spacer(Modifier.weight(1f))
                                     }
                                 }
                             }
                         }
                         viewedConfig.columns.filter { it.type == "textarea" && !viewedRecord[it.key].isNullOrBlank() }.forEach { col ->
                             RecordFieldLine(col, viewedRecord[col.key]!!, viewedRecord, domainId)
+                        }
+                        // v1.6.23 (mockup v128c, item 4) -- Safra/Pedidos: todos os itens da
+                        // mesma O.S. / do mesmo lançamento do pedido, com os totais.
+                        if (domainId == "safra" || domainId == "pedidos") {
+                            val dia = { r: Map<String, String?> -> (r["dataEntrega"] ?: "").take(10) }
+                            val irmaos = if (domainId == "safra") records.filter { it["os"] == viewedRecord["os"] && it["local"] == viewedRecord["local"] && !viewedRecord["os"].isNullOrBlank() }
+                            else records.filter { it["noPedido"] == viewedRecord["noPedido"] && it["nf"] == viewedRecord["nf"] && dia(it) == dia(viewedRecord) && !viewedRecord["noPedido"].isNullOrBlank() }
+                            if (irmaos.isNotEmpty()) {
+                                val nf = java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 2 }
+                                val moeda = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("pt", "BR"))
+                                fun d(k: String, r: Map<String, String?>) = r[k]?.toDoubleOrNull()
+                                Text((if (domainId == "safra") "ITENS DA O.S. (${irmaos.size})" else "ITENS DESTE LANÇAMENTO (${irmaos.size})"), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
+                                irmaos.forEach { r ->
+                                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                        Text(r["item"] ?: "—", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                                        val qtd = d(if (domainId == "safra") "qtd" else "qtdPedida", r)
+                                        Text(
+                                            (if (domainId == "safra") d("vazaoDose", r)?.let { "${nf.format(it)}/ha · " } ?: "" else "") +
+                                                (qtd?.let { "${nf.format(it)} ${r["unidade"] ?: ""}" } ?: "—") +
+                                                (if (domainId == "safra") d("realizado", r)?.let { " · ${moeda.format(it)}" } ?: "" else d("qtdEntregue", r)?.let { " · entregue ${nf.format(it)}" } ?: ""),
+                                            style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
+                                        )
+                                    }
+                                }
+                                if (domainId == "safra") {
+                                    val total = irmaos.sumOf { d("realizado", it) ?: 0.0 }
+                                    val ha = d("hectare", viewedRecord)
+                                    Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                                        Text("Realizado: ${moeda.format(total)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                                        Text("Custo/ha: ${if (ha != null && ha > 0) moeda.format(total / ha) else "—"}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
                         }
                         auditInfo[recordBeingViewed]?.let { entry ->
                             Text(

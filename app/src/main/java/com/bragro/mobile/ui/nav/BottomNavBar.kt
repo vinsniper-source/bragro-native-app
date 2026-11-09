@@ -9,6 +9,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.RequestPage
+import androidx.compose.material.icons.outlined.GpsFixed
+import androidx.compose.material.icons.outlined.Domain
+import androidx.compose.material.icons.outlined.PointOfSale
+import androidx.compose.material.icons.outlined.LocalMall
+import androidx.compose.material.icons.outlined.FolderOpen
+import androidx.compose.material.icons.outlined.Dashboard
+import androidx.compose.material.icons.outlined.Sensors
+import androidx.compose.material.icons.outlined.HealthAndSafety
+import androidx.compose.material.icons.outlined.Spa
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Agriculture
 import androidx.compose.material.icons.outlined.Analytics
@@ -405,17 +415,19 @@ private val OWNER_BOTTOM_TABS = listOf(
 // projeto, ver CategoryBreakdownCard.kt). Categoria sem entrada aqui cai no
 // ícone da própria aba (tabIcon), sem quebrar nada.
 private val CATEGORY_ICONS: Map<String, ImageVector> = mapOf(
+    // v1.6.23 (mockup v128c, item 8) -- grupos com ícone próprio, diferente
+    // de qualquer módulo de dentro deles.
     // Safra
-    "Produção" to com.bragro.mobile.ui.domain.IconesVazados.Agriculture,
-    "Sanidade" to com.bragro.mobile.ui.domain.IconesVazados.BugReport,
-    "Monitoramento" to Icons.Outlined.WbSunny,
-    "Painéis" to Icons.Outlined.Assignment,
+    "Produção" to Icons.Outlined.Spa,
+    "Sanidade" to Icons.Outlined.HealthAndSafety,
+    "Monitoramento" to Icons.Outlined.Sensors,
+    "Painéis" to Icons.Outlined.Dashboard,
     // Financeiro
-    "Registros" to Icons.Outlined.Receipt,
+    "Registros" to Icons.Outlined.FolderOpen,
     "Relatórios" to com.bragro.mobile.ui.domain.IconeGraficos,
-    "Compras" to Icons.Outlined.ShoppingCart,
-    "Faturamento" to Icons.Outlined.Payments,
-    "Patrimônio" to Icons.Outlined.Warehouse,
+    "Compras" to Icons.Outlined.LocalMall,
+    "Faturamento" to Icons.Outlined.PointOfSale,
+    "Patrimônio" to Icons.Outlined.Domain,
 )
 
 private data class SistemaLink(val path: String, val label: String, val icon: ImageVector)
@@ -924,9 +936,9 @@ private fun sectorItemIcon(item: SectorTarget, fallback: ImageVector): ImageVect
         // Prescrição/Reconciliação (antes só ícone/FAB dentro de FieldView/
         // Estoque) e NF-e (módulo novo) -- mesmo critério de ícone próprio
         // já usado pelos itens acima.
-        "prescricao" -> Icons.Outlined.Map
-        "reconciliacaoestoque" -> com.bragro.mobile.ui.domain.IconesVazados.Balance
-        "nfe" -> Icons.Outlined.ReceiptLong
+        "prescricao" -> Icons.Outlined.GpsFixed
+        "reconciliacaoestoque" -> com.bragro.mobile.ui.domain.IconeAjustarFisicoFiscal
+        "nfe" -> Icons.Outlined.RequestPage
         // Pivôs de Irrigação (Task #904-909) -- mesmo critério acima.
         "pivos" -> Icons.Outlined.WaterDrop
         "silos" -> com.bragro.mobile.ui.domain.IconesVazados.Storage

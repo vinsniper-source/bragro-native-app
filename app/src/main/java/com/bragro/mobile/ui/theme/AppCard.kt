@@ -275,14 +275,18 @@ fun SearchableDropdownField(
     val optionLabels = remember(opts) { opts.associate { it.first to it.second } }
     var expanded by remember { mutableStateOf(false) }
     var query by remember(value, opts) { mutableStateOf(optionLabels[value] ?: com.bragro.mobile.ui.i18n.Idioma.tr(value)) }
-    val filtered = remember(query, opts) {
+    // v1.6.23 (mockup v128c, item 6) -- ao abrir, mostra TODAS as opções;
+    // só filtra depois que a pessoa digita (antes filtrava pelo texto já
+    // escolhido e sobrava uma opção só).
+    var digitou by remember(value, opts) { mutableStateOf(false) }
+    val filtered = remember(query, opts, digitou) {
         val q = query.trim()
-        if (q.isEmpty()) opts else opts.filter { it.second.contains(q, ignoreCase = true) }
+        if (q.isEmpty() || !digitou) opts else opts.filter { it.second.contains(q, ignoreCase = true) }
     }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = modifier) {
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it; if (it) digitou = false }, modifier = modifier) {
         OutlinedTextField(
             value = query,
-            onValueChange = { typed -> query = typed; expanded = true },
+            onValueChange = { typed -> query = typed; digitou = true; expanded = true },
             label = { Text(label, style = if (dense) MaterialTheme.typography.labelSmall else LocalTextStyle.current, maxLines = 1, overflow = TextOverflow.Ellipsis) },
             placeholder = placeholder?.let { p -> { Text(p) } },
             textStyle = if (dense) MaterialTheme.typography.bodySmall else LocalTextStyle.current,

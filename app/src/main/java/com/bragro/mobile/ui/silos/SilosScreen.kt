@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.silos
 
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.outlined.Warehouse
 import androidx.compose.material.icons.outlined.Refresh
@@ -249,7 +251,7 @@ class SilosViewModel(app: Application) : AndroidViewModel(app) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
+fun SilosScreen(onBack: () -> Unit, onAbrirRomaneio: (String) -> Unit = {}, viewModel: SilosViewModel = viewModel()) {
     LaunchedEffect(Unit) { viewModel.load() }
     val silosTodos by viewModel.silos
     val farmSel = com.bragro.mobile.ui.domain.FarmSelection.selected.value
@@ -446,6 +448,7 @@ fun SilosScreen(onBack: () -> Unit, viewModel: SilosViewModel = viewModel()) {
                         onArchive = { viewModel.arquivar(silo.id) },
                         onSalvarRapido = { pct -> viewModel.leituraRapida(silo, pct) },
                         busy = busy,
+                        onAbrirRomaneio = onAbrirRomaneio,
                     )
                 }
             }
@@ -536,8 +539,9 @@ private fun HistoricoLeiturasDialog(siloNome: String, leituras: List<SiloLeitura
 
 @Composable
 private fun AlertaBanner(texto: String, critico: Boolean) {
-    val bg = if (critico) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.tertiaryContainer
-    val fg = if (critico) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onTertiaryContainer
+    // v1.6.23 (mockup v128) -- sem vermelho/rosa: aviso em laranja.
+    val bg = com.bragro.mobile.ui.domain.corAtencao().copy(alpha = if (critico) 0.24f else 0.14f)
+    val fg = MaterialTheme.colorScheme.onSurface
     Text(
         texto,
         style = MaterialTheme.typography.bodySmall,
@@ -560,6 +564,7 @@ private fun SiloCard(
     onArchive: () -> Unit,
     onSalvarRapido: (Double) -> Unit,
     busy: Boolean,
+    onAbrirRomaneio: (String) -> Unit = {},
 ) {
     val base = (silo.estimadoPct ?: silo.nivelAtualPct ?: 0.0).toInt().toFloat()
     var pct by remember(base) { mutableStateOf(base) }
@@ -622,14 +627,29 @@ private fun SiloCard(
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.padding(top = 6.dp),
                 )
+                // v1.6.23 (mockup v128c, item 1) -- colunas alinhadas; tocar abre o romaneio.
+                val nf1 = java.text.NumberFormat.getNumberInstance(Locale("pt", "BR")).apply { minimumFractionDigits = 1; maximumFractionDigits = 1 }
+                Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
+                    listOf("Romaneio" to 1.1f, "Tipo" to 1f, "Toneladas" to 1.2f, "Data" to 0.9f).forEachIndexed { i, (t, w) ->
+                        Text(t, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = if (i >= 2) androidx.compose.ui.text.style.TextAlign.End else null, modifier = Modifier.weight(w))
+                    }
+                    Spacer(Modifier.width(16.dp))
+                }
                 silo.movimentos.forEach { m ->
-                    Text(
-                        // v1.6.2 -- romaneio com Silo de Origem = saída (negativo).
-                        "Romaneio ${m.noRomaneio} · ${if (m.toneladas < 0) "saída " else "entrada +"}${"%.1f".format(Locale("pt", "BR"), m.toneladas)} t · ${m.data.take(10)}" +
-                            (if (m.editadoPor != null && m.editadoEm != null) " · por ${m.editadoPor} em ${m.editadoEm.take(16).replace('T', ' ')}" else ""),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    val estilo = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum")
+                    Row(Modifier.fillMaxWidth().clickable { onAbrirRomaneio(m.romaneioId) }.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(m.noRomaneio, style = estilo, modifier = Modifier.weight(1.1f))
+                        Text(if (m.toneladas < 0) "saída" else "entrada", style = estilo, modifier = Modifier.weight(1f))
+                        Text(
+                            (if (m.toneladas < 0) "−" else "+") + nf1.format(kotlin.math.abs(m.toneladas)) + " t",
+                            style = estilo,
+                            color = if (m.toneladas < 0) com.bragro.mobile.ui.domain.corAtencao() else MaterialTheme.colorScheme.onSurface,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                            modifier = Modifier.weight(1.2f),
+                        )
+                        Text(m.data.take(10).let { d -> if (d.length == 10) "${d.substring(8, 10)}/${d.substring(5, 7)}" else d }, style = estilo, textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.weight(0.9f))
+                        Text("›", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.width(16.dp))
+                    }
                 }
             }
             Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {

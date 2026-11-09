@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.operacoes
 
+import androidx.compose.material.icons.outlined.Timeline
 import androidx.compose.material.icons.outlined.Agriculture
 import androidx.compose.material.icons.outlined.ViewList
 import androidx.compose.ui.unit.sp
@@ -434,9 +435,11 @@ private fun OperacaoCard(
 
                 // Um card por atividade, um abaixo do outro
                 cards.forEach { (a, lista) ->
-                    val aberto = cardsFechados[a] != true
+                    // v1.6.23 (mockup v128b, item 4) -- blocos começam fechados.
+                    val aberto = cardsFechados[a] == false
                     val colheita = lista.first().tipo == "colheita"
-                    val area = lista.groupBy { it.talhao ?: it.id }.values.sumOf { g -> g.maxOf { it.hectare ?: 0.0 } }
+                    // v1.6.23 -- sem talhão, cada O.S. conta uma vez (não um por item).
+                    val area = lista.groupBy { it.talhao ?: it.os?.let { o -> "os:$o" } ?: it.id }.values.sumOf { g -> g.maxOf { it.hectare ?: 0.0 } }
                     val custo = lista.sumOf { it.realizado }
                     val orcado = lista.sumOf { it.planejado }
                     val desvio = if (orcado > 0) (custo - orcado) / orcado * 100 else 0.0
@@ -462,7 +465,6 @@ private fun OperacaoCard(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.weight(1f),
                                 )
-                                com.bragro.mobile.ui.domain.CantoL(aberto)
                             }
                             Text(tituloAtividade(a), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                             Text(
@@ -513,24 +515,38 @@ private fun OperacaoCard(
                             )
                         }
                         if (aberto) {
-                            lista.forEach { ev ->
+                            lista.forEachIndexed { idxEv, ev ->
+                                // v1.6.23 (mockup v128b) -- Safra: uma linha por O.S. (período,
+                                // área e total) e embaixo os itens dela.
+                                val novaOs = ev.tipo != "colheita" && (idxEv == 0 || lista[idxEv - 1].os != ev.os)
+                                if (novaOs) {
+                                    val daOs = lista.filter { it.os == ev.os && it.tipo != "colheita" }
+                                    androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                    Row(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            "O.S. ${ev.os ?: "—"} · ${fmtDataCurta(ev.data)} · ${ev.hectare?.let { "${fmtNum0(it)} ha" } ?: "—"}",
+                                            style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f),
+                                        )
+                                        Text(fmtMoney(daOs.sumOf { it.realizado }), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                    }
+                                }
                                 val osAberta = osAbertas[ev.id] == true
                                 val revisado = ev.id in revisados
                                 val pendente = ev.id in pendingIds && !revisado
                                 val dominio = if (ev.tipo == "colheita") "colheita" else "safra"
-                                androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                                com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().clickable { osAbertas[ev.id] = !osAberta }.padding(horizontal = 10.dp, vertical = 8.dp)) {
+                                if (ev.tipo == "colheita") androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().clickable { osAbertas[ev.id] = !osAberta }.padding(horizontal = 10.dp, vertical = if (ev.tipo == "colheita") 8.dp else 4.dp)) {
                                     Row(verticalAlignment = Alignment.Top) {
-                                        com.bragro.mobile.ui.domain.CantoL(osAberta)
                                         Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
                                             Text(
-                                                (if (ev.tipo == "colheita") "Colheita" else "O.S. ${ev.os ?: "—"}") + " · " + (ev.talhao?.let { "Talhão $it" } ?: "Sem talhão"),
+                                                if (ev.tipo == "colheita") "Colheita · " + (ev.talhao?.let { "Talhão $it" } ?: "Sem talhão")
+                                                else "${ev.item ?: "—"}${ev.qtd?.let { q -> " · ${fmtNum1(q)} ${ev.unidade ?: ""}" } ?: ""}",
                                                 style = MaterialTheme.typography.labelLarge,
                                                 fontWeight = FontWeight.Bold,
                                             )
+                                            if (ev.tipo == "colheita") {
                                             Text(
-                                                "${fmtDataCurta(ev.data)}${ev.dataFim?.let { if (it.take(10) != ev.data.take(10)) " a ${fmtDataCurta(it)}" else "" } ?: ""} · ${ev.hectare?.let { "${fmtNum0(it)} ha" } ?: "—"}" +
-                                                    if (ev.tipo != "colheita") " · ${fmtMoney(ev.realizado)}" else "",
+                                                "${fmtDataCurta(ev.data)}${ev.dataFim?.let { if (it.take(10) != ev.data.take(10)) " a ${fmtDataCurta(it)}" else "" } ?: ""} · ${ev.hectare?.let { "${fmtNum0(it)} ha" } ?: "—"}",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             )
@@ -540,9 +556,11 @@ private fun OperacaoCard(
                                                 fontWeight = FontWeight.Bold,
                                                 maxLines = 2,
                                             )
+                                            }
                                         }
                                         Column(horizontalAlignment = Alignment.End) {
-                                            com.bragro.mobile.ui.domain.StatusBadge(ev.situacao)
+                                            if (ev.tipo != "colheita") Text(fmtMoney(ev.realizado), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            else com.bragro.mobile.ui.domain.StatusBadge(ev.situacao)
                                             if (revisado) Text("✓ Revisada", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             else if (pendente) Text("Pendente", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
@@ -758,7 +776,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.domain.IconesVazados.Agriculture, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
+                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Timeline, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))

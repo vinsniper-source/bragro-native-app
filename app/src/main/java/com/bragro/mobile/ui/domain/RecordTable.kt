@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -69,7 +70,7 @@ private fun alinhamentoColuna(col: ColumnConfig): Alignment = when {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun RecordTableHeader(columns: List<ColumnConfig>, hScroll: ScrollState, showActions: Boolean = true) {
+fun RecordTableHeader(columns: List<ColumnConfig>, hScroll: ScrollState, showActions: Boolean = true, colunaData: String? = null, dataDesc: Boolean = false, onTrocarOrdem: (() -> Unit)? = null) {
     // Borda mais escura que o PRÓPRIO fundo da célula (mesmo critério de
     // ModuleIconRow.kt/darkerBorderColor) -- achado de auditoria ("as linhas
     // das tabelas estão desconfiguradas"): outlineVariant ficava quase
@@ -94,15 +95,25 @@ fun RecordTableHeader(columns: List<ColumnConfig>, hScroll: ScrollState, showAct
                     .padding(horizontal = 8.dp, vertical = 10.dp),
                 contentAlignment = alinhamentoColuna(col),
             ) {
+                androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                 Text(
                     col.label,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
-                                        overflow = TextOverflow.Clip,
-                    
+                    overflow = TextOverflow.Clip,
                 )
+                // v1.6.23 (mockup v128b, item 2) -- setinha da ordem ao lado do título Data.
+                if (col.key == colunaData && onTrocarOrdem != null) {
+                    Text(
+                        if (dataDesc) " ↓" else " ↑",
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.clickable { onTrocarOrdem() },
+                    )
+                }
+                }
             }
         }
         // Coluna de ações fica no cabeçalho também, pra reservar o mesmo

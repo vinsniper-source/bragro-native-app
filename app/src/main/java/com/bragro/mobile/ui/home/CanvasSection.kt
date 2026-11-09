@@ -33,6 +33,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import com.bragro.mobile.ui.i18n.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -491,12 +493,19 @@ fun CanvasCirclesRow(
                     }
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    // v1.6.23 (mockup v128c, item 7) -- nome sempre numa linha:
+                    // a fonte diminui até caber, sem cortar.
+                    var escalaNome by androidx.compose.runtime.remember(f.nome) { androidx.compose.runtime.mutableStateOf(1f) }
+                    val estiloNome = MaterialTheme.typography.labelMedium
                     Text(
                         f.nome,
-                        style = MaterialTheme.typography.labelMedium,
+                        style = estiloNome.copy(fontSize = estiloNome.fontSize * escalaNome),
                         fontWeight = FontWeight.Bold,
                         color = corTextoCanvas,
                         textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        softWrap = false,
+                        onTextLayout = { r -> if (r.didOverflowWidth && escalaNome > 0.6f) escalaNome -= 0.06f },
                     )
                     Text(
                         "${NumberFormat.getNumberInstance(Locale("pt", "BR")).format(areaExibida)} ha",
@@ -684,7 +693,7 @@ private data class Sugestao(val texto: String, val domainId: String?, val label:
 private val ESTAGIO_SUGESTAO: Map<String, Sugestao> = mapOf(
     "plantio" to Sugestao("Registre cada operação (data, hectare, insumo) conforme for plantando.", "safra", "Ir para Safra", com.bragro.mobile.ui.domain.IconesVazados.Grass),
     "vegetativo" to Sugestao("Bom momento para acompanhar pragas e manter os receituários em dia.", "pragas", "Ir para Pragas", com.bragro.mobile.ui.domain.IconesVazados.BugReport),
-    "colheita" to Sugestao("Registre romaneios e a produtividade realizada.", "colheita", "Ir para Colheita", com.bragro.mobile.ui.domain.IconesVazados.Agriculture),
+    "colheita" to Sugestao("Registre romaneios e a produtividade realizada.", "colheita", "Ir para Colheita", com.bragro.mobile.ui.domain.IconesVazados.Trigo),
 )
 
 /** R$ 00.000,00 -- v17. */

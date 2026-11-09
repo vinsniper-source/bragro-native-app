@@ -430,7 +430,9 @@ fun AbasEncaixadas(titulos: List<String>, selecionada: Int, avisos: List<Int> = 
                         // v1.6.16 (mockup v119) -- abas em maiúsculo e negrito.
                         Idioma.tr(t).uppercase(), fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                         fontWeight = FontWeight.ExtraBold,
-                        color = when { aviso -> amarelo; ativa -> cs.onSurface.copy(alpha = 0.38f); else -> cs.onSurface },
+                        // v1.6.23 (mockup v128b, item 3) -- amarelo só na barra; a letra
+                        // segue a regra normal (selecionada apagada).
+                        color = if (ativa) cs.onSurface.copy(alpha = 0.38f) else cs.onSurface,
                     )
                 }
             }
@@ -440,9 +442,10 @@ fun AbasEncaixadas(titulos: List<String>, selecionada: Int, avisos: List<Int> = 
                 if (i > 0) Spacer(Modifier.width(1.dp))
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     val ativa = i == selecionada
+                    val avisoBarra = (avisos.getOrNull(i) ?: 0) > 0
                     Box(
-                        Modifier.fillMaxWidth(0.76f).height(if (ativa) 2.dp else 1.dp)
-                            .background(if (ativa) com.bragro.mobile.ui.theme.VerdeBarra else cs.outlineVariant),
+                        Modifier.fillMaxWidth(0.76f).height(if (ativa || avisoBarra) 2.dp else 1.dp)
+                            .background(if (avisoBarra) amarelo else if (ativa) com.bragro.mobile.ui.theme.VerdeBarra else cs.outlineVariant),
                     )
                 }
             }
@@ -788,14 +791,7 @@ fun CartaoGrupo(
             }
         }
     }
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-    Row(
-        Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)).clickable { onToggle() }.padding(horizontal = 12.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(if (aberto) "Recolher" else "$qtd ${if (qtd == 1) "lançamento" else "lançamentos"} ▸ abrir", fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-        CantoL(aberto, onClick = onToggle)
-    }
+    // v1.6.23 (mockup v128b, itens 4/6/10) -- sem rodapé: tocar no bloco abre e fecha.
     if (soPendentes) {
         Row(
             Modifier.fillMaxWidth().background(corAtencao().copy(alpha = 0.10f)).padding(horizontal = 12.dp, vertical = 6.dp),

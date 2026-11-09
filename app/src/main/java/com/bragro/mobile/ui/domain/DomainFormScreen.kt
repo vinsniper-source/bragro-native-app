@@ -1326,9 +1326,11 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                 ?: options?.map { it.value to it.label }
                 ?: emptyList()
             var query by remember(value) { mutableStateOf(optionLabels[value] ?: value) }
-            val filtered = remember(query, allOptions) {
+            // v1.6.23 -- ao abrir mostra tudo; filtra só depois de digitar.
+            var digitou by remember(value) { mutableStateOf(false) }
+            val filtered = remember(query, allOptions, digitou) {
                 val q = query.trim()
-                if (q.isEmpty()) allOptions else allOptions.filter { it.first == OPCAO_TODAS || it.second.contains(q, ignoreCase = true) }
+                if (q.isEmpty() || !digitou) allOptions else allOptions.filter { it.first == OPCAO_TODAS || it.second.contains(q, ignoreCase = true) }
             }
             // "+Criar" -- paridade nativa do pedido do usuário ("em todas as
             // listas suspensas da plataforma coloque a opção criar na
@@ -1345,10 +1347,10 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                 trimmedQuery.length >= 2 &&
                 allOptions.none { it.second.equals(trimmedQuery, ignoreCase = true) }
             var creating by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+            ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it; if (it) digitou = false }) {
                 OutlinedTextField(
                     value = query,
-                    onValueChange = { typed -> query = typed; expanded = true },
+                    onValueChange = { typed -> query = typed; digitou = true; expanded = true },
                     label = { Text(fieldLabel(col)) },
                     // autoCorrect = false -- pedido do usuário ("digito letras
                     // pra frente mas não consigo apagar com o cursor"): em

@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.dre
 
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.outlined.Assessment
 import androidx.compose.material.icons.automirrored.outlined.ViewList
 import android.app.Application
@@ -284,7 +285,18 @@ private fun DreTreeNode(item: DreRamoItemData, depth: Int) {
                 )
             }
         }
-        Text(formatMoneyBrl(item.valor), style = MaterialTheme.typography.bodySmall)
+        // v1.6.23 (mockup v128c, item 2) -- "R$" numa coluna e o número
+        // encostado à direita com algarismos de largura igual: vírgulas e
+        // últimos dígitos ficam um embaixo do outro.
+        val valorTxt = formatMoneyBrl(item.valor).replace("R$", "").replace('\u00A0', ' ').trim()
+        Text("R$", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 6.dp, end = 4.dp))
+        Text(
+            valorTxt,
+            style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
+            textAlign = androidx.compose.ui.text.style.TextAlign.End,
+            maxLines = 1,
+            modifier = Modifier.width(androidx.compose.ui.unit.Dp(96f)),
+        )
     }
     item.filhos?.forEach { filho -> DreTreeNode(filho, depth + 1) }
 }

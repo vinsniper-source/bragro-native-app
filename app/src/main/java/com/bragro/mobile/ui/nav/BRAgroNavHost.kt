@@ -378,7 +378,7 @@ fun BRAgroNavHost() {
             PivosScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.SILOS) {
-            SilosScreen(onBack = { navController.popBackStack() })
+            SilosScreen(onBack = { navController.popBackStack() }, onAbrirRomaneio = { id -> navController.navigate(Routes.domainFormEdit("romaneios", id)) })
         }
         composable(Routes.ORCAMENTO_LISTA) {
             OrcamentoListScreen(

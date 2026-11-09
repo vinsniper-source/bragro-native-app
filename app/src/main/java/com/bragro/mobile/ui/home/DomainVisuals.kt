@@ -108,7 +108,7 @@ private val DOMAIN_ICON: Map<String, ImageVector> = mapOf(
     "nfse" to Icons.Outlined.ReceiptLong,
     "safra" to Icons.Outlined.Eco,
     "planejamentosafra" to Icons.Outlined.Assignment,
-    "colheita" to com.bragro.mobile.ui.domain.IconesVazados.Agriculture,
+    "colheita" to com.bragro.mobile.ui.domain.IconesVazados.Trigo, // v1.6.23 -- trigo (o trator é da aba Safra)
     "romaneios" to Icons.Outlined.LocalShipping,
     "receituarios" to Icons.Outlined.Science,
     "pragas" to com.bragro.mobile.ui.domain.IconesVazados.BugReport,
