@@ -554,7 +554,7 @@ fun DomainListScreen(
         val kData = dateCol?.key
         if (kData != null) {
             val cmp = compareBy<Map<String, String?>>({ it[kData].orEmpty().take(10) }, { it["criadoEm"].orEmpty() })
-            result = if (dataDesc) result.sortedWith(cmp.reversed()) else result.sortedWith(cmp)
+            result = if (dataDesc && domainId !in SEM_SETA_DATA) result.sortedWith(cmp.reversed()) else result.sortedWith(cmp)
         }
         result
     }
@@ -1580,7 +1580,8 @@ fun DomainListScreen(
                 // ficarem sempre alinhados -- mesmo critério de
                 // ColumnsPickerButton/exportXlsx (visibleKeys).
                 val tableColumns = cfg.columns.filter { !it.hideInTable && visibleKeys.contains(it.key) }
-                if (dateCol != null && !tableView) {
+                // v1.6.27 (mockup v131) -- Atividades e Pedidos sem setinha (mexia na ordem dos blocos).
+                if (dateCol != null && !tableView && domainId !in SEM_SETA_DATA) {
                     item(key = "ordem-data") {
                         Row(Modifier.fillMaxWidth().padding(bottom = 2.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                             // v1.6.23 (mockup v128b, item 2) -- só o ícone, sem o rótulo.
@@ -1599,7 +1600,7 @@ fun DomainListScreen(
                 // Cards unificados por atividade (chaveAtividade da
                 // plataforma) -- só na vista Bloco; Tabela segue linha a linha.
                 // v1.6.19 (mockup v123) -- Pedidos também em bloco (um por pedido).
-                val agrupar = !tableView && domainId != "financeiro"
+                val agrupar = !tableView // v1.6.27 (mockup v131b) -- Financeiro também agrupa (por categoria)
                 val chaves = if (agrupar) filteredRecords.map { chaveAtividade(domainId, it) } else emptyList()
                 val listaCards = if (agrupar && chaves.any { it != null }) {
                     val ordem = LinkedHashMap<String, MutableList<Int>>()
@@ -1628,14 +1629,12 @@ fun DomainListScreen(
                         if (c != null && q >= 1 && (i == 0 || chavesCards[i - 1] != c)) {
                             add(Pair(c, q))
                             // v1.6.18 (mockup v122) -- Safra aberta: uma entrada por O.S.
-                            if (domainId == "safra" && gruposAbertos[c] == true && gruposSoPend[c] != true) {
-                                add(FasesDaFazenda(c, agruparFasesSafra(listaCards.filterIndexed { j, _ -> chavesFull[j] == c })))
-                            }
+                            // v1.6.27 (mockup v131) -- fases da Safra agora vão DENTRO do bloco (CartaoGrupo.conteudo).
                             if (domainId == "pedidos" && gruposAbertos[c] == true && gruposSoPend[c] != true) {
                                 add(resumoPedido(c, listaCards.filterIndexed { j, _ -> chavesFull[j] == c }))
                             }
                         }
-                        val osAgrupa = (domainId == "safra" || domainId == "pedidos") && c != null && gruposSoPend[c] != true
+                        val osAgrupa = (domainId == "safra" || domainId == "pedidos" || domainId == "financeiro") && c != null && gruposSoPend[c] != true
                         if (!osAgrupa && (c == null || (gruposAbertos[c] == true && (gruposSoPend[c] != true || statusPendente(listaVisivel[i]["status"]))))) add(i)
                     }
                 }
@@ -1698,7 +1697,7 @@ fun DomainListScreen(
                                 if (ligar) gruposAbertos[chaveGrupo] = true
                             },
                             // v1.6.4 (mockup v105, item 11) -- fechado: só os 3 números principais.
-                            numeros = if (domainId == "colheita") numerosGrupoColheita(doGrupo).let { if (abertoGrupo) it else it.take(3) } else emptyList(),
+                            numeros = if (domainId == "colheita") numerosGrupoColheita(doGrupo).let { if (abertoGrupo) it else it.take(3) } else if (domainId == "financeiro") numerosGrupoFinanceiro(doGrupo) else emptyList(),
                             selo = seloGrupo(domainId, doGrupo),
                             qtdOs = null,
                             rotuloQtd = if (domainId == "safra") run {
@@ -1706,9 +1705,23 @@ fun DomainListScreen(
                                 val nO = doGrupo.map { "${it["os"]?.trim().orEmpty()}|${it["local"].orEmpty()}" }.distinct().size
                                 "$nF ${if (nF == 1) "fase" else "fases"} · $nO O.S. · ${doGrupo.size} ${if (doGrupo.size == 1) "item" else "itens"}"
                             } else if (domainId == "pedidos") resumoPedido(chaveGrupo, doGrupo).let { r -> "${r.itens.size} itens · ${r.fases.size} ${if (r.fases.size == 1) "fase" else "fases"} · ${r.remessas} ${if (r.remessas == 1) "entrega" else "entregas"}" } else null,
+                            conteudo = when {
+                                domainId == "safra" && gruposSoPend[chaveGrupo] != true -> { ->
+                                    CartaoFasesSafra(
+                                        dados = FasesDaFazenda(chaveGrupo, agruparFasesSafra(doGrupo)),
+                                        onEdit = { onEditRecord(it) },
+                                        onDelete = { os -> osPendingDelete = os },
+                                        onVer = { recordBeingViewed = it },
+                                    )
+                                }
+                                domainId == "financeiro" -> { ->
+                                    LinhasParcelasFinanceiro(doGrupo, onVer = { recordBeingViewed = it }, onEdit = { onEditRecord(it) })
+                                }
+                                else -> null
+                            },
                         )
                         // v1.6.24 (mockup v129, item 1) -- setinha da ordem também no topo do bloco aberto.
-                        if (abertoGrupo && dateCol != null) {
+                        if (abertoGrupo && dateCol != null && domainId !in SEM_SETA_DATA && conteudoNulo(domainId)) {
                             Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.End) {
                                 Text(
                                     if (dataDesc) "↓" else "↑",
@@ -1781,10 +1794,11 @@ fun DomainListScreen(
                     // grupo são pulados (já cobertos pelo card do 1º índice).
                     // Vista Tabela continua linha-a-linha, sem agrupar (não
                     // mexida acima).
-                    if (domainId == "financeiro" && idx in financeiroHiddenIndexes) {
+                    val fIdx = if (domainId == "financeiro") filteredRecords.indexOf(listaVisivel[idx]) else idx
+                    if (domainId == "financeiro" && fIdx in financeiroHiddenIndexes) {
                         return@itemsIndexed
                     }
-                    val financeiroGroupIndexes = if (domainId == "financeiro") financeiroGroupByStartIndex[idx] else null
+                    val financeiroGroupIndexes = if (domainId == "financeiro") financeiroGroupByStartIndex[fIdx] else null
                     if (financeiroGroupIndexes != null) {
                         FinanceiroNfeGroupCard(
                             groupRecords = financeiroGroupIndexes.map { filteredRecords[it] },
@@ -2889,3 +2903,7 @@ private fun PrioridadeCotacaoDialog(onDismiss: () -> Unit, onSalvo: () -> Unit) 
         confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar") } },
     )
 }
+
+/** v1.6.27 (mockup v131) -- blocos por fazenda/fase: sem setinha de data. */
+val SEM_SETA_DATA = setOf("safra", "pedidos")
+private fun conteudoNulo(domainId: String) = domainId != "financeiro"

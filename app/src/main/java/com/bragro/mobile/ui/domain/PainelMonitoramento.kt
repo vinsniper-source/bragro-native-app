@@ -665,6 +665,8 @@ fun chaveAtividade(domainId: String, r: Map<String, String?>): String? {
         "receituarios" -> k(r["produto"])
         // v1.6.19 (mockup v123) -- um bloco por pedido.
         "pedidos" -> k(r["noPedido"])
+        // v1.6.27 (mockup v131b) -- um bloco por categoria, parcelas dentro (igual à plataforma).
+        "financeiro" -> if (r["origem"] == "nfe") null else k(r["categoria"])
         else -> null
     }
 }
@@ -720,6 +722,9 @@ fun CartaoGrupo(
     qtdOs: Int? = null,
     // v1.6.19 (mockup v123) -- texto pronto no lugar de "N lançamentos" (Pedidos).
     rotuloQtd: String? = null,
+    // v1.6.27 (mockup v131/v131b) -- conteúdo do bloco aberto DENTRO do mesmo
+    // cartão (fases da Safra, parcelas do Financeiro), como na plataforma.
+    conteudo: (@Composable () -> Unit)? = null,
 ) {
     val primary = MaterialTheme.colorScheme.primary
     com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { onToggle() }) {
@@ -802,6 +807,10 @@ fun CartaoGrupo(
             Text("Mostrando só os $pendentes pendente${if (pendentes > 1) "s" else ""}", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = corAtencao())
             Text("Ver todos", fontSize = 11.5.sp, color = primary, modifier = Modifier.clickable { onPendentes?.invoke() })
         }
+    }
+    if (aberto && conteudo != null) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        conteudo()
     }
     }
     }
@@ -1262,25 +1271,30 @@ fun agruparFasesSafra(rows: List<Map<String, String?>>): List<FaseSafra> =
 
 @Composable
 fun CartaoFasesSafra(dados: FasesDaFazenda, onEdit: (String) -> Unit, onDelete: (OsDaOperacao) -> Unit, onVer: (String) -> Unit) {
+    // v1.6.27 (mockup v131) -- fases como LINHAS dentro do bloco da fazenda
+    // (não mais cartões soltos); tocou na fase, abre as O.S. dela.
     var aberta by androidx.compose.runtime.saveable.rememberSaveable(dados.chave) { mutableStateOf<String?>(null) }
-    val muted = MaterialTheme.colorScheme.onSurfaceVariant
     Column(Modifier.fillMaxWidth()) {
-        dados.fases.forEach { f ->
+        dados.fases.forEachIndexed { i, f ->
             val estaAberta = aberta == f.fase
-            com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(start = 10.dp, top = 2.dp, bottom = 2.dp).clickable { aberta = if (estaAberta) null else f.fase }) {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        androidx.compose.ui.text.buildAnnotatedString {
-                            pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold)); append(f.titulo); pop()
-                            val oss = if (f.os.size == 1) f.os[0].titulo.substringBefore(" · ") else "${f.os.size} O.S."
-                            append(" · $oss${if (f.periodo.isNotBlank()) " · ${f.periodo}" else ""} · ${fmtMoeda(f.total)}")
-                        },
-                        fontSize = 12.5.sp, modifier = Modifier.weight(1f),
-                    )
-                    // v1.6.24 -- sem setinha.
-                }
+            if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Row(
+                Modifier.fillMaxWidth()
+                    .background(if (estaAberta) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else androidx.compose.ui.graphics.Color.Transparent)
+                    .clickable { aberta = if (estaAberta) null else f.fase }
+                    .padding(horizontal = 12.dp, vertical = 9.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    androidx.compose.ui.text.buildAnnotatedString {
+                        pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold)); append(f.titulo); pop()
+                        val oss = if (f.os.size == 1) f.os[0].titulo.substringBefore(" · ") else "${f.os.size} O.S."
+                        append(" · $oss${if (f.periodo.isNotBlank()) " · ${f.periodo}" else ""} · ${fmtMoeda(f.total)}")
+                    },
+                    fontSize = 12.5.sp, modifier = Modifier.weight(1f),
+                )
             }
-            if (estaAberta) Column(Modifier.padding(start = 12.dp)) {
+            if (estaAberta) Column(Modifier.padding(start = 12.dp, end = 6.dp, bottom = 4.dp)) {
                 f.os.forEach { os ->
                     CartaoOs(os = os, onEdit = { os.itens.firstOrNull()?.get("id")?.let(onEdit) }, onDelete = { onDelete(os) }, onVerItem = { r -> r["id"]?.let(onVer) })
                 }
@@ -1297,3 +1311,47 @@ fun kgCurtoApp(v: String): String {
     if (kotlin.math.abs(kg) < 10000) return v
     return "%,.1f t".format(java.util.Locale("pt", "BR"), kg / 1000)
 }
+
+/** v1.6.27 (mockup v131b) -- números do bloco do Financeiro (igual à plataforma). */
+fun numerosGrupoFinanceiro(rows: List<Map<String, String?>>): List<Pair<String, String>> {
+    val receita = rows.firstOrNull()?.get("operacao").orEmpty().uppercase() in RECEITA_OPS
+    fun quitado(r: Map<String, String?>) = !r["dataPgto"].isNullOrBlank() || !r["dataReceb"].isNullOrBlank()
+    val hoje = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.US).format(java.util.Date())
+    val prox = rows.filter { !quitado(it) }.mapNotNull { it["vcto"]?.take(10)?.takeIf { d -> d.length == 10 && d >= hoje } }.minOrNull()
+    val entidades = rows.mapNotNull { it["entidade"]?.trim()?.takeIf { e -> e.isNotEmpty() } }.distinct().size
+    return listOf(
+        (if (receita) "Recebidos" else "Pagos") to "${rows.count(::quitado)}/${rows.size}",
+        "Próx. vencimento" to (prox?.let { "${it.substring(8, 10)}/${it.substring(5, 7)}/${it.substring(0, 4)}" } ?: "—"),
+        "Entidades" to (if (entidades > 0) entidades.toString() else "—"),
+    )
+}
+
+/** v1.6.27 (mockup v131b) -- linhas do bloco do Financeiro: uma por parcela,
+ *  com o valor DELA (líquido), o vencimento e o lápis de editar. */
+@Composable
+fun LinhasParcelasFinanceiro(rows: List<Map<String, String?>>, onVer: (String) -> Unit, onEdit: (String) -> Unit) {
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    Column(Modifier.fillMaxWidth()) {
+        rows.sortedWith(compareBy({ it["vcto"].orEmpty() }, { it["data"].orEmpty() })).forEachIndexed { i, r ->
+            if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+            Row(
+                Modifier.fillMaxWidth().clickable { r["id"]?.let(onVer) }.padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    val parcela = r["parcelaS"]?.takeIf { it.isNotBlank() && it != "1/1" }?.let { " · parcela $it" } ?: ""
+                    Text(listOfNotNull(r["entidade"]?.takeIf { it.isNotBlank() }, r["subcategoria"]?.takeIf { it.isNotBlank() }?.lowercase()?.replaceFirstChar { it.uppercase() }).joinToString(" · ") + parcela, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
+                    val pago = r["dataPgto"] ?: r["dataReceb"]
+                    val d = (pago ?: r["vcto"])?.take(10)?.let { if (it.length == 10) "${it.substring(8, 10)}/${it.substring(5, 7)}/${it.substring(0, 4)}" else it }
+                    Text(listOfNotNull(r["local"]?.takeIf { it.isNotBlank() }, d?.let { if (pago != null) "pago $it" else "vence $it" }).joinToString(" · "), fontSize = 11.5.sp, color = muted)
+                }
+                val v = painelNum(r["liquido"]?.takeIf { it.isNotBlank() } ?: r["bruto"])
+                Text(fmtMoeda(v), fontSize = 12.5.sp, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"))
+                androidx.compose.material3.IconButton(onClick = { r["id"]?.let(onEdit) }, modifier = Modifier.size(34.dp)) {
+                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Edit, contentDescription = "Editar", modifier = Modifier.size(18.dp))
+                }
+            }
+        }
+    }
+}
+
