@@ -753,6 +753,7 @@ fun CartaoGrupo(
                     fontWeight = FontWeight.Bold,
                     color = cor,
                     maxLines = 1,
+                    softWrap = false, // v1.6.24 -- selo sempre numa linha
                     modifier = Modifier.padding(start = 6.dp).clip(RoundedCornerShape(50)).background(cor.copy(alpha = 0.14f)).padding(horizontal = 7.dp, vertical = 1.dp),
                 )
             }
@@ -1228,7 +1229,7 @@ fun CartaoResumoPedido(res: ResumoPedido, onEdit: (String) -> Unit, onDelete: (L
                             },
                             fontSize = 12.sp, modifier = Modifier.weight(1f),
                         )
-                        Text(if (aberta) "▾" else "▸", color = muted)
+                        // v1.6.24 -- sem setinha na fase.
                     }
                     Text("Total da fase: ${f.total}", fontSize = 11.sp, color = muted)
                 }
@@ -1275,7 +1276,7 @@ fun CartaoFasesSafra(dados: FasesDaFazenda, onEdit: (String) -> Unit, onDelete: 
                         },
                         fontSize = 12.5.sp, modifier = Modifier.weight(1f),
                     )
-                    Text(if (estaAberta) "▾" else "▸", color = muted)
+                    // v1.6.24 -- sem setinha.
                 }
             }
             if (estaAberta) Column(Modifier.padding(start = 12.dp)) {

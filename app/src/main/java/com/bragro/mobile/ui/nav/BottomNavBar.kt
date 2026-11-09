@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Summarize
+import androidx.compose.material.icons.outlined.CompareArrows
+import androidx.compose.material.icons.outlined.RequestQuote
 import androidx.compose.material.icons.outlined.RequestPage
 import androidx.compose.material.icons.outlined.GpsFixed
 import androidx.compose.material.icons.outlined.Domain
@@ -424,7 +427,7 @@ private val CATEGORY_ICONS: Map<String, ImageVector> = mapOf(
     "Painéis" to Icons.Outlined.Dashboard,
     // Financeiro
     "Registros" to Icons.Outlined.FolderOpen,
-    "Relatórios" to com.bragro.mobile.ui.domain.IconeGraficos,
+    "Relatórios" to Icons.Outlined.Summarize,
     "Compras" to Icons.Outlined.LocalMall,
     "Faturamento" to Icons.Outlined.PointOfSale,
     "Patrimônio" to Icons.Outlined.Domain,
@@ -920,8 +923,8 @@ private fun sectorItemIcon(item: SectorTarget, fallback: ImageVector): ImageVect
     // "Financeiro"/"Registros" -- pedido do usuário ("troque icone dre
     // e icone analises cruzadas").
     is SectorTarget.Special -> when (item.routeKey) {
-        "dre" -> com.bragro.mobile.ui.domain.IconesVazados.Assessment
-        "analises" -> com.bragro.mobile.ui.domain.IconesVazados.Analytics
+        "dre" -> Icons.Outlined.RequestQuote
+        "analises" -> Icons.Outlined.CompareArrows
         "livrocaixa" -> Icons.AutoMirrored.Outlined.MenuBook
         "drone" -> com.bragro.mobile.ui.domain.IconesVazados.FlightTakeoff
         "fieldview" -> Icons.Outlined.Map

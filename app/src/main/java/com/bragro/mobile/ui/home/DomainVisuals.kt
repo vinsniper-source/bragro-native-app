@@ -1,6 +1,8 @@
 package com.bragro.mobile.ui.home
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.HomeRepairService
+import androidx.compose.material.icons.outlined.Handshake
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Agriculture
 import androidx.compose.material.icons.outlined.Apps
@@ -102,10 +104,10 @@ private val DOMAIN_ICON: Map<String, ImageVector> = mapOf(
     // Balanca (comparacao de propostas) -- mesmo espirito do icone "Scale"
     // do site (lucide-react) pro modulo novo de Cotacoes de Fornecedores.
     "cotacoesfornecedores" to com.bragro.mobile.ui.domain.IconesVazados.Balance,
-    "contratos" to Icons.Outlined.Description,
+    "contratos" to Icons.Outlined.Handshake,
     "caixainterno" to Icons.Outlined.Payments,
     "cobrancas" to Icons.Outlined.CreditCard,
-    "nfse" to Icons.Outlined.ReceiptLong,
+    "nfse" to Icons.Outlined.HomeRepairService,
     "safra" to Icons.Outlined.Eco,
     "planejamentosafra" to Icons.Outlined.Assignment,
     "colheita" to com.bragro.mobile.ui.domain.IconesVazados.Trigo, // v1.6.23 -- trigo (o trator é da aba Safra)

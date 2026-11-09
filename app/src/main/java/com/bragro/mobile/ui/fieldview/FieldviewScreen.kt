@@ -957,6 +957,7 @@ private fun FazendasKmlTab(
             onDesenhar = { drawing = true; draft = emptyList() },
             onDesfazer = { draft = draft.dropLast(1) },
             onCancelar = { drawing = false; draft = emptyList() },
+            onMoverPonto = { i, pt -> if (i in draft.indices) draft = draft.toMutableList().also { it[i] = pt } },
             onConcluir = {
                 onPolygonDrawn(ParsedPolygon(null, draft.map { it.latitude to it.longitude }))
                 drawing = false
@@ -1094,6 +1095,7 @@ private fun BoundariesMap(
     onCancelar: () -> Unit = {},
     onConcluir: () -> Unit = {},
     destino: Pair<GeoPoint, String>? = null,
+    onMoverPonto: (Int, GeoPoint) -> Unit = { _, _ -> },
 ) {
     val strokeColor = MaterialTheme.colorScheme.primary.toArgb()
     val contexto = LocalContext.current
@@ -1123,6 +1125,7 @@ private fun BoundariesMap(
     }
     val onTapState = androidx.compose.runtime.rememberUpdatedState(onTap)
     val onConcluirState = androidx.compose.runtime.rememberUpdatedState(onConcluir)
+    val onMoverState = androidx.compose.runtime.rememberUpdatedState(onMoverPonto)
     val drawingState = androidx.compose.runtime.rememberUpdatedState(drawing)
     // v44 -- mapa estável: altura fixa, recortado no próprio quadro (não
     // cobre mais os ícones), sem repetir o mundo nem "soltar" para fora,
@@ -1233,12 +1236,26 @@ private fun BoundariesMap(
                         setSize(lado, lado)
                     }
                 }
+                // v1.6.24 (mockup v129, item 7) -- cantos arrastáveis (segure e
+                // arraste): a linha acompanha o dedo.
+                val pontosVivos = draft.toMutableList()
                 draft.forEachIndexed { i, pt ->
                     mv.overlays.add(org.osmdroid.views.overlay.Marker(mv).apply {
                         position = pt
                         setAnchor(org.osmdroid.views.overlay.Marker.ANCHOR_CENTER, org.osmdroid.views.overlay.Marker.ANCHOR_CENTER)
                         icon = if (i == 0) quadrado(16f, 0xFFE65100.toInt(), android.graphics.Color.WHITE) else quadrado(11f, android.graphics.Color.WHITE, 0xFF2F6B4A.toInt())
                         setInfoWindow(null)
+                        isDraggable = true
+                        setDragOffset(0f)
+                        setOnMarkerDragListener(object : org.osmdroid.views.overlay.Marker.OnMarkerDragListener {
+                            override fun onMarkerDragStart(m: org.osmdroid.views.overlay.Marker) {}
+                            override fun onMarkerDrag(m: org.osmdroid.views.overlay.Marker) {
+                                pontosVivos[i] = m.position
+                                d.setPoints(if (pontosVivos.size >= 3) pontosVivos + pontosVivos.first() else pontosVivos.toList())
+                                mv.invalidate()
+                            }
+                            override fun onMarkerDragEnd(m: org.osmdroid.views.overlay.Marker) { onMoverState.value(i, m.position) }
+                        })
                         setOnMarkerClickListener { _, _ ->
                             if (i == 0 && draft.size >= 3) onConcluirState.value()
                             true
@@ -1246,6 +1263,10 @@ private fun BoundariesMap(
                     })
                 }
             }
+            // v1.6.24 (mockup v129, item 7) -- depois do 1º ponto o mapa fica
+            // parado (não arrasta sem querer); o zoom + / − continua.
+            if (drawing && draft.isNotEmpty()) mv.setScrollableAreaLimitDouble(mv.boundingBox)
+            else mv.setScrollableAreaLimitDouble(null)
             // v1.6.5 -- rota: linha tracejada até a fazenda e o ponto "você".
             val de = rota?.de
             if (de != null && destino != null) {
@@ -1327,7 +1348,7 @@ private fun BoundariesMap(
         }
         if (drawing) {
             Text(
-                "Toque no mapa para marcar os cantos do talhão (mínimo 3). Toque no 1º canto (laranja) para fechar.",
+                "Toque no mapa para marcar os cantos do talhão (mínimo 3). Segure e arraste um canto para ajustar; toque no 1º (laranja) para fechar.",
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier
                     .align(Alignment.TopStart)

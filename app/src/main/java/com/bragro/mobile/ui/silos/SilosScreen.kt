@@ -629,13 +629,23 @@ private fun SiloCard(
                 )
                 // v1.6.23 (mockup v128c, item 1) -- colunas alinhadas; tocar abre o romaneio.
                 val nf1 = java.text.NumberFormat.getNumberInstance(Locale("pt", "BR")).apply { minimumFractionDigits = 1; maximumFractionDigits = 1 }
+                // v1.6.24 (mockup v129, item 3) -- setinha no título Data; desempate pelo número.
+                var romAsc by androidx.compose.runtime.saveable.rememberSaveable(silo.id) { androidx.compose.runtime.mutableStateOf(false) }
                 Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
                     listOf("Romaneio" to 1.1f, "Tipo" to 1f, "Toneladas" to 1.2f, "Data" to 0.9f).forEachIndexed { i, (t, w) ->
-                        Text(t, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = if (i >= 2) androidx.compose.ui.text.style.TextAlign.End else null, modifier = Modifier.weight(w))
+                        Text(
+                            if (i == 3) "$t ${if (romAsc) "↑" else "↓"}" else t,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = if (i == 3) FontWeight.Bold else null,
+                            color = if (i == 3) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = if (i >= 2) androidx.compose.ui.text.style.TextAlign.End else null,
+                            modifier = Modifier.weight(w).then(if (i == 3) Modifier.clickable { romAsc = !romAsc } else Modifier),
+                        )
                     }
                     Spacer(Modifier.width(16.dp))
                 }
-                silo.movimentos.forEach { m ->
+                val cmpRom = compareBy<com.bragro.mobile.data.model.SiloMovimentoData>({ it.data.take(10) }, { it.noRomaneio.filter { c -> c.isDigit() }.toLongOrNull() ?: 0L })
+                (if (romAsc) silo.movimentos.sortedWith(cmpRom) else silo.movimentos.sortedWith(cmpRom.reversed())).forEach { m ->
                     val estilo = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum")
                     Row(Modifier.fillMaxWidth().clickable { onAbrirRomaneio(m.romaneioId) }.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(m.noRomaneio, style = estilo, modifier = Modifier.weight(1.1f))

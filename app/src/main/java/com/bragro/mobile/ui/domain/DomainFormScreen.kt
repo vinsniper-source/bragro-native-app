@@ -1756,6 +1756,8 @@ private fun ItensExtrasSection(
                             Text(if (t > 0) java.text.NumberFormat.getCurrencyInstance(java.util.Locale("pt", "BR")).format(t) else "—", fontWeight = FontWeight.Bold)
                         }
                     }
+                    // v1.6.24 -- consulta do MAPA (Agrofit) também em cada item adicionado.
+                    porChave["item"]?.agrofit?.let { cfg -> AgrofitAviso(cfg, x["item"], viewModel.fields + x) }
                 }
             }
         }

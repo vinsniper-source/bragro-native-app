@@ -553,7 +553,11 @@ fun DomainListScreen(
         }
         val kData = dateCol?.key
         if (kData != null) {
-            val cmp = compareBy<Map<String, String?>>({ it[kData].orEmpty().take(10) }, { it["criadoEm"].orEmpty() })
+            // v1.6.24 (mockup v129, item 1) -- desempate pelo número (romaneio,
+            // O.S., pedido...), comparando como número quando dá.
+            val kNum = listOf("noRomaneio", "os", "noPedido", "numero", "documento").firstOrNull { k -> k != kData && config?.columns?.any { it.key == k } == true }
+            fun numDe(r: Map<String, String?>): Double = kNum?.let { r[it]?.filter { ch -> ch.isDigit() }?.toDoubleOrNull() } ?: 0.0
+            val cmp = compareBy<Map<String, String?>>({ it[kData].orEmpty().take(10) }, { numDe(it) }, { it["criadoEm"].orEmpty() })
             result = if (dataDesc) result.sortedWith(cmp.reversed()) else result.sortedWith(cmp)
         }
         result
@@ -1681,6 +1685,7 @@ fun DomainListScreen(
                             if (soma == 0.0) null else if (m.money) fmtMoeda(soma) else java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 1 }.format(soma)
                         }
                         val pendGrupo = doGrupo.count { statusPendente(it["status"]) }
+                        Column {
                         CartaoGrupo(
                             titulo = tituloChave(chaveGrupo),
                             qtd = qtdGrupo,
@@ -1706,6 +1711,17 @@ fun DomainListScreen(
                                 "$nF ${if (nF == 1) "fase" else "fases"} · $nO O.S. · ${doGrupo.size} ${if (doGrupo.size == 1) "item" else "itens"}"
                             } else if (domainId == "pedidos") resumoPedido(chaveGrupo, doGrupo).let { r -> "${r.itens.size} itens · ${r.fases.size} ${if (r.fases.size == 1) "fase" else "fases"} · ${r.remessas} ${if (r.remessas == 1) "entrega" else "entregas"}" } else null,
                         )
+                        // v1.6.24 (mockup v129, item 1) -- setinha da ordem também no topo do bloco aberto.
+                        if (abertoGrupo && dateCol != null) {
+                            Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.End) {
+                                Text(
+                                    if (dataDesc) "↓" else "↑",
+                                    color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 17.sp,
+                                    modifier = Modifier.clickable { dataDesc = !dataDesc }.padding(horizontal = 6.dp),
+                                )
+                            }
+                        }
+                        }
                         return@itemsIndexed
                     }
                     val idx = entrada as Int
@@ -1974,19 +1990,38 @@ fun DomainListScreen(
                             val campos = visiveis.filter { secaoDe(it) == id }
                             if (campos.isNotEmpty()) {
                                 Text(titulo.uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
-                                campos.chunked(2).forEach { par ->
+                                // v1.6.24 (mockup v129, itens 5 e 8) -- texto longo ocupa a linha
+                                // toda; "AUTO" vira etiqueta pequena ao lado (calculado sozinho).
+                                val linhasCampos = mutableListOf<List<com.bragro.mobile.data.model.ColumnConfig>>()
+                                var pendente: com.bragro.mobile.data.model.ColumnConfig? = null
+                                campos.forEach { c ->
+                                    if ((viewedRecord[c.key]?.length ?: 0) > 40) { pendente?.let { linhasCampos.add(listOf(it)) }; pendente = null; linhasCampos.add(listOf(c)) }
+                                    else if (pendente == null) pendente = c else { linhasCampos.add(listOf(pendente!!, c)); pendente = null }
+                                }
+                                pendente?.let { linhasCampos.add(listOf(it)) }
+                                linhasCampos.forEach { par ->
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                         par.forEach { col ->
-                                            Column(
+                                            Row(
                                                 Modifier.weight(1f)
                                                     .background(if (col.computed) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f) else androidx.compose.ui.graphics.Color.Transparent, RoundedCornerShape(8.dp))
                                                     .padding(horizontal = if (col.computed) 6.dp else 0.dp, vertical = if (col.computed) 3.dp else 0.dp),
+                                                verticalAlignment = Alignment.Top,
                                             ) {
-                                                if (col.computed) Text("AUTO", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                RecordFieldLine(col, viewedRecord[col.key]!!, viewedRecord, domainId)
+                                                Box(Modifier.weight(1f)) { RecordFieldLine(col, viewedRecord[col.key]!!, viewedRecord, domainId) }
+                                                if (col.computed) {
+                                                    var dica by remember { mutableStateOf(false) }
+                                                    Text(
+                                                        if (dica) "calculado" else "AUTO",
+                                                        fontSize = 8.5.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+                                                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
+                                                            .clickable { dica = !dica }.padding(horizontal = 3.dp),
+                                                    )
+                                                }
                                             }
                                         }
-                                        if (par.size == 1) Spacer(Modifier.weight(1f))
+                                        if (par.size == 1 && (viewedRecord[par[0].key]?.length ?: 0) <= 40) Spacer(Modifier.weight(1f))
                                     }
                                 }
                             }
