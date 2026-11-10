@@ -908,19 +908,26 @@ fun HomeScreen(
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                                         )
+                                        // v1.6.28 (mockup v132b, item 3) -- só as listas que preenchem
+                                        // os campos do setor, nome legível + campo; sem "Ver tudo".
                                         grupo.categories.forEach { cat ->
                                             DropdownMenuItem(
-                                                text = { Text(cat.lowercase().replaceFirstChar { c -> c.uppercase() }) },
-                                                onClick = { dbMenuOpen = false; onOpenBaseDeDados() },
+                                                text = {
+                                                    Column {
+                                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                            Text(grupo.rotulos[cat] ?: cat.lowercase().replaceFirstChar { c -> c.uppercase() }, modifier = Modifier.weight(1f, fill = false))
+                                                            grupo.campos[cat]?.let { Text("  $it", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                                        }
+                                                        grupo.filhos[cat]?.takeIf { it.isNotEmpty() }?.let { f ->
+                                                            Text(f.joinToString(" · ") { grupo.rotulos[it] ?: it }, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                        }
+                                                    }
+                                                },
+                                                onClick = { dbMenuOpen = false; com.bragro.mobile.ui.basededados.BaseDeDadosFoco.categoria = cat; onOpenBaseDeDados() },
                                             )
                                         }
                                     }
                                 }
-                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                                DropdownMenuItem(
-                                    text = { Text("Ver tudo", color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                                    onClick = { dbMenuOpen = false; onOpenBaseDeDados() },
-                                )
                             }
                         }
                     }

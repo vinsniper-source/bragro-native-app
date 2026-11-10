@@ -215,6 +215,7 @@ fun FinanceiroScreen(
     // botão único (ícone+rótulo) do módulo genérico, ver RecordTable.kt e
     // o comentário completo em DomainListScreen.kt.
     var tableView by remember { mutableStateOf(false) }
+    var dataDescFin by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     val tableHScroll = remember { androidx.compose.foundation.ScrollState(0) }
     val cardOverrides = remember { mutableStateMapOf<String, Boolean>() }
     // Confirmação antes de excluir -- mesmo padrão do módulo genérico
@@ -705,9 +706,12 @@ fun FinanceiroScreen(
                             }
                             if (allExpanded) {
                             if (tableView && cols.isNotEmpty()) {
-                                item(key = "table-header") { RecordTableHeader(cols, tableHScroll) }
+                                item(key = "table-header") { RecordTableHeader(cols, tableHScroll, colunaData = "data", dataDesc = dataDescFin, onTrocarOrdem = { dataDescFin = !dataDescFin }) }
                             }
-                            itemsIndexed(filtered, key = { _, it -> it["id"] ?: it.hashCode().toString() }) { idx, record ->
+                            if (tableView && cols.isNotEmpty()) {
+                            // v1.6.28 (mockup v132, item 4) -- setinha só na tabela, ao lado de Data.
+                            val ordenados = (if (dataDescFin) filtered.sortedByDescending { it["data"].orEmpty().take(10) } else filtered.sortedBy { it["data"].orEmpty().take(10) })
+                            itemsIndexed(ordenados, key = { _, it -> it["id"] ?: it.hashCode().toString() }) { idx, record ->
                                 val recordId = record["id"]
                                 if (tableView && cols.isNotEmpty()) {
                                     RecordTableRow(
@@ -802,6 +806,51 @@ fun FinanceiroScreen(
                                         }
                                     }
                                 }
+                            }
+                            } else {
+                            // v1.6.28 (mockup v131b/v132, item 6) -- Vista Bloco: um bloco
+                            // por categoria, fechado, com as parcelas dentro (valor de cada
+                            // uma, vencimento e lápis), igual à plataforma. Notas de NF-e
+                            // com várias fazendas continuam no cartão da nota.
+                            val nfeIdx = financeiroGroupByStartIndex.values.flatten().toSet()
+                            financeiroGroupByStartIndex.forEach { (start, idxs) ->
+                                item(key = "nfe:$start") {
+                                    FinanceiroNfeGroupCard(
+                                        groupRecords = idxs.map { filtered[it] },
+                                        onEditRecord = onEditRecord,
+                                        onDeleteRequest = { idToDelete -> recordPendingDelete = idToDelete },
+                                    )
+                                }
+                            }
+                            val gruposCat = filtered.filterIndexed { i, _ -> i !in nfeIdx }
+                                .groupBy { r -> r["categoria"]?.trim()?.uppercase()?.takeIf { it.isNotEmpty() } ?: "SEM CATEGORIA" }
+                            gruposCat.forEach { (cat, rows) ->
+                                item(key = "fgrp:$cat") {
+                                    var abertoCat by androidx.compose.runtime.saveable.rememberSaveable(cat) { mutableStateOf(false) }
+                                    val locais = rows.mapNotNull { it["local"]?.takeIf { l -> l.isNotBlank() } }.distinct()
+                                    val safras = rows.mapNotNull { it["safra"]?.takeIf { l -> l.isNotBlank() } }.distinct()
+                                    val onde = listOfNotNull(
+                                        if (locais.size == 1) locais[0] else if (locais.size > 1) "${locais.size} fazendas" else null,
+                                        if (safras.size == 1) "Safra ${safras[0]}" else null,
+                                    ).joinToString(" · ")
+                                    val total = rows.sumOf { com.bragro.mobile.ui.domain.painelNum(it["liquido"]?.takeIf { v -> v.isNotBlank() } ?: it["bruto"]) }
+                                    val pend = rows.count { it["dataPgto"].isNullOrBlank() && it["dataReceb"].isNullOrBlank() }
+                                    com.bragro.mobile.ui.domain.CartaoGrupo(
+                                        titulo = cat.lowercase().replaceFirstChar { it.uppercase() },
+                                        qtd = rows.size,
+                                        onde = onde,
+                                        total = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("pt", "BR")).format(total),
+                                        totalRotulo = "total",
+                                        aberto = abertoCat,
+                                        onToggle = { abertoCat = !abertoCat },
+                                        pendentes = pend,
+                                        numeros = com.bragro.mobile.ui.domain.numerosGrupoFinanceiro(rows),
+                                        conteudo = {
+                                            com.bragro.mobile.ui.domain.LinhasParcelasFinanceiro(rows, onVer = { recordBeingViewed = it }, onEdit = { onEditRecord(it) })
+                                        },
+                                    )
+                                }
+                            }
                             }
                             }
                         }

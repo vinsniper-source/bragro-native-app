@@ -1,5 +1,11 @@
 package com.bragro.mobile.ui.nav
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -285,6 +291,7 @@ private val BOTTOM_TABS = listOf(
         "estoque", "Estoque", Icons.Outlined.Inventory2,
         items = listOf(
             SectorTarget.Domain("estoque", "Estoque"),
+            SectorTarget.Special("controleinsumos", "Controle de Insumos"), // v1.6.28
             SectorTarget.Special("reconciliacaoestoque", "Ajustar Físico x Fiscal"),
             SectorTarget.Special("silos", "Silos"),
         ),
@@ -597,6 +604,32 @@ fun BRAgroBottomBar(
             }
         }
     }
+    // v1.6.28 (mockup v132/v132b) -- setor enxuto: a lista suspensa vira
+    // botões na própria barra. 1º passo: aba com grupos (ex.: Financeiro:
+    // Registros/Relatórios/Compras) vira um botão por grupo; 2º passo: aba
+    // que sobrou sozinha com poucos módulos vira um botão por módulo. Só
+    // quando o total cabe (até 5 botões); senão fica o painel de botões.
+    val tabsBarra = remember(visibleTabs) {
+        var tabs = visibleTabs
+        val porGrupo = tabs.flatMap { tab ->
+            val cats = tab.items.map { categoriaDe(it) }
+            if (tab.directDomainId != null || cats.any { it == null } || cats.distinct().size < 2) listOf(tab)
+            else cats.distinct().map { cat ->
+                BottomTab(
+                    id = "${tab.id}:$cat",
+                    label = if (cat == "Registros") tab.label else cat!!,
+                    icon = if (cat == "Registros") tab.icon else (CATEGORY_ICONS[cat] ?: tab.icon),
+                    items = tab.items.filter { categoriaDe(it) == cat },
+                )
+            }
+        }
+        if (porGrupo.size <= 5) tabs = porGrupo
+        val porModulo = tabs.flatMap { tab ->
+            if (tab.directDomainId != null || tab.items.size < 2) listOf(tab)
+            else tab.items.map { item -> BottomTab(id = "${tab.id}:${idDe(item)}", label = rotuloCurto(sectorItemLabel(item)), icon = sectorItemIcon(item, tab.icon), items = listOf(item)) }
+        }
+        if (porModulo.size <= 5) porModulo else tabs
+    }
     val visibleSistemaLinks = remember(allowedModules) {
         SISTEMA_LINKS.filter { isAllowed(allowedModules, it.path) }
     }
@@ -644,15 +677,15 @@ fun BRAgroBottomBar(
     // "*"), então caem sempre em Group (dropdown) -- exatamente o pedido do
     // usuário de trazer de volta as listas suspensas nesses 4 botões, sem
     // precisar de nenhum caminho especial aqui.
-    val renderTabs = remember(visibleTabs) {
-        visibleTabs.map { tab ->
+    val renderTabs = remember(tabsBarra) {
+        tabsBarra.map { tab ->
             when {
                 tab.directDomainId != null ->
                     RenderTab.Direct(tab.id, tab.label, tab.icon, tab.directDomainId) { onNavigateDomain(tab.directDomainId) }
                 tab.items.size == 1 -> {
                     val item = tab.items[0]
                     val domainId = (item as? SectorTarget.Domain)?.domainId
-                    RenderTab.Direct(tab.id, sectorItemLabel(item), sectorItemIcon(item, tab.icon), domainId) { openSector(item) }
+                    RenderTab.Direct(tab.id, if (tab.id.contains(":")) tab.label else rotuloCurto(sectorItemLabel(item)), if (tab.id.contains(":")) tab.icon else sectorItemIcon(item, tab.icon), domainId) { openSector(item) }
                 }
                 else -> RenderTab.Group(tab)
             }
@@ -761,69 +794,10 @@ fun BRAgroBottomBar(
                         // sempre no Material3, sem risco de incompatibilidade.
                         MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(surface = MaterialTheme.colorScheme.background, surfaceContainer = MaterialTheme.colorScheme.background, surfaceTint = androidx.compose.ui.graphics.Color.Transparent)) {
                         com.bragro.mobile.ui.theme.MenuSuspenso(expanded = openTabId == tab.id, onDismissRequest = { openTabId = null }) {
-                            // Cada aba-grupo agora É a antiga categoria (ver
-                            // comentário no topo de BOTTOM_TABS) -- os itens não
-                            // carregam mais "category" nenhuma, então "groups"
-                            // abaixo sempre produz um único grupo (category ==
-                            // null) e cai direto na lista plana. O agrupamento
-                            // por "category"/acordeão continua existindo pra não
-                            // arriscar mexer no que já funciona, só que inerte
-                            // por enquanto (nenhuma aba usa "category" hoje).
-                            val groups = mutableListOf<Pair<String?, MutableList<SectorTarget>>>()
-                            tab.items.forEach { item ->
-                                val category = when (item) {
-                                    is SectorTarget.Domain -> item.category
-                                    is SectorTarget.Special -> item.category
-                                }
-                                val lastGroup = groups.lastOrNull()
-                                if (lastGroup != null && lastGroup.first == category) lastGroup.second.add(item)
-                                else groups.add(category to mutableListOf(item))
-                            }
-                            groups.forEachIndexed { index, (category, items) ->
-                                if (category == null) {
-                                    items.forEach { item -> SectorMenuItem(item, tab.icon, onClick = { openSector(item) }) }
-                                } else {
-                                    if (index > 0) {
-                                        HorizontalDivider(
-                                            modifier = Modifier.padding(vertical = 4.dp),
-                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                                        )
-                                    }
-                                    val expanded = expandedCategory == category
-                                    com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth()) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable { expandedCategory = if (expanded) null else category }
-                                            .background(
-                                                MaterialTheme.colorScheme.onSurface.copy(alpha = if (expanded) 0.10f else 0.05f),
-                                                RoundedCornerShape(8.dp),
-                                            )
-                                            .padding(horizontal = 16.dp, vertical = 10.dp),
-                                    ) {
-                                        Icon(
-                                            CATEGORY_ICONS[category] ?: tab.icon,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp).padding(end = 8.dp),
-                                            tint = MaterialTheme.colorScheme.onSurface,
-                                        )
-                                        Text(
-                                            category.uppercase(),
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            modifier = Modifier.weight(1f),
-                                        )
-                                        com.bragro.mobile.ui.domain.CantoL(expanded, onClick = { expandedCategory = if (expanded) null else category })
-                                    }
-                                    if (expanded) {
-                                        items.forEach { item -> SectorMenuItem(item, tab.icon, onClick = { openSector(item) }) }
-                                    }
-                                    }
-                                }
-                            }
+                            // v1.6.28 (mockup v132b) -- painel de botões compactos e iguais
+                            // (4 por linha) no lugar da lista; com grupos, título do grupo
+                            // e os botões embaixo.
+                            PainelBotoes(tab = tab, onAbrir = { openSector(it) })
                         }
                         }
                     }
@@ -986,3 +960,73 @@ private fun SectorMenuItem(item: SectorTarget, tabIcon: ImageVector, onClick: ()
         modifier = Modifier.padding(start = 8.dp),
     )
 }
+
+private fun categoriaDe(item: SectorTarget): String? = when (item) {
+    is SectorTarget.Domain -> item.category
+    is SectorTarget.Special -> item.category
+}
+
+private fun idDe(item: SectorTarget): String = when (item) {
+    is SectorTarget.Domain -> item.domainId
+    is SectorTarget.Special -> item.routeKey
+}
+
+/** v1.6.28 (mockup v132b) -- nome curto nos botões (o completo fica no título da tela). */
+private fun rotuloCurto(label: String): String = when (label) {
+    "Análises cruzadas" -> "Análises"
+    "Dossiê Bancário" -> "Dossiê"
+    "Simulador \"E se?\"" -> "Simulador"
+    "Controle de Insumos" -> "Insumos"
+    "Ajustar Físico x Fiscal" -> "Físico x Fiscal"
+    "Mão de Obra e Familiar" -> "Mão de Obra"
+    "Planejamento de Safra" -> "Planejamento"
+    "Cotações de Fornecedores" -> "Cotações"
+    "Cobranças / NFS-e" -> "Cobranças"
+    "Prescrição / Taxa Variável" -> "Prescrição"
+    "Pivôs de Irrigação" -> "Pivôs"
+    "Gestão Financeira" -> "Gestão"
+    else -> label
+}
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun PainelBotoes(tab: BottomTab, onAbrir: (SectorTarget) -> Unit) {
+    val grupos = tab.items.groupBy { categoriaDe(it) }
+    Column(Modifier.width(312.dp).padding(horizontal = 8.dp, vertical = 4.dp)) {
+        grupos.entries.forEachIndexed { gi, (cat, itens) ->
+            if (cat != null) {
+                Text(
+                    cat.uppercase(),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp, top = if (gi == 0) 2.dp else 10.dp, bottom = 4.dp),
+                )
+            }
+            itens.chunked(4).forEach { linha ->
+                Row(Modifier.fillMaxWidth().padding(bottom = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    linha.forEach { item ->
+                        Column(
+                            Modifier.weight(1f).height(52.dp)
+                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f), RoundedCornerShape(8.dp))
+                                .clickable { onAbrir(item) }
+                                .padding(horizontal = 2.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            Icon(sectorItemIcon(item, tab.icon), contentDescription = sectorItemLabel(item), modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurface)
+                            Text(
+                                rotuloCurto(sectorItemLabel(item)),
+                                fontSize = 10.sp, lineHeight = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(top = 3.dp),
+                            )
+                        }
+                    }
+                    repeat(4 - linha.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
+        }
+    }
+}
+

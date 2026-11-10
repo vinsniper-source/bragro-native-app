@@ -436,6 +436,10 @@ data class HomeBaseDeDadosSectorGroup(
     val sector: String,
     val label: String,
     val categories: List<String> = emptyList(),
+    // v1.6.28 (mockup v132b) -- nome legível, campo onde aparece e variações.
+    val rotulos: Map<String, String> = emptyMap(),
+    val campos: Map<String, String> = emptyMap(),
+    val filhos: Map<String, List<String>> = emptyMap(),
 )
 
 @Serializable

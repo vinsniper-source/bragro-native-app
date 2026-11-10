@@ -381,7 +381,21 @@ fun BaseDeDadosScreen(
         // aviso some de vez, reversível cadastrando na mão depois.
         var showDeclineConfirm by remember { mutableStateOf(false) }
 
+        // v1.6.28 (mockup v132b, item 3) -- veio do menu do cabeçalho: rola
+        // até o setor que tem a lista escolhida.
+        val listaEstado = androidx.compose.foundation.lazy.rememberLazyListState()
+        LaunchedEffect(bySector) {
+            val alvo = BaseDeDadosFoco.categoria ?: return@LaunchedEffect
+            val setores = bySector ?: return@LaunchedEffect
+            val i = setores.indexOfFirst { el -> el.jsonObject["categories"]?.jsonArray?.any { c -> (c.jsonObject["category"]?.jsonPrimitive?.contentOrNull ?: c.toString().trim('"')) == alvo } == true }
+            if (i >= 0) {
+                val antes = (if (error != null) 1 else 0) + (if (missingCount > 0) 1 else 0) + (if (onOpenCsvImport != null) 1 else 0) + 1
+                listaEstado.scrollToItem(antes + i)
+                BaseDeDadosFoco.categoria = null
+            }
+        }
         LazyColumn(
+            state = listaEstado,
             // Margem horizontal reduzida de 12dp pra 6dp -- pedido do
             // usuário ("expanda mais o limite da tela, diminua a margem
             // para caber tudo sem cortar palavra ou usar letreiro"): o
@@ -1224,3 +1238,7 @@ private fun SectorCard(
 
 /** v51 -- item da lista suspensa aberto na janela do lápis. */
 private data class LookupEmEdicao(val id: String, val categoria: String, val nome: String, val ativo: Boolean)
+
+/** v1.6.28 -- lista escolhida no menu "Base de Dados" do cabeçalho (rola até ela). */
+object BaseDeDadosFoco { var categoria: String? = null }
+

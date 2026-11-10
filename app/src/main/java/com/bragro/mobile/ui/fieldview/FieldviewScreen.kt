@@ -389,7 +389,7 @@ private val RAW_FIELD_LABELS: Map<String, String> = mapOf(
     "dataFim" to "Data fim",
     "hectare" to "Hectare",
     "categoria" to "Categoria",
-    "subcategoriaVariedade" to "Subcategoria/Variedade",
+    "subcategoriaVariedade" to "Subcategoria",
     "subcategoria" to "Subcategoria",
     "item" to "Item",
     "unidade" to "Unidade",
