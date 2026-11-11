@@ -507,6 +507,7 @@ fun DomainListScreen(
     val gruposAbertos = remember(domainId) { mutableStateMapOf<String, Boolean>() }
     // v1.6.1 (mockup v102, item 2) -- blocos mostrando só os pendentes.
     val gruposSoPend = remember(domainId) { mutableStateMapOf<String, Boolean>() }
+    val gruposInvertidos = remember(domainId) { mutableStateMapOf<String, Boolean>() }
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val lancTail = remember { intArrayOf(0) }
@@ -1637,6 +1638,17 @@ fun DomainListScreen(
                         val osAgrupa = (domainId == "safra" || domainId == "pedidos" || domainId == "financeiro") && c != null && gruposSoPend[c] != true
                         if (!osAgrupa && (c == null || (gruposAbertos[c] == true && (gruposSoPend[c] != true || statusPendente(listaVisivel[i]["status"]))))) add(i)
                     }
+                }.let { base ->
+                    // v1.6.30 (mockup v133b, item 3) -- setinha do bloco inverte SÓ este bloco.
+                    if (gruposInvertidos.isEmpty()) base else {
+                        val out = base.toMutableList()
+                        gruposInvertidos.keys.forEach { g ->
+                            val pos = out.indices.filter { k -> (out[k] as? Int)?.let { chavesCards.getOrNull(it) == g } == true }
+                            val vals = pos.map { out[it] }.reversed()
+                            pos.forEachIndexed { n, k -> out[k] = vals[n] }
+                        }
+                        out
+                    }
                 }
                 lancTail[0] = entradas.size + if (tableView && tableColumns.isNotEmpty()) 1 else 0
                 itemsIndexed(entradas, key = { _, e -> if (e is Pair<*, *>) "grupo:${e.first}" else if (e is ResumoPedido) "ped:${e.chave}" else if (e is FasesDaFazenda) "faz:${e.chave}" else if (e is OsDaOperacao) "os:${e.chave}:${e.itens.firstOrNull()?.get("id")}" else listaVisivel[e as Int].let { it["id"] ?: it.hashCode().toString() } }) { _, entrada ->
@@ -1724,9 +1736,9 @@ fun DomainListScreen(
                         if (abertoGrupo && dateCol != null && domainId !in SEM_SETA_DATA && conteudoNulo(domainId)) {
                             Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.End) {
                                 Text(
-                                    if (dataDesc) "↓" else "↑",
+                                    if (dataDesc != (gruposInvertidos[chaveGrupo] == true)) "↓" else "↑",
                                     color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 17.sp,
-                                    modifier = Modifier.clickable { dataDesc = !dataDesc }.padding(horizontal = 6.dp),
+                                    modifier = Modifier.clickable { if (gruposInvertidos[chaveGrupo] == true) gruposInvertidos.remove(chaveGrupo) else gruposInvertidos[chaveGrupo] = true }.padding(horizontal = 6.dp),
                                 )
                             }
                         }
