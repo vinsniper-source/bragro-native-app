@@ -100,6 +100,7 @@ private object Routes {
     const val BASE_DE_DADOS = "base_de_dados"
     const val CSV_IMPORT = "csv_import"
     const val SEGURANCA = "seguranca"
+    const val PAINEL_DONO = "painel_dono"
     const val DOMAIN_LIST = "domain/{domainId}"
     const val DOMAIN_FORM_NEW = "domain/{domainId}/new"
     const val DOMAIN_FORM_EDIT = "domain/{domainId}/edit/{recordId}"
@@ -276,6 +277,7 @@ fun BRAgroNavHost() {
                 // usada pelo antigo menu "Módulos" da barra inferior logo
                 // abaixo (onOpenSeguranca).
                 onOpenSeguranca = { navController.navigate(Routes.SEGURANCA) },
+                onOpenPainelDono = { navController.navigate(Routes.PAINEL_DONO) },
             )
         }
         composable(Routes.DRE) {
@@ -421,6 +423,9 @@ fun BRAgroNavHost() {
         }
         composable(Routes.CSV_IMPORT) {
             CsvImportScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.PAINEL_DONO) {
+            com.bragro.mobile.ui.admin.PainelDonoScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.SEGURANCA) {
             SegurancaScreen(onBack = { navController.popBackStack() })

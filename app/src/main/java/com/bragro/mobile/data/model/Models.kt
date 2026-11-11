@@ -401,6 +401,8 @@ data class HomeData(
     // somente o que usar [no setor]... sempre no cabeçalho"). Default false/
     // vazio não quebra o cache offline salvo antes desses campos existirem.
     val showConfiguracoesIcon: Boolean = false,
+    // v134 -- "Painel do dono" no menu Módulos (só o dono da plataforma).
+    val donoPlataforma: Boolean = false,
     val showBaseDeDadosIcon: Boolean = false,
     val apkUrl: String? = null,
     val apkVersao: String? = null,
@@ -730,6 +732,9 @@ data class SecurityRequest(
     // o próprio usuário logado quer ver na Início (ver comentário no case
     // correspondente em api/mobile/security/route.ts).
     val inicioWidgets: List<String>? = null,
+    // v134 -- "Criar com senha provisória" (modo = "senha") e "set_password".
+    val modo: String? = null,
+    val senha: String? = null,
 )
 
 @Serializable

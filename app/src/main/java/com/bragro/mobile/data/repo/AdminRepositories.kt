@@ -128,10 +128,12 @@ class SecurityRepository(context: Context) {
         membershipId: String? = null,
         ativo: Boolean? = null,
         inicioWidgets: List<String>? = null,
+        modo: String? = null,
+        senha: String? = null,
     ): Result<JsonElement?> {
         val tokens = tokenStore.current() ?: return Result.failure(IllegalStateException("Sessão expirada. Entre novamente."))
         var (accessToken, refreshToken) = tokens
-        fun body() = SecurityRequest(accessToken, refreshToken, action, email, role, modulosPermitidos, membershipId, ativo, inicioWidgets)
+        fun body() = SecurityRequest(accessToken, refreshToken, action, email, role, modulosPermitidos, membershipId, ativo, inicioWidgets, modo, senha)
         return try {
             var response = NetworkModule.mobileApi.security(body())
             if (response.code() == 401) {

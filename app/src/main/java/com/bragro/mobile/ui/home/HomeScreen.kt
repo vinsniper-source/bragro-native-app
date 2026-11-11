@@ -83,6 +83,7 @@ import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.SwapHoriz
@@ -603,6 +604,8 @@ fun HomeScreen(
     // cabeçalho (ver bloco mais abaixo, exclusivo de OWNER/ADMIN). Mesma rota
     // já usada pelo antigo menu "Módulos" da barra inferior (BottomNavBar.kt).
     onOpenSeguranca: () -> Unit = {},
+    // v134 -- "Painel do dono" (só o dono da plataforma).
+    onOpenPainelDono: () -> Unit = {},
     viewModel: HomeViewModel = viewModel(),
 ) {
     val home by viewModel.home
@@ -799,6 +802,13 @@ fun HomeScreen(
                                     leadingIcon = { Icon(Icons.Outlined.Security, contentDescription = null) },
                                     onClick = { modulosMenuOpen = false; onOpenSeguranca() },
                                 )
+                                if (home?.donoPlataforma == true) {
+                                    DropdownMenuItem(
+                                        text = { Text("Painel do dono") },
+                                        leadingIcon = { Icon(Icons.Outlined.AdminPanelSettings, contentDescription = null) },
+                                        onClick = { modulosMenuOpen = false; onOpenPainelDono() },
+                                    )
+                                }
                             }
                         }
                     }

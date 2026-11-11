@@ -180,12 +180,22 @@ class SegurancaViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun invite(email: String, role: String, modulos: List<String>, onDone: (Boolean, String?) -> Unit) {
+    fun invite(email: String, role: String, modulos: List<String>, modo: String, senha: String, onDone: (Boolean, String?) -> Unit) {
         busy.value = true
         viewModelScope.launch {
-            val result = repo.run("invite", email = email, role = role, modulosPermitidos = modulos)
+            val result = repo.run("invite", email = email, role = role, modulosPermitidos = modulos, modo = modo, senha = senha.ifEmpty { null })
             busy.value = false
             result.onSuccess { load(); onDone(true, null) }.onFailure { onDone(false, it.message) }
+        }
+    }
+
+    // v134 -- administrador define uma senha nova para um membro.
+    fun definirSenha(id: String, senha: String, onDone: (Boolean, String?) -> Unit) {
+        busy.value = true
+        viewModelScope.launch {
+            val result = repo.run("set_password", membershipId = id, senha = senha)
+            busy.value = false
+            result.onSuccess { onDone(true, null) }.onFailure { onDone(false, it.message) }
         }
     }
 
@@ -292,7 +302,8 @@ fun SegurancaScreen(onBack: () -> Unit, viewModel: SegurancaViewModel = viewMode
                     busy = busy,
                     currentUserId = currentUserId,
                     currentInicioWidgets = currentInicioWidgets,
-                    onInvite = { email, role, modulos, onDone -> viewModel.invite(email, role, modulos, onDone) },
+                    onInvite = { email, role, modulos, modo, senha, onDone -> viewModel.invite(email, role, modulos, modo, senha, onDone) },
+                    onDefinirSenha = { id, senha, onDone -> viewModel.definirSenha(id, senha, onDone) },
                     onToggle = { id, ativo -> viewModel.toggleMembership(id, ativo) },
                     onUpdateModules = { id, role, modulos -> viewModel.updateModules(id, role, modulos) },
                     onUpdateMyInicioWidgets = { widgets, onDone -> viewModel.updateMyInicioWidgets(widgets, onDone) },
@@ -423,7 +434,8 @@ private fun EquipeCard(
     busy: Boolean,
     currentUserId: String?,
     currentInicioWidgets: List<String>,
-    onInvite: (String, String, List<String>, (Boolean, String?) -> Unit) -> Unit,
+    onInvite: (String, String, List<String>, String, String, (Boolean, String?) -> Unit) -> Unit,
+    onDefinirSenha: (String, String, (Boolean, String?) -> Unit) -> Unit,
     onToggle: (String, Boolean) -> Unit,
     onUpdateModules: (String, String, List<String>) -> Unit,
     onUpdateMyInicioWidgets: (List<String>, (Boolean, String?) -> Unit) -> Unit,
@@ -434,6 +446,27 @@ private fun EquipeCard(
     var inviteError by remember { mutableStateOf<String?>(null) }
     var showInviteForm by remember { mutableStateOf(false) }
     var showPersonalizarInicio by remember { mutableStateOf(false) }
+    // v134 -- "Criar com senha provisória" (padrão) ou convite por email.
+    var inviteModo by remember { mutableStateOf("senha") }
+    var inviteSenha by remember { mutableStateOf("") }
+    var senhaPara by remember { mutableStateOf<Pair<String, String>?>(null) }
+    val ctxToast = androidx.compose.ui.platform.LocalContext.current
+
+    senhaPara?.let { (mid, memail) ->
+        NovaSenhaDialog(
+            email = memail,
+            busy = busy,
+            onDismiss = { senhaPara = null },
+            onSave = { senha, setErro ->
+                onDefinirSenha(mid, senha) { ok, err ->
+                    if (ok) {
+                        senhaPara = null
+                        android.widget.Toast.makeText(ctxToast, "Senha definida. A pessoa troca no próximo login.", android.widget.Toast.LENGTH_LONG).show()
+                    } else setErro(err ?: "Não foi possível definir a senha.")
+                }
+            },
+        )
+    }
 
     if (showPersonalizarInicio) {
         PersonalizarInicioDialog(
@@ -539,8 +572,14 @@ private fun EquipeCard(
                         RoleDropdown(selected = editRole) { editRole = it }
                         Text("Módulos liberados", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 8.dp))
                         ModulesChecklist(selected = editModules) { editModules = it }
-                        Button(onClick = { onUpdateModules(id, editRole, editModules) }, enabled = !busy, modifier = Modifier.padding(top = 8.dp)) {
-                            Text("Salvar permissões")
+                        Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Button(onClick = { onUpdateModules(id, editRole, editModules) }, enabled = !busy) {
+                                Text("Salvar permissões")
+                            }
+                            if (role != "OWNER") {
+                                Spacer(Modifier.width(8.dp))
+                                androidx.compose.material3.OutlinedButton(onClick = { senhaPara = id to email }, enabled = !busy) { Text("Definir nova senha") }
+                            }
                         }
                     }
                 }
@@ -550,23 +589,46 @@ private fun EquipeCard(
 
         Spacer(Modifier.height(8.dp))
         if (!showInviteForm) {
-            Button(onClick = { showInviteForm = true }, modifier = Modifier.padding(top = 8.dp)) { Text("Convidar colaborador") }
+            Button(onClick = { showInviteForm = true }, modifier = Modifier.padding(top = 8.dp)) { Text("Novo usuário") }
         } else {
             Column(modifier = Modifier.padding(top = 12.dp)) {
                 OutlinedTextField(value = inviteEmail, onValueChange = { inviteEmail = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = appFieldColors())
                 RoleDropdown(selected = inviteRole) { inviteRole = it }
+                Text("Como entregar o acesso", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 8.dp))
+                listOf(
+                    Triple("senha", "Criar com senha provisória", "Você define a senha e entrega à pessoa. Ela troca no primeiro login."),
+                    Triple("convite", "Enviar convite por email", "A pessoa cria a senha pelo link. Precisa de um email real."),
+                ).forEach { (mid, titulo, dica) ->
+                    Row(
+                        verticalAlignment = Alignment.Top,
+                        modifier = Modifier.fillMaxWidth().clickable { inviteModo = mid }.padding(vertical = 4.dp),
+                    ) {
+                        androidx.compose.material3.RadioButton(selected = inviteModo == mid, onClick = { inviteModo = mid })
+                        Column(modifier = Modifier.padding(top = 10.dp)) {
+                            Text(titulo, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                            Text(dica, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+                if (inviteModo == "senha") {
+                    OutlinedTextField(
+                        value = inviteSenha, onValueChange = { inviteSenha = it }, label = { Text("Senha provisória") },
+                        modifier = Modifier.fillMaxWidth(), singleLine = true, colors = appFieldColors(),
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    )
+                }
                 Text("Módulos liberados", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 8.dp))
                 ModulesChecklist(selected = inviteModules) { inviteModules = it }
                 if (inviteError != null) Text(inviteError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
                 Row(modifier = Modifier.padding(top = 8.dp)) {
                     Button(
                         onClick = {
-                            onInvite(inviteEmail.trim(), inviteRole, inviteModules) { ok, err ->
-                                if (ok) { showInviteForm = false; inviteEmail = ""; inviteModules = emptyList(); inviteError = null } else inviteError = err
+                            onInvite(inviteEmail.trim(), inviteRole, inviteModules, inviteModo, inviteSenha) { ok, err ->
+                                if (ok) { showInviteForm = false; inviteEmail = ""; inviteSenha = ""; inviteModules = emptyList(); inviteError = null } else inviteError = err
                             }
                         },
-                        enabled = !busy && inviteEmail.contains("@"),
-                    ) { Text("Enviar convite") }
+                        enabled = !busy && inviteEmail.contains("@") && (inviteModo != "senha" || inviteSenha.length >= 8),
+                    ) { Text(if (inviteModo == "senha") "Criar acesso" else "Enviar convite") }
                     Spacer(Modifier.width(8.dp))
                     androidx.compose.material3.OutlinedButton(onClick = { showInviteForm = false }) { Text("Cancelar") }
                 }
@@ -574,6 +636,30 @@ private fun EquipeCard(
         }
         if (busy) CircularProgressIndicator(modifier = Modifier.padding(top = 8.dp))
     }
+}
+
+/** v134 -- administrador define uma senha nova para um membro. */
+@Composable
+private fun NovaSenhaDialog(email: String, busy: Boolean, onDismiss: () -> Unit, onSave: (String, (String) -> Unit) -> Unit) {
+    var senha by remember { mutableStateOf("") }
+    var erro by remember { mutableStateOf<String?>(null) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Nova senha de $email") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = senha, onValueChange = { senha = it; erro = null }, label = { Text("Senha provisória") },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true, colors = appFieldColors(),
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                )
+                Text("Mínimo de 8 caracteres. A pessoa troca no próximo login.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (erro != null) Text(erro!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            }
+        },
+        confirmButton = { Button(onClick = { onSave(senha) { erro = it } }, enabled = !busy && senha.length >= 8) { Text("Salvar") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+    )
 }
 
 @Composable
@@ -638,6 +724,9 @@ private fun AuditLogsCard(auditLogs: kotlinx.serialization.json.JsonArray?) {
         }
     }
 }
+
+/** v134 -- usado pelo Painel do dono (ui/admin). */
+fun formatIsoPublico(iso: String?): String = formatIso(iso)
 
 private fun formatIso(iso: String?): String {
     if (iso.isNullOrBlank()) return ""
