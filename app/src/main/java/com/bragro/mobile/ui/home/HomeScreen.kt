@@ -783,7 +783,7 @@ fun HomeScreen(
                             IconButton(onClick = { modulosMenuOpen = true }) {
                                 Icon(Icons.Outlined.GridView, contentDescription = "Módulos")
                             }
-                            com.bragro.mobile.ui.theme.MenuSuspenso(expanded = modulosMenuOpen, onDismissRequest = { modulosMenuOpen = false }) {
+                            com.bragro.mobile.ui.theme.MenuSuspenso(expanded = modulosMenuOpen, onDismissRequest = { modulosMenuOpen = false }, corFixa = com.bragro.mobile.ui.theme.corMenuBarra()) {
                                 DropdownMenuItem(
                                     text = { Text("Configurações") },
                                     leadingIcon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
@@ -820,7 +820,7 @@ fun HomeScreen(
                             IconButton(onClick = { configMenuOpen = true }) {
                                 Icon(Icons.Outlined.Settings, contentDescription = "Configurações")
                             }
-                            com.bragro.mobile.ui.theme.MenuSuspenso(expanded = configMenuOpen, onDismissRequest = { configMenuOpen = false }) {
+                            com.bragro.mobile.ui.theme.MenuSuspenso(expanded = configMenuOpen, onDismissRequest = { configMenuOpen = false }, corFixa = com.bragro.mobile.ui.theme.corMenuBarra()) {
                                 val apkUrl = home?.apkUrl
                                 val apkVersao = home?.apkVersao
                                 if (!apkUrl.isNullOrBlank()) {
@@ -896,7 +896,7 @@ fun HomeScreen(
                             IconButton(onClick = { dbMenuOpen = true }) {
                                 Icon(IconesVazados.Storage, contentDescription = "Base de Dados")
                             }
-                            com.bragro.mobile.ui.theme.MenuSuspenso(expanded = dbMenuOpen, onDismissRequest = { dbMenuOpen = false }) {
+                            com.bragro.mobile.ui.theme.MenuSuspenso(expanded = dbMenuOpen, onDismissRequest = { dbMenuOpen = false }, corFixa = com.bragro.mobile.ui.theme.corMenuBarra()) {
                                 val grupos = home?.baseDeDadosCategorias.orEmpty()
                                 if (grupos.isEmpty()) {
                                     DropdownMenuItem(text = { Text("Nenhuma categoria cadastrada ainda") }, onClick = {}, enabled = false)
@@ -960,7 +960,7 @@ fun HomeScreen(
                                 Icon(Icons.Outlined.AccountCircle, contentDescription = "Conta")
                             }
                         }
-                        com.bragro.mobile.ui.theme.MenuSuspenso(expanded = userMenuOpen, onDismissRequest = { userMenuOpen = false }) {
+                        com.bragro.mobile.ui.theme.MenuSuspenso(expanded = userMenuOpen, onDismissRequest = { userMenuOpen = false }, corFixa = com.bragro.mobile.ui.theme.corMenuBarra()) {
                             // Trocar foto direto pelo app -- pedido do
                             // usuário ("coloque também no ícone usuário a
                             // opção de inserir foto").
