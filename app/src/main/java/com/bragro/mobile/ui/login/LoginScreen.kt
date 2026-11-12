@@ -58,6 +58,25 @@ class LoginViewModel(app: Application) : AndroidViewModel(app) {
     // v72b -- 2 etapas: senha conferida, falta o código do autenticador.
     var pendente = mutableStateOf<LoginResult.PrecisaCodigo?>(null)
         private set
+    // v139 -- senha provisória: troca antes de entrar.
+    var trocarSenha = mutableStateOf<LoginResult.TrocarSenha?>(null)
+        private set
+
+    fun salvarNovaSenha(email: String, nova: String, repetir: String, onSuccess: () -> Unit) {
+        val p = trocarSenha.value ?: return
+        if (nova.length < 8) { errorMessage.value = "A senha precisa ter pelo menos 8 caracteres."; return }
+        if (nova != repetir) { errorMessage.value = "As duas senhas não são iguais."; return }
+        loading.value = true
+        errorMessage.value = null
+        viewModelScope.launch {
+            when (val r = authRepository.trocarSenha(email.trim(), nova, p)) {
+                is LoginResult.Success -> { trocarSenha.value = null; onSuccess() }
+                is LoginResult.Failure -> errorMessage.value = r.message
+                else -> Unit
+            }
+            loading.value = false
+        }
+    }
 
     fun verificarCodigo(email: String, password: String, codigo: String, onSuccess: () -> Unit) {
         val p = pendente.value ?: return
@@ -72,6 +91,7 @@ class LoginViewModel(app: Application) : AndroidViewModel(app) {
                 is LoginResult.Success -> { pendente.value = null; onSuccess() }
                 is LoginResult.Failure -> errorMessage.value = r.message
                 is LoginResult.PrecisaCodigo -> Unit
+                is LoginResult.TrocarSenha -> { pendente.value = null; trocarSenha.value = r }
             }
             loading.value = false
         }
@@ -89,6 +109,7 @@ class LoginViewModel(app: Application) : AndroidViewModel(app) {
                 is LoginResult.Success -> onSuccess()
                 is LoginResult.Failure -> errorMessage.value = result.message
                 is LoginResult.PrecisaCodigo -> pendente.value = result
+                is LoginResult.TrocarSenha -> trocarSenha.value = result
             }
             loading.value = false
         }
@@ -220,6 +241,30 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
             )
         }
 
+        // v139 -- "Troque sua senha" (entrou com a senha provisória).
+        val trocar by viewModel.trocarSenha
+        var nova by remember { mutableStateOf("") }
+        var repetir by remember { mutableStateOf("") }
+        if (trocar != null) {
+            androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 16.dp))
+            Text("Troque sua senha", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            Text("Você entrou com uma senha provisória.", style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+            androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 8.dp))
+            OutlinedTextField(
+                value = nova, onValueChange = { nova = it }, label = { Text("Nova senha") },
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                modifier = Modifier.fillMaxWidth(), singleLine = true, colors = appFieldColors(),
+            )
+            androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 8.dp))
+            OutlinedTextField(
+                value = repetir, onValueChange = { repetir = it }, label = { Text("Repetir senha") },
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                modifier = Modifier.fillMaxWidth(), singleLine = true, colors = appFieldColors(),
+            )
+        }
+
         if (error != null) {
             androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 8.dp))
             Text(error!!, color = androidx.compose.material3.MaterialTheme.colorScheme.error)
@@ -228,7 +273,8 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 20.dp))
         Button(
             onClick = {
-                if (viewModel.pendente.value != null) viewModel.verificarCodigo(email, password, codigo2, onLoggedIn)
+                if (viewModel.trocarSenha.value != null) viewModel.salvarNovaSenha(email, nova, repetir, onLoggedIn)
+                else if (viewModel.pendente.value != null) viewModel.verificarCodigo(email, password, codigo2, onLoggedIn)
                 else viewModel.login(email, password, onLoggedIn)
             },
             enabled = !loading,
@@ -237,7 +283,7 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
             if (loading) {
                 CircularProgressIndicator(modifier = Modifier.padding(2.dp))
             } else {
-                Text("Entrar")
+                Text(if (trocar != null) "Salvar e entrar" else "Entrar")
             }
         }
 

@@ -649,6 +649,7 @@ private fun FarmsCard(
     // Pedido do usuário: "coloque o campo latitude longitude depois da área
     // 2" -- por isso vem depois de newCultura2Ha abaixo.
     var newLocation by remember { mutableStateOf("") }
+    val ctxLoc = androidx.compose.ui.platform.LocalContext.current
     // Situação da terra / regime de posse (9ª exceção de schema, ver
     // MEMORY.md) -- pedido do usuário: "logo após lat/lon o campo com
     // lista suspensa (parceria, comodato, própria, arrendo)".
@@ -866,8 +867,10 @@ private fun FarmsCard(
                             label = { Text("latitude, longitude", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             textStyle = MaterialTheme.typography.bodySmall,
                             singleLine = true,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1.4f),
                             colors = appFieldColors(),
+                            // v139 -- 📍 minha localização e 🔍 município.
+                            trailingIcon = { LocalizacaoBotoes(onLocal = { locationText = it }, onAviso = { android.widget.Toast.makeText(ctxLoc, it, android.widget.Toast.LENGTH_LONG).show() }) },
                         )
                         SituacaoTerraDropdownField(
                             value = situacaoTerraText,
@@ -1028,8 +1031,9 @@ private fun FarmsCard(
                     value = newLocation, onValueChange = { newLocation = it },
                     label = { Text("latitude, longitude", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     textStyle = MaterialTheme.typography.bodySmall,
-                    singleLine = true, modifier = Modifier.weight(1f),
+                    singleLine = true, modifier = Modifier.weight(1.4f),
                     colors = appFieldColors(),
+                    trailingIcon = { LocalizacaoBotoes(onLocal = { newLocation = it }, onAviso = { android.widget.Toast.makeText(ctxLoc, it, android.widget.Toast.LENGTH_LONG).show() }) },
                 )
                 SituacaoTerraDropdownField(
                     value = newSituacaoTerra, onValueChange = { newSituacaoTerra = it },

@@ -1515,6 +1515,26 @@ fun HomeScreen(
             val showCambio = data.hasWidget("inicio.cambio") && fx != null
             val showDestaques = data.hasWidget("inicio.destaques")
             if (showClima) {
+                // v139 -- fazenda sem localização: avisa de onde é a previsão.
+                data.climaSemLocalizacao?.let { sem ->
+                    item(key = "clima-aviso") {
+                        val laranja = androidx.compose.ui.graphics.Color(0xFFD9822B)
+                        androidx.compose.material3.Surface(
+                            onClick = onOpenBaseDeDados,
+                            color = laranja.copy(alpha = 0.12f),
+                            shape = MaterialTheme.shapes.small,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(
+                                if (sem == "todas") "Nenhuma fazenda tem localização: previsão de Tupaciguara/MG. Toque para definir."
+                                else "$sem sem localização: previsão de ${data.climaLocal ?: "Tupaciguara/MG"}. Toque para definir.",
+                                color = laranja,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(10.dp),
+                            )
+                        }
+                    }
+                }
                 item(key = "clima") {
                     ClimaCard(clima!!, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth())
                 }

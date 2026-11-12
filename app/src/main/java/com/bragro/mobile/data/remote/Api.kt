@@ -177,6 +177,14 @@ interface SupabaseAuthApi {
         @Header("Authorization") bearer: String,
     ): Response<kotlinx.serialization.json.JsonObject>
 
+    // v139 -- troca da senha provisória (PUT /auth/v1/user).
+    @retrofit2.http.PUT("auth/v1/user")
+    suspend fun updateUser(
+        @Header("apikey") apiKey: String,
+        @Header("Authorization") bearer: String,
+        @Body body: kotlinx.serialization.json.JsonObject,
+    ): Response<kotlinx.serialization.json.JsonObject>
+
     @POST("auth/v1/factors/{id}/challenge")
     suspend fun mfaChallenge(
         @Header("apikey") apiKey: String,
@@ -392,6 +400,10 @@ interface MobileApi {
     // "Repositório de XML" (Task #655/#644) -- baixar em lote o XML das
     // notas recebidas/enviadas (mesma rota /api/mobile/nfe, action
     // "downloadLote", ver downloadXmlLoteAction no site).
+    // v139 -- ações da emissão nativa (form, emitir_saida, cancelar, cce, pdf, xml, cep).
+    @POST("api/mobile/nfe")
+    suspend fun nfeAcao(@Body body: kotlinx.serialization.json.JsonObject): Response<kotlinx.serialization.json.JsonObject>
+
     @POST("api/mobile/nfe")
     suspend fun nfeDownloadLote(@Body body: NfeDownloadLoteRequest): Response<NfeDownloadLoteResponse>
 

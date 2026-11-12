@@ -327,6 +327,9 @@ data class HomeData(
     // v89 -- coordenada do clima do Início (fazenda selecionada; mesma regra do site).
     val climaLat: Double? = null,
     val climaLon: Double? = null,
+    // v139 -- fazenda escolhida sem localização (aviso no clima).
+    val climaSemLocalizacao: String? = null,
+    val climaLocal: String? = null,
     val saldoFinanceiroAberto: Double,
     val itensEstoque: Int,
     val safrasAtivas: Int,
@@ -1329,6 +1332,10 @@ data class InvoiceData(
     val dataEmissao: String? = null,
     val criadoEm: String? = null,
     val itensCount: Int = 0,
+    // v139 -- emissão nativa (DANFE, XML, carta, cancelar no app).
+    val provedorSefaz: String? = null,
+    val chaveAcesso: String? = null,
+    val modelo: String? = null,
 )
 
 // "action" SEM valor padrão de propósito nas 5 requests abaixo (mesmo

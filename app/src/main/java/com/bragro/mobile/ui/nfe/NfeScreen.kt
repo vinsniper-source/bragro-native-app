@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.foundation.lazy.items
@@ -96,7 +98,7 @@ class NfeViewModel(app: Application) : AndroidViewModel(app) {
     var pendingAction = mutableStateOf<String?>(null)
         private set
 
-    init { carregar() }
+    init { carregar(); carregarForm() }
 
     fun carregar() {
         carregando.value = true
@@ -159,6 +161,45 @@ class NfeViewModel(app: Application) : AndroidViewModel(app) {
             }
             onDone(resultado.mensagem ?: resultado.error, resultado.ok)
             carregar()
+        }
+    }
+
+    // v139 -- emissão nativa pelo app.
+    var formNativo = mutableStateOf<kotlinx.serialization.json.JsonObject?>(null)
+        private set
+
+    fun carregarForm() {
+        viewModelScope.launch { repository.acao("form").onSuccess { formNativo.value = it } }
+    }
+
+    fun buscarCep(cep: String, onDone: (kotlinx.serialization.json.JsonObject?) -> Unit) {
+        viewModelScope.launch {
+            onDone(repository.acao("cep", mapOf("cep" to kotlinx.serialization.json.JsonPrimitive(cep))).getOrNull()?.obj("endereco"))
+        }
+    }
+
+    fun emitirSaida(nota: kotlinx.serialization.json.JsonObject, emitir: Boolean, onDone: (String?, Boolean) -> Unit) {
+        pendingAction.value = "emitirSaida"
+        viewModelScope.launch {
+            val r = repository.acao("emitir_saida", mapOf("nota" to nota, "emitir" to kotlinx.serialization.json.JsonPrimitive(emitir)))
+            pendingAction.value = null
+            r.fold({ onDone(it["mensagem"].txt().ifBlank { "Nota salva." }, true) }, { onDone(it.message, false) })
+            carregar()
+        }
+    }
+
+    /** DANFE (pdf), XML (xml), carta de correção (cce) ou cancelamento (cancelar). */
+    fun acaoNota(acao: String, invoiceId: String, texto: String? = null, onDone: (Result<kotlinx.serialization.json.JsonObject>) -> Unit) {
+        pendingAction.value = "$acao:$invoiceId"
+        viewModelScope.launch {
+            val extra = buildMap<String, kotlinx.serialization.json.JsonElement> {
+                put("invoiceId", kotlinx.serialization.json.JsonPrimitive(invoiceId))
+                if (texto != null) put("texto", kotlinx.serialization.json.JsonPrimitive(texto))
+            }
+            val r = repository.acao(acao, extra)
+            pendingAction.value = null
+            onDone(r)
+            if (r.isSuccess && (acao == "cce" || acao == "cancelar")) carregar()
         }
     }
 
@@ -235,10 +276,11 @@ private fun InvoiceCard(
     pendingAction: String?,
     onEmitir: () -> Unit,
     onExcluir: () -> Unit,
+    onAbrir: (() -> Unit)? = null,
 ) {
     val emitindo = pendingAction == "emitir:${inv.id}"
     val excluindo = pendingAction == "delete:${inv.id}"
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth().then(if (onAbrir != null) Modifier.clickable(onClick = onAbrir) else Modifier)) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             // v1.6.7 (mockup v108, item 5) -- duas linhas: número/série e valor;
             // fornecedor · tipo · situação · ações, distribuídos por igual.
@@ -286,11 +328,12 @@ private fun InvoiceRow(
     pendingAction: String?,
     onEmitir: () -> Unit,
     onExcluir: () -> Unit,
+    onAbrir: (() -> Unit)? = null,
 ) {
     val emitindo = pendingAction == "emitir:${inv.id}"
     val excluindo = pendingAction == "delete:${inv.id}"
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth().then(if (onAbrir != null) Modifier.clickable(onClick = onAbrir) else Modifier).padding(horizontal = 12.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -438,6 +481,12 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
     var lancAberto by remember { mutableStateOf(false) }
     var erroXmlLote by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+    // v139 -- emissão nativa.
+    val formNativo by viewModel.formNativo
+    var showEmitir by remember { mutableStateOf(false) }
+    var notaNativa by remember { mutableStateOf<InvoiceData?>(null) }
+    fun abrirSeNativa(inv: InvoiceData): (() -> Unit)? =
+        if (inv.provedorSefaz == "nativo" && (inv.statusSefaz == "AUTORIZADA" || inv.statusSefaz == "CANCELADA")) ({ notaNativa = inv }) else null
 
     Scaffold(
         topBar = {
@@ -515,6 +564,9 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
                                 )
                             },
                             operacoes = {
+                                if (formNativo?.get("nativo").txt() == "true") {
+                                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Description, label = "+ Emitir", onClick = { showEmitir = true })
+                                }
                                 com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Add, label = "+ Nota", onClick = { copiaOrigem = null; showNovaNota = true })
                                 com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ContentCopy, label = "Copiar", onClick = { if (ultimaNota != null) { copiaOrigem = ultimaNota; showNovaNota = true } })
                                 com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.VerifiedUser, label = "Certificado", onClick = { showCertificado = true })
@@ -541,6 +593,7 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
                                 pendingAction = pendingAction,
                                 onEmitir = { viewModel.emitir(inv.id) { mensagem, _ -> mensagemEmissao = mensagem } },
                                 onExcluir = { confirmarExclusao = inv },
+                                onAbrir = abrirSeNativa(inv),
                             )
                         } else {
                             Column {
@@ -549,6 +602,7 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
                                     pendingAction = pendingAction,
                                     onEmitir = { viewModel.emitir(inv.id) { mensagem, _ -> mensagemEmissao = mensagem } },
                                     onExcluir = { confirmarExclusao = inv },
+                                    onAbrir = abrirSeNativa(inv),
                                 )
                                 HorizontalDivider()
                             }
@@ -590,7 +644,7 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
     if (dialogErro != null) {
         AlertDialog(
             onDismissRequest = { dialogErro = null },
-            title = { Text("Não foi possível lançar") },
+            title = { Text("Não foi possível concluir") },
             text = { Text(dialogErro ?: "") },
             confirmButton = { TextButton(onClick = { dialogErro = null }) { Text("Ok") } },
         )
@@ -637,5 +691,46 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
             dismissButton = { TextButton(onClick = { confirmarExclusao = null }) { Text("Cancelar") } },
         )
     }
-}
 
+    val form = formNativo
+    if (showEmitir && form != null) {
+        EmitirNfeAppDialog(
+            form = form,
+            pending = pendingAction == "emitirSaida",
+            onDismiss = { showEmitir = false },
+            onBuscarCep = { cep, cb -> viewModel.buscarCep(cep, cb) },
+            onSalvar = { nota, emitir ->
+                viewModel.emitirSaida(nota, emitir) { msg, ok ->
+                    if (ok) { showEmitir = false; mensagemEmissao = msg } else dialogErro = msg
+                }
+            },
+        )
+    }
+
+    val nativa = notaNativa
+    if (nativa != null) {
+        AcoesNotaNativaDialog(
+            inv = nativa,
+            pending = pendingAction?.endsWith(":${nativa.id}") == true,
+            onDismiss = { notaNativa = null },
+            onDanfe = {
+                viewModel.acaoNota("pdf", nativa.id) { r ->
+                    r.fold({
+                        val bytes = android.util.Base64.decode(it["base64"].txt(), android.util.Base64.DEFAULT)
+                        shareBinaryFile(context, bytes, "${nativa.chaveAcesso ?: nativa.numero}.pdf", "application/pdf")
+                    }, { dialogErro = it.message })
+                }
+            },
+            onXml = {
+                viewModel.acaoNota("xml", nativa.id) { r ->
+                    r.fold({ com.bragro.mobile.ui.util.shareTextFile(context, it["nome"].txt().ifBlank { "nota.xml" }, "application/xml", it["xml"].txt()) }, { dialogErro = it.message })
+                }
+            },
+            onTexto = { acao, texto ->
+                viewModel.acaoNota(acao, nativa.id, texto) { r ->
+                    r.fold({ notaNativa = null; mensagemEmissao = it["mensagem"].txt().ifBlank { "Feito." } }, { dialogErro = it.message })
+                }
+            },
+        )
+    }
+}

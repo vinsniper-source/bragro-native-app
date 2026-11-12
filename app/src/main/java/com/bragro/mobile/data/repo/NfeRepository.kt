@@ -151,4 +151,30 @@ class NfeRepository(context: Context) {
             NfeDownloadLoteResponse(ok = false, error = "Sem conexão. Tente novamente.")
         }
     }
+
+    /** v139 -- ação genérica da emissão nativa. `extra` vai junto no corpo. */
+    suspend fun acao(action: String, extra: Map<String, kotlinx.serialization.json.JsonElement> = emptyMap()): Result<kotlinx.serialization.json.JsonObject> {
+        val tokens = tokenStore.current() ?: return Result.failure(IllegalStateException("Sessão expirada. Entre novamente."))
+        var (accessToken, refreshToken) = tokens
+        return try {
+            fun corpo() = kotlinx.serialization.json.JsonObject(
+                mapOf(
+                    "accessToken" to kotlinx.serialization.json.JsonPrimitive(accessToken),
+                    "refreshToken" to kotlinx.serialization.json.JsonPrimitive(refreshToken),
+                    "action" to kotlinx.serialization.json.JsonPrimitive(action),
+                ) + extra,
+            )
+            var r = NetworkModule.mobileApi.nfeAcao(corpo())
+            if (r.code() == 401) {
+                TokenRefresher.refreshAccessToken(tokenStore, refreshToken)?.let { accessToken = it; r = NetworkModule.mobileApi.nfeAcao(corpo()) }
+            }
+            val body = r.body() ?: r.errorBody()?.string()?.let { runCatching { kotlinx.serialization.json.Json.parseToJsonElement(it) as kotlinx.serialization.json.JsonObject }.getOrNull() }
+            val ok = (body?.get("ok") as? kotlinx.serialization.json.JsonPrimitive)?.content == "true"
+            if (ok && body != null) Result.success(body)
+            else Result.failure(IllegalStateException((body?.get("error") as? kotlinx.serialization.json.JsonPrimitive)?.content ?: "Falha na operação."))
+        } catch (e: Exception) {
+            AppLog.e("NfeRepository", "Falha na ação $action", e)
+            Result.failure(IllegalStateException("Sem conexão. Tente novamente."))
+        }
+    }
 }

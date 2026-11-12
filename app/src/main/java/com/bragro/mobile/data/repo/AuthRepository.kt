@@ -17,6 +17,8 @@ sealed class LoginResult {
     data class Failure(val message: String) : LoginResult()
     /** v72b -- senha certa, falta o código do app autenticador (2 etapas). */
     data class PrecisaCodigo(val factorId: String, val accessToken: String, val refreshToken: String) : LoginResult()
+    /** v139 -- entrou com senha provisória: troca antes de entrar. */
+    data class TrocarSenha(val accessToken: String, val refreshToken: String) : LoginResult()
 }
 
 /** Login/logout -- fala DIRETO com o Supabase Auth (REST), sem passar pelo
@@ -43,6 +45,7 @@ class AuthRepository(private val context: Context) {
             }
             // v72b -- quem ativou 2 etapas digita o código antes de entrar.
             fatorPendente(body.accessToken)?.let { return LoginResult.PrecisaCodigo(it, body.accessToken, body.refreshToken) }
+            if (precisaTrocarSenha(body.accessToken)) return LoginResult.TrocarSenha(body.accessToken, body.refreshToken)
             concluirLogin(email, password, body.accessToken, body.refreshToken)
         } catch (e: Exception) {
             falhaLogin(email, password, e)
@@ -60,9 +63,42 @@ class AuthRepository(private val context: Context) {
             val v = auth.mfaVerify(BuildConfig.SUPABASE_ANON_KEY, bearer, pendente.factorId, mapOf("challenge_id" to challengeId, "code" to codigo.trim()))
             val b = v.body()
             if (!v.isSuccessful || b?.accessToken == null || b.refreshToken == null) return LoginResult.Failure("Código inválido ou vencido.")
+            if (precisaTrocarSenha(b.accessToken)) return LoginResult.TrocarSenha(b.accessToken, b.refreshToken)
             concluirLogin(email, password, b.accessToken, b.refreshToken)
         } catch (e: Exception) {
             falhaLogin(email, password, e)
+        }
+    }
+
+    /** v139 -- senha provisória definida pelo administrador (user_metadata.trocarSenha). */
+    private suspend fun precisaTrocarSenha(accessToken: String): Boolean = try {
+        val r = NetworkModule.supabaseAuthApi.user(BuildConfig.SUPABASE_ANON_KEY, "Bearer $accessToken")
+        r.body()?.get("user_metadata")?.jsonObject?.get("trocarSenha")?.jsonPrimitive?.contentOrNull == "true"
+    } catch (e: Exception) {
+        false
+    }
+
+    /** v139 -- grava a senha nova, tira a marca de provisória e termina o login. */
+    suspend fun trocarSenha(email: String, novaSenha: String, pendente: LoginResult.TrocarSenha): LoginResult {
+        return try {
+            val corpo = kotlinx.serialization.json.buildJsonObject {
+                put("password", kotlinx.serialization.json.JsonPrimitive(novaSenha))
+                put("data", kotlinx.serialization.json.buildJsonObject { put("trocarSenha", kotlinx.serialization.json.JsonPrimitive(false)) })
+            }
+            val r = NetworkModule.supabaseAuthApi.updateUser(BuildConfig.SUPABASE_ANON_KEY, "Bearer ${pendente.accessToken}", corpo)
+            if (!r.isSuccessful) {
+                val erro = r.errorBody()?.string().orEmpty()
+                return LoginResult.Failure(
+                    when {
+                        erro.contains("weak", true) || erro.contains("pwned", true) -> "Senha fraca ou conhecida em vazamentos. Escolha outra."
+                        erro.contains("same", true) -> "A senha nova precisa ser diferente da provisória."
+                        else -> "Não foi possível trocar a senha. Tente de novo."
+                    },
+                )
+            }
+            concluirLogin(email, novaSenha, pendente.accessToken, pendente.refreshToken)
+        } catch (e: Exception) {
+            falhaLogin(email, novaSenha, e)
         }
     }
 
