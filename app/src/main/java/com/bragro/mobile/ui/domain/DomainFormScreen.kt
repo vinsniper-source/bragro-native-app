@@ -1147,7 +1147,7 @@ private fun groupThousands(digits: String): String =
 // completar de novo aqui era a causa do "há 2 (R$) (R$)" relatado pelo
 // usuário. Só o "*" de obrigatório é acrescentado.
 /** v143 (opção B) -- espaço entre as linhas de campos. */
-private val ESPACO_CAMPOS = 18.dp
+private val ESPACO_CAMPOS = 20.dp
 
 private fun fieldLabel(col: ColumnConfig): String = col.label + if (col.required) " *" else ""
 
