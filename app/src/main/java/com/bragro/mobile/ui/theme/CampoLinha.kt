@@ -1,6 +1,10 @@
 package com.bragro.mobile.ui.theme
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -8,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -94,13 +99,10 @@ fun LinhaTextField(
             keyboardOptions = keyboardOptions, keyboardActions = keyboardActions, singleLine = singleLine, maxLines = maxLines, minLines = minLines,
             interactionSource = interactionSource,
             decorationBox = { inner ->
-                TextFieldDefaults.DecorationBox(
-                    value = value, innerTextField = inner, enabled = enabled, singleLine = singleLine,
-                    visualTransformation = visualTransformation, interactionSource = interactionSource, isError = isError,
-                    label = null, placeholder = placeholder, leadingIcon = leadingIcon, trailingIcon = trailingIcon,
-                    prefix = prefix, suffix = suffix, supportingText = supportingText, shape = SEM_CANTO, colors = colors,
-                    contentPadding = PaddingValues(start = 2.dp, end = 2.dp, top = 4.dp, bottom = 1.dp),
-                )
+                // v159 (mockup aprovado) -- decoração própria: setinha/calendário
+                // pequenos em cima da linha (o padrão do Material reserva 48 dp
+                // para o ícone e empurrava a linha para longe do nome).
+                DecoracaoLinha(value.isEmpty(), inner, placeholder, leadingIcon, trailingIcon, prefix, suffix, supportingText, isError, enabled, interactionSource)
             },
         )
         return
@@ -151,13 +153,10 @@ fun LinhaTextField(
             keyboardOptions = keyboardOptions, keyboardActions = keyboardActions, singleLine = singleLine, maxLines = maxLines, minLines = minLines,
             interactionSource = interactionSource,
             decorationBox = { inner ->
-                TextFieldDefaults.DecorationBox(
-                    value = value.text, innerTextField = inner, enabled = enabled, singleLine = singleLine,
-                    visualTransformation = visualTransformation, interactionSource = interactionSource, isError = isError,
-                    label = null, placeholder = placeholder, leadingIcon = leadingIcon, trailingIcon = trailingIcon,
-                    prefix = prefix, suffix = suffix, supportingText = supportingText, shape = SEM_CANTO, colors = colors,
-                    contentPadding = PaddingValues(start = 2.dp, end = 2.dp, top = 4.dp, bottom = 1.dp),
-                )
+                // v159 (mockup aprovado) -- decoração própria: setinha/calendário
+                // pequenos em cima da linha (o padrão do Material reserva 48 dp
+                // para o ícone e empurrava a linha para longe do nome).
+                DecoracaoLinha(value.text.isEmpty(), inner, placeholder, leadingIcon, trailingIcon, prefix, suffix, supportingText, isError, enabled, interactionSource)
             },
         )
         return
@@ -213,6 +212,74 @@ fun CampoAutoLinha(nome: String, valor: String) {
                 Text("—", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = cs.primary, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f))
             } else {
                 Text(valor, fontSize = 15.sp, color = cs.onSurface, modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun DecoracaoLinha(
+    vazio: Boolean,
+    inner: @Composable () -> Unit,
+    placeholder: @Composable (() -> Unit)?,
+    leadingIcon: @Composable (() -> Unit)?,
+    trailingIcon: @Composable (() -> Unit)?,
+    prefix: @Composable (() -> Unit)?,
+    suffix: @Composable (() -> Unit)?,
+    supportingText: @Composable (() -> Unit)?,
+    isError: Boolean,
+    enabled: Boolean,
+    interactionSource: MutableInteractionSource,
+) {
+    val foco by interactionSource.collectIsFocusedAsState()
+    val cs = MaterialTheme.colorScheme
+    val linha = linhaCampoColor()
+    val cor = when {
+        isError -> cs.error
+        foco -> cs.primary
+        !enabled -> linha.copy(alpha = 0.5f)
+        else -> linha
+    }
+    val esp = if (foco) 2.dp else 1.5.dp
+    // Ícone ocupa 22 dp na altura (desenha por cima; o toque continua de 48 dp).
+    @Composable
+    fun Icone(c: @Composable () -> Unit) {
+        CompositionLocalProvider(
+            androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement provides false,
+            androidx.compose.material3.LocalContentColor provides cs.primary,
+        ) {
+            Box(Modifier.width(28.dp).height(22.dp).wrapContentSize(unbounded = true), contentAlignment = Alignment.Center) { c() }
+        }
+    }
+    Column {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .drawBehind {
+                    val y = size.height - esp.toPx() / 2
+                    drawLine(cor, Offset(0f, y), Offset(size.width, y), strokeWidth = esp.toPx())
+                }
+                .padding(start = 2.dp, end = 2.dp, top = 4.dp, bottom = 1.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            if (leadingIcon != null) Icone(leadingIcon)
+            if (prefix != null) prefix()
+            Box(Modifier.weight(1f).heightIn(min = 22.dp), contentAlignment = Alignment.CenterStart) {
+                if (vazio && placeholder != null) {
+                    CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides cs.onSurfaceVariant.copy(alpha = 0.7f)) {
+                        androidx.compose.material3.ProvideTextStyle(TextStyle(fontSize = 15.sp, color = cs.onSurfaceVariant.copy(alpha = 0.7f))) { placeholder() }
+                    }
+                }
+                inner()
+            }
+            if (suffix != null) suffix()
+            if (trailingIcon != null) Icone(trailingIcon)
+        }
+        if (supportingText != null) {
+            androidx.compose.material3.ProvideTextStyle(MaterialTheme.typography.labelSmall) {
+                Box(Modifier.padding(top = 2.dp)) { supportingText() }
             }
         }
     }
