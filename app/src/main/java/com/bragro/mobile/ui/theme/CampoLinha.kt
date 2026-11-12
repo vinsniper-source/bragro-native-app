@@ -99,7 +99,7 @@ fun LinhaTextField(
                     visualTransformation = visualTransformation, interactionSource = interactionSource, isError = isError,
                     label = null, placeholder = placeholder, leadingIcon = leadingIcon, trailingIcon = trailingIcon,
                     prefix = prefix, suffix = suffix, supportingText = supportingText, shape = SEM_CANTO, colors = colors,
-                    contentPadding = PaddingValues(start = 2.dp, end = 2.dp, top = 4.dp, bottom = 3.dp),
+                    contentPadding = PaddingValues(start = 2.dp, end = 2.dp, top = 4.dp, bottom = 1.dp),
                 )
             },
         )
@@ -156,7 +156,7 @@ fun LinhaTextField(
                     visualTransformation = visualTransformation, interactionSource = interactionSource, isError = isError,
                     label = null, placeholder = placeholder, leadingIcon = leadingIcon, trailingIcon = trailingIcon,
                     prefix = prefix, suffix = suffix, supportingText = supportingText, shape = SEM_CANTO, colors = colors,
-                    contentPadding = PaddingValues(start = 2.dp, end = 2.dp, top = 4.dp, bottom = 3.dp),
+                    contentPadding = PaddingValues(start = 2.dp, end = 2.dp, top = 4.dp, bottom = 1.dp),
                 )
             },
         )
@@ -198,22 +198,22 @@ fun CampoAutoLinha(nome: String, valor: String) {
         Row(
             Modifier
                 .weight(1f)
-                .heightIn(min = 30.dp)
+                .heightIn(min = 28.dp)
                 .drawBehind {
                     val y = size.height - 1.dp.toPx()
                     drawLine(linha, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.5.dp.toPx(),
                         pathEffect = PathEffect.dashPathEffect(floatArrayOf(2.dp.toPx(), 3.dp.toPx())))
                 }
-                .padding(start = 2.dp, end = 2.dp, top = 4.dp, bottom = 3.dp),
+                .padding(start = 2.dp, end = 2.dp, top = 4.dp, bottom = 1.dp),
             verticalAlignment = Alignment.Bottom,
         ) {
-            // v146/v147 -- vazio mostra só o AUTO (sem traço).
-            Text(
-                if (valor == "—") "" else valor,
-                fontSize = 15.sp, color = cs.onSurface,
-                modifier = Modifier.weight(1f),
-            )
-            Text("AUTO", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = cs.primary, letterSpacing = 0.6.sp)
+            // v152 (mockup aprovado) -- sem AUTO: vazio mostra só um traço
+            // verde no centro; preenchido mostra o valor.
+            if (valor.isBlank() || valor == "—") {
+                Text("—", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = cs.primary, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f))
+            } else {
+                Text(valor, fontSize = 15.sp, color = cs.onSurface, modifier = Modifier.weight(1f))
+            }
         }
     }
 }
