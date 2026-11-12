@@ -887,7 +887,8 @@ fun DomainFormScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                // v162 (mockup aprovado) -- mais margem nas laterais.
+                .padding(horizontal = 24.dp, vertical = 16.dp),
         ) {
             if (cfg.notice != null) {
                 Text(cfg.notice, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 12.dp))

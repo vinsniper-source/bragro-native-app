@@ -3,6 +3,7 @@ package com.bragro.mobile.ui.theme
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -175,7 +176,7 @@ fun LinhaTextField(
  * esquerda e o campo ocupa o resto (sem repetir o rótulo dentro). */
 @Composable
 fun NomeAoLado(nome: String, obrigatorio: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
         Text(
             nome + if (obrigatorio) " *" else "",
             style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold,
@@ -192,7 +193,7 @@ fun NomeAoLado(nome: String, obrigatorio: Boolean = false, content: @Composable 
 fun CampoAutoLinha(nome: String, valor: String) {
     val linha = linhaCampoColor()
     val cs = MaterialTheme.colorScheme
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
         Text(nome, style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant, modifier = Modifier.padding(top = 5.dp))
         Row(
             Modifier
@@ -253,29 +254,35 @@ private fun DecoracaoLinha(
         }
     }
     Column {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .drawBehind {
-                    val y = size.height - esp.toPx() / 2
-                    drawLine(cor, Offset(0f, y), Offset(size.width, y), strokeWidth = esp.toPx())
-                }
-                .padding(start = 2.dp, end = 2.dp, top = 4.dp, bottom = 1.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            if (leadingIcon != null) Icone(leadingIcon)
-            if (prefix != null) prefix()
-            Box(Modifier.weight(1f).heightIn(min = 22.dp), contentAlignment = Alignment.CenterStart) {
-                if (vazio && placeholder != null) {
-                    CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides cs.onSurfaceVariant.copy(alpha = 0.7f)) {
-                        androidx.compose.material3.ProvideTextStyle(TextStyle(fontSize = 15.sp, color = cs.onSurfaceVariant.copy(alpha = 0.7f))) { placeholder() }
+        // v163 (mockup aprovado) -- a linha termina antes da setinha/calendário:
+        // o ícone fica ao lado, 6 dp afastado e um pouco acima, sem linha embaixo.
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier
+                    .weight(1f)
+                    .drawBehind {
+                        val y = size.height - esp.toPx() / 2
+                        drawLine(cor, Offset(0f, y), Offset(size.width, y), strokeWidth = esp.toPx())
                     }
+                    .padding(start = 2.dp, end = 2.dp, top = 4.dp, bottom = 1.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                if (leadingIcon != null) Icone(leadingIcon)
+                if (prefix != null) prefix()
+                Box(Modifier.weight(1f).heightIn(min = 22.dp), contentAlignment = Alignment.CenterStart) {
+                    if (vazio && placeholder != null) {
+                        CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides cs.onSurfaceVariant.copy(alpha = 0.7f)) {
+                            androidx.compose.material3.ProvideTextStyle(TextStyle(fontSize = 15.sp, color = cs.onSurfaceVariant.copy(alpha = 0.7f))) { placeholder() }
+                        }
+                    }
+                    inner()
                 }
-                inner()
+                if (suffix != null) suffix()
             }
-            if (suffix != null) suffix()
-            if (trailingIcon != null) Icone(trailingIcon)
+            if (trailingIcon != null) {
+                Box(Modifier.padding(start = 6.dp).offset(y = (-2).dp)) { Icone(trailingIcon) }
+            }
         }
         if (supportingText != null) {
             androidx.compose.material3.ProvideTextStyle(MaterialTheme.typography.labelSmall) {
