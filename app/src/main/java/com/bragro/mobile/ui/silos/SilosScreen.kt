@@ -51,7 +51,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import com.bragro.mobile.ui.theme.LinhaTextField as OutlinedTextField
 import androidx.compose.material3.Scaffold
 import com.bragro.mobile.ui.i18n.Text
 import androidx.compose.material3.TextButton

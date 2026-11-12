@@ -48,7 +48,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import com.bragro.mobile.ui.theme.LinhaTextField as OutlinedTextField
 import androidx.compose.material3.Scaffold
 import com.bragro.mobile.ui.i18n.Text
 import androidx.compose.material3.TextButton
@@ -442,7 +442,13 @@ private fun DroneRecordCard(record: DroneRecordDto) {
             // botão de anexo e concluído (errado) que o módulo já estava OK.
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Icon(com.bragro.mobile.ui.domain.IconesVazados.FlightTakeoff, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
-                Text(tipoLabel, style = MaterialTheme.typography.titleSmall)
+                Text(tipoLabel, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                // v140 -- registro vindo da DJI (FlightHub 2 ou SmartFarm).
+                if (record.storagePath.startsWith("flighthub:") || record.storagePath.startsWith("smartfarm:")) {
+                    androidx.compose.material3.Surface(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp)) {
+                        Text("DJI", style = MaterialTheme.typography.labelSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
+                    }
+                }
             }
             Text(isoDateOnlyDrone(record.data), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             record.talhao?.let { Text("Talhão: ${it.uppercase()}", style = MaterialTheme.typography.bodySmall) }

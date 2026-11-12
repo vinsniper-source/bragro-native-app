@@ -264,7 +264,7 @@ fun PixConfigDialog(onDismiss: () -> Unit) {
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Box {
-                        androidx.compose.material3.OutlinedTextField(
+                        com.bragro.mobile.ui.theme.LinhaTextField(
                             value = tipo, onValueChange = {}, readOnly = true, label = { Text("Tipo da chave") },
                             trailingIcon = { TextButton(onClick = { tipoAberto = true }) { Text("Trocar") } },
                             modifier = Modifier.fillMaxWidth(),
@@ -273,9 +273,9 @@ fun PixConfigDialog(onDismiss: () -> Unit) {
                             TIPOS_PIX.forEach { t -> androidx.compose.material3.DropdownMenuItem(text = { Text(t) }, onClick = { tipo = t; tipoAberto = false }) }
                         }
                     }
-                    androidx.compose.material3.OutlinedTextField(value = chave, onValueChange = { chave = it }, label = { Text("Chave") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    androidx.compose.material3.OutlinedTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome do recebedor") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    androidx.compose.material3.OutlinedTextField(value = cidade, onValueChange = { cidade = it }, label = { Text("Cidade") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    com.bragro.mobile.ui.theme.LinhaTextField(value = chave, onValueChange = { chave = it }, label = { Text("Chave") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    com.bragro.mobile.ui.theme.LinhaTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome do recebedor") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    com.bragro.mobile.ui.theme.LinhaTextField(value = cidade, onValueChange = { cidade = it }, label = { Text("Cidade") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     Text(
                         "Com a chave cadastrada, cada cobrança ganha o QR e o código Pix. Alterar a chave pede confirmação (aba Proteção).",
                         style = MaterialTheme.typography.bodySmall,

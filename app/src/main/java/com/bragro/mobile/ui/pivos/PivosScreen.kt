@@ -58,7 +58,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import com.bragro.mobile.ui.theme.LinhaTextField as OutlinedTextField
 import androidx.compose.material3.Scaffold
 import com.bragro.mobile.ui.i18n.Text
 import androidx.compose.material3.TextButton
@@ -903,14 +903,14 @@ private fun LeituraPivoDialog(
     var chuva by remember { mutableStateOf("0") }
     @Composable
     fun campo(v: String, set: (String) -> Unit, rotulo: String, mod: Modifier) =
-        androidx.compose.material3.OutlinedTextField(v, set, label = { Text(rotulo) }, singleLine = true, modifier = mod,
+        com.bragro.mobile.ui.theme.LinhaTextField(v, set, label = { Text(rotulo) }, singleLine = true, modifier = mod,
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal))
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Lançar leitura · ${pivo.nome}") },
         text = {
             Column(Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                androidx.compose.material3.OutlinedTextField(dataBr, { dataBr = it }, label = { Text("Data (dd/mm/aaaa)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                com.bragro.mobile.ui.theme.LinhaTextField(dataBr, { dataBr = it }, label = { Text("Data (dd/mm/aaaa)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 Text("Situação", style = MaterialTheme.typography.labelMedium)
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     STATUS_OPTIONS.forEach { (v, l) -> androidx.compose.material3.FilterChip(selected = status == v, onClick = { status = v }, label = { Text(l) }) }

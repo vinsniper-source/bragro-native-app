@@ -48,7 +48,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import com.bragro.mobile.ui.theme.LinhaTextField as OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -277,7 +277,7 @@ private fun livroCaixaExportRecords(lancamentos: List<LivroCaixaLancamentoData>)
 private fun CampoListaSuspensa(label: String, valorTexto: String, opcoes: List<Pair<String, String>>, onSelect: (String) -> Unit) {
     var aberto by remember { mutableStateOf(false) }
     androidx.compose.material3.ExposedDropdownMenuBox(expanded = aberto, onExpandedChange = { aberto = it }) {
-        androidx.compose.material3.OutlinedTextField(
+        com.bragro.mobile.ui.theme.LinhaTextField(
             value = valorTexto,
             onValueChange = {},
             readOnly = true,

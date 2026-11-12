@@ -44,7 +44,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import com.bragro.mobile.ui.theme.LinhaTextField as OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import com.bragro.mobile.ui.i18n.Text
@@ -994,11 +994,18 @@ fun DomainFormScreen(
                         val raw = if (temPrevia) previa[col.key] ?: "" else computedValues[col.key] ?: ""
                         val dica = if (temPrevia) previaDicas[col.key] else null
                         ComputedFieldDisplay(col = col, raw = raw, optionLabels = optionLabels, dica = dica)
-                        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
+                        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
                         return@forEach
                     }
-                    FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
-                    androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
+                    // v143 -- "nome ______" na mesma linha (checkbox fica como está).
+                    if (col.type == "checkbox") {
+                        FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
+                    } else {
+                        com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label), col.required) {
+                            FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
+                        }
+                    }
+                    androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
                     if (recordId == null && domainId == "financeiro" && col.key == "docNf") {
                         FinanceiroItensInlineSection(
                             docNf = viewModel.fields["docNf"] ?: "",
@@ -1139,6 +1146,9 @@ private fun groupThousands(digits: String): String =
 // lib/domains/registry.ts no site, ex.: "Valor (R$)", "Bruto (R$)") --
 // completar de novo aqui era a causa do "há 2 (R$) (R$)" relatado pelo
 // usuário. Só o "*" de obrigatório é acrescentado.
+/** v143 (opção B) -- espaço entre as linhas de campos. */
+private val ESPACO_CAMPOS = 18.dp
+
 private fun fieldLabel(col: ColumnConfig): String = col.label + if (col.required) " *" else ""
 
 // "Itens (automático)" (itensNf) -- bug real reportado pelo usuário: o campo
@@ -1195,43 +1205,13 @@ private fun computedDisplayValue(col: ColumnConfig, raw: String, optionLabels: M
 // visual do site (record-form.tsx: "bg-muted/40" + rótulo "(calculado)").
 @Composable
 private fun ComputedFieldDisplay(col: ColumnConfig, raw: String, optionLabels: Map<String, String>, dica: String? = null) {
-    // v58 (mockup v58, opção A) -- rótulo + etiqueta "auto" e o valor numa
-    // caixa própria, do tamanho dos outros campos: fundo verde-claro, texto
-    // preto/branco do tema (cor só no fundo, sem fonte verde).
-    val cs = MaterialTheme.colorScheme
+    // v143 (mockup aprovado, opção B) -- "nome ......... AUTO": nome em
+    // cinza, linha pontilhada e AUTO na ponta, sem caixa.
     Column(modifier = Modifier.fillMaxWidth()) {
-        androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            Text(col.label, style = MaterialTheme.typography.labelMedium, color = cs.onSurfaceVariant)
-            // v59 -- "auto" sem fundo, em negrito, na cor normal do texto.
-            Text(
-                "AUTO",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                color = cs.onSurface,
-                modifier = Modifier.padding(start = 6.dp),
-            )
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 4.dp)
-                .heightIn(min = 52.dp)
-                .background(cs.primary.copy(alpha = 0.14f), RoundedCornerShape(8.dp))
-                .border(1.dp, cs.primary.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
-                .padding(horizontal = 14.dp, vertical = 14.dp),
-            contentAlignment = androidx.compose.ui.Alignment.CenterStart,
-        ) {
-            Text(
-                computedDisplayValue(col, raw, optionLabels),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
-                color = cs.onSurface,
-            )
-        }
-        // Dica útil da prévia (ex.: "saldo anterior R$ 9.680,00"). Avisos de
-        // campo obrigatório não aparecem aqui (v58).
+        com.bragro.mobile.ui.theme.CampoAutoLinha(com.bragro.mobile.ui.i18n.Idioma.tr(col.label), computedDisplayValue(col, raw, optionLabels))
+        // Dica útil da prévia (ex.: "saldo anterior R$ 9.680,00").
         if (!dica.isNullOrBlank()) {
-            Text(dica, style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
+            Text(dica, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
         }
     }
 }
@@ -1257,17 +1237,7 @@ private fun ComputedFieldDisplay(col: ColumnConfig, raw: String, optionLabels: M
 // transparentes nos dois estados -- quem demarca o campo agora é só o
 // preenchimento, igual um bloco.
 @Composable
-private fun greenFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = MaterialTheme.colorScheme.primary,
-    unfocusedBorderColor = com.bragro.mobile.ui.theme.cardBorderColor(),
-    disabledBorderColor = com.bragro.mobile.ui.theme.cardBorderColor(),
-    focusedContainerColor = if (com.bragro.mobile.ui.theme.LocalBlocoItens.current) com.bragro.mobile.ui.theme.campoNoBlocoColor() else MaterialTheme.colorScheme.surface,
-    unfocusedContainerColor = if (com.bragro.mobile.ui.theme.LocalBlocoItens.current) com.bragro.mobile.ui.theme.campoNoBlocoColor() else MaterialTheme.colorScheme.surface,
-    disabledContainerColor = if (com.bragro.mobile.ui.theme.LocalBlocoItens.current) com.bragro.mobile.ui.theme.campoNoBlocoColor() else MaterialTheme.colorScheme.surface,
-    focusedLabelColor = MaterialTheme.colorScheme.primary,
-    cursorColor = MaterialTheme.colorScheme.primary,
-    focusedTrailingIconColor = MaterialTheme.colorScheme.primary,
-)
+private fun greenFieldColors() = com.bragro.mobile.ui.theme.appFieldColors()
 
 // Mesmas cores de sempre, só com a borda/rótulo em vermelho quando o campo
 // está na lista de "faltando" depois de uma tentativa de Salvar (pedido do
@@ -1283,8 +1253,8 @@ private fun greenFieldColors() = OutlinedTextFieldDefaults.colors(
 private fun errorFieldColors() = OutlinedTextFieldDefaults.colors(
     unfocusedBorderColor = MaterialTheme.colorScheme.error,
     focusedBorderColor = MaterialTheme.colorScheme.error,
-    focusedContainerColor = MaterialTheme.colorScheme.surface,
-    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+    focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+    unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
     unfocusedLabelColor = MaterialTheme.colorScheme.error,
     focusedLabelColor = MaterialTheme.colorScheme.error,
     cursorColor = MaterialTheme.colorScheme.error,

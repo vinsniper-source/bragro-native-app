@@ -17,7 +17,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import com.bragro.mobile.ui.theme.LinhaTextField as OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import com.bragro.mobile.ui.i18n.Text
 import androidx.compose.material3.TextFieldColors
@@ -209,16 +209,16 @@ fun Card(
  * demarca o campo agora é só o preenchimento, igual um bloco. */
 @Composable
 fun appFieldColors(): TextFieldColors {
-    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    // Campo igual ao da plataforma: fundo da página dentro do cartão + borda cinza.
-    val fill = if (LocalBlocoItens.current) campoNoBlocoColor() else if (dark) Color(0xFF0E100F) else Color(0xFFFFFFFF)
+    // v143 -- campo como linha: sem fundo, linha cinza embaixo, verde no foco.
+    val linha = linhaCampoColor()
     return OutlinedTextFieldDefaults.colors(
     focusedBorderColor = MaterialTheme.colorScheme.primary,
-    unfocusedBorderColor = cardBorderColor(),
-    disabledBorderColor = cardBorderColor(),
-    focusedContainerColor = fill,
-    unfocusedContainerColor = fill,
-    disabledContainerColor = fill,
+    unfocusedBorderColor = linha,
+    disabledBorderColor = linha.copy(alpha = 0.5f),
+    focusedContainerColor = Color.Transparent,
+    unfocusedContainerColor = Color.Transparent,
+    disabledContainerColor = Color.Transparent,
+    errorContainerColor = Color.Transparent,
     focusedLabelColor = MaterialTheme.colorScheme.primary,
     cursorColor = MaterialTheme.colorScheme.primary,
     focusedTrailingIconColor = MaterialTheme.colorScheme.primary,
