@@ -62,6 +62,14 @@ fun linhaCampoColor(): Color =
  * então o campo não repete o rótulo dentro dele. */
 val LocalNomeAoLado = compositionLocalOf { false }
 
+/** v175 (mockup aprovado) -- true = campo com lista: sem setinha; a linha vai
+ * até a ponta e ganha uma pequena dobra vertical na ponta direita. */
+val LocalCampoLista = compositionLocalOf { false }
+
+/** Espaço da coluna de ícones (calendário): 6 dp + 28 dp. Campos sem ícone
+ * reservam o mesmo espaço, então todas as linhas terminam no mesmo ponto. */
+private val COLUNA_ICONE = 34.dp
+
 private val SEM_CANTO: Shape = RoundedCornerShape(0.dp)
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
@@ -93,7 +101,7 @@ fun LinhaTextField(
 ) {
     if (LocalNomeAoLado.current) {
         // v147 (opção A) -- dentro do formulário: linha colada no texto.
-        val st = textStyle.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp))
+        val st = textStyle.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, textAlign = if (numero(keyboardOptions, trailingIcon)) androidx.compose.ui.text.style.TextAlign.End else androidx.compose.ui.text.style.TextAlign.Start))
         BasicTextField(
             value = value, onValueChange = onValueChange, modifier = modifier.fillMaxWidth(), enabled = enabled, readOnly = readOnly,
             textStyle = st, cursorBrush = SolidColor(MaterialTheme.colorScheme.primary), visualTransformation = visualTransformation,
@@ -103,7 +111,7 @@ fun LinhaTextField(
                 // v159 (mockup aprovado) -- decoração própria: setinha/calendário
                 // pequenos em cima da linha (o padrão do Material reserva 48 dp
                 // para o ícone e empurrava a linha para longe do nome).
-                DecoracaoLinha(value.isEmpty(), inner, placeholder, leadingIcon, trailingIcon, prefix, suffix, supportingText, isError, enabled, interactionSource)
+                DecoracaoLinha(value.isEmpty(), inner, placeholder, leadingIcon, trailingIcon, prefix, suffix, supportingText, isError, enabled, interactionSource, numero(keyboardOptions, trailingIcon))
             },
         )
         return
@@ -147,7 +155,7 @@ fun LinhaTextField(
 ) {
     if (LocalNomeAoLado.current) {
         // v147 (opção A) -- dentro do formulário: linha colada no texto.
-        val st = textStyle.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp))
+        val st = textStyle.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, textAlign = if (numero(keyboardOptions, trailingIcon)) androidx.compose.ui.text.style.TextAlign.End else androidx.compose.ui.text.style.TextAlign.Start))
         BasicTextField(
             value = value, onValueChange = onValueChange, modifier = modifier.fillMaxWidth(), enabled = enabled, readOnly = readOnly,
             textStyle = st, cursorBrush = SolidColor(MaterialTheme.colorScheme.primary), visualTransformation = visualTransformation,
@@ -157,7 +165,7 @@ fun LinhaTextField(
                 // v159 (mockup aprovado) -- decoração própria: setinha/calendário
                 // pequenos em cima da linha (o padrão do Material reserva 48 dp
                 // para o ícone e empurrava a linha para longe do nome).
-                DecoracaoLinha(value.text.isEmpty(), inner, placeholder, leadingIcon, trailingIcon, prefix, suffix, supportingText, isError, enabled, interactionSource)
+                DecoracaoLinha(value.text.isEmpty(), inner, placeholder, leadingIcon, trailingIcon, prefix, suffix, supportingText, isError, enabled, interactionSource, numero(keyboardOptions, trailingIcon))
             },
         )
         return
@@ -172,18 +180,23 @@ fun LinhaTextField(
     )
 }
 
-/** Formulário de registro: "nome ______" na mesma linha. O nome fica à
- * esquerda e o campo ocupa o resto (sem repetir o rótulo dentro). */
+/** Campo numérico sem ícone (teclado de número): valor alinhado à direita. */
+private fun numero(k: KeyboardOptions, trailingIcon: (@Composable () -> Unit)?): Boolean =
+    trailingIcon == null && (k.keyboardType == androidx.compose.ui.text.input.KeyboardType.Number ||
+        k.keyboardType == androidx.compose.ui.text.input.KeyboardType.Decimal)
+
+/** Formulário de registro. v175 (mockup aprovado, padrão E da plataforma):
+ * nome pequeno em cima e a linha embaixo, largura toda (o nome continua
+ * fora do campo, sem repetir o rótulo dentro). */
 @Composable
 fun NomeAoLado(nome: String, obrigatorio: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
             nome + if (obrigatorio) " *" else "",
-            style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(top = 5.dp),
+            fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface,
         )
         CompositionLocalProvider(LocalNomeAoLado provides true) {
-            Column(Modifier.weight(1f)) { content() }
+            Column(Modifier.fillMaxWidth()) { content() }
         }
     }
 }
@@ -193,11 +206,13 @@ fun NomeAoLado(nome: String, obrigatorio: Boolean = false, content: @Composable 
 fun CampoAutoLinha(nome: String, valor: String) {
     val linha = linhaCampoColor()
     val cs = MaterialTheme.colorScheme
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        Text(nome, style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant, modifier = Modifier.padding(top = 5.dp))
+    // v175 -- nome em cima; a linha termina antes da coluna dos ícones.
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(nome, fontSize = 11.5.sp, color = cs.onSurfaceVariant)
         Row(
             Modifier
-                .weight(1f)
+                .padding(end = COLUNA_ICONE)
+                .fillMaxWidth()
                 .heightIn(min = 28.dp)
                 .drawBehind {
                     val y = size.height - 1.dp.toPx()
@@ -212,7 +227,7 @@ fun CampoAutoLinha(nome: String, valor: String) {
             if (valor.isBlank() || valor == "—") {
                 Text("—", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = cs.primary, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f))
             } else {
-                Text(valor, fontSize = 15.sp, color = cs.onSurface, modifier = Modifier.weight(1f))
+                Text(valor, fontSize = 15.sp, color = cs.onSurface, textAlign = if (valor.trim().firstOrNull()?.let { it.isDigit() || it == 'R' || it == '-' } == true && valor.any { it.isDigit() }) androidx.compose.ui.text.style.TextAlign.End else androidx.compose.ui.text.style.TextAlign.Start, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -232,7 +247,9 @@ private fun DecoracaoLinha(
     isError: Boolean,
     enabled: Boolean,
     interactionSource: MutableInteractionSource,
+    numero: Boolean = false,
 ) {
+    val lista = LocalCampoLista.current
     val foco by interactionSource.collectIsFocusedAsState()
     val cs = MaterialTheme.colorScheme
     val linha = linhaCampoColor()
@@ -263,6 +280,11 @@ private fun DecoracaoLinha(
                     .drawBehind {
                         val y = size.height - esp.toPx() / 2
                         drawLine(cor, Offset(0f, y), Offset(size.width, y), strokeWidth = esp.toPx())
+                        // v175 -- lista: dobra vertical na ponta direita, na cor da linha.
+                        if (lista) {
+                            val x = size.width - 0.75.dp.toPx()
+                            drawLine(cor, Offset(x, size.height), Offset(x, size.height - 8.dp.toPx()), strokeWidth = 1.5.dp.toPx())
+                        }
                     }
                     .padding(start = 2.dp, end = 2.dp, top = 4.dp, bottom = 1.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -270,7 +292,7 @@ private fun DecoracaoLinha(
             ) {
                 if (leadingIcon != null) Icone(leadingIcon)
                 if (prefix != null) prefix()
-                Box(Modifier.weight(1f).heightIn(min = 22.dp), contentAlignment = Alignment.CenterStart) {
+                Box(Modifier.weight(1f).heightIn(min = 22.dp), contentAlignment = if (numero) Alignment.CenterEnd else Alignment.CenterStart) {
                     if (vazio && placeholder != null) {
                         CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides cs.onSurfaceVariant.copy(alpha = 0.7f)) {
                             androidx.compose.material3.ProvideTextStyle(TextStyle(fontSize = 15.sp, color = cs.onSurfaceVariant.copy(alpha = 0.7f))) { placeholder() }
@@ -280,8 +302,12 @@ private fun DecoracaoLinha(
                 }
                 if (suffix != null) suffix()
             }
-            if (trailingIcon != null) {
+            if (trailingIcon != null && !lista) {
                 Box(Modifier.padding(start = 6.dp).offset(y = (-2).dp)) { Icone(trailingIcon) }
+            } else {
+                // v169/v175 -- sem ícone (ou lista, sem setinha): reserva o
+                // espaço da coluna de ícones para alinhar as pontas.
+                androidx.compose.foundation.layout.Spacer(Modifier.width(COLUNA_ICONE))
             }
         }
         if (supportingText != null) {

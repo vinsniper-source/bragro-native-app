@@ -1148,7 +1148,7 @@ private fun groupThousands(digits: String): String =
 // completar de novo aqui era a causa do "há 2 (R$) (R$)" relatado pelo
 // usuário. Só o "*" de obrigatório é acrescentado.
 /** v143 (opção B) -- espaço entre as linhas de campos. */
-private val ESPACO_CAMPOS = 20.dp
+private val ESPACO_CAMPOS = 16.dp
 
 private fun fieldLabel(col: ColumnConfig): String = col.label + if (col.required) " *" else ""
 
@@ -1321,6 +1321,8 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                 allOptions.none { it.second.equals(trimmedQuery, ignoreCase = true) }
             var creating by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it; if (it) digitou = false }) {
+                // v175 -- lista sem setinha: linha com a dobra na ponta direita.
+                androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.theme.LocalCampoLista provides true) {
                 OutlinedTextField(
                     value = query,
                     onValueChange = { typed -> query = typed; digitou = true; expanded = true },
@@ -1340,6 +1342,7 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                     modifier = Modifier.fillMaxWidth().menuAnchor(),
                     colors = fieldColors,
                 )
+                }
                 // DropdownMenu (não ExposedDropdownMenu) + exposedDropdownSize()
                 // -- ExposedDropdownMenu do material3 1.2.1 NÃO expõe
                 // `properties` (só apareceu em versões mais novas), então o
