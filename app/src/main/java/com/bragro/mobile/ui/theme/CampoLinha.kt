@@ -101,7 +101,7 @@ fun LinhaTextField(
 ) {
     if (LocalNomeAoLado.current) {
         // v147 (opção A) -- dentro do formulário: linha colada no texto.
-        val st = textStyle.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, textAlign = if (numero(keyboardOptions, trailingIcon)) androidx.compose.ui.text.style.TextAlign.End else androidx.compose.ui.text.style.TextAlign.Start))
+        val st = textStyle.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.End))
         BasicTextField(
             value = value, onValueChange = onValueChange, modifier = modifier.fillMaxWidth(), enabled = enabled, readOnly = readOnly,
             textStyle = st, cursorBrush = SolidColor(MaterialTheme.colorScheme.primary), visualTransformation = visualTransformation,
@@ -155,7 +155,7 @@ fun LinhaTextField(
 ) {
     if (LocalNomeAoLado.current) {
         // v147 (opção A) -- dentro do formulário: linha colada no texto.
-        val st = textStyle.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, textAlign = if (numero(keyboardOptions, trailingIcon)) androidx.compose.ui.text.style.TextAlign.End else androidx.compose.ui.text.style.TextAlign.Start))
+        val st = textStyle.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.End))
         BasicTextField(
             value = value, onValueChange = onValueChange, modifier = modifier.fillMaxWidth(), enabled = enabled, readOnly = readOnly,
             textStyle = st, cursorBrush = SolidColor(MaterialTheme.colorScheme.primary), visualTransformation = visualTransformation,
@@ -225,9 +225,9 @@ fun CampoAutoLinha(nome: String, valor: String) {
             // v152 (mockup aprovado) -- sem AUTO: vazio mostra só um traço
             // verde no centro; preenchido mostra o valor.
             if (valor.isBlank() || valor == "—") {
-                Text("—", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = cs.primary, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f))
+                Text("—", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = cs.primary, textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.weight(1f))
             } else {
-                Text(valor, fontSize = 15.sp, color = cs.onSurface, textAlign = if (valor.trim().firstOrNull()?.let { it.isDigit() || it == 'R' || it == '-' } == true && valor.any { it.isDigit() }) androidx.compose.ui.text.style.TextAlign.End else androidx.compose.ui.text.style.TextAlign.Start, modifier = Modifier.weight(1f))
+                Text(valor, fontSize = 15.sp, color = cs.onSurface, textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -292,7 +292,7 @@ private fun DecoracaoLinha(
             ) {
                 if (leadingIcon != null) Icone(leadingIcon)
                 if (prefix != null) prefix()
-                Box(Modifier.weight(1f).heightIn(min = 22.dp), contentAlignment = if (numero) Alignment.CenterEnd else Alignment.CenterStart) {
+                Box(Modifier.weight(1f).heightIn(min = 22.dp), contentAlignment = Alignment.CenterEnd) {
                     if (vazio && placeholder != null) {
                         CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides cs.onSurfaceVariant.copy(alpha = 0.7f)) {
                             androidx.compose.material3.ProvideTextStyle(TextStyle(fontSize = 15.sp, color = cs.onSurfaceVariant.copy(alpha = 0.7f))) { placeholder() }

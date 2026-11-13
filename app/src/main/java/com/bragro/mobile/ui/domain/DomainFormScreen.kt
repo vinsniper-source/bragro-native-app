@@ -1148,7 +1148,7 @@ private fun groupThousands(digits: String): String =
 // completar de novo aqui era a causa do "há 2 (R$) (R$)" relatado pelo
 // usuário. Só o "*" de obrigatório é acrescentado.
 /** v143 (opção B) -- espaço entre as linhas de campos. */
-private val ESPACO_CAMPOS = 16.dp
+private val ESPACO_CAMPOS = 28.dp
 
 private fun fieldLabel(col: ColumnConfig): String = col.label + if (col.required) " *" else ""
 
@@ -1624,17 +1624,11 @@ private fun brDateToMillisOrNull(br: String): Long? {
 /** Cabeçalho de seção do formulário (QUANDO · número e datas). */
 @Composable
 private fun SecaoFormHeader(titulo: String, sub: String, acoes: @Composable () -> Unit = {}) {
-    Column(modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 8.dp)) {
-        androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                titulo.uppercase(),
-                fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (sub.isNotBlank()) Text("  ·  $sub", fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f)) else Spacer(Modifier.weight(1f))
-            acoes()
-        }
+    // v183 (mockup aprovado) -- sem títulos de seção (como na plataforma):
+    // os campos seguem direto; ficam só os ícones de ação (Copiar último /
+    // Clima de hoje) no canto direito, acima do primeiro campo.
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+        acoes()
     }
 }
 

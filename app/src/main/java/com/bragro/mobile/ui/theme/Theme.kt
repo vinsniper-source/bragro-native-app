@@ -117,7 +117,7 @@ private val LightColors = lightColorScheme(
     // visível. A barra inferior usa esta MESMA cor (ver BottomNavBar.kt,
     // containerColor = colorScheme.background, não mais .surface).
     // v1.6.16 (mockup v118c, opção K) -- fundo cinza limpo #FAFAFA, sem tom verde.
-    background = Color(0xFFFAFAFA),
+    background = Color(0xFFF7F9FA) /* v183 -- branco gelo, igual à plataforma */,
     // "surface" (cor dos Cards -- AppCard.kt/CardDefaults.cardColors() usam
     // este token, não "background") virou uma cor DIFERENTE do fundo --
     // pedido do usuário ("os blocos não tem contorno e não se destacam por
