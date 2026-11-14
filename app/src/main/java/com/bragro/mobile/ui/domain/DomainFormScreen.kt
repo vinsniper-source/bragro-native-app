@@ -1030,8 +1030,20 @@ fun DomainFormScreen(
                 if (g.first == "itens" && domainId in ITENS_INVERTIDOS) {
                     // v194 -- bloco Itens com mais recuo (16 dp); os campos de fora
                     // recuam o mesmo tanto, para todas as linhas terminarem no mesmo ponto.
+                    // v197/v198 (mockups aprovados) -- recuo igual dos quatro lados (26 dp)
+                    // e o copiar item só como ícone no canto superior direito do bloco.
                     com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 4.dp)) { camposDaSecao() }
+                        Box(Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(start = 26.dp, end = 26.dp, top = 30.dp)) { camposDaSecao() }
+                            if (multi != null) {
+                                IconButton(
+                                    onClick = { viewModel.copiarItemPrincipal((multi.sel + multi.inp).map { it.first }) },
+                                    modifier = Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 4.dp).size(40.dp),
+                                ) {
+                                    Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                }
+                            }
+                        }
                     }
                     androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
                 } else {
@@ -1153,8 +1165,8 @@ private fun groupThousands(digits: String): String =
 /** v143 (opção B) -- espaço entre as linhas de campos. */
 private val ESPACO_CAMPOS = 28.dp
 
-/** v194 -- recuo dos campos fora do bloco Itens (16 dp do bloco + 1 dp da borda). */
-private val RECUO_CAMPOS = 17.dp
+/** v197 -- recuo dos campos fora do bloco Itens (26 dp do bloco + 1 dp da borda). */
+private val RECUO_CAMPOS = 27.dp
 
 private fun fieldLabel(col: ColumnConfig): String = col.label + if (col.required) " *" else ""
 
@@ -1652,12 +1664,15 @@ private fun ItensExtrasSection(
     val inp = multi.inp.filter { porChave.containsKey(it.first) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         // v1.6.22 (mockup v127) -- ⧉ Copiar o item principal para uma nova linha.
-        // v196 (mockup aprovado) -- só o ícone de copiar item.
-        IconButton(
-            onClick = { viewModel.copiarItemPrincipal((multi.sel + multi.inp).map { it.first }) },
-            modifier = Modifier.align(Alignment.End).size(40.dp),
-        ) {
-            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+        // v198 -- o copiar item fica dentro do bloco Itens (canto superior
+        // direito); aqui só sobra quando o módulo não tem o bloco.
+        if (domainId !in ITENS_INVERTIDOS) {
+            IconButton(
+                onClick = { viewModel.copiarItemPrincipal((multi.sel + multi.inp).map { it.first }) },
+                modifier = Modifier.align(Alignment.End).size(40.dp),
+            ) {
+                Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+            }
         }
         if (viewModel.itensExtras.isNotEmpty()) {
             Text(

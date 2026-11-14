@@ -211,7 +211,6 @@ fun CampoAutoLinha(nome: String, valor: String) {
         Text(nome, fontSize = 11.5.sp, color = cs.onSurfaceVariant)
         Row(
             Modifier
-                .padding(end = COLUNA_ICONE)
                 .fillMaxWidth()
                 .heightIn(min = 28.dp)
                 .drawBehind {
@@ -304,11 +303,9 @@ private fun DecoracaoLinha(
             }
             if (trailingIcon != null && !lista) {
                 Box(Modifier.padding(start = 6.dp).offset(y = (-2).dp)) { Icone(trailingIcon) }
-            } else {
-                // v169/v175 -- sem ícone (ou lista, sem setinha): reserva o
-                // espaço da coluna de ícones para alinhar as pontas.
-                androidx.compose.foundation.layout.Spacer(Modifier.width(COLUNA_ICONE))
             }
+            // v197 (mockup aprovado) -- sem ícone, a linha ocupa a largura toda
+            // (não reserva mais a coluna do calendário).
         }
         if (supportingText != null) {
             androidx.compose.material3.ProvideTextStyle(MaterialTheme.typography.labelSmall) {

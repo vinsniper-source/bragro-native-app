@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.theme
 
+import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.material3.MaterialTheme
@@ -42,7 +43,9 @@ fun MenuSuspenso(
         androidx.compose.material3.DropdownMenu(
             expanded = expanded,
             onDismissRequest = onDismissRequest,
-            modifier = modifier,
+            // v197 -- a cor vai direto no fundo da lista (o container do
+            // DropdownMenu continuava cinza em alguns aparelhos).
+            modifier = modifier.background(cor),
             offset = offset,
             properties = properties,
             content = content,
