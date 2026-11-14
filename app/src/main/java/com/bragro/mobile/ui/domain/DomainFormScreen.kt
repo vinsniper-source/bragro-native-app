@@ -1683,23 +1683,27 @@ private fun ItensExtrasSection(
         }
         viewModel.itensExtras.forEachIndexed { i, x ->
             com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                // v199 (mockup aprovado) -- itens repetidos no mesmo padrão do
+                // primeiro: um campo por linha, nome em cima, listas com o
+                // cantinho, traço do automático no centro e recuo de 26 dp.
+                Column(modifier = Modifier.fillMaxWidth().padding(start = 26.dp, end = 26.dp, top = 8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                         Text("Item ${i + 2}", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                        IconButton(onClick = { viewModel.copiarItemExtra(i) }, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", modifier = Modifier.size(18.dp))
+                        IconButton(onClick = { viewModel.copiarItemExtra(i) }, modifier = Modifier.size(36.dp)) {
+                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         }
-                        IconButton(onClick = { viewModel.removeItemExtra(i) }, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Outlined.Close, contentDescription = "Remover item")
+                        IconButton(onClick = { viewModel.removeItemExtra(i) }, modifier = Modifier.size(36.dp)) {
+                            Icon(Icons.Outlined.Close, contentDescription = "Remover item", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
-                    sel.chunked(2).forEach { par ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            par.forEach { (k, rotulo) ->
-                                val c = porChave.getValue(k)
-                                val cat = c.dependsOn?.let { d -> c.lookupCategoryByValue?.get(x[d] ?: "") } ?: c.lookupCategory
-                                val opts = (c.staticOptions?.map { it to it } ?: lookups[cat].orEmpty().map { it.value to it.label })
-                                    .sortedBy { it.second.lowercase() }
+                    androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
+                    sel.forEach { (k, rotulo) ->
+                        val c = porChave.getValue(k)
+                        val cat = c.dependsOn?.let { d -> c.lookupCategoryByValue?.get(x[d] ?: "") } ?: c.lookupCategory
+                        val opts = (c.staticOptions?.map { it to it } ?: lookups[cat].orEmpty().map { it.value to it.label })
+                            .sortedBy { it.second.lowercase() }
+                        com.bragro.mobile.ui.theme.NomeAoLado(rotulo) {
+                            androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.theme.LocalCampoLista provides true) {
                                 com.bragro.mobile.ui.theme.SearchableDropdownField(
                                     value = x[k] ?: "",
                                     label = rotulo,
@@ -1708,15 +1712,16 @@ private fun ItensExtrasSection(
                                         x[k] = v
                                         columns.filter { it.dependsOn == k }.forEach { dep -> if (!x[dep.key].isNullOrEmpty()) x[dep.key] = "" }
                                     },
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.fillMaxWidth(),
                                     dense = true,
                                 )
                             }
-                            if (par.size == 1) androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
                         }
+                        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        inp.forEach { (k, rotulo) ->
+                    inp.forEach { (k, rotulo) ->
+                        val nome = when (rotulo) { "Qtd" -> "Quantidade"; "Unitário" -> "Unitário (R$)"; else -> rotulo }
+                        com.bragro.mobile.ui.theme.NomeAoLado(nome) {
                             OutlinedTextField(
                                 value = x[k] ?: "",
                                 onValueChange = { v ->
@@ -1729,22 +1734,17 @@ private fun ItensExtrasSection(
                                         if (d != null && ha != null && ha > 0) x["qtd"] = "%.2f".format(java.util.Locale.US, d * ha).trimEnd('0').trimEnd('.')
                                     }
                                 },
-                                label = { Text(rotulo, maxLines = 1) },
                                 singleLine = true,
                                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
-                                colors = greenFieldColors(),
-                                // v15: quantidade no meio, valor à direita.
-                                textStyle = androidx.compose.material3.LocalTextStyle.current.copy(textAlign = if (porChave[k]?.money == true || k.contains("unit", true) || k.contains("valor", true) || k.contains("preco", true)) androidx.compose.ui.text.style.TextAlign.End else androidx.compose.ui.text.style.TextAlign.Center),
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.fillMaxWidth(),
                             )
                         }
+                        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
                     }
                     multi.total?.let { (a, b) ->
                         val t = (x[a]?.toDoubleOrNull() ?: 0.0) * (x[b]?.toDoubleOrNull() ?: 0.0)
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Total", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-                            Text(if (t > 0) java.text.NumberFormat.getCurrencyInstance(java.util.Locale("pt", "BR")).format(t) else "—", fontWeight = FontWeight.Bold)
-                        }
+                        com.bragro.mobile.ui.theme.CampoAutoLinha("Total (R$)", if (t > 0) java.text.NumberFormat.getCurrencyInstance(java.util.Locale("pt", "BR")).format(t) else "")
+                        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
                     }
                     // v1.6.24 -- consulta do MAPA (Agrofit) também em cada item adicionado.
                     porChave["item"]?.agrofit?.let { cfg -> AgrofitAviso(cfg, x["item"], viewModel.fields + x) }
