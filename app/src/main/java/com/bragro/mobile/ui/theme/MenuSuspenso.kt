@@ -53,5 +53,6 @@ fun MenuSuspenso(
 /** v1.6.29 (mockup v132e) -- menus da barra de baixo e do cabeçalho: branco no modo claro, preto no escuro. */
 @Composable
 fun corMenuBarra(): androidx.compose.ui.graphics.Color =
-    if (MaterialTheme.colorScheme.background.luminance() < 0.5f) androidx.compose.ui.graphics.Color.Black else androidx.compose.ui.graphics.Color.White
+    // v194 -- no claro, branco gelo (cor da barra inferior).
+    if (MaterialTheme.colorScheme.background.luminance() < 0.5f) androidx.compose.ui.graphics.Color.Black else MaterialTheme.colorScheme.background
 

@@ -127,22 +127,22 @@ private val LightColors = lightColorScheme(
     // sumia visualmente). Agora surface é um tom bem mais claro/branco
     // (só 6% de verde) -- os Cards ficam claramente mais claros que o
     // fundo verde da página, sem precisar trazer a borda de volta.
-    surface = Color(0xFFFFFFFF),
-    surfaceVariant = Color(0xFFEEF1EF),
+    surface = Color(0xFFF7F9FA) /* v194 -- tudo no branco gelo */,
+    surfaceVariant = Color(0xFFF7F9FA),
     // Janelas (AlertDialog), menus suspensos e campos usam estes tokens --
     // sem defini-los ficavam no cinza/roxo padrão do Material3.
-    surfaceContainerLowest = Color(0xFFFFFFFF),
-    surfaceContainerLow = Color(0xFFFFFFFF),
+    surfaceContainerLowest = Color(0xFFF7F9FA),
+    surfaceContainerLow = Color(0xFFF7F9FA),
     // v1.6.16 (mockup v119) -- listas suspensas na cor de onde abrem: fora
     // de bloco, na cor do fundo; dentro de um Card, o Card troca para a cor dele.
-    surfaceContainer = Color(0xFFFAFAFA),
+    surfaceContainer = Color(0xFFF7F9FA),
     // Janelas (AlertDialog/DatePicker): verde-acinzentado claro, um degrau
     // abaixo do campo (EFF1EE) -- campos se destacam dentro da janela,
     // igual ao Abastecimento rápido aprovado.
-    surfaceContainerHigh = Color(0xFFFFFFFF),
-    surfaceContainerHighest = Color(0xFFFAFAFA),
-    surfaceDim = Color(0xFFFAFAFA),
-    surfaceBright = Color(0xFFFFFFFF),
+    surfaceContainerHigh = Color(0xFFF7F9FA),
+    surfaceContainerHighest = Color(0xFFF7F9FA),
+    surfaceDim = Color(0xFFF7F9FA),
+    surfaceBright = Color(0xFFF7F9FA),
     outline = Color(0xFFC7C7C7),
     outlineVariant = Color(0xFFD4D4D4),
 )

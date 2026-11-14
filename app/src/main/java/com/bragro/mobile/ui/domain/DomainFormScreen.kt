@@ -888,7 +888,7 @@ fun DomainFormScreen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
                 // v162 (mockup aprovado) -- mais margem nas laterais.
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+                .padding(horizontal = 20.dp, vertical = 20.dp),
         ) {
             if (cfg.notice != null) {
                 Text(cfg.notice, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 12.dp))
@@ -980,7 +980,8 @@ fun DomainFormScreen(
                                 else Icon(Icons.Outlined.WaterDrop, contentDescription = "Preencher com clima de hoje", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
                             }
                         }
-                        IconButton(onClick = { if (lastRecord != null) viewModel.copyFromLastRecord() }, modifier = Modifier.size(32.dp)) {
+                        // v196 -- sem copiar último registro nos módulos com vários itens (já há o copiar item).
+                        if (domainId !in MULTI_ITEM_FORM) IconButton(onClick = { if (lastRecord != null) viewModel.copyFromLastRecord() }, modifier = Modifier.size(32.dp)) {
                             Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último registro", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
                         }
                     }
@@ -1027,12 +1028,14 @@ fun DomainFormScreen(
                 }
                 }
                 if (g.first == "itens" && domainId in ITENS_INVERTIDOS) {
+                    // v194 -- bloco Itens com mais recuo (16 dp); os campos de fora
+                    // recuam o mesmo tanto, para todas as linhas terminarem no mesmo ponto.
                     com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(start = 10.dp, end = 10.dp, top = 10.dp)) { camposDaSecao() }
+                        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 4.dp)) { camposDaSecao() }
                     }
                     androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
                 } else {
-                    camposDaSecao()
+                    Column(Modifier.padding(horizontal = RECUO_CAMPOS)) { camposDaSecao() }
                 }
                 if (g.first == "itens" && multi != null) {
                     ItensExtrasSection(domainId, multi, cfg.columns, lookups, viewModel)
@@ -1149,6 +1152,9 @@ private fun groupThousands(digits: String): String =
 // usuário. Só o "*" de obrigatório é acrescentado.
 /** v143 (opção B) -- espaço entre as linhas de campos. */
 private val ESPACO_CAMPOS = 28.dp
+
+/** v194 -- recuo dos campos fora do bloco Itens (16 dp do bloco + 1 dp da borda). */
+private val RECUO_CAMPOS = 17.dp
 
 private fun fieldLabel(col: ColumnConfig): String = col.label + if (col.required) " *" else ""
 
@@ -1646,13 +1652,12 @@ private fun ItensExtrasSection(
     val inp = multi.inp.filter { porChave.containsKey(it.first) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         // v1.6.22 (mockup v127) -- ⧉ Copiar o item principal para uma nova linha.
-        androidx.compose.material3.TextButton(
+        // v196 (mockup aprovado) -- só o ícone de copiar item.
+        IconButton(
             onClick = { viewModel.copiarItemPrincipal((multi.sel + multi.inp).map { it.first }) },
-            modifier = Modifier.align(Alignment.End),
+            modifier = Modifier.align(Alignment.End).size(40.dp),
         ) {
-            Icon(Icons.Outlined.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
-            androidx.compose.foundation.layout.Spacer(Modifier.size(6.dp))
-            Text("Copiar item")
+            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
         }
         if (viewModel.itensExtras.isNotEmpty()) {
             Text(
@@ -1731,14 +1736,8 @@ private fun ItensExtrasSection(
                 }
             }
         }
-        androidx.compose.material3.OutlinedButton(
-            onClick = { viewModel.addItemExtra() },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-            androidx.compose.foundation.layout.Spacer(Modifier.size(6.dp))
-            Text(multi.rotulo)
-        }
+        // v194 (mockup aprovado) -- sem "Adicionar item nesta O.S.": o
+        // copiar item já cria o item novo (igual à plataforma, v193).
         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 6.dp))
     }
 }

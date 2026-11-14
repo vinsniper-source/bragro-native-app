@@ -219,13 +219,13 @@ fun CampoAutoLinha(nome: String, valor: String) {
                     drawLine(linha, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.5.dp.toPx(),
                         pathEffect = PathEffect.dashPathEffect(floatArrayOf(2.dp.toPx(), 3.dp.toPx())))
                 }
-                .padding(start = 2.dp, end = 2.dp, top = 4.dp, bottom = 1.dp),
+                .padding(start = 2.dp, end = 14.dp, top = 4.dp, bottom = 1.dp),
             verticalAlignment = Alignment.Bottom,
         ) {
             // v152 (mockup aprovado) -- sem AUTO: vazio mostra só um traço
             // verde no centro; preenchido mostra o valor.
             if (valor.isBlank() || valor == "—") {
-                Text("—", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = cs.primary, textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.weight(1f))
+                Text("—", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = cs.primary, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f))
             } else {
                 Text(valor, fontSize = 15.sp, color = cs.onSurface, textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.weight(1f))
             }
@@ -286,7 +286,7 @@ private fun DecoracaoLinha(
                             drawLine(cor, Offset(x, size.height), Offset(x, size.height - 8.dp.toPx()), strokeWidth = 1.5.dp.toPx())
                         }
                     }
-                    .padding(start = 2.dp, end = 2.dp, top = 4.dp, bottom = 1.dp),
+                    .padding(start = 2.dp, end = 14.dp, top = 4.dp, bottom = 1.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {

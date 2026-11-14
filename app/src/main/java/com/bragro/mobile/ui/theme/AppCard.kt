@@ -107,7 +107,8 @@ val LocalInStandardBlock = androidx.compose.runtime.compositionLocalOf { false }
 fun formBlockColor(): Color {
     val bg = MaterialTheme.colorScheme.background
     val dark = bg.luminance() < 0.5f
-    return androidx.compose.ui.graphics.lerp(bg, Color.Black, if (dark) 0.35f else 0.07f)
+    // v194 -- no claro, bloco interno na mesma cor (branco gelo); a borda separa.
+    return if (dark) androidx.compose.ui.graphics.lerp(bg, Color.Black, 0.35f) else bg
 }
 
 /** true dentro do bloco de itens / bloco de campos (v15): o bloco fica com
@@ -119,7 +120,7 @@ val LocalBlocoItens = androidx.compose.runtime.compositionLocalOf { false }
 @Composable
 fun campoNoBlocoColor(): Color {
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    return if (dark) Color(0xFF0E100F) else Color(0xFFF0F2F1)
+    return if (dark) Color(0xFF0E100F) else Color(0xFFF7F9FA)
 }
 
 /** Card de bloco com campos dentro (itens de Pedido/Cotação/Orçamento etc.). */

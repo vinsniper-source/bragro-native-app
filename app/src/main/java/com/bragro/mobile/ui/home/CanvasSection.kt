@@ -352,13 +352,7 @@ fun CanvasCirclesRow(
                             modifier = Modifier.matchParentSize(),
                         )
                         Box(modifier = Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.38f)))
-                        // v1.6.11 (mockup v111c) -- ícone de mapa sempre no centro, branco sobre a foto.
-                        androidx.compose.material3.Icon(
-                            androidx.compose.material.icons.Icons.Outlined.Map,
-                            contentDescription = "Ver mapa",
-                            tint = Color.White,
-                            modifier = Modifier.size(30.dp),
-                        )
+                        // v194 (mockup aprovado) -- círculo só com a foto, sem ícone.
                     } else {
                         // v1.6.9 (mockup v110, item 3) -- ícone de mapa da plataforma, sem texto.
                         androidx.compose.material3.Icon(
@@ -464,8 +458,8 @@ fun CanvasCirclesRow(
                             // imagem, precisa de contraste garantido).
                             Box(modifier = Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.38f)))
                         }
-                        // v1.6.13 (mockup v113) -- ícone de mapa sempre no centro.
-                        androidx.compose.material3.Icon(
+                        // v194 -- com foto, só a foto; sem foto continua o ícone.
+                        if (!temMapa) androidx.compose.material3.Icon(
                             androidx.compose.material.icons.Icons.Outlined.Map,
                             contentDescription = null,
                             tint = if (temMapa) Color.White else statusColor(f.status),
