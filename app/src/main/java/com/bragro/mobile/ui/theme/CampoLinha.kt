@@ -204,7 +204,8 @@ fun NomeAoLado(nome: String, obrigatorio: Boolean = false, content: @Composable 
 /** Campo automático: nome em cinza, linha pontilhada e AUTO na ponta. */
 @Composable
 fun CampoAutoLinha(nome: String, valor: String) {
-    val linha = linhaCampoColor()
+    // v207 (mockup aprovado) -- automático: linha pontilhada verde; vazio fica vazio.
+    val linha = MaterialTheme.colorScheme.primary
     val cs = MaterialTheme.colorScheme
     // v175 -- nome em cima; a linha termina antes da coluna dos ícones.
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -224,7 +225,7 @@ fun CampoAutoLinha(nome: String, valor: String) {
             // v152 (mockup aprovado) -- sem AUTO: vazio mostra só um traço
             // verde no centro; preenchido mostra o valor.
             if (valor.isBlank() || valor == "—") {
-                Text("—", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = cs.primary, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f))
+                Text("", fontSize = 15.sp, modifier = Modifier.weight(1f))
             } else {
                 Text(valor, fontSize = 15.sp, color = cs.onSurface, textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.weight(1f))
             }
