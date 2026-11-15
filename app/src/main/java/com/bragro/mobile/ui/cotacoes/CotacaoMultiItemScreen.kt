@@ -479,7 +479,7 @@ private fun PropostaCard(
                         value = proposta.validadeProposta,
                         onValueChange = { proposta.validadeProposta = it },
                         label = { Text("Validade") },
-                        placeholder = { Text("DD/MM/AAAA") },
+                        /* v201 -- sem DD/MM/AAAA */
                         modifier = Modifier.fillMaxWidth(),
                         colors = appFieldColors(),
                     )
@@ -708,7 +708,7 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                     value = viewModel.data,
                     onValueChange = { viewModel.data = it },
                     label = { Text("Data *") },
-                    placeholder = { Text("DD/MM/AAAA") },
+                    /* v201 -- sem DD/MM/AAAA */
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     colors = appFieldColors(),

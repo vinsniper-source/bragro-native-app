@@ -479,6 +479,9 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
         ?.takeIf { it.isString }?.content
 
     fun isVisible(col: ColumnConfig): Boolean {
+        // v204 (mockup aprovado) -- Atividades: Produtividade e Custo/sc-ton só na
+        // COLHEITA (também somem com a Operação ainda vazia), igual à plataforma.
+        if (domainId == "safra" && (col.key == "produtividadeScTon" || col.key == "custoScTon") && fields["operacao"] != "COLHEITA") return false
         // v1.6.3 (mockup v104, item 3) -- só a medida do veículo; implemento sem medidor não mostra nenhuma.
         if (domainId == "frota") {
             val grupos = when (medidaFrota()) {
@@ -727,8 +730,8 @@ val ITENS_INVERTIDOS = setOf("pedidos", "cotacoes", "safra", "orcamentos", "frot
 
 val MULTI_ITEM_FORM: Map<String, MultiItemCfg> = mapOf(
     "safra" to MultiItemCfg(
-        sel = listOf("categoria" to "Categoria", "subcategoriaVariedade" to "Subcategoria", "item" to "Item / insumo", "unidade" to "Unidade"),
-        inp = listOf("vazaoDose" to "Dose/ha", "qtd" to "Qtd", "unitario" to "Unitário (R$)"),
+        sel = listOf("categoria" to "Categoria", "subcategoriaVariedade" to "Subcategoria", "item" to "Item/Insumo", "unidade" to "Unidade"),
+        inp = listOf("vazaoDose" to "Dose/ha", "qtd" to "Quantidade", "unitario" to "Unitário (R$)"),
         total = "qtd" to "unitario",
     ),
     "pedidos" to MultiItemCfg(
@@ -964,8 +967,22 @@ fun DomainFormScreen(
                 val dep = cfg.columns.drop(i + 1).firstOrNull { !it.computed && it.type != "textarea" }
                 return (ant ?: dep)?.let { secaoDoCampo(it.key, domainId) } ?: "outros"
             }
+            // v205 (mockup aprovado) -- Atividades: o Item 1 fica com os mesmos campos
+            // e a mesma ordem do Item 2; Custo/ha, Status, Produtividade e Custo/sc-ton
+            // vão para o Resumo da O.S., abaixo de todos os itens.
+            val ehSafra = domainId == "safra"
+            val resumoKeys = listOf("custoHa", "status", "produtividadeScTon", "custoScTon")
+            val ordemItem = listOf("categoria", "subcategoriaVariedade", "item", "unidade", "vazaoDose", "qtd", "unitario", "realizado", "emEstoque")
+            val resumoCols = if (ehSafra) resumoKeys.mapNotNull { k -> camposForm.firstOrNull { it.key == k } } else emptyList()
             val grupos = (SECOES_FORM.map { Triple(it.id, it.titulo, it.sub) } + Triple("outros", "Outros dados", ""))
-                .map { g -> g to camposForm.filter { secaoDe(it) == g.first } }
+                .map { g ->
+                    var cs = camposForm.filter { secaoDe(it) == g.first }
+                    if (ehSafra) {
+                        cs = cs.filter { it.key !in resumoKeys }
+                        if (g.first == "itens") cs = cs.sortedBy { c -> ordemItem.indexOf(c.key).let { if (it < 0) 99 else it } }
+                    }
+                    g to cs
+                }
                 .filter { it.second.isNotEmpty() }
             val multi = if (recordId == null || domainId in OS_EDITA_ITENS) MULTI_ITEM_FORM[domainId] else null
             grupos.forEach { (g, campos) ->
@@ -995,7 +1012,7 @@ fun DomainFormScreen(
                         val temPrevia = previa.containsKey(col.key)
                         val raw = if (temPrevia) previa[col.key] ?: "" else computedValues[col.key] ?: ""
                         val dica = if (temPrevia) previaDicas[col.key] else null
-                        ComputedFieldDisplay(col = col, raw = raw, optionLabels = optionLabels, dica = dica)
+                        ComputedFieldDisplay(col = if (ehSafra && col.key == "realizado") col.copy(label = "Total (R$)") else col, raw = raw, optionLabels = optionLabels, dica = dica)
                         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
                         return@forEach
                     }
@@ -1034,7 +1051,13 @@ fun DomainFormScreen(
                     // e o copiar item só como ícone no canto superior direito do bloco.
                     com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
                         Box(Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(start = 26.dp, end = 26.dp, top = 30.dp)) { camposDaSecao() }
+                            Column(Modifier.padding(start = 26.dp, end = 26.dp, top = if (ehSafra) 16.dp else 30.dp)) {
+                                if (ehSafra) {
+                                    Text("Item 1", fontWeight = FontWeight.Bold)
+                                    androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 16.dp))
+                                }
+                                camposDaSecao()
+                            }
                             if (multi != null) {
                                 IconButton(
                                     onClick = { viewModel.copiarItemPrincipal((multi.sel + multi.inp).map { it.first }) },
@@ -1052,6 +1075,47 @@ fun DomainFormScreen(
                 if (g.first == "itens" && multi != null) {
                     ItensExtrasSection(domainId, multi, cfg.columns, lookups, viewModel)
                 }
+            }
+            if (ehSafra && resumoCols.isNotEmpty()) {
+                // v205 -- Resumo da O.S. (soma dos itens), calculado na tela.
+                fun numBr(v: String?): Double {
+                    val t = v.orEmpty().trim()
+                    return (if (t.contains(',')) t.replace(".", "").replace(",", ".") else t).toDoubleOrNull() ?: 0.0
+                }
+                val brl = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("pt", "BR"))
+                val totalOS = numBr(viewModel.fields["qtd"]) * numBr(viewModel.fields["unitario"]) +
+                    viewModel.itensExtras.sumOf { numBr(it["qtd"]) * numBr(it["unitario"]) }
+                val ha = numBr(viewModel.fields["hectare"])
+                val custoHaOS = if (ha > 0 && totalOS > 0) totalOS / ha else 0.0
+                val prod = numBr(viewModel.fields["produtividadeScTon"])
+                val custoScOS = if (custoHaOS > 0 && prod > 0) custoHaOS / prod else 0.0
+                androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.padding(top = 8.dp))
+                Column(Modifier.padding(horizontal = RECUO_CAMPOS).padding(top = 22.dp)) {
+                    Text("RESUMO DA O.S.", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
+                    androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 18.dp))
+                    com.bragro.mobile.ui.theme.CampoAutoLinha("Total da O.S. (R$)", if (totalOS > 0) brl.format(totalOS) else "")
+                    androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
+                    if (resumoCols.any { it.key == "custoHa" }) {
+                        com.bragro.mobile.ui.theme.CampoAutoLinha("Custo/ha (R$)", if (custoHaOS > 0) brl.format(custoHaOS) else "")
+                        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
+                    }
+                    resumoCols.firstOrNull { it.key == "status" }?.let { col ->
+                        val raw = if (previa.containsKey(col.key)) previa[col.key] ?: "" else computedValues[col.key] ?: ""
+                        ComputedFieldDisplay(col = col, raw = raw, optionLabels = emptyMap(), dica = null)
+                        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
+                    }
+                    resumoCols.firstOrNull { it.key == "produtividadeScTon" }?.let { col ->
+                        com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label), col.required) {
+                            FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
+                        }
+                        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
+                    }
+                    if (resumoCols.any { it.key == "custoScTon" }) {
+                        com.bragro.mobile.ui.theme.CampoAutoLinha("Custo/sc-ton", if (custoScOS > 0) brl.format(custoScOS) else "")
+                        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
+                    }
+                }
+                androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.padding(bottom = 16.dp))
             }
             textos.forEach { col ->
                 FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
@@ -1540,7 +1604,7 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                 value = value,
                 onValueChange = { viewModel.setField(col.key, it) },
                 label = { Text(fieldLabel(col)) },
-                placeholder = { Text("DD/MM/AAAA") },
+                // v201 -- sem "DD/MM/AAAA" (só a linha e o calendário).
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -1744,6 +1808,11 @@ private fun ItensExtrasSection(
                     multi.total?.let { (a, b) ->
                         val t = (x[a]?.toDoubleOrNull() ?: 0.0) * (x[b]?.toDoubleOrNull() ?: 0.0)
                         com.bragro.mobile.ui.theme.CampoAutoLinha("Total (R$)", if (t > 0) java.text.NumberFormat.getCurrencyInstance(java.util.Locale("pt", "BR")).format(t) else "")
+                        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
+                    }
+                    if (domainId == "safra") {
+                        // v205 -- Em Estoque em cada item (sai do Estoque quando tem item + quantidade).
+                        com.bragro.mobile.ui.theme.CampoAutoLinha("Em Estoque", if (!x["item"].isNullOrBlank() && (x["qtd"]?.toDoubleOrNull() ?: 0.0) > 0) "Sim" else "")
                         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
                     }
                     // v1.6.24 -- consulta do MAPA (Agrofit) também em cada item adicionado.
