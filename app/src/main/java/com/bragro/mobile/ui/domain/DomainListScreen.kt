@@ -1227,7 +1227,7 @@ fun DomainListScreen(
                             // usuário (gap analysis). Mesmo padrão de bloco
                             // colapsável do "Previsão" acima.
                             ModuleIconButton(
-                                ModuleIconItem("clima-spray", Icons.Outlined.Air, "Pulveriz.", active = expandedBlocks["clima-spray"] == true),
+                                ModuleIconItem("clima-spray", Icons.Outlined.Air, "Pulverização", active = expandedBlocks["clima-spray"] == true),
                             ) { expandedBlocks["clima-spray"] = expandedBlocks["clima-spray"] != true }
                             ModuleIconButton(
                                 ModuleIconItem("clima-gdd", androidx.compose.material.icons.Icons.Outlined.DeviceThermostat, "Graus", active = expandedBlocks["clima-gdd"] == true),
@@ -1413,7 +1413,7 @@ fun DomainListScreen(
                             ModuleIconItem("clima-weather", Icons.Outlined.WbSunny, "Previsão", active = expandedBlocks["clima-weather"] == true),
                         ) { expandedBlocks["clima-weather"] = expandedBlocks["clima-weather"] != true }
                         ModuleIconButton(
-                            ModuleIconItem("clima-spray", Icons.Outlined.Air, "Pulveriz.", active = expandedBlocks["clima-spray"] == true),
+                            ModuleIconItem("clima-spray", Icons.Outlined.Air, "Pulverização", active = expandedBlocks["clima-spray"] == true),
                         ) { expandedBlocks["clima-spray"] = expandedBlocks["clima-spray"] != true }
                         ModuleIconButton(
                             ModuleIconItem("clima-gdd", androidx.compose.material.icons.Icons.Outlined.DeviceThermostat, "Graus", active = expandedBlocks["clima-gdd"] == true),

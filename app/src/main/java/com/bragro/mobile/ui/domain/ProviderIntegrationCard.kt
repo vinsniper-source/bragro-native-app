@@ -205,7 +205,7 @@ fun ProviderIntegrationCard(
                         value = apiKey, onValueChange = { apiKey = it },
                         label = { Text("API Key / Token") },
                         placeholder = { Text(if (integration?.apiKeyConfigurado == true) "•••• (salvo)" else "Cole a credencial") },
-                        leadingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null) },
+                        trailingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null) }, // v219 -- cadeado do lado direito
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         singleLine = true,

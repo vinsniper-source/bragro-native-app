@@ -285,6 +285,8 @@ fun SearchableDropdownField(
         if (q.isEmpty() || !digitou) opts else opts.filter { it.second.contains(q, ignoreCase = true) }
     }
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it; if (it) digitou = false }, modifier = modifier) {
+        // v219 (mockup aprovado) -- regra geral das listas: sem setinha, com o cantinho.
+        androidx.compose.runtime.CompositionLocalProvider(LocalCampoLista provides true) {
         OutlinedTextField(
             value = query,
             onValueChange = { typed -> query = typed; digitou = true; expanded = true },
@@ -301,6 +303,7 @@ fun SearchableDropdownField(
             modifier = Modifier.fillMaxWidth().menuAnchor(),
             colors = appFieldColors(),
         )
+        }
         // DropdownMenu (não ExposedDropdownMenu) + exposedDropdownSize() --
         // ExposedDropdownMenu do material3 1.2.1 NÃO expõe `properties` (só
         // em versões mais novas), então precisou trocar pro DropdownMenu

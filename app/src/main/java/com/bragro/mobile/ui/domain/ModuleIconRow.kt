@@ -482,7 +482,8 @@ private val ROTULOS_EXPORTAR = setOf("Imprimir", "PDF", "Excel", "LCDPR")
 fun ExportarMenu(content: @Composable () -> Unit) {
     var aberto by remember { androidx.compose.runtime.mutableStateOf(false) }
     androidx.compose.runtime.CompositionLocalProvider(LocalModoExportar provides 1) { content() }
-    Box {
+    // v219 -- conteúdo centralizado na célula (antes ficava encostado à esquerda).
+    Box(contentAlignment = Alignment.Center) {
         LabeledIconButton(icon = Icons.Outlined.FileDownload, label = "Exportar", onClick = { aberto = true })
         androidx.compose.material3.DropdownMenu(
             expanded = aberto,

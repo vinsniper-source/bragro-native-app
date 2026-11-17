@@ -492,7 +492,7 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
             Box(Modifier.fillMaxWidth().weight(1f)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(12.dp),
+            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp), // v219 -- margens nas janelas
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item {

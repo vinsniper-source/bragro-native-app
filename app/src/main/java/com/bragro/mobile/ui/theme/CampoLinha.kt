@@ -110,7 +110,7 @@ fun LinhaTextField(
             CompositionLocalProvider(LocalNomeAoLado provides true) {
                 LinhaTextField(
                     value = value, onValueChange = onValueChange, modifier = Modifier.fillMaxWidth(), enabled = enabled, readOnly = readOnly,
-                    textStyle = textStyle, label = null, placeholder = placeholder, leadingIcon = leadingIcon, trailingIcon = trailingIcon,
+                    textStyle = textStyle, label = null, placeholder = null /* v219 -- sem textos de exemplo */, leadingIcon = leadingIcon, trailingIcon = trailingIcon,
                     prefix = prefix, suffix = suffix, supportingText = supportingText, isError = isError, visualTransformation = visualTransformation,
                     keyboardOptions = keyboardOptions, keyboardActions = keyboardActions, singleLine = singleLine, maxLines = maxLines, minLines = minLines,
                     interactionSource = interactionSource, shape = shape, colors = colors,
@@ -182,7 +182,7 @@ fun LinhaTextField(
             CompositionLocalProvider(LocalNomeAoLado provides true) {
                 LinhaTextField(
                     value = value, onValueChange = onValueChange, modifier = Modifier.fillMaxWidth(), enabled = enabled, readOnly = readOnly,
-                    textStyle = textStyle, label = null, placeholder = placeholder, leadingIcon = leadingIcon, trailingIcon = trailingIcon,
+                    textStyle = textStyle, label = null, placeholder = null /* v219 -- sem textos de exemplo */, leadingIcon = leadingIcon, trailingIcon = trailingIcon,
                     prefix = prefix, suffix = suffix, supportingText = supportingText, isError = isError, visualTransformation = visualTransformation,
                     keyboardOptions = keyboardOptions, keyboardActions = keyboardActions, singleLine = singleLine, maxLines = maxLines, minLines = minLines,
                     interactionSource = interactionSource, shape = shape, colors = colors,

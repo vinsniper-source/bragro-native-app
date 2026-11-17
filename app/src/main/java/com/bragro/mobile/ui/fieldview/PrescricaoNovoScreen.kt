@@ -334,6 +334,8 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
         // v19 -- ícones do cabeçalho movidos para a faixa Ações.
         Column(Modifier.fillMaxSize().padding(padding0)) {
             com.bragro.mobile.ui.domain.AcoesIcones {
+                // v219 (mockup aprovado) -- importar ISO-XML sobe para o lado do Copiar.
+                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.UploadFile, label = "Importar ISO-XML (.xml)", onClick = { isoXmlPicker.launch(arrayOf("text/xml", "application/xml", "*/*")) })
                 com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ContentCopy, label = "Copiar último", loading = copiando, onClick = { if (!copiando) viewModel.copiarUltimoLancamento() })
             }
             val padding = PaddingValues(0.dp)
@@ -355,7 +357,8 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
 
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(12.dp),
+            // v219 -- margem dos dois lados.
+            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item {
@@ -372,7 +375,7 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
                     value = viewModel.nome,
                     onValueChange = { viewModel.nome = it },
                     label = { Text("Nome *") },
-                    placeholder = { Text("Ex.: Adubação zona norte") },
+                    
                     modifier = Modifier.fillMaxWidth(),
                     colors = appFieldColors(),
                 )
@@ -438,16 +441,6 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
                     placeholder = "Ex.: 12",
                     onCreate = { raw -> viewModel.quickCreateLookupOption("talhoes", raw) { value -> value?.let { viewModel.talhao = it } } },
                 )
-            }
-            item {
-                OutlinedButton(
-                    onClick = { isoXmlPicker.launch(arrayOf("text/xml", "application/xml", "*/*")) },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Icon(Icons.Outlined.UploadFile, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Importar ISO-XML (.xml)")
-                }
             }
             if (origemArquivo != null) {
                 item {

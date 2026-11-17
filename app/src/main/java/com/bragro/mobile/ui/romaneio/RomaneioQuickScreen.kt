@@ -485,13 +485,15 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
         // v19 -- ícones do cabeçalho movidos para a faixa Ações.
         Column(Modifier.fillMaxSize().padding(padding0)) {
             com.bragro.mobile.ui.domain.AcoesIcones {
+                // v219 (mockup aprovado) -- foto do ticket ao lado do Copiar.
+                com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconeFotoIA, label = if (fotoTicketUrl != null) "Trocar foto do ticket" else "Tirar foto do ticket (opcional)", loading = uploadingFoto, onClick = { if (!uploadingFoto) launchCameraComPermissao() })
                 com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ContentCopy, label = "Copiar último", loading = copiando, onClick = { if (!copiando) viewModel.preencherComUltimo() })
             }
             val padding = PaddingValues(0.dp)
             Box(Modifier.fillMaxWidth().weight(1f)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(12.dp),
+            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp), // v219 -- margens nas janelas
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item {
@@ -502,13 +504,6 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                        // v216 (mockup aprovado) -- foto com IA só com o ícone, sem rótulo.
-                        androidx.compose.material3.IconButton(onClick = { launchCameraComPermissao() }, enabled = !uploadingFoto) {
-                            if (uploadingFoto) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            else Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoTicketUrl != null) "Trocar foto do ticket" else "Tirar foto do ticket (opcional)", modifier = Modifier.size(24.dp))
-                        }
-                    }
                     if (ocrMensagem != null) {
                         Text(ocrMensagem ?: "", style = MaterialTheme.typography.labelSmall)
                     }

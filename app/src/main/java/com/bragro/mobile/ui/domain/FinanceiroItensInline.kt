@@ -273,35 +273,35 @@ private fun ItemNotaLinhaRow(
                 label = "Item *",
                 value = itensOptions.firstOrNull { it.value == linha.descricao }?.label ?: linha.descricao.ifBlank { null },
                 options = itensOptions.map { it.label },
-                placeholder = "Selecione o item",
+                placeholder = "",
                 onSelect = { picked -> linha.descricao = itensOptions.firstOrNull { it.label == picked }?.value ?: picked },
                 onCreate = { raw -> viewModel.quickCreateLookupOption("itens_estoque", raw) { value -> value?.let { linha.descricao = it } } },
             )
         }
-        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            ItemFieldBlock(modifier = Modifier.weight(1f)) {
+        // v219 (mockup aprovado) -- um campo por linha.
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            ItemFieldBlock(modifier = Modifier.fillMaxWidth()) {
                 ItemStringDropdown(
                     label = "Unidade",
                     value = unidadesOptions.firstOrNull { it.value == linha.unidade }?.label ?: linha.unidade.ifBlank { null },
                     options = unidadesOptions.map { it.label },
-                    placeholder = "Opcional",
+                    placeholder = "",
                     onSelect = { picked -> linha.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked },
                     onCreate = { raw -> viewModel.quickCreateLookupOption("unidades", raw) { value -> value?.let { linha.unidade = it } } },
                 )
             }
-            ItemFieldBlock(modifier = Modifier.weight(1f)) {
+            ItemFieldBlock(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
                     value = linha.quantidade,
                     onValueChange = { linha.quantidade = it },
                     label = { Text("Quantidade *") },
-                        textStyle = androidx.compose.material3.LocalTextStyle.current.copy(textAlign = androidx.compose.ui.text.style.TextAlign.Center),
-                    placeholder = { Text("0") },
+
                     modifier = Modifier.fillMaxWidth(),
                     colors = appFieldColors(),
                 )
             }
             if (showRemove) {
-                IconButton(onClick = onRemove, modifier = Modifier.size(30.dp)) {
+                IconButton(onClick = onRemove, modifier = Modifier.size(30.dp).align(androidx.compose.ui.Alignment.End)) {
                     Icon(Icons.Outlined.Delete, contentDescription = "Remover item", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                 }
             }

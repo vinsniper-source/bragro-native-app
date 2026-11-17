@@ -63,6 +63,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.offset
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -541,13 +542,28 @@ private fun NovoDroneRegistroDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                OutlinedTextField(
-                    value = dataBr, onValueChange = { dataBr = it },
-                    label = { Text("Data *") }, placeholder = { Text("DD/MM/AAAA") },
-                    keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                    singleLine = true, modifier = Modifier.fillMaxWidth(),
-                    colors = appFieldColors(),
-                )
+                // v220 (mockup aprovado) -- clipe do arquivo na altura da palavra "Data".
+                androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = dataBr, onValueChange = { dataBr = it },
+                        label = { Text("Data *") },
+                        keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                        singleLine = true, modifier = Modifier.fillMaxWidth(),
+                        colors = appFieldColors(),
+                    )
+                    IconButton(
+                        onClick = { filePicker.launch(arrayOf("image/*", "video/*")) },
+                        modifier = Modifier.align(Alignment.TopEnd).offset(y = (-14).dp),
+                    ) {
+                        Icon(
+                            Icons.Outlined.AttachFile,
+                            contentDescription = pickedName ?: "Selecionar arquivo *",
+                            tint = if (pickedUri != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+                if (pickedName != null) Text(pickedName!!, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                 DroneLookupDropdown("Talhão", talhoes, talhao) { talhao = it }
                 DroneStaticDropdown("Tipo de captura *", TIPOS_CAPTURA, tipo) { tipo = it }
                 OutlinedTextField(value = piloto, onValueChange = { piloto = it }, label = { Text("Piloto") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
@@ -564,13 +580,6 @@ private fun NovoDroneRegistroDialog(
                     colors = appFieldColors(),
                 )
                 OutlinedTextField(value = obs, onValueChange = { obs = it }, label = { Text("Observações") }, minLines = 2, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
-                OutlinedButton(
-                    onClick = { filePicker.launch(arrayOf("image/*", "video/*")) },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Icon(Icons.Outlined.AttachFile, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                    Text(pickedName ?: "Selecionar arquivo *")
-                }
                 if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
         },

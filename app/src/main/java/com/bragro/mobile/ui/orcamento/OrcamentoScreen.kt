@@ -184,6 +184,15 @@ class OrcamentoViewModel(app: Application) : AndroidViewModel(app) {
         linhas.add(OrcamentoLinha())
     }
 
+    /** v219 (mockup aprovado) -- copiar o último item cria o próximo. */
+    fun copiarLinha() {
+        val o = linhas.lastOrNull() ?: return addLinha()
+        linhas.add(OrcamentoLinha().apply {
+            item = o.item; unidade = o.unidade; quantidade = o.quantidade; valorUnitario = o.valorUnitario
+            fazendaId = o.fazendaId; equipamentoTalhao = o.equipamentoTalhao; statusEntrega = o.statusEntrega
+        })
+    }
+
     fun removeLinha(i: Int) {
         if (linhas.size > 1) linhas.removeAt(i)
     }
@@ -453,24 +462,23 @@ private fun OrcamentoLinhaCard(
                     colors = appFieldColors(),
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                ItemFieldBlock(modifier = Modifier.weight(1f)) {
+            // v219 -- um campo por linha.
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                ItemFieldBlock(modifier = Modifier.fillMaxWidth()) {
                     StringDropdown(
                         label = "Unidade",
                         value = unidadesOptions.firstOrNull { it.value == linha.unidade }?.label ?: linha.unidade.ifBlank { null },
                         options = unidadesOptions.map { it.label },
-                        placeholder = "Opcional",
+                        placeholder = "",
                         allowEmpty = true,
                         onSelect = { picked -> linha.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
                     )
                 }
-                ItemFieldBlock(modifier = Modifier.weight(1f)) {
+                ItemFieldBlock(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = linha.quantidade,
                         onValueChange = { linha.quantidade = it },
                         label = { Text("Quantidade *") },
-                        textStyle = androidx.compose.material3.LocalTextStyle.current.copy(textAlign = androidx.compose.ui.text.style.TextAlign.Center),
-                        placeholder = { Text("0") },
                         modifier = Modifier.fillMaxWidth(),
                         colors = appFieldColors(),
                     )
@@ -492,7 +500,7 @@ private fun OrcamentoLinhaCard(
                     label = "Fazenda",
                     value = farms.firstOrNull { it.id == linha.fazendaId }?.name,
                     options = farms.map { it.name },
-                    placeholder = "Opcional",
+                    placeholder = "",
                     allowEmpty = true,
                     onSelect = { picked -> linha.fazendaId = farms.firstOrNull { it.name == picked }?.id },
                 )
@@ -502,7 +510,7 @@ private fun OrcamentoLinhaCard(
                     value = linha.equipamentoTalhao,
                     onValueChange = { linha.equipamentoTalhao = it },
                     label = { Text("Equipamento/Talhão") },
-                    placeholder = { Text("Opcional") },
+                    
                     modifier = Modifier.fillMaxWidth(),
                     colors = appFieldColors(),
                 )
@@ -665,6 +673,8 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
         // v19 -- ícones do cabeçalho movidos para a faixa Ações.
         Column(Modifier.fillMaxSize().padding(padding0)) {
             com.bragro.mobile.ui.domain.AcoesIcones {
+                // v219 (mockup aprovado) -- foto da requisição ao lado do Copiar.
+                com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconeFotoIA, label = if (fotoRequisicaoUrl != null) "Trocar foto da requisição" else "Foto da requisição (lê automaticamente)", loading = uploadingRequisicao, onClick = { if (!uploadingRequisicao) launchCameraComPermissao("requisicao", { uri -> pendingRequisicaoUri = uri }, takeRequisicaoPicture) })
                 com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ContentCopy, label = "Copiar último", loading = copiando, onClick = { if (!copiando) viewModel.preencherComUltimo() })
             }
             val padding = PaddingValues(0.dp)
@@ -695,7 +705,7 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
 
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(12.dp),
+            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp), // v219 -- margens nas janelas
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item {
@@ -740,14 +750,6 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                        // v216 (mockup aprovado) -- foto com IA só com o ícone, sem rótulo.
-                        androidx.compose.material3.IconButton(onClick = { launchCameraComPermissao("requisicao", { uri -> pendingRequisicaoUri = uri }, takeRequisicaoPicture) },
-                        enabled = !uploadingRequisicao) {
-                            if (uploadingRequisicao) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            else Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoRequisicaoUrl != null) "Trocar foto da requisição" else "Foto da requisição (lê automaticamente)", modifier = Modifier.size(24.dp))
-                        }
-                    }
                     if (ocrMensagemRequisicao != null) {
                         Text(ocrMensagemRequisicao ?: "", style = MaterialTheme.typography.labelSmall)
                     }
@@ -768,7 +770,7 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                     label = "Fornecedor",
                     value = viewModel.fornecedorNome,
                     options = fornecedoresOptions.map { it.label },
-                    placeholder = "Opcional",
+                    placeholder = "",
                     allowEmpty = true,
                     onSelect = { picked -> viewModel.fornecedorNome = picked },
                 )
@@ -778,21 +780,13 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                     value = viewModel.numeroOrcamento,
                     onValueChange = { viewModel.numeroOrcamento = it },
                     label = { Text("Nº do orçamento") },
-                    placeholder = { Text("Opcional") },
+                    
                     modifier = Modifier.fillMaxWidth(),
                     colors = appFieldColors(),
                 )
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                        // v216 (mockup aprovado) -- foto com IA só com o ícone, sem rótulo.
-                        androidx.compose.material3.IconButton(onClick = { launchCameraComPermissao("comprovante", { uri -> pendingComprovanteUri = uri }, takeComprovantePicture) },
-                        enabled = !uploadingComprovante) {
-                            if (uploadingComprovante) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            else Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoComprovanteUrl != null) "Trocar foto do comprovante/orçamento" else "Foto do comprovante/orçamento (lê os itens)", modifier = Modifier.size(24.dp))
-                        }
-                    }
                     if (ocrMensagemItens != null) {
                         Text(ocrMensagemItens ?: "", style = MaterialTheme.typography.labelSmall)
                     }
@@ -800,7 +794,19 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
             }
             item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
             // Bloco 2: itens.
-            item { Text("Itens *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold) }
+            // v219 (mockup aprovado) -- foto do comprovante e Copiar item na linha do título.
+            item {
+                androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Text("Itens *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    androidx.compose.material3.IconButton(onClick = { launchCameraComPermissao("comprovante", { uri -> pendingComprovanteUri = uri }, takeComprovantePicture) }, enabled = !uploadingComprovante) {
+                        if (uploadingComprovante) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        else Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoComprovanteUrl != null) "Trocar foto do comprovante/orçamento" else "Foto do comprovante/orçamento (lê os itens)", modifier = Modifier.size(22.dp))
+                    }
+                    androidx.compose.material3.IconButton(onClick = { viewModel.copiarLinha() }) {
+                        Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", modifier = Modifier.size(22.dp))
+                    }
+                }
+            }
             items(viewModel.linhas.size) { i ->
                 OrcamentoLinhaCard(
                     linha = viewModel.linhas[i],
@@ -810,12 +816,6 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                     onRemove = { viewModel.removeLinha(i) },
                 )
             }
-            item {
-                OutlinedButton(onClick = { viewModel.addLinha() }, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
-                    Text("Adicionar item")
-                }
-            }
             item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
             // Bloco 3: observações.
             item {
@@ -823,7 +823,7 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                     value = viewModel.observacoes,
                     onValueChange = { viewModel.observacoes = it },
                     label = { Text("Observações") },
-                    placeholder = { Text("Opcional") },
+                    
                     modifier = Modifier.fillMaxWidth(),
                     colors = appFieldColors(),
                 )
