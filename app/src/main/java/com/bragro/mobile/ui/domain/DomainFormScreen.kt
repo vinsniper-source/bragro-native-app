@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -985,11 +986,24 @@ fun DomainFormScreen(
                 }
                 .filter { it.second.isNotEmpty() }
             val multi = if (recordId == null || domainId in OS_EDITA_ITENS) MULTI_ITEM_FORM[domainId] else null
-            grupos.forEach { (g, campos) ->
+            // v210 (mockup aprovado) -- regra geral dos módulos com vários itens
+            // (Pedidos, Frota, Controle Interno...): o Item 1 fica só com os campos
+            // do item (os mesmos do Item 2, na mesma ordem); os demais campos da
+            // seção Itens descem para baixo de todos os itens, sem título nem linhas.
+            val chavesItem = multi?.let { m -> (m.sel + m.inp).map { it.first } } ?: emptyList()
+            val resumoGeral = mutableListOf<ColumnConfig>()
+            val gruposAjust = if (multi != null && !ehSafra) grupos.map { (g, cs) ->
+                if (g.first != "itens") g to cs else {
+                    val doItem = cs.filter { c -> c.key in chavesItem || (multi.total != null && c.computed && com.bragro.mobile.ui.i18n.Idioma.tr(c.label).startsWith("Total", ignoreCase = true)) }
+                    resumoGeral += cs.filter { it !in doItem }
+                    g to doItem.sortedBy { c -> chavesItem.indexOf(c.key).let { if (it < 0) 99 else it } }
+                }
+            } else grupos
+            gruposAjust.forEach { (g, campos) ->
                 // v20 -- Clima de hoje / Copiar último como ícones sem rótulo
                 // no canto direito da primeira seção (QUANDO).
                 SecaoFormHeader(g.second, g.third) {
-                    if (recordId == null && g == grupos.first().first) {
+                    if (recordId == null && g == gruposAjust.first().first) {
                         if (domainId == "clima") {
                             val climaHojeBusy by viewModel.climaHojeBusy
                             IconButton(onClick = { if (!climaHojeBusy) viewModel.preencherClimaHoje() }, modifier = Modifier.size(32.dp)) {
@@ -1051,8 +1065,8 @@ fun DomainFormScreen(
                     // e o copiar item só como ícone no canto superior direito do bloco.
                     com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
                         Box(Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(start = 26.dp, end = 26.dp, top = if (ehSafra) 16.dp else 30.dp)) {
-                                if (ehSafra) {
+                            Column(Modifier.padding(start = 26.dp, end = 26.dp, top = if (ehSafra || multi != null) 16.dp else 30.dp)) {
+                                if (ehSafra || multi != null) {
                                     Text("Item 1", fontWeight = FontWeight.Bold)
                                     androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 16.dp))
                                 }
@@ -1074,6 +1088,23 @@ fun DomainFormScreen(
                 }
                 if (g.first == "itens" && multi != null) {
                     ItensExtrasSection(domainId, multi, cfg.columns, lookups, viewModel)
+                    if (resumoGeral.isNotEmpty()) {
+                        Column(Modifier.padding(horizontal = RECUO_CAMPOS).padding(top = 18.dp)) {
+                            resumoGeral.forEach { col ->
+                                if (col.computed) {
+                                    val optionLabels = col.lookupCategory?.let { cat -> lookups[cat]?.associate { it.value to it.label } } ?: emptyMap()
+                                    val temPrevia = previa.containsKey(col.key)
+                                    val raw = if (temPrevia) previa[col.key] ?: "" else computedValues[col.key] ?: ""
+                                    ComputedFieldDisplay(col = col, raw = raw, optionLabels = optionLabels, dica = if (temPrevia) previaDicas[col.key] else null)
+                                } else {
+                                    com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label), col.required) {
+                                        FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
+                                    }
+                                }
+                                androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
+                            }
+                        }
+                    }
                 }
             }
             if (ehSafra && resumoCols.isNotEmpty()) {
@@ -1089,10 +1120,8 @@ fun DomainFormScreen(
                 val custoHaOS = if (ha > 0 && totalOS > 0) totalOS / ha else 0.0
                 val prod = numBr(viewModel.fields["produtividadeScTon"])
                 val custoScOS = if (custoHaOS > 0 && prod > 0) custoHaOS / prod else 0.0
-                androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.padding(top = 8.dp))
-                Column(Modifier.padding(horizontal = RECUO_CAMPOS).padding(top = 22.dp)) {
-                    Text("RESUMO DA O.S.", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
-                    androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 18.dp))
+                // v210 (mockup aprovado) -- sem o título "Resumo da O.S." e sem as linhas.
+                Column(Modifier.padding(horizontal = RECUO_CAMPOS).padding(top = 18.dp)) {
                     com.bragro.mobile.ui.theme.CampoAutoLinha("Total da O.S. (R$)", if (totalOS > 0) brl.format(totalOS) else "")
                     androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
                     if (resumoCols.any { it.key == "custoHa" }) {
@@ -1115,7 +1144,6 @@ fun DomainFormScreen(
                         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
                     }
                 }
-                androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.padding(bottom = 16.dp))
             }
             textos.forEach { col ->
                 FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
@@ -1738,13 +1766,6 @@ private fun ItensExtrasSection(
                 Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
             }
         }
-        if (viewModel.itensExtras.isNotEmpty()) {
-            Text(
-                if (domainId == "pedidos") "MAIS ITENS DESTE PEDIDO" else "MAIS ITENS",
-                fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
         viewModel.itensExtras.forEachIndexed { i, x ->
             com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
                 // v199 (mockup aprovado) -- itens repetidos no mesmo padrão do
@@ -1757,7 +1778,7 @@ private fun ItensExtrasSection(
                             Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         }
                         IconButton(onClick = { viewModel.removeItemExtra(i) }, modifier = Modifier.size(36.dp)) {
-                            Icon(Icons.Outlined.Close, contentDescription = "Remover item", tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Outlined.Delete, contentDescription = "Remover item", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
                         }
                     }
                     androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
