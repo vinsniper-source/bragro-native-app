@@ -381,7 +381,7 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item(key = "subtitulo") {
-                Text("Funciona sem fabricante: cadastre os pivôs e lance telemetria e controle manualmente.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Cadastre e lance manualmente.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             item(key = "acoes") {
                     // v14: abas Dados / Operações / Arquivos, iguais aos outros módulos.

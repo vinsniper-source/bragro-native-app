@@ -57,6 +57,7 @@ import java.io.File
 fun OcrFotoButton(
     modifier: Modifier = Modifier,
     label: String = "Preencher com foto",
+    somenteIcone: Boolean = false,
     onFotoUrl: suspend (String) -> String?,
 ) {
     val context = LocalContext.current
@@ -142,6 +143,14 @@ fun OcrFotoButton(
         }
     }
 
+    if (somenteIcone) {
+        // v221 -- só o ícone, para ficar na linha do nome do primeiro campo.
+        androidx.compose.material3.IconButton(onClick = { abrir() }, enabled = !busy, modifier = modifier.size(36.dp)) {
+            if (busy) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+            else Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = label, modifier = Modifier.size(22.dp))
+        }
+        return
+    }
     Column(modifier = modifier.fillMaxWidth()) {
         androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             // v216 (mockup aprovado) -- foto com IA só com o ícone, sem rótulo.

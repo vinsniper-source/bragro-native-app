@@ -943,103 +943,54 @@ private fun FarmsCard(
         // padrão do bloco de edição) faz cada campo dividir a largura real
         // da tela em vez de uma largura fixa que não cabe em aparelhos
         // estreitos.
-        Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-            // "Preencher com foto" -- paridade com o cadastro de fazenda
-            // do site (Task #895): lê CCIR/CAR/matrícula/escritura e
-            // pré-preenche Nome, Área e coordenadas; usuário confere antes de
-            // clicar em Adicionar.
-            val ocrContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
-            com.bragro.mobile.ui.domain.OcrFotoButton(
-                modifier = Modifier.padding(bottom = 8.dp),
-                label = "Preencher com foto do documento",
-            ) { url ->
-                val r = com.bragro.mobile.data.repo.OcrFotoRepository(ocrContext).lerFazenda(url)
-                val f = r.fazenda
-                if (r.ok && f != null) {
-                    f.name?.let { newName = it }
-                    f.areaHa?.let { newArea = it.toString() }
-                    if (f.latitude != null && f.longitude != null) newLocation = "${f.latitude}, ${f.longitude}"
-                }
-                r.mensagem ?: r.error
-            }
+        // v221 (mockup aprovado) -- um campo por linha; a foto do documento
+        // (CCIR/CAR/matrícula) fica ao lado do GPS e da busca.
+        val ocrContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
+        Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             OutlinedTextField(
-                value = newName, onValueChange = { newName = it }, label = { Text("Nova fazenda") },
+                value = newName, onValueChange = { newName = it }, label = { Text("Nome da fazenda") },
                 modifier = Modifier.fillMaxWidth(), singleLine = true, colors = appFieldColors(),
             )
-            // 4 linhas de 2 campos (em vez de 2 linhas de 4) -- mesma causa
-            // raiz e mesmo critério do bloco de edição acima (ver comentário
-            // lá): 4 campos por linha deixava cada coluna estreita demais
-            // pro label/valor caberem (ex.: "SOJA" saindo cortado "SOJ",
-            // "Cultura 1" quebrando letra por letra quando vazio).
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                // Cultura (safra principal/verão) que ocupa a Área Total --
-                // 8ª exceção de schema (ver MEMORY.md). Pedido do usuário:
-                // "crie um campo cultura com lista suspensa antes de área
-                // total" -- por isso vem ANTES do campo TOTAL (ha) abaixo.
-                CulturaDropdownField(
-                    value = newCultura, onValueChange = { newCultura = it }, label = "Cultura",
-                    modifier = Modifier.weight(1f), dense = true,
-                )
-                OutlinedTextField(
-                    value = newArea, onValueChange = { newArea = it },
-                    label = { Text("TOTAL (hectares)", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                    textStyle = MaterialTheme.typography.bodySmall,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.weight(1f),
-                    colors = appFieldColors(),
-                )
-            }
-            // Campo genérico "safrinha" REMOVIDO da UI pra fazendas novas --
-            // pedido do usuário (X na screenshot): só os 2 slots por cultura
-            // abaixo. newAreaSafrinha continua "" e nunca populado (onAdd
-            // recebe null pra esse parâmetro), o que é o comportamento
-            // correto pra cadastros novos daqui em diante.
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                CulturaDropdownField(
-                    value = newCultura1, onValueChange = { newCultura1 = it }, label = "Cultura 1",
-                    modifier = Modifier.weight(1f), dense = true,
-                )
-                OutlinedTextField(
-                    value = newCultura1Ha, onValueChange = { newCultura1Ha = it },
-                    label = { Text("Hectares", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                    textStyle = MaterialTheme.typography.bodySmall,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.weight(1f),
-                    colors = appFieldColors(),
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                CulturaDropdownField(
-                    value = newCultura2, onValueChange = { newCultura2 = it }, label = "Cultura 2",
-                    modifier = Modifier.weight(1f), dense = true,
-                )
-                OutlinedTextField(
-                    value = newCultura2Ha, onValueChange = { newCultura2Ha = it },
-                    label = { Text("Hectares", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                    textStyle = MaterialTheme.typography.bodySmall,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.weight(1f),
-                    colors = appFieldColors(),
-                )
-            }
-            // Localização (lat, lon) sozinha na própria linha -- 6ª exceção
-            // de schema (ver MEMORY.md). Texto mais longo (dois números com
-            // vírgula) que os demais campos, agora com a linha inteira só
-            // pra ele em vez de dividir espaço.
-            // Situação da terra (9ª exceção de schema, ver MEMORY.md) NA
-            // MESMA LINHA e ao lado de lat/lon -- pedido do usuário: "coloque
-            // o campo situação da terra ao lado de lat.lon".
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                OutlinedTextField(
-                    value = newLocation, onValueChange = { newLocation = it },
-                    label = { Text("latitude, longitude", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                    textStyle = MaterialTheme.typography.bodySmall,
-                    singleLine = true, modifier = Modifier.weight(1.4f),
-                    colors = appFieldColors(),
-                    trailingIcon = { LocalizacaoBotoes(onLocal = { newLocation = it }, onAviso = { android.widget.Toast.makeText(ctxLoc, it, android.widget.Toast.LENGTH_LONG).show() }) },
-                )
-                SituacaoTerraDropdownField(
-                    value = newSituacaoTerra, onValueChange = { newSituacaoTerra = it },
-                    modifier = Modifier.weight(1f), dense = true,
-                )
-            }
+            CulturaDropdownField(value = newCultura, onValueChange = { newCultura = it }, label = "Cultura", modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(
+                value = newArea, onValueChange = { newArea = it }, label = { Text("TOTAL (hectares)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth(),
+                colors = appFieldColors(),
+            )
+            CulturaDropdownField(value = newCultura1, onValueChange = { newCultura1 = it }, label = "Cultura 1", modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(
+                value = newCultura1Ha, onValueChange = { newCultura1Ha = it }, label = { Text("Hectares") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth(),
+                colors = appFieldColors(),
+            )
+            CulturaDropdownField(value = newCultura2, onValueChange = { newCultura2 = it }, label = "Cultura 2", modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(
+                value = newCultura2Ha, onValueChange = { newCultura2Ha = it }, label = { Text("Hectares") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth(),
+                colors = appFieldColors(),
+            )
+            OutlinedTextField(
+                value = newLocation, onValueChange = { newLocation = it },
+                label = { Text("Latitude, longitude") },
+                singleLine = true, modifier = Modifier.fillMaxWidth(),
+                colors = appFieldColors(),
+                trailingIcon = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        LocalizacaoBotoes(onLocal = { newLocation = it }, onAviso = { android.widget.Toast.makeText(ctxLoc, it, android.widget.Toast.LENGTH_LONG).show() })
+                        com.bragro.mobile.ui.domain.OcrFotoButton(label = "Preencher com foto do documento", somenteIcone = true) { url ->
+                            val r = com.bragro.mobile.data.repo.OcrFotoRepository(ocrContext).lerFazenda(url)
+                            val f = r.fazenda
+                            if (r.ok && f != null) {
+                                f.name?.let { newName = it }
+                                f.areaHa?.let { newArea = it.toString() }
+                                if (f.latitude != null && f.longitude != null) newLocation = "${f.latitude}, ${f.longitude}"
+                            }
+                            r.mensagem ?: r.error
+                        }
+                    }
+                },
+            )
+            SituacaoTerraDropdownField(value = newSituacaoTerra, onValueChange = { newSituacaoTerra = it }, modifier = Modifier.fillMaxWidth())
         }
         Row(modifier = Modifier.padding(top = 8.dp)) {
             Button(

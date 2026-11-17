@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -485,9 +486,6 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
     ) { padding0 ->
         // v19 -- ícones do cabeçalho movidos para a faixa Ações.
         Column(Modifier.fillMaxSize().padding(padding0)) {
-            com.bragro.mobile.ui.domain.AcoesIcones {
-                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ContentCopy, label = "Copiar último", loading = copiando, onClick = { if (!copiando) viewModel.preencherComUltimo() })
-            }
             val padding = PaddingValues(0.dp)
             Box(Modifier.fillMaxWidth().weight(1f)) {
         LazyColumn(
@@ -497,19 +495,12 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
         ) {
             item {
                 Text(
-                    "Fotografe. A IA sugere, você confirma o Alvo.",
+                    "Fotografe e confirme o Alvo.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                        // v216 (mockup aprovado) -- foto com IA só com o ícone, sem rótulo.
-                        androidx.compose.material3.IconButton(onClick = { launchCameraComPermissao() }, enabled = !enviandoFoto) {
-                            if (enviandoFoto) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            else Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoUrl != null) "Trocar foto" else "Tirar foto da praga/doença", modifier = Modifier.size(24.dp))
-                        }
-                    }
                     if (mensagemFoto != null) {
                         Text(mensagemFoto ?: "", style = MaterialTheme.typography.labelSmall)
                     }
@@ -546,7 +537,23 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
                 }
             }
             item {
-                LookupDropdown("Alvo (praga/doença) *", alvo, alvos) { viewModel.setAlvo(it) }
+                // v221 (mockup aprovado) -- foto e Copiar na linha do nome "Alvo".
+                androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth()) {
+                    LookupDropdown("Alvo (praga/doença) *", alvo, alvos) { viewModel.setAlvo(it) }
+                    androidx.compose.foundation.layout.Row(
+                        modifier = Modifier.align(androidx.compose.ui.Alignment.TopEnd).offset(y = (-8).dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    ) {
+                        androidx.compose.material3.IconButton(onClick = { launchCameraComPermissao() }, enabled = !enviandoFoto, modifier = Modifier.size(32.dp)) {
+                            if (enviandoFoto) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            else Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoUrl != null) "Trocar foto" else "Tirar foto da praga/doença", modifier = Modifier.size(22.dp))
+                        }
+                        androidx.compose.material3.IconButton(onClick = { if (!copiando) viewModel.preencherComUltimo() }, modifier = Modifier.size(32.dp)) {
+                            if (copiando) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            else Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último", modifier = Modifier.size(20.dp))
+                        }
+                    }
+                }
             }
             item {
                 LookupDropdown("Fazenda (opcional)", fazenda, fazendas) { viewModel.setFazenda(it) }

@@ -291,7 +291,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
         ) {
             item {
                 Text(
-                    "Voos e capturas (foto, NDVI, ortomosaico, vídeo). Arquivos até 50 MB.",
+                    "Voos e capturas, até 50 MB.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

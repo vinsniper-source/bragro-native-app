@@ -227,12 +227,18 @@ private fun numero(k: KeyboardOptions, trailingIcon: (@Composable () -> Unit)?):
  * nome pequeno em cima e a linha embaixo, largura toda (o nome continua
  * fora do campo, sem repetir o rótulo dentro). */
 @Composable
-fun NomeAoLado(nome: String, obrigatorio: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
+fun NomeAoLado(nome: String, obrigatorio: Boolean = false, acoes: (@Composable () -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(
-            nome + if (obrigatorio) " *" else "",
-            fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface,
-        )
+        // v221 (mockup aprovado) -- ícones (foto, copiar...) na linha do nome do
+        // primeiro campo, à direita, sem ocupar uma linha própria.
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                nome + if (obrigatorio) " *" else "",
+                fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            if (acoes != null) Row(Modifier.height(28.dp), verticalAlignment = Alignment.CenterVertically) { acoes() }
+        }
         CompositionLocalProvider(LocalNomeAoLado provides true) {
             Column(Modifier.fillMaxWidth()) { content() }
         }

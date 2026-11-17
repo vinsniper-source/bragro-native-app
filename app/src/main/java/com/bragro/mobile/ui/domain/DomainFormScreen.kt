@@ -910,9 +910,8 @@ fun DomainFormScreen(
 
             // "Preencher com foto" -- só em registro NOVO dos módulos
             // que declaram `ocrFoto` no registry.ts do site (paridade).
-            if (recordId == null && domainId in OCR_FOTO_DOMAINS) {
-                OcrFotoButton(modifier = Modifier.padding(bottom = 12.dp)) { url -> viewModel.aplicarOcrFoto(url) }
-            }
+            // v221 (mockup aprovado) -- a foto agora fica na linha do nome do
+            // primeiro campo, junto do Copiar (ver acoesTopo abaixo).
 
             // Mostra TODAS as colunas na ordem natural do domínio (mesma
             // ordem de cfg.columns, que já reflete a ordem da operação em
@@ -999,11 +998,30 @@ fun DomainFormScreen(
                     g to doItem.sortedBy { c -> chavesItem.indexOf(c.key).let { if (it < 0) 99 else it } }
                 }
             } else grupos
+            // v221 (mockup aprovado) -- Clima de hoje, foto e Copiar último ficam na
+            // linha do nome do primeiro campo, à direita (o formulário sobe).
+            val primeiroCampoKey = if (recordId == null) gruposAjust.firstOrNull()?.second?.firstOrNull { !it.computed && it.type != "checkbox" }?.key else null
+            val acoesTopo: @Composable () -> Unit = {
+                if (domainId == "clima") {
+                    val climaHojeBusy by viewModel.climaHojeBusy
+                    IconButton(onClick = { if (!climaHojeBusy) viewModel.preencherClimaHoje() }, modifier = Modifier.size(32.dp)) {
+                        if (climaHojeBusy) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        else Icon(Icons.Outlined.WaterDrop, contentDescription = "Preencher com clima de hoje", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                    }
+                }
+                if (domainId in OCR_FOTO_DOMAINS) {
+                    OcrFotoButton(somenteIcone = true) { url -> viewModel.aplicarOcrFoto(url) }
+                }
+                if (domainId !in MULTI_ITEM_FORM) IconButton(onClick = { if (lastRecord != null) viewModel.copyFromLastRecord() }, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último registro", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
+                }
+            }
             gruposAjust.forEach { (g, campos) ->
                 // v20 -- Clima de hoje / Copiar último como ícones sem rótulo
-                // no canto direito da primeira seção (QUANDO).
+                // no canto direito da primeira seção (QUANDO). v221: só quando não
+                // há um primeiro campo com nome para recebê-los.
                 SecaoFormHeader(g.second, g.third) {
-                    if (recordId == null && g == gruposAjust.first().first) {
+                    if (recordId == null && primeiroCampoKey == null && g == gruposAjust.first().first) {
                         if (domainId == "clima") {
                             val climaHojeBusy by viewModel.climaHojeBusy
                             IconButton(onClick = { if (!climaHojeBusy) viewModel.preencherClimaHoje() }, modifier = Modifier.size(32.dp)) {
@@ -1034,7 +1052,7 @@ fun DomainFormScreen(
                     if (col.type == "checkbox") {
                         FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                     } else {
-                        com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label), col.required) {
+                        com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label), col.required, acoes = if (col.key == primeiroCampoKey) acoesTopo else null) {
                             FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                         }
                     }

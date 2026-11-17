@@ -363,7 +363,7 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
         ) {
             item {
                 Text(
-                    "Importa um TASKDATA.XML (ISO-XML por zonas de tratamento) direto do aparelho. Importação de .SHP continua exclusiva do site.",
+                    "Importa ISO-XML. SHP só no site.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }

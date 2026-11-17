@@ -498,7 +498,7 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
         ) {
             item {
                 Text(
-                    "Só o essencial — data e os cálculos (líquido, sacas, tonelada) saem sozinhos quando sincronizar.",
+                    "Data e cálculos saem sozinhos.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }

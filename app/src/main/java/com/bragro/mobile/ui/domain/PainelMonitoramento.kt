@@ -429,7 +429,7 @@ fun AbasEncaixadas(titulos: List<String>, selecionada: Int, avisos: List<Int> = 
                 ) {
                     Text(
                         // v1.6.16 (mockup v119) -- abas em maiúsculo e negrito.
-                        Idioma.tr(t).uppercase(), fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        Idioma.tr(t) /* v222 -- sem caixa alta */, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                         fontWeight = FontWeight.ExtraBold,
                         // v1.6.23 (mockup v128b, item 3) -- amarelo só na barra; a letra
                         // segue a regra normal (selecionada apagada).

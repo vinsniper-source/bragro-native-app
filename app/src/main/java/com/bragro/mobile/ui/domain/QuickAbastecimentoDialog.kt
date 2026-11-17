@@ -12,6 +12,8 @@ import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -380,42 +382,30 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
         title = { Text("Abastecimento rápido") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                    Text("Só o essencial. Data, unidade e operação já ficam prontos automaticamente.", modifier = Modifier.weight(1f))
-                    // "Copiar último abastecimento" virou ícone -- pedido do
-                    // usuário ("dentro dos registros rápidos converta
-                    // apenas a um ícone copiar"), mesmo padrão do ícone de
-                    // copiar em Novo Registro (DomainFormScreen.kt).
-                    androidx.compose.material3.IconButton(onClick = {
-                        viewModel.copyFromLastAbastecimento { found ->
-                            copyMessage = if (found) "Preenchido com o último abastecimento. Confira." else "Nenhum abastecimento lançado ainda para copiar."
-                        }
-                    }) {
-                        androidx.compose.material3.Icon(
-                            Icons.Outlined.ContentCopy,
-                            contentDescription = "Copiar último abastecimento",
-                            tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                }
+                // v221 (mockup aprovado) -- texto até a margem; QR e Copiar na
+                // linha do nome "Máquina/Frota", à direita; a linha do campo fica
+                // na largura toda, como as outras.
+                Text("Data, unidade e operação vêm prontas.", modifier = Modifier.fillMaxWidth())
                 if (copyMessage != null) Text(copyMessage!!, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
-
-                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    androidx.compose.foundation.layout.Box(modifier = Modifier.weight(1f)) {
-                        LookupDropdown("Máquina/Frota *", frotas, viewModel.frota) { viewModel.frota = it }
-                    }
-                    // v83 (mockup v83 aprovado) -- um botão só: o leitor ao vivo
-                    // do BRAgro (LeitorQrCamera.kt), verde como os outros ícones.
-                    // A leitura por foto virou reserva dentro do próprio leitor.
-                    androidx.compose.material3.IconButton(onClick = { launchQrExterno() }, enabled = !lendoQr) {
-                        if (lendoQr) {
-                            CircularProgressIndicator(modifier = Modifier)
-                        } else {
-                            androidx.compose.material3.Icon(
-                                Icons.Outlined.CenterFocusWeak,
-                                contentDescription = "Ler QR Code da máquina",
-                                tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                            )
+                androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxWidth()) {
+                    LookupDropdown("Máquina/Frota *", frotas, viewModel.frota) { viewModel.frota = it }
+                    Row(
+                        modifier = Modifier.align(androidx.compose.ui.Alignment.TopEnd).offset(y = (-8).dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    ) {
+                        androidx.compose.material3.IconButton(onClick = { launchQrExterno() }, enabled = !lendoQr, modifier = Modifier.size(32.dp)) {
+                            if (lendoQr) {
+                                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            } else {
+                                androidx.compose.material3.Icon(Icons.Outlined.CenterFocusWeak, contentDescription = "Ler QR Code da máquina", tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            }
+                        }
+                        androidx.compose.material3.IconButton(onClick = {
+                            viewModel.copyFromLastAbastecimento { found ->
+                                copyMessage = if (found) "Preenchido com o último abastecimento. Confira." else "Nenhum abastecimento lançado ainda para copiar."
+                            }
+                        }, modifier = Modifier.size(32.dp)) {
+                            androidx.compose.material3.Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último abastecimento", tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         }
                     }
                 }
