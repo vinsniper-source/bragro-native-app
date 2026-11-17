@@ -814,8 +814,10 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                             com.bragro.mobile.ui.domain.NuvemButton()
                         },
                         arquivos = {
+                            com.bragro.mobile.ui.domain.ExportarMenu {
                             com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Print, label = "Imprimir", onClick = { if (operacoes.isNotEmpty()) HtmlPrinter.printList(context, operacoesExportConfig(), operacoesExportRecords(operacoes)) })
                             com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.PictureAsPdf, label = "PDF", onClick = { if (operacoes.isNotEmpty()) HtmlPrinter.exportPdfDirect(context, operacoesExportConfig(), operacoesExportRecords(operacoes)) })
+                            }
                         },
                     )
                     // Atualizar saiu daqui (subiu pro TopAppBar, ao lado da

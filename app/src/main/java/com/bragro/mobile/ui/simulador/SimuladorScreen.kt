@@ -244,8 +244,8 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
                             hint = "Ex.: -15 numa quebra de safra, +10 numa safra recorde.",
                         )
                         // Câmbio projetado e % do custo exposto na MESMA linha.
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 Text("Câmbio projetado (R$/USD)", style = MaterialTheme.typography.labelSmall, maxLines = 2)
                                 OutlinedTextField(
                                     value = if (cambioProjetado == cambioProjetado.toLong().toDouble()) cambioProjetado.toLong().toString() else cambioProjetado.toString(),
@@ -261,7 +261,7 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
                                 min = 0,
                                 max = 100,
                                 compact = true,
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.fillMaxWidth(),
                             )
                         }
                         Text(

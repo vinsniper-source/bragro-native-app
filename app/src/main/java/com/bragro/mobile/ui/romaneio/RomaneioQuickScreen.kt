@@ -502,13 +502,11 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    OutlinedButton(onClick = { launchCameraComPermissao() }, enabled = !uploadingFoto, modifier = Modifier.fillMaxWidth()) {
-                        if (uploadingFoto) {
-                            CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
-                            Text("Lendo e enviando foto...")
-                        } else {
-                            Icon(Icons.Outlined.CameraAlt, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                            Text(if (fotoTicketUrl != null) "Trocar foto do ticket" else "Tirar foto do ticket (opcional)")
+                    androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        // v216 (mockup aprovado) -- foto com IA só com o ícone, sem rótulo.
+                        androidx.compose.material3.IconButton(onClick = { launchCameraComPermissao() }, enabled = !uploadingFoto) {
+                            if (uploadingFoto) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            else Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoTicketUrl != null) "Trocar foto do ticket" else "Tirar foto do ticket (opcional)", modifier = Modifier.size(24.dp))
                         }
                     }
                     if (ocrMensagem != null) {
@@ -536,37 +534,37 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
                 )
             }
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = pesoBrutoKg,
                         onValueChange = { viewModel.setPesoBruto(it) },
                         label = { Text("Peso Bruto (kg) *") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                         colors = appFieldColors(),
                     )
                     OutlinedTextField(
                         value = taraKg,
                         onValueChange = { viewModel.setTara(it) },
                         label = { Text("Tara (kg) *") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                         colors = appFieldColors(),
                     )
                 }
             }
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = umidade,
                         onValueChange = { viewModel.setUmidade(it) },
                         label = { Text("Umidade (%)") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                         colors = appFieldColors(),
                     )
                     OutlinedTextField(
                         value = impureza,
                         onValueChange = { viewModel.setImpureza(it) },
                         label = { Text("Impureza (%)") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                         colors = appFieldColors(),
                     )
                 }

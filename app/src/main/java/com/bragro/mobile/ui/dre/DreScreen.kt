@@ -638,6 +638,8 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                     com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                 }
                 val arquivosBlock = DreBlockSpec("Arquivos", vertical = false) {
+                    // v215 -- Imprimir/PDF/Excel num só "Exportar" com lista.
+                    com.bragro.mobile.ui.domain.ExportarMenu {
                     LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Print, label = "Imprimir", onClick = { if (dre != null && dre!!.porFazenda.isNotEmpty()) HtmlPrinter.printList(context, dreExportConfig(), dreExportRecords(dre!!)) })
                     if (temRegistros) {
                         LabeledIconButton(
@@ -650,6 +652,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                             label = "PDF",
                             onClick = { HtmlPrinter.exportPdfDirect(context, dreExportConfig(), dreExportRecords(data!!)) },
                         )
+                    }
                     }
                 }
                 // Nuvem/Imprimir saíram daqui -- foram promovidos pro canto

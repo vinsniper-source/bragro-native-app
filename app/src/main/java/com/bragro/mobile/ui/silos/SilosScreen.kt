@@ -278,6 +278,10 @@ fun SilosScreen(onBack: () -> Unit, onAbrirRomaneio: (String) -> Unit = {}, view
     val leiturasLoading by viewModel.leiturasLoading
 
     Scaffold(
+        // v215 -- adicionar no botão verde (antes ficava em Operações).
+        floatingActionButton = {
+            com.bragro.mobile.ui.domain.BotaoAdicionar(com.bragro.mobile.ui.domain.IconesVazados.Storage, "Novo silo", onClick = { editing = null; showForm = true })
+        },
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -345,14 +349,15 @@ fun SilosScreen(onBack: () -> Unit, onAbrirRomaneio: (String) -> Unit = {}, view
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.ViewList, label = "Silos", active = silosAbertos, onClick = { silosAbertos = !silosAbertos })
                     },
                     operacoes = {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Storage, label = "+ Silo", onClick = { editing = null; showForm = true })
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.load() })
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, label = "Prestadora", onClick = { prestadoraAberta = true })
                         com.bragro.mobile.ui.domain.NuvemButton()
                     },
                     arquivos = {
+                        com.bragro.mobile.ui.domain.ExportarMenu {
                         com.bragro.mobile.ui.domain.ArquivosTabela("Silos", listOf("Silo", "Fazenda", "Produto", "Capacidade (t)", "Nível (%)", "Temperatura (°C)", "Umidade (%)", "Status")) {
                             silos.map { x -> listOf(x.nome, farms.firstOrNull { it.id == x.farmId }?.name.orEmpty(), x.produto.orEmpty(), x.capacidadeT?.toString().orEmpty(), (x.estimadoPct ?: x.nivelAtualPct)?.toInt()?.toString().orEmpty(), x.temperaturaAtualC?.toString().orEmpty(), x.umidadeAtualPct?.toString().orEmpty(), statusLabel(x.status)) }
+                        }
                         }
                     },
                 )

@@ -251,8 +251,10 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                     },
                     avisos = listOf(divergentes.size, 0, 0),
                     arquivos = {
+                        com.bragro.mobile.ui.domain.ExportarMenu {
                         com.bragro.mobile.ui.domain.ArquivosTabela("Ajustar Físico x Fiscal", listOf("Item", "Categoria", "Saldo Fiscal", "Saldo Real", "Diferença")) {
                             itens.map { listOf(it.item, it.categoria ?: "", formatoNumero(it.saldoFiscal) + (it.unidade?.let { u -> " $u" } ?: ""), formatoNumero(it.saldoFisico) + (it.unidade?.let { u -> " $u" } ?: ""), formatoNumero(it.diferenca) + (it.unidade?.let { u -> " $u" } ?: "")) }
+                        }
                         }
                     },
                 )

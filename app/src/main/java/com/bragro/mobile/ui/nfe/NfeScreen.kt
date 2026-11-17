@@ -489,6 +489,15 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
         if (inv.provedorSefaz == "nativo" && (inv.statusSefaz == "AUTORIZADA" || inv.statusSefaz == "CANCELADA")) ({ notaNativa = inv }) else null
 
     Scaffold(
+        // v215 -- adicionar no botão verde (antes ficava em Operações).
+        floatingActionButton = {
+            androidx.compose.foundation.layout.Column(horizontalAlignment = androidx.compose.ui.Alignment.End, verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
+                if (formNativo?.get("nativo").txt() == "true") {
+                    com.bragro.mobile.ui.domain.BotaoAdicionar(Icons.Outlined.Description, "Emitir NF-e", onClick = { showEmitir = true }, principal = false)
+                }
+                com.bragro.mobile.ui.domain.BotaoAdicionar(Icons.Outlined.Add, "Nova nota", onClick = { copiaOrigem = null; showNovaNota = true })
+            }
+        },
         topBar = {
             TopAppBar(
                 navigationIcon = { com.bragro.mobile.ui.domain.BackNavButton() },
@@ -564,18 +573,16 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
                                 )
                             },
                             operacoes = {
-                                if (formNativo?.get("nativo").txt() == "true") {
-                                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Description, label = "+ Emitir", onClick = { showEmitir = true })
-                                }
-                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Add, label = "+ Nota", onClick = { copiaOrigem = null; showNovaNota = true })
                                 com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ContentCopy, label = "Copiar", onClick = { if (ultimaNota != null) { copiaOrigem = ultimaNota; showNovaNota = true } })
                                 com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.VerifiedUser, label = "Certificado", onClick = { showCertificado = true })
                                 com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", onClick = { viewModel.carregar() })
                             },
                             arquivos = {
+                                com.bragro.mobile.ui.domain.ExportarMenu {
                                 com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.FolderZip, label = "XML lote", onClick = { showXmlLote = true })
                                 com.bragro.mobile.ui.domain.ArquivosTabela("NF-e", listOf("Número", "Série", "Tipo", "Emitente", "Valor", "Emissão", "Status")) {
                                     invoices.map { listOf(it.numero, it.serie.orEmpty(), it.tipo.orEmpty(), it.emitenteNome.orEmpty(), formatoMoeda(it.valorTotal), it.dataEmissao?.take(10)?.let { d -> com.bragro.mobile.ui.domain.isoDateToBr(d) }.orEmpty(), it.statusSefaz ?: it.status) }
+                                }
                                 }
                             },
                         )

@@ -48,6 +48,8 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.FileDownload
 
 /** v20 -- dentro de [AcoesIcones] os botões aparecem só com o ícone. */
 val LocalSomenteIcone = androidx.compose.runtime.compositionLocalOf { false }
@@ -208,6 +210,23 @@ fun LabeledIconButton(
     // retângulo fica amarela e a contagem vira um círculo verde.
     realce: Boolean = false,
 ) {
+    // v215 (mockup aprovado) -- dentro de ExportarMenu: Imprimir/PDF/Excel
+    // viram itens da lista "Exportar"; os outros botões continuam fora.
+    val modoExportar = LocalModoExportar.current
+    if (modoExportar != 0) {
+        val ehExportacao = label in ROTULOS_EXPORTAR
+        if (modoExportar == 1 && ehExportacao) return
+        if (modoExportar == 2) {
+            if (!ehExportacao) return
+            val fechar = LocalFecharExportar.current
+            androidx.compose.material3.DropdownMenuItem(
+                text = { Text(label) },
+                leadingIcon = { Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                onClick = { fechar(); onClick() },
+            )
+            return
+        }
+    }
     // v22 -- todo botão de Ações muda de cor ao ser tocado e só volta no
     // segundo toque. Botões de ação única (Imprimir, PDF, Excel, Atualizar,
     // Nuvem...) ficam marcados depois do toque; o segundo toque só desmarca,
@@ -367,12 +386,21 @@ fun EqualWidthBlockRow(modifier: Modifier = Modifier, drawBackground: Boolean = 
             itemCount.intValue = 0
             return@Layout layout(constraints.minWidth, 0) {}
         }
-        itemCount.intValue = measurables.size
         val totalWidth = constraints.maxWidth
-        val itemWidth = totalWidth / measurables.size
-        val itemConstraints = Constraints(minWidth = itemWidth, maxWidth = itemWidth, minHeight = 0, maxHeight = constraints.maxHeight)
+        // v215 (mockup aprovado) -- com muitos ícones (ex.: Dados do Clima) as
+        // células ficavam estreitas demais e os rótulos se embolavam; agora
+        // quebra em linhas equilibradas (ex.: 8 -> 2 x 4), sempre com células
+        // de largura igual e espaços iguais.
+        val minCelula = 52.dp.roundToPx()
+        val porLinhaMax = (totalWidth / minCelula).coerceAtLeast(1)
+        val linhas = (measurables.size + porLinhaMax - 1) / porLinhaMax
+        val porLinha = (measurables.size + linhas - 1) / linhas
+        itemCount.intValue = if (linhas == 1) measurables.size else 0
+        val itemWidth = totalWidth / porLinha
+        val itemConstraints = Constraints(minWidth = itemWidth, maxWidth = itemWidth, minHeight = 0, maxHeight = Constraints.Infinity)
         val placeables = measurables.map { it.measure(itemConstraints) }
-        val height = placeables.maxOf { it.height }
+        val alturaLinha = placeables.maxOf { it.height }
+        val height = alturaLinha * linhas
         layout(totalWidth, height) {
             // Centralizado nos dois eixos -- BUG real de auditoria
             // encontrado ("os icones não estão centralizados"): o item já
@@ -385,9 +413,14 @@ fun EqualWidthBlockRow(modifier: Modifier = Modifier, drawBackground: Boolean = 
             // inteiro à direita. Agora X também centraliza o placeable
             // dentro da largura da própria célula, igual já acontecia com Y.
             placeables.forEachIndexed { index, placeable ->
-                val cellX = index * itemWidth
+                val linha = index / porLinha
+                val col = index % porLinha
+                // última linha incompleta fica centralizada
+                val naLinha = if (linha == linhas - 1) measurables.size - linha * porLinha else porLinha
+                val desloc = (totalWidth - naLinha * itemWidth) / 2
+                val cellX = desloc + col * itemWidth
                 val x = cellX + (itemWidth - placeable.width) / 2
-                val y = (height - placeable.height) / 2
+                val y = linha * alturaLinha + (alturaLinha - placeable.height) / 2
                 placeable.placeRelative(x, y)
             }
         }
@@ -431,4 +464,51 @@ fun Modifier.girar(ativo: Boolean): Modifier {
         label = "graus",
     )
     return this.graphicsLayer { rotationZ = graus }
+}
+
+
+/** v215 -- 0 = normal; 1 = conteúdo fora da lista Exportar; 2 = dentro da lista. */
+val LocalModoExportar = androidx.compose.runtime.compositionLocalOf { 0 }
+val LocalFecharExportar = androidx.compose.runtime.compositionLocalOf<() -> Unit> { {} }
+private val ROTULOS_EXPORTAR = setOf("Imprimir", "PDF", "Excel", "LCDPR")
+
+/**
+ * v215 (mockup aprovado) -- Imprimir, PDF e Excel do bloco Arquivos num só
+ * ícone "Exportar" com lista suspensa. O conteúdo é o mesmo de antes: os
+ * botões de exportação viram itens da lista e os demais (Extrato, XML...)
+ * continuam como ícones ao lado.
+ */
+@Composable
+fun ExportarMenu(content: @Composable () -> Unit) {
+    var aberto by remember { androidx.compose.runtime.mutableStateOf(false) }
+    androidx.compose.runtime.CompositionLocalProvider(LocalModoExportar provides 1) { content() }
+    Box {
+        LabeledIconButton(icon = Icons.Outlined.FileDownload, label = "Exportar", onClick = { aberto = true })
+        androidx.compose.material3.DropdownMenu(
+            expanded = aberto,
+            onDismissRequest = { aberto = false },
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+        ) {
+            androidx.compose.runtime.CompositionLocalProvider(
+                LocalModoExportar provides 2,
+                LocalFecharExportar provides { aberto = false },
+            ) { content() }
+        }
+    }
+}
+
+
+/**
+ * v215 (mockup aprovado) -- adicionar sai do bloco Operações e vira o botão
+ * verde no canto inferior direito, com o ícone de cada módulo.
+ */
+@Composable
+fun BotaoAdicionar(icon: ImageVector, descricao: String, onClick: () -> Unit, principal: Boolean = true) {
+    androidx.compose.material3.FloatingActionButton(
+        onClick = onClick,
+        containerColor = if (principal) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = if (principal) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer,
+    ) {
+        Icon(icon, contentDescription = descricao)
+    }
 }

@@ -534,6 +534,8 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                 com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
             }
             val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
+                // v215 -- Imprimir/PDF/Excel num só "Exportar" com lista.
+                com.bragro.mobile.ui.domain.ExportarMenu {
                 LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Print, label = "Imprimir", onClick = { run {
 val headers = listOf("Data", "Nº Orçamento", "Requisição", "Autorizado por", "Itens", "Total", "Status")
                                 val rows = filtered.map { o ->
@@ -573,6 +575,7 @@ val headers = listOf("Data", "Nº Orçamento", "Requisição", "Autorizado por",
                     label = "PDF",
                     onClick = { HtmlPrinter.printSimpleTable(context, "Orçamentos", headers, rows) },
                 )
+                }
             }
             // Painel de monitoramento (mesmo da plataforma), antes de Ações.
             run {

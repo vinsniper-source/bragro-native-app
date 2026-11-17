@@ -521,6 +521,10 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
     }
 
     Scaffold(
+        // v215 -- adicionar no botão verde (antes ficava em Operações).
+        floatingActionButton = {
+            com.bragro.mobile.ui.domain.BotaoAdicionar(Icons.Outlined.EditLocationAlt, "Novo talhão", onClick = { manualDialogOpen = true })
+        },
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -587,14 +591,15 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                         icon = Icons.Outlined.UploadFile, label = "KML/KMZ", loading = importing,
                         onClick = { kmlPicker.launch(arrayOf("application/vnd.google-earth.kml+xml", "application/vnd.google-earth.kmz", "application/octet-stream", "*/*")) },
                     )
-                    com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.EditLocationAlt, label = "+ Talhão", onClick = { manualDialogOpen = true })
                     com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, label = "Prestadora", active = integration != null, onClick = { prestadoraAberta = 1 })
                     com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Public, label = "NDVI", active = camadasNdvi.isNotEmpty(), onClick = { prestadoraAberta = 2 })
                 },
                 arquivos = {
+                    com.bragro.mobile.ui.domain.ExportarMenu {
                     com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Map, label = "Prescrição", onClick = onOpenPrescricao)
                     com.bragro.mobile.ui.domain.ArquivosTabela("Talhões e Mapas", listOf("Talhão", "Nome", "Área (ha)")) {
                         boundaries.map { b -> listOf(b.talhao, b.nome.orEmpty(), b.areaHaCalc?.let { "%,.2f".format(java.util.Locale("pt", "BR"), it) }.orEmpty()) }
+                    }
                     }
                 },
             )

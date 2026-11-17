@@ -513,7 +513,7 @@ fun FinanceiroScreen(
                         // do usuario ("substitua icones que estejam iguais
                         // mas com funcoes diferentes").
                         ModuleIconButton(
-                            ModuleIconItem("recalcular-vencimentos", Icons.Outlined.Autorenew, "Recalc. vcto", active = expandedBlocks["recalcular-vencimentos"] == true),
+                            ModuleIconItem("recalcular-vencimentos", Icons.Outlined.Autorenew, "Vencimento", active = expandedBlocks["recalcular-vencimentos"] == true),
                         ) { expandedBlocks["recalcular-vencimentos"] = expandedBlocks["recalcular-vencimentos"] != true }
                     }
                     PeriodoDropdown(
@@ -541,6 +541,8 @@ fun FinanceiroScreen(
                 }
             val arquivosBlock =
                 FinBlockSpec("Arquivos", MaterialTheme.typography.titleSmall, vertical = false) {
+                    // v215 -- Imprimir/PDF/Excel num só "Exportar" com lista.
+                    com.bragro.mobile.ui.domain.ExportarMenu {
                     LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filtered, effectiveColumns.map { it.key }.toSet()) })
                     if (!isQuickView) {
                         LabeledIconButton(icon = Icons.Outlined.Upload, label = "Extrato", onClick = onOpenBankImport)
@@ -574,6 +576,7 @@ fun FinanceiroScreen(
                             label = "PDF",
                             onClick = { HtmlPrinter.exportPdfDirect(context, cfg, filtered, effectiveColumns.map { it.key }.toSet()) },
                         )
+                    }
                     }
                 }
             // Nuvem e Imprimir saíram daqui -- foram promovidos pro canto

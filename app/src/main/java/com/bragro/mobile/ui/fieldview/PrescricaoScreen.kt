@@ -297,6 +297,10 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
     }
 
     Scaffold(
+        // v215 -- adicionar no botão verde (antes ficava em Operações).
+        floatingActionButton = {
+            com.bragro.mobile.ui.domain.BotaoAdicionar(Icons.Outlined.Add, "Nova prescrição", onClick = onNovo)
+        },
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -381,11 +385,11 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Description, label = "ISO-XML", onClick = { exportarExpandida(true) })
                     },
                     operacoes = {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Add, label = "+ Nova", onClick = onNovo)
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", onClick = { viewModel.carregar() })
                         com.bragro.mobile.ui.domain.NuvemButton()
                     },
                     arquivos = {
+                        com.bragro.mobile.ui.domain.ExportarMenu {
                         com.bragro.mobile.ui.domain.ArquivosTabela("Prescrição / Taxa Variável", listOf("Nome", "Produto", "Safra", "Cultura", "Talhão", "Taxa mín.", "Taxa média", "Taxa máx.")) {
                             prescricoes.map {
                                 listOf(
@@ -395,6 +399,7 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                                     it.taxaMax?.let { v -> "%,.2f".format(java.util.Locale("pt", "BR"), v) } ?: "",
                                 )
                             }
+                        }
                         }
                     },
                 )

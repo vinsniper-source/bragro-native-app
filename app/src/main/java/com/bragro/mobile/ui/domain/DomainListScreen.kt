@@ -948,11 +948,19 @@ fun DomainListScreen(
                         // é que fica verde (ícone e rótulo), como já acontecia
                         // no modo escuro. Antes o verde cheio no modo claro
                         // apagava a diferença entre as duas.
+                        // v215 (mockup aprovado) -- fundo verde e fonte branca; a opção
+                        // escolhida fica branca cheia, a outra branca suave.
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
                         ) {
+                            val esquema = MaterialTheme.colorScheme
+                            MaterialTheme(colorScheme = esquema.copy(
+                                primary = androidx.compose.ui.graphics.Color.White,
+                                onSurface = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.78f),
+                                onSurfaceVariant = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.78f),
+                                surface = esquema.primary,
+                            )) {
                             // Borda vertical dividindo em partes iguais +
                             // ícones centralizados dentro de cada bloco --
                             // pedido do usuário ("coloque uma borda vertical
@@ -979,6 +987,7 @@ fun DomainListScreen(
                                         ModuleIconItem(id, linkedDomainIcon(id), label, active = active),
                                     ) { if (!active) onSwitchDomain(id) }
                                 }
+                            }
                             }
                         }
                     }
@@ -1137,6 +1146,8 @@ fun DomainListScreen(
                     // cabiam lado a lado na largura do bloco Arquivos e
                     // quebravam pra 2 linhas, esticando a fileira inteira.
                     val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
+                        // v215 -- Imprimir/PDF/Excel num só "Exportar" com lista.
+                        com.bragro.mobile.ui.domain.ExportarMenu {
                         LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
                         if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
@@ -1153,6 +1164,7 @@ fun DomainListScreen(
                                     HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys)
                                 },
                             )
+                        }
                         }
                     }
                     // Nuvem/Imprimir e os blocos únicos que só existiam pra
@@ -1236,7 +1248,7 @@ fun DomainListScreen(
                     val operacoesBlock = ModuleBlockSpec("Operações", vertical = false, badgeCount = pendingVisibleCount, footer = revisarFooter) {
                         if (domainId == "safra") {
                             ModuleIconButton(
-                                ModuleIconItem("recalcular-area", Icons.Outlined.Autorenew, "Recalc área"),
+                                ModuleIconItem("recalcular-area", Icons.Outlined.Autorenew, "Área"),
                             ) { expandedBlocks["recalcular-area"] = expandedBlocks["recalcular-area"] != true }
                         }
                         LabeledIconButton(
@@ -1262,7 +1274,7 @@ fun DomainListScreen(
                         }
                         if (domainId == "frota") {
                             ModuleIconButton(
-                                ModuleIconItem("recalcular-area", Icons.Outlined.Autorenew, "Recalc área"),
+                                ModuleIconItem("recalcular-area", Icons.Outlined.Autorenew, "Área"),
                             ) { expandedBlocks["recalcular-area"] = expandedBlocks["recalcular-area"] != true }
                         }
                         com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
@@ -1271,6 +1283,8 @@ fun DomainListScreen(
                     // pedido do usuário ("coloque os blocos da linha 2
                     // todos na horizontal e com limite de altura").
                     val arquivosBlock = ModuleBlockSpec("Arquivos", vertical = false) {
+                        // v215 -- Imprimir/PDF/Excel num só "Exportar" com lista.
+                        com.bragro.mobile.ui.domain.ExportarMenu {
                         LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
                         if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
@@ -1287,6 +1301,7 @@ fun DomainListScreen(
                                     HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys)
                                 },
                             )
+                        }
                         }
                     }
                     // Nuvem/Imprimir e todo o esqueleto de Row/weight
@@ -1354,6 +1369,8 @@ fun DomainListScreen(
                         com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                     }
                     val arquivosBlockCobrancas = ModuleBlockSpec("Arquivos", vertical = false) {
+                        // v215 -- Imprimir/PDF/Excel num só "Exportar" com lista.
+                        com.bragro.mobile.ui.domain.ExportarMenu {
                         LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Print, label = "Imprimir", onClick = { if (config != null) HtmlPrinter.printList(context, config!!, filteredRecords, visibleKeys) })
                         if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                             LabeledIconButton(
@@ -1366,6 +1383,7 @@ fun DomainListScreen(
                                 label = "PDF",
                                 onClick = { HtmlPrinter.exportPdfDirect(context, cfg, filteredRecords, visibleKeys) },
                             )
+                        }
                         }
                     }
                     // Mesma barra oval alternando categorias -- pedido do
@@ -1412,7 +1430,7 @@ fun DomainListScreen(
                         // confundia, pedido do usuario ("substitua icones
                         // que estejam iguais mas com funcoes diferentes").
                         ModuleIconButton(
-                            ModuleIconItem("recalcular-area", Icons.Outlined.Autorenew, "Recalc área"),
+                            ModuleIconItem("recalcular-area", Icons.Outlined.Autorenew, "Área"),
                         ) { expandedBlocks["recalcular-area"] = expandedBlocks["recalcular-area"] != true }
                     }
                     if (showFiltros) {
@@ -1465,7 +1483,8 @@ fun DomainListScreen(
                         visibleKeys = visibleKeys,
                         onChange = { customVisibleKeys = it },
                     )
-                    if (true) { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
+                    if (true) {
+                        com.bragro.mobile.ui.domain.ExportarMenu { // sempre visível -- pedido do usuário ("force todos os ícones aparecerem")
                         // Ícones separados (mesmo padrão do Financeiro) em vez
                         // de um menu único -- pedido do usuário ("implemente
                         // nos módulos que não tiverem... csv, pdf, imprimir,
@@ -1485,6 +1504,7 @@ fun DomainListScreen(
                         // Ícone Compartilhar (txt) removido -- pedido do
                         // usuário ("exclua o ícone de compartilhar em txt...
                         // em todos os outros [módulos]").
+                        }
                     }
                     // Nuvem e Imprimir saíram daqui -- agora só na TopAppBar
                     // (ver actions do Scaffold acima), pedido do usuário.

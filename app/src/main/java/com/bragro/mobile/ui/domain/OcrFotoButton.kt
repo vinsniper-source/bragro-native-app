@@ -9,6 +9,7 @@ import android.graphics.Matrix
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -142,13 +143,11 @@ fun OcrFotoButton(
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        OutlinedButton(onClick = { abrir() }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-            if (busy) {
-                CircularProgressIndicator(modifier = Modifier.size(18.dp).padding(end = 0.dp), strokeWidth = 2.dp)
-                Text("  Lendo foto...")
-            } else {
-                Icon(Icons.Outlined.CameraAlt, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                Text(label)
+        androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            // v216 (mockup aprovado) -- foto com IA só com o ícone, sem rótulo.
+            androidx.compose.material3.IconButton(onClick = { abrir() }, enabled = !busy) {
+                if (busy) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                else Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = label, modifier = Modifier.size(24.dp))
             }
         }
         if (mensagem != null) {

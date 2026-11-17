@@ -240,6 +240,10 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
     val context = LocalContext.current
 
     Scaffold(
+        // v215 -- adicionar no botão verde (antes ficava em Operações).
+        floatingActionButton = {
+            com.bragro.mobile.ui.domain.BotaoAdicionar(com.bragro.mobile.ui.domain.IconesVazados.FlightTakeoff, "Novo voo", onClick = { showNovo = true })
+        },
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -349,12 +353,12 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                         )
                     },
                     operacoes = {
-                        com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.FlightTakeoff, label = "+ Voo", onClick = { showNovo = true })
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, label = "Prestadora", active = integration != null, onClick = { showPrestadora = true })
                         com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.load() })
                         com.bragro.mobile.ui.domain.NuvemButton()
                     },
                     arquivos = {
+                        com.bragro.mobile.ui.domain.ExportarMenu {
                         com.bragro.mobile.ui.domain.ArquivosTabela("Drone", listOf("Data", "Talhão", "Tipo", "Piloto", "Altitude (m)", "Área (ha)", "Observações")) {
                             filtrados.map { r ->
                                 listOf(
@@ -363,6 +367,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                                     r.piloto.orEmpty(), r.altitude?.toString().orEmpty(), r.areaCoberta?.toString().orEmpty(), r.observacoes.orEmpty(),
                                 )
                             }
+                        }
                         }
                     },
                 )

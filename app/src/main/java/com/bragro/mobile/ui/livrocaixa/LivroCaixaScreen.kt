@@ -731,6 +731,8 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                     com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                 }
                 val arquivosBlock = LivroCaixaBlockSpec("Arquivos") {
+                    // v215 -- Imprimir/PDF/Excel num só "Exportar" com lista.
+                    com.bragro.mobile.ui.domain.ExportarMenu {
                     LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Print, label = "Imprimir", onClick = { if (resultado != null && resultado!!.lancamentos.isNotEmpty()) HtmlPrinter.printList(context, livroCaixaExportConfig(), livroCaixaExportRecords(resultado!!.lancamentos)) })
                     if (temRegistros) {
                         LabeledIconButton(icon = Icons.Outlined.GridOn, label = "Excel", onClick = { exportXlsx(context, "Livro Caixa", LIVRO_CAIXA_EXPORT_COLUMNS, livroCaixaExportRecords(data!!.lancamentos)) })
@@ -748,6 +750,7 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                                 }
                             },
                         )
+                    }
                     }
                 }
                 LivroCaixaCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth())

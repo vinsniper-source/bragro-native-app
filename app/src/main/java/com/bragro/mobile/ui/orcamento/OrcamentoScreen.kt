@@ -740,17 +740,12 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    OutlinedButton(
-                        onClick = { launchCameraComPermissao("requisicao", { uri -> pendingRequisicaoUri = uri }, takeRequisicaoPicture) },
-                        enabled = !uploadingRequisicao,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        if (uploadingRequisicao) {
-                            CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
-                            Text("Lendo e enviando foto...")
-                        } else {
-                            Icon(Icons.Outlined.CameraAlt, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                            Text(if (fotoRequisicaoUrl != null) "Trocar foto da requisição" else "Foto da requisição (lê automaticamente)")
+                    androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        // v216 (mockup aprovado) -- foto com IA só com o ícone, sem rótulo.
+                        androidx.compose.material3.IconButton(onClick = { launchCameraComPermissao("requisicao", { uri -> pendingRequisicaoUri = uri }, takeRequisicaoPicture) },
+                        enabled = !uploadingRequisicao) {
+                            if (uploadingRequisicao) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            else Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoRequisicaoUrl != null) "Trocar foto da requisição" else "Foto da requisição (lê automaticamente)", modifier = Modifier.size(24.dp))
                         }
                     }
                     if (ocrMensagemRequisicao != null) {
@@ -790,17 +785,12 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    OutlinedButton(
-                        onClick = { launchCameraComPermissao("comprovante", { uri -> pendingComprovanteUri = uri }, takeComprovantePicture) },
-                        enabled = !uploadingComprovante,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        if (uploadingComprovante) {
-                            CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
-                            Text("Lendo e enviando foto...")
-                        } else {
-                            Icon(Icons.Outlined.CameraAlt, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                            Text(if (fotoComprovanteUrl != null) "Trocar foto do comprovante/orçamento" else "Foto do comprovante/orçamento (lê os itens)")
+                    androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        // v216 (mockup aprovado) -- foto com IA só com o ícone, sem rótulo.
+                        androidx.compose.material3.IconButton(onClick = { launchCameraComPermissao("comprovante", { uri -> pendingComprovanteUri = uri }, takeComprovantePicture) },
+                        enabled = !uploadingComprovante) {
+                            if (uploadingComprovante) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            else Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoComprovanteUrl != null) "Trocar foto do comprovante/orçamento" else "Foto do comprovante/orçamento (lê os itens)", modifier = Modifier.size(24.dp))
                         }
                     }
                     if (ocrMensagemItens != null) {

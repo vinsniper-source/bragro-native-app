@@ -61,6 +61,8 @@ fun linhaCampoColor(): Color =
 /** true = o nome do campo já está escrito ao lado (formulários de registro),
  * então o campo não repete o rótulo dentro dele. */
 val LocalNomeAoLado = compositionLocalOf { false }
+/** v216 -- telas que mantêm o campo antigo (rótulo dentro), ex.: login. */
+val LocalCampoClassico = compositionLocalOf { false }
 
 /** v175 (mockup aprovado) -- true = campo com lista: sem setinha; a linha vai
  * até a ponta e ganha uma pequena dobra vertical na ponta direita. */
@@ -99,6 +101,24 @@ fun LinhaTextField(
     shape: Shape = SEM_CANTO,
     colors: TextFieldColors = appFieldColors(),
 ) {
+    if (label != null && !LocalNomeAoLado.current && !LocalCampoClassico.current) {
+        // v216 (mockup aprovado) -- regra geral também nas janelas: nome
+        // pequeno em cima, linha embaixo e conteúdo à direita (o rótulo sai
+        // de dentro do campo, então nada fica cortado por ícone).
+        Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            androidx.compose.material3.ProvideTextStyle(TextStyle(fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)) { label() }
+            CompositionLocalProvider(LocalNomeAoLado provides true) {
+                LinhaTextField(
+                    value = value, onValueChange = onValueChange, modifier = Modifier.fillMaxWidth(), enabled = enabled, readOnly = readOnly,
+                    textStyle = textStyle, label = null, placeholder = placeholder, leadingIcon = leadingIcon, trailingIcon = trailingIcon,
+                    prefix = prefix, suffix = suffix, supportingText = supportingText, isError = isError, visualTransformation = visualTransformation,
+                    keyboardOptions = keyboardOptions, keyboardActions = keyboardActions, singleLine = singleLine, maxLines = maxLines, minLines = minLines,
+                    interactionSource = interactionSource, shape = shape, colors = colors,
+                )
+            }
+        }
+        return
+    }
     if (LocalNomeAoLado.current) {
         // v147 (opção A) -- dentro do formulário: linha colada no texto.
         val st = textStyle.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.End))
@@ -153,6 +173,24 @@ fun LinhaTextField(
     shape: Shape = SEM_CANTO,
     colors: TextFieldColors = appFieldColors(),
 ) {
+    if (label != null && !LocalNomeAoLado.current && !LocalCampoClassico.current) {
+        // v216 (mockup aprovado) -- regra geral também nas janelas: nome
+        // pequeno em cima, linha embaixo e conteúdo à direita (o rótulo sai
+        // de dentro do campo, então nada fica cortado por ícone).
+        Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            androidx.compose.material3.ProvideTextStyle(TextStyle(fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)) { label() }
+            CompositionLocalProvider(LocalNomeAoLado provides true) {
+                LinhaTextField(
+                    value = value, onValueChange = onValueChange, modifier = Modifier.fillMaxWidth(), enabled = enabled, readOnly = readOnly,
+                    textStyle = textStyle, label = null, placeholder = placeholder, leadingIcon = leadingIcon, trailingIcon = trailingIcon,
+                    prefix = prefix, suffix = suffix, supportingText = supportingText, isError = isError, visualTransformation = visualTransformation,
+                    keyboardOptions = keyboardOptions, keyboardActions = keyboardActions, singleLine = singleLine, maxLines = maxLines, minLines = minLines,
+                    interactionSource = interactionSource, shape = shape, colors = colors,
+                )
+            }
+        }
+        return
+    }
     if (LocalNomeAoLado.current) {
         // v147 (opção A) -- dentro do formulário: linha colada no texto.
         val st = textStyle.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.End))
@@ -313,5 +351,27 @@ private fun DecoracaoLinha(
                 Box(Modifier.padding(top = 2.dp)) { supportingText() }
             }
         }
+    }
+}
+
+
+/** v216 -- campo do login: mantém o rótulo dentro (fora da regra geral). */
+@Composable
+fun LinhaTextFieldClassico(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    label: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    singleLine: Boolean = false,
+    colors: TextFieldColors = appFieldColors(),
+) {
+    CompositionLocalProvider(LocalCampoClassico provides true) {
+        LinhaTextField(
+            value = value, onValueChange = onValueChange, modifier = modifier, label = label, trailingIcon = trailingIcon,
+            visualTransformation = visualTransformation, keyboardOptions = keyboardOptions, singleLine = singleLine, colors = colors,
+        )
     }
 }

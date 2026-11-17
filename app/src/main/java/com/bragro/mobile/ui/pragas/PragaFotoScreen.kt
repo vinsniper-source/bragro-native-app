@@ -503,13 +503,11 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    OutlinedButton(onClick = { launchCameraComPermissao() }, enabled = !enviandoFoto, modifier = Modifier.fillMaxWidth()) {
-                        if (enviandoFoto) {
-                            CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
-                            Text("Enviando e analisando foto...")
-                        } else {
-                            Icon(Icons.Outlined.CameraAlt, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                            Text(if (fotoUrl != null) "Trocar foto" else "Tirar foto da praga/doença")
+                    androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        // v216 (mockup aprovado) -- foto com IA só com o ícone, sem rótulo.
+                        androidx.compose.material3.IconButton(onClick = { launchCameraComPermissao() }, enabled = !enviandoFoto) {
+                            if (enviandoFoto) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            else Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoUrl != null) "Trocar foto" else "Tirar foto da praga/doença", modifier = Modifier.size(24.dp))
                         }
                     }
                     if (mensagemFoto != null) {

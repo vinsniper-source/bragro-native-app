@@ -967,6 +967,8 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                     com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                 }
                 val arquivosBlock = AnalisesBlockSpec("Arquivos", vertical = false) {
+                    // v215 -- Imprimir/PDF/Excel num só "Exportar" com lista.
+                    com.bragro.mobile.ui.domain.ExportarMenu {
                     LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Print, label = "Imprimir", onClick = { if (analises != null && analises!!.entries.isNotEmpty()) HtmlPrinter.printList(context, analisesExportConfig(), analisesExportRecords(analises!!)) })
                     if (temRegistros) {
                         LabeledIconButton(
@@ -979,6 +981,7 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                             label = "PDF",
                             onClick = { HtmlPrinter.exportPdfDirect(context, analisesExportConfig(), analisesExportRecords(data!!)) },
                         )
+                    }
                     }
                 }
                 // Nuvem/Imprimir saíram daqui -- foram promovidos pro canto

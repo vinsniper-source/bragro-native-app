@@ -471,6 +471,8 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                     com.bragro.mobile.ui.domain.NuvemButton() // label = "Nuvem"
                 }
                 val arquivosBlock = InsumosBlockSpec("Arquivos") {
+                    // v215 -- Imprimir/PDF/Excel num só "Exportar" com lista.
+                    com.bragro.mobile.ui.domain.ExportarMenu {
                     if (temDados) {
                         LabeledIconButton(
                             icon = Icons.Outlined.GridOn,
@@ -487,6 +489,7 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                             label = "Imprimir",
                             onClick = { HtmlPrinter.printList(context, insumosExportConfig(), insumosExportRecords(d!!)) },
                         )
+                    }
                     }
                 }
                 com.bragro.mobile.ui.domain.BlocoComFaixa("Ações") {

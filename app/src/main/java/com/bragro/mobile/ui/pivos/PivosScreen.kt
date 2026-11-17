@@ -337,6 +337,10 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
     val historicoLoading by viewModel.historicoLoading
 
     Scaffold(
+        // v215 -- adicionar no botão verde (antes ficava em Operações).
+        floatingActionButton = {
+            com.bragro.mobile.ui.domain.BotaoAdicionar(Icons.Outlined.WaterDrop, "Novo pivô", onClick = { editing = null; showNovo = true })
+        },
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -388,16 +392,17 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                             com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.Opacity, label = "Balanço", active = balancoOpen, onClick = { balancoOpen = !balancoOpen })
                         },
                         operacoes = {
-                            com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.WaterDrop, label = "+ Pivô", onClick = { editing = null; showNovo = true })
                             com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", loading = loading, onClick = { viewModel.load() })
                             com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, label = "Fabricante", onClick = { prestadoraAberta = true })
                             com.bragro.mobile.ui.domain.NuvemButton()
                         },
                         arquivos = {
+                            com.bragro.mobile.ui.domain.ExportarMenu {
                             com.bragro.mobile.ui.domain.ArquivosTabela("Pivôs de Irrigação", listOf("Pivô", "Fazenda", "Marca", "Status", "Ângulo", "Lâmina (mm)", "Pressão (psi)", "Raio (m)")) {
                                 pivos.map { p ->
                                     listOf(p.nome, farms.firstOrNull { it.id == p.farmId }?.name.orEmpty(), p.marca, statusLabel(p.status), p.anguloAtual?.toInt()?.toString().orEmpty(), p.laminaAtualMm?.toString().orEmpty(), p.pressaoPsi?.toInt()?.toString().orEmpty(), p.raioM?.toInt()?.toString().orEmpty())
                                 }
+                            }
                             }
                         },
                     )
