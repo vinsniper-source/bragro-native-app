@@ -324,7 +324,7 @@ private fun DecoracaoLinha(
                             drawLine(cor, Offset(x, size.height), Offset(x, size.height - 8.dp.toPx()), strokeWidth = 1.5.dp.toPx())
                         }
                     }
-                    .padding(start = 2.dp, end = 14.dp, top = 4.dp, bottom = 1.dp),
+                    .padding(start = 2.dp, end = if (trailingIcon != null && !lista) 2.dp else 14.dp, top = 4.dp, bottom = 1.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
@@ -339,9 +339,11 @@ private fun DecoracaoLinha(
                     inner()
                 }
                 if (suffix != null) suffix()
-            }
-            if (trailingIcon != null && !lista) {
-                Box(Modifier.padding(start = 6.dp).offset(y = (-2).dp)) { Icone(trailingIcon) }
+                // v218 (mockup aprovado) -- calendário (e outros ícones) de volta
+                // para dentro da linha, na ponta direita.
+                if (trailingIcon != null && !lista) {
+                    Box(Modifier.offset(y = (-1).dp)) { Icone(trailingIcon) }
+                }
             }
             // v197 (mockup aprovado) -- sem ícone, a linha ocupa a largura toda
             // (não reserva mais a coluna do calendário).
