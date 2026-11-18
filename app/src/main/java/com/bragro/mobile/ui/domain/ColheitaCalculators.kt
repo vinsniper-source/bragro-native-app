@@ -12,7 +12,7 @@ import androidx.compose.material.icons.outlined.CompareArrows
  * agronomic-calculators.tsx. */
 @Composable
 fun ColheitaCalculators() {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
         GraosPesoLiquidoCalc()
         CanaAtrCalc()
         ConversaoProdutividadeCalc()
@@ -48,7 +48,7 @@ private fun GraosPesoLiquidoCalc() {
     }
 
     CalcCard(icon = com.bragro.mobile.ui.domain.IconesVazados.Balance, title = "Grãos — peso líquido") {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             CalcNumField("Peso bruto", "kg", pesoBruto)
             CalcNumField("Umidade real", "%", umidadeReal)
             CalcNumField("Umidade padrão", "%", umidadePadrao)
@@ -75,7 +75,7 @@ private fun CanaAtrCalc() {
     val valorEstimado = if (atrTotal != null && preco != null) atrTotal * preco else null
 
     CalcCard(icon = com.bragro.mobile.ui.domain.IconesVazados.Agriculture, title = "Cana — ATR") {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             CalcNumField("Peso bruto cana", "ton", pesoCana)
             CalcNumField("ATR — usina", "kg/ton", atrUsina)
             CalcNumField("Preço ATR", "R$/kg", precoAtr)
@@ -93,7 +93,7 @@ private fun ConversaoProdutividadeCalc() {
     val emToneladas = if (p != null) p / 1000 else null
 
     CalcCard(icon = androidx.compose.material.icons.Icons.Outlined.CompareArrows, title = "Conversão de produtividade") {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             CalcNumField("Produtividade", "kg/ha", produtividade)
             CalcResultField("Sacas (60kg)", value = fmtCalc(emSacas))
             CalcResultField("Toneladas", value = fmtCalc(emToneladas))

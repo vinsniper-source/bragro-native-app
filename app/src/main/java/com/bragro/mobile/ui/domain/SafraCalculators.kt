@@ -11,7 +11,7 @@ import androidx.compose.material.icons.outlined.WaterDrop
 /** Espelho de Semeadura()/Pulverizacao()/Adubacao() em agronomic-calculators.tsx. */
 @Composable
 fun SafraCalculators() {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
         SemeaduraCalc()
         PulverizacaoCalc()
         AdubacaoCalc()
@@ -43,7 +43,7 @@ private fun SemeaduraCalc() {
     }
 
     CalcCard(icon = androidx.compose.material.icons.Icons.Outlined.Eco, title = "Semeadura") {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             CalcNumField("Pop. desejada", "plantas/m", popDesejada)
             CalcNumField("Espaçamento", "m", espacamento)
             CalcNumField("PMS", "g", pms)
@@ -77,7 +77,7 @@ private fun PulverizacaoCalc() {
     val nTanques = if (caldaTotal != null && capacidade != null && capacidade > 0) caldaTotal / capacidade else null
 
     CalcCard(icon = androidx.compose.material.icons.Icons.Outlined.WaterDrop, title = "Pulverização") {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             CalcNumField("Vazão/bico", "L/min", vazaoBico)
             CalcNumField("Velocidade", "km/h", velocidade)
             CalcNumField("Espaç. bicos", "m", espacamentoBicos)
@@ -109,7 +109,7 @@ private fun AdubacaoCalc() {
     val kTotal = if (aduboTotal != null && pctK.n != null) aduboTotal * (pctK.n!! / 100) else null
 
     CalcCard(icon = androidx.compose.material.icons.Icons.Outlined.Science, title = "Adubação") {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             CalcNumField("Dose", "kg/ha", dose)
             CalcNumField("Área", "ha", area)
             CalcNumField("% N", field = pctN)

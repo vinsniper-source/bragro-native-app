@@ -91,28 +91,11 @@ fun CalcNumField(label: String, unit: String? = null, field: CalcFieldState) {
 // existia (Task #199), só trocando "borda" por "preenchimento" como critério
 // de contraste, igual o resto do app depois do pedido "retire as bordas dos
 // campos".
+// v237 (mockup v236 aprovado) -- calculado = linha pontilhada verde da regra
+// geral (CampoAutoLinha); vazio fica vazio, sem o traço.
 @Composable
 fun CalcResultField(label: String, unit: String? = null, value: String) {
-    Column {
-        Text(
-            if (unit != null) "$label ($unit)" else label,
-            style = MaterialTheme.typography.labelSmall,
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 4.dp)
-                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-        ) {
-            Text(
-                value,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-    }
+    com.bragro.mobile.ui.theme.CampoAutoLinha(if (unit != null) "$label ($unit)" else label, value)
 }
 
 /** Card individual de UMA calculadora, com título+ícone (emoji, igual ao
@@ -135,24 +118,21 @@ fun CalcCard(icon: androidx.compose.ui.graphics.vector.ImageVector, title: Strin
     // v42 -- ícone de traço no lugar da figura colorida; a calculadora entra
     // recolhida (mostrando só o nome, levemente apagada) e o toque em qualquer
     // ponto do bloco abre e fecha.
-    var aberto by androidx.compose.runtime.saveable.rememberSaveable(title) { androidx.compose.runtime.mutableStateOf(false) }
+    // v237 (mockup v236 aprovado) -- volta ao padrão: campos empilhados e
+    // sempre visíveis (sem recolher), com mais margem e espaço entre campos.
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .alpha(if (aberto) 1f else 0.82f),
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = com.bragro.mobile.ui.theme.formBlockColor()),
     ) {
         Column(
-            modifier = Modifier
-                .clickable { aberto = !aberto }
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 com.bragro.mobile.ui.domain.IconeNegrito(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, size = 20.dp)
                 Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
             }
-            if (aberto) content()
+            content()
         }
     }
 }
@@ -199,7 +179,7 @@ fun CalculatorsCard(domainId: String, showHeader: Boolean = true) {
             if (open) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
                 ) {
                     when (domainId) {
                         "safra" -> SafraCalculators()

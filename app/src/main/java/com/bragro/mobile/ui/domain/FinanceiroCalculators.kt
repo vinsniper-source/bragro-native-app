@@ -20,7 +20,7 @@ import androidx.compose.material.icons.outlined.TrendingUp
 /** Espelho de JurosCompostos()/Amortizacao() em agronomic-calculators.tsx. */
 @Composable
 fun FinanceiroCalculators() {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
         JurosCompostosCalc()
         AmortizacaoCalc()
     }
@@ -44,7 +44,7 @@ private fun JurosCompostosCalc() {
     }
 
     CalcCard(icon = androidx.compose.material.icons.Icons.Outlined.TrendingUp, title = "Juros compostos") {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             CalcNumField("Capital inicial", "R$", capital)
             CalcNumField("Taxa", "% ao mês", taxa)
             CalcNumField("Período", "meses", periodo)
@@ -88,7 +88,7 @@ private fun AmortizacaoCalc() {
     }
 
     CalcCard(icon = com.bragro.mobile.ui.domain.IconesVazados.AccountBalance, title = "Amortização (custeio/financiamento)") {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             CalcNumField("Valor financiado", "R$", valorFinanciado)
             CalcNumField("Taxa", "% ao mês", taxa)
             CalcNumField("Nº de parcelas", field = parcelas)
