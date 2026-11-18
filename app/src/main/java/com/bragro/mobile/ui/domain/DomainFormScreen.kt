@@ -964,6 +964,11 @@ fun DomainFormScreen(
                 }
             }
             val visiveis = cfg.columns.filter { viewModel.isVisible(it) }
+            // v252 (mockup v251 aprovado) -- formulário com mais de 10 campos:
+            // ficam à vista os 8 primeiros, os obrigatórios, os da seção Itens e
+            // os já preenchidos; o resto vai para "Ver mais". Editando com algum
+            // desses preenchido, abre tudo. Os valores ficam no ViewModel.
+            var verMais by remember(recordId) { mutableStateOf(false) }
             // v57 -- automáticos na seção do campo de onde vêm (o campo
             // editável anterior na ordem do módulo), logo depois dele; sem
             // bloco "Calculado" separado. Mesma regra da plataforma.
@@ -975,6 +980,14 @@ fun DomainFormScreen(
                 val ant = cfg.columns.subList(0, maxOf(i, 0)).lastOrNull { !it.computed && it.type != "textarea" }
                 val dep = cfg.columns.drop(i + 1).firstOrNull { !it.computed && it.type != "textarea" }
                 return (ant ?: dep)?.let { secaoDoCampo(it.key, domainId) } ?: "outros"
+            }
+            val ocultosVerMais: Set<String> = run {
+                if (visiveis.size <= 10) return@run emptySet()
+                fun temValor(c: ColumnConfig): Boolean =
+                    if (c.computed) !computedValues[c.key].isNullOrBlank() else !viewModel.fields[c.key].isNullOrBlank()
+                val cand = visiveis.filterIndexed { i, c -> i >= 8 && !c.required && secaoDe(c) != "itens" }
+                if (recordId != null && cand.any { temValor(it) }) return@run emptySet()
+                cand.filter { !temValor(it) }.map { it.key }.toSet()
             }
             // v205 (mockup aprovado) -- Atividades: o Item 1 fica com os mesmos campos
             // e a mesma ordem do Item 2; Custo/ha, Status, Produtividade e Custo/sc-ton
@@ -1048,12 +1061,13 @@ fun DomainFormScreen(
                 // invertidas: bloco branco, campos em cinza claro.
                 val camposDaSecao: @Composable () -> Unit = {
                 campos.forEach { col ->
+                    if (!verMais && col.key in ocultosVerMais) return@forEach
                     if (col.computed) {
                         val optionLabels = col.lookupCategory?.let { cat -> lookups[cat]?.associate { it.value to it.label } } ?: emptyMap()
                         val temPrevia = previa.containsKey(col.key)
                         val raw = if (temPrevia) previa[col.key] ?: "" else computedValues[col.key] ?: ""
                         val dica = if (temPrevia) previaDicas[col.key] else null
-                        ComputedFieldDisplay(col = if (ehSafra && col.key == "realizado") col.copy(label = "Total (R$)") else col, raw = raw, optionLabels = optionLabels, dica = dica)
+                        ComputedFieldDisplay(col = if (ehSafra && col.key == "realizado") col.copy(label = "Total") else col, raw = raw, optionLabels = optionLabels, dica = dica)
                         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
                         return@forEach
                     }
@@ -1061,7 +1075,7 @@ fun DomainFormScreen(
                     if (col.type == "checkbox") {
                         FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                     } else {
-                        com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label), col.required, acoes = if (col.key == primeiroCampoKey) acoesTopo else null) {
+                        com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), col.required, acoes = if (col.key == primeiroCampoKey) acoesTopo else null) {
                             FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                         }
                     }
@@ -1124,7 +1138,7 @@ fun DomainFormScreen(
                                     val raw = if (temPrevia) previa[col.key] ?: "" else computedValues[col.key] ?: ""
                                     ComputedFieldDisplay(col = col, raw = raw, optionLabels = optionLabels, dica = if (temPrevia) previaDicas[col.key] else null)
                                 } else {
-                                    com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label), col.required) {
+                                    com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), col.required) {
                                         FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                                     }
                                 }
@@ -1161,7 +1175,7 @@ fun DomainFormScreen(
                         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
                     }
                     resumoCols.firstOrNull { it.key == "produtividadeScTon" }?.let { col ->
-                        com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label), col.required) {
+                        com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), col.required) {
                             FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                         }
                         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
@@ -1173,8 +1187,28 @@ fun DomainFormScreen(
                 }
             }
             textos.forEach { col ->
+                if (!verMais && col.key in ocultosVerMais) return@forEach
                 FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                 androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
+            }
+            if (ocultosVerMais.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.clickable { verMais = !verMais }.padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    if (verMais) {
+                        Text("Ver menos ‹", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    } else {
+                        Text("Ver mais", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Text(
+                            "${ocultosVerMais.size}",
+                            color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 11.sp,
+                            modifier = Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), androidx.compose.foundation.shape.RoundedCornerShape(10.dp)).padding(horizontal = 8.dp, vertical = 1.dp),
+                        )
+                        Text("›", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    }
+                }
             }
 
             if (error != null) {
@@ -1346,7 +1380,7 @@ private fun ComputedFieldDisplay(col: ColumnConfig, raw: String, optionLabels: M
     // v143 (mockup aprovado, opção B) -- "nome ......... AUTO": nome em
     // cinza, linha pontilhada e AUTO na ponta, sem caixa.
     Column(modifier = Modifier.fillMaxWidth()) {
-        com.bragro.mobile.ui.theme.CampoAutoLinha(com.bragro.mobile.ui.i18n.Idioma.tr(col.label), computedDisplayValue(col, raw, optionLabels))
+        com.bragro.mobile.ui.theme.CampoAutoLinha(com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), computedDisplayValue(col, raw, optionLabels))
         // Dica útil da prévia (ex.: "saldo anterior R$ 9.680,00").
         if (!dica.isNullOrBlank()) {
             Text(dica, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
@@ -1607,7 +1641,8 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                         viewModel.setField(col.key, moneyDisplayToRaw(formatted))
                     },
                     label = { Text(fieldLabel(col)) },
-                    prefix = { Text("R$ ") },
+                    // v252 (mockup v251) -- R$ só aparece com valor digitado.
+                    prefix = if (display.isNotEmpty()) ({ Text("R$ ") }) else null,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth().onFocusChanged { state ->
                         val wasFocused = focused
