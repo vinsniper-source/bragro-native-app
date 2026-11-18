@@ -109,6 +109,8 @@ fun CertificadoDigitalCard(modifier: Modifier = Modifier) {
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                // v263 (mockup v262) -- Salvar à direita.
+                androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth(), contentAlignment = androidx.compose.ui.Alignment.CenterEnd) {
                 Button(
                     enabled = !salvando,
                     onClick = {
@@ -134,6 +136,7 @@ fun CertificadoDigitalCard(modifier: Modifier = Modifier) {
                         }
                     },
                 ) { Text(if (salvando) "Salvando..." else "Salvar") }
+                }
                 if (mensagem != null) {
                     Text(mensagem ?: "", style = MaterialTheme.typography.labelSmall)
                 }

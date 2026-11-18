@@ -1548,22 +1548,19 @@ fun DomainListScreen(
                             // ("os filtros coloquem em tres colunas dentro
                             // do mesmo bloco"); quebra pra linha de baixo
                             // se sobrar filtro.
-                            filterableSelectCols.chunked(3).forEach { rowCols ->
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    rowCols.forEach { col ->
-                                        val options = remember(records, col.key) {
-                                            records.mapNotNull { it[col.key] }.filter { it.isNotBlank() }.distinct().sorted()
-                                        }
-                                        ColumnFilterRow(
-                                            col = col,
-                                            options = options,
-                                            selected = columnFilters[col.key] ?: "",
-                                            onSelect = { columnFilters[col.key] = it },
-                                            modifier = Modifier.weight(1f),
-                                        )
-                                    }
-                                    repeat(3 - rowCols.size) { Spacer(Modifier.weight(1f)) }
+                            // v263 (mockup v262 aprovado) -- um filtro por linha,
+                            // lista suspensa na vertical (padrão das bordas).
+                            filterableSelectCols.forEach { col ->
+                                val options = remember(records, col.key) {
+                                    records.mapNotNull { it[col.key] }.filter { it.isNotBlank() }.distinct().sorted()
                                 }
+                                ColumnFilterRow(
+                                    col = col,
+                                    options = options,
+                                    selected = columnFilters[col.key] ?: "",
+                                    onSelect = { columnFilters[col.key] = it },
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
                             }
                         }
                     }
@@ -2842,34 +2839,17 @@ private fun ColumnFilterRow(
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    Column(modifier = modifier.padding(bottom = 10.dp)) {
-        Text(
-            col.label,
-            style = MaterialTheme.typography.labelSmall,
-            maxLines = 2,
-            overflow = TextOverflow.Clip,
-            modifier = Modifier.padding(bottom = 2.dp),
-        )
-        Box(modifier = Modifier.fillMaxWidth()) {
-            OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
-                Text(selected.ifBlank { "Todos" }, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier)
-            }
-            com.bragro.mobile.ui.theme.MenuSuspenso(expanded = expanded, onDismissRequest = { expanded = false }) {
-                DropdownMenuItem(text = { Text("Todos") }, onClick = { onSelect(""); expanded = false })
-                if (options.isNotEmpty()) HorizontalDivider()
-                options.forEach { opt ->
-                    // maxLines/ellipsis -- achado de auditoria: valores
-                    // distintos de coluna (nome de item/fazenda/categoria
-                    // etc.) podem ser bem mais longos que "Todos".
-                    DropdownMenuItem(
-                        text = { Text(opt, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                        onClick = { onSelect(opt); expanded = false },
-                    )
-                }
-            }
-        }
-    }
+    // v263 (mockup v262) -- lista suspensa no padrão dos campos (nome em
+    // cima, linha embaixo com o cantinho à direita).
+    com.bragro.mobile.ui.theme.SearchableDropdownField(
+        value = selected,
+        label = col.label,
+        options = remember(options) { options.map { it to it } },
+        onSelect = onSelect,
+        modifier = modifier.padding(bottom = 8.dp),
+        placeholder = "Todos",
+        emptyOptionLabel = "Todos",
+    )
 }
 
 /** Ícone de cada módulo "linkado" (Cobranças/NFS-e) no alternador -- só

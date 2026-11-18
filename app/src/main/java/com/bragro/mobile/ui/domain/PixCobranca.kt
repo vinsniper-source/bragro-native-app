@@ -264,11 +264,16 @@ fun PixConfigDialog(onDismiss: () -> Unit) {
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Box {
-                        com.bragro.mobile.ui.theme.LinhaTextField(
-                            value = tipo, onValueChange = {}, readOnly = true, label = { Text("Tipo da chave") },
-                            trailingIcon = { TextButton(onClick = { tipoAberto = true }) { Text("Trocar") } },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                        // v263 (mockup v262) -- "Trocar" embaixo da linha, à direita.
+                        Column {
+                            com.bragro.mobile.ui.theme.LinhaTextField(
+                                value = tipo, onValueChange = {}, readOnly = true, label = { Text("Tipo da chave") },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                TextButton(onClick = { tipoAberto = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("Trocar") }
+                            }
+                        }
                         com.bragro.mobile.ui.theme.MenuSuspenso(expanded = tipoAberto, onDismissRequest = { tipoAberto = false }) {
                             TIPOS_PIX.forEach { t -> androidx.compose.material3.DropdownMenuItem(text = { Text(t) }, onClick = { tipo = t; tipoAberto = false }) }
                         }

@@ -374,6 +374,7 @@ private fun InvoiceRow(
 private fun NovaNotaDialog(
     pending: Boolean,
     initial: InvoiceData? = null,
+    ultima: InvoiceData? = null,
     onDismiss: () -> Unit,
     onConfirm: (String, String?, String, String, Double, String?) -> Unit,
 ) {
@@ -390,6 +391,18 @@ private fun NovaNotaDialog(
     var valorTotal by remember { mutableStateOf(initial?.let { valorParaCampo(it.valorTotal) } ?: "") }
     var dataEmissao by remember { mutableStateOf(initial?.dataEmissao?.let { isoDateOnly(it) } ?: "") }
 
+    // v263 (mockup v262 aprovado) -- Copiar sai do bloco Ações e fica aqui,
+    // na linha do aviso: preenche com a última nota.
+    fun copiarUltima() {
+        val u = ultima ?: return
+        numero = u.numero ?: ""
+        serie = u.serie ?: ""
+        tipo = u.tipo?.takeIf { it in TIPO_OPTIONS } ?: "ENTRADA"
+        emitenteNome = u.emitenteNome ?: ""
+        valorTotal = valorParaCampo(u.valorTotal)
+        dataEmissao = u.dataEmissao?.let { isoDateOnly(it) } ?: ""
+    }
+
     fun parseValor(s: String): Double =
         s.trim().replace(".", "").replace(",", ".").toDoubleOrNull() ?: s.trim().toDoubleOrNull() ?: 0.0
 
@@ -400,6 +413,11 @@ private fun NovaNotaDialog(
         title = { Text(if (initial != null) "Nova NF-e (copiada da última)" else "Nova NF-e (manual)") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                com.bragro.mobile.ui.domain.AvisoComIcones("Preencha os dados da nota.") {
+                    androidx.compose.material3.IconButton(onClick = { copiarUltima() }, enabled = ultima != null, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar última nota", modifier = Modifier.size(24.dp))
+                    }
+                }
                 OutlinedTextField(value = numero, onValueChange = { numero = it }, label = { Text("Número *") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
                 OutlinedTextField(value = serie, onValueChange = { serie = it }, label = { Text("Série") }, placeholder = { Text("Opcional") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
                 StringDropdown(label = "Tipo", value = tipo, options = TIPO_OPTIONS, onSelect = { tipo = it })
@@ -573,7 +591,6 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
                                 )
                             },
                             operacoes = {
-                                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ContentCopy, label = "Copiar", onClick = { if (ultimaNota != null) { copiaOrigem = ultimaNota; showNovaNota = true } })
                                 com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.VerifiedUser, label = "Certificado", onClick = { showCertificado = true })
                                 com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.Refresh, label = "Atualizar", onClick = { viewModel.carregar() })
                             },
@@ -639,6 +656,7 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
         NovaNotaDialog(
             pending = pendingAction == "create",
             initial = copiaOrigem,
+            ultima = invoices.firstOrNull(),
             onDismiss = { if (pendingAction != "create") { showNovaNota = false; copiaOrigem = null } },
             onConfirm = { numero, serie, tipo, emitenteNome, valorTotal, dataEmissao ->
                 viewModel.criar(numero, serie, tipo, emitenteNome, valorTotal, dataEmissao) { erroMsg ->

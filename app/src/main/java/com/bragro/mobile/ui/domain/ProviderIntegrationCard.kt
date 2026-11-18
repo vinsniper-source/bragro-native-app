@@ -203,9 +203,9 @@ fun ProviderIntegrationCard(
                 FieldBlock(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = apiKey, onValueChange = { apiKey = it },
-                        label = { Text("API Key / Token") },
+                        // v263 (mockup v262) -- cadeado ao lado da palavra Token.
+                        label = { Row(verticalAlignment = Alignment.CenterVertically) { Text("API Key / Token"); Icon(Icons.Outlined.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 6.dp).size(14.dp)) } },
                         placeholder = { Text(if (integration?.apiKeyConfigurado == true) "•••• (salvo)" else "Cole a credencial") },
-                        trailingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null) }, // v219 -- cadeado do lado direito
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         singleLine = true,
@@ -215,12 +215,7 @@ fun ProviderIntegrationCard(
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Button(
-                        enabled = busy == null && provedor.isNotBlank() && apiKey.isNotBlank(),
-                        onClick = { onSave(provedor, apiKey.trim()); apiKey = "" },
-                    ) {
-                        if (busy == IntegrationBusy.SALVANDO) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Salvar")
-                    }
+                    // v263 (mockup v262) -- Salvar (verde) à direita.
                     // "Testar conexão" sempre visível ao lado de Salvar: com
                     // token digitado salva (o servidor testa ao salvar); sem
                     // token, testa a credencial já salva.
@@ -237,6 +232,12 @@ fun ProviderIntegrationCard(
                             Icon(Icons.Outlined.Sync, contentDescription = null, modifier = Modifier.padding(end = 4.dp).size(16.dp))
                         }
                         Text("Testar conexão", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium)
+                    }
+                    Button(
+                        enabled = busy == null && provedor.isNotBlank() && apiKey.isNotBlank(),
+                        onClick = { onSave(provedor, apiKey.trim()); apiKey = "" },
+                    ) {
+                        if (busy == IntegrationBusy.SALVANDO) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Salvar")
                     }
                 }
                 if (conectado) {

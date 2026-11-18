@@ -338,10 +338,9 @@ private fun TransferirFazendaDialog(farms: List<FazendaOpt>, itens: List<LookupE
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Sai da origem e entra no destino.", style = MaterialTheme.typography.bodySmall)
                 ItemDropdown("Item *", itens, "Selecione", item) { item = it }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = quantidade, onValueChange = { quantidade = it }, label = { Text("Quantidade *") }, modifier = Modifier.weight(1f), colors = appFieldColors())
-                    OutlinedTextField(value = unidade, onValueChange = { unidade = it }, label = { Text("Unidade") }, modifier = Modifier.weight(1f), colors = appFieldColors())
-                }
+                // v263 (mockup v262) -- um campo por linha, todos com a linha inteira.
+                OutlinedTextField(value = quantidade, onValueChange = { quantidade = it }, label = { Text("Quantidade *") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+                OutlinedTextField(value = unidade, onValueChange = { unidade = it }, label = { Text("Unidade") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
                 FazendaDropdown("Origem", farms, "Depósito Central", fazendaOrigemId) { fazendaOrigemId = it }
                 FazendaDropdown("Destino *", farms, "Selecione", fazendaDestinoId) { fazendaDestinoId = it }
             }
@@ -360,7 +359,7 @@ private fun TransferirFazendaDialog(farms: List<FazendaOpt>, itens: List<LookupE
                 if (saving) CircularProgressIndicator(modifier = Modifier.size(18.dp)) else Text("Transferir")
             }
         },
-        dismissButton = { Button(onClick = onDismiss) { Text("Cancelar") } },
+        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancelar") } }, // v263 -- verde só no principal
     )
 }
 
@@ -382,10 +381,9 @@ private fun SaidaFazendaDialog(farms: List<FazendaOpt>, itens: List<LookupEntity
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Baixa manual (consumo, perda, quebra).", style = MaterialTheme.typography.bodySmall)
                 ItemDropdown("Item *", itens, "Selecione", item) { item = it }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = quantidade, onValueChange = { quantidade = it }, label = { Text("Quantidade *") }, modifier = Modifier.weight(1f), colors = appFieldColors())
-                    OutlinedTextField(value = unidade, onValueChange = { unidade = it }, label = { Text("Unidade") }, modifier = Modifier.weight(1f), colors = appFieldColors())
-                }
+                // v263 (mockup v262) -- um campo por linha, todos com a linha inteira.
+                OutlinedTextField(value = quantidade, onValueChange = { quantidade = it }, label = { Text("Quantidade *") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+                OutlinedTextField(value = unidade, onValueChange = { unidade = it }, label = { Text("Unidade") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
                 FazendaDropdown("Origem", farms, "Depósito Central", fazendaId) { fazendaId = it }
                 OutlinedTextField(
                     value = motivo, onValueChange = { motivo = it }, label = { Text("Motivo") },
@@ -408,7 +406,7 @@ private fun SaidaFazendaDialog(farms: List<FazendaOpt>, itens: List<LookupEntity
                 if (saving) CircularProgressIndicator(modifier = Modifier.size(18.dp)) else Text("Registrar saída")
             }
         },
-        dismissButton = { Button(onClick = onDismiss) { Text("Cancelar") } },
+        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancelar") } }, // v263 -- verde só no principal
     )
 }
 
@@ -443,10 +441,9 @@ private fun AjusteManualFazendaDialog(farms: List<FazendaOpt>, itens: List<Looku
                     onSelect = { tipo = it },
                     emptyOptionLabel = null,
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = quantidade, onValueChange = { quantidade = it }, label = { Text("Quantidade *") }, modifier = Modifier.weight(1f), colors = appFieldColors())
-                    OutlinedTextField(value = unidade, onValueChange = { unidade = it }, label = { Text("Unidade") }, modifier = Modifier.weight(1f), colors = appFieldColors())
-                }
+                // v263 (mockup v262) -- um campo por linha, todos com a linha inteira.
+                OutlinedTextField(value = quantidade, onValueChange = { quantidade = it }, label = { Text("Quantidade *") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
+                OutlinedTextField(value = unidade, onValueChange = { unidade = it }, label = { Text("Unidade") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
                 FazendaDropdown("Origem", farms, "Depósito Central", fazendaId) { fazendaId = it }
                 OutlinedTextField(
                     value = motivo, onValueChange = { motivo = it }, label = { Text("Motivo *") },
@@ -469,7 +466,7 @@ private fun AjusteManualFazendaDialog(farms: List<FazendaOpt>, itens: List<Looku
                 if (saving) CircularProgressIndicator(modifier = Modifier.size(18.dp)) else Text("Registrar ajuste")
             }
         },
-        dismissButton = { Button(onClick = onDismiss) { Text("Cancelar") } },
+        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancelar") } }, // v263 -- verde só no principal
     )
 }
 
@@ -502,6 +499,6 @@ private fun DevolverFazendaDialog(transferenciaEntradaId: String, onDismiss: () 
                 if (saving) CircularProgressIndicator(modifier = Modifier.size(18.dp)) else Text("Confirmar devolução")
             }
         },
-        dismissButton = { Button(onClick = onDismiss) { Text("Cancelar") } },
+        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancelar") } }, // v263 -- verde só no principal
     )
 }
