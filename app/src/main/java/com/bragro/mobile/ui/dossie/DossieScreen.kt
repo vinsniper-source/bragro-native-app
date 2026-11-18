@@ -425,19 +425,20 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                             CelulaDossie(CELULA_IMPRIMIR_PDF, null) {},
                         )
                         celulas.chunked(3).forEach { linha ->
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            // v260 (mockup v255, item 7) -- Imprimir/PDF na mesma altura dos outros.
+                            Row(modifier = Modifier.fillMaxWidth().height(androidx.compose.foundation.layout.IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 linha.forEach { c ->
                                     if (c.rotulo == CELULA_IMPRIMIR_PDF) com.bragro.mobile.ui.domain.PrintPdfSegmentedButton(
                                         onPrint = { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(d, ano)) },
                                         onPdf = { HtmlPrinter.printHtmlComoPdf(context, "Dossiê Bancário", buildDossieHtml(d, ano)) },
-                                        modifier = Modifier.weight(1f),
+                                        modifier = Modifier.weight(1f).fillMaxHeight(),
                                         rotulos = false,
                                         compacto = true,
                                         preencher = true,
                                     ) else {
                                         val ligado = c.id != null && aberta(c.id)
                                         Box(
-                                        modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
+                                        modifier = Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(8.dp))
                                             .background(if (ligado) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent)
                                             .border(1.dp, if (ligado) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
                                             .clickable { c.acao() }

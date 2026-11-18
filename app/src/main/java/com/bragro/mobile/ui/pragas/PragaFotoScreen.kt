@@ -494,10 +494,17 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item {
-                Text(
-                    "Fotografe e confirme o Alvo.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
+                // v260 (mockups v255/v259) -- foto e Copiar na linha do aviso.
+                com.bragro.mobile.ui.domain.AvisoComIcones("Fotografe e confirme o Alvo.") {
+                    androidx.compose.material3.IconButton(onClick = { launchCameraComPermissao() }, enabled = !enviandoFoto, modifier = Modifier.size(40.dp)) {
+                        if (enviandoFoto) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        else Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoUrl != null) "Trocar foto" else "Tirar foto da praga/doença", modifier = Modifier.size(24.dp))
+                    }
+                    androidx.compose.material3.IconButton(onClick = { if (!copiando) viewModel.preencherComUltimo() }, modifier = Modifier.size(40.dp)) {
+                        if (copiando) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        else Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último", modifier = Modifier.size(24.dp))
+                    }
+                }
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -537,23 +544,7 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
                 }
             }
             item {
-                // v221 (mockup aprovado) -- foto e Copiar na linha do nome "Alvo".
-                androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth()) {
-                    LookupDropdown("Alvo (praga/doença) *", alvo, alvos) { viewModel.setAlvo(it) }
-                    androidx.compose.foundation.layout.Row(
-                        modifier = Modifier.align(androidx.compose.ui.Alignment.TopEnd).offset(y = (-8).dp),
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                    ) {
-                        androidx.compose.material3.IconButton(onClick = { launchCameraComPermissao() }, enabled = !enviandoFoto, modifier = Modifier.size(32.dp)) {
-                            if (enviandoFoto) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                            else Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoUrl != null) "Trocar foto" else "Tirar foto da praga/doença", modifier = Modifier.size(22.dp))
-                        }
-                        androidx.compose.material3.IconButton(onClick = { if (!copiando) viewModel.preencherComUltimo() }, modifier = Modifier.size(32.dp)) {
-                            if (copiando) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                            else Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último", modifier = Modifier.size(20.dp))
-                        }
-                    }
-                }
+                LookupDropdown("Alvo (praga/doença) *", alvo, alvos) { viewModel.setAlvo(it) }
             }
             item {
                 LookupDropdown("Fazenda (opcional)", fazenda, fazendas) { viewModel.setFazenda(it) }
@@ -588,13 +579,15 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
                 }
             }
             item {
+                // v260 (mockup v255, item 1) -- botão verde do final à direita.
+                androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth(), contentAlignment = androidx.compose.ui.Alignment.CenterEnd) {
                 Button(
                     onClick = { viewModel.submit() },
                     enabled = !saving && !savedOk,
-                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     if (saving) CircularProgressIndicator(modifier = Modifier.padding(4.dp))
                     else Text("Lançar")
+                }
                 }
             }
         }

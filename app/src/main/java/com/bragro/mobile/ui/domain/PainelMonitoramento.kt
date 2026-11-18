@@ -732,7 +732,7 @@ fun CartaoGrupo(
     // v1.6.5 (mockup v106, item 8) -- bloco homogêneo: título na largura
     // toda, embaixo local + etiqueta, e por último uma faixa de números em
     // células iguais (Lançamentos, total do módulo e os demais números).
-    Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 10.dp)) {
+    Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 12.dp)) { // v260 -- margem 16dp (regra geral)
         // v1.6.22 (mockup v127b) -- 1ª linha: título (uma linha) + situação à
         // direita; 2ª: local/safra · período · contagem; 3ª: valor principal.
         Row(verticalAlignment = Alignment.Top) {
@@ -1085,8 +1085,8 @@ fun itemDaOs(r: Map<String, String?>): String {
 @Composable
 fun CartaoOs(os: OsDaOperacao, onEdit: () -> Unit, onDelete: () -> Unit, onVerItem: (Map<String, String?>) -> Unit) {
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
-    com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(start = 10.dp, top = 2.dp, bottom = 2.dp)) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 9.dp)) {
+    com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp)) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(os.titulo, fontWeight = FontWeight.Bold, fontSize = 13.sp)
@@ -1173,8 +1173,8 @@ fun resumoPedido(chave: String, rows: List<Map<String, String?>>): ResumoPedido 
 fun CartaoResumoPedido(res: ResumoPedido, onEdit: (String) -> Unit, onDelete: (LancPedido) -> Unit, onVer: (String) -> Unit) {
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     val nf = java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 2 }
-    com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(start = 10.dp, top = 2.dp, bottom = 2.dp)) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 9.dp)) {
+    com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp)) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp)) {
             // v1.6.21 (mockup v126) -- fase aberta: o quadro mostra só os produtos dela.
             var faseAberta by androidx.compose.runtime.saveable.rememberSaveable(res.chave) { mutableStateOf<String?>(null) }
             val daFase = faseAberta?.let { fa -> res.fases.firstOrNull { it.fase == fa }?.entregas?.flatMap { e -> e.linhas.map { it["item"]?.uppercase().orEmpty() } }?.toSet() }
@@ -1282,7 +1282,7 @@ fun CartaoFasesSafra(dados: FasesDaFazenda, onEdit: (String) -> Unit, onDelete: 
                 Modifier.fillMaxWidth()
                     .background(if (estaAberta) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else androidx.compose.ui.graphics.Color.Transparent)
                     .clickable { aberta = if (estaAberta) null else f.fase }
-                    .padding(horizontal = 12.dp, vertical = 9.dp),
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -1294,7 +1294,7 @@ fun CartaoFasesSafra(dados: FasesDaFazenda, onEdit: (String) -> Unit, onDelete: 
                     fontSize = 12.5.sp, modifier = Modifier.weight(1f),
                 )
             }
-            if (estaAberta) Column(Modifier.padding(start = 12.dp, end = 6.dp, bottom = 4.dp)) {
+            if (estaAberta) Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)) {
                 f.os.forEach { os ->
                     CartaoOs(os = os, onEdit = { os.itens.firstOrNull()?.get("id")?.let(onEdit) }, onDelete = { onDelete(os) }, onVerItem = { r -> r["id"]?.let(onVer) })
                 }

@@ -903,8 +903,28 @@ fun DomainFormScreen(
                 // v162 (mockup aprovado) -- mais margem nas laterais.
                 .padding(horizontal = 20.dp, vertical = 20.dp),
         ) {
-            if (cfg.notice != null) {
-                Text(cfg.notice, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 12.dp))
+            // v260 (mockups v255/v259 aprovados) -- foto/Copiar/Clima saem do
+            // nome do 1º campo e vão para a linha do aviso (à direita); se não
+            // couber, descem para a linha de baixo. Sem aviso, ficam numa linha
+            // própria acima do 1º campo.
+            val acoesTopo: @Composable () -> Unit = {
+                if (domainId == "clima") {
+                    val climaHojeBusy by viewModel.climaHojeBusy
+                    IconButton(onClick = { if (!climaHojeBusy) viewModel.preencherClimaHoje() }, modifier = Modifier.size(32.dp)) {
+                        if (climaHojeBusy) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        else Icon(Icons.Outlined.WaterDrop, contentDescription = "Preencher com clima de hoje", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    }
+                }
+                if (domainId in OCR_FOTO_DOMAINS) {
+                    OcrFotoButton(somenteIcone = true) { url -> viewModel.aplicarOcrFoto(url) }
+                }
+                if (domainId !in MULTI_ITEM_FORM) IconButton(onClick = { if (lastRecord != null) viewModel.copyFromLastRecord() }, modifier = Modifier.size(40.dp)) {
+                    Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último registro", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(24.dp))
+                }
+            }
+            val temAcoesTopo = recordId == null && (domainId == "clima" || domainId in OCR_FOTO_DOMAINS || domainId !in MULTI_ITEM_FORM)
+            if (cfg.notice != null || temAcoesTopo) {
+                com.bragro.mobile.ui.domain.AvisoComIcones(cfg.notice, Modifier.padding(bottom = 10.dp)) { if (temAcoesTopo) acoesTopo() }
             }
 
             // Avisos da nuvem/copiar e de campos calculados REMOVIDOS daqui --
@@ -1023,27 +1043,12 @@ fun DomainFormScreen(
             // v221 (mockup aprovado) -- Clima de hoje, foto e Copiar último ficam na
             // linha do nome do primeiro campo, à direita (o formulário sobe).
             val primeiroCampoKey = if (recordId == null) gruposAjust.firstOrNull()?.second?.firstOrNull { !it.computed && it.type != "checkbox" }?.key else null
-            val acoesTopo: @Composable () -> Unit = {
-                if (domainId == "clima") {
-                    val climaHojeBusy by viewModel.climaHojeBusy
-                    IconButton(onClick = { if (!climaHojeBusy) viewModel.preencherClimaHoje() }, modifier = Modifier.size(32.dp)) {
-                        if (climaHojeBusy) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                        else Icon(Icons.Outlined.WaterDrop, contentDescription = "Preencher com clima de hoje", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
-                    }
-                }
-                if (domainId in OCR_FOTO_DOMAINS) {
-                    OcrFotoButton(somenteIcone = true) { url -> viewModel.aplicarOcrFoto(url) }
-                }
-                if (domainId !in MULTI_ITEM_FORM) IconButton(onClick = { if (lastRecord != null) viewModel.copyFromLastRecord() }, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último registro", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
-                }
-            }
             gruposAjust.forEach { (g, campos) ->
                 // v20 -- Clima de hoje / Copiar último como ícones sem rótulo
                 // no canto direito da primeira seção (QUANDO). v221: só quando não
                 // há um primeiro campo com nome para recebê-los.
                 SecaoFormHeader(g.second, g.third) {
-                    if (recordId == null && primeiroCampoKey == null && g == gruposAjust.first().first) {
+                    if (false && recordId == null && primeiroCampoKey == null && g == gruposAjust.first().first) {
                         if (domainId == "clima") {
                             val climaHojeBusy by viewModel.climaHojeBusy
                             IconButton(onClick = { if (!climaHojeBusy) viewModel.preencherClimaHoje() }, modifier = Modifier.size(32.dp)) {
@@ -1075,7 +1080,7 @@ fun DomainFormScreen(
                     if (col.type == "checkbox") {
                         FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                     } else {
-                        com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), col.required, acoes = if (col.key == primeiroCampoKey) acoesTopo else null) {
+                        com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), col.required, acoes = null) {
                             FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                         }
                     }
@@ -1219,13 +1224,15 @@ fun DomainFormScreen(
             }
 
             androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 16.dp))
+            // v260 (mockup v255, item 1) -- botão verde do final à direita.
+            androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
             Button(
                 onClick = { viewModel.save(domainId, recordId, onSaved) },
                 enabled = !saving,
-                modifier = Modifier.fillMaxWidth(),
             ) {
                 val nExtras = MULTI_ITEM_FORM[domainId]?.let { m -> viewModel.itensExtras.count { !it[m.chaveItem].isNullOrBlank() } } ?: 0
                 if (saving) CircularProgressIndicator(modifier = Modifier.padding(2.dp)) else Text(if (recordId == null && nExtras > 0) "Salvar (${nExtras + 1} itens)" else "Salvar")
+            }
             }
         }
     }
@@ -1642,7 +1649,8 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                     },
                     label = { Text(fieldLabel(col)) },
                     // v252 (mockup v251) -- R$ só aparece com valor digitado.
-                    prefix = if (display.isNotEmpty()) ({ Text("R$ ") }) else null,
+                    // v260 (mockup v255, item 10) -- e colado no número, à direita.
+                    visualTransformation = RsColadoTransformation,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth().onFocusChanged { state ->
                         val wasFocused = focused
@@ -1945,4 +1953,17 @@ private fun LeituraFrotaAuto(viewModel: DomainFormViewModel, tipo: String) {
             )
         }
     }
+}
+
+/** v260 (mockup v255, item 10) -- "R$ " colado no número (à direita), só
+ *  quando há valor; o texto editado continua sendo só o número. */
+private val RsColadoTransformation = androidx.compose.ui.text.input.VisualTransformation { t ->
+    if (t.text.isEmpty()) androidx.compose.ui.text.input.TransformedText(t, androidx.compose.ui.text.input.OffsetMapping.Identity)
+    else androidx.compose.ui.text.input.TransformedText(
+        androidx.compose.ui.text.AnnotatedString("R$ ") + t,
+        object : androidx.compose.ui.text.input.OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int = offset + 3
+            override fun transformedToOriginal(offset: Int): Int = (offset - 3).coerceIn(0, t.text.length)
+        },
+    )
 }

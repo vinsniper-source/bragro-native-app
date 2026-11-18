@@ -145,9 +145,9 @@ fun OcrFotoButton(
 
     if (somenteIcone) {
         // v221 -- só o ícone, para ficar na linha do nome do primeiro campo.
-        androidx.compose.material3.IconButton(onClick = { abrir() }, enabled = !busy, modifier = modifier.size(36.dp)) {
+        androidx.compose.material3.IconButton(onClick = { abrir() }, enabled = !busy, modifier = modifier.size(40.dp)) {
             if (busy) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-            else Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = label, modifier = Modifier.size(22.dp))
+            else Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = label, modifier = Modifier.size(24.dp))
         }
         return
     }

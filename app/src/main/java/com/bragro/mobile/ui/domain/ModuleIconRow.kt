@@ -480,6 +480,9 @@ private val ROTULOS_EXPORTAR = setOf("Imprimir", "PDF", "Excel", "LCDPR")
  */
 @Composable
 fun ExportarMenu(content: @Composable () -> Unit) {
+    // v260 (mockup v255, item 4) -- no app volta a desmembrar: Imprimir,
+    // Excel e PDF aparecem como ícones separados (a plataforma segue "Exportar").
+    if (true) { content(); return }
     var aberto by remember { androidx.compose.runtime.mutableStateOf(false) }
     androidx.compose.runtime.CompositionLocalProvider(LocalModoExportar provides 1) { content() }
     // v219 -- conteúdo centralizado na célula (antes ficava encostado à esquerda).

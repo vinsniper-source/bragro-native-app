@@ -2614,7 +2614,7 @@ private fun GrausDiaCard(dados: kotlinx.serialization.json.JsonObject?) {
                 Spacer(Modifier.width(6.dp))
                 Text("Graus-dia e chuva desde o plantio", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
             }
-            Text("Soma diária de (Tmédia − Tbase), desde o Plantio em Safra.", style = MaterialTheme.typography.labelSmall, color = muted)
+            Text("Soma térmica acumulada desde o plantio (graus-dia) — não é temperatura.", style = MaterialTheme.typography.labelSmall, color = muted)
             if (dados == null) Text("Carregando…", style = MaterialTheme.typography.bodySmall, color = muted)
             else if (linhas.isEmpty()) Text("Nenhum plantio nos últimos 300 dias.", style = MaterialTheme.typography.bodySmall, color = muted)
             linhas.forEach { l ->
@@ -2626,12 +2626,12 @@ private fun GrausDiaCard(dados: kotlinx.serialization.json.JsonObject?) {
                 Row(verticalAlignment = Alignment.Top) {
                     Column(Modifier.weight(1f)) {
                         Text("Talhão ${l.txt("talhao").orEmpty()} · $cultura", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                        Text("plantio ${dm(plantio)} · ${l.txt("diasDesdePlantio") ?: "—"} dias · base ${l.txt("tBase") ?: "—"}°", style = MaterialTheme.typography.labelSmall, color = muted)
+                        Text("plantio ${dm(plantio)} · ${l.txt("diasDesdePlantio") ?: "—"} dias · base ${l.txt("tBase") ?: "—"} °C", style = MaterialTheme.typography.labelSmall, color = muted)
                     }
                     Column(horizontalAlignment = Alignment.End) {
-                        Text(if (diasDado > 0) "${l.txt("grausDia")} °C·dia" else "—", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                        Text(if (diasDado > 0) "${l.txt("grausDia")} graus-dia" else "—", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
                         Text(
-                            "${l.txt("chuvaMm") ?: "0"} mm " + if (l.txt("chuvaFonte") == "pluviometro") "pluviômetro" else "previsão",
+                            "chuva ${l.txt("chuvaMm") ?: "0"} mm · " + if (l.txt("chuvaFonte") == "pluviometro") "pluviômetro" else "estimada",
                             style = MaterialTheme.typography.labelSmall,
                             color = muted,
                         )
