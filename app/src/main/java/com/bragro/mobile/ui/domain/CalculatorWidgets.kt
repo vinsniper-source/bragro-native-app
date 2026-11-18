@@ -128,9 +128,10 @@ fun CalcCard(icon: androidx.compose.ui.graphics.vector.ImageVector, title: Strin
             modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                com.bragro.mobile.ui.domain.IconeNegrito(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, size = 20.dp)
-                Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+            // v239 (mockup aprovado) -- ícone e título em verde, com mais espaço até os campos.
+            Row(modifier = Modifier.padding(bottom = 12.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                com.bragro.mobile.ui.domain.IconeNegrito(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, size = 20.dp)
+                Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             }
             content()
         }
