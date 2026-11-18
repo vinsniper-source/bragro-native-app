@@ -865,7 +865,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                 if (operacoes.isEmpty()) {
                     item {
                         Text(
-                            if (loading) "Carregando..." else if (!temCache) "Sem dados ainda. Conecte-se à internet e atualize." else "Nenhuma operação de safra lançada nesta janela.",
+                            if (loading) "Carregando..." else if (!temCache) "Sem dados. Conecte e atualize." else "Nenhuma operação de safra lançada nesta janela.",
                             modifier = Modifier.padding(vertical = 24.dp),
                         )
                     }

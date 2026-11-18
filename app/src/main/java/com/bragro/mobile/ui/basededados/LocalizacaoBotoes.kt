@@ -60,7 +60,7 @@ fun LocalizacaoBotoes(onLocal: (String) -> Unit, onAviso: (String) -> Unit = {})
         val loc = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER).firstNotNullOfOrNull { p ->
             runCatching { lm?.getLastKnownLocation(p) }.getOrNull()
         }
-        if (loc == null) onAviso("Localização indisponível. Ligue o GPS e tente de novo.")
+        if (loc == null) onAviso("Sem localização. Ligue o GPS.")
         else onLocal("%.4f, %.4f".format(java.util.Locale.US, loc.latitude, loc.longitude))
     }
     val permissao = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->

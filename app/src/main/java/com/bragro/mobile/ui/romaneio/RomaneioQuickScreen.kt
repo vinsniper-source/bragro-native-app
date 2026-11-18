@@ -277,7 +277,7 @@ class RomaneioQuickViewModel(app: Application) : AndroidViewModel(app) {
                     savedOk.value = true
                 }
                 is SaveResult.SavedOffline -> {
-                    resultMessage.value = "Salvo no aparelho. Envia quando a internet voltar."
+                    resultMessage.value = "Salvo no aparelho. Envia com internet."
                     savedOk.value = true
                 }
                 is SaveResult.Failure -> {

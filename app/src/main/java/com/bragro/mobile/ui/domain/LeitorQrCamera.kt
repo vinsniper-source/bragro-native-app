@@ -119,7 +119,7 @@ fun LeitorQrCameraDialog(
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 } else {
                     ultimoInvalido = texto
-                    aviso = "QR Code lido, mas não é de uma frota cadastrada."
+                    aviso = "QR lido, mas sem máquina cadastrada."
                 }
             }
         }

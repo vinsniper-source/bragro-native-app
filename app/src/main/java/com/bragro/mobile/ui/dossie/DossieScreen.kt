@@ -106,7 +106,7 @@ class DossieViewModel(app: Application) : AndroidViewModel(app) {
             val resultado = repository.fetch(ano.value)
             carregando.value = false
             if (resultado == null) {
-                erro.value = "Sem conexão. Não foi possível carregar o dossiê agora."
+                erro.value = "Sem conexão. Tente de novo."
                 return@launch
             }
             dados.value = resultado

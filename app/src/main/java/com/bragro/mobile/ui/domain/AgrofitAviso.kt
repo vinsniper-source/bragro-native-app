@@ -91,7 +91,7 @@ fun AgrofitAviso(config: AgrofitConfig, produto: String?, fields: Map<String, St
         }
         d.registradoNaCultura == false -> {
             ok = false
-            tituloForte = "Sem registro no MAPA para ${d.cultura.orEmpty()}"
+            tituloForte = "Sem registro MAPA para ${d.cultura.orEmpty()}"
             tituloResto = ""
             meta = "Registrado para: ${listaCurta(p.culturas, 6)}. Confira com o agrônomo."
         }

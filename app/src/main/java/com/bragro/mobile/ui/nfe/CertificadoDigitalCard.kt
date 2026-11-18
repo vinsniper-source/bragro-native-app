@@ -105,7 +105,7 @@ fun CertificadoDigitalCard(modifier: Modifier = Modifier) {
                     colors = appFieldColors(),
                 )
                 Text(
-                    "Só controla o vencimento. O certificado não é enviado.",
+                    "Só controla o vencimento.",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

@@ -184,7 +184,7 @@ class NfeImportViewModel(app: Application) : AndroidViewModel(app) {
         if (xml == null && nota == null) return
         val fazenda = selectedFarm.value
         if (fazenda.isNullOrBlank()) {
-            errorMessage.value = "Escolha a fazenda de destino antes de confirmar."
+            errorMessage.value = "Escolha a fazenda de destino."
             return
         }
         importing.value = true
@@ -403,7 +403,7 @@ fun NfeImportScreen(onBack: () -> Unit, viewModel: NfeImportViewModel = viewMode
                     }
                     item {
                         Text(
-                            "Cria a nota, o Estoque e o Financeiro. Confira os itens.",
+                            "Cria nota, Estoque e Financeiro. Confira os itens.",
                             style = MaterialTheme.typography.labelSmall,
                         )
                     }

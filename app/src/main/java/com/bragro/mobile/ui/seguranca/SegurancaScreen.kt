@@ -147,7 +147,7 @@ private val INICIO_WIDGETS = listOf(
     "inicio.clima" to "Clima",
     "inicio.cambio" to "Câmbio (Dólar/Euro)",
     "inicio.cotacoes" to "Cotações agrícolas (Grão Direto)",
-    "inicio.cotacoespecuaria" to "Cotações de pecuária (Boi Gordo/Bezerro/Leite - CEPEA)",
+    "inicio.cotacoespecuaria" to "Cotações pecuária (CEPEA)",
     "inicio.destaques" to "Destaques",
     // Indicador "barra segmentada por categoria" por setor -- adicionados no
     // site em lib/permissions.ts (Task #516/#519, "replique o que ainda
@@ -387,7 +387,7 @@ private fun PersonalizarInicioDialog(
         text = {
             Column {
                 Text(
-                    "Escolha quais blocos aparecem na sua tela Início.",
+                    "Escolha os blocos do seu Início.",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp),
@@ -461,7 +461,7 @@ private fun EquipeCard(
                 onDefinirSenha(mid, senha) { ok, err ->
                     if (ok) {
                         senhaPara = null
-                        android.widget.Toast.makeText(ctxToast, "Senha definida. A pessoa troca no próximo login.", android.widget.Toast.LENGTH_LONG).show()
+                        android.widget.Toast.makeText(ctxToast, "Senha definida. Troca no próximo login.", android.widget.Toast.LENGTH_LONG).show()
                     } else setErro(err ?: "Não foi possível definir a senha.")
                 }
             },

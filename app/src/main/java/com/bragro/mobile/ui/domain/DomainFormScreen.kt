@@ -384,7 +384,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             fields[k] = if (col.type == "date") isoDateToBr(isoDateOnly(v)) else v
             if (k in missingFields.value) missingFields.value = missingFields.value - k
         }
-        return r.mensagem ?: "${campos.size} campo(s) lido(s). Confira antes de salvar."
+        return r.mensagem ?: "${campos.size} campo(s) lido(s). Confira."
     }
 
     /** v57 -- pede ao servidor o resultado dos campos automáticos com o que
@@ -664,7 +664,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             val extrasValidos = if ((recordId == null || domainId in OS_EDITA_ITENS) && multi != null) itensExtras.filter { x -> !x[multi.chaveItem].isNullOrBlank() }.map { it.toMap() } else emptyList()
             if (extrasValidos.isNotEmpty() && multi?.chave != null && snapshot[multi.chave].isNullOrBlank()) {
                 saving.value = false
-                errorMessage.value = "Informe o número do pedido. Ele une todos os itens."
+                errorMessage.value = "Nº do pedido (une os itens)."
                 return@launch
             }
             var result = if (recordId == null) recordRepository.createRecord(domainId, snapshot) else recordRepository.updateRecord(domainId, recordId, snapshot)
@@ -692,7 +692,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             when (result) {
                 is SaveResult.SavedOnline -> onDone()
                 is SaveResult.SavedOffline -> {
-                    offlineNotice.value = "Salvo no aparelho. Envia quando a internet voltar."
+                    offlineNotice.value = "Salvo no aparelho. Envia com internet."
                     onDone()
                 }
                 is SaveResult.Failure -> errorMessage.value = result.message
@@ -1511,7 +1511,7 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                             query = ""
                         } catch (e: Exception) {
                             com.bragro.mobile.data.AppLog.e("DomainFormScreen", "Erro ao esvaziar campo ${col.key}", e)
-                            viewModel.errorMessage.value = "Não foi possível limpar este campo. Tente novamente."
+                            viewModel.errorMessage.value = "Falha ao limpar. Tente de novo."
                         }
                         expanded = false
                     })

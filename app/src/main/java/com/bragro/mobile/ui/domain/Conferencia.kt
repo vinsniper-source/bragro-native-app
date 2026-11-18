@@ -132,7 +132,7 @@ fun conferirRegistro(
         val nome = r["local"] ?: r["fazenda"]
         val faz = nome?.let { nm -> farms.firstOrNull { normalizarTexto(it.name) == normalizarTexto(nm) } }
         if (ha > 0 && faz != null && faz.areaHa > 0 && ha > faz.areaHa * 1.001) {
-            out += ProblemaCampo("hectare", "Hectare", "divergencia", mensagem = "Hectare ${nf.format(ha)} maior que a área da fazenda (${nf.format(faz.areaHa)} ha)")
+            out += ProblemaCampo("hectare", "Hectare", "divergencia", mensagem = "Hectare ${nf.format(ha)} > área da fazenda (${nf.format(faz.areaHa)} ha)")
         }
     }
     conferirCoerencia(cfg, r, lookups, romaneiosCulturaSafra, out)
@@ -273,7 +273,7 @@ private fun conferirFaixas(cfg: DomainConfig, r: Map<String, String?>, primeiroD
         if (um != null && um > 40) out += ProblemaCampo("umidade", "Umidade (%)", "foraFaixa", mensagem = "Umidade ${nf.format(um)}% (normal: 12% a 25%)")
         val prod = r["produtividade"]?.replace(",", ".")?.toDoubleOrNull()
         if (prod != null && prod > 150 && normalizarTexto(r["cultura"].orEmpty()) in GRAOS_ROMANEIO) {
-            out += ProblemaCampo("produtividade", "Produtividade (sc/ha)", "foraFaixa", mensagem = "Produtividade ${nf.format(prod)} sc/ha — confira Colhida (kg) e Hectare")
+            out += ProblemaCampo("produtividade", "Produtividade (sc/ha)", "foraFaixa", mensagem = "Produtividade ${nf.format(prod)} sc/ha: confira Colhida e Hectare")
         }
     }
 }

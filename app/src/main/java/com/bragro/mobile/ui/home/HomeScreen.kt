@@ -874,9 +874,9 @@ fun HomeScreen(
                                             style = MaterialTheme.typography.bodySmall,
                                         )
                                         listOf(
-                                            "Abra o sistema no Safari (precisa ser o Safari).",
-                                            "Toque no ícone de Compartilhar, na barra inferior.",
-                                            "Role a lista e toque em \"Adicionar à Tela de Início\".",
+                                            "Abra no Safari.",
+                                            "Toque em Compartilhar, na barra inferior.",
+                                            "Toque em \"Adicionar à Tela de Início\".",
                                             "Toque em Adicionar.",
                                         ).forEachIndexed { i, step ->
                                             Row(modifier = Modifier.padding(top = 6.dp)) {

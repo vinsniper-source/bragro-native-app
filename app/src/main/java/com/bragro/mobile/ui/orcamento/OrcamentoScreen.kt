@@ -211,13 +211,13 @@ class OrcamentoViewModel(app: Application) : AndroidViewModel(app) {
             val bytes = compressPhoto(context, uri)
             if (bytes == null) {
                 uploadingRequisicao.value = false
-                ocrMensagemRequisicao.value = "Não foi possível processar a foto. Tente novamente."
+                ocrMensagemRequisicao.value = "Falha na foto. Tente de novo."
                 return@launch
             }
             val url = uploadRepository.uploadFoto(bytes, "requisicao")
             if (url == null) {
                 uploadingRequisicao.value = false
-                ocrMensagemRequisicao.value = "Sem conexão. Não foi possível enviar a foto agora."
+                ocrMensagemRequisicao.value = "Sem conexão. Foto não enviada."
                 return@launch
             }
             fotoRequisicaoUrl.value = url
@@ -241,13 +241,13 @@ class OrcamentoViewModel(app: Application) : AndroidViewModel(app) {
             val bytes = compressPhoto(context, uri)
             if (bytes == null) {
                 uploadingComprovante.value = false
-                ocrMensagemItens.value = "Não foi possível processar a foto. Tente novamente."
+                ocrMensagemItens.value = "Falha na foto. Tente de novo."
                 return@launch
             }
             val url = uploadRepository.uploadFoto(bytes, "comprovante")
             if (url == null) {
                 uploadingComprovante.value = false
-                ocrMensagemItens.value = "Sem conexão. Não foi possível enviar a foto agora."
+                ocrMensagemItens.value = "Sem conexão. Foto não enviada."
                 return@launch
             }
             fotoComprovanteUrl.value = url
@@ -402,7 +402,7 @@ class OrcamentoViewModel(app: Application) : AndroidViewModel(app) {
                 errorMessage.value = resultado?.error ?: "Erro ao lançar o orçamento."
                 return@launch
             }
-            successMessage.value = "${resultado.itens ?: validas.size} item(ns) lançado(s) no orçamento."
+            successMessage.value = "${resultado.itens ?: validas.size} item(ns) lançado(s)."
         }
     }
 }

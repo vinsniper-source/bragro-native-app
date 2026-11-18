@@ -261,7 +261,7 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         v("condicaoPagamento")?.let { p.condicaoPagamento = it }
         v("validadeProposta")?.let { p.validadeProposta = com.bragro.mobile.ui.domain.isoDateToBr(com.bragro.mobile.ui.domain.isoDateOnly(it)) }
         v("observacoes")?.let { observacoes = it }
-        return r.mensagem ?: "${c.size} campo(s) lido(s). Confira antes de salvar."
+        return r.mensagem ?: "${c.size} campo(s) lido(s). Confira."
     }
 
     fun removeProposta(gi: Int, pi: Int) {

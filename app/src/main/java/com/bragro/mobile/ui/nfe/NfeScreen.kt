@@ -215,7 +215,7 @@ class NfeViewModel(app: Application) : AndroidViewModel(app) {
             val resultado = repository.baixarLote(inicio, fim)
             pendingAction.value = null
             if (resultado == null || !resultado.ok || resultado.base64.isNullOrBlank()) {
-                onDone(null, resultado?.error ?: "Sem conexão. Não foi possível baixar os XMLs agora.")
+                onDone(null, resultado?.error ?: "Sem conexão. Tente de novo.")
                 return@launch
             }
             try {

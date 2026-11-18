@@ -169,13 +169,13 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
             val bytes = compressFoto(context, uri)
             if (bytes == null) {
                 uploadingFoto.value = false
-                errorMessage.value = "Não foi possível processar a imagem selecionada."
+                errorMessage.value = "Falha na imagem."
                 return@launch
             }
             val url = uploadRepo.uploadFoto(bytes)
             if (url == null) {
                 uploadingFoto.value = false
-                errorMessage.value = "Sem conexão. Não foi possível enviar a foto agora."
+                errorMessage.value = "Sem conexão. Foto não enviada."
                 return@launch
             }
             addLookup(category, value, fotoUrl = url) { ok ->

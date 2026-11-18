@@ -686,7 +686,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
             }
             if (data == null) {
                 item {
-                    Text(if (loading) "Carregando..." else "Sem dados ainda. Conecte-se à internet e atualize.")
+                    Text(if (loading) "Carregando..." else "Sem dados. Conecte e atualize.")
                 }
             } else if (tableView) {
                 item(key = "table-header") { RecordTableHeader(DRE_EXPORT_COLUMNS, tableHScroll, showActions = false) }

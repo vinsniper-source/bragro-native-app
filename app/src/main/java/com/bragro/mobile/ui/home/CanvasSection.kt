@@ -564,8 +564,8 @@ fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
                         Text(
                             "${seta ?: "→"} ${
                                 when (fazenda.tendencia) {
-                                    "melhorando" -> "Convergindo com o planejado (vs. período anterior)"
-                                    "piorando" -> "Se afastando do planejado (vs. período anterior)"
+                                    "melhorando" -> "Aproximando do planejado"
+                                    "piorando" -> "Afastando do planejado"
                                     else -> "Estável em relação ao período anterior"
                                 }
                             }",

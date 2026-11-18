@@ -241,7 +241,7 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
                             label = "Variação de produtividade",
                             value = varProdutividadePct,
                             onChange = { viewModel.varProdutividadePct.value = it },
-                            hint = "Ex.: -15 numa quebra de safra, +10 numa safra recorde.",
+                            hint = "Ex.: -15 (quebra), +10 (recorde).",
                         )
                         // Câmbio projetado e % do custo exposto na MESMA linha.
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -294,7 +294,7 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
                                 tint = if (positivo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                             )
                             Text(
-                                "Neste cenário, a margem ${if (positivo) "melhora em" else "piora em"} ${formatMoneyBrl(kotlin.math.abs(resultado.deltaMargem))} em relação ao resultado atual.",
+                                "Margem ${if (positivo) "melhora" else "piora"} ${formatMoneyBrl(kotlin.math.abs(resultado.deltaMargem))} neste cenário.",
                                 style = MaterialTheme.typography.bodySmall,
                             )
                         }

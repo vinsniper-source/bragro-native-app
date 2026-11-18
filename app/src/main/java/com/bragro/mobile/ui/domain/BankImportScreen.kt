@@ -255,7 +255,7 @@ fun BankImportScreen(onBack: () -> Unit, viewModel: BankImportViewModel = viewMo
                 item {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("$importedCount registro(s) importado(s) para o Financeiro.", fontWeight = FontWeight.Bold)
+                            Text("$importedCount registro(s) importado(s).", fontWeight = FontWeight.Bold)
                             Button(onClick = { viewModel.reset() }, modifier = Modifier.fillMaxWidth()) {
                                 Text("Importar outro extrato")
                             }

@@ -1315,7 +1315,7 @@ private fun PeriodoDropdown(
             }
             HorizontalDivider()
             Text(
-                "Ou por intervalo de datas (${if (view == FinanceiroView.PAGAR || view == FinanceiroView.RECEBER) "Vencimento" else "Data"})",
+                "Ou por datas (${if (view == FinanceiroView.PAGAR || view == FinanceiroView.RECEBER) "Vencimento" else "Data"})",
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
             )

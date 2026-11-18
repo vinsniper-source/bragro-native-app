@@ -492,7 +492,7 @@ private fun SegurancaAppCard() {
             Column(Modifier.weight(1f)) {
                 Text("Digital ou rosto ao abrir", style = MaterialTheme.typography.bodyMedium)
                 Text(
-                    if (protegido) "Também aceita a senha do celular." else "Cadastre uma senha ou digital no celular para usar.",
+                    if (protegido) "Também aceita a senha do celular." else "Cadastre senha ou digital no celular.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -538,8 +538,8 @@ private fun AppMobileIosCard() {
         Column(modifier = Modifier.padding(top = 8.dp)) {
             listOf(
                 "Abra no Safari (outros navegadores não mostram a opção).",
-                "Toque no ícone de Compartilhar, na barra inferior.",
-                "Role a lista e toque em \"Adicionar à Tela de Início\".",
+                "Toque em Compartilhar, na barra inferior.",
+                "Toque em \"Adicionar à Tela de Início\".",
                 "Toque em Adicionar. Vira um app, com uso offline.",
             ).forEachIndexed { i, step ->
                 Row(modifier = Modifier.padding(top = if (i == 0) 0.dp else 6.dp)) {

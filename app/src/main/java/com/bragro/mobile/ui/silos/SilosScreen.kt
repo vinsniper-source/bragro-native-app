@@ -385,7 +385,7 @@ fun SilosScreen(onBack: () -> Unit, onAbrirRomaneio: (String) -> Unit = {}, view
                         )
                         Spacer(Modifier.height(8.dp))
                         if (estoque.isEmpty()) {
-                            Text("Sem leituras com capacidade cadastrada no período.", style = MaterialTheme.typography.bodySmall)
+                            Text("Sem leituras com capacidade no período.", style = MaterialTheme.typography.bodySmall)
                         } else {
                             // v53 -- gráfico de área, igual à plataforma.
                             com.bragro.mobile.ui.domain.GraficoArea(
@@ -404,7 +404,7 @@ fun SilosScreen(onBack: () -> Unit, onAbrirRomaneio: (String) -> Unit = {}, view
             if (silosAbertos) {
                 items(silos.filter { it.nivelCritico }, key = { "c-" + it.id }) { s ->
                     AlertaBanner(
-                        "Nível crítico: ${s.nome} está com ${(s.estimadoPct ?: s.nivelAtualPct ?: 0.0).toInt()}% (limite ${s.nivelCriticoLimitePct.toInt()}%).",
+                        "Nível crítico: ${s.nome} em ${(s.estimadoPct ?: s.nivelAtualPct ?: 0.0).toInt()}% (limite ${s.nivelCriticoLimitePct.toInt()}%).",
                         critico = true,
                     )
                 }

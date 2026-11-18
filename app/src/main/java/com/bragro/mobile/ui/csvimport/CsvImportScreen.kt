@@ -126,7 +126,7 @@ class CsvImportViewModel(app: Application) : AndroidViewModel(app) {
     /** Lê o arquivo escolhido e já pede a análise (sugestão de mapeamento) ao servidor. */
     fun onFileSelected(uri: Uri, name: String?) {
         if (domainId.value.isBlank()) {
-            errorMessage.value = "Escolha o módulo de destino antes de enviar o arquivo."
+            errorMessage.value = "Escolha o módulo antes de enviar."
             return
         }
         errorMessage.value = null

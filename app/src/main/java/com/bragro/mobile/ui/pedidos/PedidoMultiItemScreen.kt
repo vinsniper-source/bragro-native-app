@@ -294,7 +294,7 @@ class PedidoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
             successMessage.value = if (resultado.savedOffline) {
                 "Pedido ${noPedido.trim()} salvo (${validas.size} item(ns)). Envia quando houver internet."
             } else {
-                "${resultado.count ?: validas.size} item(ns) lançado(s) no pedido ${noPedido.trim()}."
+                "${resultado.count ?: validas.size} item(ns) no pedido ${noPedido.trim()}."
             }
         }
     }

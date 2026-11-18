@@ -231,7 +231,7 @@ class PragaFotoViewModel(app: Application) : AndroidViewModel(app) {
             if (resultado.ok && resultado.diagnostico != null) {
                 diagnosticoTexto.value = resultado.diagnostico
             } else {
-                mensagemFoto.value = resultado.mensagem ?: resultado.error ?: "Não foi possível gerar o diagnóstico automático."
+                mensagemFoto.value = resultado.mensagem ?: resultado.error ?: "Falha no diagnóstico automático."
             }
         }
     }
@@ -306,7 +306,7 @@ class PragaFotoViewModel(app: Application) : AndroidViewModel(app) {
                     savedOk.value = true
                 }
                 is SaveResult.SavedOffline -> {
-                    resultMessage.value = "Salvo no aparelho. Envia quando a internet voltar."
+                    resultMessage.value = "Salvo no aparelho. Envia com internet."
                     savedOk.value = true
                 }
                 is SaveResult.Failure -> {

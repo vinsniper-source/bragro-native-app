@@ -1586,7 +1586,7 @@ fun DomainListScreen(
             }
             if (filteredRecords.isEmpty()) {
                 item(key = "empty") {
-                    val msg = if (records.isEmpty()) "Nenhum registro ainda. Toque em + para adicionar." else "Nenhum registro neste período."
+                    val msg = if (records.isEmpty()) "Nada ainda. Toque em + para adicionar." else "Nenhum registro neste período."
                     Text(msg, modifier = Modifier.padding(vertical = 24.dp))
                 }
             } else if (allExpanded) {
@@ -2559,7 +2559,7 @@ private fun ClimaForecastCard(weather: WeatherResponse?, showHeader: Boolean = t
                 val clima = weather?.weather
                 if (clima == null) {
                     Text(
-                        "Não foi possível carregar a previsão no momento.",
+                        "Previsão indisponível agora.",
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 8.dp),
                     )
@@ -2616,7 +2616,7 @@ private fun GrausDiaCard(dados: kotlinx.serialization.json.JsonObject?) {
             }
             Text("Soma diária de (Tmédia − Tbase), desde o Plantio em Safra.", style = MaterialTheme.typography.labelSmall, color = muted)
             if (dados == null) Text("Carregando…", style = MaterialTheme.typography.bodySmall, color = muted)
-            else if (linhas.isEmpty()) Text("Nenhum plantio lançado em Safra nos últimos 300 dias.", style = MaterialTheme.typography.bodySmall, color = muted)
+            else if (linhas.isEmpty()) Text("Nenhum plantio nos últimos 300 dias.", style = MaterialTheme.typography.bodySmall, color = muted)
             linhas.forEach { l ->
                 HorizontalDivider()
                 val cultura = l.txt("cultura").orEmpty().lowercase().replaceFirstChar { it.uppercase() }
@@ -2693,7 +2693,7 @@ private fun SprayAlertCard(alerta: kotlinx.serialization.json.JsonObject?, showH
                         val inicio = proximaJanela?.get("inicio")?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull }
                         val fim = proximaJanela?.get("fim")?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull }
                         Text(
-                            if (inicio != null && fim != null) "Próxima janela favorável: $inicio às $fim" else "Nenhuma janela favorável prevista nas próximas 24h.",
+                            if (inicio != null && fim != null) "Próxima janela favorável: $inicio às $fim" else "Nenhuma janela favorável em 24h.",
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(top = 4.dp),
                         )

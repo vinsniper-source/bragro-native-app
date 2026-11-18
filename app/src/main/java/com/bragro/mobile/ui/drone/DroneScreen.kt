@@ -382,7 +382,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
             }
             when {
                 loading -> item { CircularProgressIndicator(modifier = Modifier.padding(top = 24.dp)) }
-                records.isEmpty() -> item { Text("Nenhum registro ainda. Toque em + Voo para adicionar.", modifier = Modifier.padding(vertical = 24.dp)) }
+                records.isEmpty() -> item { Text("Nada ainda. Toque em + Voo.", modifier = Modifier.padding(vertical = 24.dp)) }
                 lancAberto -> items(filtrados, key = { it.id }) { record -> DroneRecordCard(record) }
             }
         }

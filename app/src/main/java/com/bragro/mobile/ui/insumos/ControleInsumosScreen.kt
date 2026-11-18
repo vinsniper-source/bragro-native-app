@@ -500,7 +500,7 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                 item { Text(NetworkStatus.failureMessage(context), style = MaterialTheme.typography.bodySmall) }
             }
             if (d == null) {
-                item { Text(if (loading) "Carregando..." else "Sem dados ainda. Conecte-se à internet e atualize.") }
+                item { Text(if (loading) "Carregando..." else "Sem dados. Conecte e atualize.") }
             } else {
                 val sit = d.situacaoConsolidada
                 val estoquePorItem = d.itensCriticos.associate { it.item.trim().uppercase() to it.status }

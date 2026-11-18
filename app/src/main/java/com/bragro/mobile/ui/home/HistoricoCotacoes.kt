@@ -211,7 +211,7 @@ fun HistoricoCotacoesDialog(historico: JsonObject?, medias: JsonObject?, inicial
                     }
                     Text(
                         (if (parcial && inicio != null) "Histórico começando em ${dmDia(inicio)}. " else "") +
-                            if (dolar) "Fonte: Banco Central (PTAX de fechamento)" else "Fonte: Grão Direto (registrado pelo BRAgro a cada atualização)",
+                            if (dolar) "Fonte: Banco Central (PTAX de fechamento)" else "Fonte: Grão Direto",
                         style = MaterialTheme.typography.labelSmall,
                         color = muted,
                     )

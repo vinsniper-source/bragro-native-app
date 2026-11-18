@@ -515,7 +515,7 @@ private fun MiniChart(titulo: String, descricao: String, items: List<JsonObject>
         Text(descricao, style = MaterialTheme.typography.bodySmall)
         Spacer(modifier = Modifier.height(6.dp))
         if (items.isEmpty()) {
-            Text("Sem dados suficientes ainda para este cruzamento.", style = MaterialTheme.typography.bodySmall)
+            Text("Sem dados para este cruzamento.", style = MaterialTheme.typography.bodySmall)
         } else {
             SimpleBarChart(categories = items.map { it.strOf(labelKey) }, series = series, isMoney = isMoney)
         }
@@ -665,7 +665,7 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                                     }
                                 }
                                 if (custoHaExibido.isEmpty()) {
-                                    Text("Sem dados suficientes ainda para este cruzamento.", style = MaterialTheme.typography.bodySmall)
+                                    Text("Sem dados para este cruzamento.", style = MaterialTheme.typography.bodySmall)
                                 } else {
                                     SimpleBarChart(
                                         categories = custoHaExibido.map { it.farmName },
@@ -753,7 +753,7 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                             HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                             MiniChart(
                                 "Item mais consumido x Saldo restante",
-                                "Top itens por consumo total x saldo atual em Estoque.",
+                                "Mais consumidos x saldo em Estoque.",
                                 itemConsumoVsSaldo, "item",
                                 listOf(
                                     serieDe(itemConsumoVsSaldo, "Consumido", "consumido", defaultSeriesColor(2)),
@@ -1019,7 +1019,7 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
             }
             if (data == null) {
                 item {
-                    Text(if (loading) "Carregando..." else "Sem dados ainda. Conecte-se à internet e atualize.")
+                    Text(if (loading) "Carregando..." else "Sem dados. Conecte e atualize.")
                 }
             } else if (tableView) {
                 item(key = "table-header") { RecordTableHeader(ANALISES_EXPORT_COLUMNS, tableHScroll, showActions = false) }

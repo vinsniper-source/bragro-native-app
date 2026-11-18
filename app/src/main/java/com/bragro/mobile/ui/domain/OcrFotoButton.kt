@@ -87,7 +87,7 @@ fun OcrFotoButton(
                 onFotoUrl(url)
             } catch (e: Exception) {
                 AppLog.e("OcrFotoButton", "Falha ao ler foto por IA", e)
-                "Falha na leitura automática. Preencha manualmente."
+                "Falha na leitura. Preencha à mão."
             }
             busy = false
         }
@@ -127,7 +127,7 @@ fun OcrFotoButton(
             val activity = context as? android.app.Activity
             permanentementeNegada = activity != null &&
                 !ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.CAMERA)
-            mensagem = "Permissão da câmera negada. Preencha manualmente."
+            mensagem = "Câmera negada. Preencha à mão."
         }
     }
 

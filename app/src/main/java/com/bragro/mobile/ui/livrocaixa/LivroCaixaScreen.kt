@@ -507,7 +507,7 @@ private fun ProdutorRuralCard(
                 }
             }
             Text(
-                "Só controla o vencimento. O certificado não é enviado.",
+                "Só controla o vencimento.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -781,7 +781,7 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
                 item { Text(NetworkStatus.failureMessage(context), style = MaterialTheme.typography.bodySmall) }
             }
             if (data == null) {
-                item { Text(if (loading) "Carregando..." else "Sem dados ainda. Conecte-se à internet e atualize.") }
+                item { Text(if (loading) "Carregando..." else "Sem dados. Conecte e atualize.") }
             } else if (tableView) {
                 item(key = "table-header") { RecordTableHeader(LIVRO_CAIXA_EXPORT_COLUMNS, tableHScroll, showActions = false) }
                 items(livroCaixaExportRecords(data.lancamentos), key = { it.hashCode() }) { row ->
