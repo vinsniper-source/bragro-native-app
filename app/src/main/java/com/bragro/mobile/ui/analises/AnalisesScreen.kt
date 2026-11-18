@@ -627,7 +627,7 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                         AnalisesAba.FINANCEIRO -> {
                             MiniChart(
                                 "Planejado x Realizado x Pago",
-                                "Custo Orçado x Realizado (Safra) x efetivamente pago (Financeiro), por Safra/Cultura/Fazenda.",
+                                "Orçado x Realizado x Pago.",
                                 planejadoVsRealizado, "label",
                                 listOf(
                                     serieDe(planejadoVsRealizado, "Orçado", "orcado", defaultSeriesColor(0)),
@@ -652,7 +652,7 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                             ) {
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 Text("Custo/ha por Fazenda — fonte por fonte", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                                Text("De onde vem o custo (ha ou sc) de cada fazenda: Financeiro direto, indireto (rateado), Frota, Safra e Arrendamento.", style = MaterialTheme.typography.bodySmall)
+                                Text("Origem do custo por fazenda (ha ou sc).", style = MaterialTheme.typography.bodySmall)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 SingleChoiceSegmentedButtonRow(modifier = Modifier.padding(bottom = 6.dp)) {
                                     listOf("ha" to "R$/ha", "sc" to "R$/sc").forEachIndexed { index, (valor, rotulo) ->
@@ -684,7 +684,7 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                             HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                             MiniChart(
                                 "Contrato x Volume Transportado",
-                                "Volume contratado (Contratos) x volume transportado (Romaneios), por número de contrato.",
+                                "Contratado x transportado, por contrato.",
                                 contratoVsTransporte, "noContrato",
                                 listOf(
                                     serieDe(contratoVsTransporte, "Volume contratado", "volumeContratado", defaultSeriesColor(0)),
@@ -695,7 +695,7 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                             HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                             MiniChart(
                                 "Margem por saca",
-                                "Custo/saca (Safra) x Receita/saca (Financeiro ÷ Colheita), por Safra/Cultura.",
+                                "Custo/saca x Receita/saca.",
                                 margemPorSaca, "label",
                                 listOf(
                                     serieDe(margemPorSaca, "Custo/saca", "custoPorSaca", defaultSeriesColor(2)),
@@ -708,7 +708,7 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                                 HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                                 MiniChart(
                                     "Margem por tonelada",
-                                    "Custo/ton x Receita/ton, por Safra/Cultura. Mesma conta de Margem por saca, em toneladas.",
+                                    "Custo/ton x Receita/ton.",
                                     margemPorTon, "label",
                                     listOf(
                                         serieDe(margemPorTon, "Custo/ton", "custoPorTon", defaultSeriesColor(2)),
@@ -721,7 +721,7 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                             HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                             MiniChart(
                                 "Conciliação: Caixa Interno x Financeiro",
-                                "Saldo do Caixa Interno x registros conciliados no Financeiro, por setor.",
+                                "Caixa Interno x Financeiro conciliado.",
                                 conciliacaoCaixaVsFinanceiro, "setor",
                                 listOf(
                                     serieDe(conciliacaoCaixaVsFinanceiro, "Saldo Caixa Interno", "saldoCaixaInterno", defaultSeriesColor(1)),
@@ -733,7 +733,7 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                         AnalisesAba.ESTOQUE -> {
                             MiniChart(
                                 "Pedido x Recebimento em Estoque",
-                                "O que foi pedido/entregue (Pedidos) x o que virou entrada em Estoque.",
+                                "Pedido/entregue x entrada em Estoque.",
                                 pedidoVsRecebimento, "item",
                                 listOf(
                                     serieDe(pedidoVsRecebimento, "Qtd Pedida", "qtdPedida", defaultSeriesColor(0)),
@@ -745,7 +745,7 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                             HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                             MiniChart(
                                 "Consumo de Estoque por origem",
-                                "Quem mais tira do estoque geral: Frota, Safra ou Controle Interno.",
+                                "Quem mais tira do estoque.",
                                 consumoEstoquePorOrigem, "origem",
                                 listOf(serieDe(consumoEstoquePorOrigem, "Quantidade consumida", "qtd", defaultSeriesColor(0))),
                                 isMoney = false,
@@ -764,7 +764,7 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                             HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                             MiniChart(
                                 "Eficiência de máquina (R$/ha)",
-                                "Custo total da máquina (Frota) dividido pelo hectare trabalhado (Safra).",
+                                "Custo da máquina por hectare.",
                                 eficienciaMaquina, "frota",
                                 listOf(serieDe(eficienciaMaquina, "Custo/ha", "custoPorHectare", defaultSeriesColor(0))),
                                 isMoney = true,
@@ -773,7 +773,7 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                         AnalisesAba.AGRONOMICO -> {
                             MiniChart(
                                 "Chuva x Produtividade",
-                                "Chuva acumulada (mm) x Produtividade média (sc/ha), por fazenda.",
+                                "Chuva (mm) x produtividade (sc/ha).",
                                 climaVsProdutividade, "local",
                                 listOf(
                                     serieDe(climaVsProdutividade, "Chuva (mm)", "chuvaTotalMm", defaultSeriesColor(2)),
@@ -784,7 +784,7 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                             HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                             MiniChart(
                                 "Ocorrências de Praga x Produtividade",
-                                "Quantas vezes cada talhão teve praga/doença registrada x a produtividade colhida.",
+                                "Ocorrências de praga x produtividade, por talhão.",
                                 pragaVsProdutividade, "talhao",
                                 listOf(
                                     serieDe(pragaVsProdutividade, "Ocorrências de praga", "ocorrenciasPraga", defaultSeriesColor(0)),
@@ -796,7 +796,7 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                         AnalisesAba.PESSOAS -> {
                             MiniChart(
                                 "RH x Atividade de campo",
-                                "Colaboradores ativos x registros feitos em Safra/Frota/Controle Interno com o mesmo nome.",
+                                "Colaboradores x registros com o mesmo nome.",
                                 rhVsAtividadeCampo, "colaborador",
                                 listOf(
                                     serieDe(rhVsAtividadeCampo, "Safra", "lancamentosSafra", defaultSeriesColor(1)),

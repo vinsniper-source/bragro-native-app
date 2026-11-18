@@ -264,7 +264,7 @@ fun ProviderIntegrationCard(
                     // avisos"). O comportamento (sync automática ainda
                     // depende de aprovação de parceiro) continua o mesmo.
                     Text(
-                        "Pendente = fabricante sem validação online ainda (depende de parceria).",
+                        "Pendente = depende do fabricante.",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

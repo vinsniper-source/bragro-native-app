@@ -249,7 +249,7 @@ internal fun EmitirNfeAppDialog(
                     Campo("UF", uf, { uf = it.uppercase().take(2); recalcularCfop() }, Modifier.weight(1f))
                 }
                 if (codigoMunicipio.isBlank() && municipio.isNotBlank()) {
-                    Text("Use a lupa do CEP para preencher o código do município.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
+                    Text("A lupa do CEP preenche o município.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
                 }
 
                 HorizontalDivider()
@@ -286,7 +286,7 @@ internal fun EmitirNfeAppDialog(
                         Text("Total do item: ${moeda(item.total)}", style = MaterialTheme.typography.labelMedium)
                     }
                 }
-                Text("ICMS ST, IPI, transportadora e exportação: use a plataforma.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("ICMS ST, IPI, transporte e exportação: só na plataforma.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
                 HorizontalDivider()
                 Lista("Frete", frete, FRETE) { frete = it }
@@ -336,8 +336,8 @@ internal fun AcoesNotaNativaDialog(
                     if (pending) CircularProgressIndicator(Modifier.size(20.dp).align(Alignment.CenterHorizontally), strokeWidth = 2.dp)
                 } else {
                     Text(
-                        if (acao == "cce") "Descreva a correção (não pode mudar valores, impostos, destinatário ou data)."
-                        else "Motivo do cancelamento. Prazo: até 24 horas após a autorização.",
+                        if (acao == "cce") "Descreva a correção (sem mudar valores, impostos, destinatário ou data)."
+                        else "Motivo. Prazo: 24 h após a autorização.",
                         style = MaterialTheme.typography.bodySmall,
                     )
                     OutlinedTextField(

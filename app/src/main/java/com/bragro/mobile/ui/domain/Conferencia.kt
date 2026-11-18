@@ -174,7 +174,7 @@ private fun conferirCoerencia(cfg: DomainConfig, r: Map<String, String?>, lookup
     if (venda && romaneios != null && cultura != null && safra != null) {
         val c = normalizarTexto(cultura)
         if (c in GRAOS_ROMANEIO && "$c|${normalizarTexto(safra)}" !in romaneios) {
-            out += ProblemaCampo("cultura", "Cultura", "semRomaneio", mensagem = "Venda de $cultura $safra sem nenhum romaneio dessa cultura nessa safra — a Sua média e o custo por saca ficam sem as sacas")
+            out += ProblemaCampo("cultura", "Cultura", "semRomaneio", mensagem = "Venda de $cultura $safra sem romaneio: média e custo/saca sem sacas")
         }
     }
 }
@@ -240,7 +240,7 @@ fun ConferenciaCard(
                 }
             }
         }
-        if (problemas.size > 60) Text("Mostrando 60 de ${problemas.size}. Corrija estes e a lista atualiza.", fontSize = 11.sp, color = cs.onSurfaceVariant, modifier = M.padding(12.dp))
+        if (problemas.size > 60) Text("60 de ${problemas.size}. Corrija e a lista atualiza.", fontSize = 11.sp, color = cs.onSurfaceVariant, modifier = M.padding(12.dp))
     }
     if (confirmar) {
         androidx.compose.material3.AlertDialog(
@@ -248,7 +248,7 @@ fun ConferenciaCard(
             title = { Text("Corrigir ${corrigiveis.size} campo(s)?") },
             text = {
                 androidx.compose.foundation.layout.Column(M.heightIn(max = 380.dp).verticalScroll(androidx.compose.foundation.rememberScrollState()), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)) {
-                    Text("Confira o que vai mudar. Campos vazios e divergências não entram — abra o registro.", fontSize = 12.sp, color = cs.onSurfaceVariant)
+                    Text("Confira as mudanças. Vazios e divergências: abra o registro.", fontSize = 12.sp, color = cs.onSurfaceVariant)
                     corrigiveis.forEach { (_, p, t) -> Text("$t — ${p.rotulo}: ${p.atual} → ${p.sugestao}", fontSize = 12.sp) }
                 }
             },
@@ -265,12 +265,12 @@ private fun conferirFaixas(cfg: DomainConfig, r: Map<String, String?>, primeiroD
         val ini = r["inicial"]?.replace(",", ".")?.toDoubleOrNull() ?: 0.0
         val primeiro = item?.let { primeiroDoItem[normalizarTexto(it)] }
         if (ini > 0 && primeiro != null && primeiro != r["id"]) {
-            out += ProblemaCampo("inicial", "Inicial", "saldoInicial", nf.format(ini), "0", "Saldo inicial repetido: este item já tem saldo inicial em outro lançamento (repetir soma o saldo de novo)")
+            out += ProblemaCampo("inicial", "Inicial", "saldoInicial", nf.format(ini), "0", "Saldo inicial repetido neste item")
         }
     }
     if (cfg.id == "colheita") {
         val um = r["umidade"]?.replace(",", ".")?.toDoubleOrNull()
-        if (um != null && um > 40) out += ProblemaCampo("umidade", "Umidade (%)", "foraFaixa", mensagem = "Umidade ${nf.format(um)}% — grão costuma ser colhido entre 12% e 25%")
+        if (um != null && um > 40) out += ProblemaCampo("umidade", "Umidade (%)", "foraFaixa", mensagem = "Umidade ${nf.format(um)}% (normal: 12% a 25%)")
         val prod = r["produtividade"]?.replace(",", ".")?.toDoubleOrNull()
         if (prod != null && prod > 150 && normalizarTexto(r["cultura"].orEmpty()) in GRAOS_ROMANEIO) {
             out += ProblemaCampo("produtividade", "Produtividade (sc/ha)", "foraFaixa", mensagem = "Produtividade ${nf.format(prod)} sc/ha — confira Colhida (kg) e Hectare")

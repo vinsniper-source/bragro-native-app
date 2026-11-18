@@ -425,7 +425,7 @@ fun SilosScreen(onBack: () -> Unit, onAbrirRomaneio: (String) -> Unit = {}, view
                 }
                 silos.isEmpty() -> {
                     item(key = "vazio") {
-                        Text("Nenhum silo cadastrado ainda. Toque no botão para adicionar.", modifier = Modifier.padding(vertical = 12.dp))
+                        Text("Nenhum silo. Toque para adicionar.", modifier = Modifier.padding(vertical = 12.dp))
                     }
                     item(key = "exemplo") {
                         // Card de exemplo (fictício, sem ação) -- mostra o layout antes do primeiro cadastro.

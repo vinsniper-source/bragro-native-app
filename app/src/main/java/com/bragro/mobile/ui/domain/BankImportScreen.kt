@@ -98,7 +98,7 @@ class BankImportViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val text = readFileSmart(uri)
             if (text.isNullOrBlank()) {
-                errorMessage.value = "Não foi possível ler o arquivo selecionado (verifique se é um CSV)."
+                errorMessage.value = "Arquivo inválido. Use CSV."
                 busy.value = false
                 return@launch
             }
@@ -116,14 +116,14 @@ class BankImportViewModel(app: Application) : AndroidViewModel(app) {
             val roles = guessColumnRoles(header)
             val parsed = parseBankRows(body, roles)
             if (parsed.isEmpty()) {
-                errorMessage.value = "Nenhum registro reconhecido nesse arquivo. Confira se é um extrato bancário em CSV."
+                errorMessage.value = "Nenhum registro no arquivo. Use extrato CSV."
                 busy.value = false
                 return@launch
             }
 
             val signatures = repository.signatures(banco.trim())
             if (signatures == null) {
-                errorMessage.value = "Sem conexão. Não foi possível checar duplicados. Tente novamente."
+                errorMessage.value = "Sem conexão. Tente de novo."
                 busy.value = false
                 return@launch
             }
@@ -146,7 +146,7 @@ class BankImportViewModel(app: Application) : AndroidViewModel(app) {
             val result = repository.confirm(banco.trim(), dtos)
             busy.value = false
             if (result == null) {
-                errorMessage.value = "Não foi possível confirmar a importação. Tente novamente."
+                errorMessage.value = "Falha ao importar. Tente de novo."
             } else {
                 importedCount.value = result
                 rows.value = emptyList()
@@ -246,7 +246,7 @@ fun BankImportScreen(onBack: () -> Unit, viewModel: BankImportViewModel = viewMo
         ) {
             item {
                 Text(
-                    "Envie o CSV do banco. Você confere antes de lançar no Financeiro.",
+                    "Envie o CSV do banco e confira antes de lançar.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -309,7 +309,7 @@ fun BankImportScreen(onBack: () -> Unit, viewModel: BankImportViewModel = viewMo
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            "${rows.size} registros encontrados -- ${rows.count { it.include }} selecionados",
+                            "${rows.size} encontrados · ${rows.count { it.include }} selecionados",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                         )

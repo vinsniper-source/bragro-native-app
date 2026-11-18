@@ -140,7 +140,7 @@ class OrcamentoListViewModel(app: Application) : AndroidViewModel(app) {
             val resposta = repository.listar()
             carregando.value = false
             if (resposta == null || !resposta.ok) {
-                erro.value = resposta?.error ?: "Sem conexão. Não foi possível carregar os orçamentos agora."
+                erro.value = resposta?.error ?: "Sem conexão. Tente de novo."
                 return@launch
             }
             orcamentos.value = resposta.orcamentos ?: emptyList()

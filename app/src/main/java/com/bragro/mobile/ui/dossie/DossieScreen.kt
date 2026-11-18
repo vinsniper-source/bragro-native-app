@@ -340,7 +340,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
             var n = 0
             item {
                 Text(
-                    "DRE, Livro Caixa, Contratos e Patrimônio num relatório para o banco.",
+                    "DRE, Livro Caixa, Contratos e Patrimônio para o banco.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -540,7 +540,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                                 patrimonio.principais.forEach { p -> PatrimonioItemLinha(p) }
                                 if (patrimonio.totalItens > patrimonio.principais.size) {
                                     Text(
-                                        "Mostrando os ${patrimonio.principais.size} itens de maior valor contábil. Lista completa em Inventário (Ativos).",
+                                        "Os ${patrimonio.principais.size} de maior valor. Lista completa em Inventário.",
                                         style = MaterialTheme.typography.labelSmall,
                                     )
                                 }

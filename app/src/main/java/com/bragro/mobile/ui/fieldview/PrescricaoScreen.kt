@@ -167,7 +167,7 @@ class PrescricaoViewModel(app: Application) : AndroidViewModel(app) {
             carregando.value = false
             offline.value = resultado == null
             if (resultado == null) {
-                erro.value = "Sem conexão. Não foi possível carregar as prescrições agora."
+                erro.value = "Sem conexão. Tente de novo."
                 return@launch
             }
             erro.value = null
@@ -270,7 +270,7 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
     val exportarExpandida: (Boolean) -> Unit = { iso ->
         val alvo = prescricoes.firstOrNull { it.id == expandidoId }
         if (alvo == null) {
-            erroExportacao = "Toque em uma prescrição na lista para expandi-la e depois exporte."
+            erroExportacao = "Toque numa prescrição para expandir e exportar."
         } else if (iso) {
             viewModel.exportarIsoXml(alvo.id) { xml, erroMsg, filename ->
                 if (xml != null) shareTextFile(context, filename, "application/xml", xml)
@@ -408,7 +408,7 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                 com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = prescricoes.size, aberto = lancAberto, titulo = "Prescrições") { lancAberto = !lancAberto }
             }
             if (prescricoes.isEmpty()) item {
-                Text("Nenhuma prescrição de taxa variável salva ainda. Toque em + Nova para importar um ISO-XML, ou crie pelo site (SHP/ISO-XML).", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 16.dp))
+                Text("Nenhuma prescrição. Toque em + Nova para importar ISO-XML.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 16.dp))
             }
             if (lancAberto) items(prescricoes) { p ->
                 PrescricaoCard(

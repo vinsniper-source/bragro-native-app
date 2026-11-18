@@ -134,7 +134,7 @@ class CsvImportViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val text = readFileSmart(uri)
             if (text.isNullOrBlank()) {
-                errorMessage.value = "Não foi possível ler o arquivo selecionado (verifique se é um CSV)."
+                errorMessage.value = "Arquivo inválido. Use CSV."
                 busy.value = false
                 return@launch
             }
@@ -292,7 +292,7 @@ fun CsvImportScreen(onBack: () -> Unit, viewModel: CsvImportViewModel = viewMode
         ) {
             item {
                 Text(
-                    "Importe a planilha de outro sistema. O que faltar nas listas é cadastrado.",
+                    "Importe planilha de outro sistema. Listas faltantes são criadas.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -356,7 +356,7 @@ fun CsvImportScreen(onBack: () -> Unit, viewModel: CsvImportViewModel = viewMode
                                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Text("2. Conferir o mapeamento", fontWeight = FontWeight.Bold)
                                     Text(
-                                        "${fileName ?: "arquivo"} -- ${a.totalRows} linha(s) -> $domainLabel. Confira para qual campo do BRAgro cada coluna vai; campos com * são obrigatórios.",
+                                        "${fileName ?: "arquivo"} -- ${a.totalRows} linha(s) -> $domainLabel. Associe as colunas; * é obrigatório.",
                                         style = MaterialTheme.typography.bodySmall,
                                     )
                                 }
@@ -421,10 +421,10 @@ fun CsvImportScreen(onBack: () -> Unit, viewModel: CsvImportViewModel = viewMode
                                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Text("3. Resultado", fontWeight = FontWeight.Bold)
                                     Text("${r.criados} registro(s) criado(s).", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                    Text("${r.lookupsReaproveitados} item(ns) de lista/fazenda reaproveitado(s).", style = MaterialTheme.typography.bodyMedium)
-                                    Text("${r.lookupsNovos} item(ns) de lista/fazenda novo(s) criado(s).", style = MaterialTheme.typography.bodyMedium)
+                                    Text("${r.lookupsReaproveitados} item(ns) reaproveitado(s).", style = MaterialTheme.typography.bodyMedium)
+                                    Text("${r.lookupsNovos} item(ns) novo(s).", style = MaterialTheme.typography.bodyMedium)
                                     Text(
-                                        "Os registros importados ficam marcados como pendentes de revisão.",
+                                        "Importados ficam pendentes de revisão.",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )

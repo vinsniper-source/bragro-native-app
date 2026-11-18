@@ -1940,7 +1940,7 @@ fun DomainListScreen(
         AlertDialog(
             onDismissRequest = { lancPedidoPendingDelete = null },
             title = { Text("Excluir ${l.titulo}?") },
-            text = { Text("Os ${l.linhas.size} itens deste lançamento serão excluídos, junto com as entradas deles no Estoque.") },
+            text = { Text("Exclui ${l.linhas.size} itens e as entradas no Estoque.") },
             confirmButton = {
                 TextButton(onClick = {
                     l.linhas.mapNotNull { it["id"] }.forEach { viewModel.deleteRecord(domainId, it) }
@@ -1954,7 +1954,7 @@ fun DomainListScreen(
         AlertDialog(
             onDismissRequest = { osPendingDelete = null },
             title = { Text("Excluir ${os.titulo}?") },
-            text = { Text("Os ${os.itens.size} itens desta O.S. serão excluídos, e o Estoque volta a ter o que saiu por eles.") },
+            text = { Text("Exclui ${os.itens.size} itens e devolve ao Estoque.") },
             confirmButton = {
                 TextButton(onClick = {
                     os.itens.mapNotNull { it["id"] }.forEach { viewModel.deleteRecord(domainId, it) }
@@ -2614,7 +2614,7 @@ private fun GrausDiaCard(dados: kotlinx.serialization.json.JsonObject?) {
                 Spacer(Modifier.width(6.dp))
                 Text("Graus-dia e chuva desde o plantio", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
             }
-            Text("Calor acumulado pela lavoura (Tmédia − temperatura-base da cultura), somado dia a dia. Plantio = lançamento de Safra com operação Plantio/Semeadura.", style = MaterialTheme.typography.labelSmall, color = muted)
+            Text("Soma diária de (Tmédia − Tbase), desde o Plantio em Safra.", style = MaterialTheme.typography.labelSmall, color = muted)
             if (dados == null) Text("Carregando…", style = MaterialTheme.typography.bodySmall, color = muted)
             else if (linhas.isEmpty()) Text("Nenhum plantio lançado em Safra nos últimos 300 dias.", style = MaterialTheme.typography.bodySmall, color = muted)
             linhas.forEach { l ->
@@ -2720,7 +2720,7 @@ private fun SprayAlertCard(alerta: kotlinx.serialization.json.JsonObject?, showH
                         }
                     }
                     Text(
-                        "Regra geral (vento 3–10 km/h, umidade ≥55%, temperatura ≤30°C, sem chuva) — não substitui a bula do produto.",
+                        "Vento 3–10 km/h, umidade ≥55%, ≤30°C, sem chuva. Não substitui a bula.",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 10.dp),
@@ -2905,7 +2905,7 @@ private fun PrioridadeCotacaoDialog(onDismiss: () -> Unit, onSalvo: () -> Unit) 
         title = { Text("Prioridade das cotações") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Escolha o que pesa mais para definir a melhor proposta. Vale para todas as cotações.", style = MaterialTheme.typography.bodySmall)
+                Text("Escolha o que pesa mais na melhor proposta.", style = MaterialTheme.typography.bodySmall)
                 PRIORIDADES_COTACAO.forEach { (v, l, d) ->
                     val sel = atual == v
                     Column(

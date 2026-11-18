@@ -313,7 +313,7 @@ fun NfeImportScreen(onBack: () -> Unit, viewModel: NfeImportViewModel = viewMode
         ) {
             item {
                 Text(
-                    "Escolha o arquivo XML da nota (o mesmo arquivo que a SEFAZ entrega, ou que você já usaria para importar pelo site).",
+                    "Escolha o XML da nota (o da SEFAZ).",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -340,7 +340,7 @@ fun NfeImportScreen(onBack: () -> Unit, viewModel: NfeImportViewModel = viewMode
                             if (!inv.emitenteNome.isNullOrBlank()) Row { Text("Emitente: "); Text(inv.emitenteNome, fontWeight = FontWeight.Bold) }
                             if (inv.valorTotal != null) Row { Text("Valor total: "); Text(formatMoneyBrl(inv.valorTotal), fontWeight = FontWeight.Bold) }
                             Text(
-                                "Registros de Estoque e Financeiro já foram gerados automaticamente, igual à importação pelo site.",
+                                "Estoque e Financeiro já gerados.",
                                 style = MaterialTheme.typography.bodySmall,
                             )
                             Button(onClick = { viewModel.reset() }, modifier = Modifier.fillMaxWidth()) {

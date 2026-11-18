@@ -74,13 +74,13 @@ fun OcrFotoButton(
             val bytes = withContext(Dispatchers.IO) { comprimirFotoOcr(context, uri) }
             if (bytes == null) {
                 busy = false
-                mensagem = "Não foi possível processar a foto. Tente novamente ou preencha manualmente."
+                mensagem = "Falha na foto. Tente de novo ou preencha à mão."
                 return@launch
             }
             val url = OrcamentoUploadRepository(context).uploadFoto(bytes, "ocr")
             if (url == null) {
                 busy = false
-                mensagem = "Sem conexão. Não foi possível enviar a foto agora. Preencha manualmente."
+                mensagem = "Sem conexão. Preencha à mão."
                 return@launch
             }
             mensagem = try {
@@ -102,7 +102,7 @@ fun OcrFotoButton(
     fun launchCamera() {
         if (!temAppDeCameraDisponivel(context)) {
             avisarSemAppDeCamera(context)
-            mensagem = "Não foi possível abrir a câmera neste aparelho. Preencha manualmente."
+            mensagem = "Câmera indisponível. Preencha à mão."
             return
         }
         try {
@@ -113,7 +113,7 @@ fun OcrFotoButton(
             takePicture.launch(uri)
         } catch (e: Exception) {
             AppLog.e("OcrFotoButton", "Falha ao abrir a câmera", e)
-            mensagem = "Não foi possível abrir a câmera neste aparelho. Preencha manualmente."
+            mensagem = "Câmera indisponível. Preencha à mão."
         }
     }
 
@@ -164,7 +164,7 @@ fun OcrFotoButton(
         }
         if (permanentementeNegada) {
             Text(
-                "Permissão da câmera bloqueada pelo sistema. Toque abaixo para liberar.",
+                "Câmera bloqueada. Toque abaixo para liberar.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.error,
             )

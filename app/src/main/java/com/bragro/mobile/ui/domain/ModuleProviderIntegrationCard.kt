@@ -42,7 +42,7 @@ class FrotaIntegrationViewModel(app: Application) : AndroidViewModel(app) {
         message.value = null
         viewModelScope.launch {
             val ok = repo.save(provedor, apiKey)
-            message.value = if (ok) "Credencial salva." else "Falha ao salvar credencial. Confira a conexão e tente de novo."
+            message.value = if (ok) "Credencial salva." else "Falha ao salvar. Confira a conexão."
             if (ok) integration.value = repo.get()
             busy.value = null
         }
@@ -57,7 +57,7 @@ class FrotaIntegrationViewModel(app: Application) : AndroidViewModel(app) {
                 integration.value = repo.get()
                 message.value = "Integração desconectada."
             } else {
-                message.value = "Falha ao desconectar. Confira a conexão e tente de novo."
+                message.value = "Falha ao desconectar. Confira a conexão."
             }
             busy.value = null
         }
@@ -93,7 +93,7 @@ class RomaneioIntegrationViewModel(app: Application) : AndroidViewModel(app) {
         message.value = null
         viewModelScope.launch {
             val ok = repo.save(provedor, apiKey)
-            message.value = if (ok) "Credencial salva." else "Falha ao salvar credencial. Confira a conexão e tente de novo."
+            message.value = if (ok) "Credencial salva." else "Falha ao salvar. Confira a conexão."
             if (ok) integration.value = repo.get()
             busy.value = null
         }
@@ -108,7 +108,7 @@ class RomaneioIntegrationViewModel(app: Application) : AndroidViewModel(app) {
                 integration.value = repo.get()
                 message.value = "Integração desconectada."
             } else {
-                message.value = "Falha ao desconectar. Confira a conexão e tente de novo."
+                message.value = "Falha ao desconectar. Confira a conexão."
             }
             busy.value = null
         }
@@ -148,7 +148,7 @@ class PecuariaIntegrationViewModel(app: Application) : AndroidViewModel(app) {
         message.value = null
         viewModelScope.launch {
             val ok = repo.save(provedor, apiKey)
-            message.value = if (ok) "Credencial salva." else "Falha ao salvar credencial. Confira a conexão e tente de novo."
+            message.value = if (ok) "Credencial salva." else "Falha ao salvar. Confira a conexão."
             if (ok) integration.value = repo.get()
             busy.value = null
         }
@@ -163,7 +163,7 @@ class PecuariaIntegrationViewModel(app: Application) : AndroidViewModel(app) {
                 integration.value = repo.get()
                 message.value = "Integração desconectada."
             } else {
-                message.value = "Falha ao desconectar. Confira a conexão e tente de novo."
+                message.value = "Falha ao desconectar. Confira a conexão."
             }
             busy.value = null
         }
@@ -203,7 +203,7 @@ class PivosIntegrationViewModel(app: Application) : AndroidViewModel(app) {
         message.value = null
         viewModelScope.launch {
             val ok = repo.save(provedor, apiKey)
-            message.value = if (ok) "Credencial salva." else "Falha ao salvar credencial. Confira a conexão e tente de novo."
+            message.value = if (ok) "Credencial salva." else "Falha ao salvar. Confira a conexão."
             if (ok) integration.value = repo.get()
             busy.value = null
         }
@@ -218,7 +218,7 @@ class PivosIntegrationViewModel(app: Application) : AndroidViewModel(app) {
                 integration.value = repo.get()
                 message.value = "Integração desconectada."
             } else {
-                message.value = "Falha ao desconectar. Confira a conexão e tente de novo."
+                message.value = "Falha ao desconectar. Confira a conexão."
             }
             busy.value = null
         }
@@ -255,7 +255,7 @@ class SiloIntegrationViewModel(app: Application) : AndroidViewModel(app) {
         message.value = null
         viewModelScope.launch {
             val ok = repo.save(provedor, apiKey)
-            message.value = if (ok) "Credencial salva." else "Falha ao salvar credencial. Confira a conexão e tente de novo."
+            message.value = if (ok) "Credencial salva." else "Falha ao salvar. Confira a conexão."
             if (ok) integration.value = repo.get()
             busy.value = null
         }
@@ -270,7 +270,7 @@ class SiloIntegrationViewModel(app: Application) : AndroidViewModel(app) {
                 integration.value = repo.get()
                 message.value = "Integração desconectada."
             } else {
-                message.value = "Falha ao desconectar. Confira a conexão e tente de novo."
+                message.value = "Falha ao desconectar. Confira a conexão."
             }
             busy.value = null
         }
@@ -307,7 +307,7 @@ fun ModuleProviderIntegrationCard(domainId: String) {
                 "Cimbria", "Kepler Weber", "Silos Chapecó", "Pedrotti", "Fockink",
                 "API genérica (URL + token)",
             ),
-            descricao = "Em \"API genérica\", informe: https://sua-api.com/rota|SEU_TOKEN. Os demais dependem de parceria com o fabricante.",
+            descricao = "\"API genérica\": https://sua-api.com/rota|SEU_TOKEN. Os demais dependem do fabricante.",
             integration = integration,
             busy = busy,
             syncMessage = message,
@@ -325,7 +325,7 @@ fun ModuleProviderIntegrationCard(domainId: String) {
         val message by vm.message
         ProviderIntegrationCard(
             providers = listOf("Lindsay FieldNET", "Valley 365/AgSense", "Reinke ReinCloud"),
-            descricao = "Lançamento manual por enquanto. A conexão automática depende de parceria com o fabricante.",
+            descricao = "Lançamento manual. Automático depende do fabricante.",
             integration = integration,
             busy = busy,
             syncMessage = message,
@@ -343,7 +343,7 @@ fun ModuleProviderIntegrationCard(domainId: String) {
         val message by vm.message
         ProviderIntegrationCard(
             providers = listOf("Coimma", "Bezerra Balanças", "Intergado", "Gallagher", "Tru-Test / Datamars", "Allflex", "Zeetag", "Toledo do Brasil", "Digitron", "Outro"),
-            descricao = "Lançamento manual por enquanto. A leitura automática (balança/RFID) depende de parceria com o fabricante.",
+            descricao = "Lançamento manual. Automático depende do fabricante.",
             integration = integration,
             busy = busy,
             syncMessage = message,
@@ -361,7 +361,7 @@ fun ModuleProviderIntegrationCard(domainId: String) {
         val message by vm.message
         ProviderIntegrationCard(
             providers = listOf("Tanque Certo", "Softlub", "Sistema Fácil Combustível", "Outro"),
-            descricao = "Lançamento manual por enquanto. A leitura automática da bomba depende de parceria com o fabricante.",
+            descricao = "Lançamento manual. Automático depende do fabricante.",
             integration = integration,
             busy = busy,
             syncMessage = message,
@@ -382,7 +382,7 @@ fun ModuleProviderIntegrationCard(domainId: String) {
         val message by vm.message
         ProviderIntegrationCard(
             providers = listOf("Toledo do Brasil", "Filizola", "Coti Balanças", "Outro"),
-            descricao = "Peso manual ou pela foto do ticket. A leitura automática da balança depende de parceria com o fabricante.",
+            descricao = "Peso manual ou pela foto do ticket.",
             integration = integration,
             busy = busy,
             syncMessage = message,

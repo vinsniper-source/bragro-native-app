@@ -107,7 +107,7 @@ class NfeViewModel(app: Application) : AndroidViewModel(app) {
             val resposta = repository.listar()
             carregando.value = false
             if (resposta == null || !resposta.ok) {
-                erro.value = resposta?.error ?: "Sem conexão. Não foi possível carregar as notas fiscais agora."
+                erro.value = resposta?.error ?: "Sem conexão. Tente de novo."
                 return@launch
             }
             invoices.value = resposta.invoices ?: emptyList()
@@ -436,7 +436,7 @@ private fun BaixarXmlLoteDialog(pending: Boolean, onDismiss: () -> Unit, onConfi
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    "Baixa um .zip com o XML de cada nota fiscal recebida e enviada (autorizada ou importada) no período. Deixe em branco para baixar todas.",
+                    "Baixa um .zip com os XMLs. Datas em branco = todas.",
                     style = MaterialTheme.typography.bodySmall,
                 )
                 OutlinedTextField(value = inicio, onValueChange = { inicio = it }, label = { Text("De") }, placeholder = { Text("AAAA-MM-DD, opcional") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
@@ -688,7 +688,7 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
         AlertDialog(
             onDismissRequest = { confirmarExclusao = null },
             title = { Text("Excluir nota fiscal?") },
-            text = { Text("Nº ${paraExcluir.numero}. Estoque e Financeiro gerados por ela continuam.") },
+            text = { Text("Nº ${paraExcluir.numero}. Estoque e Financeiro ficam.") },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.excluir(paraExcluir.id) { erroMsg -> dialogErro = erroMsg }

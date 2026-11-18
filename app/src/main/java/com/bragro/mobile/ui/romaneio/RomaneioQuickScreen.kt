@@ -145,14 +145,14 @@ class RomaneioQuickViewModel(app: Application) : AndroidViewModel(app) {
      * disponivel -- a foto e so opcional, entao isso nunca bloqueia o
      * lancamento, so avisa o motivo em vez de nao acontecer nada visivel. */
     fun onPhotoCancelled() {
-        ocrMensagem.value = "Nenhuma foto capturada. Você pode lançar sem foto ou tentar de novo."
+        ocrMensagem.value = "Nenhuma foto. Lance sem foto ou tente de novo."
     }
 
     /** Chamado pela tela quando launchCamera() falha ao abrir a câmera
      * (ActivityNotFoundException/SecurityException etc. -- ver comentário
      * completo em launchCamera() abaixo). */
     fun onCameraLaunchFailed() {
-        ocrMensagem.value = "Não foi possível abrir a câmera neste aparelho. Você pode lançar sem foto."
+        ocrMensagem.value = "Câmera indisponível. Lance sem foto."
     }
 
     /** Chamado depois que a foto ja foi tirada e salva no Uri temporario
@@ -170,9 +170,9 @@ class RomaneioQuickViewModel(app: Application) : AndroidViewModel(app) {
                 camposLidos["umidade"]?.let { umidade.value = it }
                 camposLidos["impureza"]?.let { impureza.value = it }
                 camposLidos["noRomaneio"]?.let { if (noRomaneio.value.isBlank()) noRomaneio.value = it }
-                ocrMensagem.value = "Campos pré-preenchidos automaticamente — confira antes de lançar."
+                ocrMensagem.value = "Pré-preenchido. Confira antes de lançar."
             } else {
-                ocrMensagem.value = "Não foi possível ler o ticket automaticamente — preencha manualmente."
+                ocrMensagem.value = "Não deu para ler o ticket. Preencha à mão."
             }
 
             val bytes = compressPhoto(context, uri)
@@ -181,7 +181,7 @@ class RomaneioQuickViewModel(app: Application) : AndroidViewModel(app) {
                 if (url != null) {
                     fotoTicketUrl.value = url
                 } else if (ocrMensagem.value?.startsWith("Campos") != true) {
-                    ocrMensagem.value = "Foto lida, mas não foi possível enviar agora (sem conexão) — o registro segue sem foto."
+                    ocrMensagem.value = "Sem conexão: segue sem foto."
                 }
             }
             uploadingFoto.value = false
@@ -509,7 +509,7 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
                     }
                     if (cameraPermanentementeNegada) {
                         Text(
-                            "Permissão da câmera bloqueada pelo sistema. Toque abaixo para liberar.",
+                            "Câmera bloqueada. Toque abaixo para liberar.",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.error,
                         )

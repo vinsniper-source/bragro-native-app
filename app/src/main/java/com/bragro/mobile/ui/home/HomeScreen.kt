@@ -840,7 +840,7 @@ fun HomeScreen(
                                         onClick = {
                                             configMenuOpen = false
                                             com.bragro.mobile.ui.util.enqueueApkDownload(logoScreenContext, apkUrl, apkVersao ?: "?")
-                                            android.widget.Toast.makeText(logoScreenContext, "Download iniciado. Você recebe uma notificação quando terminar.", android.widget.Toast.LENGTH_SHORT).show()
+                                            android.widget.Toast.makeText(logoScreenContext, "Baixando. Você será avisado ao terminar.", android.widget.Toast.LENGTH_SHORT).show()
                                         },
                                     )
                                 } else {
@@ -870,7 +870,7 @@ fun HomeScreen(
                                     // instalar um .apk, só via PWA pelo Safari.
                                     Column {
                                         Text(
-                                            "O iOS não permite instalar um arquivo baixado como app — a Apple só libera isso pela App Store. O caminho que funciona sem custo, direto pelo Safari:",
+                                            "No iPhone, instale pelo Safari:",
                                             style = MaterialTheme.typography.bodySmall,
                                         )
                                         listOf(
@@ -1296,7 +1296,7 @@ fun HomeScreen(
                             Icon(Icons.Outlined.CloudSync, contentDescription = null, tint = BrOrange, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                "$pending registro(s) aguardando conexão para sincronizar. Toque para ver quais.",
+                                "$pending registro(s) aguardando conexão. Toque para ver.",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Bold,
                                 color = BrOrange,
@@ -1332,7 +1332,7 @@ fun HomeScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    "Um registro foi alterado em outro dispositivo — abra e confira antes de tentar salvar de novo.",
+                                    "Alterado em outro aparelho. Abra e confira antes de salvar.",
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onErrorContainer,
@@ -1526,7 +1526,7 @@ fun HomeScreen(
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text(
-                                if (sem == "todas") "Nenhuma fazenda tem localização: previsão de Tupaciguara/MG. Toque para definir."
+                                if (sem == "todas") "Fazendas sem localização: previsão de Tupaciguara/MG. Toque para definir."
                                 else "$sem sem localização: previsão de ${data.climaLocal ?: "Tupaciguara/MG"}. Toque para definir.",
                                 color = laranja,
                                 style = MaterialTheme.typography.bodySmall,
@@ -1694,7 +1694,7 @@ private fun PendingSyncDialog(items: List<PendingSyncEntity>, onDismiss: () -> U
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     Text(
-                        "Salvos no aparelho, ainda não enviados. O motivo aparece em cada um.",
+                        "Salvos no aparelho, não enviados. Motivo em cada um.",
                         style = MaterialTheme.typography.bodySmall,
                     )
                     items.forEach { item ->
@@ -2948,13 +2948,13 @@ private fun AgroLinha(g: com.bragro.mobile.data.model.ClimaAgro, linha: androidx
     val saldo = g.balanco.saldoMm.roundToInt()
     data class Cel(val rot: String, val dica: String, val valor: String, val sub: String, val ok: Boolean?)
     val celulas = listOf(
-        Cel("Delta T", "2 a 8 = bom para aplicar; abaixo de 2 a gota escorre/deriva; acima de 8 evapora antes do alvo",
+        Cel("Delta T", "2 a 8 = bom; abaixo deriva; acima evapora",
             g.deltaT?.let { String.format(br, "%.1f", it) } ?: "—", dt[g.deltaTNivel]?.first ?: "", dt[g.deltaTNivel]?.second),
         Cel("Geada · 7 dias", "Menor temperatura prevista nos próximos 7 dias",
             g.geada.minC?.let { "${it.roundToInt()}° ${dia(g.geada.dia)}".trim() } ?: "—", geada[g.geada.nivel]?.first ?: "", geada[g.geada.nivel]?.second),
-        Cel("Molhamento · 24 h", "Horas seguidas de folha molhada (umidade ≥ 90%) com 15 a 28 °C: 6 h ou mais = risco médio de ferrugem e manchas; 10 h ou mais = alto",
+        Cel("Molhamento · 24 h", "Folha molhada (≥90%, 15–28 °C): 6 h = risco médio; 10 h = alto",
             "${g.molhamento.horasFavoraveis} h", molh[g.molhamento.risco]?.first ?: "", molh[g.molhamento.risco]?.second),
-        Cel("Balanço · 7 dias", "Chuva prevista menos a água que a lavoura perde (ET0). Negativo = falta de água",
+        Cel("Balanço · 7 dias", "Chuva − ET0. Negativo = falta de água",
             (if (saldo > 0) "+" else if (saldo < 0) "−" else "") + "${kotlin.math.abs(saldo)} mm",
             "${g.balanco.chuvaMm.roundToInt()} chuva · ${g.balanco.et0Mm.roundToInt()} ET0", null),
     )

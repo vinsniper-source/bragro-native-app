@@ -336,7 +336,7 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
                 return@launch
             }
             successMessage.value = if (offline) {
-                "$total proposta(s) salva(s) no aparelho. Envia quando a internet voltar."
+                "$total proposta(s) salva(s). Envia quando houver internet."
             } else if (validos.size > 1) {
                 "$total proposta(s) lançada(s) em ${validos.size} itens."
             } else {
@@ -393,8 +393,8 @@ private fun ItemFieldBlock(modifier: Modifier = Modifier, content: @Composable (
  * recomposição com a mesma chave (ela não fica marcada como já buscada). */
 private fun historicoTexto(hist: CotacaoPrecoMedioResponse?): String {
     if (hist == null) return "Calculando preço médio histórico..."
-    if (!hist.ok || hist.amostras == null || hist.amostras == 0) return "Sem cotações anteriores deste item para comparar ainda."
-    val media = hist.mediaPreco ?: return "Sem cotações anteriores deste item para comparar ainda."
+    if (!hist.ok || hist.amostras == null || hist.amostras == 0) return "Sem cotações anteriores."
+    val media = hist.mediaPreco ?: return "Sem cotações anteriores."
     val plural = hist.amostras > 1
     val dataTxt = hist.ultimaData?.let { ", última em ${isoParaBr(it)}" } ?: ""
     return "Preço médio histórico: R$ ${"%.2f".format(media)} (${hist.amostras} cotação${if (plural) "ões" else ""} anterior${if (plural) "es" else ""}$dataTxt)"
@@ -761,7 +761,7 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                 OutlinedTextField(
                     value = viewModel.observacoes,
                     onValueChange = { viewModel.observacoes = it },
-                    label = { Text("Observações (opcional, vale para todos os itens/propostas)") },
+                    label = { Text("Observações (opcional, para todos)") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2,
                     colors = appFieldColors(),

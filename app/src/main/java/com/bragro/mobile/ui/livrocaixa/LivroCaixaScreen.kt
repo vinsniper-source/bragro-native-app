@@ -214,7 +214,7 @@ class LivroCaixaViewModel(app: Application) : AndroidViewModel(app) {
                 produtorRuralLoading.value = false
             }
             if (pr == null || (pr.cpfProdutorRural.isBlank() && pr.cnpj.isBlank())) {
-                onError("Preencha o CPF do produtor rural no card \"Produtor Rural\" antes de exportar o LCDPR.")
+                onError("Preencha o CPF em \"Produtor Rural\" antes de exportar o LCDPR.")
                 return@launch
             }
             val orgName = AppDatabase.get(getApplication()).sessionDao().get()?.orgName ?: "BRAgro"
@@ -485,7 +485,7 @@ private fun ProdutorRuralCard(
             com.bragro.mobile.ui.domain.TituloRecolhivel("Produtor Rural / IRPF", aberto) { aberto = !aberto }
             if (aberto) {
             Text(
-                "Dados usados na apuração do Livro Caixa da Atividade Rural (LCDPR). Confira com seu contador antes de declarar.",
+                "Dados do LCDPR. Confira com o contador.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

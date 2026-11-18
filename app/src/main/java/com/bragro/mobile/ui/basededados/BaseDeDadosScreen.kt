@@ -412,7 +412,7 @@ fun BaseDeDadosScreen(
                 item(key = "import") {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("Há $missingCount item(ns) padrão ainda não importados (categorias e/ou fazendas).", style = MaterialTheme.typography.bodyMedium)
+                            Text("$missingCount item(ns) padrão para importar.", style = MaterialTheme.typography.bodyMedium)
                             Row(modifier = Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Button(onClick = { showImportConfirm = true }, enabled = !busy) {
                                     Text("Importar padrões")
@@ -474,7 +474,7 @@ fun BaseDeDadosScreen(
                 title = { Text("Importar dados padrão?") },
                 text = {
                     Column {
-                        Text("Adiciona $missingCount item(ns) padrão. Os que você excluiu não voltam.")
+                        Text("Adiciona $missingCount item(ns). Excluídos não voltam.")
                         if (missingSummary.isNotBlank()) {
                             Text(missingSummary, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
                         }
@@ -1099,7 +1099,7 @@ private fun SectorCard(
         AlertDialog(
             onDismissRequest = { excluindo = null },
             title = { Text("Excluir “$nomeEx”?") },
-            text = { Text("Sai da lista. Registros que já usam “$nomeEx” continuam com esse nome.", style = MaterialTheme.typography.bodySmall) },
+            text = { Text("Sai da lista. Registros com “$nomeEx” ficam.", style = MaterialTheme.typography.bodySmall) },
             confirmButton = {
                 Button(
                     onClick = { onDelete(idEx); excluindo = null },
@@ -1121,7 +1121,7 @@ private fun SectorCard(
             // v1.6.4 (mockup v105, item 1) -- nome legível (vem do servidor) e aviso de lista vazia.
             Text(cat["label"]?.jsonPrimitive?.contentOrNull ?: category, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp))
             if (values == null || values.isEmpty()) {
-                Text("Nenhum valor ainda · digite abaixo e toque em + para incluir", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Nenhum valor. Digite e toque em +", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             values?.forEach { vEl ->
                 val v = vEl.jsonObject

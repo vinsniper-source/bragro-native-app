@@ -158,9 +158,9 @@ private fun brl(v: Double) = NumberFormat.getCurrencyInstance(Locale("pt", "BR")
 private fun dataBr(iso: String?) = iso?.split("-")?.reversed()?.joinToString("/")
 
 private val MOTIVOS = mapOf(
-    "SEM_CHAVE" to "Cadastre a chave Pix na plataforma (Cobranças e NFS-e → Ferramentas → Pix) para gerar o código das cobranças.",
-    "NAO_ENCONTRADA" to "Cobrança não encontrada. Se acabou de lançar sem internet, sincronize e tente de novo.",
-    "CHAVE_INVALIDA" to "A chave Pix cadastrada está inválida. Confira na plataforma.",
+    "SEM_CHAVE" to "Cadastre a chave Pix na plataforma (Cobranças → Pix).",
+    "NAO_ENCONTRADA" to "Cobrança não encontrada. Sincronize e tente de novo.",
+    "CHAVE_INVALIDA" to "Chave Pix inválida. Confira na plataforma.",
 )
 
 @Composable
@@ -183,7 +183,7 @@ fun PixCobrancaDialog(cobrancaId: String, onDismiss: () -> Unit) {
         text = {
             when {
                 carregando -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-                p == null -> Text("Não foi possível gerar o Pix agora. Confira a internet e tente de novo.")
+                p == null -> Text("Falha ao gerar o Pix. Confira a internet.")
                 !p.ok -> Text(MOTIVOS[p.motivo] ?: "Não foi possível gerar o Pix.")
                 else -> Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     qr?.let {
@@ -201,7 +201,7 @@ fun PixCobrancaDialog(cobrancaId: String, onDismiss: () -> Unit) {
                         androidx.compose.material3.Text(p.codigo.orEmpty(), fontFamily = FontFamily.Monospace, fontSize = 10.sp, modifier = Modifier.fillMaxWidth())
                     }
                     Text(
-                        "O sistema não vê o pagamento. Quando cair, marque como PAGO.",
+                        "Pagamento não é detectado. Quando cair, marque PAGO.",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -277,7 +277,7 @@ fun PixConfigDialog(onDismiss: () -> Unit) {
                     com.bragro.mobile.ui.theme.LinhaTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome do recebedor") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     com.bragro.mobile.ui.theme.LinhaTextField(value = cidade, onValueChange = { cidade = it }, label = { Text("Cidade") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     Text(
-                        "Com a chave cadastrada, cada cobrança ganha o QR e o código Pix. Alterar a chave pede confirmação (aba Proteção).",
+                        "Cada cobrança ganha QR e código Pix. Trocar a chave pede confirmação.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

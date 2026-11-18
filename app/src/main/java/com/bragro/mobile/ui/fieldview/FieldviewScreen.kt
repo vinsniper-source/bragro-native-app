@@ -210,7 +210,7 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
         integrationMessage.value = null
         viewModelScope.launch {
             val ok = integrationRepository.save(provedor, apiKey)
-            integrationMessage.value = if (ok) "Credencial salva." else "Falha ao salvar credencial. Confira a conexão e tente de novo."
+            integrationMessage.value = if (ok) "Credencial salva." else "Falha ao salvar. Confira a conexão."
             if (ok) integration.value = integrationRepository.get()
             integrationBusy.value = null
         }
@@ -225,7 +225,7 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
                 integration.value = integrationRepository.get()
                 integrationMessage.value = "Integração desconectada."
             } else {
-                integrationMessage.value = "Falha ao desconectar. Confira a conexão e tente de novo."
+                integrationMessage.value = "Falha ao desconectar. Confira a conexão."
             }
             integrationBusy.value = null
         }
@@ -247,7 +247,7 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
         ndviIntegrationMessage.value = null
         viewModelScope.launch {
             val ok = ndviIntegrationRepository.save(provedor, apiKey)
-            ndviIntegrationMessage.value = if (ok) "Credencial salva." else "Falha ao salvar credencial. Confira a conexão e tente de novo."
+            ndviIntegrationMessage.value = if (ok) "Credencial salva." else "Falha ao salvar. Confira a conexão."
             if (ok) ndviIntegration.value = ndviIntegrationRepository.get()
             ndviIntegrationBusy.value = null
         }
@@ -262,7 +262,7 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
                 ndviIntegration.value = ndviIntegrationRepository.get()
                 ndviIntegrationMessage.value = "Integração desconectada."
             } else {
-                ndviIntegrationMessage.value = "Falha ao desconectar. Confira a conexão e tente de novo."
+                ndviIntegrationMessage.value = "Falha ao desconectar. Confira a conexão."
             }
             ndviIntegrationBusy.value = null
         }
@@ -296,7 +296,7 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
             if (ok) {
                 data.value = repository.fetch()
             } else {
-                importError.value = "Falha ao importar o contorno. Confira a conexão e tente de novo."
+                importError.value = "Falha ao importar o contorno. Confira a conexão."
             }
             importing.value = false
             onDone(ok)
@@ -323,7 +323,7 @@ class FieldviewViewModel(app: Application) : AndroidViewModel(app) {
             if (ok) {
                 data.value = repository.fetch()
             } else {
-                importError.value = "Falha ao lançar o talhão. Confira a conexão e tente de novo."
+                importError.value = "Falha ao lançar o talhão. Confira a conexão."
             }
             importing.value = false
             onDone(ok)
@@ -642,7 +642,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                     if (prestadoraAberta == 1) ProviderIntegrationCard(
                         providers = listOf("Climate FieldView", "John Deere Operations Center", "Outro", "Trimble Ag Software"),
                         titulo = "Acesso automático via prestadora (talhões/KML)",
-                        descricao = "Talhões importados por KML/KMZ. A conexão automática depende de parceria com o fabricante.",
+                        descricao = "Talhões por KML/KMZ. Automático depende do fabricante.",
                         integration = integration,
                         busy = integrationBusy,
                         syncMessage = integrationMessage,
@@ -681,7 +681,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                         if (contaSateliteAberta) ProviderIntegrationCard(
                         providers = listOf("Sentinel Hub", "Planet", "EOS Data Analytics", "Outro"),
                         titulo = "Conta própria de satélite (opcional)",
-                        descricao = "O NDVI acima já é calculado pelo BRAgro sem conta. Se tiver assinatura própria: Sentinel Hub (CLIENT_ID|CLIENT_SECRET) ou Planet (chave).",
+                        descricao = "NDVI já incluso. Assinatura própria: Sentinel Hub (CLIENT_ID|CLIENT_SECRET) ou Planet (chave).",
                         integration = ndviIntegration,
                         busy = ndviIntegrationBusy,
                         syncMessage = ndviIntegrationMessage,
@@ -863,7 +863,7 @@ private fun isDatePast(iso: String): Boolean {
 @Composable
 private fun BoundariesList(boundaries: List<FieldBoundaryDto>, modifier: Modifier = Modifier) {
     if (boundaries.isEmpty()) {
-        Text("Nenhum talhão ainda. Desenhe no mapa ou importe KML/KMZ em Operações.", modifier = modifier.padding(16.dp))
+        Text("Nenhum talhão. Desenhe no mapa ou importe KML/KMZ.", modifier = modifier.padding(16.dp))
         return
     }
     LazyColumn(modifier = modifier, contentPadding = PaddingValues(16.dp)) {
@@ -976,7 +976,7 @@ private fun FazendasKmlTab(
 }
 
 /** v1.6.6 (mockup v107b) -- texto de ajuda acima do mapa (igual à plataforma). */
-const val AJUDA_DESENHO = "Toque no ícone do polígono (canto direito do mapa) e marque os cantos da área sobre a imagem de satélite. Ao fechar o desenho, você escolhe o nome e a fazenda antes de salvar."
+const val AJUDA_DESENHO = "Toque no polígono (à direita) e marque os cantos. Ao fechar, escolha nome e fazenda."
 
 /**
  * v1.6.6 (mockup v107b) -- o mesmo mapa da tela Talhões e Mapas dentro do
@@ -1344,7 +1344,7 @@ private fun BoundariesMap(
             }
             botao(rota != null, "Rota até a fazenda", {
                 if (rota != null) rota = null
-                else if (destino == null) rota = RotaEstado(null, "Cadastre a latitude e a longitude da fazenda em Base de Dados.")
+                else if (destino == null) rota = RotaEstado(null, "Cadastre a lat/long da fazenda em Base de Dados.")
                 else if (androidx.core.content.ContextCompat.checkSelfPermission(contexto, android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED) pegarPosicao()
                 else permissaoLocal.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
             }) {
@@ -1353,7 +1353,7 @@ private fun BoundariesMap(
         }
         if (drawing) {
             Text(
-                "Toque no mapa para marcar os cantos do talhão (mínimo 3). Segure e arraste um canto para ajustar; toque no 1º (laranja) para fechar.",
+                "Toque para marcar os cantos (mín. 3). Arraste para ajustar; toque no 1º para fechar.",
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier
                     .align(Alignment.TopStart)
@@ -1486,7 +1486,7 @@ private fun ImportBoundaryDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
-                    "Contorno com ${polygon.points.size} pontos. Confirme o nome do talhão (chave usada para cruzar com Safra/Frota).",
+                    "Contorno com ${polygon.points.size} pontos. Confirme o nome do talhão.",
                     style = MaterialTheme.typography.bodySmall,
                 )
                 OutlinedTextField(
@@ -1546,7 +1546,7 @@ private fun ManualBoundaryDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
-                    "Cria o talhão na hora, sem precisar de um arquivo KML/KMZ. Você pode importar o contorno depois, se quiser.",
+                    "Cria o talhão na hora. Contorno pode vir depois.",
                     style = MaterialTheme.typography.bodySmall,
                 )
                 OutlinedTextField(
@@ -1628,7 +1628,7 @@ private fun NdviLista(
     fun dataBr(d: String) = if (d.length >= 10) "${d.substring(8, 10)}/${d.substring(5, 7)}" else d
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
-            "Fundo do mapa: foto de satélite Esri. NDVI: calculado pelo BRAgro com o satélite Sentinel-2, que tem a faixa infravermelha que a foto não tem (10 m, imagem nova a cada ~5 dias, sem nuvem nem sombra).",
+            "Mapa: satélite Esri. NDVI: Sentinel-2 (10 m, a cada ~5 dias).",
             style = MaterialTheme.typography.labelSmall,
             color = muted,
         )
@@ -1639,7 +1639,7 @@ private fun NdviLista(
             val titulo = "Talhão ${b.talhao}" + (cultura?.let { " · $it" } ?: "")
             if (!temContorno(b)) {
                 Text(titulo, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                Text("Importe o KML ou desenhe o contorno no mapa para calcular.", style = MaterialTheme.typography.labelSmall, color = muted)
+                Text("Importe o KML ou desenhe para calcular.", style = MaterialTheme.typography.labelSmall, color = muted)
                 return@forEach
             }
             val st = estados[b.id]

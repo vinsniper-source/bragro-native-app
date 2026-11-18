@@ -145,7 +145,7 @@ fun FrotaQrScreen(onBack: () -> Unit, viewModel: FrotaQrViewModel = viewModel())
         }
         if (frotas.isEmpty()) {
             Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Nenhuma máquina/frota cadastrada em Base de Dados ainda.", style = MaterialTheme.typography.bodyMedium)
+                Text("Nenhuma máquina em Base de Dados.", style = MaterialTheme.typography.bodyMedium)
             }
             return@Scaffold
         }

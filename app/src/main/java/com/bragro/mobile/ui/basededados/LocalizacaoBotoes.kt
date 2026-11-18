@@ -64,7 +64,7 @@ fun LocalizacaoBotoes(onLocal: (String) -> Unit, onAviso: (String) -> Unit = {})
         else onLocal("%.4f, %.4f".format(java.util.Locale.US, loc.latitude, loc.longitude))
     }
     val permissao = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
-        if (ok) pegar() else onAviso("Libere a localização para o BRAgro nas configurações do celular.")
+        if (ok) pegar() else onAviso("Libere a localização nas configurações.")
     }
 
     Row {

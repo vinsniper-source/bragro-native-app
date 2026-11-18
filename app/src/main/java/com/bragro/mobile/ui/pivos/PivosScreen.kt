@@ -416,7 +416,7 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                 }
                 pivos.isEmpty() -> {
                     item(key = "vazio") {
-                        Text("Nenhum pivô cadastrado ainda. Toque no botão para adicionar.", modifier = Modifier.padding(vertical = 12.dp))
+                        Text("Nenhum pivô. Toque para adicionar.", modifier = Modifier.padding(vertical = 12.dp))
                     }
                     item(key = "exemplo") {
                         // Card de exemplo (fictício, sem ação) -- mostra o layout antes do primeiro cadastro.
@@ -481,7 +481,7 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                             )
                         }
                         Text(
-                            "Água por dia: lâmina do pivô + chuva. Não calcula a necessidade da cultura.",
+                            "Lâmina + chuva por dia. Não calcula a necessidade.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -847,7 +847,7 @@ private fun ControleDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    "Só registra o estado desejado. Ainda não liga o pivô de verdade.",
+                    "Só registra. Não liga o pivô.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

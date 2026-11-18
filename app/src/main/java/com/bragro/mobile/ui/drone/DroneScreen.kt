@@ -143,7 +143,7 @@ class DroneViewModel(app: Application) : AndroidViewModel(app) {
         integrationMessage.value = null
         viewModelScope.launch {
             val ok = integrationRepository.save(provedor, apiKey)
-            integrationMessage.value = if (ok) "Credencial salva." else "Falha ao salvar credencial. Confira a conexão e tente de novo."
+            integrationMessage.value = if (ok) "Credencial salva." else "Falha ao salvar. Confira a conexão."
             if (ok) integration.value = integrationRepository.get()
             integrationBusy.value = null
         }
@@ -158,7 +158,7 @@ class DroneViewModel(app: Application) : AndroidViewModel(app) {
                 integration.value = integrationRepository.get()
                 integrationMessage.value = "Integração desconectada."
             } else {
-                integrationMessage.value = "Falha ao desconectar. Confira a conexão e tente de novo."
+                integrationMessage.value = "Falha ao desconectar. Confira a conexão."
             }
             integrationBusy.value = null
         }
@@ -193,7 +193,7 @@ class DroneViewModel(app: Application) : AndroidViewModel(app) {
             val uploaded = uploadRepository.upload(fileBytes, fileName, mimeType, talhao)
             if (uploaded == null) {
                 saving.value = false
-                errorMessage.value = "Falha ao subir o arquivo. Confira a conexão e tente de novo."
+                errorMessage.value = "Falha ao subir o arquivo. Confira a conexão."
                 onDone(false)
                 return@launch
             }
@@ -398,7 +398,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                 Column(modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
                     ProviderIntegrationCard(
                         providers = listOf("DJI Cloud", "DJI Terra", "Outro", "Pix4Dfields", "XAG One"),
-                        descricao = "Lançamento manual por enquanto. A conexão automática depende de parceria com o fabricante.",
+                        descricao = "Lançamento manual. Automático depende do fabricante.",
                         integration = integration,
                         busy = integrationBusy,
                         syncMessage = integrationMessage,

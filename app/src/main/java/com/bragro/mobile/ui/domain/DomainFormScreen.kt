@@ -597,7 +597,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             val result = ModuleActionsRepository(getApplication()).run("clima-hoje")
             climaHojeBusy.value = false
             if (result == null) {
-                errorMessage.value = "Não foi possível buscar o clima de hoje agora. Tente novamente."
+                errorMessage.value = "Clima indisponível. Tente de novo."
                 return@launch
             }
             fun str(key: String): String? = (result[key] as? JsonPrimitive)?.contentOrNull
@@ -638,7 +638,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
     fun save(domainId: String, recordId: String?, onDone: () -> Unit) {
         val missingLabels = validateRequired()
         if (missingLabels.isNotEmpty()) {
-            errorMessage.value = "Preencha os campos obrigatórios: ${missingLabels.joinToString(", ")}."
+            errorMessage.value = "Obrigatórios: ${missingLabels.joinToString(", ")}."
             return
         }
         saving.value = true
@@ -1555,7 +1555,7 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                                 query = optLabel
                             } catch (e: Exception) {
                                 com.bragro.mobile.data.AppLog.e("DomainFormScreen", "Erro ao selecionar valor em ${col.key}", e)
-                                viewModel.errorMessage.value = "Não foi possível selecionar este valor. Tente novamente."
+                                viewModel.errorMessage.value = "Falha ao selecionar. Tente de novo."
                             }
                             expanded = false
                         })
@@ -1714,7 +1714,7 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
     if (viewModel.domainId == "estoque" && col.key == "inicial") {
         viewModel.inicialJaLancadoEm?.let { d ->
             Text(
-                "🔒 Saldo inicial deste item já lançado em ${d.split("-").reversed().joinToString("/")}. Para corrigir, edite aquele lançamento.",
+                "🔒 Saldo inicial já lançado em ${d.split("-").reversed().joinToString("/")}. Edite aquele lançamento.",
                 style = MaterialTheme.typography.bodySmall,
                 color = corAtencao(),
             )

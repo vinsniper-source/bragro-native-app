@@ -59,7 +59,7 @@ fun CertificadoDigitalCard(modifier: Modifier = Modifier) {
                 validade = isoDateToBr(cfg.certificadoDigitalValidade.orEmpty())
                 carregado = true
             } else {
-                mensagem = "Não foi possível carregar o certificado. Verifique a conexão."
+                mensagem = "Falha ao carregar o certificado. Confira a conexão."
             }
         }
     }
@@ -129,7 +129,7 @@ fun CertificadoDigitalCard(modifier: Modifier = Modifier) {
                                 validade = isoDateToBr(saved.certificadoDigitalValidade.orEmpty())
                                 mensagem = "Certificado salvo."
                             } else {
-                                mensagem = "Não foi possível salvar. Confira a data (DD/MM/AAAA) e a conexão."
+                                mensagem = "Falha ao salvar. Confira a data (DD/MM/AAAA)."
                             }
                         }
                     },

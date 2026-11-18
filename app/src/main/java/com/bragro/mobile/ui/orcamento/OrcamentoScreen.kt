@@ -226,9 +226,9 @@ class OrcamentoViewModel(app: Application) : AndroidViewModel(app) {
             if (resultado?.ok == true && resultado.campos != null) {
                 resultado.campos.requisicao?.let { if (it.isNotBlank()) requisicao = it }
                 resultado.campos.autorizadoPorNomeLido?.let { if (it.isNotBlank()) autorizadoPorNome = it }
-                ocrMensagemRequisicao.value = "Campos pré-preenchidos automaticamente. Confira antes de lançar."
+                ocrMensagemRequisicao.value = "Pré-preenchido. Confira antes de lançar."
             } else {
-                ocrMensagemRequisicao.value = "Foto enviada, mas não foi possível ler automaticamente. Preencha manualmente."
+                ocrMensagemRequisicao.value = "Não deu para ler a foto. Preencha à mão."
             }
         }
     }
@@ -265,9 +265,9 @@ class OrcamentoViewModel(app: Application) : AndroidViewModel(app) {
                     linha.fazendaId = lido.fazendaIdSugerido ?: encontrarFazendaPorNome(farms.value, lido.fazendaNomeLido)
                     linhas.add(linha)
                 }
-                ocrMensagemItens.value = "${itensLidos.size} item(ns) lido(s) automaticamente. Confira antes de lançar."
+                ocrMensagemItens.value = "${itensLidos.size} item(ns) lido(s). Confira."
             } else {
-                ocrMensagemItens.value = "Foto enviada, mas não foi possível ler os itens. Preencha manualmente."
+                ocrMensagemItens.value = "Não deu para ler os itens. Preencha à mão."
             }
         }
     }
@@ -319,7 +319,7 @@ class OrcamentoViewModel(app: Application) : AndroidViewModel(app) {
     // o motivo nem oferecer alternativa. Agora avisa e deixa claro que dá
     // pra lançar sem foto, mesmo padrão de Romaneio/Pragas.
     fun onPhotoCancelled() {
-        ocrMensagemRequisicao.value = "Nenhuma foto capturada. Você pode lançar sem foto ou tentar de novo."
+        ocrMensagemRequisicao.value = "Nenhuma foto. Lance sem foto ou tente de novo."
     }
 
     /** "Copiar último registro" -- busca o último Orçamento lançado no
@@ -710,7 +710,7 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
         ) {
             item {
                 Text(
-                    "Fica pendente até a nota fiscal chegar e ser conciliada em Financeiro.",
+                    "Pendente até a nota ser conciliada no Financeiro.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -755,7 +755,7 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                     }
                     if (cameraPermanentementeNegada) {
                         Text(
-                            "Permissão da câmera bloqueada pelo sistema. Toque abaixo para liberar em Configurações.",
+                            "Câmera bloqueada. Toque abaixo para liberar.",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.error,
                         )

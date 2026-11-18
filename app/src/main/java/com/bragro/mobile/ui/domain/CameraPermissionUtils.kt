@@ -75,7 +75,7 @@ fun temAppDeCameraDisponivel(context: Context): Boolean {
 }
 
 fun avisarSemAppDeCamera(context: Context) {
-    Toast.makeText(context, "Nenhum app de câmera encontrado neste aparelho. Verifique se há um app de câmera instalado e habilitado.", Toast.LENGTH_LONG).show()
+    Toast.makeText(context, "Nenhum app de câmera no aparelho.", Toast.LENGTH_LONG).show()
 }
 
 // v78 -- iniciarLeitorQrNativo (tela pronta do Google Play Services) saiu:

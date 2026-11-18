@@ -634,7 +634,7 @@ fun FinanceiroScreen(
                         }
                         if (offline) {
                             Text(
-                                "Sem conexão. Não foi possível verificar se há registros salvos no servidor.",
+                                "Sem conexão. Não deu para checar o servidor.",
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.padding(horizontal = 24.dp),
                             )

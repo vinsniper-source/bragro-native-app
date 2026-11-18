@@ -87,13 +87,13 @@ fun AgrofitAviso(config: AgrofitConfig, produto: String?, fields: Map<String, St
             ok = false
             tituloForte = "Registro ${p.situacao.lowercase()} no MAPA"
             tituloResto = " · $classe"
-            meta = "${p.marca} · registro nº ${p.registro}. Confira com o agrônomo antes de usar."
+            meta = "${p.marca} · reg. ${p.registro}. Confira com o agrônomo."
         }
         d.registradoNaCultura == false -> {
             ok = false
             tituloForte = "Sem registro no MAPA para ${d.cultura.orEmpty()}"
             tituloResto = ""
-            meta = "Registrado para: ${listaCurta(p.culturas, 6)}. Confira com o agrônomo antes de aplicar."
+            meta = "Registrado para: ${listaCurta(p.culturas, 6)}. Confira com o agrônomo."
         }
         d.registradoNaCultura == true -> {
             ok = true
@@ -172,7 +172,7 @@ fun GuiaPraga(cultura: String?, alvo: String?) {
     val produtos = (d["produtos"] as? kotlinx.serialization.json.JsonArray)?.mapNotNull { it as? kotlinx.serialization.json.JsonObject }.orEmpty()
     if (produtos.isEmpty()) {
         Text(
-            "Nenhum produto do Agrofit para esse alvo nessa cultura (ou o nome do alvo está diferente do oficial).",
+            "Nenhum produto do Agrofit para esse alvo nessa cultura.",
             style = MaterialTheme.typography.labelSmall,
             color = muted,
             modifier = Modifier.padding(top = 4.dp),

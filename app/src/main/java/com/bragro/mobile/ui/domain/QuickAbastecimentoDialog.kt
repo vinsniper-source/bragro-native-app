@@ -146,13 +146,13 @@ class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
                 // v78 -- leitor próprio (ZXing), fora da thread principal.
                 val texto = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { LeitorQr.lerDaFoto(bitmap) }
                 if (texto == null) {
-                    qrMensagem.value = "Nenhum QR Code encontrado na foto. Tente novamente com mais luz e foco."
+                    qrMensagem.value = "Nenhum QR na foto. Tente com mais luz."
                     return@launch
                 }
                 aplicarTextoQrLido(texto)
             } catch (e: Exception) {
                 AppLog.e("QuickAbastecimentoDialog", "Falha ao ler QR Code do abastecimento", e)
-                qrMensagem.value = "Falha ao ler o QR Code. Tente novamente ou escolha manualmente."
+                qrMensagem.value = "Falha ao ler o QR. Tente de novo ou escolha na lista."
             } finally {
                 lendoQr.value = false
             }
@@ -167,7 +167,7 @@ class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
      * [onQrPhotoTaken], só pulando a etapa de decodificar bitmap. */
     fun onQrTextoLidoExterno(texto: String?) {
         if (texto.isNullOrBlank()) {
-            qrMensagem.value = "Nenhum QR Code lido. Tente novamente ou escolha manualmente."
+            qrMensagem.value = "Nenhum QR lido. Tente de novo ou escolha na lista."
             return
         }
         lendoQr.value = true
@@ -209,7 +209,7 @@ class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
             frota = match
             qrMensagem.value = null
         } else {
-            qrMensagem.value = "QR Code lido, mas não corresponde a nenhuma máquina/frota cadastrada."
+            qrMensagem.value = "QR lido, mas sem máquina cadastrada."
         }
     }
 
@@ -220,12 +220,12 @@ class QuickAbastecimentoViewModel(app: Application) : AndroidViewModel(app) {
     /** v83 -- sem permissão de câmera não dá para ler o QR. */
     fun onPermissaoCameraNegada() {
         lendoQr.value = false
-        qrMensagem.value = "Permita o acesso à câmera para ler o QR Code, ou escolha a máquina na lista."
+        qrMensagem.value = "Permita a câmera ou escolha na lista."
     }
 
     fun onQrPhotoCancelled() {
         lendoQr.value = false
-        qrMensagem.value = "Nenhuma foto do QR Code capturada. Tente novamente ou escolha a máquina manualmente."
+        qrMensagem.value = "Nenhuma foto. Tente de novo ou escolha na lista."
     }
 
     fun submit(onDone: (SaveResult) -> Unit) {
@@ -410,14 +410,14 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
                     }
                 }
                 Text(
-                    "O leitor do BRAgro lê o QR direto pela câmera, sem tirar foto.",
+                    "Lê o QR direto pela câmera.",
                     style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
                     color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (qrMensagem != null) Text(qrMensagem ?: "", style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
                 if (cameraPermanentementeNegada) {
                     Text(
-                        "Permissão da câmera bloqueada pelo sistema. Toque abaixo para liberar.",
+                        "Câmera bloqueada. Toque abaixo para liberar.",
                         style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
                         color = androidx.compose.material3.MaterialTheme.colorScheme.error,
                     )

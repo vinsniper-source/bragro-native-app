@@ -90,7 +90,7 @@ fun RecalcularAreaButton(domainId: String, viewModel: ModuleActionButtonViewMode
                 }
             }
             Text(
-                "Recalcula a área do histórico com o cadastro atual das fazendas.",
+                "Recalcula a área com o cadastro atual.",
                 style = MaterialTheme.typography.bodySmall,
             )
             if (message != null) Text(message!!, style = MaterialTheme.typography.bodySmall)
@@ -178,7 +178,7 @@ fun FleetEfficiencyCard(viewModel: FleetEfficiencyViewModel = viewModel()) {
                     val maquinas = data!!["maquinas"]?.jsonArray.orEmpty().mapNotNull { it as? JsonObject }
                     val mediaGeral = data!!["mediaGeral"]?.jsonPrimitive?.doubleOrNull ?: 0.0
                     if (maquinas.isEmpty()) {
-                        Text("Sem abastecimentos suficientes ainda para calcular a eficiência.", style = MaterialTheme.typography.bodySmall)
+                        Text("Poucos abastecimentos para calcular.", style = MaterialTheme.typography.bodySmall)
                     } else {
                         val categories = maquinas.map { it["frota"]?.jsonPrimitive?.content ?: "—" }
                         val values = maquinas.map { it["litrosPorHora"]?.jsonPrimitive?.doubleOrNull ?: 0.0 }

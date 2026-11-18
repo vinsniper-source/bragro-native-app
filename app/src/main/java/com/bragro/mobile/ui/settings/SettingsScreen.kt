@@ -359,7 +359,7 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
                             android.app.DownloadManager.STATUS_FAILED -> {
                                 downloading = false
                                 downloadId = null
-                                android.widget.Toast.makeText(context, "Falha no download. Toque em Baixar para tentar de novo.", android.widget.Toast.LENGTH_LONG).show()
+                                android.widget.Toast.makeText(context, "Falha no download. Toque em Baixar.", android.widget.Toast.LENGTH_LONG).show()
                                 return@LaunchedEffect
                             }
                         }
@@ -402,7 +402,7 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
         )
         if (!versaoServidor.isNullOrBlank() && versaoServidor != instalada) {
             Text(
-                "Desatualizado. A versão mais recente publicada é $versaoServidor. Baixe e instale abaixo, e desinstale o app antigo antes.",
+                "Versão $versaoServidor disponível. Desinstale a antiga e instale abaixo.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(top = 2.dp),
@@ -442,7 +442,7 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
                         Text(notas, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 2.dp))
                     }
                     Text(
-                        if (downloading) "Baixando... você recebe uma notificação quando terminar." else "Toque em Baixar (fora da Play Store, pode pedir para permitir \"fontes desconhecidas\").",
+                        if (downloading) "Baixando. Você será avisado ao terminar." else "Toque em Baixar (pode pedir \"fontes desconhecidas\").",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 4.dp),
@@ -515,12 +515,12 @@ private fun SegurancaAppCard() {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
             Column(Modifier.weight(1f)) {
                 Text("Esconder Financeiro e Pix em prints", style = MaterialTheme.typography.bodyMedium)
-                Text("A tela fica preta em prints e na lista de apps abertos.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Tela preta em prints e apps recentes.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Switch(checked = prints, onCheckedChange = { prints = it; S.setEsconderPrints(context, it) })
         }
         Text(
-            "A sessão fica criptografada neste celular e nada do app vai para backup. Aparelhos conectados, 2 etapas e seus dados ficam no site, em Meus dados e aparelhos.",
+            "Sessão criptografada, sem backup. Aparelhos e 2 etapas: no site, em Meus dados.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp),
@@ -532,15 +532,15 @@ private fun SegurancaAppCard() {
 private fun AppMobileIosCard() {
     CollapsibleCard("Aplicativo mobile (iPhone/iPad)", icon = { Icon(Icons.Outlined.Smartphone, contentDescription = null) }) {
         Text(
-            "O iOS não permite instalar um arquivo baixado como app — a Apple só libera isso pela App Store. O caminho que funciona sem custo, direto pelo Safari:",
+            "No iPhone, instale pelo Safari:",
             style = MaterialTheme.typography.bodySmall,
         )
         Column(modifier = Modifier.padding(top = 8.dp)) {
             listOf(
-                "Abra o sistema no Safari (precisa ser o Safari. Outros navegadores no iPhone não mostram essa opção).",
+                "Abra no Safari (outros navegadores não mostram a opção).",
                 "Toque no ícone de Compartilhar, na barra inferior.",
                 "Role a lista e toque em \"Adicionar à Tela de Início\".",
-                "Toque em Adicionar. O ícone aparece na tela como um app, com uso offline.",
+                "Toque em Adicionar. Vira um app, com uso offline.",
             ).forEachIndexed { i, step ->
                 Row(modifier = Modifier.padding(top = if (i == 0) 0.dp else 6.dp)) {
                     Text("${i + 1}.", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.padding(end = 6.dp))
@@ -605,7 +605,7 @@ private fun AssinaturaCard(org: JsonObject?, stripeAtivo: Boolean, onCheckout: (
             )
         } else {
             Text(
-                "Cobrança automática ainda não ativada. As faturas são lançadas pelo suporte.",
+                "Faturas lançadas pelo suporte.",
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 8.dp),
             )
@@ -641,7 +641,7 @@ private fun NotificacoesCard(
 
     CollapsibleCard("Notificações automáticas") {
         Text(
-            "Revisão de frota, romaneios do dia e estoque mínimo. Telegram e WhatsApp são opcionais.",
+            "Frota, romaneios do dia e estoque mínimo. Telegram e WhatsApp opcionais.",
             style = MaterialTheme.typography.bodySmall,
         )
 
@@ -649,7 +649,7 @@ private fun NotificacoesCard(
             CheckboxRow("Manutenção de frota", frotaManutencao) { frotaManutencao = it }
             CheckboxRow("Fechamento diário de Romaneios", romaneioDiario) { romaneioDiario = it }
             CheckboxRow("Itens de Estoque abaixo do mínimo", estoqueMinimo) { estoqueMinimo = it }
-            CheckboxRow("Clima da fazenda (alerta do INMET, risco de geada e janela de pulverização de amanhã)", clima) { clima = it }
+            CheckboxRow("Clima (INMET, geada e janela de pulverização)", clima) { clima = it }
         }
 
         Column(modifier = Modifier.padding(top = 12.dp)) {

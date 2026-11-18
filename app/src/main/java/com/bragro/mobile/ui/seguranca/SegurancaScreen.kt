@@ -596,8 +596,8 @@ private fun EquipeCard(
                 RoleDropdown(selected = inviteRole) { inviteRole = it }
                 Text("Como entregar o acesso", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 8.dp))
                 listOf(
-                    Triple("senha", "Criar com senha provisória", "Você define a senha e entrega à pessoa. Ela troca no primeiro login."),
-                    Triple("convite", "Enviar convite por email", "A pessoa cria a senha pelo link. Precisa de um email real."),
+                    Triple("senha", "Criar com senha provisória", "Você define a senha; a pessoa troca no 1º login."),
+                    Triple("convite", "Enviar convite por email", "A pessoa cria a senha pelo link (email real)."),
                 ).forEach { (mid, titulo, dica) ->
                     Row(
                         verticalAlignment = Alignment.Top,
@@ -653,7 +653,7 @@ private fun NovaSenhaDialog(email: String, busy: Boolean, onDismiss: () -> Unit,
                     modifier = Modifier.fillMaxWidth(), singleLine = true, colors = appFieldColors(),
                     visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
                 )
-                Text("Mínimo de 8 caracteres. A pessoa troca no próximo login.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Mín. 8 caracteres. Troca no próximo login.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (erro != null) Text(erro!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             }
         },

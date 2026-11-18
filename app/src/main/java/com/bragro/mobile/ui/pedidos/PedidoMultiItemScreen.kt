@@ -292,7 +292,7 @@ class PedidoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
                 return@launch
             }
             successMessage.value = if (resultado.savedOffline) {
-                "Pedido ${noPedido.trim()} salvo no aparelho (${validas.size} item(ns)). Envia quando a internet voltar."
+                "Pedido ${noPedido.trim()} salvo (${validas.size} item(ns)). Envia quando houver internet."
             } else {
                 "${resultado.count ?: validas.size} item(ns) lançado(s) no pedido ${noPedido.trim()}."
             }
@@ -495,7 +495,7 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                 // entrada em Estoque automaticamente) continua valendo, só a
                 // explicação ficou mais curta.
                 Text(
-                    "Qtd. entregue já lança automaticamente como entrada em Estoque.",
+                    "Qtd. entregue já entra no Estoque.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
