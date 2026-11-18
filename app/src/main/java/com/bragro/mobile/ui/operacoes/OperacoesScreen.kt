@@ -272,8 +272,10 @@ private val GRUPOS_ATIVIDADE = listOf(
 private val NOME_ATIVIDADE = mapOf(
     "AMOSTRAGEM SOLO" to "Amostragem e análise de solo",
     "AMOSTRAGEM" to "Ponto de maturação (amostragem)",
+    "AMOSTRAGEM GRÃOS" to "Ponto de maturação (amostragem)",
     "TRAT. SEMENTES" to "Tratamento de sementes",
     "TRATAMENTO" to "Tratamento de sulco",
+    "TRATAMENTO DE SULCO" to "Tratamento de sulco",
     "MONITOR. PRAGAS" to "Monitoramento de pragas",
 )
 private fun tituloAtividade(op: String): String = NOME_ATIVIDADE[op] ?: (op.take(1) + op.drop(1).lowercase(PT_BR))

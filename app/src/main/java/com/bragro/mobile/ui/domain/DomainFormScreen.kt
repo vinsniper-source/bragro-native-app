@@ -480,6 +480,8 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
         ?.takeIf { it.isString }?.content
 
     fun isVisible(col: ColumnConfig): Boolean {
+        // v232 -- lista que não se aplica à Operação/Categoria escolhida some.
+        if (col.type == "select" && sugestaoVazia(col)) return false
         // v204 (mockup aprovado) -- Atividades: Produtividade e Custo/sc-ton só na
         // COLHEITA (também somem com a Operação ainda vazia), igual à plataforma.
         if (domainId == "safra" && (col.key == "produtividadeScTon" || col.key == "custoScTon") && fields["operacao"] != "COLHEITA") return false
@@ -545,25 +547,32 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
     private fun normSug(s: String): String =
         java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD).replace(Regex("\\p{Mn}+"), "").trim().uppercase()
 
-    /** v64 -- mesma regra de filtrarSugeridas (record-form.tsx): com o
-     * campo-pai preenchido, mostra só as opções que combinam com ele e deixa
-     * "Mostrar todas (N)" no fim. */
-    private fun filtrarSugeridas(col: ColumnConfig, todas: List<LookupEntity>): List<LookupEntity> {
-        if (col.sugeridoPor.isEmpty() || col.key in mostrarTodas.value) return todas
-        val porPai = sugestoes.value[col.key] ?: return todas
-        val permitidas = mutableSetOf<String>()
-        var achou = false
+    /** v232 (v229/v230) -- mesma regra do site (record-form.tsx): com o
+     * campo-pai escolhido, a tabela padrão manda e a lista mostra só o que
+     * combina (sem "Mostrar todas"). Lista vazia = campo não se aplica (some).
+     * `valor` permite usar os valores de um item extra (Item 2, 3...). */
+    private fun listaSugerida(col: ColumnConfig, valor: (String) -> String?): Set<String>? {
+        if (col.sugeridoPor.isEmpty()) return null
+        val porPai = sugestoes.value[col.key] ?: return null
+        var permitidas: MutableSet<String>? = null
         for (pai in col.sugeridoPor) {
-            val vp = fields[pai]?.takeIf { it.isNotBlank() } ?: continue
-            val lista = porPai[pai]?.get(normSug(vp))
-            if (!lista.isNullOrEmpty()) { achou = true; lista.forEach { permitidas.add(normSug(it)) } }
+            val vp = valor(pai)?.takeIf { it.isNotBlank() } ?: continue
+            val lista = porPai[pai]?.get(normSug(vp)) ?: continue
+            val set = permitidas ?: mutableSetOf<String>().also { permitidas = it }
+            lista.forEach { set.add(normSug(it)) }
         }
-        if (!achou) return todas
-        val atual = fields[col.key]
+        return permitidas
+    }
+
+    fun sugestaoVazia(col: ColumnConfig, valor: (String) -> String? = { fields[it] }): Boolean =
+        listaSugerida(col, valor)?.isEmpty() == true
+
+    fun filtrarSugeridas(col: ColumnConfig, todas: List<LookupEntity>, valor: (String) -> String? = { fields[it] }): List<LookupEntity> {
+        val permitidas = listaSugerida(col, valor) ?: return todas
+        if (permitidas.isEmpty()) return emptyList()
+        val atual = valor(col.key)
         val filtradas = todas.filter { normSug(it.value) in permitidas || it.value == atual }
-        if (filtradas.isEmpty() || filtradas.size >= todas.size) return todas
-        val cat = todas.firstOrNull()?.category ?: ""
-        return filtradas + LookupEntity(cat, OPCAO_TODAS, "Mostrar todas (${todas.size})", Int.MAX_VALUE)
+        return filtradas.ifEmpty { todas }
     }
 
     /** Preenche todos os campos (exceto computados) com os valores do
@@ -1800,10 +1809,12 @@ private fun ItensExtrasSection(
                         }
                     }
                     androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
-                    sel.forEach { (k, rotulo) ->
+                    // v232 -- itens extras filtram pela Operação/Categoria/Subcategoria, igual ao Item 1.
+                    val valorItem: (String) -> String? = { key -> x[key]?.takeIf { it.isNotBlank() } ?: viewModel.fields[key] }
+                    sel.filter { (k, _) -> !viewModel.sugestaoVazia(porChave.getValue(k), valorItem) }.forEach { (k, rotulo) ->
                         val c = porChave.getValue(k)
                         val cat = c.dependsOn?.let { d -> c.lookupCategoryByValue?.get(x[d] ?: "") } ?: c.lookupCategory
-                        val opts = (c.staticOptions?.map { it to it } ?: lookups[cat].orEmpty().map { it.value to it.label })
+                        val opts = (c.staticOptions?.map { it to it } ?: viewModel.filtrarSugeridas(c, lookups[cat].orEmpty(), valorItem).map { it.value to it.label })
                             .sortedBy { it.second.lowercase() }
                         com.bragro.mobile.ui.theme.NomeAoLado(rotulo) {
                             androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.theme.LocalCampoLista provides true) {
