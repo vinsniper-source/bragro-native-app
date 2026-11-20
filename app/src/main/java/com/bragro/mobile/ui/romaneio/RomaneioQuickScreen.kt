@@ -474,6 +474,7 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
                 // aplicado em Cotações/Pedidos (ver preencherComUltimo
                 // acima no ViewModel).
                 actions = {
+                    com.bragro.mobile.ui.domain.SalvarTopo(onClick = { viewModel.submit() }, enabled = !savedOk, loading = saving, descricao = "Lançar")
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
@@ -584,16 +585,7 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
                     }
                 }
             }
-            item {
-                Button(
-                    onClick = { viewModel.submit() },
-                    enabled = !saving && !savedOk,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    if (saving) CircularProgressIndicator(modifier = Modifier.padding(4.dp))
-                    else Text("Lançar")
-                }
-            }
+            // v1.6.59 -- botão do final virou ✓ na linha do título.
         }
     }
         }

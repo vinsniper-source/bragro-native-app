@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
@@ -875,6 +876,16 @@ fun DomainFormScreen(
                     }
                 } },
                 actions = {
+                    // v1.6.59 (site v302/v305) -- Salvar vira ✓ verde na
+                    // linha do título (único ícone verde).
+                    if (config != null) Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        val nExtrasTopo = MULTI_ITEM_FORM[domainId]?.let { m -> viewModel.itensExtras.count { !it[m.chaveItem].isNullOrBlank() } } ?: 0
+                        IconButton(onClick = { if (!saving) viewModel.save(domainId, recordId, onSaved) }) {
+                            if (saving) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            else com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Check, contentDescription = if (recordId == null && nExtrasTopo > 0) "Salvar (${nExtrasTopo + 1} itens)" else "Salvar", tint = MaterialTheme.colorScheme.primary, size = 26.dp)
+                        }
+                    }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
@@ -1223,17 +1234,8 @@ fun DomainFormScreen(
                 Text(offlineNotice!!, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.padding(top = 8.dp))
             }
 
+            // v1.6.59 -- botão Salvar do final virou ✓ na linha do título.
             androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 16.dp))
-            // v260 (mockup v255, item 1) -- botão verde do final à direita.
-            androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-            Button(
-                onClick = { viewModel.save(domainId, recordId, onSaved) },
-                enabled = !saving,
-            ) {
-                val nExtras = MULTI_ITEM_FORM[domainId]?.let { m -> viewModel.itensExtras.count { !it[m.chaveItem].isNullOrBlank() } } ?: 0
-                if (saving) CircularProgressIndicator(modifier = Modifier.padding(2.dp)) else Text(if (recordId == null && nExtras > 0) "Salvar (${nExtras + 1} itens)" else "Salvar")
-            }
-            }
         }
     }
         }

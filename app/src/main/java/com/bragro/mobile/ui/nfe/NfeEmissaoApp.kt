@@ -3,6 +3,7 @@ package com.bragro.mobile.ui.nfe
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -325,7 +326,19 @@ internal fun AcoesNotaNativaDialog(
         title = { Text("${if (nfce) "NFC-e" else "NF-e"} Nº ${inv.numero}") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                inv.chaveAcesso?.let { Text(it.chunked(4).joinToString(" "), style = MaterialTheme.typography.labelSmall) }
+                inv.chaveAcesso?.let { chave ->
+                    // v1.6.59 (site v302) -- copiar a chave de acesso.
+                    val ctxCopia = androidx.compose.ui.platform.LocalContext.current
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Text(chave.chunked(4).joinToString(" "), style = MaterialTheme.typography.labelSmall, modifier = Modifier.weight(1f))
+                        androidx.compose.material3.IconButton(onClick = {
+                            ctxCopia.getSystemService(android.content.ClipboardManager::class.java)?.setPrimaryClip(android.content.ClipData.newPlainText("Chave de acesso", chave))
+                            android.widget.Toast.makeText(ctxCopia, "Chave copiada", android.widget.Toast.LENGTH_SHORT).show()
+                        }, modifier = Modifier.size(32.dp)) {
+                            androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.ContentCopy, contentDescription = "Copiar chave de acesso", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(18.dp))
+                        }
+                    }
+                }
                 if (acao == null) {
                     OutlinedButton(onClick = onDanfe, enabled = !pending, modifier = Modifier.fillMaxWidth()) { Text(if (nfce) "DANFE NFC-e (PDF)" else "DANFE (PDF)") }
                     OutlinedButton(onClick = onXml, enabled = !pending, modifier = Modifier.fillMaxWidth()) { Text("XML") }

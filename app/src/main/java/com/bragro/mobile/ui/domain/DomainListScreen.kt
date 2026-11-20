@@ -1583,8 +1583,13 @@ fun DomainListScreen(
             }
             if (filteredRecords.isEmpty()) {
                 item(key = "empty") {
-                    val msg = if (records.isEmpty()) "Nada ainda. Toque em + para adicionar." else "Nenhum registro neste período."
-                    Text(msg, modifier = Modifier.padding(vertical = 24.dp))
+                    // v1.6.59 (site v286) -- tela vazia com um convite só: "+" e uma frase.
+                    val vazio = records.isEmpty()
+                    Column(Modifier.fillMaxWidth().padding(vertical = 40.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        if (vazio) Icon(Icons.Outlined.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                        Text(if (vazio) "Nenhum lançamento ainda" else "Nenhum registro neste período", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
+                        if (vazio) Text("Toque no + para lançar o primeiro.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             } else if (allExpanded) {
                 // Agrupamento visual de Safra (Safra+Cultura+Local+Operação
@@ -1703,7 +1708,7 @@ fun DomainListScreen(
                         val doGrupo = listaCards.filterIndexed { i, _ -> chavesFull[i] == chaveGrupo }
                         val onde = listOf("local", "fazenda", "talhao").firstNotNullOfOrNull { k ->
                             doGrupo.mapNotNull { it[k]?.takeIf { v -> v.isNotBlank() } }.distinct().takeIf { it.isNotEmpty() }
-                        }?.let { l -> l.take(2).joinToString(", ") + if (l.size > 2) " +${l.size - 2}" else "" }
+                        }?.let { l -> l.take(2).joinToString(", ") { exibirTexto(it, true) } + if (l.size > 2) " +${l.size - 2}" else "" }
                         val total = medidaGrupo?.let { m ->
                             val soma = doGrupo.sumOf { painelNum(it[m.key]) }
                             if (soma == 0.0) null else if (m.money) fmtMoeda(soma) else java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 1 }.format(soma)
@@ -1711,7 +1716,7 @@ fun DomainListScreen(
                         val pendGrupo = doGrupo.count { statusPendente(it["status"]) }
                         Column {
                         CartaoGrupo(
-                            titulo = tituloChave(chaveGrupo),
+                            titulo = exibirSegmentos(tituloChave(chaveGrupo)),
                             qtd = qtdGrupo,
                             onde = onde,
                             total = total,
@@ -2394,7 +2399,7 @@ private fun RecordFieldLine(
     } else if (col.type == "checkbox" || col.money || col.type == "select" || col.type == "number") {
         // Destaque genérico por tipo de campo (padrão aprovado "imagem 2").
         // Se nenhuma regra casar, cai no texto simples de sempre.
-        val displayValue = if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)
+        val displayValue = if (col.money) formatMoneyValue(value) else displayValueLista(col.key, value, col.type)
         // v39 -- mesma regra dos demais campos: valor ao lado do rótulo se
         // couber inteiro, senão na linha de baixo a partir da margem.
         RotuloValorSlot(
@@ -2418,7 +2423,7 @@ private fun RecordFieldPlain(
     domainId: String,
 ) {
     run {
-        val displayValue = if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)
+        val displayValue = if (col.money) formatMoneyValue(value) else displayValueLista(col.key, value, col.type)
         // Verde (receita) / laranja-âmbar (despesa) só nas colunas Bruto/
         // Liquido do Financeiro -- pedido do usuário sobre a cor da fonte dos
         // valores (mesmo critério de FinanceiroFieldLine/RecordTable).
@@ -2626,7 +2631,7 @@ private fun GrausDiaCard(dados: kotlinx.serialization.json.JsonObject?) {
                         Text("plantio ${dm(plantio)} · ${l.txt("diasDesdePlantio") ?: "—"} dias · base ${l.txt("tBase") ?: "—"} °C", style = MaterialTheme.typography.labelSmall, color = muted)
                     }
                     Column(horizontalAlignment = Alignment.End) {
-                        Text(if (diasDado > 0) "${l.txt("grausDia")} graus-dia" else "—", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                        Text(if (diasDado > 0) "${l.txt("grausDia")} °C-dia" else "—", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
                         Text(
                             "chuva ${l.txt("chuvaMm") ?: "0"} mm · " + if (l.txt("chuvaFonte") == "pluviometro") "pluviômetro" else "estimada",
                             style = MaterialTheme.typography.labelSmall,

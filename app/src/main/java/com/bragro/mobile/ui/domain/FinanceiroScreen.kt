@@ -956,7 +956,7 @@ private fun FinanceiroFieldLine(col: com.bragro.mobile.data.model.ColumnConfig, 
             } else if (col.key == "itensNf" || (value.trim().startsWith("[") && col.key.contains("itens", ignoreCase = true))) {
                 formatItensNf(value)
             } else {
-                displayValueFor(col.key, value, col.type)
+                displayValueLista(col.key, value, col.type)
             }
             // Mesmo critério do módulo genérico: negrito só no valor
             // preenchido, cabeçalho normal -- "vcto" (isFinanceiroBoldColumn)

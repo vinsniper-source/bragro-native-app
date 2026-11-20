@@ -224,7 +224,7 @@ private fun RecordTableCellValue(col: ColumnConfig, value: String, record: Map<S
         progress != null -> DomainProgressCell(col.label, progress)
         isStatusLikeColumn(col.key) -> StatusBadge(value)
         else -> {
-            val displayValue = if (col.money) formatMoneyValue(value) else displayValueFor(col.key, value, col.type)
+            val displayValue = if (col.money) formatMoneyValue(value) else displayValueLista(col.key, value, col.type)
             // Verde (receita) / laranja-âmbar (despesa) só nas colunas Bruto/
             // Liquido do Financeiro -- pedido do usuário sobre a cor da fonte
             // dos valores (mesmo critério de FinanceiroFieldLine).

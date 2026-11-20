@@ -1237,7 +1237,7 @@ fun HomeScreen(
                 // aparecer abaixo do filete, pra ficar parecido com o
                 // respiro deixado acima dele.
                 var destaquesAberto by remember { mutableStateOf(false) }
-                val showDestaques = data.hasWidget("inicio.destaques")
+                val showDestaques = false // v1.6.59 (site v295) -- sem Destaques
                 Column(modifier = Modifier.offset(y = 0.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -1447,9 +1447,7 @@ fun HomeScreen(
             // Card, menos largura disponível) e os rótulos cortavam
             // ("Itens no e...", "Operaç...", "Colabor..."). Volta a ser
             // seção própria, largura cheia.
-            if (data.hasWidget("inicio.kpis")) {
-            item(key = "kpis") { KpiGrid(data) }
-            }
+            // v1.6.59 (site v295) -- Início sem indicadores/Destaques.
             // Indicador "barra segmentada por categoria" por setor -- réplica do
             // dashboard web (dashboard-breakdown.ts/category-breakdown-card.tsx),
             // pedido do usuário ("replique o que ainda falta da plataforma no
@@ -1539,6 +1537,12 @@ fun HomeScreen(
                     ClimaCard(clima!!, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth())
                 }
             }
+            // v1.6.59 (site v295) -- Grãos logo depois do Clima; Câmbio e Pecuária em seguida.
+            if (!com.bragro.mobile.ui.i18n.Idioma.argentina && data.hasWidget("inicio.cotacoes")) {
+            item(key = "cotacoes") {
+                weather?.commodities?.let { CotacoesCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth(), suaMedia = viewModel.suaMedia.value, mostrarSuaMedia = viewModel.suaMediaCarregada.value, historico = viewModel.historicoCotacoes.value, custoSaca = viewModel.custoSaca.value) }
+            }
+            }
             // Câmbio ocupa a largura inteira (até a margem); Destaques virou a
             // estrela amarela na linha da saudação (ver item "greeting").
             if (showCambio) {
@@ -1562,22 +1566,12 @@ fun HomeScreen(
             // fica no set de widgets liberados pra quem tem safra/colheita/
             // planejamentosafra (ver MODULE_TO_INICIO_KPI, lib/permissions.
             // ts) -- como proxy do setor Safra, sem precisar de um id novo.
-            if (data.hasWidget("inicio.kpi.safra")) {
-            item(key = "fazendas") {
-                KpiCard(fazendasKpi(data), modifier = Modifier.fillMaxWidth())
-            }
-            }
             // Cotações Grãos agora ocupa a linha inteira, até o limite da
             // tela -- pedido do usuário ("expanda kpi cotações grãos até o
             // limite da tela"), separado de Destaques (que foi pro lado de
             // Fazendas cadastradas acima).
             // Pais = Argentina: o card "Mercado de granos y hacienda" (BCR/MAG)
             // substitui as cotacoes brasileiras (Grao Direto / CEPEA).
-            if (!com.bragro.mobile.ui.i18n.Idioma.argentina && data.hasWidget("inicio.cotacoes")) {
-            item(key = "cotacoes") {
-                weather?.commodities?.let { CotacoesCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth(), suaMedia = viewModel.suaMedia.value, mostrarSuaMedia = viewModel.suaMediaCarregada.value, historico = viewModel.historicoCotacoes.value, custoSaca = viewModel.custoSaca.value) }
-            }
-            }
             // Cotações Pecuária (Boi Gordo/CEPEA) -- pedido do usuário
             // ("habilitar API tudo que for relacionado a pecuária, igual foi
             // feito em cotações de grãos, crie bloco separado"). Bloco

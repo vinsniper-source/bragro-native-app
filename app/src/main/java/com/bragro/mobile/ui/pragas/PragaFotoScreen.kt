@@ -476,6 +476,7 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
                 // Ícone Copiar no canto superior direito -- gap encontrado em
                 // auditoria de paridade, mesmo padrão de RomaneioQuickScreen.kt.
                 actions = {
+                    com.bragro.mobile.ui.domain.SalvarTopo(onClick = { viewModel.submit() }, enabled = !savedOk, loading = saving, descricao = "Lançar")
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
@@ -578,18 +579,7 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
                     }
                 }
             }
-            item {
-                // v260 (mockup v255, item 1) -- botão verde do final à direita.
-                androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth(), contentAlignment = androidx.compose.ui.Alignment.CenterEnd) {
-                Button(
-                    onClick = { viewModel.submit() },
-                    enabled = !saving && !savedOk,
-                ) {
-                    if (saving) CircularProgressIndicator(modifier = Modifier.padding(4.dp))
-                    else Text("Lançar")
-                }
-                }
-            }
+            // v1.6.59 -- botão do final virou ✓ na linha do título.
         }
     }
         }

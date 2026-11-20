@@ -663,7 +663,8 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                 
                     }
                 } },
-                actions = { Column {
+                actions = { com.bragro.mobile.ui.domain.SalvarTopo(onClick = { viewModel.submit() }, enabled = successMessage == null && viewModel.podeSalvar(), loading = pending, descricao = "Lançar propostas")
+                    Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
                     } },
@@ -767,16 +768,7 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                     colors = appFieldColors(),
                 )
             }
-            item {
-                Button(
-                    onClick = { viewModel.submit() },
-                    enabled = !pending && viewModel.podeSalvar(),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    if (pending) CircularProgressIndicator(modifier = Modifier.padding(4.dp))
-                    else Text("Lançar ${viewModel.totalPropostasValidas().let { if (it > 0) it else "" }} proposta(s)")
-                }
-            }
+            // v1.6.59 -- botão do final virou ✓ na linha do título.
         }
     }
 }

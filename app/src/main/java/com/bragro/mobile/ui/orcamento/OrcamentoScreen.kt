@@ -662,6 +662,7 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                 // Ícone Copiar no topo -- mesmo padrão de Pedidos/Cotações/
                 // Romaneio Rápido (preencherComUltimo).
                 actions = {
+                    com.bragro.mobile.ui.domain.SalvarTopo(onClick = { viewModel.submit() }, enabled = successMessage == null && viewModel.podeSalvar(), loading = pending, descricao = "Lançar orçamento")
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
@@ -828,16 +829,7 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                     colors = appFieldColors(),
                 )
             }
-            item {
-                Button(
-                    onClick = { viewModel.submit() },
-                    enabled = !pending && viewModel.podeSalvar(),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    if (pending) CircularProgressIndicator(modifier = Modifier.padding(4.dp))
-                    else Text("Lançar orçamento")
-                }
-            }
+            // v1.6.59 -- botão do final virou ✓ na linha do título.
         }
     }
         }

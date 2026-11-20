@@ -704,7 +704,7 @@ private fun OperacaoDetalheCompleto(recordId: String, dominio: String = "safra")
                             StatusBadge(valorCru)
                         }
                     } else {
-                        val valorFormatado = if (col.money) formatMoneyValue(valorCru) else displayValueFor(col.key, valorCru, col.type)
+                        val valorFormatado = if (col.money) formatMoneyValue(valorCru) else com.bragro.mobile.ui.domain.displayValueLista(col.key, valorCru, col.type)
                         // v39 -- o valor desce inteiro quando não cabe ao lado do rótulo.
                         com.bragro.mobile.ui.domain.RotuloValorLinha(
                             rotulo = col.label,

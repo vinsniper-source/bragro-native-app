@@ -188,7 +188,10 @@ fun displayValueFor(key: String, rawValue: String, colType: String? = null): Str
             return NumberFormat.getNumberInstance(PT_BR_MONEY).apply { maximumFractionDigits = 2 }.format(n)
         }
     }
-    return rawValue
+    // v1.6.59 (site v293/v294) -- MAIÚSCULO só na exibição vira iniciais
+    // maiúsculas; status continua cru (StatusBadge compara o texto).
+    if (STATUS_LIKE_KEY.containsMatchIn(key)) return rawValue
+    return exibirTexto(rawValue, ehCampoProprio(key))
 }
 
 private val PT_BR_MONEY = Locale("pt", "BR")
@@ -276,12 +279,10 @@ fun StatusBadge(rawValue: String) {
     val aviso = AVISO_RE.containsMatchIn(displayValue)
     // v1.6.7 (mockup v108, item 7) -- sem abreviação na etiqueta.
     val texto = (if (aviso) displayValue.replace(AVISO_RE, "") else displayValue).let { if (it.trim().equals("PROX VENC", ignoreCase = true)) "VENCE EM BREVE" else it }.replace("ORCAMENT", "ORÇAMENT")
+    // v1.6.59 (site v291) -- só a palavra colorida, sem círculo/fundo,
+    // numa linha, com só a 1ª letra maiúscula.
     androidx.compose.foundation.layout.Row(
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(bg)
-            .padding(horizontal = 10.dp, vertical = 3.dp),
     ) {
         if (aviso) {
             androidx.compose.material3.Icon(
@@ -296,8 +297,8 @@ fun StatusBadge(rawValue: String) {
         val base = MaterialTheme.typography.labelMedium
         val escala = androidx.compose.runtime.remember(texto) { androidx.compose.runtime.mutableFloatStateOf(1f) }
         Text(
-            texto,
-            style = base.copy(fontSize = base.fontSize * escala.floatValue),
+            texto.trim().lowercase(Locale("pt", "BR")).replaceFirstChar { it.titlecase(Locale("pt", "BR")) }.replace(Regex("\\bnf\\b", RegexOption.IGNORE_CASE), "NF"),
+            style = base.copy(fontSize = base.fontSize * escala.floatValue, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
             color = fg,
             maxLines = 1,
             softWrap = false,
@@ -362,7 +363,6 @@ fun FieldHighlight(
                 style = MaterialTheme.typography.bodySmall,
                 color = good.second,
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(good.first).padding(horizontal = 8.dp, vertical = 3.dp),
             )
         } else {
             Text(displayValue, style = MaterialTheme.typography.bodySmall, color = good.second, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
@@ -409,16 +409,12 @@ fun OperacaoBadge(value: String, isReceita: Boolean) {
     }
     // Neutro (preto/branco) -- pedido do usuário: "fontes preto e branco,
     // apenas os status com cores".
-    val bg = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+    // v1.6.59 (site v290) -- sem fundo colorido.
     val fg = MaterialTheme.colorScheme.onSurface
     Text(
-        value,
+        exibirTexto(value),
         style = MaterialTheme.typography.labelMedium,
         color = fg,
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(bg)
-            .padding(horizontal = 10.dp, vertical = 3.dp),
     )
 }
 
