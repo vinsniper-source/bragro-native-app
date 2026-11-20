@@ -302,6 +302,16 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
 
             lastRecord.value = if (recordId == null) recordRepository.mostRecent(domainId) else null
 
+            // v1.6.59 (site v302) -- "Copiar para um novo lançamento" na
+            // janela Ver: o novo registro já abre com os dados do copiado.
+            if (recordId == null) CopiaParaNovo.pegar(domainId)?.let { origem ->
+                for (col in cfg.columns) {
+                    if (col.computed) continue
+                    val raw = origem[col.key] ?: ""
+                    fields[col.key] = if (col.type == "date") isoDateToBr(isoDateOnly(raw)) else raw
+                }
+            }
+
             // v1.6.18 (mockup v122) -- editar uma O.S. de Safra traz os
             // demais itens dela (mesmo nº, fazenda, operação e safra).
             if (recordId != null && existing != null && domainId in OS_EDITA_ITENS && itensExtras.isEmpty()) {
@@ -1091,7 +1101,7 @@ fun DomainFormScreen(
                     if (col.type == "checkbox") {
                         FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                     } else {
-                        com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), col.required, acoes = null) {
+                        com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), col.required, acoes = null, dica = col.hint) {
                             FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                         }
                     }
@@ -1154,7 +1164,7 @@ fun DomainFormScreen(
                                     val raw = if (temPrevia) previa[col.key] ?: "" else computedValues[col.key] ?: ""
                                     ComputedFieldDisplay(col = col, raw = raw, optionLabels = optionLabels, dica = if (temPrevia) previaDicas[col.key] else null)
                                 } else {
-                                    com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), col.required) {
+                                    com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), col.required, dica = col.hint) {
                                         FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                                     }
                                 }
@@ -1191,7 +1201,7 @@ fun DomainFormScreen(
                         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
                     }
                     resumoCols.firstOrNull { it.key == "produtividadeScTon" }?.let { col ->
-                        com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), col.required) {
+                        com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), col.required, dica = col.hint) {
                             FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                         }
                         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
@@ -1757,7 +1767,8 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
     if (isMissing) {
         Text("Campo obrigatório", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
     }
-    if (col.hint != null) {
+    // v310 -- com o nome ao lado, a ajuda vira ⓘ (DicaInfo) junto do nome.
+    if (col.hint != null && !com.bragro.mobile.ui.theme.LocalNomeAoLado.current) {
         Text(col.hint, style = MaterialTheme.typography.bodySmall)
     }
     // v85 -- aviso do Agrofit (registro no MAPA) embaixo do item.

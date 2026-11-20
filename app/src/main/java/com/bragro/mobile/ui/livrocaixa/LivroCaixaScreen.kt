@@ -482,7 +482,28 @@ private fun ProdutorRuralCard(
     com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
         var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            com.bragro.mobile.ui.domain.TituloRecolhivel("Produtor Rural / IRPF", aberto) { aberto = !aberto }
+            // v1.6.59 -- Salvar virou ✓ na linha do título.
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                androidx.compose.foundation.layout.Box(Modifier.weight(1f)) {
+                    com.bragro.mobile.ui.domain.TituloRecolhivel("Produtor Rural / IRPF", aberto) { aberto = !aberto }
+                }
+                if (aberto) com.bragro.mobile.ui.domain.SalvarIcone(loading = loading, onClick = {
+                        onSave(
+                            ProdutorRuralConfigData(
+                                cnpj = cnpj,
+                                cpfProdutorRural = cpf,
+                                inscricaoEstadualProdutor = ie,
+                                certificadoDigitalTipo = certTipo,
+                                certificadoDigitalEmissor = certEmissor,
+                                // Volta pra AAAA-MM-DD antes de enviar -- o
+                                // servidor guarda/espera ISO, só a tela edita
+                                // em DD/MM/AAAA.
+                                certificadoDigitalValidade = brDateToIso(certValidade),
+                                contaIrpfPadrao = contaIrpf,
+                            ),
+                        )
+                })
+            }
             if (aberto) {
             Text(
                 "Dados do LCDPR. Confira com o contador.",
@@ -513,27 +534,6 @@ private fun ProdutorRuralCard(
             )
             ItemFieldBlock(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(value = contaIrpf, onValueChange = { contaIrpf = it }, label = { Text("Conta padrão para IRPF") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
-            }
-            Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-                androidx.compose.material3.Button(
-                    enabled = !loading,
-                    onClick = {
-                        onSave(
-                            ProdutorRuralConfigData(
-                                cnpj = cnpj,
-                                cpfProdutorRural = cpf,
-                                inscricaoEstadualProdutor = ie,
-                                certificadoDigitalTipo = certTipo,
-                                certificadoDigitalEmissor = certEmissor,
-                                // Volta pra AAAA-MM-DD antes de enviar -- o
-                                // servidor guarda/espera ISO, só a tela edita
-                                // em DD/MM/AAAA.
-                                certificadoDigitalValidade = brDateToIso(certValidade),
-                                contaIrpfPadrao = contaIrpf,
-                            ),
-                        )
-                    },
-                ) { Text(if (loading) "Salvando..." else "Salvar") }
             }
         }
 }

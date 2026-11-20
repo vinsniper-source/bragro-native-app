@@ -195,13 +195,11 @@ fun RecordTableRow(
                     }
                     if (onEdit != null) {
                         IconButton(onClick = onEdit, modifier = Modifier.size(30.dp)) {
-                            Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                     if (onDelete != null) {
-                        IconButton(onClick = onDelete, modifier = Modifier.size(30.dp)) {
-                            Icon(Icons.Outlined.Delete, contentDescription = "Excluir registro", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)
-                        }
+                        ExcluirInline(onConfirm = onDelete, tamanhoBotao = 30.dp, tamanhoIcone = 16.dp)
                     }
                 }
             }

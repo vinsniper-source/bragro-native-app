@@ -35,6 +35,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Autorenew
@@ -1818,7 +1819,7 @@ fun DomainListScreen(
                             hScroll = tableHScroll,
                             onView = { recordBeingViewed = recordId },
                             onEdit = { if (recordId != null) onEditRecord(recordId) },
-                            onDelete = { recordPendingDelete = recordId },
+                            onDelete = { recordId?.let { viewModel.deleteRecord(domainId, it) } },
                         )
                         return@itemsIndexed
                     }
@@ -1837,7 +1838,7 @@ fun DomainListScreen(
                         FinanceiroNfeGroupCard(
                             groupRecords = financeiroGroupIndexes.map { filteredRecords[it] },
                             onEditRecord = onEditRecord,
-                            onDeleteRequest = { idToDelete -> recordPendingDelete = idToDelete },
+                            onDeleteRequest = { idToDelete -> idToDelete?.let { viewModel.deleteRecord(domainId, it) } },
                         )
                         return@itemsIndexed
                     }
@@ -1920,11 +1921,9 @@ fun DomainListScreen(
                                 // plataforma"): na vista Tabela (onView, ver
                                 // RecordTable.kt) o ícone Ver continua igual.
                                 IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
-                                    Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                    Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurface)
                                 }
-                                IconButton(onClick = { recordPendingDelete = recordId }, modifier = Modifier.size(28.dp)) {
-                                    Icon(Icons.Outlined.Delete, contentDescription = "Excluir registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
-                                }
+                                ExcluirInline(onConfirm = { recordId?.let { viewModel.deleteRecord(domainId, it) } })
                             }
                         }
                     }
@@ -2008,7 +2007,14 @@ fun DomainListScreen(
         val viewedRecord = records.firstOrNull { it["id"] == recordBeingViewed }
         AlertDialog(
             onDismissRequest = { recordBeingViewed = null },
-            title = { Text(viewedConfig?.label ?: domainId) },
+            title = { TituloJanela(viewedConfig?.label ?: domainId, onFechar = { recordBeingViewed = null }) {
+                    // v1.6.59 (site v302) -- Copiar para um novo lançamento, ✕ fechar.
+                    if (viewedRecord != null) IconButton(onClick = {
+                        CopiaParaNovo.guardar(domainId, viewedRecord)
+                        recordBeingViewed = null
+                        onNewRecord()
+                    }) { IconeNegrito(Icons.Outlined.ContentCopy, contentDescription = "Copiar para um novo lançamento", tint = MaterialTheme.colorScheme.onSurface, size = 22.dp) }
+                } },
             text = {
                 if (viewedRecord == null || viewedConfig == null) {
                     Text("Registro não encontrado.")
@@ -2117,9 +2123,7 @@ fun DomainListScreen(
                     }
                 }
             },
-            confirmButton = {
-                TextButton(onClick = { recordBeingViewed = null }) { Text("Fechar") }
-            },
+            confirmButton = {},
         )
     }
 
@@ -2513,11 +2517,9 @@ private fun FinanceiroNfeGroupCard(
                         )
                     }
                     IconButton(onClick = { if (recId != null) onEditRecord(recId) }, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurface)
                     }
-                    IconButton(onClick = { onDeleteRequest(recId) }, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Outlined.Delete, contentDescription = "Excluir registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
-                    }
+                    ExcluirInline(onConfirm = { onDeleteRequest(recId) })
                 }
             }
         }

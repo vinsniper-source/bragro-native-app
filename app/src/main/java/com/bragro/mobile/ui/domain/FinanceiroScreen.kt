@@ -30,6 +30,7 @@ import androidx.compose.foundation.shape.CircleShape
 import android.app.Application
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.AccountTree
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Autorenew
@@ -724,7 +725,7 @@ fun FinanceiroScreen(
                                         hScroll = tableHScroll,
                                         onView = { recordBeingViewed = recordId },
                                         onEdit = { if (recordId != null) onEditRecord(recordId) },
-                                        onDelete = { recordPendingDelete = recordId },
+                                        onDelete = { recordId?.let { viewModel.deleteRecord("financeiro", it) } },
                                     )
                                     return@itemsIndexed
                                 }
@@ -740,7 +741,7 @@ fun FinanceiroScreen(
                                     FinanceiroNfeGroupCard(
                                         groupRecords = groupIndexes.map { filtered[it] },
                                         onEditRecord = onEditRecord,
-                                        onDeleteRequest = { idToDelete -> recordPendingDelete = idToDelete },
+                                        onDeleteRequest = { idToDelete -> idToDelete?.let { viewModel.deleteRecord("financeiro", it) } },
                                     )
                                     return@itemsIndexed
                                 }
@@ -801,11 +802,9 @@ fun FinanceiroScreen(
                                             // (continua existindo na vista Tabela, ver RecordTable.kt,
                                             // que o usuário pediu pra manter).
                                             IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
-                                                Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                                Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurface)
                                             }
-                                            IconButton(onClick = { recordPendingDelete = recordId }, modifier = Modifier.size(28.dp)) {
-                                                Icon(Icons.Outlined.Delete, contentDescription = "Excluir registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
-                                            }
+                                            ExcluirInline(onConfirm = { recordId?.let { viewModel.deleteRecord("financeiro", it) } })
                                         }
                                     }
                                 }
@@ -821,7 +820,7 @@ fun FinanceiroScreen(
                                     FinanceiroNfeGroupCard(
                                         groupRecords = idxs.map { filtered[it] },
                                         onEditRecord = onEditRecord,
-                                        onDeleteRequest = { idToDelete -> recordPendingDelete = idToDelete },
+                                        onDeleteRequest = { idToDelete -> idToDelete?.let { viewModel.deleteRecord("financeiro", it) } },
                                     )
                                 }
                             }
@@ -902,7 +901,14 @@ fun FinanceiroScreen(
         val viewedRecord = filtered.firstOrNull { it["id"] == recordBeingViewed }
         AlertDialog(
             onDismissRequest = { recordBeingViewed = null },
-            title = { Text(if (isQuickView) view.label else "Registros") },
+            title = { TituloJanela(if (isQuickView) view.label else "Registros", onFechar = { recordBeingViewed = null }) {
+                    // v1.6.59 (site v302) -- Copiar para um novo lançamento, ✕ fechar.
+                    if (viewedRecord != null) IconButton(onClick = {
+                        CopiaParaNovo.guardar("financeiro", viewedRecord)
+                        recordBeingViewed = null
+                        onNewRecord()
+                    }) { IconeNegrito(Icons.Outlined.ContentCopy, contentDescription = "Copiar para um novo lançamento", tint = MaterialTheme.colorScheme.onSurface, size = 22.dp) }
+                } },
             text = {
                 if (viewedRecord == null) {
                     Text("Registro não encontrado.")
@@ -925,9 +931,7 @@ fun FinanceiroScreen(
                     }
                 }
             },
-            confirmButton = {
-                TextButton(onClick = { recordBeingViewed = null }) { Text("Fechar") }
-            },
+            confirmButton = {},
         )
     }
 }
@@ -1048,11 +1052,9 @@ private fun FinanceiroNfeGroupCard(
                         )
                     }
                     IconButton(onClick = { if (recId != null) onEditRecord(recId) }, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurface)
                     }
-                    IconButton(onClick = { onDeleteRequest(recId) }, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Outlined.Delete, contentDescription = "Excluir registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
-                    }
+                    ExcluirInline(onConfirm = { onDeleteRequest(recId) })
                 }
             }
         }

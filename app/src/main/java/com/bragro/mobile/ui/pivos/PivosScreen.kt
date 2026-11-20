@@ -746,7 +746,7 @@ private fun NovoPivoDialog(
 
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text(if (initial != null) "Editar pivô" else "Novo pivô") },
+        title = { com.bragro.mobile.ui.domain.TituloJanela(if (initial != null) "Editar pivô" else "Novo pivô", onFechar = onDismiss, fecharEnabled = !busy) { com.bragro.mobile.ui.domain.SalvarIcone(enabled = nome.isNotBlank(), loading = busy, onClick = { onSubmit(nome, marca, farmId.takeIf { it.isNotBlank() }, raioM, latitude, longitude) }) } },
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome *") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
@@ -775,12 +775,7 @@ private fun NovoPivoDialog(
                 if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
         },
-        confirmButton = {
-            Button(enabled = !busy && nome.isNotBlank(), onClick = { onSubmit(nome, marca, farmId.takeIf { it.isNotBlank() }, raioM, latitude, longitude) }) {
-                if (busy) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Salvar")
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancelar") } },
+        confirmButton = {},
     )
 }
 
@@ -799,7 +794,7 @@ private fun TelemetriaDialog(
 
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text("Telemetria -- $pivoNome") },
+        title = { com.bragro.mobile.ui.domain.TituloJanela("Telemetria -- $pivoNome", onFechar = onDismiss, fecharEnabled = !busy) { com.bragro.mobile.ui.domain.SalvarIcone(enabled = water.isNotBlank(), loading = busy, descricao = "Lançar", onClick = { onSubmit(water, rain, dataBr) }) } },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -819,12 +814,7 @@ private fun TelemetriaDialog(
                 if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
         },
-        confirmButton = {
-            Button(enabled = !busy && water.isNotBlank(), onClick = { onSubmit(water, rain, dataBr) }) {
-                if (busy) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Lançar")
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancelar") } },
+        confirmButton = {},
     )
 }
 
@@ -912,7 +902,7 @@ private fun LeituraPivoDialog(
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal))
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Lançar leitura · ${pivo.nome}") },
+        title = { com.bragro.mobile.ui.domain.TituloJanela("Lançar leitura · ${pivo.nome}", onFechar = onDismiss) { com.bragro.mobile.ui.domain.SalvarIcone(loading = busy, onClick = { onSubmit(dataBr, status, sentido, angulo, lamina, pressao, horas, chuva) }) } },
         text = {
             Column(Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 com.bragro.mobile.ui.theme.LinhaTextField(dataBr, { dataBr = it }, label = { Text("Data (dd/mm/aaaa)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
@@ -936,7 +926,6 @@ private fun LeituraPivoDialog(
                 Text("A lâmina e a chuva entram no Balanço hídrico.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
-        confirmButton = { androidx.compose.material3.Button(enabled = !busy, onClick = { onSubmit(dataBr, status, sentido, angulo, lamina, pressao, horas, chuva) }) { Text("Salvar") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+        confirmButton = {},
     )
 }

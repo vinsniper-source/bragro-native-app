@@ -84,3 +84,16 @@ fun semAnoAtual(v: String): String = if (DATA_BR.matches(v) && v.endsWith("/$ANO
 
 /** displayValueFor para listas (sem o ano atual nas datas). */
 fun displayValueLista(key: String, rawValue: String, colType: String? = null): String = semAnoAtual(displayValueFor(key, rawValue, colType))
+
+/** v1.6.59 (site v302) -- registro a copiar para o próximo "Novo registro"
+ * (ícone Copiar da janela Ver). Usado uma vez e limpo. */
+object CopiaParaNovo {
+    private var dominio: String? = null
+    private var registro: Map<String, String?>? = null
+    fun guardar(domainId: String, r: Map<String, String?>) { dominio = domainId; registro = r }
+    fun pegar(domainId: String): Map<String, String?>? {
+        val r = if (dominio == domainId) registro else null
+        dominio = null; registro = null
+        return r
+    }
+}

@@ -64,6 +64,28 @@ fun CertificadoDigitalCard(modifier: Modifier = Modifier) {
         }
     }
 
+    val salvarCert: () -> Unit = {
+                        salvando = true
+                        mensagem = null
+                        scope.launch {
+                            val saved = repo.save(
+                                CertificadoDigitalData(
+                                    certificadoDigitalTipo = tipo,
+                                    certificadoDigitalEmissor = emissor.trim(),
+                                    certificadoDigitalValidade = brDateToIso(validade).trim(),
+                                ),
+                            )
+                            salvando = false
+                            if (saved != null) {
+                                tipo = saved.certificadoDigitalTipo.orEmpty()
+                                emissor = saved.certificadoDigitalEmissor.orEmpty()
+                                validade = isoDateToBr(saved.certificadoDigitalValidade.orEmpty())
+                                mensagem = "Certificado salvo."
+                            } else {
+                                mensagem = "Falha ao salvar. Confira a data (DD/MM/AAAA)."
+                            }
+                        }
+                    }
     Surface(
         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
         shape = MaterialTheme.shapes.medium,
@@ -76,6 +98,7 @@ fun CertificadoDigitalCard(modifier: Modifier = Modifier) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text("Certificado digital (NF-e / NFS-e)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                if (aberto) com.bragro.mobile.ui.domain.SalvarIcone(onClick = salvarCert, loading = salvando)
                 TextButton(onClick = { aberto = !aberto }) { Text(if (aberto) "Recolher" else "Editar") }
             }
             if (aberto) {
@@ -109,34 +132,7 @@ fun CertificadoDigitalCard(modifier: Modifier = Modifier) {
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                // v263 (mockup v262) -- Salvar à direita.
-                androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth(), contentAlignment = androidx.compose.ui.Alignment.CenterEnd) {
-                Button(
-                    enabled = !salvando,
-                    onClick = {
-                        salvando = true
-                        mensagem = null
-                        scope.launch {
-                            val saved = repo.save(
-                                CertificadoDigitalData(
-                                    certificadoDigitalTipo = tipo,
-                                    certificadoDigitalEmissor = emissor.trim(),
-                                    certificadoDigitalValidade = brDateToIso(validade).trim(),
-                                ),
-                            )
-                            salvando = false
-                            if (saved != null) {
-                                tipo = saved.certificadoDigitalTipo.orEmpty()
-                                emissor = saved.certificadoDigitalEmissor.orEmpty()
-                                validade = isoDateToBr(saved.certificadoDigitalValidade.orEmpty())
-                                mensagem = "Certificado salvo."
-                            } else {
-                                mensagem = "Falha ao salvar. Confira a data (DD/MM/AAAA)."
-                            }
-                        }
-                    },
-                ) { Text(if (salvando) "Salvando..." else "Salvar") }
-                }
+                // v1.6.59 -- Salvar virou ✓ na linha do título.
                 if (mensagem != null) {
                     Text(mensagem ?: "", style = MaterialTheme.typography.labelSmall)
                 }

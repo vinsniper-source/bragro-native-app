@@ -257,7 +257,27 @@ fun PixConfigDialog(onDismiss: () -> Unit) {
     }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Recebimento por Pix", fontWeight = FontWeight.Bold) },
+        title = {
+            // v1.6.59 -- ✓ e ✕ na linha do título.
+            TituloJanela("Recebimento por Pix", onFechar = onDismiss) {
+                SalvarIcone(
+                    enabled = !carregando,
+                    loading = salvando,
+                    onClick = {
+                        salvando = true
+                        erro = null
+                        scope.launch {
+                            val (c, e) = repo.salvar(PixConfig(tipo, chave, nome, cidade))
+                            salvando = false
+                            if (c != null) {
+                                Toast.makeText(context, "Chave Pix salva.", Toast.LENGTH_SHORT).show()
+                                onDismiss()
+                            } else erro = e
+                        }
+                    },
+                )
+            }
+        },
         text = {
             if (carregando) {
                 Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -290,23 +310,6 @@ fun PixConfigDialog(onDismiss: () -> Unit) {
                 }
             }
         },
-        confirmButton = {
-            Button(
-                enabled = !carregando && !salvando,
-                onClick = {
-                    salvando = true
-                    erro = null
-                    scope.launch {
-                        val (c, e) = repo.salvar(PixConfig(tipo, chave, nome, cidade))
-                        salvando = false
-                        if (c != null) {
-                            Toast.makeText(context, "Chave Pix salva.", Toast.LENGTH_SHORT).show()
-                            onDismiss()
-                        } else erro = e
-                    }
-                },
-            ) { Text(if (salvando) "Salvando…" else "Salvar") }
-        },
-        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancelar") } },
+        confirmButton = {},
     )
 }

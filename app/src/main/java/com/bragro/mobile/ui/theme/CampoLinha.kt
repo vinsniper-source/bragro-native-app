@@ -28,6 +28,11 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
@@ -227,7 +232,7 @@ private fun numero(k: KeyboardOptions, trailingIcon: (@Composable () -> Unit)?):
  * nome pequeno em cima e a linha embaixo, largura toda (o nome continua
  * fora do campo, sem repetir o rótulo dentro). */
 @Composable
-fun NomeAoLado(nome: String, obrigatorio: Boolean = false, acoes: (@Composable () -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
+fun NomeAoLado(nome: String, obrigatorio: Boolean = false, acoes: (@Composable () -> Unit)? = null, dica: String? = null, content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         // v221 (mockup aprovado) -- ícones (foto, copiar...) na linha do nome do
         // primeiro campo, à direita, sem ocupar uma linha própria.
@@ -235,8 +240,9 @@ fun NomeAoLado(nome: String, obrigatorio: Boolean = false, acoes: (@Composable (
             Text(
                 nome + if (obrigatorio) " *" else "",
                 fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
             )
+            if (!dica.isNullOrBlank()) DicaInfo(dica)
+            androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
             if (acoes != null) Row(Modifier.height(28.dp), verticalAlignment = Alignment.CenterVertically) { acoes() }
         }
         CompositionLocalProvider(LocalNomeAoLado provides true) {
@@ -381,5 +387,43 @@ fun LinhaTextFieldClassico(
             value = value, onValueChange = onValueChange, modifier = modifier, label = label, trailingIcon = trailingIcon,
             visualTransformation = visualTransformation, keyboardOptions = keyboardOptions, singleLine = singleLine, colors = colors,
         )
+    }
+}
+
+/** v310 (mockup v310 aprovado) -- texto de ajuda do campo vira uma bolinha ⓘ
+ * ao lado do nome; tocar abre um balão com a cor de fundo da tela. */
+@Composable
+fun DicaInfo(texto: String) {
+    var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val cs = MaterialTheme.colorScheme
+    Box {
+        androidx.compose.material3.Icon(
+            androidx.compose.material.icons.Icons.Outlined.Info,
+            contentDescription = texto,
+            tint = cs.onSurfaceVariant,
+            modifier = Modifier
+                .padding(start = 5.dp)
+                .size(15.dp)
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { aberto = !aberto },
+        )
+        if (aberto) {
+            androidx.compose.ui.window.Popup(
+                alignment = Alignment.TopStart,
+                offset = androidx.compose.ui.unit.IntOffset(0, 48),
+                onDismissRequest = { aberto = false },
+                properties = androidx.compose.ui.window.PopupProperties(focusable = true),
+            ) {
+                androidx.compose.material3.Surface(
+                    color = cs.background,
+                    contentColor = cs.onBackground,
+                    shape = RoundedCornerShape(7.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, cs.outlineVariant),
+                    shadowElevation = 6.dp,
+                    modifier = Modifier.widthIn(max = 260.dp),
+                ) {
+                    Text(texto, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp))
+                }
+            }
+        }
     }
 }

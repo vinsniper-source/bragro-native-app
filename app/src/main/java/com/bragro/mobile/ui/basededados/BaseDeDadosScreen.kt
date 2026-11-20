@@ -1074,7 +1074,7 @@ private fun SectorCard(
         var ativoEd by remember(e.id) { mutableStateOf(e.ativo) }
         AlertDialog(
             onDismissRequest = { editando = null },
-            title = { Text("Editar · ${e.categoria}") },
+            title = { com.bragro.mobile.ui.domain.TituloJanela("Editar · ${e.categoria}", onFechar = { editando = null }) { com.bragro.mobile.ui.domain.SalvarIcone(enabled = !busy && nome.isNotBlank(), onClick = { onEdit(e.id, nome.trim(), ativoEd) { ok -> if (ok) editando = null } }) } },
             text = {
                 androidx.compose.foundation.layout.Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome") }, singleLine = true, colors = appFieldColors())
@@ -1089,10 +1089,7 @@ private fun SectorCard(
                     }
                 }
             },
-            confirmButton = {
-                Button(onClick = { onEdit(e.id, nome.trim(), ativoEd) { ok -> if (ok) editando = null } }, enabled = !busy && nome.isNotBlank()) { Text("Salvar") }
-            },
-            dismissButton = { TextButton(onClick = { editando = null }) { Text("Cancelar") } },
+            confirmButton = {},
         )
     }
     excluindo?.let { (idEx, nomeEx) ->

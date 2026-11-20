@@ -1479,7 +1479,7 @@ private fun ImportBoundaryDialog(
 
     AlertDialog(
         onDismissRequest = { if (!saving) onDismiss() },
-        title = { Text(if (total > 1) "Importar talhão (${index + 1}/$total)" else "Importar talhão") },
+        title = { com.bragro.mobile.ui.domain.TituloJanela(if (total > 1) "Importar talhão (${index + 1}/$total)" else "Importar talhão", onFechar = onDismiss, fecharEnabled = !saving) { com.bragro.mobile.ui.domain.SalvarIcone(enabled = talhao.isNotBlank(), loading = saving, onClick = { onConfirm(talhao.trim(), selectedFarm?.id) }) } },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -1507,15 +1507,7 @@ private fun ImportBoundaryDialog(
                 if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
         },
-        confirmButton = {
-            Button(
-                enabled = !saving && talhao.isNotBlank(),
-                onClick = { onConfirm(talhao.trim(), selectedFarm?.id) },
-            ) {
-                if (saving) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Salvar")
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !saving) { Text("Cancelar") } },
+        confirmButton = {},
     )
 }
 
@@ -1539,7 +1531,7 @@ private fun ManualBoundaryDialog(
 
     AlertDialog(
         onDismissRequest = { if (!saving) onDismiss() },
-        title = { Text("Lançar talhão manualmente") },
+        title = { com.bragro.mobile.ui.domain.TituloJanela("Lançar talhão manualmente", onFechar = onDismiss, fecharEnabled = !saving) { com.bragro.mobile.ui.domain.SalvarIcone(enabled = talhao.isNotBlank(), loading = saving, onClick = { onConfirm(talhao.trim(), nome.trim().ifBlank { null }, selectedFarm?.id) }) } },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -1569,15 +1561,7 @@ private fun ManualBoundaryDialog(
                 if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
         },
-        confirmButton = {
-            Button(
-                enabled = !saving && talhao.isNotBlank(),
-                onClick = { onConfirm(talhao.trim(), nome.trim().ifBlank { null }, selectedFarm?.id) },
-            ) {
-                if (saving) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Salvar")
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !saving) { Text("Cancelar") } },
+        confirmButton = {},
     )
 }
 

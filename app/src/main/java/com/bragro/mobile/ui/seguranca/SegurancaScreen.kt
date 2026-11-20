@@ -383,7 +383,7 @@ private fun PersonalizarInicioDialog(
     var selected by remember { mutableStateOf(initialWidgets) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Personalizar Início") },
+        title = { com.bragro.mobile.ui.domain.TituloJanela("Personalizar Início", onFechar = onDismiss, fecharEnabled = !busy) { com.bragro.mobile.ui.domain.SalvarIcone(loading = busy, onClick = { onSave(selected) }) } },
         text = {
             Column {
                 Text(
@@ -405,12 +405,7 @@ private fun PersonalizarInicioDialog(
                 }
             }
         },
-        confirmButton = {
-            Button(onClick = { onSave(selected) }, enabled = !busy) { Text("Salvar") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancelar") }
-        },
+        confirmButton = {},
     )
 }
 
@@ -645,7 +640,7 @@ private fun NovaSenhaDialog(email: String, busy: Boolean, onDismiss: () -> Unit,
     var erro by remember { mutableStateOf<String?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nova senha de $email") },
+        title = { com.bragro.mobile.ui.domain.TituloJanela("Nova senha de $email", onFechar = onDismiss) { com.bragro.mobile.ui.domain.SalvarIcone(enabled = senha.length >= 8, loading = busy, onClick = { onSave(senha) { erro = it } }) } },
         text = {
             Column {
                 OutlinedTextField(
@@ -657,8 +652,7 @@ private fun NovaSenhaDialog(email: String, busy: Boolean, onDismiss: () -> Unit,
                 if (erro != null) Text(erro!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             }
         },
-        confirmButton = { Button(onClick = { onSave(senha) { erro = it } }, enabled = !busy && senha.length >= 8) { Text("Salvar") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+        confirmButton = {},
     )
 }
 

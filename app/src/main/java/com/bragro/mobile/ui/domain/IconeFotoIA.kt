@@ -9,10 +9,6 @@ import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 
 /**
  * v216 (mockup aprovado, opção B) -- "foto com IA": câmera com dois brilhos
@@ -50,36 +46,16 @@ val IconeFotoIA: ImageVector by lazy {
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @androidx.compose.runtime.Composable
 fun AvisoComIcones(texto: String?, modifier: androidx.compose.ui.Modifier = androidx.compose.ui.Modifier, icones: @androidx.compose.runtime.Composable () -> Unit) {
-    // v1.6.59 (site v302) -- o aviso vira uma bolinha ⓘ; tocar mostra o texto.
-    var aberto by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
-    androidx.compose.foundation.layout.Column(modifier = modifier.then(androidx.compose.ui.Modifier.fillMaxWidth())) {
+    // v1.6.59/v310 -- o aviso vira a bolinha ⓘ; tocar abre o balão (cor de fundo).
+    androidx.compose.foundation.layout.Row(
+        modifier = modifier.then(androidx.compose.ui.Modifier.fillMaxWidth()),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+    ) {
+        if (!texto.isNullOrBlank()) com.bragro.mobile.ui.theme.DicaInfo(texto)
         androidx.compose.foundation.layout.Row(
-            modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+            modifier = androidx.compose.ui.Modifier.weight(1f),
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End,
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-        ) {
-            if (!texto.isNullOrBlank()) {
-                androidx.compose.material3.IconButton(onClick = { aberto = !aberto }, modifier = androidx.compose.ui.Modifier.size(32.dp)) {
-                    androidx.compose.material3.Icon(
-                        androidx.compose.material.icons.Icons.Outlined.Info,
-                        contentDescription = texto,
-                        tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = androidx.compose.ui.Modifier.size(20.dp),
-                    )
-                }
-            }
-            androidx.compose.foundation.layout.Row(
-                modifier = androidx.compose.ui.Modifier.weight(1f),
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End,
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-            ) { icones() }
-        }
-        if (aberto && !texto.isNullOrBlank()) {
-            androidx.compose.material3.Text(
-                texto,
-                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = androidx.compose.ui.Modifier.padding(start = 6.dp, bottom = 4.dp),
-            )
-        }
+        ) { icones() }
     }
 }

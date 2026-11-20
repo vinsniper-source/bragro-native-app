@@ -532,9 +532,21 @@ private fun NovoDroneRegistroDialog(
                         area = ultimoRegistro.areaCoberta?.toString() ?: ""
                         obs = ultimoRegistro.observacoes ?: ""
                     }) {
-                        Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último registro", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último registro", tint = MaterialTheme.colorScheme.onSurface)
                     }
                 }
+                // v1.6.59 -- ✓ e ✕ na linha do título.
+                com.bragro.mobile.ui.domain.SalvarIcone(
+                    enabled = pickedUri != null && tipo.isNotBlank(),
+                    loading = saving,
+                    onClick = salvarDrone@{
+                        val uri = pickedUri ?: return@salvarDrone
+                        val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return@salvarDrone
+                        val mime = context.contentResolver.getType(uri) ?: "application/octet-stream"
+                        onSubmit(dataBr, talhao.takeIf { it.isNotBlank() }, tipo, piloto, altitude, area, obs, bytes, pickedName ?: "arquivo", mime)
+                    },
+                )
+                com.bragro.mobile.ui.domain.FecharIcone(onDismiss, enabled = !saving)
             }
         },
         text = {
@@ -583,20 +595,7 @@ private fun NovoDroneRegistroDialog(
                 if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
         },
-        confirmButton = {
-            Button(
-                enabled = !saving && pickedUri != null && tipo.isNotBlank(),
-                onClick = {
-                    val uri = pickedUri ?: return@Button
-                    val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return@Button
-                    val mime = context.contentResolver.getType(uri) ?: "application/octet-stream"
-                    onSubmit(dataBr, talhao.takeIf { it.isNotBlank() }, tipo, piloto, altitude, area, obs, bytes, pickedName ?: "arquivo", mime)
-                },
-            ) {
-                if (saving) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Salvar")
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !saving) { Text("Cancelar") } },
+        confirmButton = {},
     )
 }
 
