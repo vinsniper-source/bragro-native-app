@@ -227,7 +227,7 @@ dependencies {
     // se ainda estiver instalado no aparelho) -- exatamente o "app anterior"
     // relatado. CustomTabsIntent abre direto no Chrome (ou outro navegador
     // com suporte), sem passar por essa resolução.
-    implementation("androidx.browser:browser:1.8.0")
+    implementation("androidx.browser:browser:1.10.0")
 
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
