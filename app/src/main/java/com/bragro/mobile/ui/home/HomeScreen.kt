@@ -11,6 +11,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
@@ -608,6 +611,9 @@ fun HomeScreen(
     onOpenPainelDono: () -> Unit = {},
     viewModel: HomeViewModel = viewModel(),
 ) {
+    // v318 (mockup v318 aprovado, igual ao site) -- Clima e Cotações Grãos
+    // começam recolhidos; tocar abre os dois, tocar de novo recolhe.
+    var blocosAbertos by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     val home by viewModel.home
     val weather by viewModel.weather
     // v1.6.13 (mockup v114) -- guarda a cotação do dia para "Exibir valores em" (U$D/ARS).
@@ -1094,14 +1100,7 @@ fun HomeScreen(
                             // e legível no cabeçalho. Alinhada à esquerda por
                             // design (pedido antigo do usuário -- "logo no
                             // limite esquerdo"), sem offset de centralização.
-                            Image(
-                                painter = painterResource(if (com.bragro.mobile.ui.i18n.Idioma.argentina) R.drawable.logo_argro else R.drawable.logo_bragro),
-                                contentDescription = if (com.bragro.mobile.ui.i18n.Idioma.argentina) "ARGro" else "BRAgro",
-                                alignment = Alignment.BottomCenter,
-                                modifier = Modifier
-                                    .height(80.dp)
-                                    .widthIn(max = 190.dp),
-                            )
+                            com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.height(44.dp).widthIn(max = 190.dp)) // v317 -- logo nova sem fundo
                             Box(modifier = Modifier.weight(1f)) { headerTrailingContent() }
                         }
                     } else {
@@ -1115,14 +1114,7 @@ fun HomeScreen(
                                 modifier = Modifier.fillMaxWidth().padding(start = 0.dp, top = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Image(
-                                    painter = painterResource(if (com.bragro.mobile.ui.i18n.Idioma.argentina) R.drawable.logo_argro else R.drawable.logo_bragro),
-                                    contentDescription = if (com.bragro.mobile.ui.i18n.Idioma.argentina) "ARGro" else "BRAgro",
-                                    alignment = Alignment.BottomCenter,
-                                    modifier = Modifier
-                                        .height(80.dp)
-                                        .widthIn(max = 190.dp),
-                                )
+                                com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.height(44.dp).widthIn(max = 190.dp)) // v317 -- logo nova sem fundo
                             }
                             Spacer(Modifier.height(2.dp))
                             Box(modifier = Modifier.fillMaxWidth().padding(end = 8.dp, bottom = 2.dp)) { headerTrailingContent() }
@@ -1239,29 +1231,21 @@ fun HomeScreen(
                 var destaquesAberto by remember { mutableStateOf(false) }
                 val showDestaques = false // v1.6.59 (site v295) -- sem Destaques
                 Column(modifier = Modifier.offset(y = 0.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "Olá, bem-vindo de volta",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
+                    // v320 (mockup v320b aprovado) -- no lugar do "Olá, bem-vindo de
+                    // volta": o slogan com BRAgro no início e a data pequena.
                     Text(
-                        "${data?.orgName ?: "BRAgro"} — ${todayLongBrazil()}",
-                        style = MaterialTheme.typography.bodySmall,
+                        "BRAgro — Conectando a força da nossa terra, carregando o Brasil no coração.",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontStyle = FontStyle.Italic,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
-                        "Conectando a força da nossa terra, carregando o Brasil no coração.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontStyle = FontStyle.Italic,
-                        fontWeight = FontWeight.Medium,
-                        // BrGreen (fixo) -> colorScheme.primary (adapta por
-                        // tema) -- pedido do usuário ("coloque as cores das
-                        // fontes preto/branco modo claro/escuro"): BrGreen
-                        // cru ficava quase ilegível no fundo quase-preto do
-                        // modo Escuro (ver Theme.kt).
-                        color = MaterialTheme.colorScheme.primary,
+                        java.time.LocalDate.now(java.time.ZoneId.of("America/Sao_Paulo")).let { d ->
+                            d.format(java.time.format.DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy", java.util.Locale("pt", "BR")))
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 2.dp),
                     )
                     if (data != null) {
@@ -1534,13 +1518,14 @@ fun HomeScreen(
                     }
                 }
                 item(key = "clima") {
-                    ClimaCard(clima!!, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth())
+                    if (blocosAbertos) ClimaCard(clima!!, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth().clickable { blocosAbertos = false })
+                    else ClimaResumo(clima!!, onClick = { blocosAbertos = true })
                 }
             }
             // v1.6.59 (site v295) -- Grãos logo depois do Clima; Câmbio e Pecuária em seguida.
             if (!com.bragro.mobile.ui.i18n.Idioma.argentina && data.hasWidget("inicio.cotacoes")) {
             item(key = "cotacoes") {
-                weather?.commodities?.let { CotacoesCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth(), suaMedia = viewModel.suaMedia.value, mostrarSuaMedia = viewModel.suaMediaCarregada.value, historico = viewModel.historicoCotacoes.value, custoSaca = viewModel.custoSaca.value) }
+                weather?.commodities?.let { if (!blocosAbertos) CotacoesResumo(it, onClick = { blocosAbertos = true }) else CotacoesCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth().clickable { blocosAbertos = false }, suaMedia = viewModel.suaMedia.value, mostrarSuaMedia = viewModel.suaMediaCarregada.value, historico = viewModel.historicoCotacoes.value, custoSaca = viewModel.custoSaca.value) }
             }
             }
             // Câmbio ocupa a largura inteira (até a margem); Destaques virou a
@@ -2673,6 +2658,85 @@ private fun MiniCardHeaderWithRefresh(
         Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(10.dp))
         Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f).basicMarquee())
+    }
+}
+
+// v318 (mockup v318) -- Clima recolhido: agora, alerta, 4 dias e pulverização.
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ClimaResumo(clima: com.bragro.mobile.data.model.WeatherData, onClick: () -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    val laranja = androidx.compose.ui.graphics.Color(0xFFD97706)
+    val br = java.util.Locale("pt", "BR")
+    androidx.compose.material3.Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(iconeClima(clima.currentIcon), contentDescription = null, modifier = Modifier.size(32.dp))
+                Spacer(Modifier.width(10.dp))
+                Text("${Math.round(clima.currentTempC)}°C", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    listOfNotNull(
+                        clima.condicao,
+                        "Máx ${Math.round(clima.todayMaxC)}° · Mín ${Math.round(clima.todayMinC)}°",
+                        "${String.format(br, "%.1f", clima.todayPrecipMm)} mm hoje" + (clima.todayPrecipProb?.let { " (${Math.round(it)}%)" } ?: ""),
+                    ).joinToString(" · "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = cs.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            clima.agro?.alertas?.firstOrNull()?.let { a ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.WarningAmber, contentDescription = null, tint = laranja, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("${a.titulo} até ${a.fim.substringAfter(' ', a.fim)}", color = laranja, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                clima.forecast.drop(1).take(4).forEach { d ->
+                    val dia = runCatching { java.time.LocalDate.parse(d.date).format(java.time.format.DateTimeFormatter.ofPattern("EEE", br)).replace(".", "") }.getOrDefault("")
+                    Text(buildAnnotatedString {
+                        append("$dia ")
+                        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append("${Math.round(d.maxC)}/${Math.round(d.minC)}°") }
+                    }, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            clima.spray?.let { sp ->
+                Text(buildAnnotatedString {
+                    append("Pulverização ")
+                    withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = if (sp.favoravelAgora) cs.primary else laranja)) { append(if (sp.favoravelAgora) "favorável" else "desfavorável") }
+                    if (!sp.favoravelAgora) sp.proximaJanela?.let { j -> append(" · janela "); withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append("${j.inicio}–${j.fim}") } }
+                }, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+}
+
+// v318 (mockup v318) -- Cotações Grãos recolhido: só preço e variação.
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CotacoesResumo(com: com.bragro.mobile.data.model.CommodityQuotesData, onClick: () -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    val laranja = androidx.compose.ui.graphics.Color(0xFFD97706)
+    val br = java.util.Locale("pt", "BR")
+    androidx.compose.material3.Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Cotações Grãos", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Row(modifier = Modifier.fillMaxWidth()) {
+                listOf("Soja" to com.soja, "Milho" to com.milho, "Sorgo" to com.sorgo).forEach { (rot, d) ->
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(rot, style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
+                        Text(if (d != null) "R$ " + String.format(br, "%.2f", d.valor) else "—", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                        if (d != null) Text(
+                            (if (d.variacaoPct >= 0) "↗ " else "↘ −") + String.format(br, "%.2f", kotlin.math.abs(d.variacaoPct)) + "%",
+                            color = if (d.variacaoPct >= 0) cs.primary else laranja,
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

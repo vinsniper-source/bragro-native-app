@@ -154,37 +154,10 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
         // cálculo de centralização da Column) pra compensar esse desbalanço
         // e centralizar a arte de verdade -- sem cortar nem redimensionar
         // nada, só reposicionar.
-        Image(
-            painter = painterResource(if (com.bragro.mobile.ui.i18n.Idioma.argentina) R.drawable.logo_argro else R.drawable.logo_bragro),
-            contentDescription = if (com.bragro.mobile.ui.i18n.Idioma.argentina) "ARGro" else "BRAgro",
-            modifier = Modifier
-                .height(200.dp)
-                .offset(x = (-32).dp),
-        )
-        // Slogan abaixo da logo -- pedido do usuário ("coloque o slogan
-        // abaixo da logo"), mesmo texto/estilo do login do site (itálico,
-        // negrito, cor primária).
-        Text(
-            "Conectando a força da nossa terra, carregando o Brasil no coração.",
-            style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
-            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-            // BrGreen (fixo) -> colorScheme.primary (adapta por tema) --
-            // pedido do usuário ("coloque as cores das fontes preto/branco
-            // modo claro/escuro"): BrGreen cru era escuro demais e ficava
-            // quase ilegível sobre o fundo quase-preto do modo Escuro.
-            color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            modifier = Modifier.padding(top = 6.dp),
-        )
-        Text(
-            "Entre com sua conta para continuar",
-            style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            modifier = Modifier.padding(top = 4.dp),
-        )
-
-        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 24.dp))
+        // v319/v317 (mockups aprovados, iguais ao site) -- login minimalista:
+        // logo nova, sem o slogan e sem "Entre com sua conta".
+        MarcaBRAgro(modifier = Modifier.height(52.dp))
+        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 28.dp))
 
         OutlinedTextField(
             value = email,
@@ -292,30 +265,19 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
         // esqueceu a senha"), mesma posição do login do site (login-form.tsx:
         // logo após o botão de submit). O app nativo não tem tela própria de
         // recuperação de senha -- abre a mesma página do site.
-        androidx.compose.material3.TextButton(
-            onClick = { openInCustomTab(context, "${BuildConfig.API_BASE_URL}/esqueci-senha") },
-            modifier = Modifier.fillMaxWidth(),
+        // v319 -- os dois links numa linha só.
+        androidx.compose.foundation.layout.Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Esqueci minha senha", style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+            androidx.compose.material3.TextButton(onClick = { openInCustomTab(context, "${BuildConfig.API_BASE_URL}/esqueci-senha") }) {
+                Text("Esqueci minha senha", style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+            }
+            androidx.compose.material3.TextButton(onClick = { openInCustomTab(context, "${BuildConfig.API_BASE_URL}/cadastro") }) {
+                Text("Criar conta grátis", style = androidx.compose.material3.MaterialTheme.typography.bodySmall, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, color = androidx.compose.material3.MaterialTheme.colorScheme.primary)
+            }
         }
-
-        // "Criar conta gratuita" -- pedido do usuário ("replique a mesma
-        // página de login da plataforma no native"): faltava esse link
-        // (site tinha, login-form.tsx). Sem tela de cadastro própria no app
-        // (self-signup completo -- CPF/CNPJ, onboarding de organização --
-        // não compensa reconstruir em Compose) -- abre a mesma página do
-        // site /cadastro numa Custom Tab, mesmo padrão já usado acima pra
-        // "Esqueci minha senha". O botão "Entrar com o Google" do site foi
-        // REMOVIDO (não configurado no Supabase/Google Cloud, sem como
-        // consertar por código) -- nunca existiu aqui no native, então não
-        // há nada a remover deste lado.
-        androidx.compose.material3.TextButton(
-            onClick = { openInCustomTab(context, "${BuildConfig.API_BASE_URL}/cadastro") },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text("Ainda não tem conta? Criar conta gratuita", style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
-        }
-
         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 4.dp))
         Text(
             "Precisa de internet só no primeiro acesso.",

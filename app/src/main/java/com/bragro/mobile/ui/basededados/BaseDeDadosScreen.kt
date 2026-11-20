@@ -283,6 +283,10 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
 @Composable
 fun BaseDeDadosScreen(
     onBack: () -> Unit,
+    // v326 (mockup v326) -- tela própria das Fazendas, logo após o login:
+    // só o cadastro das fazendas, com a logo e a casinha (vai para o Início).
+    modoFazendas: Boolean = false,
+    onHome: (() -> Unit)? = null,
     // Null = esconde o botão (só OWNER/ADMIN recebem a lambda, ver BRAgroNavHost).
     onOpenCsvImport: (() -> Unit)? = null,
     viewModel: BaseDeDadosViewModel = viewModel(),
@@ -312,6 +316,24 @@ fun BaseDeDadosScreen(
 
     Scaffold(
         topBar = {
+            if (modoFazendas) {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.height(34.dp))
+                        }
+                    },
+                    actions = {
+                        Column {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            androidx.compose.material3.IconButton(onClick = { onHome?.invoke() }) {
+                                androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Home, contentDescription = "Ir para o Início", modifier = Modifier.size(22.dp))
+                            }
+                        }
+                    },
+                )
+            } else
             TopAppBar(
                 navigationIcon = {
                     Column {
@@ -408,7 +430,7 @@ fun BaseDeDadosScreen(
             if (error != null) {
                 item(key = "error") { Text(error!!, color = MaterialTheme.colorScheme.error) }
             }
-            if (missingCount > 0) {
+            if (missingCount > 0 && !modoFazendas) {
                 item(key = "import") {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp)) {
@@ -425,15 +447,24 @@ fun BaseDeDadosScreen(
                     }
                 }
             }
-            if (onOpenCsvImport != null) {
+            if (onOpenCsvImport != null && !modoFazendas) {
                 item(key = "csv_import") {
                     OutlinedButton(onClick = onOpenCsvImport, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
                         Text("Migrar dados de outra plataforma (CSV)")
                     }
                 }
             }
-            item(key = "farms") {
+            // v321/v326 -- Fazendas saiu da Base de Dados: só na tela Fazendas.
+            if (modoFazendas) item(key = "farms_titulo") {
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)) {
+                    Text("Cadastre suas fazendas", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+                    Spacer(Modifier.width(6.dp))
+                    com.bragro.mobile.ui.theme.DicaInfo("Área e localização de cada cultura alimentam o rateio, o clima e os mapas.")
+                }
+            }
+            if (modoFazendas) item(key = "farms") {
                 FarmsCard(
+                    abertoInicial = true,
                     farms = farms,
                     busy = busy,
                     onAdd = { name, area, cultura, areaSafrinha, cultura1, cultura1Ha, cultura2, cultura2Ha, latitude, longitude, situacaoTerra ->
@@ -446,7 +477,7 @@ fun BaseDeDadosScreen(
                     onSync = { viewModel.syncLocais() },
                 )
             }
-            bySector?.forEach { sectorEl ->
+            if (!modoFazendas) bySector?.forEach { sectorEl ->
                 val sector = sectorEl.jsonObject
                 val sectorId = sector["sector"]?.jsonPrimitive?.contentOrNull ?: "outros"
                 val label = sector["label"]?.jsonPrimitive?.contentOrNull ?: "Outros"
@@ -624,6 +655,7 @@ private fun FarmsCard(
     onUpdate: (String, String?, Double, String?, Double?, String?, Double?, String?, Double?, Double?, Double?, String?) -> Unit,
     onDelete: (String) -> Unit,
     onSync: () -> Unit,
+    abertoInicial: Boolean = false,
 ) {
     var newName by remember { mutableStateOf("") }
     var newArea by remember { mutableStateOf("") }
@@ -656,7 +688,7 @@ private fun FarmsCard(
     var newSituacaoTerra by remember { mutableStateOf("") }
 
     @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-    CollapsibleCard("Fazendas (${farms?.size ?: 0})", initiallyOpen = false) { // v44: entra fechado
+    CollapsibleCard("Fazendas (${farms?.size ?: 0})", initiallyOpen = abertoInicial) { // v44: entra fechado
         farms?.forEach { el ->
             val f = el.jsonObject
             val id = f["id"]?.jsonPrimitive?.contentOrNull ?: return@forEach

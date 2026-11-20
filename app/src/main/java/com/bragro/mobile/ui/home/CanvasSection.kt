@@ -222,7 +222,8 @@ fun CanvasCirclesRow(
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     }
     val escuroCanvas = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val corTextoCanvas = if (escuroCanvas) Color(0xFF111111) else Color.White
+    // v320 (mockup v320b) -- sem a faixa verde: fazendas sobre o fundo da tela, texto preto/branco.
+    val corTextoCanvas = MaterialTheme.colorScheme.onSurface
     // Forma/cor do bloco -- pedido do usuario ("bloco 3 [cantos assimetricos]
     // com estilo do 4 [cor cheia], a cor tem que seguir o modo
     // escuro/claro"): colorScheme.primary/onPrimary ja tem par
@@ -233,10 +234,8 @@ fun CanvasCirclesRow(
     // com o restante da pagina").
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(topStart = 36.dp, topEnd = 8.dp, bottomEnd = 36.dp, bottomStart = 8.dp),
-        // v1.6.7 (mockup v108, item 3) -- modo claro: verde + texto branco;
-        // modo escuro: verde-claro + texto preto.
-        colors = CardDefaults.cardColors(containerColor = if (escuroCanvas) Color(0xFF6FA98C) else com.bragro.mobile.ui.theme.VerdeBarra, contentColor = corTextoCanvas),
+        shape = RoundedCornerShape(0.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent, contentColor = corTextoCanvas),
         border = BorderStroke(0.dp, Color.Transparent),
     ) {
         Column {

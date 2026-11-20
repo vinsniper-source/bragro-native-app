@@ -98,6 +98,8 @@ private object Routes {
     const val BANK_IMPORT = "bank_import"
     const val SETTINGS = "settings"
     const val BASE_DE_DADOS = "base_de_dados"
+    // v326 -- tela Fazendas logo após o login (casinha leva ao Início).
+    const val FAZENDAS = "fazendas"
     const val CSV_IMPORT = "csv_import"
     const val SEGURANCA = "seguranca"
     const val PAINEL_DONO = "painel_dono"
@@ -247,8 +249,24 @@ fun BRAgroNavHost() {
         ) {
         composable(Routes.LOGIN) {
             LoginScreen(onLoggedIn = {
-                navController.navigate(Routes.HOME) { popUpTo(Routes.LOGIN) { inclusive = true } }
+                // v326 (mockup v326) -- Login -> Fazendas -> (casinha) Início.
+                navController.navigate(Routes.FAZENDAS) { popUpTo(Routes.LOGIN) { inclusive = true } }
             })
+        }
+        composable(Routes.FAZENDAS) {
+            val irInicio = {
+                navController.navigate(Routes.HOME) { popUpTo(Routes.FAZENDAS) { inclusive = true } }
+            }
+            // Quem não é dono nem administrador não cadastra fazendas: segue direto.
+            val papel = session?.role
+            LaunchedEffect(papel) {
+                if (papel != null && papel != "OWNER" && papel != "ADMIN") irInicio()
+            }
+            BaseDeDadosScreen(
+                onBack = irInicio,
+                modoFazendas = true,
+                onHome = irInicio,
+            )
         }
         composable(Routes.HOME) {
             HomeScreen(
