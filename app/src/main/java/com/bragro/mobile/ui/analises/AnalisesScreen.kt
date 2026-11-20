@@ -509,10 +509,7 @@ private fun MiniChart(titulo: String, descricao: String, items: List<JsonObject>
         isMoney = isMoney,
     ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        if (titulo.isNotBlank()) {
-            Text(titulo, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-        }
-        Text(descricao, style = MaterialTheme.typography.bodySmall)
+        com.bragro.mobile.ui.domain.TituloGraficoComDica(titulo, descricao)
         Spacer(modifier = Modifier.height(6.dp))
         if (items.isEmpty()) {
             Text("Sem dados para este cruzamento.", style = MaterialTheme.typography.bodySmall)
@@ -651,19 +648,15 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                                 isMoney = true,
                             ) {
                             Column(modifier = Modifier.fillMaxWidth()) {
-                                Text("Custo/ha por Fazenda — fonte por fonte", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                                Text("Origem do custo por fazenda (ha ou sc).", style = MaterialTheme.typography.bodySmall)
+                                com.bragro.mobile.ui.domain.TituloGraficoComDica("Custo/ha por Fazenda — fonte por fonte", "Origem do custo/ha por fazenda. Soma maior que o DRE, que só conta o Financeiro.")
                                 Spacer(modifier = Modifier.height(4.dp))
-                                SingleChoiceSegmentedButtonRow(modifier = Modifier.padding(bottom = 6.dp)) {
-                                    listOf("ha" to "R$/ha", "sc" to "R$/sc").forEachIndexed { index, (valor, rotulo) ->
-                                        SegmentedButton(
-                                            selected = unidadeCusto == valor,
-                                            onClick = { unidadeCusto = valor },
-                                            shape = SegmentedButtonDefaults.itemShape(index = index, count = 2),
-                                            label = { Text(rotulo) },
-                                        )
-                                    }
-                                }
+                                // v271 (site v315/v316) -- traço verde, opções à esquerda.
+                                com.bragro.mobile.ui.domain.TracoOpcoes(
+                                    opcoes = listOf("ha" to "Por hectare (ha)", "sc" to "Por saca (sc)"),
+                                    selecionado = unidadeCusto,
+                                    onSelect = { unidadeCusto = it },
+                                    modifier = Modifier.padding(bottom = 6.dp),
+                                )
                                 if (custoHaExibido.isEmpty()) {
                                     Text("Sem dados para este cruzamento.", style = MaterialTheme.typography.bodySmall)
                                 } else {

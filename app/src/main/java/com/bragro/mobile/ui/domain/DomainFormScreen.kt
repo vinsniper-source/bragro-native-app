@@ -296,7 +296,7 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
                     col.type == "date" -> isoDateToBr(isoDateOnly(raw))
                     else -> raw
                 }
-                if (col.key == "kmOdometro" || col.key == "horimetro") camposOriginais[col.key] = raw
+                if (col.key == "kmOdometro" || col.key == "horimetro" || col.key == "entidade") camposOriginais[col.key] = raw
             }
             computedValues.value = computed
 
@@ -490,7 +490,15 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
     fun medidaFrota(): String? = (leituraFrota?.get("medida") as? kotlinx.serialization.json.JsonPrimitive)
         ?.takeIf { it.isString }?.content
 
+    // v271 (site v314, item 4/5) -- operação de banco no Financeiro: o Ajuste
+    // vira "Juros", a Entidade some (se ainda não tiver) e há a opção de
+    // lançar os juros num lançamento separado.
+    fun opBanco(): Boolean = domainId == "financeiro" &&
+        Regex("EMPR[ÉE]STIMO|FINANCIAMENTO|APLICA[ÇC][ÃA]O|RESGATE|JUROS|TARIFA").containsMatchIn((fields["operacao"] ?: "").uppercase())
+    var jurosSeparado by mutableStateOf(false)
+
     fun isVisible(col: ColumnConfig): Boolean {
+        if (col.key == "entidade" && opBanco() && camposOriginais["entidade"].isNullOrBlank()) return false
         // v232 -- lista que não se aplica à Operação/Categoria escolhida some.
         if (col.type == "select" && sugestaoVazia(col)) return false
         // v204 (mockup aprovado) -- Atividades: Produtividade e Custo/sc-ton só na
@@ -687,7 +695,18 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
                 errorMessage.value = "Nº do pedido (une os itens)."
                 return@launch
             }
-            var result = if (recordId == null) recordRepository.createRecord(domainId, snapshot) else recordRepository.updateRecord(domainId, recordId, snapshot)
+            // v271 (site v314) -- "Lançar os juros em separado": o principal sai
+            // sem os juros e um 2º lançamento, em "Juros e encargos", leva o valor.
+            val jurosTxt = snapshot["ajuste"].orEmpty()
+            val jurosNum = jurosTxt.let { t -> (if (t.contains(",")) t.replace(".", "").replace(",", ".") else t).toDoubleOrNull() } ?: 0.0
+            val separarJuros = recordId == null && opBanco() && jurosSeparado && jurosNum > 0
+            val principal = if (separarJuros) snapshot + ("ajuste" to "0") else snapshot
+            var result = if (recordId == null) recordRepository.createRecord(domainId, principal) else recordRepository.updateRecord(domainId, recordId, snapshot)
+            if (separarJuros && result !is SaveResult.Failure) {
+                val juros = (snapshot - setOf("subcategoria", "periodo")) + mapOf("categoria" to "JUROS E ENCARGOS", "operacao" to "DESPESA", "bruto" to jurosTxt, "ajuste" to "0")
+                val rj = recordRepository.createRecord(domainId, juros)
+                if (rj is SaveResult.Failure) result = rj
+            }
             // Itens extras: mesmo cabeçalho (O.S./pedido, fazenda, datas...),
             // só os campos do item trocados -- cada um vira um registro.
             if (result !is SaveResult.Failure && multi != null) {
@@ -1101,11 +1120,18 @@ fun DomainFormScreen(
                     if (col.type == "checkbox") {
                         FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                     } else {
-                        com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), col.required, acoes = null, dica = col.hint) {
+                        com.bragro.mobile.ui.theme.NomeAoLado(if (col.key == "ajuste" && viewModel.opBanco()) "Juros" else com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), col.required, acoes = null, dica = col.hint) {
                             FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                         }
                     }
                     androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
+                    // v271 (site v314) -- opção de lançar os juros em separado.
+                    if (recordId == null && col.key == "ajuste" && viewModel.opBanco()) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = ESPACO_CAMPOS)) {
+                            androidx.compose.material3.Checkbox(checked = viewModel.jurosSeparado, onCheckedChange = { viewModel.jurosSeparado = it })
+                            Text("Lançar os juros em separado", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
                     if (recordId == null && domainId == "financeiro" && col.key == "docNf") {
                         FinanceiroItensInlineSection(
                             docNf = viewModel.fields["docNf"] ?: "",

@@ -810,22 +810,17 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                                     fontWeight = FontWeight.Bold,
                                 )
                                 if (temAlgumaSaca || temAlgumTon) {
-                                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                                        val opcoes = buildList {
-                                            add("ha" to "ha")
-                                            if (temAlgumaSaca) add("sc" to "sc")
-                                            if (temAlgumTon) add("ton" to "ton")
-                                        }
-                                        opcoes.forEachIndexed { index, (v, label) ->
-                                            SegmentedButton(
-                                                selected = unidadeCusto == v,
-                                                onClick = { unidadeCusto = v },
-                                                shape = SegmentedButtonDefaults.itemShape(index = index, count = opcoes.size),
-                                            ) {
-                                                Text(label, style = MaterialTheme.typography.labelSmall)
-                                            }
-                                        }
-                                    }
+                                    // v271 (site v315/v316) -- traço verde, opções à esquerda.
+                                    com.bragro.mobile.ui.domain.TracoOpcoes(
+                                        opcoes = buildList {
+                                            add("ha" to "Por hectare (ha)")
+                                            if (temAlgumaSaca) add("sc" to "Por saca (sc)")
+                                            if (temAlgumTon) add("ton" to "Por tonelada (ton)")
+                                        },
+                                        selecionado = unidadeCusto,
+                                        onSelect = { unidadeCusto = it },
+                                        modifier = Modifier.padding(bottom = 6.dp),
+                                    )
                                 }
                                 val categorias = when (unidadeCusto) {
                                     "sc" -> data.porFazenda.filter { it.custoPorSc != null }.map { it.farmName }

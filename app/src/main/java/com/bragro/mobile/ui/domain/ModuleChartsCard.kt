@@ -263,10 +263,7 @@ private fun GenericChartBlock(data: GenericChartData) {
 @Composable
 private fun BarChartBlock(spec: ChartSpec.Bar) {
     Column {
-        Text(spec.title, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
-        if (spec.description.isNotBlank()) {
-            Text(spec.description, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(bottom = 6.dp))
-        }
+        TituloGraficoComDica(spec.title, spec.description, modifier = Modifier.padding(bottom = 6.dp))
         SimpleBarChart(
             categories = spec.categories,
             series = spec.series.mapIndexed { i, (_, label, values) -> BarSeries(label, values, defaultSeriesColor(i)) },
@@ -278,10 +275,7 @@ private fun BarChartBlock(spec: ChartSpec.Bar) {
 @Composable
 private fun TableChartBlock(spec: ChartSpec.Table) {
     Column {
-        Text(spec.title, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
-        if (spec.description.isNotBlank()) {
-            Text(spec.description, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(bottom = 6.dp))
-        }
+        TituloGraficoComDica(spec.title, spec.description, modifier = Modifier.padding(bottom = 6.dp))
         spec.rows.forEach { row ->
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 spec.columns.forEach { (_, label, value) ->
@@ -354,5 +348,19 @@ private fun parseChartSpec(obj: JsonObject): ChartSpec? {
             ChartSpec.Table(title, description, columnSpecs, rows)
         }
         else -> null
+    }
+}
+
+/** v271 (site v315, item 3) -- frase do gráfico no ⓘ ao lado do título; se
+ * for igual ao título, some. */
+@androidx.compose.runtime.Composable
+fun TituloGraficoComDica(titulo: String, descricao: String, modifier: androidx.compose.ui.Modifier = androidx.compose.ui.Modifier) {
+    fun norm(t: String) = java.text.Normalizer.normalize(t.lowercase(), java.text.Normalizer.Form.NFD).replace(Regex("[\\u0300-\\u036f]"), "").replace(Regex("[^a-z0-9]+"), " ").trim()
+    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = modifier) {
+        if (titulo.isNotBlank()) com.bragro.mobile.ui.i18n.Text(titulo, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, style = androidx.compose.material3.MaterialTheme.typography.bodyMedium)
+        if (descricao.isNotBlank() && norm(descricao) != norm(titulo)) {
+            androidx.compose.foundation.layout.Spacer(androidx.compose.ui.Modifier.width(6.dp))
+            com.bragro.mobile.ui.theme.DicaInfo(descricao)
+        }
     }
 }

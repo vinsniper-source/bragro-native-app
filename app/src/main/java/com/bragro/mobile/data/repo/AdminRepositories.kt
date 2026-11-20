@@ -94,10 +94,13 @@ class BaseDeDadosRepository(context: Context) {
         // Foto anexada ao valor de lista suspensa (13ª exceção de schema,
         // ver MEMORY.md) -- só usado em add_lookup, omitido = não mexe.
         fotoUrl: String? = null,
+        localCulturas: List<Double?>? = null,
     ): Result<JsonElement?> {
         val tokens = tokenStore.current() ?: return Result.failure(IllegalStateException("Sessão expirada. Entre novamente."))
         var (accessToken, refreshToken) = tokens
-        fun body() = BaseDeDadosRequest(accessToken, refreshToken, action, category, value, id, ativo, name, areaHa, cultura, areaSafrinhaHa, areaSafrinhaCultura1, areaSafrinhaCultura1Ha, areaSafrinhaCultura2, areaSafrinhaCultura2Ha, latitude, longitude, situacaoTerra, fotoUrl)
+        fun body() = BaseDeDadosRequest(accessToken, refreshToken, action, category, value, id, ativo, name, areaHa, cultura, areaSafrinhaHa, areaSafrinhaCultura1, areaSafrinhaCultura1Ha, areaSafrinhaCultura2, areaSafrinhaCultura2Ha, latitude, longitude, situacaoTerra, fotoUrl,
+            latitudeCultura1 = localCulturas?.getOrNull(0), longitudeCultura1 = localCulturas?.getOrNull(1),
+            latitudeCultura2 = localCulturas?.getOrNull(2), longitudeCultura2 = localCulturas?.getOrNull(3))
         return try {
             var response = NetworkModule.mobileApi.baseDeDados(body())
             if (response.code() == 401) {

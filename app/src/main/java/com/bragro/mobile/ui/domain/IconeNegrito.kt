@@ -91,7 +91,7 @@ fun SalvarTopo(onClick: () -> Unit, enabled: Boolean = true, loading: Boolean = 
  * lixeira vira "Excluir? Sim  Não" no mesmo lugar, sem janela por cima.
  * Volta sozinha depois de alguns segundos. */
 @Composable
-fun ExcluirInline(onConfirm: () -> Unit, tamanhoBotao: Dp = 28.dp, tamanhoIcone: Dp = 18.dp) {
+fun ExcluirInline(onConfirm: () -> Unit, tamanhoBotao: Dp = 28.dp, tamanhoIcone: Dp = 16.dp) {
     var confirmando by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     if (!confirmando) {
         androidx.compose.material3.IconButton(onClick = { confirmando = true }, modifier = Modifier.size(tamanhoBotao)) {

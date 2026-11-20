@@ -716,6 +716,11 @@ data class BaseDeDadosRequest(
     // partial-update: omitido (explicitNulls=false em NetworkModule.json) =
     // não mexe no fotoUrl já salvo; presente + string = define.
     val fotoUrl: String? = null,
+    // v271 (mockup v323b) -- localização da Cultura 1 e da Cultura 2.
+    val latitudeCultura1: Double? = null,
+    val longitudeCultura1: Double? = null,
+    val latitudeCultura2: Double? = null,
+    val longitudeCultura2: Double? = null,
 )
 
 @Serializable

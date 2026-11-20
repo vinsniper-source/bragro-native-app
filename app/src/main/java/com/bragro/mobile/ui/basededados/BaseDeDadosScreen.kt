@@ -35,6 +35,7 @@ import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.material.icons.outlined.Edit
@@ -139,10 +140,10 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun act(action: String, category: String? = null, value: String? = null, id: String? = null, ativo: Boolean? = null, name: String? = null, areaHa: Double? = null, cultura: String? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null, situacaoTerra: String? = null, fotoUrl: String? = null, onDone: (Boolean) -> Unit = {}) {
+    private fun act(action: String, category: String? = null, value: String? = null, id: String? = null, ativo: Boolean? = null, name: String? = null, areaHa: Double? = null, cultura: String? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null, situacaoTerra: String? = null, fotoUrl: String? = null, localCulturas: List<Double?>? = null, onDone: (Boolean) -> Unit = {}) {
         busy.value = true
         viewModelScope.launch {
-            val result = repo.run(action, category, value, id, ativo, name, areaHa, cultura, areaSafrinhaHa, areaSafrinhaCultura1, areaSafrinhaCultura1Ha, areaSafrinhaCultura2, areaSafrinhaCultura2Ha, latitude, longitude, situacaoTerra, fotoUrl)
+            val result = repo.run(action, category, value, id, ativo, name, areaHa, cultura, areaSafrinhaHa, areaSafrinhaCultura1, areaSafrinhaCultura1Ha, areaSafrinhaCultura2, areaSafrinhaCultura2Ha, latitude, longitude, situacaoTerra, fotoUrl, localCulturas)
             busy.value = false
             result.onSuccess { load(); onDone(true) }.onFailure { errorMessage.value = it.message; onDone(false) }
         }
@@ -255,8 +256,8 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
     // Situação da terra / regime de posse (9ª exceção de schema, ver
     // MEMORY.md) -- opcional, colocado por ÚLTIMO (mesmo critério de "name"
     // em updateFarm abaixo) pra não quebrar nenhuma chamada existente.
-    fun addFarm(name: String, areaHa: Double, cultura: String? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null, situacaoTerra: String? = null) =
-        act("add_farm", name = name, areaHa = areaHa, cultura = cultura, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaCultura1 = areaSafrinhaCultura1, areaSafrinhaCultura1Ha = areaSafrinhaCultura1Ha, areaSafrinhaCultura2 = areaSafrinhaCultura2, areaSafrinhaCultura2Ha = areaSafrinhaCultura2Ha, latitude = latitude, longitude = longitude, situacaoTerra = situacaoTerra)
+    fun addFarm(name: String, areaHa: Double, cultura: String? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null, situacaoTerra: String? = null, localCulturas: List<Double?>? = null) =
+        act("add_farm", localCulturas = localCulturas, name = name, areaHa = areaHa, cultura = cultura, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaCultura1 = areaSafrinhaCultura1, areaSafrinhaCultura1Ha = areaSafrinhaCultura1Ha, areaSafrinhaCultura2 = areaSafrinhaCultura2, areaSafrinhaCultura2Ha = areaSafrinhaCultura2Ha, latitude = latitude, longitude = longitude, situacaoTerra = situacaoTerra)
     // Localização (6ª exceção de schema, ver MEMORY.md) -- latitude/
     // longitude sempre viajam juntas (as duas null limpa, as duas
     // preenchidas define; validação de "uma sem a outra" já é feita no
@@ -271,8 +272,8 @@ class BaseDeDadosViewModel(app: Application) : AndroidViewModel(app) {
     // Situação da terra / regime de posse (9ª exceção de schema, ver
     // MEMORY.md) -- opcional, colocado por ÚLTIMO (mesmo critério de "name"
     // acima) pra não quebrar nenhuma chamada existente.
-    fun updateFarm(id: String, areaHa: Double, cultura: String? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null, name: String? = null, situacaoTerra: String? = null) =
-        act("update_farm", id = id, name = name, areaHa = areaHa, cultura = cultura, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaCultura1 = areaSafrinhaCultura1, areaSafrinhaCultura1Ha = areaSafrinhaCultura1Ha, areaSafrinhaCultura2 = areaSafrinhaCultura2, areaSafrinhaCultura2Ha = areaSafrinhaCultura2Ha, latitude = latitude, longitude = longitude, situacaoTerra = situacaoTerra)
+    fun updateFarm(id: String, areaHa: Double, cultura: String? = null, areaSafrinhaHa: Double? = null, areaSafrinhaCultura1: String? = null, areaSafrinhaCultura1Ha: Double? = null, areaSafrinhaCultura2: String? = null, areaSafrinhaCultura2Ha: Double? = null, latitude: Double? = null, longitude: Double? = null, name: String? = null, situacaoTerra: String? = null, localCulturas: List<Double?>? = null) =
+        act("update_farm", localCulturas = localCulturas, id = id, name = name, areaHa = areaHa, cultura = cultura, areaSafrinhaHa = areaSafrinhaHa, areaSafrinhaCultura1 = areaSafrinhaCultura1, areaSafrinhaCultura1Ha = areaSafrinhaCultura1Ha, areaSafrinhaCultura2 = areaSafrinhaCultura2, areaSafrinhaCultura2Ha = areaSafrinhaCultura2Ha, latitude = latitude, longitude = longitude, situacaoTerra = situacaoTerra)
     fun deleteFarm(id: String) = act("delete_farm", id = id)
     fun syncLocais() = act("sync_locais")
 }
@@ -463,6 +464,9 @@ fun BaseDeDadosScreen(
                 }
             }
             if (modoFazendas) item(key = "farms") {
+                FazendasCadastro(farms = farms, busy = busy, viewModel = viewModel)
+            }
+            if (false) item(key = "farms_antigo") {
                 FarmsCard(
                     abertoInicial = true,
                     farms = farms,
@@ -1226,3 +1230,196 @@ private data class LookupEmEdicao(val id: String, val categoria: String, val nom
 /** v1.6.28 -- lista escolhida no menu "Base de Dados" do cabeçalho (rola até ela). */
 object BaseDeDadosFoco { var categoria: String? = null }
 
+
+// ---------------------------------------------------------------------------
+// v271 (mockups v323b/v325 aprovados, iguais ao site) -- cadastro das fazendas
+// da tela Fazendas: lista com editar/lixeira laranja; "Nova fazenda" com ＋
+// (mais um bloco) e ✓ (cadastra todos); cada cultura (principal, 1 e 2) com
+// cultura, hectares e latitude/longitude, com localizar, buscar e câmera.
+
+private class LinhaCultura(cultura: String = "", ha: String = "", local: String = "") {
+    var cultura by mutableStateOf(cultura)
+    var ha by mutableStateOf(ha)
+    var local by mutableStateOf(local)
+}
+
+private class FormFazenda(nome: String = "", situacao: String = "", val linhas: List<LinhaCultura> = List(3) { LinhaCultura() }) {
+    var nome by mutableStateOf(nome)
+    var situacao by mutableStateOf(situacao)
+}
+
+private fun lerLocalTexto(t: String): Pair<Double, Double>? {
+    val p = t.split(",").map { it.trim() }
+    if (p.size != 2) return null
+    val la = p[0].toDoubleOrNull() ?: return null
+    val lo = p[1].toDoubleOrNull() ?: return null
+    return la to lo
+}
+
+private fun localValido(t: String) = t.isBlank() || lerLocalTexto(t) != null
+
+@Composable
+private fun CamposFazenda(form: FormFazenda) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val ocrContext = ctx.applicationContext
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(
+            value = form.nome, onValueChange = { form.nome = it }, label = { Text("Nome da fazenda") },
+            modifier = Modifier.fillMaxWidth(), singleLine = true, colors = appFieldColors(),
+        )
+        SituacaoTerraDropdownField(value = form.situacao, onValueChange = { form.situacao = it }, modifier = Modifier.fillMaxWidth())
+        listOf("Cultura principal", "Cultura 1", "Cultura 2").forEachIndexed { i, rot ->
+            val l = form.linhas[i]
+            Text(rot, style = MaterialTheme.typography.labelLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, modifier = Modifier.padding(top = 6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                CulturaDropdownField(value = l.cultura, onValueChange = { l.cultura = it }, label = "Cultura", modifier = Modifier.weight(1f))
+                OutlinedTextField(
+                    value = l.ha, onValueChange = { l.ha = it }, label = { Text("Hectares") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true,
+                    modifier = Modifier.weight(1f), colors = appFieldColors(),
+                )
+            }
+            OutlinedTextField(
+                value = l.local, onValueChange = { l.local = it }, label = { Text("Latitude, longitude") },
+                singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors(),
+                trailingIcon = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        LocalizacaoBotoes(onLocal = { l.local = it }, onAviso = { android.widget.Toast.makeText(ctx, it, android.widget.Toast.LENGTH_LONG).show() })
+                        com.bragro.mobile.ui.domain.OcrFotoButton(label = "Preencher com foto do documento", somenteIcone = true) { url ->
+                            val r = com.bragro.mobile.data.repo.OcrFotoRepository(ocrContext).lerFazenda(url)
+                            val f = r.fazenda
+                            if (r.ok && f != null) {
+                                // Na cultura principal a foto preenche nome, área e local;
+                                // na Cultura 1 e 2, só a localização daquela linha.
+                                if (i == 0) {
+                                    f.name?.let { form.nome = it }
+                                    f.areaHa?.let { l.ha = it.toString() }
+                                }
+                                if (f.latitude != null && f.longitude != null) l.local = "${f.latitude}, ${f.longitude}"
+                            }
+                            r.mensagem ?: r.error
+                        }
+                    }
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun FazendasCadastro(farms: kotlinx.serialization.json.JsonArray?, busy: Boolean, viewModel: BaseDeDadosViewModel) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val laranja = com.bragro.mobile.ui.domain.corAtencao()
+    val br = java.util.Locale("pt", "BR")
+    fun aviso(t: String) = android.widget.Toast.makeText(ctx, t, android.widget.Toast.LENGTH_LONG).show()
+    var editandoId by remember { mutableStateOf<String?>(null) }
+    var formEdicao by remember { mutableStateOf<FormFazenda?>(null) }
+    val novas = remember { androidx.compose.runtime.mutableStateListOf(FormFazenda()) }
+
+    fun enviar(form: FormFazenda, id: String?, nomeAntigo: String?) : Boolean {
+        val principal = form.linhas[0]
+        val area = principal.ha.replace(",", ".").toDoubleOrNull()
+        if (form.nome.isBlank()) return false
+        if (area == null || area <= 0) { aviso("Informe os hectares da cultura principal de ${form.nome}."); return false }
+        if (form.linhas.any { !localValido(it.local) }) { aviso("Localização inválida. Formato: latitude, longitude (ex.: -18.58, -48.69)."); return false }
+        val l0 = lerLocalTexto(principal.local)
+        val l1 = lerLocalTexto(form.linhas[1].local)
+        val l2 = lerLocalTexto(form.linhas[2].local)
+        fun c(i: Int) = form.linhas[i].cultura.trim().ifEmpty { null }
+        fun h(i: Int) = if (c(i) != null) form.linhas[i].ha.replace(",", ".").toDoubleOrNull() else null
+        val loc = listOf(l1?.first, l1?.second, l2?.first, l2?.second)
+        val situacao = form.situacao.trim().ifEmpty { null }
+        if (id == null) {
+            viewModel.addFarm(form.nome.trim(), area, cultura = c(0), areaSafrinhaCultura1 = c(1), areaSafrinhaCultura1Ha = h(1), areaSafrinhaCultura2 = c(2), areaSafrinhaCultura2Ha = h(2), latitude = l0?.first, longitude = l0?.second, situacaoTerra = situacao, localCulturas = loc)
+        } else {
+            val novoNome = form.nome.trim().takeIf { it != nomeAntigo }
+            viewModel.updateFarm(id, area, cultura = c(0), areaSafrinhaCultura1 = c(1), areaSafrinhaCultura1Ha = h(1), areaSafrinhaCultura2 = c(2), areaSafrinhaCultura2Ha = h(2), latitude = l0?.first, longitude = l0?.second, name = novoNome, situacaoTerra = situacao, localCulturas = loc)
+        }
+        return true
+    }
+
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        androidx.compose.material3.HorizontalDivider()
+        farms?.forEach { el ->
+            val f = el.jsonObject
+            val id = f["id"]?.jsonPrimitive?.contentOrNull ?: return@forEach
+            val nome = f["name"]?.jsonPrimitive?.contentOrNull ?: ""
+            fun s(k: String) = f[k]?.jsonPrimitive?.contentOrNull
+            fun d(k: String) = f[k]?.jsonPrimitive?.doubleOrNull
+            fun ha(v: Double?) = v?.let { java.text.NumberFormat.getNumberInstance(br).format(it) } ?: ""
+            if (editandoId == id && formEdicao != null) {
+                Column(modifier = Modifier.padding(vertical = 6.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Editar fazenda", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.weight(1f))
+                        IconButton(onClick = { if (enviar(formEdicao!!, id, nome)) { editandoId = null; formEdicao = null } }, enabled = !busy) {
+                            Icon(Icons.Outlined.Check, contentDescription = "Salvar", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        }
+                        IconButton(onClick = { editandoId = null; formEdicao = null }) {
+                            Icon(Icons.Outlined.Close, contentDescription = "Cancelar", modifier = Modifier.size(20.dp))
+                        }
+                    }
+                    CamposFazenda(formEdicao!!)
+                }
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(nome, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                        Text(
+                            listOfNotNull(
+                                s("situacaoTerra"),
+                                "${s("cultura")?.let { "$it " } ?: ""}${ha(d("areaHa"))} ha",
+                                s("areaSafrinhaCultura1")?.let { "$it ${ha(d("areaSafrinhaCultura1Ha"))} ha" },
+                                s("areaSafrinhaCultura2")?.let { "$it ${ha(d("areaSafrinhaCultura2Ha"))} ha" },
+                            ).joinToString(" · "),
+                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (d("latitude") != null) Icon(Icons.Outlined.Place, contentDescription = "Localização cadastrada", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                    IconButton(onClick = {
+                        fun loc(a: String, b: String) = if (d(a) != null && d(b) != null) "${d(a)}, ${d(b)}" else ""
+                        formEdicao = FormFazenda(nome, s("situacaoTerra") ?: "", listOf(
+                            LinhaCultura(s("cultura") ?: "", d("areaHa")?.toString() ?: "", loc("latitude", "longitude")),
+                            LinhaCultura(s("areaSafrinhaCultura1") ?: "", d("areaSafrinhaCultura1Ha")?.toString() ?: "", loc("latitudeCultura1", "longitudeCultura1")),
+                            LinhaCultura(s("areaSafrinhaCultura2") ?: "", d("areaSafrinhaCultura2Ha")?.toString() ?: "", loc("latitudeCultura2", "longitudeCultura2")),
+                        ))
+                        editandoId = id
+                    }) { Icon(Icons.Outlined.Edit, contentDescription = "Editar", modifier = Modifier.size(20.dp)) }
+                    IconButton(onClick = { viewModel.deleteFarm(id) }, enabled = !busy) {
+                        Icon(Icons.Outlined.Delete, contentDescription = "Excluir", tint = laranja, modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+            androidx.compose.material3.HorizontalDivider()
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 10.dp)) {
+            Text("Nova fazenda", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.weight(1f))
+            IconButton(onClick = { novas.add(FormFazenda()) }) {
+                Icon(Icons.Outlined.Add, contentDescription = "Adicionar outra fazenda", modifier = Modifier.size(20.dp))
+            }
+            IconButton(
+                onClick = {
+                    val preenchidas = novas.filter { it.nome.isNotBlank() }
+                    if (preenchidas.isNotEmpty() && preenchidas.all { enviar(it, null, null) }) {
+                        novas.clear(); novas.add(FormFazenda())
+                    }
+                },
+                enabled = !busy,
+            ) {
+                if (busy) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                else Icon(Icons.Outlined.Check, contentDescription = "Cadastrar fazenda", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+            }
+        }
+        novas.forEachIndexed { i, form ->
+            if (i > 0) {
+                androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Nova fazenda ${i + 1}", fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                    IconButton(onClick = { novas.removeAt(i) }) {
+                        Icon(Icons.Outlined.Delete, contentDescription = "Excluir este bloco", tint = laranja, modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+            CamposFazenda(form)
+        }
+    }
+}

@@ -1921,7 +1921,7 @@ fun DomainListScreen(
                                 // plataforma"): na vista Tabela (onView, ver
                                 // RecordTable.kt) o ícone Ver continua igual.
                                 IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
-                                    Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurface)
+                                    Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface)
                                 }
                                 ExcluirInline(onConfirm = { recordId?.let { viewModel.deleteRecord(domainId, it) } })
                             }
@@ -2023,6 +2023,16 @@ fun DomainListScreen(
                         modifier = Modifier.heightIn(max = 560.dp).verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
+                        // v271 (mockup v322) -- RH: ficha do colaborador com a foto.
+                        if (domainId == "rh") viewedRecord["id"]?.let { rid ->
+                            Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
+                                FotoColaborador(rid, editavel = true)
+                                Column(modifier = Modifier.padding(start = 14.dp).weight(1f)) {
+                                    Text(viewedRecord["colaborador"].orEmpty(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                    Text(listOfNotNull(viewedRecord["funcao"]?.takeIf { it.isNotBlank() }, viewedRecord["status"]?.takeIf { it.isNotBlank() }).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
                         // v1.6.1 (mockup v102, item 3) -- mesmo padrão do Editar: seções e
                         // automáticos no lugar deles, com "auto".
                         val ordem = viewedConfig.columns.filter { it.type != "textarea" }
@@ -2517,7 +2527,7 @@ private fun FinanceiroNfeGroupCard(
                         )
                     }
                     IconButton(onClick = { if (recId != null) onEditRecord(recId) }, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurface)
+                        Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface)
                     }
                     ExcluirInline(onConfirm = { onDeleteRequest(recId) })
                 }

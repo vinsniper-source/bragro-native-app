@@ -802,7 +802,7 @@ fun FinanceiroScreen(
                                             // (continua existindo na vista Tabela, ver RecordTable.kt,
                                             // que o usuário pediu pra manter).
                                             IconButton(onClick = { if (recordId != null) onEditRecord(recordId) }, modifier = Modifier.size(28.dp)) {
-                                                Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurface)
+                                                Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface)
                                             }
                                             ExcluirInline(onConfirm = { recordId?.let { viewModel.deleteRecord("financeiro", it) } })
                                         }
@@ -1052,7 +1052,7 @@ private fun FinanceiroNfeGroupCard(
                         )
                     }
                     IconButton(onClick = { if (recId != null) onEditRecord(recId) }, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurface)
+                        Icon(Icons.Outlined.Edit, contentDescription = "Editar registro", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface)
                     }
                     ExcluirInline(onConfirm = { onDeleteRequest(recId) })
                 }

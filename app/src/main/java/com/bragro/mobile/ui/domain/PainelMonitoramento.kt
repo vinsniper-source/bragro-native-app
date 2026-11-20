@@ -1094,10 +1094,10 @@ fun CartaoOs(os: OsDaOperacao, onEdit: () -> Unit, onDelete: () -> Unit, onVerIt
                 }
                 Text(fmtMoeda(os.total), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 androidx.compose.material3.IconButton(onClick = onEdit, modifier = Modifier.size(30.dp)) {
-                    androidx.compose.material3.Icon(Icons.Outlined.Edit, contentDescription = "Editar O.S.", modifier = Modifier.size(17.dp))
+                    androidx.compose.material3.Icon(Icons.Outlined.Edit, contentDescription = "Editar O.S.", modifier = Modifier.size(16.dp))
                 }
                 androidx.compose.material3.IconButton(onClick = onDelete, modifier = Modifier.size(30.dp)) {
-                    androidx.compose.material3.Icon(Icons.Outlined.Delete, contentDescription = "Excluir O.S.", tint = corAtencao(), modifier = Modifier.size(17.dp))
+                    androidx.compose.material3.Icon(Icons.Outlined.Delete, contentDescription = "Excluir O.S.", tint = corAtencao(), modifier = Modifier.size(16.dp))
                 }
             }
             val linha = MaterialTheme.colorScheme.outlineVariant
@@ -1210,10 +1210,10 @@ fun CartaoResumoPedido(res: ResumoPedido, onEdit: (String) -> Unit, onDelete: (L
                         Text(l.sub, fontSize = 11.sp, color = muted)
                     }
                     androidx.compose.material3.IconButton(onClick = { l.linhas.firstOrNull()?.get("id")?.let(onEdit) }, modifier = Modifier.size(30.dp)) {
-                        androidx.compose.material3.Icon(Icons.Outlined.Edit, contentDescription = "Editar", modifier = Modifier.size(17.dp))
+                        androidx.compose.material3.Icon(Icons.Outlined.Edit, contentDescription = "Editar", modifier = Modifier.size(16.dp))
                     }
                     androidx.compose.material3.IconButton(onClick = { onDelete(l) }, modifier = Modifier.size(30.dp)) {
-                        androidx.compose.material3.Icon(Icons.Outlined.Delete, contentDescription = "Excluir", tint = corAtencao(), modifier = Modifier.size(17.dp))
+                        androidx.compose.material3.Icon(Icons.Outlined.Delete, contentDescription = "Excluir", tint = corAtencao(), modifier = Modifier.size(16.dp))
                     }
                 }
                 if (comItens) l.linhas.forEach { r ->
@@ -1348,7 +1348,7 @@ fun LinhasParcelasFinanceiro(rows: List<Map<String, String?>>, onVer: (String) -
                 val v = painelNum(r["liquido"]?.takeIf { it.isNotBlank() } ?: r["bruto"])
                 Text(fmtMoeda(v), fontSize = 12.5.sp, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"))
                 androidx.compose.material3.IconButton(onClick = { r["id"]?.let(onEdit) }, modifier = Modifier.size(34.dp)) {
-                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Edit, contentDescription = "Editar", modifier = Modifier.size(18.dp))
+                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Edit, contentDescription = "Editar", modifier = Modifier.size(16.dp))
                 }
             }
         }
