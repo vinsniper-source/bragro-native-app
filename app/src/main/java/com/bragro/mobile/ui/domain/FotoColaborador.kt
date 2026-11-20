@@ -136,4 +136,3 @@ fun FotoColaborador(id: String, mini: Boolean = false, editavel: Boolean = false
     }
 }
 
-private fun Modifier.fillMaxSize(): Modifier = this.then(androidx.compose.foundation.layout.fillMaxSize().let { Modifier.then(it) })

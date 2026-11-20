@@ -35,6 +35,7 @@ import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.foundation.border
 import androidx.compose.foundation.background
