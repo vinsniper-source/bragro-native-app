@@ -49,7 +49,8 @@ fun SalvarIcone(onClick: () -> Unit, enabled: Boolean = true, loading: Boolean =
         else IconeNegrito(
             androidx.compose.material.icons.Icons.Outlined.Check,
             contentDescription = descricao,
-            tint = if (enabled) androidx.compose.material3.MaterialTheme.colorScheme.primary else androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+            // v272 (site v315, itens 7 e 10) -- sempre no verde da plataforma.
+            tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
             size = 26.dp,
         )
     }

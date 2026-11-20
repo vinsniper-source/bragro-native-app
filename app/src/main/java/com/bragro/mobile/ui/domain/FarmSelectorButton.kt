@@ -100,9 +100,9 @@ fun FarmSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onCh
                 // todas as bordas de todo app"); sem fundo a pill ficaria sem
                 // nenhum contorno visível (mesmo erro já corrigido antes nos
                 // Cards, ver AppCard.kt).
-                .background(MaterialTheme.colorScheme.surface)
+                // v272 (site v320) -- filtros sem contorno nem fundo.
                 .clickable { menuOpen = true }
-                .padding(horizontal = 14.dp, vertical = 8.dp),
+                .padding(horizontal = 4.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(

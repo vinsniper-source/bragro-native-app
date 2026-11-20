@@ -96,9 +96,9 @@ fun GlobalFieldSelectorButton(
                 // Preenchimento em vez de borda -- pedido do usuário ("tire
                 // todas as bordas de todo app"); mesmo critério de
                 // FarmSelectorButton.kt (ver comentário completo lá).
-                .background(MaterialTheme.colorScheme.surface)
+                // v272 (site v320) -- filtros sem contorno nem fundo.
                 .clickable { menuOpen = true }
-                .padding(horizontal = 10.dp, vertical = 5.dp),
+                .padding(horizontal = 4.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(

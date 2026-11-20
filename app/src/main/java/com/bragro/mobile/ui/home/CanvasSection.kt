@@ -550,8 +550,15 @@ private fun esriSatelliteUrl(lat: Double, lon: Double, delta: Double = 0.006): S
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
+    // v272 (site v320, mockup v320b) -- custo sem caixa: barra fina e o valor
+    // de cada categoria na legenda.
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        border = BorderStroke(0.dp, Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(fazenda.nome, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -592,30 +599,10 @@ fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
             if (fazenda.breakdown.isNotEmpty()) {
                 val total = fazenda.breakdown.sumOf { it.valor }
                 Spacer(modifier = Modifier.height(10.dp))
-                // v17 -- valor de cada categoria em cima do seu pedaço da
-                // barra (discreto, R$ 00.000,00); pedaço < 14% mostra o valor
-                // só na legenda.
-                Row(modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp)) {
-                    fazenda.breakdown.forEach { b ->
-                        val pct = if (total > 0) (b.valor / total).toFloat() else 0f
-                        if (pct > 0f) {
-                            Text(
-                                if (pct >= 0.14f) fmtBrlCanvas(b.valor) else "",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontSize = 9.5.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                softWrap = false,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                modifier = Modifier.weight(pct),
-                            )
-                        }
-                    }
-                }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(10.dp)
+                        .height(6.dp)
                         .clip(RoundedCornerShape(50)),
                 ) {
                     fazenda.breakdown.forEachIndexed { i, b ->
@@ -625,7 +612,7 @@ fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
                                 modifier = Modifier
                                     .weight(pct)
                                     .fillMaxWidth()
-                                    .height(10.dp)
+                                    .height(6.dp)
                                     .background(BREAKDOWN_COLORS[i % BREAKDOWN_COLORS.size]),
                             )
                         }
@@ -642,7 +629,7 @@ fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
                 // do "justify-between" aplicado no site (canvas-view.tsx).
                 FlowRow(
                     modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     fazenda.breakdown.forEachIndexed { i, b ->
@@ -656,7 +643,7 @@ fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
                             Spacer(modifier = Modifier.width(6.dp))
                             val pctLeg = if (total > 0) (b.valor / total) else 0.0
                             Text(
-                                if (pctLeg < 0.14) "${b.categoria} · ${fmtBrlCanvas(b.valor)}" else b.categoria,
+                                "${b.categoria} ${fmtBrlCanvas(b.valor)}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )

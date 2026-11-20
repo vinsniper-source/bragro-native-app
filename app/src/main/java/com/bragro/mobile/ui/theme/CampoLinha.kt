@@ -126,7 +126,7 @@ fun LinhaTextField(
     }
     if (LocalNomeAoLado.current) {
         // v147 (opção A) -- dentro do formulário: linha colada no texto.
-        val st = textStyle.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.End))
+        val st = textStyle.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Start)) // v272 (site v315) -- valor a partir da esquerda
         BasicTextField(
             value = value, onValueChange = onValueChange, modifier = modifier.fillMaxWidth(), enabled = enabled, readOnly = readOnly,
             textStyle = st, cursorBrush = SolidColor(MaterialTheme.colorScheme.primary), visualTransformation = visualTransformation,
@@ -198,7 +198,7 @@ fun LinhaTextField(
     }
     if (LocalNomeAoLado.current) {
         // v147 (opção A) -- dentro do formulário: linha colada no texto.
-        val st = textStyle.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.End))
+        val st = textStyle.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Start)) // v272 (site v315) -- valor a partir da esquerda
         BasicTextField(
             value = value, onValueChange = onValueChange, modifier = modifier.fillMaxWidth(), enabled = enabled, readOnly = readOnly,
             textStyle = st, cursorBrush = SolidColor(MaterialTheme.colorScheme.primary), visualTransformation = visualTransformation,
@@ -277,7 +277,7 @@ fun CampoAutoLinha(nome: String, valor: String) {
             if (valor.isBlank() || valor == "—") {
                 Text("", fontSize = 15.sp, modifier = Modifier.weight(1f))
             } else {
-                Text(valor, fontSize = 15.sp, color = cs.onSurface, textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.weight(1f))
+                Text(valor, fontSize = 15.sp, color = cs.onSurface, textAlign = androidx.compose.ui.text.style.TextAlign.End, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f)) // v272 -- uma linha só
             }
         }
     }

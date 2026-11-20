@@ -1412,7 +1412,14 @@ private fun computedDisplayValue(col: ColumnConfig, raw: String, optionLabels: M
     if (col.money) return formatMoneyValue(raw)
     if (col.type == "select") return optionLabels[raw] ?: raw
     if (col.key == "itensNf" || (raw.trim().startsWith("[") && col.key.contains("itens", ignoreCase = true))) {
-        return formatItensNf(raw)
+        // v272 (site v314, item 1) -- itens numa linha só: "16 itens · R$ total".
+        return try {
+            val arr = kotlinx.serialization.json.Json.parseToJsonElement(raw) as? kotlinx.serialization.json.JsonArray
+            if (arr == null || arr.isEmpty()) "—" else {
+                val total = arr.mapNotNull { (it as? kotlinx.serialization.json.JsonObject)?.get("valorTotal")?.jsonPrimitive?.doubleOrNull }.sum()
+                "${arr.size} ${if (arr.size == 1) "item" else "itens"}" + (if (total > 0) " · ${formatMoneyValue(total.toString())}" else "")
+            }
+        } catch (e: Exception) { formatItensNf(raw) }
     }
     return displayValueFor(col.key, raw, col.type)
 }

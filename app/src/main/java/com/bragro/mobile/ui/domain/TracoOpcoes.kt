@@ -23,10 +23,11 @@ import com.bragro.mobile.ui.i18n.Text
  * embaixo de cada opção; a escolhida fica com o traço verde e grosso.
  * Opções alinhadas à esquerda.
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun TracoOpcoes(opcoes: List<Pair<String, String>>, selecionado: String, onSelect: (String) -> Unit, modifier: Modifier = Modifier) {
     val cs = MaterialTheme.colorScheme
-    Row(horizontalArrangement = Arrangement.spacedBy(22.dp), modifier = modifier) {
+    androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(22.dp), verticalArrangement = Arrangement.spacedBy(6.dp), modifier = modifier) {
         opcoes.forEach { (valor, rotulo) ->
             val ativo = valor == selecionado
             Column(modifier = Modifier.width(IntrinsicSize.Max).clickable { onSelect(valor) }.padding(top = 4.dp)) {

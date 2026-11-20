@@ -951,46 +951,13 @@ fun DomainListScreen(
                         // apagava a diferença entre as duas.
                         // v215 (mockup aprovado) -- fundo verde e fonte branca; a opção
                         // escolhida fica branca cheia, a outra branca suave.
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
-                        ) {
-                            val esquema = MaterialTheme.colorScheme
-                            MaterialTheme(colorScheme = esquema.copy(
-                                primary = androidx.compose.ui.graphics.Color.White,
-                                onSurface = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.78f),
-                                onSurfaceVariant = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.78f),
-                                surface = esquema.primary,
-                            )) {
-                            // Borda vertical dividindo em partes iguais +
-                            // ícones centralizados dentro de cada bloco --
-                            // pedido do usuário ("coloque uma borda vertical
-                            // no bloco faturamento dividindo em partes
-                            // iguais e distribuindo os icones dentro dos
-                            // blocos centralizados"). Reaproveita o MESMO
-                            // Layout já usado em Dados/Operações/Arquivos
-                            // (EqualWidthBlockRow, ver ModuleIconRow.kt) em
-                            // vez de duplicar a lógica de bordas/centralização.
-                            // Altura reduzida até quase encostar na borda
-                            // externa do Card -- pedido do usuário ("dois
-                            // botões diminua a altura até chega no limite
-                            // das bordas externas"): era padding(vertical =
-                            // 8.dp) aqui EM CIMA do padding(vertical = 8.dp)
-                            // já embutido no próprio ModuleIconButton (usado
-                            // em todos os outros módulos, não mexido pra não
-                            // afetar o resto do app) -- 16dp de sobra total
-                            // entre o ícone e a borda do Card. Reduzido pra
-                            // 2dp aqui (só neste bloco Faturamento).
-                            EqualWidthBlockRow(modifier = Modifier.padding(vertical = 2.dp), drawBackground = false) {
-                                linkedDomains.forEach { (id, label) ->
-                                    val active = id == domainId
-                                    ModuleIconButton(
-                                        ModuleIconItem(id, linkedDomainIcon(id), label, active = active),
-                                    ) { if (!active) onSwitchDomain(id) }
-                                }
-                            }
-                            }
-                        }
+                        // v272 (site v314) -- Cobranças | NFS-e como traço verde, sem fundo.
+                        com.bragro.mobile.ui.domain.TracoOpcoes(
+                            opcoes = linkedDomains,
+                            selecionado = domainId,
+                            onSelect = { if (it != domainId) onSwitchDomain(it) },
+                            modifier = Modifier.padding(start = 4.dp, top = 2.dp),
+                        )
                     }
                 }
             }
@@ -1108,11 +1075,12 @@ fun DomainListScreen(
                             // Tabela/Coluna -- mesmo botão único alternando
                             // ícone+rótulo do Expandir/Recolher acima (achado
                             // de auditoria, pedido do usuário).
-                            LabeledIconButton(
-                                icon = if (tableView) Icons.Outlined.ViewAgenda else com.bragro.mobile.ui.domain.IconesVazados.TableChart,
-                                label = if (tableView) "Bloco" else "Tabela",
-                                onClick = { tableView = !tableView },
-                            )
+                            com.bragro.mobile.ui.domain.TracoOpcoes(
+                            // v272 (site v314) -- Bloco/Tabela como traço verde.
+                            opcoes = listOf("bloco" to "Bloco", "tabela" to "Tabela"),
+                            selecionado = if (tableView) "tabela" else "bloco",
+                            onSelect = { tableView = it == "tabela" },
+                        )
                         }
                     }
                     val operacoesBlock = ModuleBlockSpec("Operações", vertical = false, badgeCount = pendingVisibleCount, footer = revisarFooter) {
@@ -1199,11 +1167,12 @@ fun DomainListScreen(
                             // Tabela/Coluna -- mesmo botão único alternando
                             // ícone+rótulo do Expandir/Recolher acima (achado
                             // de auditoria, pedido do usuário).
-                            LabeledIconButton(
-                                icon = if (tableView) Icons.Outlined.ViewAgenda else com.bragro.mobile.ui.domain.IconesVazados.TableChart,
-                                label = if (tableView) "Bloco" else "Tabela",
-                                onClick = { tableView = !tableView },
-                            )
+                            com.bragro.mobile.ui.domain.TracoOpcoes(
+                            // v272 (site v314) -- Bloco/Tabela como traço verde.
+                            opcoes = listOf("bloco" to "Bloco", "tabela" to "Tabela"),
+                            selecionado = if (tableView) "tabela" else "bloco",
+                            onSelect = { tableView = it == "tabela" },
+                        )
                         }
                         // Transferências entra dentro de Dados (5º ícone) em
                         // vez de bloco individual -- pedido do usuário ("no
@@ -1333,11 +1302,12 @@ fun DomainListScreen(
                             // Tabela/Coluna -- mesmo botão único alternando
                             // ícone+rótulo do Expandir/Recolher acima (achado
                             // de auditoria, pedido do usuário).
-                            LabeledIconButton(
-                                icon = if (tableView) Icons.Outlined.ViewAgenda else com.bragro.mobile.ui.domain.IconesVazados.TableChart,
-                                label = if (tableView) "Bloco" else "Tabela",
-                                onClick = { tableView = !tableView },
-                            )
+                            com.bragro.mobile.ui.domain.TracoOpcoes(
+                            // v272 (site v314) -- Bloco/Tabela como traço verde.
+                            opcoes = listOf("bloco" to "Bloco", "tabela" to "Tabela"),
+                            selecionado = if (tableView) "tabela" else "bloco",
+                            onSelect = { tableView = it == "tabela" },
+                        )
                         }
                         ColumnsPickerButton(
                             allColumns = cfg.columns.filter { !it.hideInTable },
@@ -1473,10 +1443,11 @@ fun DomainListScreen(
                         lancamentosBtn()
                     }
                     if (true) {
-                        LabeledIconButton(
-                            icon = if (tableView) Icons.Outlined.ViewAgenda else com.bragro.mobile.ui.domain.IconesVazados.TableChart,
-                            label = if (tableView) "Bloco" else "Tabela",
-                            onClick = { tableView = !tableView },
+                        com.bragro.mobile.ui.domain.TracoOpcoes(
+                            // v272 (site v314) -- Bloco/Tabela como traço verde.
+                            opcoes = listOf("bloco" to "Bloco", "tabela" to "Tabela"),
+                            selecionado = if (tableView) "tabela" else "bloco",
+                            onSelect = { tableView = it == "tabela" },
                         )
                     }
                     ColumnsPickerButton(
@@ -1860,6 +1831,12 @@ fun DomainListScreen(
                             ),
                     ) {
                         Row(modifier = Modifier.fillMaxWidth()) {
+                            // v272 (site v322) -- fotinho redonda do colaborador no RH.
+                            if (domainId == "rh" && recordId != null) {
+                                androidx.compose.foundation.layout.Box(modifier = Modifier.padding(start = 12.dp, top = 12.dp)) {
+                                    FotoColaborador(recordId, mini = true)
+                                }
+                            }
                             Column(modifier = Modifier.weight(1f).padding(12.dp)) {
                                 if (expanded) {
                                     // v23 -- medido por coluna: quebra linha em vez de cortar.

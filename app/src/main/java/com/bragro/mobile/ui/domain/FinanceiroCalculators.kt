@@ -92,15 +92,8 @@ private fun AmortizacaoCalc() {
             CalcNumField("Valor financiado", "R$", valorFinanciado)
             CalcNumField("Taxa", "% ao mês", taxa)
             CalcNumField("Nº de parcelas", field = parcelas)
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf("SAC", "PRICE").forEach { s ->
-                    if (sistema == s) {
-                        Button(onClick = { sistema = s }, modifier = Modifier) { Text(s) }
-                    } else {
-                        OutlinedButton(onClick = { sistema = s }, modifier = Modifier) { Text(s) }
-                    }
-                }
-            }
+            // v272 (site v314) -- SAC/Price como traço verde.
+            TracoOpcoes(opcoes = listOf("SAC" to "SAC", "PRICE" to "Price"), selecionado = sistema, onSelect = { sistema = it })
             CalcResultField("1ª parcela", value = fmtCalcBrl(parcela1))
             CalcResultField("Última parcela", value = fmtCalcBrl(parcelaFinal))
             CalcResultField("Total de juros", value = fmtCalcBrl(totalJuros))

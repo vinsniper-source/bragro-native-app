@@ -1363,7 +1363,7 @@ fun HomeScreen(
                 // KML" agora ocupa uma linha própria abaixo dos pills.
                     Row(
                         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(18.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         FarmSelectorButton(asPill = true, onChanged = { viewModel.onFiltroGlobalChanged(logoScreenContext) })

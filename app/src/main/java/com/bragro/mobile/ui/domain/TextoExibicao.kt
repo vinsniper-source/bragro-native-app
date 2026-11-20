@@ -58,7 +58,18 @@ private val TOKEN = Regex("\\S+")
 private val SEPARA = Regex("(?<=[-/])|(?=[-/])")
 private val LETRA_OU_DIGITO = Regex("[\\p{L}\\d]")
 
+// v272 (site v316, item 1) -- palavra em CAIXA ALTA no meio de texto misto
+// ("FAZENDA TESTE 2 · SOJA · 800 t") também é corrigida, palavra por palavra.
+private val PALAVRA_ALTA = Regex("(^|[\\s(])(\\p{Lu}[\\p{Lu}\\p{M}]+)(?=$|[\\s),.;:])")
+
 fun exibirTexto(s: String, proprio: Boolean = false): String {
+    if (s.isNotEmpty() && TEM_MAIUSCULA.containsMatchIn(s) && TEM_MINUSCULA.containsMatchIn(s)) {
+        if (EMAIL.matches(s) || s.startsWith("http:", true) || s.startsWith("https:", true)) return s
+        return s.split(" · ").joinToString(" · ") { parte ->
+            if (!TEM_MINUSCULA.containsMatchIn(parte)) exibirTexto(parte, true)
+            else PALAVRA_ALTA.replace(parte) { m -> m.groupValues[1] + exibirTexto(m.groupValues[2], true) }
+        }
+    }
     if (s.isEmpty() || !TEM_MAIUSCULA.containsMatchIn(s) || TEM_MINUSCULA.containsMatchIn(s)) return s
     if (EMAIL.matches(s) || s.startsWith("http:", true) || s.startsWith("https:", true)) return s
     var inicio = true
@@ -80,7 +91,9 @@ private val ANO_ATUAL = Calendar.getInstance().get(Calendar.YEAR).toString()
 private val DATA_BR = Regex("^\\d{2}/\\d{2}/\\d{4}$")
 
 /** Nas listas, data do ano atual sem o ano (12/11 em vez de 12/11/2026). */
-fun semAnoAtual(v: String): String = if (DATA_BR.matches(v) && v.endsWith("/$ANO_ATUAL")) v.substring(0, 5) else v
+// v272 (site v312) -- datas sempre completas (dd/mm/aaaa): não tira mais o ano.
+@Suppress("UNUSED_PARAMETER")
+fun semAnoAtual(v: String): String = v
 
 /** displayValueFor para listas (sem o ano atual nas datas). */
 fun displayValueLista(key: String, rawValue: String, colType: String? = null): String = semAnoAtual(displayValueFor(key, rawValue, colType))

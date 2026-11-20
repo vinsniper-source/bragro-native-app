@@ -605,20 +605,12 @@ private fun AnalisesGraficosBlock(data: JsonObject, naJanela: Boolean = false) {
                 Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
                     // v43 -- duas linhas com dois botões em cada: o nome de cada
                     // aba cabe inteiro, sem corte e sem letreiro.
-                    AnalisesAba.entries.chunked(2).forEach { dupla ->
-                        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
-                            dupla.forEachIndexed { index, item ->
-                                SegmentedButton(
-                                    selected = aba == item,
-                                    onClick = { aba = item },
-                                    shape = SegmentedButtonDefaults.itemShape(index = index, count = dupla.size),
-                                    label = {
-                                        Text(item.titulo, maxLines = 2, overflow = TextOverflow.Clip, style = MaterialTheme.typography.labelSmall)
-                                    },
-                                )
-                            }
-                        }
-                    }
+                    // v272 (site v314) -- abas como traço verde.
+                    com.bragro.mobile.ui.domain.TracoOpcoes(
+                        opcoes = AnalisesAba.entries.map { it.name to it.titulo },
+                        selecionado = aba.name,
+                        onSelect = { n -> aba = AnalisesAba.valueOf(n) },
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     when (aba) {
                         AnalisesAba.FINANCEIRO -> {
@@ -943,10 +935,11 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                             active = contentExpanded,
                             onClick = { contentExpanded = !contentExpanded },
                         )
-                        LabeledIconButton(
-                            icon = if (tableView) Icons.Outlined.ViewAgenda else com.bragro.mobile.ui.domain.IconesVazados.TableChart,
-                            label = if (tableView) "Bloco" else "Tabela",
-                            onClick = { tableView = !tableView },
+                        com.bragro.mobile.ui.domain.TracoOpcoes(
+                            // v272 (site v314) -- Bloco/Tabela como traço verde.
+                            opcoes = listOf("bloco" to "Bloco", "tabela" to "Tabela"),
+                            selecionado = if (tableView) "tabela" else "bloco",
+                            onSelect = { tableView = it == "tabela" },
                         )
                     }
                 }
