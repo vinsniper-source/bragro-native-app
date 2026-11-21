@@ -55,6 +55,8 @@ import androidx.compose.material3.OutlinedButton
 import com.bragro.mobile.ui.theme.LinhaTextField as OutlinedTextField
 import androidx.compose.material3.Scaffold
 import com.bragro.mobile.ui.i18n.Text
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.offset
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -463,7 +465,7 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.RequestQuote, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
+                        // v274 (mockup v329) -- sem ícone ao lado do título.
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -473,23 +475,22 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                     }
                 } },
                 actions = {
+                    // v274 (mockup v329) -- novo orçamento: ícone com "+" na linha do título.
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        androidx.compose.material3.IconButton(onClick = onNovo) {
+                            androidx.compose.foundation.layout.Box {
+                                com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.RequestQuote, contentDescription = "Novo orçamento", tint = MaterialTheme.colorScheme.onSurface, size = 22.dp)
+                                Text("+", fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.align(androidx.compose.ui.Alignment.TopEnd).offset(x = 8.dp, y = (-9).dp))
+                            }
+                        }
+                    }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
                     }
                 },
             )
-        },
-        floatingActionButton = {
-            // Subido pra altura padrão do botão + dos demais módulos --
-            // pedido do usuário ("suba o botão adicionar na mesma altura
-            // dos outros módulos"): tela sem BottomNavBar, então o FAB
-            // encostava mais embaixo que nos módulos genéricos.
-            FloatingActionButton(
-                onClick = onNovo,
-                containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ) { Icon(Icons.Outlined.Add, contentDescription = "Novo orçamento") }
         },
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {

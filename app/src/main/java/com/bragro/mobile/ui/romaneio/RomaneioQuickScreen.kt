@@ -460,7 +460,7 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.home.domainIcon("romaneios"), contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
+                        // v274 (mockup v329) -- sem ícone ao lado do título.
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))

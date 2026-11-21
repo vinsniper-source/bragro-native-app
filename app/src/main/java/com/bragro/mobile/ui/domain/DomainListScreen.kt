@@ -610,7 +610,7 @@ fun DomainListScreen(
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.home.domainIcon(domainId), contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
+                        // v274 (mockup v329) -- sem ícone ao lado do título.
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -641,23 +641,37 @@ fun DomainListScreen(
                 // módulo genérico. Além do filtro global de fazenda, que já
                 // morava aqui.
                 actions = {
-                    // v273 (mockup v328) -- Frota: os ícones saem dos botões
-                    // flutuantes e ficam na linha do título, à direita.
-                    if (domainId == "frota") Column {
+                    // v274 (mockup v329) -- regra geral: os atalhos do módulo e o
+                    // ícone do módulo com "+" (novo lançamento) na linha do título.
+                    Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = { showQuickAbastecimento = true }) {
-                                Icon(Icons.Outlined.LocalGasStation, contentDescription = "Abastecimento rápido", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                            @Composable
+                            fun atalho(img: androidx.compose.ui.graphics.vector.ImageVector, nome: String, acao: () -> Unit) {
+                                IconButton(onClick = acao, modifier = Modifier.size(40.dp)) {
+                                    Icon(img, contentDescription = nome, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                                }
                             }
-                            IconButton(onClick = { showIntegracaoDialog = true }) {
-                                Icon(com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, contentDescription = "Acesso automático (bomba de combustível)", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                            when (domainId) {
+                                "frota" -> {
+                                    atalho(Icons.Outlined.LocalGasStation, "Abastecimento rápido") { showQuickAbastecimento = true }
+                                    atalho(com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, "Acesso automático (bomba de combustível)") { showIntegracaoDialog = true }
+                                    if (onOpenFrotaQr != null) atalho(com.bragro.mobile.ui.domain.IconesVazados.QrCode, "Gerar QR Codes das máquinas", onOpenFrotaQr)
+                                }
+                                "romaneios" -> if (onOpenRomaneioQuick != null) {
+                                    atalho(Icons.Outlined.MonitorWeight, "Romaneio rápido (balança)", onOpenRomaneioQuick)
+                                    atalho(com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, "Acesso automático (balança)") { showIntegracaoDialog = true }
+                                }
+                                "pragas" -> if (onOpenPragaFoto != null) atalho(com.bragro.mobile.ui.domain.IconesVazados.BugReport, "Diagnóstico por foto", onOpenPragaFoto)
+                                "pecuaria" -> atalho(com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, "Acesso automático (balança/RFID Bluetooth)") { showIntegracaoDialog = true }
+                                "colheita" -> if (onOpenColheitaQr != null) atalho(com.bragro.mobile.ui.domain.IconesVazados.QrCode, "QR Code de Rastreabilidade", onOpenColheitaQr)
+                                "estoque" -> if (onOpenReconciliacaoEstoque != null) {
+                                    atalho(com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, "Acesso automático (silos)") { showIntegracaoDialog = true }
+                                    atalho(com.bragro.mobile.ui.domain.IconeAjustarFisicoFiscal, "Ajustar Físico x Fiscal", onOpenReconciliacaoEstoque)
+                                }
+                                else -> {}
                             }
-                            if (onOpenFrotaQr != null) IconButton(onClick = onOpenFrotaQr) {
-                                Icon(com.bragro.mobile.ui.domain.IconesVazados.QrCode, contentDescription = "Gerar QR Codes das máquinas", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
-                            }
-                            IconButton(onClick = onNewRecord) {
-                                Icon(Icons.Outlined.Add, contentDescription = "Novo registro", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
-                            }
+                            com.bragro.mobile.ui.domain.NovoModuloIcone(domainId, onClick = onNewRecord)
                         }
                     }
                     Column {
@@ -667,180 +681,8 @@ fun DomainListScreen(
                 },
             )
         },
-        floatingActionButton = {
-            // Frota ganha um segundo FAB menor -- "Abastecimento rápido"
-            // (espelho de QuickAbastecimentoButton no site), sem substituir
-            // o formulário completo de "Novo registro".
-            if (domainId == "frota") {
-                // v273 -- ícones foram para a linha do título.
-            } else if (false) {
-                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FloatingActionButton(
-                        onClick = { showQuickAbastecimento = true },
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    ) {
-                        Icon(Icons.Outlined.LocalGasStation, contentDescription = "Abastecimento rápido")
-                    }
-                    // Card "Acesso automático via prestadora de serviço"
-                    // (bomba de combustível) -- saiu do bloco Dados e virou
-                    // FAB próprio, acima do + -- pedido do usuário ("coloque
-                    // o botão bomba acima do botão +").
-                    FloatingActionButton(
-                        onClick = { showIntegracaoDialog = true },
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    ) {
-                        Icon(com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, contentDescription = "Acesso automático (bomba de combustível)")
-                    }
-                    if (onOpenFrotaQr != null) {
-                        FloatingActionButton(
-                            onClick = onOpenFrotaQr,
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        ) {
-                            Icon(com.bragro.mobile.ui.domain.IconesVazados.QrCode, contentDescription = "Gerar QR Codes das máquinas")
-                        }
-                    }
-                    FloatingActionButton(
-                    onClick = onNewRecord,
-                    // Cores invertidas -- pedido do usuário ("inverta também
-                    // as cores dos botões +, tendo como exemplo a cor do
-                    // ícone fazenda"): antes usava as cores padrão do FAB
-                    // (primaryContainer claro + ícone escuro); agora fundo
-                    // verde cheio (primary, mesma cor do ícone fazenda) com
-                    // ícone branco -- mesmo tratamento já aplicado na barra
-                    // inferior e nas abas ovais de categoria.
-                    containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ) { Icon(Icons.Outlined.Add, contentDescription = "Novo registro") }
-                }
-            } else if (domainId == "romaneios" && onOpenRomaneioQuick != null) {
-                // Romaneio Rápido (leitura da balança) unificado aqui como
-                // 2º FAB -- pedido do usuário ("coloque romaneio rápido como
-                // um botão dentro de romaneio, unifique"), mesmo padrão do
-                // "Abastecimento rápido" da Frota acima.
-                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FloatingActionButton(
-                        onClick = onOpenRomaneioQuick,
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    ) {
-                        Icon(Icons.Outlined.MonitorWeight, contentDescription = "Romaneio rápido (balança)")
-                    }
-                    // Card "Acesso automático via prestadora de serviço"
-                    // (balança) -- saiu do bloco Dados e virou FAB próprio,
-                    // acima do + -- pedido do usuário ("coloque o botão
-                    // balança acima do botão +").
-                    FloatingActionButton(
-                        onClick = { showIntegracaoDialog = true },
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    ) {
-                        Icon(com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, contentDescription = "Acesso automático (balança)")
-                    }
-                    FloatingActionButton(
-                    onClick = onNewRecord,
-                    // Cores invertidas -- pedido do usuário ("inverta também
-                    // as cores dos botões +, tendo como exemplo a cor do
-                    // ícone fazenda"): antes usava as cores padrão do FAB
-                    // (primaryContainer claro + ícone escuro); agora fundo
-                    // verde cheio (primary, mesma cor do ícone fazenda) com
-                    // ícone branco -- mesmo tratamento já aplicado na barra
-                    // inferior e nas abas ovais de categoria.
-                    containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ) { Icon(Icons.Outlined.Add, contentDescription = "Novo registro") }
-                }
-            } else if (domainId == "pragas" && onOpenPragaFoto != null) {
-                // Diagnóstico por Foto (Task #601) unificado como 2º FAB --
-                // mesmo padrão de "Romaneio rápido"/"Abastecimento rápido"
-                // acima.
-                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FloatingActionButton(
-                        onClick = onOpenPragaFoto,
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    ) {
-                        Icon(com.bragro.mobile.ui.domain.IconesVazados.BugReport, contentDescription = "Diagnóstico por foto")
-                    }
-                    FloatingActionButton(
-                        onClick = onNewRecord,
-                        containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ) { Icon(Icons.Outlined.Add, contentDescription = "Novo registro") }
-                }
-            } else if (domainId == "pecuaria") {
-                // Card "Acesso automático via prestadora de serviço"
-                // (balança/RFID Bluetooth) -- mesmo padrão de Frota/
-                // Romaneios acima, pedido do usuário ("insira numa lista
-                // suspensa todos os equipamentos do mercado").
-                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FloatingActionButton(
-                        onClick = { showIntegracaoDialog = true },
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    ) {
-                        Icon(com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, contentDescription = "Acesso automático (balança/RFID Bluetooth)")
-                    }
-                    FloatingActionButton(
-                        onClick = onNewRecord,
-                        containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ) { Icon(Icons.Outlined.Add, contentDescription = "Novo registro") }
-                }
-            } else if (domainId == "colheita" && onOpenColheitaQr != null) {
-                // QR Code de Rastreabilidade (Task #773) unificado como 2º
-                // FAB -- mesmo padrão de "Diagnóstico por foto"/"Reconciliação"
-                // acima. É só um RELATÓRIO (sem formulário), então o FAB
-                // principal continua indo pro "Novo registro" normal.
-                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FloatingActionButton(
-                        onClick = onOpenColheitaQr,
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    ) {
-                        Icon(com.bragro.mobile.ui.domain.IconesVazados.QrCode, contentDescription = "QR Code de Rastreabilidade")
-                    }
-                    FloatingActionButton(
-                        onClick = onNewRecord,
-                        containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ) { Icon(Icons.Outlined.Add, contentDescription = "Novo registro") }
-                }
-            } else if (domainId == "estoque" && onOpenReconciliacaoEstoque != null) {
-                // Ajustar Físico x Fiscal (Task #603) unificada como 2º
-                // FAB -- mesmo padrão de "Diagnóstico por foto"/"Romaneio
-                // rápido" acima. É só um RELATÓRIO (sem formulário), então o
-                // FAB principal continua indo pro "Novo registro" normal.
-                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Silos cilíndricos / armazenagem de grãos (card de
-                    // integração de provedor) -- mesmo padrão dos FABs acima.
-                    FloatingActionButton(
-                        onClick = { showIntegracaoDialog = true },
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    ) {
-                        Icon(com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, contentDescription = "Acesso automático (silos)")
-                    }
-                    FloatingActionButton(
-                        onClick = onOpenReconciliacaoEstoque,
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    ) {
-                        Icon(com.bragro.mobile.ui.domain.IconeAjustarFisicoFiscal, contentDescription = "Ajustar Físico x Fiscal")
-                    }
-                    FloatingActionButton(
-                        onClick = onNewRecord,
-                        containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ) { Icon(Icons.Outlined.Add, contentDescription = "Novo registro") }
-                }
-            } else {
-                FloatingActionButton(
-                    onClick = onNewRecord,
-                    // Cores invertidas -- pedido do usuário ("inverta também
-                    // as cores dos botões +, tendo como exemplo a cor do
-                    // ícone fazenda"): antes usava as cores padrão do FAB
-                    // (primaryContainer claro + ícone escuro); agora fundo
-                    // verde cheio (primary, mesma cor do ícone fazenda) com
-                    // ícone branco -- mesmo tratamento já aplicado na barra
-                    // inferior e nas abas ovais de categoria.
-                    containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ) { Icon(Icons.Outlined.Add, contentDescription = "Novo registro") }
-            }
-        },
+        // v274 (mockup v329) -- sem botão flutuante: o novo lançamento e os
+        // atalhos do módulo ficam na linha do título, à direita.
     ) { padding ->
         val cfg = config
         if (cfg == null) {

@@ -867,7 +867,8 @@ fun DomainFormScreen(
                 // nome do módulo + ⓘ (aviso); à direita o ícone do módulo com
                 // "+" elevado, ✓ verde e ✕.
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
-                    Column {
+                    // v274 (mockup v329) -- título alinhado com a margem dos campos.
+                    Column(Modifier.padding(start = 20.dp + RECUO_CAMPOS - 16.dp)) {
                         Spacer(modifier = Modifier.height(16.dp))
                         androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                             Text(
@@ -884,18 +885,17 @@ fun DomainFormScreen(
                 actions = {
                     // v1.6.59 (site v302/v305) -- Salvar vira ✓ verde na
                     // linha do título (único ícone verde).
-                    Column {
+                    // v274 (mockup v329) -- copiar item na linha do título.
+                    val multiTopo = if (recordId == null || domainId in OS_EDITA_ITENS) MULTI_ITEM_FORM[domainId] else null
+                    if (multiTopo != null) Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Box(modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp)) {
-                            com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.home.domainIcon(domainId), contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, size = 22.dp)
-                            if (recordId == null) Text(
-                                "+",
-                                fontSize = 13.sp,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.align(androidx.compose.ui.Alignment.TopEnd).offset(x = 8.dp, y = (-9).dp),
-                            )
+                        IconButton(onClick = { viewModel.copiarItemPrincipal((multiTopo.sel + multiTopo.inp).map { it.first }) }) {
+                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
                         }
+                    }
+                    if (recordId == null) Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.NovoModuloIcone(domainId)
                     }
                     if (config != null) Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -1074,7 +1074,8 @@ fun DomainFormScreen(
             // v221 (mockup aprovado) -- Clima de hoje, foto e Copiar último ficam na
             // linha do nome do primeiro campo, à direita (o formulário sobe).
             val primeiroCampoKey = if (recordId == null) gruposAjust.firstOrNull()?.second?.firstOrNull { !it.computed && it.type != "checkbox" }?.key else null
-            gruposAjust.forEach { (g, campos) ->
+            // v274 (mockup v329) -- bloco Item (e os itens adicionados) no fim dos campos.
+            val desenharGrupo: @Composable (Triple<String, String, String>, List<ColumnConfig>) -> Unit = { g, campos ->
                 // v20 -- Clima de hoje / Copiar último como ícones sem rótulo
                 // no canto direito da primeira seção (QUANDO). v221: só quando não
                 // há um primeiro campo com nome para recebê-los.
@@ -1156,14 +1157,7 @@ fun DomainFormScreen(
                                 }
                                 camposDaSecao()
                             }
-                            if (multi != null) {
-                                IconButton(
-                                    onClick = { viewModel.copiarItemPrincipal((multi.sel + multi.inp).map { it.first }) },
-                                    modifier = Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 4.dp).size(40.dp),
-                                ) {
-                                    Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
-                                }
-                            }
+                            // v274 (mockup v329) -- copiar item foi para a linha do título.
                         }
                     }
                     androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
@@ -1172,21 +1166,25 @@ fun DomainFormScreen(
                 }
                 if (g.first == "itens" && multi != null) {
                     ItensExtrasSection(domainId, multi, cfg.columns, lookups, viewModel)
+                    // v274 -- resumo geral sobe para antes do bloco Item.
+                }
+            }
+            gruposAjust.filter { it.first.first != "itens" }.forEach { (g, campos) -> desenharGrupo(g, campos) }
+            if (multi != null && !ehSafra) {
                     if (resumoGeral.isNotEmpty()) {
-                        Column(Modifier.padding(horizontal = RECUO_CAMPOS).padding(top = 18.dp)) {
-                            resumoGeral.forEach { col ->
-                                if (col.computed) {
-                                    val optionLabels = col.lookupCategory?.let { cat -> lookups[cat]?.associate { it.value to it.label } } ?: emptyMap()
-                                    val temPrevia = previa.containsKey(col.key)
-                                    val raw = if (temPrevia) previa[col.key] ?: "" else computedValues[col.key] ?: ""
-                                    ComputedFieldDisplay(col = col, raw = raw, optionLabels = optionLabels, dica = if (temPrevia) previaDicas[col.key] else null)
-                                } else {
-                                    com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), col.required, dica = col.hint) {
-                                        FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
-                                    }
+                    Column(Modifier.padding(horizontal = RECUO_CAMPOS).padding(top = 18.dp)) {
+                        resumoGeral.forEach { col ->
+                            if (col.computed) {
+                                val optionLabels = col.lookupCategory?.let { cat -> lookups[cat]?.associate { it.value to it.label } } ?: emptyMap()
+                                val temPrevia = previa.containsKey(col.key)
+                                val raw = if (temPrevia) previa[col.key] ?: "" else computedValues[col.key] ?: ""
+                                ComputedFieldDisplay(col = col, raw = raw, optionLabels = optionLabels, dica = if (temPrevia) previaDicas[col.key] else null)
+                            } else {
+                                com.bragro.mobile.ui.theme.NomeAoLado(com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), col.required, dica = col.hint) {
+                                    FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                                 }
-                                androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
                             }
+                            androidx.compose.foundation.layout.Spacer(Modifier.padding(top = ESPACO_CAMPOS))
                         }
                     }
                 }
@@ -1234,6 +1232,7 @@ fun DomainFormScreen(
                 FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                 androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
             }
+            gruposAjust.filter { it.first.first == "itens" }.forEach { (g, campos) -> desenharGrupo(g, campos) }
             if (ocultosVerMais.isNotEmpty()) {
                 Row(
                     modifier = Modifier.clickable { verMais = !verMais }.padding(vertical = 6.dp),
@@ -1865,14 +1864,7 @@ private fun ItensExtrasSection(
         // v1.6.22 (mockup v127) -- ⧉ Copiar o item principal para uma nova linha.
         // v198 -- o copiar item fica dentro do bloco Itens (canto superior
         // direito); aqui só sobra quando o módulo não tem o bloco.
-        if (domainId !in ITENS_INVERTIDOS) {
-            IconButton(
-                onClick = { viewModel.copiarItemPrincipal((multi.sel + multi.inp).map { it.first }) },
-                modifier = Modifier.align(Alignment.End).size(40.dp),
-            ) {
-                Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
-            }
-        }
+        // v274 (mockup v329) -- copiar item fica na linha do título.
         viewModel.itensExtras.forEachIndexed { i, x ->
             com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
                 // v199 (mockup aprovado) -- itens repetidos no mesmo padrão do

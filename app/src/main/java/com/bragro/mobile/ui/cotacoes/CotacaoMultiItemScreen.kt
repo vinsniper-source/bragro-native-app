@@ -648,13 +648,12 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                 navigationIcon = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.BackNavButton()
                     }
                 },
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.home.domainIcon("cotacoesfornecedores"), contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
+                        // v274 (mockup v329) -- sem ícone ao lado do título.
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -663,10 +662,12 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                 
                     }
                 } },
-                actions = { com.bragro.mobile.ui.domain.SalvarTopo(onClick = { viewModel.submit() }, enabled = successMessage == null && viewModel.podeSalvar(), loading = pending, descricao = "Lançar propostas")
+                actions = { Column { Spacer(modifier = Modifier.height(16.dp)); com.bragro.mobile.ui.domain.NovoModuloIcone("cotacoesfornecedores") } // v274 (mockup v329)
+                    com.bragro.mobile.ui.domain.SalvarTopo(onClick = { viewModel.submit() }, enabled = successMessage == null && viewModel.podeSalvar(), loading = pending, descricao = "Lançar propostas")
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
+                        val dispFechar = androidx.activity.compose.LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+                        com.bragro.mobile.ui.domain.FecharIcone(onClick = { dispFechar?.onBackPressed() })
                     } },
             )
         },

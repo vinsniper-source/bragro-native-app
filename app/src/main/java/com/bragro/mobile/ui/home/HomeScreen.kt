@@ -722,8 +722,9 @@ fun HomeScreen(
                         (if (home?.showConfiguracoesIcon == true) 1 else 0) +
                         (if (home?.showBaseDeDadosIcon == true) 1 else 0) +
                         3 // notificações + tema + busca, sempre presentes
-                    val estimatedIconsWidth = (optionalIconCount * 48).dp + 44.dp + 40.dp + 8.dp
-                    val estimatedLogoWidth = 64.dp
+                    // v274 (mockup v329) -- ícones compactos (40 dp) e logo menor: nada cortado.
+                    val estimatedIconsWidth = (optionalIconCount * 40).dp + 40.dp + 40.dp + 12.dp
+                    val estimatedLogoWidth = 132.dp + 18.dp
                     val headerFits = estimatedLogoWidth + estimatedIconsWidth <= maxWidth
 
                     // Ícones opcionais + Conta + logo do cliente extraídos
@@ -1091,8 +1092,8 @@ fun HomeScreen(
                         // visível dela desce pra base, eliminando o vão sem
                         // precisar adivinhar nenhum valor de offset.
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(start = 0.dp, end = 8.dp, top = 4.dp, bottom = 2.dp),
-                            verticalAlignment = Alignment.Bottom,
+                            modifier = Modifier.fillMaxWidth().padding(start = 18.dp, end = 10.dp, top = 4.dp, bottom = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             // Voltamos pro tamanho de ANTES de toda a saga de
                             // recorte (v1.2.66 a v1.2.70) -- usuário confirmou
@@ -1102,8 +1103,10 @@ fun HomeScreen(
                             // e legível no cabeçalho. Alinhada à esquerda por
                             // design (pedido antigo do usuário -- "logo no
                             // limite esquerdo"), sem offset de centralização.
-                            com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.height(44.dp).widthIn(max = 190.dp)) // v317 -- logo nova sem fundo
-                            Box(modifier = Modifier.weight(1f)) { headerTrailingContent() }
+                            com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.height(30.dp).widthIn(max = 132.dp)) // v274 -- logo menor
+                            Box(modifier = Modifier.weight(1f)) {
+                                androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement provides false) { headerTrailingContent() }
+                            }
                         }
                     } else {
                         // Não cabe numa linha só -- logo sozinha em cima,
@@ -1113,13 +1116,15 @@ fun HomeScreen(
                         // ícones do cabeçalho").
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Row(
-                                modifier = Modifier.fillMaxWidth().padding(start = 0.dp, top = 4.dp),
+                                modifier = Modifier.fillMaxWidth().padding(start = 18.dp, top = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.height(44.dp).widthIn(max = 190.dp)) // v317 -- logo nova sem fundo
+                                com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.height(30.dp).widthIn(max = 132.dp)) // v274 -- logo menor
                             }
                             Spacer(Modifier.height(2.dp))
-                            Box(modifier = Modifier.fillMaxWidth().padding(end = 8.dp, bottom = 2.dp)) { headerTrailingContent() }
+                            Box(modifier = Modifier.fillMaxWidth().padding(end = 10.dp, bottom = 6.dp)) {
+                                androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement provides false) { headerTrailingContent() }
+                            }
                         }
                     }
                 } // fecha BoxWithConstraints. Nota histórica: este fechamento
@@ -1205,7 +1210,7 @@ fun HomeScreen(
             // que antes ficava entre a logo e essa linha (ver comentário no
             // Row do TopAppBar acima) -- já reduziu boa parte da distância
             // sozinho, essa mudança aqui é o resto.
-            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 0.dp, bottom = 12.dp),
+            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 0.dp, bottom = 12.dp), // v274 (mockup v329) -- margem um pouco maior
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item(key = "greeting") {
@@ -1237,7 +1242,7 @@ fun HomeScreen(
                     // volta": o slogan com BRAgro no início e a data pequena.
                     Text(
                         "BRAgro — Conectando a força da nossa terra, carregando o Brasil no coração.",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleSmall, // v274 (mockup v329) -- fonte menor
                         fontStyle = FontStyle.Italic,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,

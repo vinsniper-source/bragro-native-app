@@ -315,7 +315,7 @@ fun FinanceiroScreen(
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.home.domainIcon("financeiro"), contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
+                        // v274 (mockup v329) -- sem ícone ao lado do título.
 
                     // "Registros" (era "Financeiro") só aparece com Todos
                     // selecionado; ao clicar em outro ícone da Gestão
@@ -358,6 +358,11 @@ fun FinanceiroScreen(
                 // título/seta de voltar, pra ficarem alinhados na mesma
                 // altura.
                 actions = {
+                    // v274 (mockup v329) -- novo lançamento: ícone do módulo com "+" na linha do título.
+                    if (!isQuickView) Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.NovoModuloIcone("financeiro", onClick = onNewRecord)
+                    }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
@@ -365,22 +370,7 @@ fun FinanceiroScreen(
                 },
             )
         },
-        floatingActionButton = {
-            // Mesmo critério do site (isQuickView): visões rápidas são só
-            // leitura, sem "Novo Registro".
-            if (!isQuickView) {
-                FloatingActionButton(
-                    onClick = onNewRecord,
-                    // Cores invertidas -- pedido do usuário ("inverta também
-                    // as cores dos botões +, tendo como exemplo a cor do
-                    // ícone fazenda").
-                    containerColor = com.bragro.mobile.ui.theme.VerdeBarra,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ) {
-                    Icon(Icons.Outlined.Add, contentDescription = "Novo registro")
-                }
-            }
-        },
+        floatingActionButton = {}, // v274 -- sem botão flutuante
     ) { padding ->
         val cfg = config
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {

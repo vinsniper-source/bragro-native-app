@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
  * v22 -- ícone de contorno com traço mais grosso ("negrito" minimalista):
@@ -126,4 +127,26 @@ fun ExcluirInline(onConfirm: () -> Unit, tamanhoBotao: Dp = 28.dp, tamanhoIcone:
             modifier = Modifier.clickable { confirmando = false }.padding(vertical = 6.dp),
         )
     }
+}
+
+/**
+ * v274 (mockup v329) -- ícone do módulo com um "+" elevado: novo lançamento.
+ * Fica na linha do título (lista e formulário), na cor do texto.
+ */
+@Composable
+fun NovoModuloIcone(domainId: String, onClick: (() -> Unit)? = null) {
+    val conteudo: @Composable () -> Unit = {
+        androidx.compose.foundation.layout.Box {
+            IconeNegrito(com.bragro.mobile.ui.home.domainIcon(domainId), contentDescription = if (onClick != null) "Novo lançamento" else null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp)
+            androidx.compose.material3.Text(
+                "+",
+                fontSize = 13.sp,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.align(androidx.compose.ui.Alignment.TopEnd).offset(x = 8.dp, y = (-9).dp),
+            )
+        }
+    }
+    if (onClick != null) androidx.compose.material3.IconButton(onClick = onClick) { conteudo() }
+    else androidx.compose.foundation.layout.Box(Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) { conteudo() }
 }
