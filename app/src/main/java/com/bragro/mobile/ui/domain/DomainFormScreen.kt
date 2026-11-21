@@ -872,9 +872,9 @@ fun DomainFormScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                         androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                             Text(
-                                config?.label?.let { com.bragro.mobile.ui.domain.exibirTexto(it) } ?: if (recordId == null) "Novo registro" else "Editar registro",
+                                config?.label?.let { tituloCurto(com.bragro.mobile.ui.domain.exibirTexto(it)) } ?: if (recordId == null) "Novo registro" else "Editar registro",
                                 maxLines = 1,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                softWrap = false, // v275 (mockup v330) -- palavra relevante, sem cortar nem "…"
                                 color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f, fill = false),
                             )
@@ -909,6 +909,10 @@ fun DomainFormScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                         val dispatcherFechar = androidx.activity.compose.LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
                         com.bragro.mobile.ui.domain.FecharIcone(onClick = { dispatcherFechar?.onBackPressed() })
+                        }
+                        Column {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            com.bragro.mobile.ui.domain.HomeNavButton() // v275 (mockup v331) -- ✕ volta ao módulo, ⌂ vai ao Início
                     }
                 },
             )
@@ -1246,7 +1250,7 @@ fun DomainFormScreen(
                         Text(
                             "${ocultosVerMais.size}",
                             color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 11.sp,
-                            modifier = Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), androidx.compose.foundation.shape.RoundedCornerShape(10.dp)).padding(horizontal = 8.dp, vertical = 1.dp),
+                            modifier = Modifier,
                         )
                         Text("›", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
@@ -1503,15 +1507,16 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
             // editável de verdade: digitar abre o teclado E filtra a lista
             // (igual ao SearchableSelect novo em record-form.tsx no site).
             var expanded by remember { mutableStateOf(false) }
-            val optionLabels = options?.associate { it.value to it.label } ?: emptyMap()
+            // v275 (mockup v330) -- listas suspensas em minúsculas (só a exibição).
+            val optionLabels = options?.associate { it.value to exibirTexto(it.label) } ?: emptyMap()
             val staticOpts = col.staticOptions
             // (valor, rotulo) na mesma ordem que já vinha (staticOpts
             // preserva ordem própria do domínio; options já chega ordenado
             // alfabeticamente do Room -- ver LookupDao.byCategory).
-            val allOptions: List<Pair<String, String>> = staticOpts?.map { it to it }
-                ?: options?.map { it.value to it.label }
+            val allOptions: List<Pair<String, String>> = staticOpts?.map { it to exibirTexto(it) }
+                ?: options?.map { it.value to exibirTexto(it.label) }
                 ?: emptyList()
-            var query by remember(value) { mutableStateOf(optionLabels[value] ?: value) }
+            var query by remember(value) { mutableStateOf(optionLabels[value] ?: exibirTexto(value)) }
             // v1.6.23 -- ao abrir mostra tudo; filtra só depois de digitar.
             var digitou by remember(value) { mutableStateOf(false) }
             val filtered = remember(query, allOptions, digitou) {
@@ -1995,4 +2000,13 @@ private val RsColadoTransformation = androidx.compose.ui.text.input.VisualTransf
             override fun transformedToOriginal(offset: Int): Int = (offset - 3).coerceIn(0, t.text.length)
         },
     )
+}
+
+/** v275 (mockup v330) -- título grande: fica a parte relevante, sem cortar. */
+internal fun tituloCurto(t: String): String {
+    if (t.length <= 14) return t
+    val semPrefixo = Regex("^(controle|monitoramento|gestão|cadastro|registro|lançamento)s? de ", RegexOption.IGNORE_CASE).replace(t, "")
+        .replaceFirstChar { it.titlecase() }
+    if (semPrefixo.length <= 14) return semPrefixo
+    return semPrefixo.split(" ", " / ", "/").first().trim()
 }

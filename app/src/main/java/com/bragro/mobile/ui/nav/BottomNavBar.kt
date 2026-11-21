@@ -711,7 +711,7 @@ fun BRAgroBottomBar(
                                 selected = selected,
                                 onClick = rt.onClick,
                                 icon = { Icon(rt.icon, contentDescription = rt.label, modifier = Modifier.size(22.dp)) },
-                                label = { Text(rt.label, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) },
+                                label = null, // v275 (mockup v330) -- só ícone
                                 colors = BottomNavColors,
                             )
                         }
@@ -748,7 +748,7 @@ fun BRAgroBottomBar(
                             // com o tamanho padrão -- pedido do usuário ("realoque
                             // os espaços pra escrever a palavra Financeiro completa
                             // em uma linha").
-                            label = { Text(tab.label, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) },
+                            label = null, // v275 (mockup v330) -- só ícone
                             colors = BottomNavColors,
                         )
                         // Fundo do menu suspenso = MESMO verde forte da barra
@@ -840,7 +840,7 @@ fun BRAgroBottomBar(
                 selected = false,
                 onClick = { openTabId = if (openTabId == "sistema") null else "sistema" },
                 icon = { Icon(Icons.Outlined.GridView, contentDescription = "Módulos", modifier = Modifier.size(22.dp)) },
-                label = { Text("Módulos", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) },
+                label = null, // v275 (mockup v330) -- só ícone
                 colors = BottomNavColors,
             )
             // Mesmo critério do dropdown de setor acima: sobrescreve `surface`
@@ -899,8 +899,7 @@ private fun HorizontalNavChip(icon: ImageVector, label: String, selected: Boolea
             )
             .padding(horizontal = 18.dp, vertical = 10.dp),
     ) {
-        Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(20.dp).padding(end = 8.dp))
-        Text(label, color = color, style = MaterialTheme.typography.labelLarge, maxLines = 1, softWrap = false)
+        Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(22.dp)) // v275 -- só ícone
     }
 }
 

@@ -160,17 +160,15 @@ private fun StatusPill(status: String) {
     val tone = INSUMO_STATUS_TONE[status] ?: InsumoTone.NEUTRAL
     val (bg, fg) = when (tone) {
         InsumoTone.GOOD -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) to MaterialTheme.colorScheme.primary
-        InsumoTone.WARN -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
-        InsumoTone.BAD -> MaterialTheme.colorScheme.error.copy(alpha = 0.15f) to MaterialTheme.colorScheme.error
+        InsumoTone.WARN -> MaterialTheme.colorScheme.secondaryContainer to Color(0xFFB8860B)
+        InsumoTone.BAD -> MaterialTheme.colorScheme.error.copy(alpha = 0.15f) to com.bragro.mobile.ui.domain.corAtencao()
         InsumoTone.NEUTRAL -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
     }
     Text(
-        INSUMO_STATUS_LABEL[status] ?: status,
-        style = MaterialTheme.typography.labelSmall,
+        (INSUMO_STATUS_LABEL[status] ?: status).lowercase(),
+        style = MaterialTheme.typography.labelMedium,
         color = fg,
-        modifier = Modifier
-            .background(bg, RoundedCornerShape(50))
-            .padding(horizontal = 8.dp, vertical = 2.dp),
+        // v275 (mockup v330) -- sem fundo colorido; minúsculas.
     )
 }
 
@@ -213,7 +211,7 @@ private fun InsumoItemRow(i: InsumoItemSituacaoData) {
     Column(modifier = Modifier.padding(vertical = 6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                i.item,
+                com.bragro.mobile.ui.domain.exibirTexto(i.item), // v275 -- minúsculas
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
@@ -280,8 +278,12 @@ private fun ItemCriticoCard(i: InsumoSaldoData, onPedidoRapido: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(i.item, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text(com.bragro.mobile.ui.domain.exibirTexto(i.item), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 StatusPill(i.status)
+                // v275 (mockup v330) -- "Pedir" só com o ícone, sem borda, na linha do título.
+                androidx.compose.material3.IconButton(onClick = onPedidoRapido, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Outlined.ShoppingCart, contentDescription = "Pedir", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                }
             }
             // v1.6.7 (mockup v108, item 5) -- Saldo · Mínimo · Ruptura · Pedir em uma linha só.
             Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
@@ -299,11 +301,6 @@ private fun ItemCriticoCard(i: InsumoSaldoData, onPedidoRapido: () -> Unit) {
                 par("Saldo", fmtNum(i.saldo))
                 par("Mínimo", fmtNum(i.minimo))
                 par("Ruptura", when (val d = i.diasRestantes) { null -> "sem consumo"; 0 -> "hoje"; 1 -> "1 dia"; else -> "$d dias" })
-                OutlinedButton(onClick = onPedidoRapido, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 0.dp), modifier = Modifier.height(30.dp)) {
-                    Icon(Icons.Outlined.ShoppingCart, contentDescription = null, modifier = Modifier.size(15.dp))
-                    Spacer(modifier = Modifier.size(4.dp))
-                    Text("Pedir", style = MaterialTheme.typography.labelSmall)
-                }
             }
         }
     }
@@ -379,11 +376,10 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Inventory2, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Controle de Insumos", color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
+                        Text("Insumos", color = MaterialTheme.colorScheme.onSurface, maxLines = 1) // v275 -- título curto
                     }
                 
                     }
@@ -391,7 +387,7 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                 actions = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
+                        /* v275 (mockup v331) -- sem casinha na página inicial do módulo */
                     }
                 },
             )

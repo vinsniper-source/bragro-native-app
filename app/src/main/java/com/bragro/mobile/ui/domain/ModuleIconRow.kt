@@ -51,6 +51,8 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.foundation.layout.offset
 
 /** v20 -- dentro de [AcoesIcones] os botões aparecem só com o ícone. */
 val LocalSomenteIcone = androidx.compose.runtime.compositionLocalOf { false }
@@ -554,6 +556,26 @@ fun BalaoNomeIcone(texto: String, visivel: Boolean, onFechar: () -> Unit) {
                 color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 1,
                 softWrap = false,
+            )
+        }
+    }
+}
+
+/**
+ * v275 (mockup v330) -- substitui o botão verde flutuante: ícone do módulo
+ * com "+" elevado na linha do título, na cor do texto.
+ */
+@Composable
+fun NovoIconeTopo(icon: ImageVector, descricao: String, onClick: () -> Unit, mais: Boolean = true) {
+    androidx.compose.material3.IconButton(onClick = onClick) {
+        Box {
+            Icon(icon, contentDescription = descricao, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+            if (mais && icon != Icons.Outlined.Add) Text(
+                "+",
+                fontSize = 13.sp,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.align(Alignment.TopEnd).offset(x = 8.dp, y = (-9).dp),
             )
         }
     }

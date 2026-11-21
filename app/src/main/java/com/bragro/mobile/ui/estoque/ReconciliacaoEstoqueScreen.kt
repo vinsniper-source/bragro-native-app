@@ -157,7 +157,6 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.domain.IconeAjustarFisicoFiscal, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     // v40 -- título fixo (sem letreiro), quebrando em duas
                     // linhas quando não couber numa.
@@ -299,7 +298,7 @@ private fun ReconciliacaoItemCard(i: ReconciliacaoEstoqueItemData) {
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
                     color = cor,
-                    modifier = Modifier.background(cor.copy(alpha = 0.15f), androidx.compose.foundation.shape.RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 2.dp),
+                    modifier = Modifier,
                 )
                 com.bragro.mobile.ui.domain.CantoL(aberto)
             }

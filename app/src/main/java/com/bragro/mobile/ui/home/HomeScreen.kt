@@ -568,7 +568,7 @@ private fun formatEventTime(iso: String): String = try {
     val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
     parser.timeZone = TimeZone.getTimeZone("UTC")
     val date = parser.parse(iso)
-    if (date == null) "" else SimpleDateFormat("dd/MM HH:mm", Locale("pt", "BR")).format(date)
+    if (date == null) "" else SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR")).format(date) // v275 -- data completa
 } catch (e: Exception) {
     ""
 }
@@ -721,10 +721,11 @@ fun HomeScreen(
                     val optionalIconCount = (if (canManage) 2 else 0) +
                         (if (home?.showConfiguracoesIcon == true) 1 else 0) +
                         (if (home?.showBaseDeDadosIcon == true) 1 else 0) +
-                        3 // notificações + tema + busca, sempre presentes
+                        2 // notificações + tema, sempre presentes (v275 -- não há ícone de busca)
                     // v274 (mockup v329) -- ícones compactos (40 dp) e logo menor: nada cortado.
-                    val estimatedIconsWidth = (optionalIconCount * 40).dp + 40.dp + 40.dp + 12.dp
-                    val estimatedLogoWidth = 132.dp + 18.dp
+                    // v275 (mockup v330) -- logo um pouco maior, na altura dos ícones.
+                    val estimatedIconsWidth = (optionalIconCount * 40).dp + 40.dp + 40.dp + 10.dp
+                    val estimatedLogoWidth = 124.dp + 18.dp
                     val headerFits = estimatedLogoWidth + estimatedIconsWidth <= maxWidth
 
                     // Ícones opcionais + Conta + logo do cliente extraídos
@@ -774,7 +775,7 @@ fun HomeScreen(
                                 android.widget.Toast.makeText(logoScreenContext, msg, android.widget.Toast.LENGTH_SHORT).show()
                             }
                         }) {
-                            Icon(Icons.Outlined.Backup, contentDescription = "Backup completo")
+                            Icon(Icons.Outlined.Backup, contentDescription = "Backup completo", modifier = Modifier.size(22.dp)) /* v275 -- ícones do mesmo tamanho */
                         }
                     }
                     // Ícone "Módulos" -- consolida Configurações + Base de
@@ -793,7 +794,7 @@ fun HomeScreen(
                         var modulosMenuOpen by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { modulosMenuOpen = true }) {
-                                Icon(Icons.Outlined.GridView, contentDescription = "Módulos")
+                                Icon(Icons.Outlined.GridView, contentDescription = "Módulos", modifier = Modifier.size(22.dp)) /* v275 -- ícones do mesmo tamanho */
                             }
                             com.bragro.mobile.ui.theme.MenuSuspenso(expanded = modulosMenuOpen, onDismissRequest = { modulosMenuOpen = false }, corFixa = com.bragro.mobile.ui.theme.corMenuBarra()) {
                                 DropdownMenuItem(
@@ -837,7 +838,7 @@ fun HomeScreen(
                         var iosStepsOpen by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { configMenuOpen = true }) {
-                                Icon(Icons.Outlined.Settings, contentDescription = "Configurações")
+                                Icon(Icons.Outlined.Settings, contentDescription = "Configurações", modifier = Modifier.size(22.dp)) /* v275 -- ícones do mesmo tamanho */
                             }
                             com.bragro.mobile.ui.theme.MenuSuspenso(expanded = configMenuOpen, onDismissRequest = { configMenuOpen = false }, corFixa = com.bragro.mobile.ui.theme.corMenuBarra()) {
                                 val apkUrl = home?.apkUrl
@@ -913,7 +914,7 @@ fun HomeScreen(
                         var dbMenuOpen by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { dbMenuOpen = true }) {
-                                Icon(IconesVazados.Storage, contentDescription = "Base de Dados")
+                                Icon(IconesVazados.Storage, contentDescription = "Base de Dados", modifier = Modifier.size(22.dp)) /* v275 -- ícones do mesmo tamanho */
                             }
                             com.bragro.mobile.ui.theme.MenuSuspenso(expanded = dbMenuOpen, onDismissRequest = { dbMenuOpen = false }, corFixa = com.bragro.mobile.ui.theme.corMenuBarra()) {
                                 val grupos = home?.baseDeDadosCategorias.orEmpty()
@@ -955,6 +956,7 @@ fun HomeScreen(
                             Icon(
                                 if (unreadCount > 0) Icons.Outlined.NotificationsActive else Icons.Outlined.NotificationsNone,
                                 contentDescription = "Notificações",
+                                modifier = Modifier.size(22.dp),
                             )
                         }
                     }
@@ -976,7 +978,7 @@ fun HomeScreen(
                                     modifier = Modifier.size(28.dp).clip(CircleShape),
                                 )
                             } else {
-                                Icon(Icons.Outlined.AccountCircle, contentDescription = "Conta")
+                                Icon(Icons.Outlined.AccountCircle, contentDescription = "Conta", modifier = Modifier.size(22.dp)) /* v275 -- ícones do mesmo tamanho */
                             }
                         }
                         com.bragro.mobile.ui.theme.MenuSuspenso(expanded = userMenuOpen, onDismissRequest = { userMenuOpen = false }, corFixa = com.bragro.mobile.ui.theme.corMenuBarra()) {
@@ -1103,7 +1105,7 @@ fun HomeScreen(
                             // e legível no cabeçalho. Alinhada à esquerda por
                             // design (pedido antigo do usuário -- "logo no
                             // limite esquerdo"), sem offset de centralização.
-                            com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.height(30.dp).widthIn(max = 132.dp)) // v274 -- logo menor
+                            com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.height(36.dp).widthIn(max = 124.dp)) // v275 -- logo na altura dos ícones
                             Box(modifier = Modifier.weight(1f)) {
                                 androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement provides false) { headerTrailingContent() }
                             }
@@ -1119,7 +1121,7 @@ fun HomeScreen(
                                 modifier = Modifier.fillMaxWidth().padding(start = 18.dp, top = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.height(30.dp).widthIn(max = 132.dp)) // v274 -- logo menor
+                                com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.height(36.dp).widthIn(max = 124.dp)) // v275 -- logo na altura dos ícones
                             }
                             Spacer(Modifier.height(2.dp))
                             Box(modifier = Modifier.fillMaxWidth().padding(end = 10.dp, bottom = 6.dp)) {
@@ -1585,7 +1587,14 @@ fun HomeScreen(
 private fun NotificationsDialog(items: List<NotificationItemData>, onMarkAllRead: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Notificações") },
+        // v275 (mockup v330) -- "Marcar todas como lidas" e "Fechar" viram ícones na linha do título.
+        title = {
+            com.bragro.mobile.ui.domain.TituloJanela("Notificações", onFechar = onDismiss) {
+                if (items.isNotEmpty()) androidx.compose.material3.IconButton(onClick = { onMarkAllRead() }) {
+                    Icon(Icons.Outlined.DoneAll, contentDescription = "Marcar todas como lidas", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                }
+            }
+        },
         text = {
             if (items.isEmpty()) {
                 Text("Nenhuma notificação ainda.", style = MaterialTheme.typography.bodySmall)
@@ -1599,7 +1608,7 @@ private fun NotificationsDialog(items: List<NotificationItemData>, onMarkAllRead
                             // v51 -- sem letreiro: título inteiro, quebrando
                             // linha; o código do tipo vira uma etiqueta legível.
                             Text(
-                                n.titulo,
+                                com.bragro.mobile.ui.domain.exibirTexto(n.titulo),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = if (!n.lida) FontWeight.Bold else FontWeight.Normal,
                             )
@@ -1609,20 +1618,14 @@ private fun NotificationsDialog(items: List<NotificationItemData>, onMarkAllRead
                                 color = com.bragro.mobile.ui.domain.corAtencao(),
                                 modifier = Modifier.padding(vertical = 2.dp),
                             )
-                            Text(n.mensagem, style = MaterialTheme.typography.bodySmall)
+                            Text(com.bragro.mobile.ui.domain.exibirTexto(n.mensagem), style = MaterialTheme.typography.bodySmall)
                             Text(formatEventTime(n.criadaEm), style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 }
             }
         },
-        confirmButton = {
-            TextButton(onClick = { onMarkAllRead() }) {
-                Icon(Icons.Outlined.DoneAll, contentDescription = null, modifier = Modifier.size(18.dp))
-                Text(" Marcar todas como lidas")
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Fechar") } },
+        confirmButton = {},
     )
 }
 
@@ -2657,12 +2660,15 @@ private fun MiniCardHeaderWithRefresh(
     color: Color,
     titleStyle: androidx.compose.ui.text.TextStyle,
     onRefresh: () -> Unit,
+    acoes: (@Composable () -> Unit)? = null,
 ) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        // v75 -- ícones dos blocos no verde do BRAgro.
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+        // v275 (mockup v330) -- ícone na cor do texto; ações do bloco como
+        // ícones na mesma linha do título, à direita.
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(10.dp))
         Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f).basicMarquee())
+        acoes?.invoke()
     }
 }
 
@@ -2673,7 +2679,7 @@ private fun ClimaResumo(clima: com.bragro.mobile.data.model.WeatherData, onClick
     val cs = MaterialTheme.colorScheme
     val laranja = androidx.compose.ui.graphics.Color(0xFFD97706)
     val br = java.util.Locale("pt", "BR")
-    androidx.compose.material3.Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+    androidx.compose.material3.Card(onClick = onClick, modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.Transparent), border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) { // v275 (mockup v330) -- bloco recolhido com borda
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(iconeClima(clima.currentIcon), contentDescription = null, modifier = Modifier.size(32.dp))
@@ -2725,7 +2731,7 @@ private fun CotacoesResumo(com: com.bragro.mobile.data.model.CommodityQuotesData
     val cs = MaterialTheme.colorScheme
     val laranja = androidx.compose.ui.graphics.Color(0xFFD97706)
     val br = java.util.Locale("pt", "BR")
-    androidx.compose.material3.Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+    androidx.compose.material3.Card(onClick = onClick, modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.Transparent), border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) { // v275 (mockup v330) -- bloco recolhido com borda
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Cotações Grãos", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             Row(modifier = Modifier.fillMaxWidth()) {
@@ -2911,10 +2917,7 @@ private fun ClimaCard(clima: com.bragro.mobile.data.model.WeatherData, onRefresh
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = cor,
-                        modifier = Modifier
-                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
-                            .background(cor.copy(alpha = 0.14f))
-                            .padding(horizontal = 10.dp, vertical = 2.dp),
+                        modifier = Modifier,
                     )
                 }
             }
@@ -3052,9 +3055,15 @@ private fun AgroLinha(g: com.bragro.mobile.data.model.ClimaAgro, linha: androidx
 
 @Composable
 private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
+    var conversorAberto by remember { mutableStateOf(false) }
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            MiniCardHeaderWithRefresh("Câmbio", Icons.Outlined.CurrencyExchange, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
+            MiniCardHeaderWithRefresh("Câmbio", Icons.Outlined.CurrencyExchange, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh, acoes = {
+                // v275 (mockup v330) -- "Conversor" vira ícone na linha do título.
+                IconButton(onClick = { conversorAberto = !conversorAberto }, modifier = Modifier.size(32.dp)) {
+                    Icon(if (conversorAberto) Icons.Outlined.Close else Icons.Outlined.SwapHoriz, contentDescription = if (conversorAberto) "Fechar conversor" else "Conversor BRL / US\$ / ARS", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                }
+            })
             // Ícone de variação (alta/baixa) + porcentagem do dia ao lado do
             // valor -- pedido do usuário ("na linha dólar e na linha euro
             // adicione ícone de variação e porcentagem"), mesmo padrão já
@@ -3114,7 +3123,7 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: 
             if (com.bragro.mobile.ui.i18n.Idioma.argentina) {
                 Text("Valores em ARS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            CambioConversor(fx)
+            CambioConversor(fx, conversorAberto)
             // Periodicidade + fonte -- pedido do usuário. Valor real do
             // backend (getFxRates em quotes.ts): revalidate 900s = 15 min,
             // AwesomeAPI (com fallback pra exchangerate-api.com só se a
@@ -3209,13 +3218,9 @@ private fun MercadoArgentinaCard(lista: List<com.bragro.mobile.data.model.Mercad
 // Conversor R$ <-> US$ <-> AR$ com a cotacao ao vivo do proprio card Cambio
 // (mesma logica do CurrencyMenu no site).
 @Composable
-private fun CambioConversor(fx: com.bragro.mobile.data.model.FxRatesData) {
-    var aberto by remember { mutableStateOf(false) }
+private fun CambioConversor(fx: com.bragro.mobile.data.model.FxRatesData, aberto: Boolean) {
     var valor by remember { mutableStateOf("100") }
     var de by remember { mutableStateOf("BRL") }
-    TextButton(onClick = { aberto = !aberto }) {
-        Text(if (aberto) "Fechar conversor" else "Conversor BRL / U\$D / ARS")
-    }
     if (!aberto) return
     // BRL por 1 unidade de cada moeda.
     fun brlPer(c: String): Double? = when (c) {

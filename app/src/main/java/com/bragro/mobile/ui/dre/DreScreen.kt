@@ -260,7 +260,7 @@ private fun DreTreeNode(item: DreRamoItemData, depth: Int) {
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                item.label,
+                com.bragro.mobile.ui.domain.exibirTexto(item.label), // v275 -- minúsculas
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = if (depth == 0) FontWeight.Bold else FontWeight.Normal,
             )
@@ -313,7 +313,7 @@ private fun CategoriaBarRow(item: DreCategoriaData, maxValor: Double) {
     val fracao = if (maxValor > 0) (item.valor / maxValor).toFloat().coerceIn(0f, 1f) else 0f
     Column(modifier = Modifier.padding(vertical = 4.dp)) {
         Row(modifier = Modifier.fillMaxWidth()) {
-            Text(item.categoria, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+            Text(com.bragro.mobile.ui.domain.exibirTexto(item.categoria), style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
             Text(formatMoneyBrl(item.valor), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
         }
         Box(
@@ -403,22 +403,18 @@ private fun FarmCard(f: DreFazendaData, arvore: List<DreRamoItemData>, expanded:
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(f.farmName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(com.bragro.mobile.ui.domain.exibirTexto(f.farmName, true), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text("${"%,.0f".format(java.util.Locale("pt", "BR"), f.areaHa)} ha", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 // Selo LUCRO/PREJUÍZO (padrão da plataforma) -- verde/laranja, nunca vermelho.
                 val lucro = f.margem >= 0
                 val corSelo = if (lucro) com.bragro.mobile.ui.domain.corSucesso() else com.bragro.mobile.ui.domain.corAtencao()
                 Text(
-                    if (lucro) "LUCRO" else "PREJUÍZO",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
+                    if (lucro) "lucro" else "prejuízo", // v275 (mockup v330) -- sem fundo, minúsculas
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
                     color = corSelo,
-                    modifier = Modifier
-                        .padding(end = 6.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(corSelo.copy(alpha = 0.15f))
-                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                    modifier = Modifier.padding(end = 6.dp),
                 )
                 com.bragro.mobile.ui.domain.CantoL(expanded, onClick = onToggle)
             }
@@ -508,7 +504,6 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.RequestQuote, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -524,7 +519,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                 actions = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
+                        /* v275 (mockup v331) -- sem casinha na página inicial do módulo */
                     }
                 },
             )

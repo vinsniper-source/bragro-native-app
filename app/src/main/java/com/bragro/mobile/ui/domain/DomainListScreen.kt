@@ -676,7 +676,7 @@ fun DomainListScreen(
                     }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
+                        /* v275 (mockup v331) -- sem casinha na página inicial do módulo */
                     }
                 },
             )

@@ -469,7 +469,10 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Orçamentos", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface)
+                        androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            Text("Orçamentos", maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurface)
+                            com.bragro.mobile.ui.theme.DicaInfo("Pendente NF aguarda a nota mãe para conciliação.") // v275 (mockup v330)
+                        }
                     }
                 
                     }
@@ -487,7 +490,7 @@ fun OrcamentoListScreen(onBack: () -> Unit, onNovo: () -> Unit, viewModel: Orcam
                     }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
+                        /* v275 (mockup v331) -- sem casinha na página inicial do módulo */
                     }
                 },
             )
@@ -602,11 +605,7 @@ val headers = listOf("Data", "Nº Orçamento", "Requisição", "Autorizado por",
             com.bragro.mobile.ui.domain.BlocoComFaixa("Ações", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
                 ModuleCategoryTabs(listOf(dadosBlock, operacoesBlock, arquivosBlock), modifier = Modifier.fillMaxWidth())
             }
-            Text(
-                "${filtered.size} orçamento(s)${if (filtered.size != orcamentos.size) " de ${orcamentos.size}" else ""}. Pendente NF aguarda a nota mãe para conciliação.",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-            )
+            // v275 (mockup v330) -- aviso foi para o ⓘ do título.
             if (erro != null) {
                 Text(erro ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 12.dp))
             }

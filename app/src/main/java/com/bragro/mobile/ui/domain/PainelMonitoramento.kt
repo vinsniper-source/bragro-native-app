@@ -755,7 +755,7 @@ fun CartaoGrupo(
                     color = cor,
                     maxLines = 1,
                     softWrap = false, // v1.6.24 -- selo sempre numa linha
-                    modifier = Modifier.padding(start = 6.dp).clip(RoundedCornerShape(50)).background(cor.copy(alpha = 0.14f)).padding(horizontal = 7.dp, vertical = 1.dp),
+                    modifier = Modifier.padding(start = 6.dp),
                 )
             }
         }

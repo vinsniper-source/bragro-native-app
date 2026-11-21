@@ -122,12 +122,7 @@ fun FarmSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onCh
             // v42 -- mesma regra do bloco Ações: ícone sempre na cor padrão;
             // com fazenda escolhida, só o rótulo fica em tom apagado.
             Icon(Icons.Outlined.LocationOn, contentDescription = "Filtrar por fazenda: ${selected ?: "todas"}", tint = MaterialTheme.colorScheme.onSurface)
-            Text(
-                "Fazenda",
-                style = MaterialTheme.typography.labelSmall,
-                color = if (selected != null) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f) else MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-            )
+            // v275 (mockup v330) -- só o ícone, sem o rótulo "Fazenda".
         }
     } else {
         IconButton(onClick = { menuOpen = true }) {
@@ -153,7 +148,7 @@ fun FarmSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onCh
                 // proteção nenhuma contra quebra de linha no menu).
                 text = {
                     Text(
-                        farm.name,
+                        exibirTexto(farm.name, true),
                         fontWeight = if (selected == farm.name) FontWeight.Bold else FontWeight.Normal,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

@@ -11,6 +11,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import com.bragro.mobile.data.ThemeMode
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.unit.dp
 
 /** Botão claro/escuro/automático do cabeçalho -- réplica de ThemeToggle
  * (theme-toggle.tsx): cada toque avança pro próximo modo do ciclo
@@ -26,6 +28,6 @@ fun ThemeToggle() {
         ThemeMode.DARK -> Icons.Outlined.DarkMode to "Escuro"
     }
     IconButton(onClick = { ThemeController.cycle(context) }) {
-        Icon(icon, contentDescription = "Tema: $label")
+        Icon(icon, contentDescription = "Tema: $label", modifier = androidx.compose.ui.Modifier.size(22.dp)) // v275
     }
 }

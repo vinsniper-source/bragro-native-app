@@ -164,11 +164,10 @@ fun SimuladorScreen(onBack: () -> Unit, viewModel: SimuladorViewModel = viewMode
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Calculate, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
  Text("Simulador \"E se?\"", color = MaterialTheme.colorScheme.onSurface) 
                     }
                 } },
-                actions = { com.bragro.mobile.ui.domain.HomeNavButton() },
+                actions = { /* v275 (mockup v331) -- sem casinha na página inicial do módulo */ },
             )
         },
     ) { padding0 ->

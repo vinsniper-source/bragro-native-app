@@ -2,6 +2,10 @@ package com.bragro.mobile.ui.silos
 
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.withStyle
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.outlined.Warehouse
 import androidx.compose.material.icons.outlined.Refresh
@@ -280,9 +284,7 @@ fun SilosScreen(onBack: () -> Unit, onAbrirRomaneio: (String) -> Unit = {}, view
 
     Scaffold(
         // v215 -- adicionar no botão verde (antes ficava em Operações).
-        floatingActionButton = {
-            com.bragro.mobile.ui.domain.BotaoAdicionar(com.bragro.mobile.ui.domain.IconesVazados.Storage, "Novo silo", onClick = { editing = null; showForm = true })
-        },
+        // v275 (mockup v330) -- sem botão verde: "+" na linha do título.
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -294,18 +296,25 @@ fun SilosScreen(onBack: () -> Unit, onAbrirRomaneio: (String) -> Unit = {}, view
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Warehouse, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Silos", color = MaterialTheme.colorScheme.onSurface)
+                        // v275 (mockup v330) -- avisos (nível crítico / leitura pendente) no ⓘ.
+                        androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            Text("Silos", color = MaterialTheme.colorScheme.onSurface)
+                            val avisos = silos.filter { it.nivelCritico }.map { "Nível crítico: ${com.bragro.mobile.ui.domain.exibirTexto(it.nome, true)} em ${(it.estimadoPct ?: it.nivelAtualPct ?: 0.0).toInt()}%." } +
+                                silos.filter { it.leituraAtrasada }.map { "Leitura pendente: ${com.bragro.mobile.ui.domain.exibirTexto(it.nome, true)}" + (it.diasSemLeitura?.let { d -> " há $d dias." } ?: ".") }
+                            if (avisos.isNotEmpty()) com.bragro.mobile.ui.theme.DicaInfo(avisos.joinToString(" "))
+                        }
                     }
                 
                     }
                 } },
-                actions = { Column {
+                actions = {
+                    androidx.compose.foundation.layout.Column { androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(16.dp)); com.bragro.mobile.ui.domain.NovoIconeTopo(com.bragro.mobile.ui.domain.IconesVazados.Storage, "Novo silo", onClick = { editing = null; showForm = true }) }
+                    Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
+                        /* v275 (mockup v331) -- sem casinha na página inicial do módulo */
                     } },
             )
         },
@@ -403,20 +412,7 @@ fun SilosScreen(onBack: () -> Unit, onAbrirRomaneio: (String) -> Unit = {}, view
                 com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = silos.size, aberto = silosAbertos, titulo = "Silos") { silosAbertos = !silosAbertos }
             }
             if (silosAbertos) {
-                items(silos.filter { it.nivelCritico }, key = { "c-" + it.id }) { s ->
-                    AlertaBanner(
-                        "Nível crítico: ${s.nome} em ${(s.estimadoPct ?: s.nivelAtualPct ?: 0.0).toInt()}% (limite ${s.nivelCriticoLimitePct.toInt()}%).",
-                        critico = true,
-                    )
-                }
-                items(silos.filter { it.leituraAtrasada }, key = { "a-" + it.id }) { s ->
-                    AlertaBanner(
-                        "Leitura pendente: ${s.nome} " +
-                            (s.diasSemLeitura?.let { "sem registro há $it dias" } ?: "ainda não tem leitura registrada") +
-                            " (lembrete a cada ${s.lembreteDias}).",
-                        critico = false,
-                    )
-                }
+                // v275 -- avisos foram para o ⓘ do título e para o próprio silo.
             }
             if (silosAbertos) when {
                 loading -> item(key = "loading") {
@@ -589,7 +585,7 @@ private fun SiloCard(
             val laranja = com.bragro.mobile.ui.domain.corAtencao()
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    com.bragro.mobile.ui.domain.exibirSegmentos(listOfNotNull(silo.nome, farmNome).joinToString(" · ")),
+                    com.bragro.mobile.ui.domain.exibirTexto(silo.nome, true), // v275 (mockup v330) -- só o nome no título
                     style = MaterialTheme.typography.titleSmall,
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
@@ -607,19 +603,44 @@ private fun SiloCard(
                 icone(Icons.Outlined.Edit, "Editar", cs.onSurface, acao = onEdit)
                 icone(Icons.Outlined.Delete, "Arquivar", laranja, acao = onArchive)
             }
+            // v275 (mockup v330) -- bloco igual à plataforma: fazenda embaixo do
+            // nome, anel com o % e as toneladas ao lado.
             val toneladas = silo.capacidadeT?.let { it * pct / 100.0 }
             Text(
-                listOfNotNull(
-                    silo.produto?.takeIf { it.isNotBlank() }?.let { com.bragro.mobile.ui.domain.exibirTexto(it) },
-                    toneladas?.let { "%.1f t de %d t".format(Locale("pt", "BR"), it, silo.capacidadeT!!.toInt()) },
-                    "${pct.toInt()}%",
-                    statusLabel(silo.status).takeIf { silo.status == "CRITICO" || estimado }?.let { if (estimado) "estimado" else it.lowercase() },
-                    silo.ultimaLeituraEm?.let { com.bragro.mobile.ui.domain.diaMesBr(it) },
-                ).joinToString(" · "),
+                buildAnnotatedString {
+                    append(farmNome?.let { com.bragro.mobile.ui.domain.exibirTexto(it, true) } ?: "Sem fazenda vinculada")
+                    if (silo.leituraAtrasada) {
+                        append(" · ")
+                        withStyle(SpanStyle(color = laranja)) { append("leitura pendente") }
+                    }
+                },
                 style = MaterialTheme.typography.bodySmall,
-                color = if (critico || silo.status == "CRITICO") laranja else cs.onSurfaceVariant,
-                modifier = Modifier.padding(top = 2.dp),
+                color = cs.onSurfaceVariant,
             )
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(Modifier.size(52.dp), contentAlignment = Alignment.Center) {
+                    androidx.compose.material3.CircularProgressIndicator(
+                        progress = { (pct / 100f).coerceIn(0f, 1f) },
+                        modifier = Modifier.fillMaxSize(),
+                        color = if (critico || silo.status == "CRITICO") laranja else cs.primary,
+                        trackColor = cs.outlineVariant,
+                        strokeWidth = 5.dp,
+                    )
+                    Text("${pct.toInt()}%", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                }
+                Column {
+                    silo.produto?.takeIf { it.isNotBlank() }?.let { Text(com.bragro.mobile.ui.domain.exibirTexto(it), style = MaterialTheme.typography.bodyMedium) }
+                    if (toneladas != null) Text(buildAnnotatedString {
+                        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append("%.1f t".format(Locale("pt", "BR"), toneladas)) }
+                        append(" de ${silo.capacidadeT!!.toInt()} t")
+                    }, style = MaterialTheme.typography.bodyMedium)
+                    val rodape = listOfNotNull(
+                        if (estimado) "estimado" else if (silo.status == "CRITICO") "crítico" else null,
+                        silo.ultimaLeituraEm?.let { com.bragro.mobile.ui.domain.diaMesBr(it) },
+                    ).joinToString(" · ")
+                    if (rodape.isNotBlank()) Text(rodape, style = MaterialTheme.typography.bodySmall, color = if (silo.status == "CRITICO") laranja else cs.onSurfaceVariant)
+                }
+            }
             if (aberto) {
             Text(
                 listOfNotNull(silo.produto, silo.fabricante, silo.capacidadeT?.let { "${it.toInt()} t" }).joinToString(" · ").ifBlank { "—" },

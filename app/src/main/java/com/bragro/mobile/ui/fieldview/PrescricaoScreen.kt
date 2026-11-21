@@ -298,9 +298,7 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
 
     Scaffold(
         // v215 -- adicionar no botão verde (antes ficava em Operações).
-        floatingActionButton = {
-            com.bragro.mobile.ui.domain.BotaoAdicionar(Icons.Outlined.Add, "Nova prescrição", onClick = onNovo)
-        },
+        // v275 (mockup v330) -- sem botão verde: "+" na linha do título.
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -316,7 +314,6 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Map, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -330,9 +327,10 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                 // altura do título nesses módulos"), mesmo padrão dos demais
                 // módulos (ver DomainListScreen.kt).
                 actions = {
+                    androidx.compose.foundation.layout.Column { androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(16.dp)); com.bragro.mobile.ui.domain.NovoIconeTopo(Icons.Outlined.Add, "Nova prescrição", onClick = onNovo) }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
+                        /* v275 (mockup v331) -- sem casinha na página inicial do módulo */
                     }
                 },
             )

@@ -272,10 +272,10 @@ fun SearchableDropdownField(
     // Rótulos traduzidos (espanhol): o valor (first) segue o original, só a
     // exibição (second) passa por Idioma.tr.
     val idiomaAtual = com.bragro.mobile.ui.i18n.Idioma.codigo
-    val opts = remember(options, idiomaAtual) { options.map { it.first to com.bragro.mobile.ui.i18n.Idioma.tr(it.second) } }
+    val opts = remember(options, idiomaAtual) { options.map { it.first to com.bragro.mobile.ui.domain.exibirTexto(com.bragro.mobile.ui.i18n.Idioma.tr(it.second)) } } // v275 (mockup v330) -- listas em minúsculas
     val optionLabels = remember(opts) { opts.associate { it.first to it.second } }
     var expanded by remember { mutableStateOf(false) }
-    var query by remember(value, opts) { mutableStateOf(optionLabels[value] ?: com.bragro.mobile.ui.i18n.Idioma.tr(value)) }
+    var query by remember(value, opts) { mutableStateOf(optionLabels[value] ?: com.bragro.mobile.ui.domain.exibirTexto(com.bragro.mobile.ui.i18n.Idioma.tr(value))) }
     // v1.6.23 (mockup v128c, item 6) -- ao abrir, mostra TODAS as opções;
     // só filtra depois que a pessoa digita (antes filtrava pelo texto já
     // escolhido e sobrava uma opção só).

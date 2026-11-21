@@ -522,9 +522,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
 
     Scaffold(
         // v215 -- adicionar no botão verde (antes ficava em Operações).
-        floatingActionButton = {
-            com.bragro.mobile.ui.domain.BotaoAdicionar(Icons.Outlined.EditLocationAlt, "Novo talhão", onClick = { manualDialogOpen = true })
-        },
+        // v275 (mockup v330) -- sem botão verde: "+" na linha do título.
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -536,7 +534,6 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Map, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -546,11 +543,12 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                     }
                 } },
                 actions = {
+                    androidx.compose.foundation.layout.Column { androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(16.dp)); com.bragro.mobile.ui.domain.NovoIconeTopo(Icons.Outlined.EditLocationAlt, "Novo talhão", onClick = { manualDialogOpen = true }) }
                     // v18 -- ícone de Prescrição saiu do cabeçalho; fica só
                     // em Arquivos > Prescrição (mesmo ícone).
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
+                        /* v275 (mockup v331) -- sem casinha na página inicial do módulo */
                     }
                 },
             )

@@ -24,6 +24,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -316,6 +320,9 @@ fun BaseDeDadosScreen(
         }
     }
 
+    // v275 -- sobem para fora do Scaffold: os ícones de importar/recusar estão no título.
+    var showImportConfirm by remember { mutableStateOf(false) }
+    var showDeclineConfirm by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             if (modoFazendas) {
@@ -348,18 +355,38 @@ fun BaseDeDadosScreen(
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.domain.IconesVazados.Storage, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Base de Dados", color = MaterialTheme.colorScheme.onSurface)
+                        // v275 (mockup v330) -- aviso no ⓘ; importar/recusar/CSV viram ícones.
+                        androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            Text("Base de dados", color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+                            val faltamTopo = data?.get("missingCount")?.jsonPrimitive?.contentOrNull?.toIntOrNull() ?: 0
+                            if (faltamTopo > 0 && !modoFazendas) com.bragro.mobile.ui.theme.DicaInfo("$faltamTopo item(ns) padrão para importar.")
+                        }
                     }
                 
                     }
                 } },
                 actions = { Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
+                        /* v275 (mockup v331) -- sem casinha na página inicial do módulo */
+                        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            val faltamTopo = data?.get("missingCount")?.jsonPrimitive?.contentOrNull?.toIntOrNull() ?: 0
+                            if (faltamTopo > 0 && !modoFazendas) {
+                                androidx.compose.material3.IconButton(onClick = { showImportConfirm = true }, enabled = !busy) {
+                                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Download, contentDescription = "Importar padrões", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                }
+                                androidx.compose.material3.IconButton(onClick = { showDeclineConfirm = true }, enabled = !busy) {
+                                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Close, contentDescription = "Recusar", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(20.dp))
+                                }
+                            }
+                            if (onOpenCsvImport != null && !modoFazendas) {
+                                androidx.compose.material3.IconButton(onClick = onOpenCsvImport, enabled = !busy) {
+                                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.UploadFile, contentDescription = "Migrar dados de outra plataforma (CSV)", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                                }
+                            }
+                        }
                     } },
             )
         },
@@ -385,10 +412,10 @@ fun BaseDeDadosScreen(
                 val obj = el.jsonObject
                 val label = obj["label"]?.jsonPrimitive?.contentOrNull ?: return@forEach
                 val values = obj["values"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
-                if (values.isNotEmpty()) parts += "• $label: ${values.joinToString(", ")}"
+                if (values.isNotEmpty()) parts += "${com.bragro.mobile.ui.domain.exibirTexto(label, true)}: ${values.joinToString(", ") { com.bragro.mobile.ui.domain.exibirTexto(it) }}"
             }
             val farmNames = data?.get("missingFarmNames")?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
-            if (farmNames.isNotEmpty()) parts += "• Fazendas: ${farmNames.joinToString(", ")}"
+            if (farmNames.isNotEmpty()) parts += "Fazendas: ${farmNames.joinToString(", ") { com.bragro.mobile.ui.domain.exibirTexto(it, true) }}"
             parts.joinToString("\n")
         }
         // Confirmacao (Sim/Nao) antes de importar -- pedido do usuario
@@ -397,13 +424,11 @@ fun BaseDeDadosScreen(
         // itens padrao que ainda NAO existem nesta organizacao e que o
         // usuario nunca excluiu de proposito (ver import_defaults/
         // LookupOptionExclusion em api/mobile/base-de-dados/route.ts).
-        var showImportConfirm by remember { mutableStateOf(false) }
         // "Recusar" -- pedido do usuário ("coloque o botão com a opção
         // recusar"): diferente do "Não" do diálogo de Importar (que só
         // fecha o diálogo, o aviso continua aparecendo depois), este marca
         // os itens faltando como decisão definitiva de não importar -- o
         // aviso some de vez, reversível cadastrando na mão depois.
-        var showDeclineConfirm by remember { mutableStateOf(false) }
 
         // v1.6.28 (mockup v132b, item 3) -- veio do menu do cabeçalho: rola
         // até o setor que tem a lista escolhida.
@@ -413,7 +438,7 @@ fun BaseDeDadosScreen(
             val setores = bySector ?: return@LaunchedEffect
             val i = setores.indexOfFirst { el -> el.jsonObject["categories"]?.jsonArray?.any { c -> (c.jsonObject["category"]?.jsonPrimitive?.contentOrNull ?: c.toString().trim('"')) == alvo } == true }
             if (i >= 0) {
-                val antes = (if (error != null) 1 else 0) + (if (missingCount > 0) 1 else 0) + (if (onOpenCsvImport != null) 1 else 0) + 1
+                val antes = (if (error != null) 1 else 0) + 1
                 listaEstado.scrollToItem(antes + i)
                 BaseDeDadosFoco.categoria = null
             }
@@ -432,30 +457,7 @@ fun BaseDeDadosScreen(
             if (error != null) {
                 item(key = "error") { Text(error!!, color = MaterialTheme.colorScheme.error) }
             }
-            if (missingCount > 0 && !modoFazendas) {
-                item(key = "import") {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text("$missingCount item(ns) padrão para importar.", style = MaterialTheme.typography.bodyMedium)
-                            Row(modifier = Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = { showImportConfirm = true }, enabled = !busy) {
-                                    Text("Importar padrões")
-                                }
-                                TextButton(onClick = { showDeclineConfirm = true }, enabled = !busy) {
-                                    Text("Recusar")
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            if (onOpenCsvImport != null && !modoFazendas) {
-                item(key = "csv_import") {
-                    OutlinedButton(onClick = onOpenCsvImport, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-                        Text("Migrar dados de outra plataforma (CSV)")
-                    }
-                }
-            }
+            // v275 -- importar/recusar/CSV foram para a linha do título.
             // v321/v326 -- Fazendas saiu da Base de Dados: só na tela Fazendas.
             if (modoFazendas) item(key = "farms_titulo") {
                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)) {
@@ -507,24 +509,18 @@ fun BaseDeDadosScreen(
         if (showImportConfirm) {
             AlertDialog(
                 onDismissRequest = { showImportConfirm = false },
-                title = { Text("Importar dados padrão?") },
-                text = {
-                    Column {
-                        Text("Adiciona $missingCount item(ns). Excluídos não voltam.")
-                        if (missingSummary.isNotBlank()) {
-                            Text(missingSummary, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
-                        }
+                // v275 (mockup v330) -- ✓/✕ na linha do título; aviso no ⓘ; minúsculas.
+                title = {
+                    com.bragro.mobile.ui.domain.TituloJanela("Importar padrões?", onFechar = { showImportConfirm = false }, dica = "Adiciona $missingCount item(ns). Excluídos não voltam.") {
+                        com.bragro.mobile.ui.domain.SalvarIcone(onClick = { showImportConfirm = false; viewModel.importDefaults() }, descricao = "Sim, importar")
                     }
                 },
-                confirmButton = {
-                    TextButton(onClick = {
-                        showImportConfirm = false
-                        viewModel.importDefaults()
-                    }) { Text("Sim, importar") }
+                text = {
+                    if (missingSummary.isNotBlank()) {
+                        Text(missingSummary, style = MaterialTheme.typography.bodySmall, modifier = Modifier.verticalScroll(rememberScrollState()))
+                    }
                 },
-                dismissButton = {
-                    TextButton(onClick = { showImportConfirm = false }) { Text("Não") }
-                },
+                confirmButton = {},
             )
         }
         if (showDeclineConfirm) {

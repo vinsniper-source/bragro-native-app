@@ -287,9 +287,10 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                 navigationIcon = { com.bragro.mobile.ui.domain.BackNavButton() },
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
-                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.domain.IconesVazados.AccountBalance, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
- Text("Dossiê Bancário", color = MaterialTheme.colorScheme.onSurface) 
+                    // v275 (mockup v330) -- frase vai para o ⓘ; imprimir/PDF na linha do título.
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Text("Dossiê bancário", color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+                        com.bragro.mobile.ui.theme.DicaInfo("DRE, livro caixa, contratos e patrimônio para o banco.")
                     }
                 } },
                 // Ícone Imprimir/PDF (Task #615/#711, paridade com o botão
@@ -299,7 +300,18 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                 // único HTML e reaproveita o motor de impressão genérico do
                 // HtmlPrinter (mesmo usado por Reconciliação/Frota/DRE/Livro
                 // Caixa), em vez de recriar o mecanismo de impressão aqui.
-                actions = { com.bragro.mobile.ui.domain.HomeNavButton() },
+                actions = {
+                    /* v275 (mockup v331) -- sem casinha na página inicial do módulo */
+                    val dd = dados
+                    if (dd != null) {
+                        androidx.compose.material3.IconButton(onClick = { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(dd, ano)) }) {
+                            Icon(Icons.Outlined.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                        }
+                        androidx.compose.material3.IconButton(onClick = { HtmlPrinter.printHtmlComoPdf(context, "Dossiê Bancário", buildDossieHtml(dd, ano)) }) {
+                            Icon(Icons.Outlined.PictureAsPdf, contentDescription = "PDF", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                },
             )
         },
     ) { padding ->
@@ -337,15 +349,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
             contentPadding = PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            var n = 0
-            item {
-                Text(
-                    "DRE, Livro Caixa, Contratos e Patrimônio para o banco.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            n++
+            var n = 0 // v275 -- a frase do topo foi para o ⓘ do título
             if (dre != null) {
                 item(key = "painel") {
                     com.bragro.mobile.ui.domain.PainelMonitoramento(
@@ -390,13 +394,14 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                             com.bragro.mobile.ui.domain.CantoL(anoAberto)
                         }
                         if (anoAberto) {
-                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // v275 (mockup v330) -- um campo por linha.
+                        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             SearchableDropdownField(
                                 value = ano.toString(),
                                 label = "Ano-calendário",
                                 options = remember(anos) { anos.map { it.toString() to it.toString() } },
                                 onSelect = { picked -> picked.toIntOrNull()?.let { viewModel.setAno(it) } },
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.fillMaxWidth(),
                                 emptyOptionLabel = null,
                             )
                             SearchableDropdownField(
@@ -404,7 +409,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                                 label = "Exercício",
                                 options = remember(anos) { anos.map { (it + 1).toString() to (it + 1).toString() } },
                                 onSelect = { picked -> picked.toIntOrNull()?.let { viewModel.setAno(it - 1) } },
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.fillMaxWidth(),
                                 emptyOptionLabel = null,
                             )
                         }
@@ -412,46 +417,19 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                             "resumo" to "Resumo", "fazendas" to "Por fazenda", "caixa" to "Livro Caixa",
                             "contratos" to "Contratos", "patrimonio" to "Patrimônio",
                         ).filter { indiceSecao.containsKey(it.first) }
-                        // v34 (item 9): Imprimir e PDF viram botões separados, na mesma
-                        // grade de atalhos (3 por linha), igual aos demais atalhos.
-                        val celulas = atalhos.map { (id, rotulo) ->
-                            CelulaDossie(rotulo, null, id) {
-                                val abrir = !aberta(id)
-                                abertas[id] = abrir
-                                if (abrir) indiceSecao[id]?.let { i -> scope.launch { listState.animateScrollToItem(i) } }
-                            }
-                        } + listOf(
-                            // v46 -- Imprimir e PDF numa célula só, com divisória no meio.
-                            CelulaDossie(CELULA_IMPRIMIR_PDF, null) {},
-                        )
-                        celulas.chunked(3).forEach { linha ->
-                            // v260 (mockup v255, item 7) -- Imprimir/PDF na mesma altura dos outros.
-                            Row(modifier = Modifier.fillMaxWidth().height(androidx.compose.foundation.layout.IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                linha.forEach { c ->
-                                    if (c.rotulo == CELULA_IMPRIMIR_PDF) com.bragro.mobile.ui.domain.PrintPdfSegmentedButton(
-                                        onPrint = { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(d, ano)) },
-                                        onPdf = { HtmlPrinter.printHtmlComoPdf(context, "Dossiê Bancário", buildDossieHtml(d, ano)) },
-                                        modifier = Modifier.weight(1f).fillMaxHeight(),
-                                        rotulos = false,
-                                        compacto = true,
-                                        preencher = true,
-                                    ) else {
-                                        val ligado = c.id != null && aberta(c.id)
-                                        Box(
-                                        modifier = Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(8.dp))
-                                            .background(if (ligado) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent)
-                                            .border(1.dp, if (ligado) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
-                                            .clickable { c.acao() }
-                                            .padding(vertical = 8.dp),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        val icone = c.icone
-                                        if (icone != null) Icon(icone, contentDescription = c.rotulo, modifier = Modifier.size(18.dp))
-                                        else Text(c.rotulo, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, color = if (ligado) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)
-                                    }
-                                    }
+                        // v275 (mockup v330) -- atalhos sem fundo verde: o escolhido fica
+                        // com a fonte verde e o traço; imprimir/PDF foram para o título.
+                        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            atalhos.forEach { (id, rotulo) ->
+                                val ligado = aberta(id)
+                                Column(Modifier.clickable {
+                                    val abrir = !aberta(id)
+                                    abertas[id] = abrir
+                                    if (abrir) indiceSecao[id]?.let { i -> scope.launch { listState.animateScrollToItem(i) } }
+                                }.padding(vertical = 4.dp)) {
+                                    Text(rotulo, fontSize = 12.5.sp, fontWeight = if (ligado) FontWeight.SemiBold else FontWeight.Normal, color = if (ligado) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                                    Box(Modifier.padding(top = 2.dp).height(2.dp).fillMaxWidth().background(if (ligado) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent))
                                 }
-                                repeat(3 - linha.size) { Spacer(Modifier.weight(1f)) }
                             }
                         }
                         }
@@ -595,14 +573,11 @@ private fun FazendaDreCard(f: DossieDreFazendaData) {
                 Text(f.farmName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                 // Selo LUCRO/PREJUÍZO (padrão da plataforma).
                 Text(
-                    if (lucro) "LUCRO" else "PREJUÍZO",
+                    if (lucro) "lucro" else "prejuízo",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = corSelo,
-                    modifier = Modifier
-                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
-                        .background(corSelo.copy(alpha = 0.15f))
-                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                    modifier = Modifier,
                 )
             }
             // v44 -- os quatro valores em duas linhas (2 × 2): em uma linha só

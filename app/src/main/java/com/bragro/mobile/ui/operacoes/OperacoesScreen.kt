@@ -197,9 +197,7 @@ private fun EstagioChip(estagio: String) {
         color = fg,
         maxLines = 2,
         overflow = TextOverflow.Clip,
-        modifier = Modifier
-            .background(bg, RoundedCornerShape(50))
-            .padding(horizontal = 8.dp, vertical = 3.dp),
+        // v275 (mockup v330) -- sem fundo colorido.
     )
 }
 
@@ -778,7 +776,6 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Timeline, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -790,7 +787,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                 actions = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
+                        /* v275 (mockup v331) -- sem casinha na página inicial do módulo */
                     }
                 },
             )
@@ -826,21 +823,12 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                     // Nuvem) -- pedido do usuário: a barra de ciclo agora
                     // expande sozinha até o limite da tela.
                     Text("Progresso", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                        JANELAS.forEachIndexed { index, d ->
-                            SegmentedButton(
-                                selected = janela == d,
-                                onClick = { viewModel.setJanela(d) },
-                                shape = SegmentedButtonDefaults.itemShape(index = index, count = JANELAS.size),
-                                colors = SegmentedButtonDefaults.colors(
-                                    activeContainerColor = MaterialTheme.colorScheme.primary,
-                                    activeContentColor = MaterialTheme.colorScheme.onPrimary,
-                                    inactiveContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                ),
-                                label = { Text(if (d == 0) "Safra" else "${d}d", maxLines = 1) },
-                            )
-                        }
-                    }
+                    // v275 (mockup v330) -- seletor sem fundo: traço verde.
+                    com.bragro.mobile.ui.domain.TracoOpcoes(
+                        opcoes = JANELAS.map { d -> d.toString() to (if (d == 0) "safra" else "${d}d") },
+                        selecionado = janela.toString(),
+                        onSelect = { v -> v.toIntOrNull()?.let { viewModel.setJanela(it) } },
+                    )
                     if (pct != null) {
                         androidx.compose.material3.LinearProgressIndicator(
                             progress = { (pct / 100f).coerceIn(0f, 1f) },

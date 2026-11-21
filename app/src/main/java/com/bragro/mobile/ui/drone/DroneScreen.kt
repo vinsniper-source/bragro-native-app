@@ -242,9 +242,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
 
     Scaffold(
         // v215 -- adicionar no botão verde (antes ficava em Operações).
-        floatingActionButton = {
-            com.bragro.mobile.ui.domain.BotaoAdicionar(com.bragro.mobile.ui.domain.IconesVazados.FlightTakeoff, "Novo voo", onClick = { showNovo = true })
-        },
+        // v275 (mockup v330) -- sem botão verde: "+" na linha do título.
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -256,11 +254,13 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.domain.IconesVazados.FlightTakeoff, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Drone", color = MaterialTheme.colorScheme.onSurface)
+                        androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            Text("Drone", color = MaterialTheme.colorScheme.onSurface)
+                            com.bragro.mobile.ui.theme.DicaInfo("Voos e capturas, até 50 MB.") // v275 (mockup v330)
+                        }
                     }
                 
                     }
@@ -269,9 +269,10 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                 // achado de auditoria ("veja se há algum módulo ainda sem a
                 // nuvem"). Mesmo padrão simples usado em Operações.
                 actions = {
+                    androidx.compose.foundation.layout.Column { androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(16.dp)); com.bragro.mobile.ui.domain.NovoIconeTopo(com.bragro.mobile.ui.domain.IconesVazados.FlightTakeoff, "Novo voo", onClick = { showNovo = true }) }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
+                        /* v275 (mockup v331) -- sem casinha na página inicial do módulo */
                     }
                 },
             )
@@ -289,13 +290,6 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
             contentPadding = PaddingValues(12.dp, 4.dp, 12.dp, 80.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            item {
-                Text(
-                    "Voos e capturas, até 50 MB.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
             run {
                 item(key = "painel") {
                     val fotosVideos = (porTipo["FOTO_AEREA"] ?: 0) + (porTipo["VIDEO"] ?: 0)
@@ -382,7 +376,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
             }
             when {
                 loading -> item { CircularProgressIndicator(modifier = Modifier.padding(top = 24.dp)) }
-                records.isEmpty() -> item { Text("Nada ainda. Toque em + Voo.", modifier = Modifier.padding(vertical = 24.dp)) }
+                records.isEmpty() -> item { Text("Nada ainda. Toque no ícone com + no topo.", modifier = Modifier.padding(vertical = 24.dp)) }
                 lancAberto -> items(filtrados, key = { it.id }) { record -> DroneRecordCard(record) }
             }
         }
@@ -519,7 +513,16 @@ private fun NovoDroneRegistroDialog(
         onDismissRequest = { if (!saving) onDismiss() },
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Novo registro de drone", modifier = Modifier.weight(1f))
+                // v275 (mockup v330) -- título numa linha; anexo, ✓ e ✕ na primeira linha.
+                Text("Novo voo", modifier = Modifier.weight(1f), maxLines = 1)
+                IconButton(onClick = { filePicker.launch(arrayOf("image/*", "video/*")) }) {
+                    Icon(
+                        Icons.Outlined.AttachFile,
+                        contentDescription = pickedName ?: "Selecionar arquivo *",
+                        tint = if (pickedUri != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
                 // "Copiar último registro" -- pedido do usuário. Copia só
                 // os campos de texto (Talhão/Tipo/Piloto/Altitude/Área/
                 // Obs); o arquivo em si precisa ser escolhido de novo.
@@ -563,17 +566,6 @@ private fun NovoDroneRegistroDialog(
                         singleLine = true, modifier = Modifier.fillMaxWidth(),
                         colors = appFieldColors(),
                     )
-                    IconButton(
-                        onClick = { filePicker.launch(arrayOf("image/*", "video/*")) },
-                        modifier = Modifier.align(Alignment.TopEnd).offset(y = (-14).dp),
-                    ) {
-                        Icon(
-                            Icons.Outlined.AttachFile,
-                            contentDescription = pickedName ?: "Selecionar arquivo *",
-                            tint = if (pickedUri != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(20.dp),
-                        )
-                    }
                 }
                 if (pickedName != null) Text(pickedName!!, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                 DroneLookupDropdown("Talhão", talhoes, talhao) { talhao = it }

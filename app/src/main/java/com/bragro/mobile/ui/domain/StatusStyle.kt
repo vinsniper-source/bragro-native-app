@@ -440,7 +440,7 @@ fun CotacaoAvaliacaoBadge(rawValue: String) {
         androidx.compose.foundation.layout.Column {
             Text(
                 etiqueta, style = MaterialTheme.typography.labelSmall, color = verde, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                modifier = Modifier.background(verde.copy(alpha = 0.15f), RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 1.dp),
+                // v275 -- sem fundo colorido.
             )
             val detalhe = if (etiqueta.startsWith("MELHOR", ignoreCase = true)) "preço + prazo de entrega" else partes.drop(1).joinToString(" · ")
             if (detalhe.isNotBlank()) Text(detalhe, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

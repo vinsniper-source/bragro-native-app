@@ -282,7 +282,7 @@ fun CanvasCirclesRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                    Text(f.nome, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(com.bragro.mobile.ui.domain.exibirTexto(f.nome, true), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Text(
                         "${NumberFormat.getNumberInstance(Locale("pt", "BR")).format(areaExibida)} ha",
                         style = MaterialTheme.typography.bodySmall,
@@ -555,15 +555,15 @@ fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        border = BorderStroke(0.dp, Color.Transparent),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), // v275 (mockup v330) -- barra de custo com borda
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
-        Column(modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(fazenda.nome, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text(com.bragro.mobile.ui.domain.exibirTexto(fazenda.nome, true), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                     // v1.6.14 (mockup v115, item 1) -- cultura · safra, sem a frase "Sem cultura...".
-                    val cs = listOfNotNull(fazenda.culturaAtual, fazenda.safraAtual).joinToString(" · ")
+                    val cs = com.bragro.mobile.ui.domain.exibirTexto(listOfNotNull(fazenda.culturaAtual, fazenda.safraAtual).joinToString(" · "))
                     if (cs.isNotBlank()) Text(cs, style = MaterialTheme.typography.bodySmall)
                     val seta = tendenciaSeta(fazenda.tendencia)
                     if (fazenda.tendencia != null) {
@@ -643,7 +643,7 @@ fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
                             Spacer(modifier = Modifier.width(6.dp))
                             val pctLeg = if (total > 0) (b.valor / total) else 0.0
                             Text(
-                                "${b.categoria} ${fmtBrlCanvas(b.valor)}",
+                                "${com.bragro.mobile.ui.domain.exibirTexto(b.categoria)} ${fmtBrlCanvas(b.valor)}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )

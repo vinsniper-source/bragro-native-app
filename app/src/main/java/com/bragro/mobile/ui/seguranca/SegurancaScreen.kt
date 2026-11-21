@@ -48,6 +48,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -257,18 +258,19 @@ fun SegurancaScreen(onBack: () -> Unit, viewModel: SegurancaViewModel = viewMode
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Lock, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Acessos e Segurança", color = MaterialTheme.colorScheme.onSurface)
+                        Text("Acessos", color = MaterialTheme.colorScheme.onSurface, maxLines = 1) // v275 -- título curto
                     }
                 
                     }
                 } },
                 actions = { Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
+                        /* v275 (mockup v331) -- sem casinha na página inicial do módulo */
+                        // v275 (mockup v330) -- "Novo usuário" vira ícone na linha do título.
+                        com.bragro.mobile.ui.domain.NovoIconeTopo(androidx.compose.material.icons.Icons.Outlined.PersonAdd, "Novo usuário", onClick = { NovoUsuarioPedido.aberto = true }, mais = false)
                     } },
             )
         },
@@ -440,6 +442,7 @@ private fun EquipeCard(
     var inviteModules by remember { mutableStateOf(listOf<String>()) }
     var inviteError by remember { mutableStateOf<String?>(null) }
     var showInviteForm by remember { mutableStateOf(false) }
+    if (NovoUsuarioPedido.aberto) { showInviteForm = true; NovoUsuarioPedido.aberto = false }
     var showPersonalizarInicio by remember { mutableStateOf(false) }
     // v134 -- "Criar com senha provisória" (padrão) ou convite por email.
     var inviteModo by remember { mutableStateOf("senha") }
@@ -508,7 +511,7 @@ private fun EquipeCard(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(fullName ?: email, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                        Text("$email · $role", style = MaterialTheme.typography.labelSmall)
+                        Text("$email · ${role.lowercase().replace("_", " ")}", style = MaterialTheme.typography.labelSmall) // v275 -- minúsculas
                     }
                     // Bug real encontrado 2026-08-17: este switch nao tinha a
                     // mesma trava do site (seguranca-client.tsx:
@@ -584,7 +587,7 @@ private fun EquipeCard(
 
         Spacer(Modifier.height(8.dp))
         if (!showInviteForm) {
-            Button(onClick = { showInviteForm = true }, modifier = Modifier.padding(top = 8.dp)) { Text("Novo usuário") }
+            // v275 -- o botão "Novo usuário" foi para a linha do título.
         } else {
             Column(modifier = Modifier.padding(top = 12.dp)) {
                 OutlinedTextField(value = inviteEmail, onValueChange = { inviteEmail = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = appFieldColors())
@@ -748,4 +751,9 @@ private fun nomeAparelho(ua: String): String {
         ua.isBlank() -> "Aparelho desconhecido"
         else -> "Outro aparelho"
     }
+}
+
+/** v275 -- ponte entre o ícone "Novo usuário" do título e o formulário da equipe. */
+private object NovoUsuarioPedido {
+    var aberto by androidx.compose.runtime.mutableStateOf(false)
 }

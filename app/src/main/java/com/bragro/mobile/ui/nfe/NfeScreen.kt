@@ -508,25 +508,23 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
 
     Scaffold(
         // v215 -- adicionar no botão verde (antes ficava em Operações).
-        floatingActionButton = {
-            androidx.compose.foundation.layout.Column(horizontalAlignment = androidx.compose.ui.Alignment.End, verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
-                if (formNativo?.get("nativo").txt() == "true") {
-                    com.bragro.mobile.ui.domain.BotaoAdicionar(Icons.Outlined.Description, "Emitir NF-e", onClick = { showEmitir = true }, principal = false)
-                }
-                com.bragro.mobile.ui.domain.BotaoAdicionar(Icons.Outlined.Add, "Nova nota", onClick = { copiaOrigem = null; showNovaNota = true })
-            }
-        },
+        // v275 (mockup v330) -- sem botão verde: "+" na linha do título.
         topBar = {
             TopAppBar(
                 navigationIcon = { com.bragro.mobile.ui.domain.BackNavButton() },
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v21 -- ícone verde do módulo ao lado do título.
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Receipt, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
  Text("NF-e", color = MaterialTheme.colorScheme.onSurface) 
                     }
                 } },
-                actions = { com.bragro.mobile.ui.domain.HomeNavButton() },
+                actions = {
+                    androidx.compose.foundation.layout.Column { androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(16.dp)); androidx.compose.foundation.layout.Row {
+                if (formNativo?.get("nativo").txt() == "true") {
+                    com.bragro.mobile.ui.domain.NovoIconeTopo(Icons.Outlined.Description, "Emitir NF-e", onClick = { showEmitir = true }, mais = false)
+                }
+                com.bragro.mobile.ui.domain.NovoIconeTopo(Icons.Outlined.Add, "Nova nota", onClick = { copiaOrigem = null; showNovaNota = true })
+            } } /* v275 (mockup v331) -- sem casinha na página inicial do módulo */ },
             )
         },
         // Ícones do topo e botão flutuante foram para o bloco Ações (padrão v7).

@@ -61,6 +61,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -641,28 +643,37 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
     Scaffold(
         topBar = {
             TopAppBar(
-                navigationIcon = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.BackNavButton()
-                    }
-                },
+                // v275 (mockup v330/v331) -- padrão do Novo: título curto + ⓘ;
+                // copiar, ícone com "+", ✓, ✕ (volta ao módulo) e ⌂ na linha do título.
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
-                    // v21 -- ícone verde do módulo ao lado do título.
-                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.RequestQuote, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
-
-                    Column {
+                    Column(Modifier.padding(start = 8.dp)) {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Novo Orçamento", color = MaterialTheme.colorScheme.onSurface)
-                    }
-                
+                        androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            Text("Orçamento", color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+                            com.bragro.mobile.ui.theme.DicaInfo("Pendente até a nota ser conciliada no Financeiro.")
+                        }
                     }
                 } },
-                // Ícone Copiar no topo -- mesmo padrão de Pedidos/Cotações/
-                // Romaneio Rápido (preencherComUltimo).
                 actions = {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        androidx.compose.material3.IconButton(onClick = { if (!copiando) viewModel.preencherComUltimo() }) {
+                            if (copiando) androidx.compose.material3.CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            else androidx.compose.material3.Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        androidx.compose.foundation.layout.Box(Modifier.padding(12.dp)) {
+                            com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.RequestQuote, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, size = 22.dp)
+                            Text("+", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.align(androidx.compose.ui.Alignment.TopEnd).offset(x = 8.dp, y = (-9).dp))
+                        }
+                    }
                     com.bragro.mobile.ui.domain.SalvarTopo(onClick = { viewModel.submit() }, enabled = successMessage == null && viewModel.podeSalvar(), loading = pending, descricao = "Lançar orçamento")
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        com.bragro.mobile.ui.domain.FecharIcone(onClick = onBack)
+                    }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
@@ -673,11 +684,7 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
     ) { padding0 ->
         // v19 -- ícones do cabeçalho movidos para a faixa Ações.
         Column(Modifier.fillMaxSize().padding(padding0)) {
-            com.bragro.mobile.ui.domain.AcoesIcones {
-                // v219 (mockup aprovado) -- foto da requisição ao lado do Copiar.
-                com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconeFotoIA, label = if (fotoRequisicaoUrl != null) "Trocar foto da requisição" else "Foto da requisição (lê automaticamente)", loading = uploadingRequisicao, onClick = { if (!uploadingRequisicao) launchCameraComPermissao("requisicao", { uri -> pendingRequisicaoUri = uri }, takeRequisicaoPicture) })
-                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ContentCopy, label = "Copiar último", loading = copiando, onClick = { if (!copiando) viewModel.preencherComUltimo() })
-            }
+            // v275 -- câmera foi para a linha da Data e o copiar para a linha do título.
             val padding = PaddingValues(0.dp)
             Box(Modifier.fillMaxWidth().weight(1f)) {
         if (successMessage != null) {
@@ -709,25 +716,26 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
             contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp), // v219 -- margens nas janelas
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item {
-                Text(
-                    "Pendente até a nota ser conciliada no Financeiro.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
             if (errorMessage != null) {
                 item { Text(errorMessage ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
             }
             // Bloco 1: cabeçalho.
             item {
-                OutlinedTextField(
-                    value = viewModel.data,
-                    onValueChange = { viewModel.data = it },
-                    label = { Text("Data *") },
-                    placeholder = { Text("DD/MM/AAAA") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = appFieldColors(),
-                )
+                // v275 (mockup v330) -- câmera (foto da requisição) na linha da Data.
+                androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = viewModel.data,
+                        onValueChange = { viewModel.data = it },
+                        label = { Text("Data *") },
+                        placeholder = { Text("DD/MM/AAAA") },
+                        modifier = Modifier.weight(1f),
+                        colors = appFieldColors(),
+                    )
+                    androidx.compose.material3.IconButton(onClick = { if (!uploadingRequisicao) launchCameraComPermissao("requisicao", { uri -> pendingRequisicaoUri = uri }, takeRequisicaoPicture) }) {
+                        if (uploadingRequisicao) androidx.compose.material3.CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        else androidx.compose.material3.Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoRequisicaoUrl != null) "Trocar foto da requisição" else "Foto da requisição (lê automaticamente)", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                    }
+                }
             }
             item {
                 OutlinedTextField(

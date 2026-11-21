@@ -220,7 +220,7 @@ fun ConferenciaCard(
                 ps.forEach { p ->
                     Text(
                         ROTULO_PROBLEMA[p.tipo].orEmpty(), fontSize = 11.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, color = laranja,
-                        modifier = M.background(laranja.copy(alpha = 0.15f), androidx.compose.foundation.shape.RoundedCornerShape(50)).padding(horizontal = 7.dp, vertical = 1.dp),
+                        modifier = M,
                     )
                     if (p.atual != null && p.sugestao != null) {
                         Text(

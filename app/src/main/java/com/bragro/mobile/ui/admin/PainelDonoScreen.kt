@@ -71,20 +71,22 @@ private val Laranja = Color(0xFFD9822B)
 @Composable
 private fun Selo(texto: String, ligado: Boolean) {
     val cor = if (ligado) MaterialTheme.colorScheme.primary else Laranja
-    Surface(color = cor.copy(alpha = 0.14f), shape = RoundedCornerShape(10.dp)) {
-        Text(texto, color = cor, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
-    }
+    // v275 (mockup v330) -- só o texto colorido, sem fundo.
+    Text(texto, color = cor, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
 }
 
 @Composable
 private fun Bloco(titulo: String, direita: (@Composable () -> Unit)? = null, conteudo: @Composable () -> Unit) {
     com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Text(titulo, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            direita?.invoke()
+        // v275 (mockup v330) -- margem interna: nada encostado na borda.
+        androidx.compose.foundation.layout.Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Text(titulo, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                direita?.invoke()
+            }
+            Spacer(Modifier.height(6.dp))
+            conteudo()
         }
-        Spacer(Modifier.height(6.dp))
-        conteudo()
     }
 }
 
@@ -115,7 +117,6 @@ fun PainelDonoScreen(onBack: () -> Unit, viewModel: PainelDonoViewModel = viewMo
                 },
                 title = {
                     Row(verticalAlignment = Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.AdminPanelSettings, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = Modifier.padding(end = 8.dp, bottom = 3.dp))
                         Column {
                             Spacer(modifier = Modifier.height(16.dp))
                             Text("Painel do dono", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
@@ -144,10 +145,12 @@ fun PainelDonoScreen(onBack: () -> Unit, viewModel: PainelDonoViewModel = viewMo
             }
             item {
                 com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth()) {
+                    androidx.compose.foundation.layout.Column(Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) { // v275 -- margem interna
                     val backup = s("ultimoBackup")?.let { com.bragro.mobile.ui.seguranca.formatIsoPublico(it) } ?: "—"
                     Row { Numero("Clientes pagantes", n("clientesPagantes").toString(), Modifier.weight(1f)); Numero("Em teste", n("clientesEmTeste").toString(), Modifier.weight(1f)); Numero("Faturas em aberto", n("faturasEmAberto").toString(), Modifier.weight(1f)) }
                     HorizontalDivider()
                     Row { Numero("Banco", if (bancoNoAr) "no ar" else "fora", Modifier.weight(1f)); Numero("Último backup", backup, Modifier.weight(1f)); Numero("Robôs (7 dias)", n("robos7Dias").toString(), Modifier.weight(1f)) }
+                    }
                 }
             }
             val integracoes = dados["integracoes"]?.jsonArray ?: kotlinx.serialization.json.JsonArray(emptyList())

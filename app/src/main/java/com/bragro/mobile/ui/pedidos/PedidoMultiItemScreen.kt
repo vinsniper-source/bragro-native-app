@@ -459,6 +459,10 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                         Spacer(modifier = Modifier.height(16.dp))
                         val dispFechar = androidx.activity.compose.LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
                         com.bragro.mobile.ui.domain.FecharIcone(onClick = { dispFechar?.onBackPressed() })
+                        }
+                        Column {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            com.bragro.mobile.ui.domain.HomeNavButton() // v275 (mockup v331) -- ✕ volta ao módulo, ⌂ vai ao Início
                     }
                 },
             )
