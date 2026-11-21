@@ -126,7 +126,7 @@ fun LinhaTextField(
     }
     if (LocalNomeAoLado.current) {
         // v147 (opção A) -- dentro do formulário: linha colada no texto.
-        val st = textStyle.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Start)) // v272 (site v315) -- valor a partir da esquerda
+        val st = textStyle.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, textAlign = if (LocalValorEsquerda.current) androidx.compose.ui.text.style.TextAlign.Start else androidx.compose.ui.text.style.TextAlign.End)) // v273 (mockup v328) -- valor à direita; Configurações (contas/login) à esquerda
         BasicTextField(
             value = value, onValueChange = onValueChange, modifier = modifier.fillMaxWidth(), enabled = enabled, readOnly = readOnly,
             textStyle = st, cursorBrush = SolidColor(MaterialTheme.colorScheme.primary), visualTransformation = visualTransformation,
@@ -198,7 +198,7 @@ fun LinhaTextField(
     }
     if (LocalNomeAoLado.current) {
         // v147 (opção A) -- dentro do formulário: linha colada no texto.
-        val st = textStyle.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Start)) // v272 (site v315) -- valor a partir da esquerda
+        val st = textStyle.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, textAlign = if (LocalValorEsquerda.current) androidx.compose.ui.text.style.TextAlign.Start else androidx.compose.ui.text.style.TextAlign.End)) // v273 (mockup v328) -- valor à direita; Configurações (contas/login) à esquerda
         BasicTextField(
             value = value, onValueChange = onValueChange, modifier = modifier.fillMaxWidth(), enabled = enabled, readOnly = readOnly,
             textStyle = st, cursorBrush = SolidColor(MaterialTheme.colorScheme.primary), visualTransformation = visualTransformation,
@@ -252,6 +252,9 @@ fun NomeAoLado(nome: String, obrigatorio: Boolean = false, acoes: (@Composable (
 }
 
 /** Campo automático: nome em cinza, linha pontilhada e AUTO na ponta. */
+/** v273 (mockup v328) -- valor do campo à esquerda (Configurações › contas/login). */
+val LocalValorEsquerda = compositionLocalOf { false }
+
 @Composable
 fun CampoAutoLinha(nome: String, valor: String) {
     // v207 (mockup aprovado) -- automático: linha pontilhada verde; vazio fica vazio.
@@ -259,7 +262,7 @@ fun CampoAutoLinha(nome: String, valor: String) {
     val cs = MaterialTheme.colorScheme
     // v175 -- nome em cima; a linha termina antes da coluna dos ícones.
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(nome, fontSize = 11.5.sp, color = cs.onSurfaceVariant)
+        Text(nome, fontSize = 11.5.sp, color = cs.primary) // v273 (mockup v328) -- campo automático: nome em verde
         Row(
             Modifier
                 .fillMaxWidth()

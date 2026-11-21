@@ -498,7 +498,7 @@ private fun PropostaCard(
             }
             if (showRemove) {
                 IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Outlined.Delete, contentDescription = "Remover proposta", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Outlined.Delete, contentDescription = "Remover proposta", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -623,7 +623,7 @@ private fun GrupoCard(
             }
             if (showRemoveGrupo) {
                 IconButton(onClick = onRemoveGrupo, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Outlined.Delete, contentDescription = "Remover item", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Outlined.Delete, contentDescription = "Remover item", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(18.dp))
                 }
             }
         }

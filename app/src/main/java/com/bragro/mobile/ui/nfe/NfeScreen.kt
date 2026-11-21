@@ -309,7 +309,7 @@ private fun InvoiceCard(
                     }
                     IconButton(onClick = onExcluir, enabled = !excluindo) {
                         if (excluindo) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                        else Icon(Icons.Outlined.Delete, contentDescription = "Excluir nota", tint = MaterialTheme.colorScheme.error)
+                        else Icon(Icons.Outlined.Delete, contentDescription = "Excluir nota", tint = com.bragro.mobile.ui.domain.corAtencao())
                     }
                 }
             }
@@ -363,7 +363,7 @@ private fun InvoiceRow(
             }
             IconButton(onClick = onExcluir, enabled = !excluindo, modifier = Modifier.size(36.dp)) {
                 if (excluindo) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                else Icon(Icons.Outlined.Delete, contentDescription = "Excluir nota", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                else Icon(Icons.Outlined.Delete, contentDescription = "Excluir nota", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(18.dp))
             }
         }
     }

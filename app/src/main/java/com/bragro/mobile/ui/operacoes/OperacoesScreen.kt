@@ -292,7 +292,7 @@ private const val LIMPAR = "__limpar"
 private fun FiltroLista(label: String, valor: String, opcoes: List<Pair<String, String>>, onSelect: (String) -> Unit, modifier: Modifier = Modifier) {
     var aberto by remember { mutableStateOf(false) }
     Column(modifier = modifier) {
-        Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(label /* v273 -- sem caixa alta */, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Box {
             androidx.compose.material3.OutlinedButton(
                 onClick = { aberto = true },
@@ -461,7 +461,7 @@ private fun OperacaoCard(
                         ) {
                             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    "$ordem · ${grupoDe(a).uppercase()}",
+                                    "$ordem · ${grupoDe(a)}",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -825,7 +825,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                     // Atualizar saiu daqui (subiu pro TopAppBar, ao lado da
                     // Nuvem) -- pedido do usuário: a barra de ciclo agora
                     // expande sozinha até o limite da tela.
-                    Text("PROGRESSO", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Progresso", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                         JANELAS.forEachIndexed { index, d ->
                             SegmentedButton(

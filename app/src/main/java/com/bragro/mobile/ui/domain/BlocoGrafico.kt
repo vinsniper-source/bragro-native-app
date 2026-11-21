@@ -80,8 +80,17 @@ fun dadosGrafico(titulo: String, categorias: List<String>, series: List<Pair<Str
 
 /** "2026-10-14" -> "14/10" (eixo dos gráficos no padrão brasileiro). */
 fun diaMesBr(iso: String): String {
+    // v273 (mockup v328) -- data sempre completa (dd/mm/aaaa); aceita também
+    // data no formato americano (mm/dd/aaaa) vinda da API.
     val d = iso.take(10).split("-")
-    return if (d.size == 3) "${d[2]}/${d[1]}" else iso
+    if (d.size == 3 && d[0].length == 4) return "${d[2]}/${d[1]}/${d[0]}"
+    val us = Regex("^(\\d{1,2})/(\\d{1,2})/(\\d{4})").find(iso.trim())
+    if (us != null) {
+        val (a, b, ano) = us.destructured
+        val (dia, mes) = if (a.toInt() > 12) a to b else if (b.toInt() > 12) b to a else b to a
+        return "${dia.padStart(2, '0')}/${mes.padStart(2, '0')}/$ano"
+    }
+    return iso
 }
 
 /** BlocoGrafico com Imprimir/PDF já ligados a um gráfico de barras simples. */

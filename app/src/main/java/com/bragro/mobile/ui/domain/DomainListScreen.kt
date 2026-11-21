@@ -641,6 +641,25 @@ fun DomainListScreen(
                 // módulo genérico. Além do filtro global de fazenda, que já
                 // morava aqui.
                 actions = {
+                    // v273 (mockup v328) -- Frota: os ícones saem dos botões
+                    // flutuantes e ficam na linha do título, à direita.
+                    if (domainId == "frota") Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = { showQuickAbastecimento = true }) {
+                                Icon(Icons.Outlined.LocalGasStation, contentDescription = "Abastecimento rápido", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                            }
+                            IconButton(onClick = { showIntegracaoDialog = true }) {
+                                Icon(com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, contentDescription = "Acesso automático (bomba de combustível)", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                            }
+                            if (onOpenFrotaQr != null) IconButton(onClick = onOpenFrotaQr) {
+                                Icon(com.bragro.mobile.ui.domain.IconesVazados.QrCode, contentDescription = "Gerar QR Codes das máquinas", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                            }
+                            IconButton(onClick = onNewRecord) {
+                                Icon(Icons.Outlined.Add, contentDescription = "Novo registro", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                            }
+                        }
+                    }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         com.bragro.mobile.ui.domain.HomeNavButton()
@@ -653,6 +672,8 @@ fun DomainListScreen(
             // (espelho de QuickAbastecimentoButton no site), sem substituir
             // o formulário completo de "Novo registro".
             if (domainId == "frota") {
+                // v273 -- ícones foram para a linha do título.
+            } else if (false) {
                 Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     FloatingActionButton(
                         onClick = { showQuickAbastecimento = true },
@@ -1075,11 +1096,11 @@ fun DomainListScreen(
                             // Tabela/Coluna -- mesmo botão único alternando
                             // ícone+rótulo do Expandir/Recolher acima (achado
                             // de auditoria, pedido do usuário).
-                            com.bragro.mobile.ui.domain.TracoOpcoes(
-                            // v272 (site v314) -- Bloco/Tabela como traço verde.
-                            opcoes = listOf("bloco" to "Bloco", "tabela" to "Tabela"),
-                            selecionado = if (tableView) "tabela" else "bloco",
-                            onSelect = { tableView = it == "tabela" },
+                            LabeledIconButton(
+                            // v273 -- volta o ícone único alternando Bloco/Tabela.
+                            icon = if (tableView) Icons.Outlined.ViewAgenda else com.bragro.mobile.ui.domain.IconesVazados.TableChart,
+                            label = if (tableView) "Bloco" else "Tabela",
+                            onClick = { tableView = !tableView },
                         )
                         }
                     }
@@ -1167,11 +1188,11 @@ fun DomainListScreen(
                             // Tabela/Coluna -- mesmo botão único alternando
                             // ícone+rótulo do Expandir/Recolher acima (achado
                             // de auditoria, pedido do usuário).
-                            com.bragro.mobile.ui.domain.TracoOpcoes(
-                            // v272 (site v314) -- Bloco/Tabela como traço verde.
-                            opcoes = listOf("bloco" to "Bloco", "tabela" to "Tabela"),
-                            selecionado = if (tableView) "tabela" else "bloco",
-                            onSelect = { tableView = it == "tabela" },
+                            LabeledIconButton(
+                            // v273 -- volta o ícone único alternando Bloco/Tabela.
+                            icon = if (tableView) Icons.Outlined.ViewAgenda else com.bragro.mobile.ui.domain.IconesVazados.TableChart,
+                            label = if (tableView) "Bloco" else "Tabela",
+                            onClick = { tableView = !tableView },
                         )
                         }
                         // Transferências entra dentro de Dados (5º ícone) em
@@ -1302,11 +1323,11 @@ fun DomainListScreen(
                             // Tabela/Coluna -- mesmo botão único alternando
                             // ícone+rótulo do Expandir/Recolher acima (achado
                             // de auditoria, pedido do usuário).
-                            com.bragro.mobile.ui.domain.TracoOpcoes(
-                            // v272 (site v314) -- Bloco/Tabela como traço verde.
-                            opcoes = listOf("bloco" to "Bloco", "tabela" to "Tabela"),
-                            selecionado = if (tableView) "tabela" else "bloco",
-                            onSelect = { tableView = it == "tabela" },
+                            LabeledIconButton(
+                            // v273 -- volta o ícone único alternando Bloco/Tabela.
+                            icon = if (tableView) Icons.Outlined.ViewAgenda else com.bragro.mobile.ui.domain.IconesVazados.TableChart,
+                            label = if (tableView) "Bloco" else "Tabela",
+                            onClick = { tableView = !tableView },
                         )
                         }
                         ColumnsPickerButton(
@@ -1443,11 +1464,11 @@ fun DomainListScreen(
                         lancamentosBtn()
                     }
                     if (true) {
-                        com.bragro.mobile.ui.domain.TracoOpcoes(
-                            // v272 (site v314) -- Bloco/Tabela como traço verde.
-                            opcoes = listOf("bloco" to "Bloco", "tabela" to "Tabela"),
-                            selecionado = if (tableView) "tabela" else "bloco",
-                            onSelect = { tableView = it == "tabela" },
+                        LabeledIconButton(
+                            // v273 -- volta o ícone único alternando Bloco/Tabela.
+                            icon = if (tableView) Icons.Outlined.ViewAgenda else com.bragro.mobile.ui.domain.IconesVazados.TableChart,
+                            label = if (tableView) "Bloco" else "Tabela",
+                            onClick = { tableView = !tableView },
                         )
                     }
                     ColumnsPickerButton(
@@ -1554,7 +1575,8 @@ fun DomainListScreen(
                 else -> filteredRecords.size
             }
             if (filteredRecords.isEmpty()) {
-                item(key = "empty") {
+                // v273 (mockup v328) -- sem o aviso "Nenhum lançamento"; só o período vazio avisa.
+                if (records.isNotEmpty()) item(key = "empty") {
                     // v1.6.59 (site v286) -- tela vazia com um convite só: "+" e uma frase.
                     val vazio = records.isEmpty()
                     Column(Modifier.fillMaxWidth().padding(vertical = 40.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -2026,7 +2048,7 @@ fun DomainListScreen(
                         (SECOES_FORM.map { it.id to it.titulo } + ("outros" to "Outros dados")).forEach { (id, titulo) ->
                             val campos = visiveis.filter { secaoDe(it) == id }
                             if (campos.isNotEmpty()) {
-                                Text(titulo.uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
+                                Text(titulo /* v273 -- sem caixa alta */, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
                                 // v1.6.24 (mockup v129, itens 5 e 8) -- texto longo ocupa a linha
                                 // toda; "AUTO" vira etiqueta pequena ao lado (calculado sozinho).
                                 val linhasCampos = mutableListOf<List<com.bragro.mobile.data.model.ColumnConfig>>()

@@ -492,11 +492,11 @@ fun FinanceiroScreen(
                     // Tabela/Coluna -- mesmo botão único do módulo genérico
                     // (achado de auditoria, pedido do usuário: "coloque em
                     // todos os módulos").
-                    com.bragro.mobile.ui.domain.TracoOpcoes(
-                            // v272 (site v314) -- Bloco/Tabela como traço verde.
-                            opcoes = listOf("bloco" to "Bloco", "tabela" to "Tabela"),
-                            selecionado = if (tableView) "tabela" else "bloco",
-                            onSelect = { tableView = it == "tabela" },
+                    LabeledIconButton(
+                            // v273 -- volta o ícone único alternando Bloco/Tabela.
+                            icon = if (tableView) Icons.Outlined.ViewAgenda else com.bragro.mobile.ui.domain.IconesVazados.TableChart,
+                            label = if (tableView) "Bloco" else "Tabela",
+                            onClick = { tableView = !tableView },
                         )
                 }
             val operacoesBlock =

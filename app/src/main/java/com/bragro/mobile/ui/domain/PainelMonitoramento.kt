@@ -388,14 +388,9 @@ fun BlocoComFaixa(
     content: @Composable () -> Unit,
 ) {
     // v1.6.9 (mockup v110b, item 2) -- só a borda de cima; sem laterais nem embaixo.
-    val linhaTopo = MaterialTheme.colorScheme.outlineVariant
     Box(
         modifier = modifier
-            .fillMaxWidth()
-            .drawWithContent {
-                drawContent()
-                drawRect(linhaTopo, size = androidx.compose.ui.geometry.Size(size.width, 1.dp.toPx()))
-            },
+            .fillMaxWidth(), // v273 (mockup v328) -- sem borda de cima.
     ) {
         androidx.compose.runtime.CompositionLocalProvider(LocalAcoesEncaixadas provides true) { content() }
     }
@@ -475,7 +470,7 @@ fun FaixaTitulo(titulo: String, aberto: Boolean, extra: String? = null, onToggle
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text(Idioma.tr(titulo).uppercase(), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp, color = fg)
+        Text(Idioma.tr(titulo), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = fg)
         if (extra != null) Text(extra, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
         Box(Modifier.weight(1f).height(1.5.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)))
         CantoL(aberto, Modifier.align(Alignment.Bottom))
@@ -496,7 +491,7 @@ fun CabecalhoLancamentos(total: Int, aberto: Boolean, extra: String? = null, tit
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text(Idioma.tr(titulo).uppercase(), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp, color = fg)
+        Text(Idioma.tr(titulo), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = fg)
         Text(
             rotulo ?: (NumberFormat.getIntegerInstance(Locale("pt", "BR")).format(total) + (extra?.let { " · $it" } ?: "")),
             fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -542,7 +537,7 @@ fun PainelMonitoramento(
                 contentAlignment = Alignment.Center,
             ) { Icon(com.bragro.mobile.ui.domain.IconesVazados.Agriculture, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp)) }
             Column(modifier = Modifier.weight(1f)) {
-                Text(Idioma.tr(painel.titulo).uppercase(), fontWeight = FontWeight.Bold, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(Idioma.tr(painel.titulo), fontWeight = FontWeight.Bold, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(painel.subtitulo, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             SetaRecolher(aberto) { aberto = !aberto }
@@ -880,7 +875,7 @@ fun LinhaGruposAcoes(grupos: List<Pair<String, @Composable () -> Unit>>) {
         grupos.forEachIndexed { i, (titulo, conteudo) ->
             if (i > 0) Box(Modifier.width(1.dp).fillMaxHeight().background(linha))
             Column(Modifier.weight(1f).padding(top = 6.dp, bottom = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(Idioma.tr(titulo).uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                Text(Idioma.tr(titulo), fontSize = 11.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                 Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) { conteudo() }
             }
         }
@@ -1003,7 +998,7 @@ fun seloGrupo(domainId: String, rows: List<Map<String, String?>>): Pair<String, 
             val p = contar("statusFrete", Regex("PENDENTE|ABERTO|ATRASADO|A PAGAR"))
             if (p > 0) "$p FRETE${if (p > 1) "S" else ""} PENDENTE${if (p > 1) "S" else ""}" to "pend"
             else rows.mapNotNull { it["statusFrete"]?.takeIf { s -> s.isNotBlank() } }.distinct().let { st ->
-                if (st.isEmpty()) null else (if (st.size == 1) st[0].uppercase() else "FRETES EM DIA") to "ok"
+                if (st.isEmpty()) null else (if (st.size == 1) com.bragro.mobile.ui.domain.exibirTexto(st[0]) else "Fretes em dia") to "ok"
             }
         }
         "planejamentosafra" -> when {
@@ -1021,7 +1016,7 @@ fun seloGrupo(domainId: String, rows: List<Map<String, String?>>): Pair<String, 
             }
         }
         "cotacoesfornecedores" -> rows.firstOrNull { up(it["melhorOpcao"]) in setOf("SIM", "TRUE") }?.get("fornecedor")
-            ?.takeIf { it.isNotBlank() }?.let { "MELHOR: ${it.uppercase()}" to "ok" }
+            ?.takeIf { it.isNotBlank() }?.let { "Melhor: ${com.bragro.mobile.ui.domain.exibirTexto(it, true)}" to "ok" }
         "clima" -> {
             val hoje = System.currentTimeMillis() / 86_400_000L
             val geada = rows.any { r ->
@@ -1079,7 +1074,7 @@ fun agruparPorOs(rows: List<Map<String, String?>>): List<OsDaOperacao> {
 fun itemDaOs(r: Map<String, String?>): String {
     val nf = java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { maximumFractionDigits = 2 }
     val qtd = r["qtd"]?.replace(",", ".")?.toDoubleOrNull()?.let { nf.format(it) }
-    return listOf(r["item"]?.uppercase().orEmpty().ifBlank { "Sem item" }, listOfNotNull(qtd, r["unidade"]?.takeIf { it.isNotBlank() }).joinToString(" ")).filter { it.isNotBlank() }.joinToString(" · ")
+    return listOf(com.bragro.mobile.ui.domain.exibirTexto(r["item"].orEmpty(), true).ifBlank { "Sem item" }, listOfNotNull(qtd, r["unidade"]?.takeIf { it.isNotBlank() }).joinToString(" ")).filter { it.isNotBlank() }.joinToString(" · ")
 }
 
 @Composable
@@ -1217,16 +1212,16 @@ fun CartaoResumoPedido(res: ResumoPedido, onEdit: (String) -> Unit, onDelete: (L
                     }
                 }
                 if (comItens) l.linhas.forEach { r ->
-                    Text("${r["item"]?.uppercase().orEmpty()} · ${nf.format(painelNum(r["qtdEntregue"]))} ${r["unidade"].orEmpty()}", fontSize = 11.sp, color = muted, modifier = Modifier.padding(start = 8.dp))
+                    Text("${com.bragro.mobile.ui.domain.exibirTexto(r["item"].orEmpty(), true)} · ${nf.format(painelNum(r["qtdEntregue"]))} ${r["unidade"].orEmpty()}", fontSize = 11.sp, color = muted, modifier = Modifier.padding(start = 8.dp))
                 }
             }
             HorizontalDivider(Modifier.padding(vertical = 6.dp), color = MaterialTheme.colorScheme.outlineVariant)
-            Text("PEDIDO COMPLETO", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = muted)
+            Text("Pedido completo", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = muted)
             res.lancamentos.filter { it.completo }.forEach { linhaLanc(it, false) }
             // v1.6.20 (mockup v125) -- entregas por fase; só uma fase aberta por vez.
             if (res.fases.isNotEmpty()) {
                 HorizontalDivider(Modifier.padding(vertical = 6.dp), color = MaterialTheme.colorScheme.outlineVariant)
-                Text("ENTREGAS POR FASE", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = muted)
+                Text("Entregas por fase", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = muted)
             }
             res.fases.forEach { f ->
                 val aberta = faseAberta == f.fase

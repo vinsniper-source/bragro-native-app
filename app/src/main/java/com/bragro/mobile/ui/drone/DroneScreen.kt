@@ -457,8 +457,8 @@ private fun DroneRecordCard(record: DroneRecordDto) {
                 }
             }
             Text(isoDateOnlyDrone(record.data), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            record.talhao?.let { Text("Talhão: ${it.uppercase()}", style = MaterialTheme.typography.bodySmall) }
-            record.piloto?.let { Text("Piloto: ${it.uppercase()}", style = MaterialTheme.typography.bodySmall) }
+            record.talhao?.let { Text("Talhão: ${com.bragro.mobile.ui.domain.exibirTexto(it, true)}", style = MaterialTheme.typography.bodySmall) }
+            record.piloto?.let { Text("Piloto: ${com.bragro.mobile.ui.domain.exibirTexto(it, true)}", style = MaterialTheme.typography.bodySmall) }
             record.altitude?.let { Text("Altitude: ${"%,.1f".format(java.util.Locale("pt", "BR"), it)} m", style = MaterialTheme.typography.bodySmall) }
             record.areaCoberta?.let { Text("Área coberta: ${"%,.2f".format(java.util.Locale("pt", "BR"), it)} ha", style = MaterialTheme.typography.bodySmall) }
             record.observacoes?.let { Text(it, style = MaterialTheme.typography.bodySmall) }

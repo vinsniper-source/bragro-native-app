@@ -33,6 +33,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Opacity
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.Storage
@@ -270,7 +271,7 @@ fun SilosScreen(onBack: () -> Unit, onAbrirRomaneio: (String) -> Unit = {}, view
     var editing by remember { mutableStateOf<SiloData?>(null) }
     var leituraSilo by remember { mutableStateOf<SiloData?>(null) }
     var historicoSilo by remember { mutableStateOf<SiloData?>(null) }
-    var estoqueAberto by remember { mutableStateOf(false) }
+    var estoqueAberto by remember { mutableStateOf(true) } // v273 (mockup v328) -- estoque já aberto
     var silosAbertos by remember { mutableStateOf(false) }
     var prestadoraAberta by remember { mutableStateOf(false) }
     val filtroSilo by viewModel.filtroSiloId
@@ -430,7 +431,7 @@ fun SilosScreen(onBack: () -> Unit, onAbrirRomaneio: (String) -> Unit = {}, view
                     item(key = "exemplo") {
                         // Card de exemplo (fictício, sem ação) -- mostra o layout antes do primeiro cadastro.
                         Column(Modifier.alpha(0.6f)) {
-                            Text("EXEMPLO", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Exemplo", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             SiloCard(
                                 silo = SiloData(
                                     id = "exemplo", nome = "Silo 01 — Exemplo", produto = "Soja", capacidadeT = 1000.0,
@@ -465,9 +466,9 @@ fun SilosScreen(onBack: () -> Unit, onAbrirRomaneio: (String) -> Unit = {}, view
             onDismissRequest = { prestadoraAberta = false },
             modifier = Modifier.fillMaxWidth(0.96f),
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-            title = { Text("Leitura automática (prestadora)") },
+            title = { com.bragro.mobile.ui.domain.TituloJanela("Prestadora", onFechar = { prestadoraAberta = false }) },
             text = { Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) { ModuleProviderIntegrationCard(domainId = "estoque") } },
-            confirmButton = { androidx.compose.material3.TextButton(onClick = { prestadoraAberta = false }) { Text("Fechar") } },
+            confirmButton = {},
         )
     }
 
@@ -514,7 +515,7 @@ private fun KpiBox(titulo: String, valor: String, modifier: Modifier = Modifier,
 private fun HistoricoLeiturasDialog(siloNome: String, leituras: List<SiloLeituraData>, loading: Boolean, onExcluir: (String) -> Unit = {}, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Histórico -- $siloNome") },
+        title = { com.bragro.mobile.ui.domain.TituloJanela("Histórico", onFechar = onDismiss) },
         text = {
             Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 when {
@@ -538,7 +539,7 @@ private fun HistoricoLeiturasDialog(siloNome: String, leituras: List<SiloLeitura
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar") } },
+        confirmButton = {},
     )
 }
 
@@ -581,26 +582,43 @@ private fun SiloCard(
     var aberto by androidx.compose.runtime.saveable.rememberSaveable(silo.id) { mutableStateOf(false) }
     com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Column(modifier = Modifier.padding(12.dp)) {
+            // v273 (mockup v328) -- padrão da plataforma: ícones na linha do
+            // título, à direita (✓ verde, leitura, histórico, editar, lixeira
+            // laranja); sem fundo colorido; data completa.
+            val cs = MaterialTheme.colorScheme
+            val laranja = com.bragro.mobile.ui.domain.corAtencao()
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Icon(com.bragro.mobile.ui.domain.IconesVazados.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp))
-                Text(silo.nome.uppercase(), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                if (estimado) Badge(modifier = Modifier.padding(end = 4.dp)) { Text("Estimado") }
-                // v53 -- Crítico em laranja (sem vermelho), Normal no verde do app.
-                val cs = MaterialTheme.colorScheme
-                val (fundoStatus, textoStatus) = when (silo.status) {
-                    "CRITICO" -> com.bragro.mobile.ui.domain.corAtencao() to androidx.compose.ui.graphics.Color.White
-                    "OK" -> cs.primary to cs.onPrimary
-                    else -> cs.surfaceVariant to cs.onSurfaceVariant
+                Text(
+                    com.bragro.mobile.ui.domain.exibirSegmentos(listOfNotNull(silo.nome, farmNome).joinToString(" · ")),
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                @Composable
+                fun icone(img: androidx.compose.ui.graphics.vector.ImageVector, nome: String, cor: androidx.compose.ui.graphics.Color, habilitado: Boolean = !busy, acao: () -> Unit) {
+                    androidx.compose.material3.IconButton(onClick = acao, enabled = habilitado, modifier = Modifier.size(32.dp)) {
+                        Icon(img, contentDescription = nome, tint = if (habilitado) cor else cor.copy(alpha = 0.35f), modifier = Modifier.size(16.dp))
+                    }
                 }
-                Badge(containerColor = fundoStatus, contentColor = textoStatus) { Text(statusLabel(silo.status)) }
+                if (dirty || silo.leituraAtrasada || estimado) icone(Icons.Outlined.Check, if (estimado && !dirty) "Confirmar" else "Salvar", cs.primary) { onSalvarRapido(pct.toDouble()) }
+                icone(Icons.Outlined.Thermostat, "Lançar leitura", cs.onSurface, acao = onLeitura)
+                icone(Icons.Outlined.History, "Histórico", cs.onSurface, acao = onHistorico)
+                icone(Icons.Outlined.Edit, "Editar", cs.onSurface, acao = onEdit)
+                icone(Icons.Outlined.Delete, "Arquivar", laranja, acao = onArchive)
             }
-            Text(farmNome?.uppercase() ?: "Sem fazenda vinculada", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             val toneladas = silo.capacidadeT?.let { it * pct / 100.0 }
             Text(
-                (toneladas?.let { "%.1f de %d t · ".format(Locale("pt", "BR"), it, silo.capacidadeT!!.toInt()) } ?: "") + "${pct.toInt()}%",
-                style = MaterialTheme.typography.labelMedium,
-                color = if (critico) com.bragro.mobile.ui.domain.corAtencao() else MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = 6.dp),
+                listOfNotNull(
+                    silo.produto?.takeIf { it.isNotBlank() }?.let { com.bragro.mobile.ui.domain.exibirTexto(it) },
+                    toneladas?.let { "%.1f t de %d t".format(Locale("pt", "BR"), it, silo.capacidadeT!!.toInt()) },
+                    "${pct.toInt()}%",
+                    statusLabel(silo.status).takeIf { silo.status == "CRITICO" || estimado }?.let { if (estimado) "estimado" else it.lowercase() },
+                    silo.ultimaLeituraEm?.let { com.bragro.mobile.ui.domain.diaMesBr(it) },
+                ).joinToString(" · "),
+                style = MaterialTheme.typography.bodySmall,
+                color = if (critico || silo.status == "CRITICO") laranja else cs.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp),
             )
             if (aberto) {
             Text(
@@ -619,12 +637,7 @@ private fun SiloCard(
                         Text(label, style = MaterialTheme.typography.labelSmall)
                     }
                 }
-                Spacer(Modifier.weight(1f))
-                Button(
-                    enabled = !busy && (dirty || silo.leituraAtrasada || estimado),
-                    onClick = { onSalvarRapido(pct.toDouble()) },
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
-                ) { Text(if (estimado && !dirty) "Confirmar" else "Salvar", style = MaterialTheme.typography.labelMedium) }
+                // v273 -- Salvar/Confirmar virou o ✓ na linha do título.
             }
             if (estimado && silo.movimentos.isNotEmpty()) {
                 Text(
@@ -662,7 +675,7 @@ private fun SiloCard(
                             textAlign = androidx.compose.ui.text.style.TextAlign.End,
                             modifier = Modifier.weight(1.2f),
                         )
-                        Text(m.data.take(10).let { d -> if (d.length == 10) "${d.substring(8, 10)}/${d.substring(5, 7)}" else d }, style = estilo, textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.weight(0.9f))
+                        Text(com.bragro.mobile.ui.domain.diaMesBr(m.data), style = estilo, textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.weight(0.9f))
                         Text("›", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.width(16.dp))
                     }
                 }
@@ -686,28 +699,7 @@ private fun SiloCard(
             )
             }
         }
-        // v53 -- rodapé de ícones igual à plataforma e ao card do pivô:
-        // Temp./umid. · Histórico · Editar · Arquivar (laranja).
-        if (aberto) {
-            val cs = MaterialTheme.colorScheme
-            androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth().height(1.dp).background(cs.outlineVariant))
-            Row(Modifier.fillMaxWidth().padding(4.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                @Composable
-                fun botao(icone: androidx.compose.ui.graphics.vector.ImageVector, rotulo: String, cor: androidx.compose.ui.graphics.Color, acao: () -> Unit, mod: Modifier) {
-                    Column(
-                        mod.clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp)).clickable(enabled = !busy) { acao() }.padding(vertical = 6.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Icon(icone, contentDescription = null, tint = cor, modifier = Modifier.size(17.dp))
-                        Text(rotulo, fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = cor, maxLines = 1)
-                    }
-                }
-                botao(Icons.Outlined.Thermostat, "Lançar leitura", cs.primary, onLeitura, Modifier.weight(1.3f))
-                botao(Icons.Outlined.History, "Histórico", cs.onSurface, onHistorico, Modifier.weight(1f))
-                botao(Icons.Outlined.Edit, "Editar", cs.onSurface, onEdit, Modifier.weight(1f))
-                botao(Icons.Outlined.Archive, "Arquivar", com.bragro.mobile.ui.domain.corAtencao(), onArchive, Modifier.weight(1f))
-            }
-        }
+        // v273 -- rodapé de botões com nome saiu: os ícones estão na linha do título.
         com.bragro.mobile.ui.domain.CantoL(aberto, onClick = { aberto = !aberto })
     }
 }
@@ -735,7 +727,7 @@ private fun SiloFormDialog(
 
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text(if (initial != null) "Editar silo" else "Novo silo") },
+        title = { com.bragro.mobile.ui.domain.TituloJanela(if (initial != null) "Editar silo" else "Novo silo", onFechar = onDismiss, fecharEnabled = !busy) { com.bragro.mobile.ui.domain.SalvarIcone(enabled = !busy && nome.isNotBlank(), loading = busy, descricao = "Salvar", onClick = { onSubmit(nome, produto, fabricante, farmId, capacidade, diametro, altura, externalId, nivelCritico, lembreteDias) }) } },
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome *") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
@@ -771,12 +763,8 @@ private fun SiloFormDialog(
                 if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
         },
-        confirmButton = {
-            Button(enabled = !busy && nome.isNotBlank(), onClick = { onSubmit(nome, produto, fabricante, farmId, capacidade, diametro, altura, externalId, nivelCritico, lembreteDias) }) {
-                if (busy) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Salvar")
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancelar") } },
+        confirmButton = {},
+        
     )
 }
 
@@ -796,7 +784,7 @@ private fun LeituraDialog(
 
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text("Leitura -- $siloNome") },
+        title = { com.bragro.mobile.ui.domain.TituloJanela("Leitura", onFechar = onDismiss, fecharEnabled = !busy) { com.bragro.mobile.ui.domain.SalvarIcone(enabled = !busy && nivel.isNotBlank(), loading = busy, descricao = "Lançar", onClick = { onSubmit(nivel, temp, umid, dataBr) }) } },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -821,11 +809,7 @@ private fun LeituraDialog(
                 if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
         },
-        confirmButton = {
-            Button(enabled = !busy && nivel.isNotBlank(), onClick = { onSubmit(nivel, temp, umid, dataBr) }) {
-                if (busy) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Lançar")
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancelar") } },
+        confirmButton = {},
+        
     )
 }

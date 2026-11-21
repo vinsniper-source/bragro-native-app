@@ -10,6 +10,7 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -150,19 +151,22 @@ fun ModuleIconButton(
     // Faturamento) é respeitado só quando inativo.
     // v40/v41 -- ícone sempre neutro; o sinal de ligado é o rótulo apagado.
     val fg = contentColor ?: MODULE_ICON_FG
+    var balaoMi by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     Column(
         modifier = Modifier
             .widthIn(min = 42.dp)
-            .clickable(onClick = onClick)
+            // v273 -- só ícone; toque longo mostra o nome num balão.
+            .combinedClickable(onClick = onClick, onLongClick = { balaoMi = true })
             .padding(horizontal = 1.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        BalaoNomeIcone(item.label, balaoMi) { balaoMi = false }
         BadgedBox(badge = { if (item.badgeCount > 0) BadgeContagem(item.badgeCount, verde = true) }) {
             // v44 -- ícone de recálculo gira enquanto a ação roda.
             val girando = item.key.startsWith("recalcular") && AcaoEmAndamento.ativo.value
             Box(Modifier.girar(girando)) { IconeNegrito(item.icon, contentDescription = null, tint = fg, size = MODULE_ICON_SIZE) }
         }
-        Text(
+        if (false) Text(
             item.label,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = if (item.active) androidx.compose.ui.text.font.FontWeight.Medium else androidx.compose.ui.text.font.FontWeight.Normal,
@@ -240,12 +244,14 @@ fun LabeledIconButton(
     // v40 -- bloco Ações sempre neutro: o ícone nunca fica verde. O único
     // sinal de ligado é o rótulo em tom apagado (ver abaixo).
     val fg = tint
+    var balaoLi by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     Column(
         modifier = modifier
             .widthIn(min = 42.dp)
             // v64 -- sem moldura própria: o bloco do Início tem uma só por fora.
             .then(if (realcado) Modifier.padding(2.dp) else Modifier)
-            .clickable(enabled = !loading) {
+            // v273 -- toque longo mostra o nome do ícone num balão.
+            .combinedClickable(enabled = !loading, onLongClick = { balaoLi = true }) {
                 when {
                     realce || active -> onClick()
                     marcado -> marcado = false
@@ -255,6 +261,7 @@ fun LabeledIconButton(
             .padding(horizontal = 1.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        BalaoNomeIcone(label, balaoLi) { balaoLi = false }
         if (loading) {
             CircularProgressIndicator(modifier = Modifier.size(MODULE_ICON_SIZE), strokeWidth = 2.dp)
         } else if (badgeCount > 0) {
@@ -266,7 +273,8 @@ fun LabeledIconButton(
         } else {
             IconeNegrito(icon, contentDescription = null, tint = fg, size = MODULE_ICON_SIZE)
         }
-        if (showLabel && !LocalSomenteIcone.current) {
+        // v273 -- rótulos saem (só ícone); fica só nos atalhos do Início (realce).
+        if (showLabel && realce && !LocalSomenteIcone.current) {
             Text(
                 label,
                 style = MaterialTheme.typography.labelSmall,
@@ -514,5 +522,39 @@ fun BotaoAdicionar(icon: ImageVector, descricao: String, onClick: () -> Unit, pr
         contentColor = if (principal) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer,
     ) {
         Icon(icon, contentDescription = descricao)
+    }
+}
+
+/**
+ * v273 -- balão com o nome do ícone (toque longo). Fundo da página, fonte
+ * preta/branca, uma linha só; some sozinho.
+ */
+@Composable
+fun BalaoNomeIcone(texto: String, visivel: Boolean, onFechar: () -> Unit) {
+    if (!visivel) return
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(1600)
+        onFechar()
+    }
+    androidx.compose.ui.window.Popup(
+        alignment = Alignment.TopCenter,
+        offset = androidx.compose.ui.unit.IntOffset(0, -96),
+        onDismissRequest = onFechar,
+    ) {
+        Box(
+            modifier = Modifier
+                .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.background)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+        ) {
+            Text(
+                texto,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                softWrap = false,
+            )
+        }
     }
 }

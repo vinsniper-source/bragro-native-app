@@ -696,6 +696,8 @@ fun HomeScreen(
             // ainda respeitada via statusBarsPadding, só sem a altura extra
             // do Material3 TopAppBar vazio.
             Column(modifier = Modifier.statusBarsPadding()) {
+                // v273 (mockup v328) -- cabeçalho uma linha mais baixo.
+                androidx.compose.foundation.layout.Spacer(Modifier.height(16.dp))
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                     // Item (c) do usuário ("suba uma linha se colapsar a logo e
@@ -919,7 +921,7 @@ fun HomeScreen(
                                 } else {
                                     grupos.forEach { grupo ->
                                         Text(
-                                            grupo.label.uppercase(),
+                                            grupo.label /* v273 -- sem caixa alta */,
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -1970,10 +1972,8 @@ private fun HomeShortcutsRow(
     // v20 (opção A) -- faixa de ícones em partes iguais, igual ao bloco
     // Ações: ícone + rótulo, contador laranja sem fundo.
     Box(
-        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
+        // v273 (mockup v328) -- sem a borda externa.
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
     ) {
         // v64 -- uma moldura só (a do Box) e divisórias curtas no meio.
         com.bragro.mobile.ui.domain.EqualWidthBlockRow(modifier = Modifier.fillMaxWidth(), divisoriasCurtas = true) {

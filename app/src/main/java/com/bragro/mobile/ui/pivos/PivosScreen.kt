@@ -421,7 +421,7 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
                     item(key = "exemplo") {
                         // Card de exemplo (fictício, sem ação) -- mostra o layout antes do primeiro cadastro.
                         Column(Modifier.alpha(0.6f)) {
-                            Text("EXEMPLO", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Exemplo", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             PivoCard(
                                 pivo = PivoData(
                                     id = "exemplo", nome = "Pivô 01 — Exemplo", marca = MARCAS[0], status = "RUNNING_WATER",
@@ -497,9 +497,9 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
             onDismissRequest = { graficosOpen = false },
             modifier = Modifier.fillMaxWidth(0.96f),
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-            title = { Text("Gráficos") },
+            title = { com.bragro.mobile.ui.domain.TituloJanela("Gráficos", onFechar = { graficosOpen = false }) },
             text = { Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) { ModuleChartsCard(domainId = "pivos", showHeader = false) } },
-            confirmButton = { androidx.compose.material3.TextButton(onClick = { graficosOpen = false }) { Text("Fechar") } },
+            confirmButton = {},
         )
     }
     if (prestadoraAberta) {
@@ -507,9 +507,9 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
             onDismissRequest = { prestadoraAberta = false },
             modifier = Modifier.fillMaxWidth(0.96f),
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-            title = { Text("Sincronização com o fabricante") },
+            title = { com.bragro.mobile.ui.domain.TituloJanela("Sincronização", onFechar = { prestadoraAberta = false }) },
             text = { Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) { ModuleProviderIntegrationCard(domainId = "pivos") } },
-            confirmButton = { androidx.compose.material3.TextButton(onClick = { prestadoraAberta = false }) { Text("Fechar") } },
+            confirmButton = {},
         )
     }
 
@@ -558,7 +558,7 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
 private fun HistoricoTelemetriaDialog(pivoNome: String, logs: List<PivoTelemetriaLogData>, loading: Boolean, onExcluir: (String) -> Unit = {}, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Histórico -- $pivoNome") },
+        title = { com.bragro.mobile.ui.domain.TituloJanela("Histórico", onFechar = onDismiss) },
         text = {
             Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 when {
@@ -580,7 +580,7 @@ private fun HistoricoTelemetriaDialog(pivoNome: String, logs: List<PivoTelemetri
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar") } },
+        confirmButton = {},
     )
 }
 
@@ -609,25 +609,36 @@ private fun PivoCard(
     Card(modifier = Modifier.fillMaxWidth()) {
         Column {
             Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                    Column(Modifier.weight(1f)) {
-                        Text("${farmNome ?: "Sem fazenda"} · ${pivo.marca}".uppercase(), fontSize = 10.sp, letterSpacing = 0.6.sp, color = cs.onSurfaceVariant)
-                        Text(pivo.nome, fontSize = 15.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = cs.onSurface)
+                // v273 (mockup v328) -- padrão da plataforma: nome + status (só
+                // texto, sem fundo) e os ícones na mesma linha, à direita
+                // (Ligar/Lançar leitura verdes, lixeira laranja).
+                Column {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            com.bragro.mobile.ui.domain.exibirTexto(pivo.nome, true), fontSize = 15.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = cs.onSurface,
+                            maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
+                        )
+                        Text(
+                            statusLabel(pivo.status), fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                            color = corStatus, maxLines = 1,
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                        Spacer(Modifier.weight(1f))
+                        @Composable
+                        fun icone(img: androidx.compose.ui.graphics.vector.ImageVector, nome: String, cor: androidx.compose.ui.graphics.Color, acao: () -> Unit) {
+                            IconButton(onClick = acao, enabled = !busy, modifier = Modifier.size(32.dp)) {
+                                Icon(img, contentDescription = nome, tint = cor, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                        if (ligado) icone(com.bragro.mobile.ui.domain.IconesVazados.StopCircle, "Desligar", cs.onSurface, onDesligar)
+                        else icone(com.bragro.mobile.ui.domain.IconesVazados.PlayCircle, "Ligar", cs.primary, onLigar)
+                        icone(Icons.Outlined.Add, "Lançar leitura", cs.primary, onTelemetria)
+                        icone(Icons.Outlined.History, "Histórico", cs.onSurface, onHistorico)
+                        icone(Icons.Outlined.Edit, "Editar", cs.onSurface, onEdit)
+                        icone(Icons.Outlined.Delete, "Arquivar", com.bragro.mobile.ui.domain.corAtencao(), onArchive)
                     }
-                    // Selo como na plataforma: Irrigando cheio, Girando contornado,
-                    // Parado/Offline em tom de atenção.
-                    val forma = androidx.compose.foundation.shape.RoundedCornerShape(50)
-                    val selo = when (pivo.status) {
-                        "RUNNING_WATER" -> Modifier.background(corStatus, forma)
-                        "RUNNING_DRY" -> Modifier.border(1.dp, cs.outline, forma)
-                        else -> Modifier.background(com.bragro.mobile.ui.domain.corAtencao().copy(alpha = 0.15f), forma)
-                    }
-                    Text(
-                        statusLabel(pivo.status), fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
-                        color = if (pivo.status == "RUNNING_WATER") androidx.compose.ui.graphics.Color.White else cs.onSurface,
-                        maxLines = 1,
-                        modifier = Modifier.padding(start = 8.dp).then(selo).padding(horizontal = 10.dp, vertical = 3.dp),
-                    )
+                    Text(com.bragro.mobile.ui.domain.exibirTexto("${farmNome ?: "Sem fazenda"} · ${pivo.marca}", true), fontSize = 12.sp, color = cs.onSurfaceVariant)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Box(Modifier.size(60.dp).clickable { onHistorico() }, contentAlignment = Alignment.Center) {
@@ -658,27 +669,7 @@ private fun PivoCard(
                     fontSize = 10.5.sp, color = cs.onSurfaceVariant,
                 )
             }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(cs.outlineVariant))
-            Row(Modifier.fillMaxWidth().padding(4.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                @Composable
-                fun botao(icone: androidx.compose.ui.graphics.vector.ImageVector, rotulo: String, fundo: androidx.compose.ui.graphics.Color, cor: androidx.compose.ui.graphics.Color, acao: () -> Unit, mod: Modifier) {
-                    Column(
-                        mod.clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp)).background(fundo).clickable(enabled = !busy) { acao() }.padding(vertical = 6.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Icon(icone, contentDescription = null, tint = cor, modifier = Modifier.size(17.dp))
-                        Text(rotulo, fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = cor, maxLines = 1)
-                    }
-                }
-                // v53 -- Ligar/Desligar neutro (cor só para status).
-                if (ligado) botao(com.bragro.mobile.ui.domain.IconesVazados.StopCircle, "Desligar", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onDesligar, Modifier.weight(1f))
-                else botao(com.bragro.mobile.ui.domain.IconesVazados.PlayCircle, "Ligar", cs.primary, cs.onPrimary, onLigar, Modifier.weight(1f)) // v1.6.8 -- verde cheio, igual à plataforma
-                // v1.6.4 (mockup v105, item 7) -- Lançar leitura e Histórico, iguais à plataforma.
-                botao(Icons.Outlined.Add, "Lançar leitura", androidx.compose.ui.graphics.Color.Transparent, cs.primary, onTelemetria, Modifier.weight(1.3f))
-                botao(Icons.Outlined.History, "Histórico", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onHistorico, Modifier.weight(1f))
-                botao(Icons.Outlined.Edit, "Editar", androidx.compose.ui.graphics.Color.Transparent, cs.onSurface, onEdit, Modifier.weight(1f))
-                botao(Icons.Outlined.Archive, "Arquivar", androidx.compose.ui.graphics.Color.Transparent, com.bragro.mobile.ui.domain.corAtencao(), onArchive, Modifier.weight(1f))
-            }
+            // v273 -- barra de botões com nome saiu: ícones na linha do título.
         }
     }
 }
@@ -694,7 +685,7 @@ private fun DesligarDialog(
     var horas by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text("Desligar -- $pivoNome") },
+        title = { com.bragro.mobile.ui.domain.TituloJanela("Desligar", onFechar = onDismiss, fecharEnabled = !busy) { com.bragro.mobile.ui.domain.SalvarIcone(enabled = !busy, loading = busy, descricao = "Desligar", onClick = { onSubmit(lamina.replace(',', '.').toDoubleOrNull() ?: 0.0, horas.replace(',', '.').toDoubleOrNull()) }) } },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Lâmina aplicada nesta irrigação (mm)", style = MaterialTheme.typography.labelMedium)
@@ -717,13 +708,8 @@ private fun DesligarDialog(
                 )
             }
         },
-        confirmButton = {
-            Button(
-                enabled = !busy,
-                onClick = { onSubmit(lamina.replace(',', '.').toDoubleOrNull() ?: 0.0, horas.replace(',', '.').toDoubleOrNull()) },
-            ) { if (busy) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Desligar") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancelar") } },
+        confirmButton = {},
+        
     )
 }
 
@@ -794,7 +780,7 @@ private fun TelemetriaDialog(
 
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { com.bragro.mobile.ui.domain.TituloJanela("Telemetria -- $pivoNome", onFechar = onDismiss, fecharEnabled = !busy) { com.bragro.mobile.ui.domain.SalvarIcone(enabled = water.isNotBlank(), loading = busy, descricao = "Lançar", onClick = { onSubmit(water, rain, dataBr) }) } },
+        title = { com.bragro.mobile.ui.domain.TituloJanela("Telemetria", onFechar = onDismiss, fecharEnabled = !busy) { com.bragro.mobile.ui.domain.SalvarIcone(enabled = water.isNotBlank(), loading = busy, descricao = "Lançar", onClick = { onSubmit(water, rain, dataBr) }) } },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -833,7 +819,7 @@ private fun ControleDialog(
 
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text("Controle -- ${pivo.nome}") },
+        title = { com.bragro.mobile.ui.domain.TituloJanela("Controle", onFechar = onDismiss, fecharEnabled = !busy) { com.bragro.mobile.ui.domain.SalvarIcone(enabled = !busy, loading = busy, descricao = "Registrar", onClick = { onSubmit(status, lamina, sentido) }) } },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
@@ -851,12 +837,8 @@ private fun ControleDialog(
                 if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
         },
-        confirmButton = {
-            Button(enabled = !busy, onClick = { onSubmit(status, lamina, sentido) }) {
-                if (busy) CircularProgressIndicator(modifier = Modifier.height(18.dp)) else Text("Registrar")
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancelar") } },
+        confirmButton = {},
+        
     )
 }
 
@@ -902,7 +884,7 @@ private fun LeituraPivoDialog(
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal))
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { com.bragro.mobile.ui.domain.TituloJanela("Lançar leitura · ${pivo.nome}", onFechar = onDismiss) { com.bragro.mobile.ui.domain.SalvarIcone(loading = busy, onClick = { onSubmit(dataBr, status, sentido, angulo, lamina, pressao, horas, chuva) }) } },
+        title = { com.bragro.mobile.ui.domain.TituloJanela("Lançar leitura", onFechar = onDismiss) { com.bragro.mobile.ui.domain.SalvarIcone(loading = busy, onClick = { onSubmit(dataBr, status, sentido, angulo, lamina, pressao, horas, chuva) }) } },
         text = {
             Column(Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 com.bragro.mobile.ui.theme.LinhaTextField(dataBr, { dataBr = it }, label = { Text("Data (dd/mm/aaaa)") }, singleLine = true, modifier = Modifier.fillMaxWidth())

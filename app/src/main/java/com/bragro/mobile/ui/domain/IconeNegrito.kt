@@ -71,9 +71,14 @@ fun FecharIcone(onClick: () -> Unit, enabled: Boolean = true) {
 
 /** Título de janela com as ações (✓ e ✕) na mesma linha, à direita. */
 @Composable
-fun TituloJanela(titulo: String, onFechar: (() -> Unit)? = null, fecharEnabled: Boolean = true, acoes: @Composable () -> Unit = {}) {
+fun TituloJanela(titulo: String, onFechar: (() -> Unit)? = null, fecharEnabled: Boolean = true, dica: String? = null, acoes: @Composable () -> Unit = {}) {
+    // v273 (mockup v328) -- título numa linha só, ⓘ quando há mensagem e os
+    // ícones na mesma linha, à direita.
     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-        androidx.compose.material3.Text(titulo, modifier = Modifier.weight(1f))
+        androidx.compose.foundation.layout.Row(modifier = Modifier.weight(1f), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            androidx.compose.material3.Text(titulo, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+            if (!dica.isNullOrBlank()) com.bragro.mobile.ui.theme.DicaInfo(dica)
+        }
         acoes()
         if (onFechar != null) FecharIcone(onFechar, fecharEnabled)
     }
@@ -96,7 +101,7 @@ fun ExcluirInline(onConfirm: () -> Unit, tamanhoBotao: Dp = 28.dp, tamanhoIcone:
     var confirmando by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     if (!confirmando) {
         androidx.compose.material3.IconButton(onClick = { confirmando = true }, modifier = Modifier.size(tamanhoBotao)) {
-            Icon(androidx.compose.material.icons.Icons.Outlined.Delete, contentDescription = "Excluir registro", modifier = Modifier.size(tamanhoIcone), tint = androidx.compose.material3.MaterialTheme.colorScheme.error)
+            Icon(androidx.compose.material.icons.Icons.Outlined.Delete, contentDescription = "Excluir registro", modifier = Modifier.size(tamanhoIcone), tint = corAtencao())
         }
         return
     }

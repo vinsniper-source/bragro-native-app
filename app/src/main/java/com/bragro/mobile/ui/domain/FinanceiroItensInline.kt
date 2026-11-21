@@ -302,7 +302,7 @@ private fun ItemNotaLinhaRow(
             }
             if (showRemove) {
                 IconButton(onClick = onRemove, modifier = Modifier.size(30.dp).align(androidx.compose.ui.Alignment.End)) {
-                    Icon(Icons.Outlined.Delete, contentDescription = "Remover item", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Outlined.Delete, contentDescription = "Remover item", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(18.dp))
                 }
             }
         }

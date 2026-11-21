@@ -757,9 +757,9 @@ private fun FarmsCard(
                     if (!blocoAberto) {
                         @Composable
                         fun etiqueta(t: String, cheia: Boolean = false) = Text(
-                            t, style = MaterialTheme.typography.labelSmall, maxLines = 1,
+                            com.bragro.mobile.ui.domain.exibirTexto(t), style = MaterialTheme.typography.labelSmall, maxLines = 1,
                             modifier = Modifier.padding(start = 4.dp)
-                                .background(if (cheia) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f) else androidx.compose.ui.graphics.Color.Transparent, MaterialTheme.shapes.extraSmall)
+                                /* v273 -- sem fundo colorido */
                                 .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.extraSmall)
                                 .padding(horizontal = 6.dp, vertical = 1.dp),
                         )
@@ -767,7 +767,7 @@ private fun FarmsCard(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
                             verticalArrangement = Arrangement.Center,
                         ) {
-                            Text(name, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.weight(1f).align(Alignment.CenterVertically).padding(end = 4.dp))
+                            Text(com.bragro.mobile.ui.domain.exibirTexto(name, true), fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.weight(1f).align(Alignment.CenterVertically).padding(end = 4.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (culturaTotal.isNotBlank()) etiqueta(culturaTotal)
                                 if (situacaoTerraText.isNotBlank()) etiqueta(situacaoTerraText)
@@ -1178,7 +1178,8 @@ private fun SectorCard(
                         Spacer(Modifier.width(6.dp))
                     }
                     Text(
-                        if (ativo) vLabel else "$vLabel (desativado)",
+                        // v273 (mockup v328) -- minúsculas como na plataforma.
+                        if (ativo) com.bragro.mobile.ui.domain.exibirTexto(vLabel) else "${com.bragro.mobile.ui.domain.exibirTexto(vLabel)} (desativado)",
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (ativo) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1364,14 +1365,14 @@ private fun FazendasCadastro(farms: kotlinx.serialization.json.JsonArray?, busy:
             } else {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(nome, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                        Text(com.bragro.mobile.ui.domain.exibirTexto(nome, true), fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
                         Text(
-                            listOfNotNull(
+                            com.bragro.mobile.ui.domain.exibirTexto(listOfNotNull(
                                 s("situacaoTerra"),
                                 "${s("cultura")?.let { "$it " } ?: ""}${ha(d("areaHa"))} ha",
                                 s("areaSafrinhaCultura1")?.let { "$it ${ha(d("areaSafrinhaCultura1Ha"))} ha" },
                                 s("areaSafrinhaCultura2")?.let { "$it ${ha(d("areaSafrinhaCultura2Ha"))} ha" },
-                            ).joinToString(" · "),
+                            ).joinToString(" · ")),
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }

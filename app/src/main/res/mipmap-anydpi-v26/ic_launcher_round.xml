@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- v273 (mockup v328): capa do app = losango da logo sobre fundo branco. -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/ic_launcher_background" />
+    <background android:drawable="@android:color/white" />
     <foreground android:drawable="@mipmap/ic_launcher_foreground" />
 </adaptive-icon>

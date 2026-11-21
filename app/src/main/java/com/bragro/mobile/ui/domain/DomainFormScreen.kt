@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -862,51 +863,40 @@ fun DomainFormScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                navigationIcon = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.BackNavButton()
-                    }
-                },
-                // Título desce uma linha, mesmo padrão já usado em
-                // DomainListScreen/Financeiro/DRE/Análises -- pedido do
-                // usuário ("em novo registro em todos os módulos... rebaixe
-                // a seta a esquerda e o título uma linha abaixo").
+                // v273 (mockup v328) -- sem seta e sem ícone ao lado do título:
+                // nome do módulo + ⓘ (aviso); à direita o ícone do módulo com
+                // "+" elevado, ✓ verde e ✕.
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
-                    // v21 -- ícone verde do módulo ao lado do título.
-                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.home.domainIcon(domainId), contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp, modifier = androidx.compose.ui.Modifier.padding(end = 8.dp, bottom = 3.dp))
-
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        // basicMarquee() REMOVIDO -- suspeita forte de causa
-                        // do crash "app fecha ao preencher qualquer campo
-                        // (menos Data)" reportado pelo usuário: o único campo
-                        // que não fecha é o único preenchível SEM abrir o
-                        // teclado (o seletor de calendário); todos os outros
-                        // exigem o teclado, e abrir/fechar o teclado
-                        // redimensiona a janela (Scaffold), o que pode
-                        // recalcular a largura do marquee em condição de
-                        // corrida -- já houve um bug real confirmado de
-                        // marquee travando a barra inferior neste mesmo app
-                        // (ver StatusStyle.kt, "Reverter marquee dentro de
-                        // DropdownMenuItem"). Aqui o texto é sempre um destes
-                        // dois literais curtos e fixos ("Novo registro"/
-                        // "Editar registro"), nunca precisou de letreiro --
-                        // Ellipsis é suficiente e nunca vai nem aparecer.
-                        Text(
-                            if (recordId == null) "Novo registro" else "Editar registro",
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
-                
+                        androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            Text(
+                                config?.label?.let { com.bragro.mobile.ui.domain.exibirTexto(it) } ?: if (recordId == null) "Novo registro" else "Editar registro",
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f, fill = false),
+                            )
+                            config?.notice?.takeIf { it.isNotBlank() }?.let { com.bragro.mobile.ui.theme.DicaInfo(it) }
+                        }
                     }
                 } },
                 actions = {
                     // v1.6.59 (site v302/v305) -- Salvar vira ✓ verde na
                     // linha do título (único ícone verde).
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Box(modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp)) {
+                            com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.home.domainIcon(domainId), contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, size = 22.dp)
+                            if (recordId == null) Text(
+                                "+",
+                                fontSize = 13.sp,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.align(androidx.compose.ui.Alignment.TopEnd).offset(x = 8.dp, y = (-9).dp),
+                            )
+                        }
+                    }
                     if (config != null) Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         val nExtrasTopo = MULTI_ITEM_FORM[domainId]?.let { m -> viewModel.itensExtras.count { !it[m.chaveItem].isNullOrBlank() } } ?: 0
@@ -917,7 +907,8 @@ fun DomainFormScreen(
                     }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
+                        val dispatcherFechar = androidx.activity.compose.LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+                        com.bragro.mobile.ui.domain.FecharIcone(onClick = { dispatcherFechar?.onBackPressed() })
                     }
                 },
             )
@@ -963,8 +954,8 @@ fun DomainFormScreen(
                 }
             }
             val temAcoesTopo = recordId == null && (domainId == "clima" || domainId in OCR_FOTO_DOMAINS || domainId !in MULTI_ITEM_FORM)
-            if (cfg.notice != null || temAcoesTopo) {
-                com.bragro.mobile.ui.domain.AvisoComIcones(cfg.notice, Modifier.padding(bottom = 10.dp)) { if (temAcoesTopo) acoesTopo() }
+            if (temAcoesTopo) {
+                com.bragro.mobile.ui.domain.AvisoComIcones(null /* v273 -- aviso foi para o ⓘ do título */, Modifier.padding(bottom = 10.dp)) { if (temAcoesTopo) acoesTopo() }
             }
 
             // Avisos da nuvem/copiar e de campos calculados REMOVIDOS daqui --
@@ -1073,13 +1064,13 @@ fun DomainFormScreen(
             // seção Itens descem para baixo de todos os itens, sem título nem linhas.
             val chavesItem = multi?.let { m -> (m.sel + m.inp).map { it.first } } ?: emptyList()
             val resumoGeral = mutableListOf<ColumnConfig>()
-            val gruposAjust = if (multi != null && !ehSafra) grupos.map { (g, cs) ->
+            val gruposAjust = (if (multi != null && !ehSafra) grupos.map { (g, cs) ->
                 if (g.first != "itens") g to cs else {
                     val doItem = cs.filter { c -> c.key in chavesItem || (multi.total != null && c.computed && com.bragro.mobile.ui.i18n.Idioma.tr(c.label).startsWith("Total", ignoreCase = true)) }
                     resumoGeral += cs.filter { it !in doItem }
                     g to doItem.sortedBy { c -> chavesItem.indexOf(c.key).let { if (it < 0) 99 else it } }
                 }
-            } else grupos
+            } else grupos).sortedBy { if (it.first.first == "itens") 1 else 0 } // v273 (mockup v328) -- bloco Item por último
             // v221 (mockup aprovado) -- Clima de hoje, foto e Copiar último ficam na
             // linha do nome do primeiro campo, à direita (o formulário sobe).
             val primeiroCampoKey = if (recordId == null) gruposAjust.firstOrNull()?.second?.firstOrNull { !it.computed && it.type != "checkbox" }?.key else null
@@ -1170,7 +1161,7 @@ fun DomainFormScreen(
                                     onClick = { viewModel.copiarItemPrincipal((multi.sel + multi.inp).map { it.first }) },
                                     modifier = Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 4.dp).size(40.dp),
                                 ) {
-                                    Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                    Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
                                 }
                             }
                         }
@@ -1756,7 +1747,7 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                     // Cor verde -- pedido do usuário ("nos campos que houver
                     // calendário altere o ícone para cor verde").
                     IconButton(onClick = { showPicker = true }) {
-                        Icon(Icons.Outlined.CalendarMonth, contentDescription = "Escolher data", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Outlined.CalendarMonth, contentDescription = "Escolher data", tint = MaterialTheme.colorScheme.onSurface)
                     }
                 },
             )
@@ -1879,7 +1870,7 @@ private fun ItensExtrasSection(
                 onClick = { viewModel.copiarItemPrincipal((multi.sel + multi.inp).map { it.first }) },
                 modifier = Modifier.align(Alignment.End).size(40.dp),
             ) {
-                Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
             }
         }
         viewModel.itensExtras.forEachIndexed { i, x ->
@@ -1891,10 +1882,10 @@ private fun ItensExtrasSection(
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                         Text("Item ${i + 2}", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                         IconButton(onClick = { viewModel.copiarItemExtra(i) }, modifier = Modifier.size(36.dp)) {
-                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
                         }
                         IconButton(onClick = { viewModel.removeItemExtra(i) }, modifier = Modifier.size(36.dp)) {
-                            Icon(Icons.Outlined.Delete, contentDescription = "Remover item", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Outlined.Delete, contentDescription = "Remover item", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(20.dp))
                         }
                     }
                     androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))

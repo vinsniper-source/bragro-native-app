@@ -386,7 +386,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                         val anos = (anoAtual downTo anoAtual - 9).toList()
                         // v20 -- setinha para recolher o bloco.
                         Row(Modifier.fillMaxWidth().clickable { anoAberto = !anoAberto }, verticalAlignment = Alignment.CenterVertically) {
-                            Text("ANO-CALENDÁRIO / EXERCÍCIO", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                            Text("Ano-calendário / exercício", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
                             com.bragro.mobile.ui.domain.CantoL(anoAberto)
                         }
                         if (anoAberto) {

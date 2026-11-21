@@ -208,6 +208,8 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = viewModel(
             }
             return@Scaffold
         }
+        // v273 (mockup v328) -- em Configurações os campos de conta/login preenchem da esquerda.
+        androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.theme.LocalValorEsquerda provides true) {
         LazyColumn(
             contentPadding = PaddingValues(12.dp, padding.calculateTopPadding() + 4.dp, 12.dp, 24.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -244,11 +246,12 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = viewModel(
                 )
             }
         }
+        }
     }
 }
 
 @Composable
-private fun CollapsibleCard(title: String, icon: (@Composable () -> Unit)? = null, initiallyOpen: Boolean = false, content: @Composable () -> Unit) {
+private fun CollapsibleCard(title: String, icon: (@Composable () -> Unit)? = null, initiallyOpen: Boolean = false, acoes: (@Composable () -> Unit)? = null, content: @Composable () -> Unit) {
     var open by remember { mutableStateOf(initiallyOpen) }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -257,7 +260,9 @@ private fun CollapsibleCard(title: String, icon: (@Composable () -> Unit)? = nul
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             ) {
                 icon?.invoke()
-                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.weight(1f).padding(start = if (icon != null) 8.dp else 0.dp))
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(start = if (icon != null) 8.dp else 0.dp))
+                // v273 (mockup v328) -- botões com nome viram ícones na linha do título.
+                if (open && acoes != null) acoes()
                 com.bragro.mobile.ui.domain.CantoL(open)
             }
             if (open) {
@@ -442,14 +447,15 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
                         Text(notas, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 2.dp))
                     }
                     Text(
-                        if (downloading) "Baixando. Você será avisado ao terminar." else "Toque em Baixar (pode pedir \"fontes desconhecidas\").",
+                        if (downloading) "Baixando. Você será avisado ao terminar." else "Toque em baixar (pode pedir \"fontes desconhecidas\").",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }
                 if (!apkUrl.isNullOrBlank()) {
-                    androidx.compose.material3.Button(
+                    // v273 (mockup v328) -- Baixar vira ícone.
+                    androidx.compose.material3.IconButton(
                         onClick = {
                             if (!downloading) {
                                 downloading = true
@@ -459,13 +465,8 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
                         enabled = !downloading,
                         modifier = Modifier.padding(start = 8.dp),
                     ) {
-                        if (downloading) {
-                            CircularProgressIndicator(modifier = Modifier.size(16.dp).padding(end = 4.dp), strokeWidth = 2.dp)
-                            Text("Baixando...")
-                        } else {
-                            Icon(Icons.Outlined.Download, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                            Text("Baixar")
-                        }
+                        if (downloading) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        else Icon(Icons.Outlined.Download, contentDescription = "Baixar", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
                     }
                 }
             }
@@ -556,7 +557,9 @@ private fun OrgCard(org: JsonObject?, saving: Boolean, onSave: (String, Double, 
     var name by remember(org) { mutableStateOf(org?.get("name")?.jsonPrimitive?.contentOrNull ?: "") }
     var tolerancia by remember(org) { mutableStateOf((org?.get("toleranciaPct")?.jsonPrimitive?.doubleOrNull ?: 5.0).toString()) }
 
-    CollapsibleCard("Organização") {
+    CollapsibleCard("Organização", acoes = {
+        com.bragro.mobile.ui.domain.SalvarIcone(onClick = { onSave(name, tolerancia.toDoubleOrNull() ?: 5.0) { } }, enabled = !saving, loading = saving)
+    }) {
         OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nome") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = appFieldColors())
         OutlinedTextField(
             value = tolerancia,
@@ -567,13 +570,6 @@ private fun OrgCard(org: JsonObject?, saving: Boolean, onSave: (String, Double, 
             singleLine = true,
             colors = appFieldColors(),
         )
-        Spacer(Modifier.height(12.dp))
-        androidx.compose.material3.Button(
-            onClick = { onSave(name, tolerancia.toDoubleOrNull() ?: 5.0) { } },
-            enabled = !saving,
-        ) {
-            if (saving) CircularProgressIndicator(modifier = Modifier.padding(2.dp)) else Text("Salvar")
-        }
     }
 }
 
@@ -595,7 +591,7 @@ private fun AssinaturaCard(org: JsonObject?, stripeAtivo: Boolean, onCheckout: (
                 }
             }
             if (hasStripeCustomer) {
-                androidx.compose.material3.Button(onClick = onPortal, modifier = Modifier.padding(top = 8.dp)) { Text("Gerenciar assinatura") }
+                androidx.compose.material3.OutlinedButton(onClick = onPortal, modifier = Modifier.padding(top = 8.dp)) { Text("Gerenciar assinatura") }
             }
             Text(
                 "Abre a página de pagamento no navegador.",
@@ -639,7 +635,17 @@ private fun NotificacoesCard(
     var testingChannel by remember { mutableStateOf<String?>(null) }
     var testResult by remember { mutableStateOf<String?>(null) }
 
-    CollapsibleCard("Notificações automáticas") {
+    CollapsibleCard("Notificações", acoes = {
+        com.bragro.mobile.ui.domain.SalvarIcone(
+            onClick = {
+                onSave(
+                    telegramBotToken, telegramChatId, whatsappPhoneId, whatsappToken, whatsappTo,
+                    channelPush, channelTelegram, channelWhatsapp, frotaManutencao, romaneioDiario, estoqueMinimo, clima,
+                ) { }
+            },
+            enabled = !saving, loading = saving,
+        )
+    }) {
         Text(
             "Frota, romaneios do dia e estoque mínimo. Telegram e WhatsApp opcionais.",
             style = MaterialTheme.typography.bodySmall,
@@ -706,18 +712,6 @@ private fun NotificacoesCard(
             Text(testResult!!, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
         }
 
-        Spacer(Modifier.height(8.dp))
-        androidx.compose.material3.Button(
-            onClick = {
-                onSave(
-                    telegramBotToken, telegramChatId, whatsappPhoneId, whatsappToken, whatsappTo,
-                    channelPush, channelTelegram, channelWhatsapp, frotaManutencao, romaneioDiario, estoqueMinimo, clima,
-                ) { }
-            },
-            enabled = !saving,
-        ) {
-            if (saving) CircularProgressIndicator(modifier = Modifier.padding(2.dp)) else Text("Salvar notificações")
-        }
     }
 }
 

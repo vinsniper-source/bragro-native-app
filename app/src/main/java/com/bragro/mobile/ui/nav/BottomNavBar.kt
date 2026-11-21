@@ -807,7 +807,7 @@ fun BRAgroBottomBar(
                                             tint = MaterialTheme.colorScheme.onSurface,
                                         )
                                         Text(
-                                            category.uppercase(),
+                                            category /* v273 -- sem caixa alta */,
                                             style = MaterialTheme.typography.labelMedium,
                                             color = MaterialTheme.colorScheme.onSurface,
                                             maxLines = 1,
