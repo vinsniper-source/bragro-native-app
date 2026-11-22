@@ -710,7 +710,7 @@ fun BRAgroBottomBar(
                             this@NavigationBar.NavigationBarItem(
                                 selected = selected,
                                 onClick = rt.onClick,
-                                icon = { Icon(rt.icon, contentDescription = rt.label, modifier = Modifier.size(22.dp)) },
+                                icon = { Icon(rt.icon, contentDescription = rt.label, modifier = Modifier.size(24.dp)) },
                                 label = null, // v275 (mockup v330) -- só ícone
                                 colors = BottomNavColors,
                             )
@@ -742,7 +742,7 @@ fun BRAgroBottomBar(
                                 openTabId = if (openTabId == tab.id) null else tab.id
                                 expandedCategory = null
                             },
-                            icon = { Icon(tab.icon, contentDescription = tab.label, modifier = Modifier.size(22.dp)) },
+                            icon = { Icon(tab.icon, contentDescription = tab.label, modifier = Modifier.size(24.dp)) },
                             // maxLines/softWrap + labelSmall: rótulos como
                             // "Financeiro" quebravam em 2 linhas ou saíam cortados
                             // com o tamanho padrão -- pedido do usuário ("realoque

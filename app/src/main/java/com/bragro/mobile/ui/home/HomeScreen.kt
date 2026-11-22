@@ -775,7 +775,7 @@ fun HomeScreen(
                                 android.widget.Toast.makeText(logoScreenContext, msg, android.widget.Toast.LENGTH_SHORT).show()
                             }
                         }) {
-                            Icon(Icons.Outlined.Backup, contentDescription = "Backup completo", modifier = Modifier.size(22.dp)) /* v275 -- ícones do mesmo tamanho */
+                            Icon(Icons.Outlined.Backup, contentDescription = "Backup completo", modifier = Modifier.size(24.dp)) /* v279 -- tamanho padrão 24 dp */
                         }
                     }
                     // Ícone "Módulos" -- consolida Configurações + Base de
@@ -794,7 +794,7 @@ fun HomeScreen(
                         var modulosMenuOpen by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { modulosMenuOpen = true }) {
-                                Icon(Icons.Outlined.GridView, contentDescription = "Módulos", modifier = Modifier.size(22.dp)) /* v275 -- ícones do mesmo tamanho */
+                                Icon(Icons.Outlined.GridView, contentDescription = "Módulos", modifier = Modifier.size(24.dp)) /* v279 -- tamanho padrão 24 dp */
                             }
                             com.bragro.mobile.ui.theme.MenuSuspenso(expanded = modulosMenuOpen, onDismissRequest = { modulosMenuOpen = false }, corFixa = com.bragro.mobile.ui.theme.corMenuBarra()) {
                                 DropdownMenuItem(
@@ -838,7 +838,7 @@ fun HomeScreen(
                         var iosStepsOpen by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { configMenuOpen = true }) {
-                                Icon(Icons.Outlined.Settings, contentDescription = "Configurações", modifier = Modifier.size(22.dp)) /* v275 -- ícones do mesmo tamanho */
+                                Icon(Icons.Outlined.Settings, contentDescription = "Configurações", modifier = Modifier.size(24.dp)) /* v279 -- tamanho padrão 24 dp */
                             }
                             com.bragro.mobile.ui.theme.MenuSuspenso(expanded = configMenuOpen, onDismissRequest = { configMenuOpen = false }, corFixa = com.bragro.mobile.ui.theme.corMenuBarra()) {
                                 val apkUrl = home?.apkUrl
@@ -914,7 +914,7 @@ fun HomeScreen(
                         var dbMenuOpen by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { dbMenuOpen = true }) {
-                                Icon(IconesVazados.Storage, contentDescription = "Base de Dados", modifier = Modifier.size(22.dp)) /* v275 -- ícones do mesmo tamanho */
+                                Icon(IconesVazados.Storage, contentDescription = "Base de Dados", modifier = Modifier.size(24.dp)) /* v279 -- tamanho padrão 24 dp */
                             }
                             com.bragro.mobile.ui.theme.MenuSuspenso(expanded = dbMenuOpen, onDismissRequest = { dbMenuOpen = false }, corFixa = com.bragro.mobile.ui.theme.corMenuBarra()) {
                                 val grupos = home?.baseDeDadosCategorias.orEmpty()
@@ -956,7 +956,7 @@ fun HomeScreen(
                             Icon(
                                 if (unreadCount > 0) Icons.Outlined.NotificationsActive else Icons.Outlined.NotificationsNone,
                                 contentDescription = "Notificações",
-                                modifier = Modifier.size(22.dp),
+                                modifier = Modifier.size(24.dp),
                             )
                         }
                     }
@@ -978,7 +978,7 @@ fun HomeScreen(
                                     modifier = Modifier.size(28.dp).clip(CircleShape),
                                 )
                             } else {
-                                Icon(Icons.Outlined.AccountCircle, contentDescription = "Conta", modifier = Modifier.size(22.dp)) /* v275 -- ícones do mesmo tamanho */
+                                Icon(Icons.Outlined.AccountCircle, contentDescription = "Conta", modifier = Modifier.size(24.dp)) /* v279 -- tamanho padrão 24 dp */
                             }
                         }
                         com.bragro.mobile.ui.theme.MenuSuspenso(expanded = userMenuOpen, onDismissRequest = { userMenuOpen = false }, corFixa = com.bragro.mobile.ui.theme.corMenuBarra()) {

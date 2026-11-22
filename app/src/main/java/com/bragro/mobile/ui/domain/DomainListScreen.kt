@@ -1377,9 +1377,9 @@ fun DomainListScreen(
             // (o ícone já cumpre esse papel agora).
             if (showFiltros && filtrosExpanded) {
                 item(key = "filtros") {
-                    // v278 (mockup v335 item 13) -- bloco na largura dos formulários.
-                    Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 8.dp)) {
-                        Column(modifier = Modifier.padding(16.dp)) {
+                    // v279 (mockup v338 item 12) -- menos margem por fora e por dentro.
+                    Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
                             // 3 colunas por linha -- pedido do usuário
                             // ("os filtros coloquem em tres colunas dentro
                             // do mesmo bloco"); quebra pra linha de baixo

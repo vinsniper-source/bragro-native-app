@@ -234,11 +234,11 @@ fun CanvasCirclesRow(
     // com o restante da pagina").
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(0.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent, contentColor = corTextoCanvas),
-        border = BorderStroke(0.dp, Color.Transparent),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), // v279 (mockup v338) -- borda no canvas das fazendas
     ) {
-        Column {
+        Column(Modifier.padding(vertical = 8.dp)) {
         if (fazendas.isEmpty()) {
             Text(
                 "Nenhuma fazenda ativa cadastrada ainda.",
@@ -491,7 +491,7 @@ fun CanvasCirclesRow(
                     var escalaNome by androidx.compose.runtime.remember(f.nome) { androidx.compose.runtime.mutableStateOf(1f) }
                     val estiloNome = MaterialTheme.typography.labelMedium
                     Text(
-                        f.nome,
+                        com.bragro.mobile.ui.domain.exibirTexto(f.nome, true), // v279 -- sem maiúsculas
                         style = estiloNome.copy(fontSize = estiloNome.fontSize * escalaNome),
                         fontWeight = FontWeight.Bold,
                         color = corTextoCanvas,
@@ -508,7 +508,7 @@ fun CanvasCirclesRow(
                     // v1.6.13 (mockup v113) -- sem lançamento, a linha "Sem cultura" some.
                     val linha = if (filtroAtivo) filtroLabel else listOfNotNull(f.culturaAtual, f.safraAtual).joinToString(" · ")
                     if (linha.isNotBlank()) {
-                        Text(linha, style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp), color = corTextoCanvas, textAlign = TextAlign.Center)
+                        Text(com.bragro.mobile.ui.domain.exibirTexto(linha), style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp), color = corTextoCanvas, textAlign = TextAlign.Center)
                     }
                 }
                 }

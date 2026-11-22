@@ -194,13 +194,19 @@ val NovoLancamentoVetor: androidx.compose.ui.graphics.vector.ImageVector by lazy
     androidx.compose.ui.graphics.vector.ImageVector.Builder(
         name = "NovoLancamento", defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f,
     ).apply {
-        traco { moveTo(2.5f, 6.5f); lineTo(6.5f, 6.5f); lineTo(11f, 16.5f); lineTo(16.2f, 4.9f) }
-        traco { moveTo(2.5f, 6.5f); lineTo(9f, 20.5f); lineTo(13f, 20.5f); lineTo(18.3f, 8.3f) }
-        traco { moveTo(14.6f, 4.2f); lineTo(18.9f, 3f); lineTo(19.9f, 7.4f) }
+        // v279 (mockup v338) -- folha com a dobra no canto e o traço (imagem 8).
+        traco { moveTo(4f, 3f); lineTo(15f, 3f); lineTo(20f, 8f); lineTo(20f, 21f); lineTo(4f, 21f); close() }
+        traco { moveTo(15f, 3f); lineTo(15f, 8f); lineTo(20f, 8f) }
+        traco { moveTo(15f, 8f); lineTo(17.5f, 5.5f) }
+        traco { moveTo(6.5f, 18.5f); lineTo(15f, 8f) }
     }.build()
 }
 
 @Composable
 fun NovoLancamentoIcone(modifier: Modifier = Modifier) {
-    Icon(NovoLancamentoVetor, contentDescription = "Novo lançamento", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, modifier = modifier.padding(end = 8.dp).size(22.dp))
+    // v279 (mockup v338) -- ícone, tracinho e o título.
+    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = modifier) {
+        Icon(NovoLancamentoVetor, contentDescription = "Novo lançamento", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+        androidx.compose.material3.Text(" – ", color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
+    }
 }

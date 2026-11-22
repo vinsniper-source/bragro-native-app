@@ -412,14 +412,34 @@ private fun NovaNotaDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (initial != null) "Nova NF-e (copiada da última)" else "Nova NF-e (manual)") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                com.bragro.mobile.ui.domain.AvisoComIcones("Preencha os dados da nota.") {
-                    androidx.compose.material3.IconButton(onClick = { copiarUltima() }, enabled = ultima != null, modifier = Modifier.size(40.dp)) {
-                        Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar última nota", modifier = Modifier.size(24.dp))
+        // v279 (mockup v338 item 6) -- ícone novo – NF-e ⓘ; ⧉ ✓ ✕ na linha do título.
+        modifier = Modifier.fillMaxWidth(0.88f),
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+        title = {
+            androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                com.bragro.mobile.ui.domain.NovoLancamentoIcone()
+                androidx.compose.foundation.layout.Box(Modifier.weight(1f)) {
+                    com.bragro.mobile.ui.domain.TituloJanela(
+                        "NF-e",
+                        onFechar = onDismiss,
+                        fecharEnabled = !pending,
+                        dica = if (initial != null) "Copiada da última nota. Confira os dados." else "Lançamento manual. Preencha os dados da nota.",
+                    ) {
+                        androidx.compose.material3.IconButton(onClick = { copiarUltima() }, enabled = ultima != null) {
+                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar última nota")
+                        }
+                        com.bragro.mobile.ui.domain.SalvarIcone(
+                            onClick = { onConfirm(numero, serie.ifBlank { null }, tipo, emitenteNome, parseValor(valorTotal), dataEmissao.ifBlank { null }) },
+                            enabled = podeSalvar,
+                            loading = pending,
+                            descricao = "Lançar",
+                        )
                     }
                 }
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
                 OutlinedTextField(value = numero, onValueChange = { numero = it }, label = { Text("Número *") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
                 OutlinedTextField(value = serie, onValueChange = { serie = it }, label = { Text("Série") }, placeholder = { Text("Opcional") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
                 StringDropdown(label = "Tipo", value = tipo, options = TIPO_OPTIONS, onSelect = { tipo = it })
@@ -428,16 +448,7 @@ private fun NovaNotaDialog(
                 OutlinedTextField(value = dataEmissao, onValueChange = { dataEmissao = it }, label = { Text("Data de emissão") }, placeholder = { Text("AAAA-MM-DD, opcional") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
             }
         },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(numero, serie.ifBlank { null }, tipo, emitenteNome, parseValor(valorTotal), dataEmissao.ifBlank { null }) },
-                enabled = podeSalvar && !pending,
-            ) {
-                if (pending) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                else Text("Lançar")
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !pending) { Text("Cancelar") } },
+        confirmButton = {},
     )
 }
 
@@ -525,7 +536,7 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
                 if (formNativo?.get("nativo").txt() == "true") {
                     com.bragro.mobile.ui.domain.NovoIconeTopo(Icons.Outlined.Description, "Emitir NF-e", onClick = { showEmitir = true }, mais = false)
                 }
-                com.bragro.mobile.ui.domain.NovoIconeTopo(Icons.Outlined.Add, "Nova nota", onClick = { copiaOrigem = null; showNovaNota = true })
+                com.bragro.mobile.ui.domain.NovoIconeTopo(Icons.Outlined.Receipt, "Nova nota", onClick = { copiaOrigem = null; showNovaNota = true })
             } } /* v275 (mockup v331) -- sem casinha na página inicial do módulo */ },
             )
         },

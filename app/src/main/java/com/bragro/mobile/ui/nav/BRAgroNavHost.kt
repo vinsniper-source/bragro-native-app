@@ -248,10 +248,12 @@ fun BRAgroNavHost() {
             modifier = Modifier.padding(outerPadding),
         ) {
         composable(Routes.LOGIN) {
-            LoginScreen(onLoggedIn = {
-                // v326 (mockup v326) -- Login -> Fazendas -> (casinha) Início.
-                navController.navigate(Routes.FAZENDAS) { popUpTo(Routes.LOGIN) { inclusive = true } }
-            })
+            LoginScreen(
+                // v279 (mockup v338 item 10) -- Login vai direto ao Início; o
+                // cadastro de fazendas só abre pelo atalho "Fazendas" do login.
+                onLoggedIn = { navController.navigate(Routes.HOME) { popUpTo(Routes.LOGIN) { inclusive = true } } },
+                onLoggedInFazendas = { navController.navigate(Routes.FAZENDAS) { popUpTo(Routes.LOGIN) { inclusive = true } } },
+            )
         }
         composable(Routes.FAZENDAS) {
             val irInicio = {

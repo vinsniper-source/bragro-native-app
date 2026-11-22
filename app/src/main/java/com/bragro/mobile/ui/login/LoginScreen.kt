@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.login
 
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -118,7 +119,10 @@ class LoginViewModel(app: Application) : AndroidViewModel(app) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel()) {
+fun LoginScreen(onLoggedIn: () -> Unit, onLoggedInFazendas: () -> Unit = onLoggedIn, viewModel: LoginViewModel = viewModel()) {
+    // v279 (mockup v338 item 10) -- atalho "Fazendas": entra e abre o cadastro.
+    var irFazendas by remember { mutableStateOf(false) }
+    val aoEntrar: () -> Unit = { if (irFazendas) onLoggedInFazendas() else onLoggedIn() }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val loading by viewModel.loading
@@ -129,7 +133,7 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(PaddingValues(24.dp)),
+            .padding(PaddingValues(horizontal = 40.dp, vertical = 24.dp)), // v279 (mockup v338) -- margem dos formulários
         verticalArrangement = Arrangement.Center,
         // Logo centralizada -- pedido do usuário ("centralise a logo"),
         // mesmo layout do login do site (login/page.tsx: "items-center
@@ -243,20 +247,21 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
             Text(error!!, color = androidx.compose.material3.MaterialTheme.colorScheme.error)
         }
 
-        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 20.dp))
-        Button(
-            onClick = {
-                if (viewModel.trocarSenha.value != null) viewModel.salvarNovaSenha(email, nova, repetir, onLoggedIn)
-                else if (viewModel.pendente.value != null) viewModel.verificarCodigo(email, password, codigo2, onLoggedIn)
-                else viewModel.login(email, password, onLoggedIn)
-            },
-            enabled = !loading,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            if (loading) {
-                CircularProgressIndicator(modifier = Modifier.padding(2.dp))
-            } else {
-                Text(if (trocar != null) "Salvar e entrar" else "Entrar")
+        // v279 (mockup v338 item 10) -- "Entrar" minimalista: texto verde com seta, à direita.
+        val entrar: () -> Unit = {
+            if (viewModel.trocarSenha.value != null) viewModel.salvarNovaSenha(email, nova, repetir, aoEntrar)
+            else if (viewModel.pendente.value != null) viewModel.verificarCodigo(email, password, codigo2, aoEntrar)
+            else viewModel.login(email, password, aoEntrar)
+        }
+        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 12.dp))
+        androidx.compose.foundation.layout.Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            androidx.compose.material3.TextButton(onClick = { irFazendas = false; entrar() }, enabled = !loading) {
+                if (loading) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                } else {
+                    Text(if (trocar != null) "Salvar e entrar" else "Entrar", fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, color = androidx.compose.material3.MaterialTheme.colorScheme.primary)
+                    Icon(Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 6.dp).size(18.dp))
+                }
             }
         }
 
@@ -271,16 +276,19 @@ fun LoginScreen(onLoggedIn: () -> Unit, viewModel: LoginViewModel = viewModel())
             horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            androidx.compose.material3.TextButton(onClick = { openInCustomTab(context, "${BuildConfig.API_BASE_URL}/esqueci-senha") }) {
-                Text("Esqueci minha senha", style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+            androidx.compose.material3.TextButton(onClick = { openInCustomTab(context, "${BuildConfig.API_BASE_URL}/esqueci-senha") }, contentPadding = PaddingValues(horizontal = 4.dp)) {
+                Text("Esqueci a senha", style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = androidx.compose.material3.MaterialTheme.colorScheme.primary)
             }
-            androidx.compose.material3.TextButton(onClick = { openInCustomTab(context, "${BuildConfig.API_BASE_URL}/cadastro") }) {
-                Text("Criar conta grátis", style = androidx.compose.material3.MaterialTheme.typography.bodySmall, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, color = androidx.compose.material3.MaterialTheme.colorScheme.primary)
+            androidx.compose.material3.TextButton(onClick = { openInCustomTab(context, "${BuildConfig.API_BASE_URL}/cadastro") }, contentPadding = PaddingValues(horizontal = 4.dp)) {
+                Text("Criar conta", style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = androidx.compose.material3.MaterialTheme.colorScheme.primary)
+            }
+            androidx.compose.material3.TextButton(onClick = { irFazendas = true; entrar() }, enabled = !loading, contentPadding = PaddingValues(horizontal = 4.dp)) {
+                Text("Fazendas", style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = androidx.compose.material3.MaterialTheme.colorScheme.primary)
             }
         }
         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 4.dp))
         Text(
-            "Precisa de internet só no primeiro acesso.",
+            "Internet só no primeiro acesso.",
             style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),

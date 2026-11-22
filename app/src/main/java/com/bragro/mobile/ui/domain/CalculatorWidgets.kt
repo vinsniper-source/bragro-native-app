@@ -125,8 +125,8 @@ fun CalcCard(icon: androidx.compose.ui.graphics.vector.ImageVector, title: Strin
         colors = CardDefaults.cardColors(containerColor = com.bragro.mobile.ui.theme.formBlockColor()),
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp), // v279 (mockup v338) -- menos margem
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             // v239 (mockup aprovado) -- ícone e título em verde, com mais espaço até os campos.
             Row(modifier = Modifier.padding(bottom = 12.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
