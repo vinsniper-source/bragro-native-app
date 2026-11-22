@@ -901,6 +901,8 @@ fun DomainFormScreen(
                                     else Icon(Icons.Outlined.WaterDrop, contentDescription = "Preencher com clima de hoje", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
                                 }
                             }
+                            // v280 (mockup v339 itens 11-20) -- câmera na linha do título.
+                            if (domainId in OCR_FOTO_DOMAINS) OcrFotoButton(somenteIcone = true) { url -> viewModel.aplicarOcrFoto(url) }
                             IconButton(onClick = { if (lastRecord != null) viewModel.copyFromLastRecord() }) {
                                 Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último lançamento", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(24.dp))
                             }
@@ -1126,7 +1128,7 @@ fun DomainFormScreen(
                     if (col.type == "checkbox") {
                         FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                     } else {
-                        com.bragro.mobile.ui.theme.NomeAoLado(if (col.key == "ajuste" && viewModel.opBanco()) "Juros" else com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), col.required, acoes = if (col.key == primeiroCampoKey && domainId in OCR_FOTO_DOMAINS) ({ OcrFotoButton(somenteIcone = true) { url -> viewModel.aplicarOcrFoto(url) } }) else null, dica = col.hint) {
+                        com.bragro.mobile.ui.theme.NomeAoLado(if (col.key == "ajuste" && viewModel.opBanco()) "Juros" else com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), col.required, acoes = null, dica = col.hint) { // v280 (mockup v339) -- câmera subiu para a linha do título
                             FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                         }
                     }
@@ -1170,7 +1172,7 @@ fun DomainFormScreen(
                                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                                         Text("Item 1", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                                         if (multi != null) IconButton(onClick = { viewModel.copiarItemPrincipal(chavesItem) }, modifier = Modifier.size(36.dp)) {
-                                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+                                            Icon(Icons.Outlined.Add, contentDescription = "Adicionar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp)) /* v280 (mockup v339 item 17) */
                                         }
                                     }
                                     androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
@@ -1187,7 +1189,7 @@ fun DomainFormScreen(
                         if (g.first == "itens" && multi != null) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                             Text("Item 1", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                             IconButton(onClick = { viewModel.copiarItemPrincipal(chavesItem) }, modifier = Modifier.size(36.dp)) {
-                                Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+                                Icon(Icons.Outlined.Add, contentDescription = "Adicionar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp)) /* v280 (mockup v339 item 17) */
                             }
                         }
                         camposDaSecao()
@@ -1905,7 +1907,7 @@ private fun ItensExtrasSection(
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                         Text("Item ${i + 2}", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                         IconButton(onClick = { viewModel.copiarItemExtra(i) }, modifier = Modifier.size(36.dp)) {
-                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+                            Icon(Icons.Outlined.Add, contentDescription = "Adicionar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp)) /* v280 (mockup v339 item 17) */
                         }
                         IconButton(onClick = { viewModel.removeItemExtra(i) }, modifier = Modifier.size(36.dp)) {
                             Icon(Icons.Outlined.Delete, contentDescription = "Remover item", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(20.dp))

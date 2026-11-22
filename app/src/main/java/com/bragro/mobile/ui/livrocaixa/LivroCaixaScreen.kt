@@ -483,7 +483,7 @@ private fun ProdutorRuralCard(
 
     com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
         var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { // v280 (mockup v339 item 18) -- margem menor dentro do bloco
             // v1.6.59 -- Salvar virou ✓ na linha do título.
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 androidx.compose.foundation.layout.Box(Modifier.weight(1f)) {

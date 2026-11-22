@@ -338,7 +338,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
         // "Seções" em Ações rola direto pra cada uma.
         val abertas = remember { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
         // v1.6.5 (mockup v106, item 2) -- seções começam recolhidas (igual à plataforma).
-        fun aberta(id: String) = abertas[id] == true
+        fun aberta(id: String) = abertas[id] != false // v280 (mockup v339 item 19) -- tudo já aberto
         val listState = androidx.compose.foundation.lazy.rememberLazyListState()
         val scope = androidx.compose.runtime.rememberCoroutineScope()
         val indiceSecao = remember { mutableMapOf<String, Int>() }

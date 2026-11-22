@@ -396,14 +396,21 @@ fun LinhaTextFieldClassico(
 /** v310 (mockup v310 aprovado) -- texto de ajuda do campo vira uma bolinha ⓘ
  * ao lado do nome; tocar abre um balão com a cor de fundo da tela. */
 @Composable
-fun DicaInfo(texto: String) {
+fun DicaInfo(texto: String, nivel: Int = 0) {
+    // v280 (mockup v339 item 15) -- aviso importante: ⓘ laranja (nivel 2, atenção)
+    // ou amarelo (nivel 1, lembrete); aviso comum segue cinza.
     var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     val cs = MaterialTheme.colorScheme
+    val corI = when (nivel) {
+        2 -> com.bragro.mobile.ui.domain.corAtencao()
+        1 -> androidx.compose.ui.graphics.Color(0xFFD4A017)
+        else -> cs.onSurfaceVariant
+    }
     Box {
         androidx.compose.material3.Icon(
             androidx.compose.material.icons.Icons.Outlined.Info,
             contentDescription = texto,
-            tint = cs.onSurfaceVariant,
+            tint = corI,
             modifier = Modifier
                 .padding(start = 5.dp)
                 .size(15.dp)

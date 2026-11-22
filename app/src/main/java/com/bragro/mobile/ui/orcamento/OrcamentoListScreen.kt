@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.orcamento
 
+import androidx.compose.material.icons.outlined.FilterAltOff
 import androidx.compose.material.icons.outlined.Backspace
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.automirrored.outlined.ViewList
@@ -389,7 +390,7 @@ private fun PeriodoDialog(from: String, to: String, onDismiss: () -> Unit, onApl
         title = {
             com.bragro.mobile.ui.domain.TituloJanela("Período", onFechar = onDismiss, dica = "Filtra pela data do orçamento.") {
                 androidx.compose.material3.IconButton(onClick = { onAplicar("", "") }) {
-                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Backspace, contentDescription = "Limpar")
+                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.FilterAltOff, contentDescription = "Limpar filtro") // v280 (mockup v339) -- sem dois X na linha
                 }
                 com.bragro.mobile.ui.domain.SalvarIcone(onClick = { onAplicar(deInput.trim(), ateInput.trim()) }, descricao = "Aplicar")
             }

@@ -621,7 +621,12 @@ fun DomainListScreen(
                         // isso podiam quebrar linha e cortar embaixo, já
                         // que a AppBar tem altura fixa.
                         // v1.6.4 (mockup v105, item 9) -- uma linha só: a fonte diminui até caber.
-                        com.bragro.mobile.ui.domain.ValorUmaLinha(config?.label ?: domainId, MaterialTheme.colorScheme.onSurface, maxSp = 22f, minSp = 14f)
+                        // v280 (mockup v339 itens 7 e 8) -- Cobranças | NFS-e (com traço) no lugar do título.
+                        if (linkedDomains != null && onSwitchDomain != null) com.bragro.mobile.ui.domain.TracoOpcoes(
+                            opcoes = linkedDomains,
+                            selecionado = domainId,
+                            onSelect = { if (it != domainId) onSwitchDomain(it) },
+                        ) else com.bragro.mobile.ui.domain.ValorUmaLinha(config?.label ?: domainId, MaterialTheme.colorScheme.onSurface, maxSp = 22f, minSp = 14f)
                     }
                 
                     }
@@ -764,7 +769,7 @@ fun DomainListScreen(
             // ícones sem mexer na estrutura dos blocos, coloque uma borda
             // fina em volta do bloco"). Toque no ícone já alterna o título
             // pro nome do outro módulo, então dispensa o rótulo escrito.
-            if (linkedDomains != null && onSwitchDomain != null) {
+            if (false && linkedDomains != null && onSwitchDomain != null) { // v280 -- foi para o título
                 item(key = "linked-domain-switch") {
                     // Ganhou o título "Faturamento" acima do alternador
                     // NFSe/Cobranças (mesmo padrão de bloco com título dos

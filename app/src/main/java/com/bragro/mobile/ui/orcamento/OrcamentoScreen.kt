@@ -646,15 +646,25 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                 // v275 (mockup v330/v331) -- padrão do Novo: título curto + ⓘ;
                 // copiar, ícone com "+", ✓, ✕ (volta ao módulo) e ⌂ na linha do título.
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
-                    Column(Modifier.padding(start = 8.dp)) {
+                    Column(Modifier.padding(start = 20.dp)) {
                         Spacer(modifier = Modifier.height(16.dp))
                         androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            // v280 (mockup v339 item 6) -- ícone novo e tracinho antes do título.
+                            com.bragro.mobile.ui.domain.NovoLancamentoIcone()
                             Text("Orçamento", color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
                             com.bragro.mobile.ui.theme.DicaInfo("Pendente até a nota ser conciliada no Financeiro.")
                         }
                     }
                 } },
                 actions = {
+                    // v280 (mockup v339) -- foto do comprovante (lê os itens) subiu para a linha do título.
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        androidx.compose.material3.IconButton(onClick = { launchCameraComPermissao("comprovante", { uri -> pendingComprovanteUri = uri }, takeComprovantePicture) }, enabled = !uploadingComprovante) {
+                            if (uploadingComprovante) androidx.compose.material3.CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            else androidx.compose.material3.Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoComprovanteUrl != null) "Trocar foto do comprovante/orçamento" else "Foto do comprovante/orçamento (lê os itens)", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                        }
+                    }
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         androidx.compose.material3.IconButton(onClick = { if (!copiando) viewModel.preencherComUltimo() }) {
@@ -707,7 +717,7 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
 
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp), // v219 -- margens nas janelas
+            contentPadding = PaddingValues(horizontal = 40.dp, vertical = 12.dp), // v280 (mockup v339) -- margem dos formulários
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (errorMessage != null) {
@@ -716,19 +726,23 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
             // Bloco 1: cabeçalho.
             item {
                 // v275 (mockup v330) -- câmera (foto da requisição) na linha da Data.
-                androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                // v280 (mockup v339 item 9) -- câmera na linha do nome "Data", à direita.
+                Column {
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        Text("Data *", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                        androidx.compose.material3.IconButton(onClick = { if (!uploadingRequisicao) launchCameraComPermissao("requisicao", { uri -> pendingRequisicaoUri = uri }, takeRequisicaoPicture) }, modifier = Modifier.size(32.dp)) {
+                            if (uploadingRequisicao) androidx.compose.material3.CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            else androidx.compose.material3.Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoRequisicaoUrl != null) "Trocar foto da requisição" else "Foto da requisição (lê automaticamente)", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+                        }
+                    }
                     OutlinedTextField(
                         value = viewModel.data,
                         onValueChange = { viewModel.data = it },
-                        label = { Text("Data *") },
+                        label = null,
                         placeholder = { Text("DD/MM/AAAA") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                         colors = appFieldColors(),
                     )
-                    androidx.compose.material3.IconButton(onClick = { if (!uploadingRequisicao) launchCameraComPermissao("requisicao", { uri -> pendingRequisicaoUri = uri }, takeRequisicaoPicture) }) {
-                        if (uploadingRequisicao) androidx.compose.material3.CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                        else androidx.compose.material3.Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoRequisicaoUrl != null) "Trocar foto da requisição" else "Foto da requisição (lê automaticamente)", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
-                    }
                 }
             }
             item {
@@ -801,12 +815,9 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
             item {
                 androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                     Text("Itens *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                    androidx.compose.material3.IconButton(onClick = { launchCameraComPermissao("comprovante", { uri -> pendingComprovanteUri = uri }, takeComprovantePicture) }, enabled = !uploadingComprovante) {
-                        if (uploadingComprovante) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                        else Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoComprovanteUrl != null) "Trocar foto do comprovante/orçamento" else "Foto do comprovante/orçamento (lê os itens)", modifier = Modifier.size(22.dp))
-                    }
+                    // v280 (mockup v339 itens 6 e 17) -- sem câmera/⧉ repetidos: só o ＋ (adiciona item a partir do último).
                     androidx.compose.material3.IconButton(onClick = { viewModel.copiarLinha() }) {
-                        Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", modifier = Modifier.size(22.dp))
+                        Icon(Icons.Outlined.Add, contentDescription = "Adicionar item", modifier = Modifier.size(24.dp))
                     }
                 }
             }

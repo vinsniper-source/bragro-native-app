@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.material.icons.outlined.SwapHoriz
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -259,7 +260,7 @@ fun PixConfigDialog(onDismiss: () -> Unit) {
         onDismissRequest = onDismiss,
         title = {
             // v1.6.59 -- ✓ e ✕ na linha do título.
-            TituloJanela("Recebimento por Pix", onFechar = onDismiss) {
+            TituloJanela("Recebimento", onFechar = onDismiss, dica = "Recebimento por Pix. Cada cobrança ganha QR e código Pix. Trocar a chave pede confirmação.") {
                 SalvarIcone(
                     enabled = !carregando,
                     loading = salvando,
@@ -290,9 +291,10 @@ fun PixConfigDialog(onDismiss: () -> Unit) {
                                 value = tipo, onValueChange = {}, readOnly = true, label = { Text("Tipo da chave") },
                                 modifier = Modifier.fillMaxWidth(),
                             )
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                                TextButton(onClick = { tipoAberto = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("Trocar") }
-                            }
+                        }
+                        // v280 (mockup v339 itens 7 e 8) -- "Trocar" vira ⇄ na linha do nome do campo.
+                        androidx.compose.material3.IconButton(onClick = { tipoAberto = true }, modifier = Modifier.align(Alignment.TopEnd).size(32.dp)) {
+                            androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.SwapHoriz, contentDescription = "Trocar tipo da chave", modifier = Modifier.size(20.dp))
                         }
                         com.bragro.mobile.ui.theme.MenuSuspenso(expanded = tipoAberto, onDismissRequest = { tipoAberto = false }) {
                             TIPOS_PIX.forEach { t -> androidx.compose.material3.DropdownMenuItem(text = { Text(t) }, onClick = { tipo = t; tipoAberto = false }) }
@@ -301,11 +303,6 @@ fun PixConfigDialog(onDismiss: () -> Unit) {
                     com.bragro.mobile.ui.theme.LinhaTextField(value = chave, onValueChange = { chave = it }, label = { Text("Chave") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     com.bragro.mobile.ui.theme.LinhaTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome do recebedor") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     com.bragro.mobile.ui.theme.LinhaTextField(value = cidade, onValueChange = { cidade = it }, label = { Text("Cidade") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    Text(
-                        "Cada cobrança ganha QR e código Pix. Trocar a chave pede confirmação.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                     erro?.let { Text(it, color = corAtencao(), style = MaterialTheme.typography.bodySmall) }
                 }
             }

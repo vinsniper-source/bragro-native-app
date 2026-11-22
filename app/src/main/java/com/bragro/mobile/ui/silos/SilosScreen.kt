@@ -304,7 +304,7 @@ fun SilosScreen(onBack: () -> Unit, onAbrirRomaneio: (String) -> Unit = {}, view
                             Text("Silos", color = MaterialTheme.colorScheme.onSurface)
                             val avisos = silos.filter { it.nivelCritico }.map { "Nível crítico: ${com.bragro.mobile.ui.domain.exibirTexto(it.nome, true)} em ${(it.estimadoPct ?: it.nivelAtualPct ?: 0.0).toInt()}%." } +
                                 silos.filter { it.leituraAtrasada }.map { "Leitura pendente: ${com.bragro.mobile.ui.domain.exibirTexto(it.nome, true)}" + (it.diasSemLeitura?.let { d -> " há $d dias." } ?: ".") }
-                            if (avisos.isNotEmpty()) com.bragro.mobile.ui.theme.DicaInfo(avisos.joinToString(" "))
+                            if (avisos.isNotEmpty()) com.bragro.mobile.ui.theme.DicaInfo(avisos.joinToString(" "), nivel = 2) // v280 -- aviso importante em laranja
                         }
                     }
                 

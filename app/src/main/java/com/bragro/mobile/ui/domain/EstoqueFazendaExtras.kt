@@ -238,7 +238,7 @@ fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel(), 
     val message by viewModel.message
 
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (showHeader) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.CompareArrows, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
@@ -247,8 +247,7 @@ fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel(), 
                 }
             }
             if (open) {
-                // v260 (mockup v255, item 2) -- mesmo padrão da plataforma.
-                Text("Transferências, devoluções, ajustes e saldo por fazenda.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                // v280 (mockup v339 item 12) -- texto no ⓘ; Transferir e Ajuste viram ícones na linha do título.
                 if (loading && farms.isEmpty()) {
                     Text("Carregando...", style = MaterialTheme.typography.bodySmall)
                 } else {
@@ -258,20 +257,17 @@ fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel(), 
                     // em telas estreitas o 3º botão (Ajuste) podia ficar
                     // cortado na borda; com scroll, os 3 continuam sempre na
                     // mesma linha, sem nunca sumir.
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        OutlinedButton(onClick = { transferOpen = true }, modifier = Modifier.weight(1f)) {
-                            Icon(Icons.Outlined.CompareArrows, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Text(" Transferir", maxLines = 1)
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Saldo por fazenda", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                        com.bragro.mobile.ui.theme.DicaInfo("Transferências, devoluções, ajustes e saldo por fazenda.")
+                        androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                        androidx.compose.material3.IconButton(onClick = { transferOpen = true }) {
+                            Icon(Icons.Outlined.CompareArrows, contentDescription = "Transferir", modifier = Modifier.size(24.dp))
                         }
-                        OutlinedButton(onClick = { ajusteOpen = true }, modifier = Modifier.weight(1f)) {
-                            Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Text(" Ajuste manual", maxLines = 1)
+                        androidx.compose.material3.IconButton(onClick = { ajusteOpen = true }) {
+                            Icon(Icons.Outlined.Edit, contentDescription = "Ajuste manual", modifier = Modifier.size(24.dp))
                         }
                     }
-                    Text("Saldo por fazenda", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))
                     if (saldos.isEmpty()) {
                         Text("Nenhuma transferência lançada ainda.", style = MaterialTheme.typography.bodySmall)
                     } else {
