@@ -451,7 +451,7 @@ fun BaseDeDadosScreen(
             // bloco de fazendas tem 4 campos por linha (Cultura/TOTAL ha/
             // Cultura 1/ha, depois Cultura 2/ha/lat,lon), cada dp a mais de
             // largura útil ajuda os rótulos a caberem sem elipse.
-            contentPadding = PaddingValues(6.dp, padding.calculateTopPadding() + 4.dp, 6.dp, 24.dp),
+            contentPadding = if (modoFazendas) PaddingValues(20.dp, padding.calculateTopPadding() + 4.dp, 20.dp, 24.dp) else PaddingValues(6.dp, padding.calculateTopPadding() + 4.dp, 6.dp, 24.dp), // v277 -- margem lateral no cadastro de fazendas
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             if (error != null) {
@@ -1269,18 +1269,16 @@ private fun CamposFazenda(form: FormFazenda) {
         listOf("Cultura principal", "Cultura 1", "Cultura 2").forEachIndexed { i, rot ->
             val l = form.linhas[i]
             Text(rot, style = MaterialTheme.typography.labelLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, modifier = Modifier.padding(top = 6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                CulturaDropdownField(value = l.cultura, onValueChange = { l.cultura = it }, label = "Cultura", modifier = Modifier.weight(1f))
-                OutlinedTextField(
-                    value = l.ha, onValueChange = { l.ha = it }, label = { Text("Hectares") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true,
-                    modifier = Modifier.weight(1f), colors = appFieldColors(),
-                )
-            }
+            // v277 (mockup v334) -- um campo por linha; os ícones de localizar,
+            // buscar e câmera sobem para a linha do nome do campo (nada cortado).
+            CulturaDropdownField(value = l.cultura, onValueChange = { l.cultura = it }, label = "Cultura", modifier = Modifier.fillMaxWidth())
             OutlinedTextField(
-                value = l.local, onValueChange = { l.local = it }, label = { Text("Latitude, longitude") },
-                singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors(),
-                trailingIcon = {
+                value = l.ha, onValueChange = { l.ha = it }, label = { Text("Hectares") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true,
+                modifier = Modifier.fillMaxWidth(), colors = appFieldColors(),
+            )
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                Text("Latitude, longitude", style = MaterialTheme.typography.labelMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, modifier = Modifier.weight(1f))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         LocalizacaoBotoes(onLocal = { l.local = it }, onAviso = { android.widget.Toast.makeText(ctx, it, android.widget.Toast.LENGTH_LONG).show() })
                         com.bragro.mobile.ui.domain.OcrFotoButton(label = "Preencher com foto do documento", somenteIcone = true) { url ->
@@ -1298,7 +1296,10 @@ private fun CamposFazenda(form: FormFazenda) {
                             r.mensagem ?: r.error
                         }
                     }
-                },
+            }
+            OutlinedTextField(
+                value = l.local, onValueChange = { l.local = it }, label = null,
+                singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors(),
             )
         }
     }

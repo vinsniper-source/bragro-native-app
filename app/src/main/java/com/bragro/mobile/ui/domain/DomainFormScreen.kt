@@ -885,6 +885,25 @@ fun DomainFormScreen(
                 actions = {
                     // v1.6.59 (site v302/v305) -- Salvar vira ✓ verde na
                     // linha do título (único ícone verde).
+                    // v277 (mockup v334) -- clima, foto e copiar último na linha do título (todos os módulos).
+                    if (recordId == null && (domainId == "clima" || domainId in OCR_FOTO_DOMAINS || domainId !in MULTI_ITEM_FORM)) Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            if (domainId == "clima") {
+                                val climaHojeBusy by viewModel.climaHojeBusy
+                                IconButton(onClick = { if (!climaHojeBusy) viewModel.preencherClimaHoje() }) {
+                                    if (climaHojeBusy) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                    else Icon(Icons.Outlined.WaterDrop, contentDescription = "Preencher com clima de hoje", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                                }
+                            }
+                            if (domainId in OCR_FOTO_DOMAINS) {
+                                OcrFotoButton(somenteIcone = true) { url -> viewModel.aplicarOcrFoto(url) }
+                            }
+                            if (domainId !in MULTI_ITEM_FORM) IconButton(onClick = { if (lastRecord != null) viewModel.copyFromLastRecord() }) {
+                                Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último registro", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
+                            }
+                        }
+                    }
                     // v274 (mockup v329) -- copiar item na linha do título.
                     val multiTopo = if (recordId == null || domainId in OS_EDITA_ITENS) MULTI_ITEM_FORM[domainId] else null
                     if (multiTopo != null) Column {
@@ -955,9 +974,8 @@ fun DomainFormScreen(
                 }
             }
             val temAcoesTopo = recordId == null && (domainId == "clima" || domainId in OCR_FOTO_DOMAINS || domainId !in MULTI_ITEM_FORM)
-            if (temAcoesTopo) {
-                com.bragro.mobile.ui.domain.AvisoComIcones(null /* v273 -- aviso foi para o ⓘ do título */, Modifier.padding(bottom = 10.dp)) { if (temAcoesTopo) acoesTopo() }
-            }
+            // v277 (mockup v334) -- clima/foto/copiar subiram para a linha do título.
+            if (false && temAcoesTopo) acoesTopo()
 
             // Avisos da nuvem/copiar e de campos calculados REMOVIDOS daqui --
             // pedido do usuário ("retire os avisos da nuvem copiar e dos
