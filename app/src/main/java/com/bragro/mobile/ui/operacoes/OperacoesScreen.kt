@@ -169,6 +169,16 @@ private val JANELAS = listOf(0, 30, 60, 90, 180)
 private val PT_BR = Locale("pt", "BR")
 private fun fmtMoney(v: Double): String = com.bragro.mobile.ui.i18n.MoedaApp.formatar(v)
 private fun fmtNum(v: Double): String = NumberFormat.getNumberInstance(PT_BR).apply { maximumFractionDigits = 2 }.format(v)
+/** v276 -- data completa (dd/mm/aaaa). */
+private fun fmtDataCompleta(iso: String): String =
+    try {
+        val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+        val d = parser.parse(iso)
+        if (d != null) SimpleDateFormat("dd/MM/yyyy", PT_BR).format(d) else com.bragro.mobile.ui.domain.diaMesBr(iso)
+    } catch (e: Exception) {
+        com.bragro.mobile.ui.domain.diaMesBr(iso)
+    }
+
 private fun fmtDataCurta(iso: String): String =
     try {
         val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
@@ -449,69 +459,47 @@ private fun OperacaoCard(
                     val equipe = lista.map { Triple(it.responsavel ?: "Não lançado", it.funcao ?: "—", it.frota ?: "Não lançada") }.distinctBy { it.first + it.third }
                     val ordem = (atividades.indexOf(a) + 1).toString().padStart(2, '0')
                     com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth()) {
+                        // v276 (mockup v333) -- cartão minimalista: 3 linhas, sem
+                        // caixinhas internas; sem equipe lançada, o aviso vai no ⓘ.
+                        val semEquipe = equipe.all { it.first == "Não lançado" }
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
                                 .clickable { cardsFechados[a] = aberto }
-                                .padding(10.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalArrangement = Arrangement.spacedBy(3.dp),
                         ) {
                             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    "$ordem · ${grupoDe(a)}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.weight(1f),
-                                )
+                                Text("$ordem · ${tituloAtividade(a)}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                if (semEquipe) com.bragro.mobile.ui.theme.DicaInfo("Equipe ainda não lançada nas O.S.")
+                                Spacer(Modifier.weight(1f))
+                                val nFin = lista.count { it.situacao == "FINALIZADO" }
+                                val (stTxt, stCor) = when {
+                                    nFin == lista.size -> "finalizado" to MaterialTheme.colorScheme.primary
+                                    lista.all { it.situacao == "PROGRAMADO" } -> "programado" to MaterialTheme.colorScheme.onSurfaceVariant
+                                    else -> "${lista.size - nFin} pendente${if (lista.size - nFin > 1) "s" else ""}" to com.bragro.mobile.ui.domain.corAtencao()
+                                }
+                                Text(stTxt, style = MaterialTheme.typography.labelMedium, color = stCor)
                             }
-                            Text(tituloAtividade(a), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                             Text(
-                                (if (colheita) "${lista.size} colheita(s)" else "${lista.size} registro(s) · $nOS O.S.") +
-                                    " · ${fmtDataCurta(lista.first().data)} a ${fmtDataCurta(lista.last().dataFim ?: lista.last().data)}",
+                                (if (colheita) "${lista.size} colheita(s)" else "$nOS O.S.") +
+                                    " · ${fmtDataCompleta(lista.first().data)} a ${fmtDataCompleta(lista.last().dataFim ?: lista.last().data)}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                            // Responsável, função e frota em destaque
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
-                                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
-                                    .padding(horizontal = 8.dp, vertical = 6.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp),
-                            ) {
-                                // v40 -- Responsável, Função e Frota sempre à vista,
-                                // sem o L: o cartão da equipe não recolhe mais.
-                                equipe.forEach { (nome, func, frota) ->
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Icon(Icons.Outlined.Person, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        // v1.6.4 (mockup v105, item 6) -- responsável · função · frota numa linha.
-                                        Text(
-                                            androidx.compose.ui.text.buildAnnotatedString {
-                                                withStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold)) { append(" $nome") }
-                                                listOf(func, frota).filter { it.isNotBlank() && it != "—" && !it.startsWith("Não lan") }.forEach { append(" · $it") }
-                                            },
-                                            style = MaterialTheme.typography.labelLarge,
-                                            modifier = Modifier.weight(1f),
-                                        )
-                                    }
-                                }
-                            }
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                KpiBox("Área", "${fmtNum0(area)} ha", modifier = Modifier.weight(1f))
-                                KpiBox(if (colheita) "Produção" else "Custo", if (colheita) "${fmtNum0(producao)} $un" else fmtMoney(custo), modifier = Modifier.weight(1f))
-                            }
-                            KpiBox(
-                                if (colheita) "Produtividade" else "Custo/ha (área utilizada)",
-                                if (colheita) "${fmtNum1(if (area > 0) producao / area else 0.0)} $un/ha" else fmtMoney(if (area > 0) custo / area else 0.0),
-                                if (!colheita && orcado > 0) "Desvio ${if (abs(desvio) <= ACIMA_LIMITE) "dentro do orçado" else fmtPct(desvio)}" else null,
-                                null,
-                                Modifier.fillMaxWidth(),
+                            if (!semEquipe) Text(
+                                equipe.filter { it.first != "Não lançado" }.joinToString(" · ") { it.first },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                            )
+                            Text(
+                                listOf(
+                                    "${fmtNum0(area)} ha",
+                                    if (colheita) "${fmtNum0(producao)} $un" else fmtMoney(custo),
+                                    if (colheita) "${fmtNum1(if (area > 0) producao / area else 0.0)} $un/ha" else "${fmtMoney(if (area > 0) custo / area else 0.0)}/ha",
+                                ).joinToString(" · ") + if (!colheita && orcado > 0 && abs(desvio) > ACIMA_LIMITE) " · desvio ${fmtPct(desvio)}" else "",
+                                style = MaterialTheme.typography.bodyMedium,
                             )
                         }
                         if (aberto) {
@@ -524,7 +512,7 @@ private fun OperacaoCard(
                                     androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                     Row(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Text(
-                                            "O.S. ${ev.os ?: "—"} · ${fmtDataCurta(ev.data)} · ${ev.hectare?.let { "${fmtNum0(it)} ha" } ?: "—"}",
+                                            "O.S. ${ev.os ?: "—"} · ${fmtDataCompleta(ev.data)} · ${ev.hectare?.let { "${fmtNum0(it)} ha" } ?: "—"}",
                                             style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f),
                                         )
                                         Text(fmtMoney(daOs.sumOf { it.realizado }), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
@@ -546,7 +534,7 @@ private fun OperacaoCard(
                                             )
                                             if (ev.tipo == "colheita") {
                                             Text(
-                                                "${fmtDataCurta(ev.data)}${ev.dataFim?.let { if (it.take(10) != ev.data.take(10)) " a ${fmtDataCurta(it)}" else "" } ?: ""} · ${ev.hectare?.let { "${fmtNum0(it)} ha" } ?: "—"}",
+                                                "${fmtDataCompleta(ev.data)}${ev.dataFim?.let { if (it.take(10) != ev.data.take(10)) " a ${fmtDataCompleta(it)}" else "" } ?: ""} · ${ev.hectare?.let { "${fmtNum0(it)} ha" } ?: "—"}",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             )
@@ -822,7 +810,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                     // Atualizar saiu daqui (subiu pro TopAppBar, ao lado da
                     // Nuvem) -- pedido do usuário: a barra de ciclo agora
                     // expande sozinha até o limite da tela.
-                    Text("Progresso", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    // v276 (mockup v333) -- sem o rótulo "Progresso" (minimalista).
                     // v275 (mockup v330) -- seletor sem fundo: traço verde.
                     com.bragro.mobile.ui.domain.TracoOpcoes(
                         opcoes = JANELAS.map { d -> d.toString() to (if (d == 0) "safra" else "${d}d") },

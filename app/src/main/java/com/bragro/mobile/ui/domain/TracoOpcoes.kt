@@ -33,7 +33,7 @@ fun TracoOpcoes(opcoes: List<Pair<String, String>>, selecionado: String, onSelec
             Column(modifier = Modifier.width(IntrinsicSize.Max).clickable { onSelect(valor) }.padding(top = 4.dp)) {
                 Text(
                     rotulo,
-                    color = cs.primary,
+                    color = cs.onSurface, // v276 (mockup v333) -- fonte branca/preta; só o traço é verde
                     fontWeight = if (ativo) FontWeight.SemiBold else FontWeight.Normal,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(bottom = 4.dp),

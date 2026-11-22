@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -414,21 +415,22 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                             )
                         }
                         val atalhos = listOf(
-                            "resumo" to "Resumo", "fazendas" to "Por fazenda", "caixa" to "Livro Caixa",
+                            "resumo" to "Resumo", "fazendas" to "Por fazenda", "caixa" to "Livro caixa",
                             "contratos" to "Contratos", "patrimonio" to "Patrimônio",
                         ).filter { indiceSecao.containsKey(it.first) }
                         // v275 (mockup v330) -- atalhos sem fundo verde: o escolhido fica
                         // com a fonte verde e o traço; imprimir/PDF foram para o título.
-                        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // v276 (mockup v333) -- todos numa linha, cada um com seu traço; fonte branca/preta.
+                        Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             atalhos.forEach { (id, rotulo) ->
                                 val ligado = aberta(id)
-                                Column(Modifier.clickable {
+                                Column(Modifier.width(androidx.compose.foundation.layout.IntrinsicSize.Max).clickable {
                                     val abrir = !aberta(id)
                                     abertas[id] = abrir
                                     if (abrir) indiceSecao[id]?.let { i -> scope.launch { listState.animateScrollToItem(i) } }
                                 }.padding(vertical = 4.dp)) {
-                                    Text(rotulo, fontSize = 12.5.sp, fontWeight = if (ligado) FontWeight.SemiBold else FontWeight.Normal, color = if (ligado) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-                                    Box(Modifier.padding(top = 2.dp).height(2.dp).fillMaxWidth().background(if (ligado) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent))
+                                    Text(if (rotulo == "Por fazenda") "Fazendas" else rotulo, fontSize = 12.sp, maxLines = 1, softWrap = false, fontWeight = if (ligado) FontWeight.SemiBold else FontWeight.Normal, color = MaterialTheme.colorScheme.onSurface)
+                                    Box(Modifier.padding(top = 2.dp).height(if (ligado) 2.dp else 1.dp).fillMaxWidth().background(if (ligado) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant))
                                 }
                             }
                         }
@@ -570,7 +572,7 @@ private fun FazendaDreCard(f: DossieDreFazendaData) {
             val lucro = f.margem >= 0
             val corSelo = if (lucro) com.bragro.mobile.ui.domain.corSucesso() else com.bragro.mobile.ui.domain.corAtencao()
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(f.farmName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                Text(com.bragro.mobile.ui.domain.exibirTexto(f.farmName, true), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                 // Selo LUCRO/PREJUÍZO (padrão da plataforma).
                 Text(
                     if (lucro) "lucro" else "prejuízo",

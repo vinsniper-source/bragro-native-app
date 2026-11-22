@@ -854,13 +854,13 @@ fun FinanceiroScreen(
             onDismissRequest = { expandedBlocks["charts"] = false },
             modifier = Modifier.fillMaxWidth(0.96f),
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-            title = { Text("Gráficos · Financeiro") },
+            title = { com.bragro.mobile.ui.domain.TituloJanela("Gráficos · Financeiro", onFechar = { expandedBlocks["charts"] = false }) }, // v276 (mockup v333) -- ✕ no título
             text = {
                 Column(modifier = Modifier.heightIn(max = 560.dp).verticalScroll(rememberScrollState())) {
                     ModuleChartsCard("financeiro", showHeader = false)
                 }
             },
-            confirmButton = { TextButton(onClick = { expandedBlocks["charts"] = false }) { Text("Fechar") } },
+            confirmButton = {},
         )
     }
 

@@ -453,7 +453,7 @@ fun PedidoMultiItemScreen(onBack: () -> Unit, viewModel: PedidoMultiItemViewMode
                 // inteira. Mesmo destino (preencherComUltimo), só muda onde
                 // o usuário aciona.
                 actions = {
-                    Column { Spacer(modifier = Modifier.height(16.dp)); com.bragro.mobile.ui.domain.NovoModuloIcone("pedidos") } // v274 (mockup v329)
+                    /* v276 (mockup v333) -- sem o ícone com "+" no formulário */ // v274 (mockup v329)
                     com.bragro.mobile.ui.domain.SalvarTopo(onClick = { viewModel.submit() }, enabled = successMessage == null && viewModel.podeSalvar(), loading = pending, descricao = "Lançar pedido")
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))

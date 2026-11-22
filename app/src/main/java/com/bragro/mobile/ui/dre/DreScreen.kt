@@ -785,7 +785,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                 onDismissRequest = { graficosOpen = false },
                 modifier = Modifier.fillMaxWidth(0.96f),
                 properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-                title = { Text("Gráficos · DRE") },
+                title = { com.bragro.mobile.ui.domain.TituloJanela("Gráficos · DRE", onFechar = { graficosOpen = false }) }, // v276 (mockup v333) -- ✕ no título
                 text = {
                     Column(
                         modifier = Modifier.heightIn(max = 560.dp).verticalScroll(androidx.compose.foundation.rememberScrollState()),
@@ -852,7 +852,7 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
                         }
                     }
                 },
-                confirmButton = { androidx.compose.material3.TextButton(onClick = { graficosOpen = false }) { Text("Fechar") } },
+                confirmButton = {},
             )
         }
     }

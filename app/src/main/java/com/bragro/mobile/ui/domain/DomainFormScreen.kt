@@ -893,10 +893,7 @@ fun DomainFormScreen(
                             Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
                         }
                     }
-                    if (recordId == null) Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.NovoModuloIcone(domainId)
-                    }
+                    // v276 (mockup v333) -- o ícone com "+" fica só na página inicial do módulo.
                     if (config != null) Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         val nExtrasTopo = MULTI_ITEM_FORM[domainId]?.let { m -> viewModel.itensExtras.count { !it[m.chaveItem].isNullOrBlank() } } ?: 0

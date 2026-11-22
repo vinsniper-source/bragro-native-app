@@ -662,13 +662,7 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                             else androidx.compose.material3.Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
                         }
                     }
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        androidx.compose.foundation.layout.Box(Modifier.padding(12.dp)) {
-                            com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.RequestQuote, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, size = 22.dp)
-                            Text("+", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.align(androidx.compose.ui.Alignment.TopEnd).offset(x = 8.dp, y = (-9).dp))
-                        }
-                    }
+                    // v276 (mockup v333) -- sem o ícone com "+" no formulário.
                     com.bragro.mobile.ui.domain.SalvarTopo(onClick = { viewModel.submit() }, enabled = successMessage == null && viewModel.podeSalvar(), loading = pending, descricao = "Lançar orçamento")
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))

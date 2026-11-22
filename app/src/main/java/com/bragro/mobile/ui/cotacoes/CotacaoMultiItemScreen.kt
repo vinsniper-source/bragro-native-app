@@ -662,7 +662,7 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                 
                     }
                 } },
-                actions = { Column { Spacer(modifier = Modifier.height(16.dp)); com.bragro.mobile.ui.domain.NovoModuloIcone("cotacoesfornecedores") } // v274 (mockup v329)
+                actions = { /* v276 (mockup v333) -- sem o ícone com "+" no formulário */ // v274 (mockup v329)
                     com.bragro.mobile.ui.domain.SalvarTopo(onClick = { viewModel.submit() }, enabled = successMessage == null && viewModel.podeSalvar(), loading = pending, descricao = "Lançar propostas")
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))

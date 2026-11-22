@@ -1033,13 +1033,13 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                 onDismissRequest = { graficosOpen = false },
                 modifier = Modifier.fillMaxWidth(0.96f),
                 properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-                title = { Text("Gráficos · Análises") },
+                title = { com.bragro.mobile.ui.domain.TituloJanela("Gráficos · Análises", onFechar = { graficosOpen = false }) }, // v276 (mockup v333) -- ✕ no título
                 text = {
                     Column(modifier = Modifier.heightIn(max = 600.dp).verticalScroll(androidx.compose.foundation.rememberScrollState())) {
                         AnalisesGraficosBlock(data, naJanela = true)
                     }
                 },
-                confirmButton = { androidx.compose.material3.TextButton(onClick = { graficosOpen = false }) { Text("Fechar") } },
+                confirmButton = {},
             )
         }
     }
