@@ -562,17 +562,15 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
     if (controleInternoAberto && data?.arvoreControleInterno?.isNotEmpty() == true) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { controleInternoAberto = false },
-            modifier = Modifier.fillMaxWidth(0.96f),
+            modifier = Modifier.fillMaxWidth(0.88f),
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-            title = { Text("Controle interno (EPI, uniforme, ferramenta)") },
+            title = { com.bragro.mobile.ui.domain.TituloJanela("Controle interno", onFechar = { controleInternoAberto = false }, dica = "EPI, uniforme e ferramenta. Consumo por categoria, sem fazenda/talhão.") },
             text = {
                 Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
-                    Text("Consumo por categoria, sem fazenda/talhão.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(6.dp))
                     data!!.arvoreControleInterno.forEach { ramo -> RamoNode(ramo, 0) }
                 }
             },
-            confirmButton = { androidx.compose.material3.TextButton(onClick = { controleInternoAberto = false }) { Text("Fechar") } },
+            confirmButton = {},
         )
     }
 }

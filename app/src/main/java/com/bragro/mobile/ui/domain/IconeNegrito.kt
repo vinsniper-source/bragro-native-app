@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.ui.graphics.vector.path
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
@@ -149,4 +150,57 @@ fun NovoModuloIcone(domainId: String, onClick: (() -> Unit)? = null) {
     }
     if (onClick != null) androidx.compose.material3.IconButton(onClick = onClick) { conteudo() }
     else androidx.compose.foundation.layout.Box(Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) { conteudo() }
+}
+
+
+/** v278 (mockups v335 itens 9 e 15) -- caixinha de marcar sem quadrado e sem
+ * fundo: só o ✓, cinza desmarcado e verde marcado. `colors` é ignorado (fica
+ * só pra trocar Checkbox(...) por VistoCheck(...) sem mexer nos argumentos). */
+@Composable
+fun VistoCheck(
+    checked: Boolean,
+    onCheckedChange: ((Boolean) -> Unit)?,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    @Suppress("UNUSED_PARAMETER") colors: Any? = null,
+) {
+    val cor = if (checked) androidx.compose.material3.MaterialTheme.colorScheme.primary
+        else androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
+    val icone: @Composable () -> Unit = {
+        Icon(androidx.compose.material.icons.Icons.Outlined.Check, contentDescription = if (checked) "Marcado" else "Desmarcado", tint = cor, modifier = Modifier.size(22.dp))
+    }
+    if (onCheckedChange != null) {
+        androidx.compose.material3.IconButton(onClick = { onCheckedChange(!checked) }, enabled = enabled, modifier = modifier) { icone() }
+    } else {
+        androidx.compose.foundation.layout.Box(modifier = modifier.size(40.dp), contentAlignment = androidx.compose.ui.Alignment.Center) { icone() }
+    }
+}
+
+
+/** v278 (mockup v336) -- ícone "novo lançamento": V vazado com seta na ponta.
+ * Fica antes do título dos formulários de novo lançamento (não é botão). */
+private fun androidx.compose.ui.graphics.vector.ImageVector.Builder.traco(corpo: androidx.compose.ui.graphics.vector.PathBuilder.() -> Unit) {
+    path(
+        fill = null,
+        stroke = androidx.compose.ui.graphics.SolidColor(androidx.compose.ui.graphics.Color.Black),
+        strokeLineWidth = 1.6f,
+        strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round,
+        strokeLineJoin = androidx.compose.ui.graphics.StrokeJoin.Round,
+        pathBuilder = corpo,
+    )
+}
+
+val NovoLancamentoVetor: androidx.compose.ui.graphics.vector.ImageVector by lazy {
+    androidx.compose.ui.graphics.vector.ImageVector.Builder(
+        name = "NovoLancamento", defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f,
+    ).apply {
+        traco { moveTo(2.5f, 6.5f); lineTo(6.5f, 6.5f); lineTo(11f, 16.5f); lineTo(16.2f, 4.9f) }
+        traco { moveTo(2.5f, 6.5f); lineTo(9f, 20.5f); lineTo(13f, 20.5f); lineTo(18.3f, 8.3f) }
+        traco { moveTo(14.6f, 4.2f); lineTo(18.9f, 3f); lineTo(19.9f, 7.4f) }
+    }.build()
+}
+
+@Composable
+fun NovoLancamentoIcone(modifier: Modifier = Modifier) {
+    Icon(NovoLancamentoVetor, contentDescription = "Novo lançamento", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, modifier = modifier.padding(end = 8.dp).size(22.dp))
 }

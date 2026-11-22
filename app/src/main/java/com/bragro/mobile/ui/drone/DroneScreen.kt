@@ -376,7 +376,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
             }
             when {
                 loading -> item { CircularProgressIndicator(modifier = Modifier.padding(top = 24.dp)) }
-                records.isEmpty() -> item { Text("Nada ainda. Toque no ícone com + no topo.", modifier = Modifier.padding(vertical = 24.dp)) }
+                records.isEmpty() -> {} // v278 (mockup v337) -- sem texto de lista vazia
                 lancAberto -> items(filtrados, key = { it.id }) { record -> DroneRecordCard(record) }
             }
         }
@@ -385,10 +385,11 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
     if (showPrestadora) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showPrestadora = false },
-            modifier = Modifier.fillMaxWidth(0.96f),
+            modifier = Modifier.fillMaxWidth(0.88f),
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-            title = { Text("Prestadora de serviço") },
+            // v278 (mockup v337) -- regra das janelas (ícones no título, ⓘ).
             text = {
+                androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.domain.LocalJanelaIntegracao provides com.bragro.mobile.ui.domain.JanelaIntegracao("Prestadora") { showPrestadora = false }) {
                 Column(modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
                     ProviderIntegrationCard(
                         providers = listOf("DJI Cloud", "DJI Terra", "Outro", "Pix4Dfields", "XAG One"),
@@ -401,8 +402,9 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                         onSync = { viewModel.syncIntegration() },
                     )
                 }
+                }
             },
-            confirmButton = { androidx.compose.material3.TextButton(onClick = { showPrestadora = false }) { Text("Fechar") } },
+            confirmButton = {},
         )
     }
 

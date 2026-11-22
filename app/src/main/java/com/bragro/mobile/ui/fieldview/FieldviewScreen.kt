@@ -632,10 +632,23 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
     if (prestadoraAberta != 0) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { prestadoraAberta = 0 },
-            modifier = Modifier.fillMaxWidth(0.96f),
+            modifier = Modifier.fillMaxWidth(0.88f),
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-            title = { Text(if (prestadoraAberta == 1) "Prestadora (talhões/KML)" else "NDVI dos talhões") },
+            // v278 (mockups v335/v337) -- regra das janelas: ícones na linha do
+            // título (⚡ conta de satélite, ✕), textos no ⓘ.
+            title = { if (prestadoraAberta != 1) {
+                com.bragro.mobile.ui.domain.TituloJanela(
+                    "NDVI",
+                    onFechar = { prestadoraAberta = 0 },
+                    dica = "Mapa: satélite Esri. NDVI: Sentinel-2 (10 m, a cada ~5 dias)." + (if (data?.boundaries.isNullOrEmpty()) "\nNenhum talhão cadastrado ainda." else ""),
+                ) {
+                    androidx.compose.material3.IconButton(onClick = { contaSateliteAberta = !contaSateliteAberta }) {
+                        Icon(com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, contentDescription = "Conta própria de satélite", tint = if (contaSateliteAberta) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                    }
+                }
+            } },
             text = {
+                androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.domain.LocalJanelaIntegracao provides com.bragro.mobile.ui.domain.JanelaIntegracao(if (prestadoraAberta == 1) "Prestadora" else null, if (prestadoraAberta == 1) ({ prestadoraAberta = 0 }) else null)) {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     if (prestadoraAberta == 1) ProviderIntegrationCard(
                         providers = listOf("Climate FieldView", "John Deere Operations Center", "Outro", "Trimble Ag Software"),
@@ -668,17 +681,10 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                                 }
                             },
                         )
-                        androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth().clickable { contaSateliteAberta = !contaSateliteAberta }.padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text("Já tem conta no Sentinel Hub ou Planet? (opcional)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-                            Text(if (contaSateliteAberta) "Fechar ‹" else "Conectar ›", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                        if (contaSateliteAberta) androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                         if (contaSateliteAberta) ProviderIntegrationCard(
                         providers = listOf("Sentinel Hub", "Planet", "EOS Data Analytics", "Outro"),
-                        titulo = "Conta própria de satélite (opcional)",
+                        titulo = "Conta própria de satélite",
                         descricao = "NDVI já incluso. Assinatura própria: Sentinel Hub (CLIENT_ID|CLIENT_SECRET) ou Planet (chave).",
                         integration = ndviIntegration,
                         busy = ndviIntegrationBusy,
@@ -689,8 +695,9 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
                     )
                     }
                 }
+                }
             },
-            confirmButton = { androidx.compose.material3.TextButton(onClick = { prestadoraAberta = 0 }) { Text("Fechar") } },
+            confirmButton = {},
         )
     }
 
@@ -1609,12 +1616,7 @@ private fun NdviLista(
     fun n2(v: Double) = String.format(br, "%.2f", v)
     fun dataBr(d: String) = if (d.length >= 10) "${d.substring(8, 10)}/${d.substring(5, 7)}" else d
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(
-            "Mapa: satélite Esri. NDVI: Sentinel-2 (10 m, a cada ~5 dias).",
-            style = MaterialTheme.typography.labelSmall,
-            color = muted,
-        )
-        if (boundaries.isEmpty()) Text("Nenhum talhão cadastrado ainda.", style = MaterialTheme.typography.bodySmall, color = muted)
+        // v278 (mockup v335) -- avisos foram para o ⓘ do título da janela.
         boundaries.forEach { b ->
             androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
             val cultura = culturaDoTalhao(b.talhao)

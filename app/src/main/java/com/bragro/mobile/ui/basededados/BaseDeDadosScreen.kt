@@ -451,7 +451,7 @@ fun BaseDeDadosScreen(
             // bloco de fazendas tem 4 campos por linha (Cultura/TOTAL ha/
             // Cultura 1/ha, depois Cultura 2/ha/lat,lon), cada dp a mais de
             // largura útil ajuda os rótulos a caberem sem elipse.
-            contentPadding = if (modoFazendas) PaddingValues(20.dp, padding.calculateTopPadding() + 4.dp, 20.dp, 24.dp) else PaddingValues(6.dp, padding.calculateTopPadding() + 4.dp, 6.dp, 24.dp), // v277 -- margem lateral no cadastro de fazendas
+            contentPadding = if (modoFazendas) PaddingValues(36.dp, padding.calculateTopPadding() + 4.dp, 36.dp, 24.dp) else PaddingValues(6.dp, padding.calculateTopPadding() + 4.dp, 6.dp, 24.dp), // v277 -- margem lateral no cadastro de fazendas
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             if (error != null) {

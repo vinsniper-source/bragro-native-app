@@ -1377,7 +1377,8 @@ fun DomainListScreen(
             // (o ícone já cumpre esse papel agora).
             if (showFiltros && filtrosExpanded) {
                 item(key = "filtros") {
-                    Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                    // v278 (mockup v335 item 13) -- bloco na largura dos formulários.
+                    Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 8.dp)) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             // 3 colunas por linha -- pedido do usuário
                             // ("os filtros coloquem em tres colunas dentro
@@ -2025,13 +2026,16 @@ fun DomainListScreen(
             // deixar o Compose calcular a "mínima"), o Row interno passa a
             // ser medido com a largura real disponível e o texto volta a
             // quebrar normalmente, como parágrafo.
-            modifier = Modifier.width(340.dp),
+            modifier = Modifier.fillMaxWidth(0.88f),
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-            title = { Text(if (domainId == "frota") "Bomba de combustível" else if (domainId == "pecuaria") "Balança/RFID Bluetooth" else if (domainId == "estoque") "Silos" else "Balança") },
-            text = { ModuleProviderIntegrationCard(domainId) },
-            confirmButton = {
-                TextButton(onClick = { showIntegracaoDialog = false }) { Text("Fechar") }
+            // v278 (mockup v337) -- título com ⓘ e ícones (⟳ ✓ ✕) à direita.
+            text = {
+                val tituloInt = if (domainId == "frota") "Bomba" else if (domainId == "pecuaria") "Balança" else if (domainId == "estoque") "Silos" else "Balança"
+                androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.domain.LocalJanelaIntegracao provides com.bragro.mobile.ui.domain.JanelaIntegracao(tituloInt) { showIntegracaoDialog = false }) {
+                    Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) { ModuleProviderIntegrationCard(domainId) }
+                }
             },
+            confirmButton = {},
         )
     }
 }
@@ -2651,11 +2655,15 @@ private fun GenericPeriodoDropdown(
                 )
             }
             HorizontalDivider()
-            Text(
-                "Ou por intervalo de datas ($dateLabel)",
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-            )
+            // v278 (mockup v335) -- "Aplicar intervalo" vira ✓ verde na linha do intervalo.
+            Row(modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "Ou por intervalo de datas ($dateLabel)",
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.weight(1f),
+                )
+                com.bragro.mobile.ui.domain.SalvarIcone(onClick = { onInterval(fromText, toText); expanded = false }, descricao = "Aplicar intervalo")
+            }
             Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
                 OutlinedTextField(
                     value = fromText,
@@ -2675,10 +2683,6 @@ private fun GenericPeriodoDropdown(
                     modifier = Modifier.fillMaxWidth(),
                     colors = appFieldColors(),
                 )
-                Button(
-                    onClick = { onInterval(fromText, toText); expanded = false },
-                    modifier = Modifier.padding(top = 6.dp),
-                ) { Text("Aplicar intervalo") }
             }
         }
     }

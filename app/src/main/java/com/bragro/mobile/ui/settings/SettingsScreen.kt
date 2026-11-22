@@ -717,7 +717,7 @@ private fun NotificacoesCard(
 @Composable
 private fun CheckboxRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
-        Checkbox(checked = checked, onCheckedChange = onCheckedChange, colors = androidx.compose.material3.CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary))
+        com.bragro.mobile.ui.domain.VistoCheck(checked = checked, onCheckedChange = onCheckedChange, colors = androidx.compose.material3.CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary))
         Text(label, style = MaterialTheme.typography.bodyMedium)
     }
 }

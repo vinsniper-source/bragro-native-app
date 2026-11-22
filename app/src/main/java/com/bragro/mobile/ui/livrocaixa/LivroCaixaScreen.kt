@@ -507,11 +507,7 @@ private fun ProdutorRuralCard(
                 })
             }
             if (aberto) {
-            Text(
-                "Dados do LCDPR. Confira com o contador.",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            // v278 (mockup v335) -- avisos do LCDPR e da validade no ⓘ.
             ItemFieldBlock(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(value = cnpj, onValueChange = { cnpj = it }, label = { Text("CNPJ") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
             }
@@ -521,7 +517,10 @@ private fun ProdutorRuralCard(
             ItemFieldBlock(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(value = ie, onValueChange = { ie = it }, label = { Text("Inscrição Estadual") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
             }
-            Text("Certificado digital (e-CAC / LCDPR)", style = MaterialTheme.typography.labelLarge)
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Text("Certificado digital", style = MaterialTheme.typography.labelLarge)
+                com.bragro.mobile.ui.theme.DicaInfo("Dados do LCDPR (e-CAC). Confira com o contador. A validade só controla o vencimento.")
+            }
             ItemFieldBlock(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     CertificadoTipoDropdown(tipo = certTipo, onSelect = { certTipo = it })
@@ -529,11 +528,6 @@ private fun ProdutorRuralCard(
                     OutlinedTextField(value = certValidade, onValueChange = { certValidade = it }, label = { Text("Validade (DD/MM/AAAA)") }, placeholder = { Text("DD/MM/AAAA") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
                 }
             }
-            Text(
-                "Só controla o vencimento.",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
             ItemFieldBlock(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(value = contaIrpf, onValueChange = { contaIrpf = it }, label = { Text("Conta padrão para IRPF") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
             }
@@ -667,7 +661,7 @@ fun LivroCaixaScreen(onBack: () -> Unit, viewModel: LivroCaixaViewModel = viewMo
         val temRegistros = data != null && data.lancamentos.isNotEmpty()
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(12.dp),
+            contentPadding = PaddingValues(horizontal = 28.dp, vertical = 12.dp), // v278 (mockup v335) -- largura dos formulários
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // Painel de monitoramento (padrão da plataforma).

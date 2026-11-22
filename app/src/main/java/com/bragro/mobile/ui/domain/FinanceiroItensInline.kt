@@ -358,26 +358,30 @@ fun FinanceiroItensInlineSection(
         // reduzido e a frase corrida "Usa Doc/NF X, Data Y..." virou uma
         // tira curta "Doc/NF: X · Data: Y · Local: Z · Entidade: W", mais
         // rápida de ler igual num resumo de pedido.
-        Text("Lançar nota com itens", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-        // Aviso resumido de novo -- pedido do usuário ("resuma os avisos e
-        // divida os campos"): a versão anterior já tinha sido encurtada uma
-        // vez (ver comentário acima), mas ainda cabia num só sentido direto.
-        Text(
-            "Itens entram no Estoque; o total, no Financeiro.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            "Doc/NF: ${docNf.ifBlank { "—" }} · Data: ${data.ifBlank { "—" }} · Local: ${local.ifBlank { "—" }} · Entidade: ${entidade.ifBlank { "—" }}",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        if (errorMessage != null) {
-            Text(errorMessage ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        // v278 (mockup v335 item 16) -- "Adicionar item" vira ＋ e "Lançar
+        // itens" vira ✓ verde na linha do título do bloco; textos no ⓘ.
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Text("Itens da nota *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            com.bragro.mobile.ui.theme.DicaInfo(
+                "Itens entram no Estoque; o total, no Financeiro.\n" +
+                    "Doc/NF: ${docNf.ifBlank { "—" }} · Data: ${data.ifBlank { "—" }} · Local: ${local.ifBlank { "—" }} · Entidade: ${entidade.ifBlank { "—" }}\n" +
+                    "Total da nota = campo Bruto (R$).",
+            )
+            androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+            IconButton(onClick = { viewModel.addLinha() }) {
+                Icon(Icons.Outlined.Add, contentDescription = "Adicionar item")
+            }
+            val n = viewModel.linhasValidas().size
+            com.bragro.mobile.ui.domain.SalvarIcone(
+                onClick = { viewModel.submit(docNf, data, local, entidade, safra, cultura, setor, banco, formaPgto, periodo, bruto, onDone) },
+                enabled = podeSalvar,
+                loading = pending,
+                descricao = if (n > 0) "Lançar $n item(ns)" else "Lançar itens",
+            )
         }
-
-        Text("Itens da nota *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        if (errorMessage != null) {
+            Text(errorMessage ?: "", color = com.bragro.mobile.ui.domain.corAtencao(), style = MaterialTheme.typography.bodySmall)
+        }
         viewModel.linhas.forEachIndexed { i, linha ->
             ItemNotaLinhaRow(
                 linha = linha,
@@ -388,31 +392,7 @@ fun FinanceiroItensInlineSection(
                 onRemove = { viewModel.removeLinha(i) },
             )
         }
-        OutlinedButton(onClick = { viewModel.addLinha() }, modifier = Modifier.fillMaxWidth()) {
-            Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.padding(end = 6.dp).size(16.dp))
-            Text("Adicionar item")
-        }
-
-        Text(
-            "Total da nota: ${formatMoneyBrlLocal(brutoNum)} (usa o campo Bruto (R$) preenchido mais abaixo)",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-        )
-
-        Button(
-            onClick = {
-                viewModel.submit(docNf, data, local, entidade, safra, cultura, setor, banco, formaPgto, periodo, bruto, onDone)
-            },
-            enabled = !pending && podeSalvar,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            if (pending) {
-                CircularProgressIndicator(modifier = Modifier.padding(4.dp).size(18.dp))
-            } else {
-                val n = viewModel.linhasValidas().size
-                Text(if (n > 0) "Lançar $n item(ns)" else "Lançar itens")
-            }
-        }
+        Text("Total da nota: ${formatMoneyBrlLocal(brutoNum)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     }
 }

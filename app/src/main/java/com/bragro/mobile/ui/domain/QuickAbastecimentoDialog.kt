@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.foundation.verticalScroll
 import android.app.Application
 import android.content.Context
 import android.graphics.BitmapFactory
@@ -379,50 +381,51 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Abastecimento rápido") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                // v221 (mockup aprovado) -- texto até a margem; QR e Copiar na
-                // linha do nome "Máquina/Frota", à direita; a linha do campo fica
-                // na largura toda, como as outras.
-                Text("Data, unidade e operação vêm prontas.", modifier = Modifier.fillMaxWidth())
-                if (copyMessage != null) Text(copyMessage!!, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
-                androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxWidth()) {
-                    LookupDropdown("Máquina/Frota *", frotas, viewModel.frota) { viewModel.frota = it }
-                    Row(
-                        modifier = Modifier.align(androidx.compose.ui.Alignment.TopEnd).offset(y = (-8).dp),
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                    ) {
-                        androidx.compose.material3.IconButton(onClick = { launchQrExterno() }, enabled = !lendoQr, modifier = Modifier.size(32.dp)) {
-                            if (lendoQr) {
-                                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                            } else {
-                                androidx.compose.material3.Icon(Icons.Outlined.CenterFocusWeak, contentDescription = "Ler QR Code da máquina", tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                            }
-                        }
-                        androidx.compose.material3.IconButton(onClick = {
-                            viewModel.copyFromLastAbastecimento { found ->
-                                copyMessage = if (found) "Preenchido com o último abastecimento. Confira." else "Nenhum abastecimento lançado ainda para copiar."
-                            }
-                        }, modifier = Modifier.size(32.dp)) {
-                            androidx.compose.material3.Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último abastecimento", tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                        }
-                    }
+        // v278 (mockup v335) -- janela: QR, ⧉ copiar último, ✓ lançar e ✕ na
+        // linha do título; avisos no ⓘ.
+        modifier = Modifier.fillMaxWidth(0.88f),
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+        title = {
+            com.bragro.mobile.ui.domain.TituloJanela(
+                "Abastecimento",
+                onFechar = onDismiss,
+                dica = "Data, unidade e operação vêm prontas.\nO QR é lido direto pela câmera.",
+            ) {
+                androidx.compose.material3.IconButton(onClick = { launchQrExterno() }, enabled = !lendoQr) {
+                    if (lendoQr) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    else androidx.compose.material3.Icon(Icons.Outlined.CenterFocusWeak, contentDescription = "Ler QR Code da máquina")
                 }
-                Text(
-                    "Lê o QR direto pela câmera.",
-                    style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
-                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                androidx.compose.material3.IconButton(onClick = {
+                    viewModel.copyFromLastAbastecimento { found ->
+                        copyMessage = if (found) "Preenchido com o último abastecimento. Confira." else "Nenhum abastecimento lançado ainda para copiar."
+                    }
+                }) {
+                    androidx.compose.material3.Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último abastecimento")
+                }
+                com.bragro.mobile.ui.domain.SalvarIcone(
+                    onClick = { viewModel.submit { onSaved() } },
+                    enabled = viewModel.frota.isNotBlank() && viewModel.qtd.isNotBlank(),
+                    loading = saving,
+                    descricao = "Lançar",
                 )
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+                if (copyMessage != null) Text(copyMessage!!, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+                LookupDropdown("Máquina/Frota *", frotas, viewModel.frota) { viewModel.frota = it }
                 if (qrMensagem != null) Text(qrMensagem ?: "", style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
                 if (cameraPermanentementeNegada) {
-                    Text(
-                        "Câmera bloqueada. Toque abaixo para liberar.",
-                        style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
-                        color = androidx.compose.material3.MaterialTheme.colorScheme.error,
-                    )
-                    androidx.compose.material3.TextButton(onClick = { openAppSettings(context) }) {
-                        Text("Abrir Configurações do app")
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Text(
+                            "Câmera bloqueada.",
+                            style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                            color = com.bragro.mobile.ui.domain.corAtencao(),
+                            modifier = Modifier.weight(1f),
+                        )
+                        androidx.compose.material3.IconButton(onClick = { openAppSettings(context) }) {
+                            androidx.compose.material3.Icon(Icons.Outlined.Settings, contentDescription = "Abrir configurações do app")
+                        }
                     }
                 }
                 LookupDropdown("Combustível", ITENS_COMBUSTIVEL.map { LookupEntity(category = "combustivel", value = it, label = it, order = 0) }, viewModel.item) { viewModel.item = it }
@@ -457,15 +460,7 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
                 LookupDropdown("Responsável (opcional)", colaboradores, viewModel.responsavel) { viewModel.responsavel = it }
             }
         },
-        confirmButton = {
-            Button(
-                onClick = { viewModel.submit { onSaved() } },
-                enabled = !saving && viewModel.frota.isNotBlank() && viewModel.qtd.isNotBlank(),
-            ) {
-                if (saving) CircularProgressIndicator(modifier = Modifier) else Text("Lançar")
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+        confirmButton = {},
     )
 }
 

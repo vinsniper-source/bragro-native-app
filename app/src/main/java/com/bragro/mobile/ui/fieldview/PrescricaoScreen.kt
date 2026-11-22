@@ -405,9 +405,7 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
             item(key = "lanc-header") {
                 com.bragro.mobile.ui.domain.CabecalhoLancamentos(total = prescricoes.size, aberto = lancAberto, titulo = "Prescrições") { lancAberto = !lancAberto }
             }
-            if (prescricoes.isEmpty()) item {
-                Text("Nenhuma prescrição. Toque em + Nova para importar ISO-XML.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 16.dp))
-            }
+            // v278 (mockup v337) -- sem texto de lista vazia.
             if (lancAberto) items(prescricoes) { p ->
                 PrescricaoCard(
                     p = p,

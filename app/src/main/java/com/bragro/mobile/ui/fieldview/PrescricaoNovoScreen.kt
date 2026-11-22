@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.fieldview
 
+import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.foundation.layout.Box
 import android.app.Application
@@ -299,44 +300,39 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
     Scaffold(
         topBar = {
             TopAppBar(
-                navigationIcon = {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.BackNavButton()
-                    }
-                },
+                // v278 (mockup v335 item 7) -- padrão de formulário: título alinhado
+                // aos campos com o ícone novo e ⓘ; importar, ⧉, ✓, ✕ e ⌂ à direita.
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
-                    // v21 -- ícone verde do módulo ao lado do título.
-                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-
-                    Column {
+                    Column(Modifier.padding(start = 20.dp)) {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Nova Prescrição", color = MaterialTheme.colorScheme.onSurface)
-                    }
-                
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            com.bragro.mobile.ui.domain.NovoLancamentoIcone()
+                            Text("Prescrição", color = MaterialTheme.colorScheme.onSurface, maxLines = 1, softWrap = false)
+                            com.bragro.mobile.ui.theme.DicaInfo("Importa ISO-XML. SHP só no site.")
+                        }
                     }
                 } },
-                // Ícone "Copiar último registro" (Task #624, gap
-                // encontrado em auditoria de paridade) -- mesmo padrão de
-                // PragaFotoScreen.kt: spinner enquanto busca, sempre
-                // habilitado (copiarUltimoLancamento() já avisa via
-                // errorMessage se não houver nada pra copiar).
                 actions = {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        com.bragro.mobile.ui.domain.HomeNavButton()
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = { isoXmlPicker.launch(arrayOf("text/xml", "application/xml", "*/*")) }, modifier = Modifier.size(40.dp)) {
+                                Icon(Icons.Outlined.UploadFile, contentDescription = "Importar ISO-XML (.xml)")
+                            }
+                            IconButton(onClick = { if (!copiando) viewModel.copiarUltimoLancamento() }, modifier = Modifier.size(40.dp)) {
+                                if (copiando) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                else Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último lançamento")
+                            }
+                            com.bragro.mobile.ui.domain.SalvarIcone(onClick = { viewModel.salvar() }, enabled = successId == null, loading = busy, descricao = "Salvar prescrição")
+                            com.bragro.mobile.ui.domain.FecharIcone(onClick = onBack)
+                            com.bragro.mobile.ui.domain.HomeNavButton()
+                        }
                     }
                 },
             )
         },
     ) { padding0 ->
-        // v19 -- ícones do cabeçalho movidos para a faixa Ações.
         Column(Modifier.fillMaxSize().padding(padding0)) {
-            com.bragro.mobile.ui.domain.AcoesIcones {
-                // v219 (mockup aprovado) -- importar ISO-XML sobe para o lado do Copiar.
-                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.UploadFile, label = "Importar ISO-XML (.xml)", onClick = { isoXmlPicker.launch(arrayOf("text/xml", "application/xml", "*/*")) })
-                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ContentCopy, label = "Copiar último", loading = copiando, onClick = { if (!copiando) viewModel.copiarUltimoLancamento() })
-            }
             val padding = PaddingValues(0.dp)
             Box(Modifier.fillMaxWidth().weight(1f)) {
         if (successId != null) {
@@ -357,15 +353,9 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             // v219 -- margem dos dois lados.
-            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
+            contentPadding = PaddingValues(horizontal = 40.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item {
-                Text(
-                    "Importa ISO-XML. SHP só no site.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
             if (errorMessage != null) {
                 item { Text(errorMessage ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
             }
@@ -456,12 +446,6 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
                             }
                         }
                     }
-                }
-            }
-            item {
-                Button(onClick = { viewModel.salvar() }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-                    if (busy) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                    else Text("Salvar prescrição")
                 }
             }
         }

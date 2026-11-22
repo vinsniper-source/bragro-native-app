@@ -1943,7 +1943,7 @@ private fun AddNoticeDialog(
                     colors = appFieldColors(),
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = fixado, onCheckedChange = { fixado = it })
+                    com.bragro.mobile.ui.domain.VistoCheck(checked = fixado, onCheckedChange = { fixado = it })
                     Text("Fixar no topo")
                 }
             }
@@ -2975,8 +2975,8 @@ private fun AlertaInmetAviso(alertas: List<com.bragro.mobile.data.model.AlertaIn
     if (aberto) {
         AlertDialog(
             onDismissRequest = { aberto = false },
-            confirmButton = { TextButton(onClick = { aberto = false }) { Text("Fechar") } },
-            title = { Text("Alerta do INMET") },
+            confirmButton = {},
+            title = { com.bragro.mobile.ui.domain.TituloJanela("Alerta do INMET", onFechar = { aberto = false }) },
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     alertas.forEach { x ->

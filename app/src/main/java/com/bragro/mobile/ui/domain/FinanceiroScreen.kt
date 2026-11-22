@@ -1302,11 +1302,15 @@ private fun PeriodoDropdown(
                 )
             }
             HorizontalDivider()
-            Text(
-                "Ou por datas (${if (view == FinanceiroView.PAGAR || view == FinanceiroView.RECEBER) "Vencimento" else "Data"})",
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-            )
+            // v278 (mockup v335) -- "Aplicar intervalo" vira ✓ verde na linha do intervalo.
+            Row(modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "Ou por datas (${if (view == FinanceiroView.PAGAR || view == FinanceiroView.RECEBER) "Vencimento" else "Data"})",
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.weight(1f),
+                )
+                com.bragro.mobile.ui.domain.SalvarIcone(onClick = { onInterval(fromText, toText); expanded = false }, descricao = "Aplicar intervalo")
+            }
             Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
                 OutlinedTextField(
                     value = fromText,
@@ -1326,10 +1330,6 @@ private fun PeriodoDropdown(
                     modifier = Modifier.fillMaxWidth(),
                     colors = appFieldColors(),
                 )
-                Button(
-                    onClick = { onInterval(fromText, toText); expanded = false },
-                    modifier = Modifier.padding(top = 6.dp),
-                ) { Text("Aplicar intervalo") }
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.orcamento
 
+import androidx.compose.material.icons.outlined.Backspace
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.outlined.RequestQuote
@@ -303,7 +304,7 @@ private fun OrcamentoTable(orcamentos: List<OrcamentoData>, visibleKeys: Set<Str
 private fun OrcamentoViewDialog(o: OrcamentoData, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(o.numeroOrcamento?.let { "Orçamento $it" } ?: "Orçamento sem número") },
+        title = { com.bragro.mobile.ui.domain.TituloJanela(o.numeroOrcamento?.let { "Orçamento $it" } ?: "Orçamento", onFechar = onDismiss) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("Data: ${isoDateToBr(isoDateOnly(o.data))}", style = MaterialTheme.typography.bodySmall)
@@ -333,7 +334,7 @@ private fun OrcamentoViewDialog(o: OrcamentoData, onDismiss: () -> Unit) {
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar") } },
+        confirmButton = {},
     )
 }
 
@@ -342,7 +343,10 @@ private fun FiltroDialog(statusAtual: String?, onDismiss: () -> Unit, onAplicar:
     var status by remember { mutableStateOf(statusAtual) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Filtros") },
+        // v278 (mockup v337) -- ✓ aplicar e ✕ cancelar na linha do título.
+        modifier = Modifier.fillMaxWidth(0.88f),
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+        title = { com.bragro.mobile.ui.domain.TituloJanela("Filtros", onFechar = onDismiss) { com.bragro.mobile.ui.domain.SalvarIcone(onClick = { onAplicar(status) }, descricao = "Aplicar") } },
         text = {
             StringDropdown(
                 label = "Status",
@@ -353,8 +357,7 @@ private fun FiltroDialog(statusAtual: String?, onDismiss: () -> Unit, onAplicar:
                 onSelect = { picked -> status = STATUS_FILTRO_OPTIONS.firstOrNull { it.second == picked }?.first },
             )
         },
-        confirmButton = { TextButton(onClick = { onAplicar(status) }) { Text("Aplicar") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+        confirmButton = {},
     )
 }
 
@@ -376,19 +379,36 @@ private val PERIODO_RAPIDO = listOf(
 private fun PeriodoDialog(from: String, to: String, onDismiss: () -> Unit, onAplicar: (String, String) -> Unit) {
     var deInput by remember { mutableStateOf(from) }
     var ateInput by remember { mutableStateOf(to) }
+    var escolhido by remember { mutableStateOf<PeriodoCategoria?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Período") },
+        // v278 (mockup v337) -- ⌫ limpar, ✓ aplicar e ✕ na linha do título;
+        // atalhos em texto com traço verde só no escolhido; aviso no ⓘ.
+        modifier = Modifier.fillMaxWidth(0.88f),
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+        title = {
+            com.bragro.mobile.ui.domain.TituloJanela("Período", onFechar = onDismiss, dica = "Filtra pela data do orçamento.") {
+                androidx.compose.material3.IconButton(onClick = { onAplicar("", "") }) {
+                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Backspace, contentDescription = "Limpar")
+                }
+                com.bragro.mobile.ui.domain.SalvarIcone(onClick = { onAplicar(deInput.trim(), ateInput.trim()) }, descricao = "Aplicar")
+            }
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Filtra pela Data do orçamento.", style = MaterialTheme.typography.bodySmall)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     PERIODO_RAPIDO.forEach { (categoria, label) ->
-                        TextButton(onClick = {
-                            val (f, t) = genericPeriodoRange(categoria)
-                            deInput = f
-                            ateInput = t
-                        }) { Text(label, style = MaterialTheme.typography.labelSmall) }
+                        Column(
+                            modifier = Modifier.width(androidx.compose.foundation.layout.IntrinsicSize.Max).clickable {
+                                val (f, t) = genericPeriodoRange(categoria)
+                                deInput = f
+                                ateInput = t
+                                escolhido = categoria
+                            },
+                        ) {
+                            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+                            HorizontalDivider(thickness = 1.5.dp, color = if (escolhido == categoria) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent)
+                        }
                     }
                 }
                 OutlinedTextField(
@@ -409,13 +429,7 @@ private fun PeriodoDialog(from: String, to: String, onDismiss: () -> Unit, onApl
                 )
             }
         },
-        confirmButton = { TextButton(onClick = { onAplicar(deInput.trim(), ateInput.trim()) }) { Text("Aplicar") } },
-        dismissButton = {
-            Row {
-                TextButton(onClick = { onAplicar("", "") }) { Text("Limpar") }
-                TextButton(onClick = onDismiss) { Text("Cancelar") }
-            }
-        },
+        confirmButton = {},
     )
 }
 

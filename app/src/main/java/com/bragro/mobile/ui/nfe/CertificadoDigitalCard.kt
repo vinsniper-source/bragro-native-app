@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.nfe
 
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,11 +40,13 @@ import kotlinx.coroutines.launch
  * Recolhido por padrão pra não ocupar a tela de NF-e.
  */
 @Composable
-fun CertificadoDigitalCard(modifier: Modifier = Modifier) {
+fun CertificadoDigitalCard(modifier: Modifier = Modifier, abertoExterno: androidx.compose.runtime.MutableState<Boolean>? = null) {
     val context = LocalContext.current
     val repo = remember { CertificadoDigitalRepository(context.applicationContext) }
     val scope = rememberCoroutineScope()
-    var aberto by remember { mutableStateOf(false) }
+    // v278 (mockup v335/v337) -- na janela, o ✎ fica na linha do título dela.
+    val abertoState = abertoExterno ?: remember { mutableStateOf(false) }
+    var aberto by abertoState
     var carregado by remember { mutableStateOf(false) }
     var tipo by remember { mutableStateOf("") }
     var emissor by remember { mutableStateOf("") }
@@ -87,19 +91,21 @@ fun CertificadoDigitalCard(modifier: Modifier = Modifier) {
                         }
                     }
     Surface(
-        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
+        color = if (abertoExterno != null) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
         shape = MaterialTheme.shapes.medium,
         modifier = modifier.fillMaxWidth(),
     ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(modifier = Modifier.padding(if (abertoExterno != null) 0.dp else 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Certificado digital (NF-e / NFS-e)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                Text("Certificado digital (NF-e / NFS-e)", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                 if (aberto) com.bragro.mobile.ui.domain.SalvarIcone(onClick = salvarCert, loading = salvando)
-                TextButton(onClick = { aberto = !aberto }) { Text(if (aberto) "Recolher" else "Editar") }
+                if (abertoExterno == null) androidx.compose.material3.IconButton(onClick = { aberto = !aberto }) {
+                    androidx.compose.material3.Icon(if (aberto) androidx.compose.material.icons.Icons.Outlined.ExpandLess else androidx.compose.material.icons.Icons.Outlined.Edit, contentDescription = if (aberto) "Recolher" else "Editar")
+                }
             }
             if (aberto) {
                 SearchableDropdownField(

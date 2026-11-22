@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.nfe
 
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.outlined.KeyboardDoubleArrowDown
@@ -636,17 +638,25 @@ fun NfeScreen(onBack: () -> Unit, viewModel: NfeViewModel = viewModel()) {
     }
 
     if (showCertificado) {
+        // v278 (mockup v337) -- ✎ e ✕ na linha do título; largura de janela.
+        val certAberto = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showCertificado = false },
-            modifier = Modifier.fillMaxWidth(0.96f),
+            modifier = Modifier.fillMaxWidth(0.88f),
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-            title = { Text("Certificado digital") },
-            text = {
-                Column(modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
-                    CertificadoDigitalCard()
+            title = {
+                com.bragro.mobile.ui.domain.TituloJanela("Certificado", onFechar = { showCertificado = false }) {
+                    androidx.compose.material3.IconButton(onClick = { certAberto.value = !certAberto.value }) {
+                        androidx.compose.material3.Icon(if (certAberto.value) androidx.compose.material.icons.Icons.Outlined.ExpandLess else androidx.compose.material.icons.Icons.Outlined.Edit, contentDescription = if (certAberto.value) "Recolher" else "Editar")
+                    }
                 }
             },
-            confirmButton = { TextButton(onClick = { showCertificado = false }) { Text("Fechar") } },
+            text = {
+                Column(modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+                    CertificadoDigitalCard(abertoExterno = certAberto)
+                }
+            },
+            confirmButton = {},
         )
     }
 

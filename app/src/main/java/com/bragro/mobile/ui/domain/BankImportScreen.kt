@@ -327,7 +327,7 @@ fun BankImportScreen(onBack: () -> Unit, viewModel: BankImportViewModel = viewMo
                     val r = rows[i]
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = r.include, onCheckedChange = { viewModel.toggleInclude(i, it) })
+                            com.bragro.mobile.ui.domain.VistoCheck(checked = r.include, onCheckedChange = { viewModel.toggleInclude(i, it) })
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(r.row.descricao, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.basicMarquee())
                                 Text(formatDateBr(r.row.dataIso), style = MaterialTheme.typography.labelSmall)

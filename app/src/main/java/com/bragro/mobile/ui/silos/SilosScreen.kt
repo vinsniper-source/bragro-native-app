@@ -460,10 +460,10 @@ fun SilosScreen(onBack: () -> Unit, onAbrirRomaneio: (String) -> Unit = {}, view
     if (prestadoraAberta) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { prestadoraAberta = false },
-            modifier = Modifier.fillMaxWidth(0.96f),
+            modifier = Modifier.fillMaxWidth(0.88f),
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-            title = { com.bragro.mobile.ui.domain.TituloJanela("Prestadora", onFechar = { prestadoraAberta = false }) },
-            text = { Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) { ModuleProviderIntegrationCard(domainId = "estoque") } },
+            // v278 (mockup v337) -- título com ⓘ e ícones à direita (no próprio card).
+            text = { androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.domain.LocalJanelaIntegracao provides com.bragro.mobile.ui.domain.JanelaIntegracao("Prestadora") { prestadoraAberta = false }) { Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) { ModuleProviderIntegrationCard(domainId = "estoque") } } },
             confirmButton = {},
         )
     }

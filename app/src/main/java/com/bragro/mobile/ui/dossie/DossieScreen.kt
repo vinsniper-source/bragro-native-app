@@ -347,7 +347,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(12.dp),
+            contentPadding = PaddingValues(horizontal = 36.dp, vertical = 12.dp), // v278 (mockup v335) -- largura dos formulários
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             var n = 0 // v275 -- a frase do topo foi para o ⓘ do título
@@ -421,7 +421,8 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                         // v275 (mockup v330) -- atalhos sem fundo verde: o escolhido fica
                         // com a fonte verde e o traço; imprimir/PDF foram para o título.
                         // v276 (mockup v333) -- todos numa linha, cada um com seu traço; fonte branca/preta.
-                        Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        // v278 (mockup v335) -- atalhos distribuídos por igual na largura.
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             atalhos.forEach { (id, rotulo) ->
                                 val ligado = aberta(id)
                                 Column(Modifier.width(androidx.compose.foundation.layout.IntrinsicSize.Max).clickable {
@@ -429,7 +430,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                                     abertas[id] = abrir
                                     if (abrir) indiceSecao[id]?.let { i -> scope.launch { listState.animateScrollToItem(i) } }
                                 }.padding(vertical = 4.dp)) {
-                                    Text(if (rotulo == "Por fazenda") "Fazendas" else rotulo, fontSize = 12.sp, maxLines = 1, softWrap = false, fontWeight = if (ligado) FontWeight.SemiBold else FontWeight.Normal, color = MaterialTheme.colorScheme.onSurface)
+                                    Text(if (rotulo == "Por fazenda") "Fazendas" else rotulo, fontSize = 11.sp, maxLines = 1, softWrap = false, fontWeight = if (ligado) FontWeight.SemiBold else FontWeight.Normal, color = MaterialTheme.colorScheme.onSurface)
                                     Box(Modifier.padding(top = 2.dp).height(if (ligado) 2.dp else 1.dp).fillMaxWidth().background(if (ligado) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant))
                                 }
                             }

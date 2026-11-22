@@ -59,7 +59,7 @@ fun ColumnsPickerButton(allColumns: List<ColumnConfig>, visibleKeys: Set<String>
                         DropdownMenuItem(
                             text = { Text(col.label) },
                             leadingIcon = {
-                                Checkbox(
+                                com.bragro.mobile.ui.domain.VistoCheck(
                                     checked = checked,
                                     onCheckedChange = { on ->
                                         onChange(if (on) visibleKeys + col.key else visibleKeys - col.key)

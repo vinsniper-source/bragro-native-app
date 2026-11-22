@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.material.icons.outlined.LinkOff
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
@@ -102,6 +103,12 @@ fun ProviderIntegrationCard(
     // tela, sem diálogo próprio) continuam com o padrão `true`.
     showCloseButton: Boolean = true,
 ) {
+    // v278 (mockup v337) -- dentro de janela: título com ⓘ e ícones à direita.
+    val janela = LocalJanelaIntegracao.current
+    if (janela != null) {
+        ConteudoJanelaIntegracao(janela, providers, descricao, titulo, integration, busy, syncMessage, onSave, onDisconnect, onSync)
+        return
+    }
     var open by remember { mutableStateOf(initiallyOpen) }
     var expanded by remember { mutableStateOf(false) }
     var provedor by remember(integration?.provedor) { mutableStateOf(integration?.provedor ?: "") }
@@ -298,6 +305,105 @@ fun ProviderIntegrationCard(
                 }
             }
         }
+    }
+}
+
+/** v278 (mockup v337) -- regra das janelas: quem abre o card numa janela
+ * fornece o título e o ✕; os botões viram ícones na linha do título e os
+ * textos explicativos vão para o ⓘ. Com titulo nulo o card fica embutido
+ * (ex.: conta de satélite dentro da janela do NDVI): linha própria com os
+ * ícones, sem ✕. */
+data class JanelaIntegracao(val titulo: String?, val onFechar: (() -> Unit)?)
+val LocalJanelaIntegracao = androidx.compose.runtime.compositionLocalOf<JanelaIntegracao?> { null }
+
+@Composable
+private fun ConteudoJanelaIntegracao(
+    janela: JanelaIntegracao,
+    providers: List<String>,
+    descricao: String,
+    tituloCard: String,
+    integration: ProviderIntegrationDto?,
+    busy: IntegrationBusy?,
+    syncMessage: String?,
+    onSave: (provedor: String, apiKey: String) -> Unit,
+    onDisconnect: () -> Unit,
+    onSync: () -> Unit,
+) {
+    var provedor by remember(integration?.provedor) { mutableStateOf(integration?.provedor ?: "") }
+    var apiKey by remember { mutableStateOf("") }
+    val conectado = integration?.status == "CONECTADO" || integration?.status == "ERRO"
+    val situacao = integration?.situacao ?: when (integration?.status) {
+        "CONECTADO" -> "CONECTADO"
+        "ERRO" -> "ERRO_CREDENCIAL"
+        else -> "NAO_CONECTADO"
+    }
+    val digitado = provedor.isNotBlank() && apiKey.isNotBlank()
+    val dica = if (conectado) "$descricao\nPendente = depende do fabricante." else descricao
+    val acoes: @Composable () -> Unit = {
+        androidx.compose.material3.IconButton(
+            enabled = busy == null && (digitado || conectado),
+            onClick = { if (digitado) { onSave(provedor, apiKey.trim()); apiKey = "" } else onSync() },
+        ) {
+            if (busy == IntegrationBusy.SINCRONIZANDO) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            else Icon(Icons.Outlined.Sync, contentDescription = "Testar conexão")
+        }
+        com.bragro.mobile.ui.domain.SalvarIcone(
+            onClick = { onSave(provedor, apiKey.trim()); apiKey = "" },
+            enabled = busy == null && digitado,
+            loading = busy == IntegrationBusy.SALVANDO,
+        )
+        if (conectado) androidx.compose.material3.IconButton(enabled = busy == null, onClick = onDisconnect) {
+            if (busy == IntegrationBusy.DESCONECTANDO) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            else Icon(Icons.Outlined.LinkOff, contentDescription = "Desconectar", tint = com.bragro.mobile.ui.domain.corAtencao())
+        }
+    }
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (janela.titulo != null) {
+            androidx.compose.material3.ProvideTextStyle(MaterialTheme.typography.headlineSmall) {
+                com.bragro.mobile.ui.domain.TituloJanela(janela.titulo, onFechar = janela.onFechar, dica = dica, acoes = acoes)
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 8.dp).size(20.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(if (janela.titulo != null) "Prestadora de serviço" else tituloCard, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f, fill = false))
+                    if (janela.titulo == null) com.bragro.mobile.ui.theme.DicaInfo(dica)
+                }
+                val (rotulo, cor) = when {
+                    !conectado -> "não conectado" to com.bragro.mobile.ui.domain.corAtencao()
+                    situacao == "CONECTADO" -> "conectado · ${integration?.provedor ?: ""}" to MaterialTheme.colorScheme.primary
+                    situacao == "ERRO_CREDENCIAL" -> "erro de credencial · ${integration?.provedor ?: ""}" to com.bragro.mobile.ui.domain.corAtencao()
+                    else -> "pendente · ${integration?.provedor ?: ""}" to MaterialTheme.colorScheme.onSurfaceVariant
+                }
+                Text(rotulo, style = MaterialTheme.typography.labelSmall, color = cor)
+            }
+            if (janela.titulo == null) acoes()
+        }
+        SearchableDropdownField(
+            value = provedor,
+            label = "Provedor",
+            options = remember(providers) { providers.map { it to it } },
+            onSelect = { provedor = it },
+            modifier = Modifier.fillMaxWidth(),
+            emptyOptionLabel = null,
+        )
+        OutlinedTextField(
+            value = apiKey, onValueChange = { apiKey = it },
+            label = { Row(verticalAlignment = Alignment.CenterVertically) { Text("API Key / Token"); Icon(Icons.Outlined.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 6.dp).size(14.dp)) } },
+            placeholder = { Text(if (integration?.apiKeyConfigurado == true) "•••• (salvo)" else "Cole a credencial") },
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            colors = appFieldColors(),
+        )
+        if (conectado) Text(
+            integration?.ultimaSincronizacaoEm?.let { "Última sincronização: ${formatIsoDateTime(it)}" } ?: "Ainda não validada pelo provedor.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        syncMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }
 

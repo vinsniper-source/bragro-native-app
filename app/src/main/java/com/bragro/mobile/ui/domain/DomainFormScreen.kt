@@ -871,6 +871,8 @@ fun DomainFormScreen(
                     Column(Modifier.padding(start = 20.dp + RECUO_CAMPOS - 16.dp)) {
                         Spacer(modifier = Modifier.height(16.dp))
                         androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            // v278 (mockup v336) -- ícone "novo" antes do título.
+                            if (recordId == null) com.bragro.mobile.ui.domain.NovoLancamentoIcone()
                             Text(
                                 config?.label?.let { tituloCurto(com.bragro.mobile.ui.domain.exibirTexto(it)) } ?: if (recordId == null) "Novo registro" else "Editar registro",
                                 maxLines = 1,
@@ -886,32 +888,25 @@ fun DomainFormScreen(
                     // v1.6.59 (site v302/v305) -- Salvar vira ✓ verde na
                     // linha do título (único ícone verde).
                     // v277 (mockup v334) -- clima, foto e copiar último na linha do título (todos os módulos).
-                    if (recordId == null && (domainId == "clima" || domainId in OCR_FOTO_DOMAINS || domainId !in MULTI_ITEM_FORM)) Column {
+                    // v278 (mockup v335) -- ⧉ do título = copiar último lançamento em
+                    // todos os módulos (o copiar item fica no bloco do item); a
+                    // câmera fica na linha do 1º campo (Data).
+                    if (recordId == null) Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                             if (domainId == "clima") {
                                 val climaHojeBusy by viewModel.climaHojeBusy
                                 IconButton(onClick = { if (!climaHojeBusy) viewModel.preencherClimaHoje() }) {
                                     if (climaHojeBusy) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                                    else Icon(Icons.Outlined.WaterDrop, contentDescription = "Preencher com clima de hoje", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                                    else Icon(Icons.Outlined.WaterDrop, contentDescription = "Preencher com clima de hoje", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
                                 }
                             }
-                            if (domainId in OCR_FOTO_DOMAINS) {
-                                OcrFotoButton(somenteIcone = true) { url -> viewModel.aplicarOcrFoto(url) }
-                            }
-                            if (domainId !in MULTI_ITEM_FORM) IconButton(onClick = { if (lastRecord != null) viewModel.copyFromLastRecord() }) {
-                                Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último registro", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
+                            IconButton(onClick = { if (lastRecord != null) viewModel.copyFromLastRecord() }) {
+                                Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último lançamento", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(24.dp))
                             }
                         }
                     }
-                    // v274 (mockup v329) -- copiar item na linha do título.
-                    val multiTopo = if (recordId == null || domainId in OS_EDITA_ITENS) MULTI_ITEM_FORM[domainId] else null
-                    if (multiTopo != null) Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        IconButton(onClick = { viewModel.copiarItemPrincipal((multiTopo.sel + multiTopo.inp).map { it.first }) }) {
-                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
-                        }
-                    }
+                    // v278 (mockup v335) -- copiar item voltou para o bloco do item.
                     // v276 (mockup v333) -- o ícone com "+" fica só na página inicial do módulo.
                     if (config != null) Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -1131,7 +1126,7 @@ fun DomainFormScreen(
                     if (col.type == "checkbox") {
                         FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                     } else {
-                        com.bragro.mobile.ui.theme.NomeAoLado(if (col.key == "ajuste" && viewModel.opBanco()) "Juros" else com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), col.required, acoes = null, dica = col.hint) {
+                        com.bragro.mobile.ui.theme.NomeAoLado(if (col.key == "ajuste" && viewModel.opBanco()) "Juros" else com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), col.required, acoes = if (col.key == primeiroCampoKey && domainId in OCR_FOTO_DOMAINS) ({ OcrFotoButton(somenteIcone = true) { url -> viewModel.aplicarOcrFoto(url) } }) else null, dica = col.hint) {
                             FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                         }
                     }
@@ -1139,7 +1134,7 @@ fun DomainFormScreen(
                     // v271 (site v314) -- opção de lançar os juros em separado.
                     if (recordId == null && col.key == "ajuste" && viewModel.opBanco()) {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = ESPACO_CAMPOS)) {
-                            androidx.compose.material3.Checkbox(checked = viewModel.jurosSeparado, onCheckedChange = { viewModel.jurosSeparado = it })
+                            VistoCheck(checked = viewModel.jurosSeparado, onCheckedChange = { viewModel.jurosSeparado = it })
                             Text("Lançar os juros em separado", style = MaterialTheme.typography.bodySmall)
                         }
                     }
@@ -1171,8 +1166,14 @@ fun DomainFormScreen(
                         Box(Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(start = 26.dp, end = 26.dp, top = if (ehSafra || multi != null) 16.dp else 30.dp)) {
                                 if (ehSafra || multi != null) {
-                                    Text("Item 1", fontWeight = FontWeight.Bold)
-                                    androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 16.dp))
+                                    // v278 (mockup v335) -- ⧉ copiar item à direita do título do bloco.
+                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                        Text("Item 1", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                                        if (multi != null) IconButton(onClick = { viewModel.copiarItemPrincipal(chavesItem) }, modifier = Modifier.size(36.dp)) {
+                                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+                                        }
+                                    }
+                                    androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
                                 }
                                 camposDaSecao()
                             }
@@ -1181,7 +1182,16 @@ fun DomainFormScreen(
                     }
                     androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
                 } else {
-                    Column(Modifier.padding(horizontal = RECUO_CAMPOS)) { camposDaSecao() }
+                    Column(Modifier.padding(horizontal = RECUO_CAMPOS)) {
+                        // v278 (mockup v335) -- bloco do item com ⧉ copiar item à direita.
+                        if (g.first == "itens" && multi != null) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Text("Item 1", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                            IconButton(onClick = { viewModel.copiarItemPrincipal(chavesItem) }, modifier = Modifier.size(36.dp)) {
+                                Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+                            }
+                        }
+                        camposDaSecao()
+                    }
                 }
                 if (g.first == "itens" && multi != null) {
                     ItensExtrasSection(domainId, multi, cfg.columns, lookups, viewModel)
@@ -1504,12 +1514,13 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
     when (col.type) {
         "checkbox" -> {
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                Checkbox(
+                VistoCheck(
                     checked = value == "true",
                     onCheckedChange = { viewModel.setField(col.key, it.toString()) },
-                    colors = androidx.compose.material3.CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary),
                 )
                 Text(col.label + if (col.required) " *" else "")
+                // v278 (mockup v335 item 15) -- explicação no ⓘ.
+                if (col.hint != null) com.bragro.mobile.ui.theme.DicaInfo(col.hint)
             }
         }
         "select" -> {
@@ -1811,7 +1822,7 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
         Text("Campo obrigatório", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
     }
     // v310 -- com o nome ao lado, a ajuda vira ⓘ (DicaInfo) junto do nome.
-    if (col.hint != null && !com.bragro.mobile.ui.theme.LocalNomeAoLado.current) {
+    if (col.hint != null && col.type != "checkbox" && !com.bragro.mobile.ui.theme.LocalNomeAoLado.current) {
         Text(col.hint, style = MaterialTheme.typography.bodySmall)
     }
     // v85 -- aviso do Agrofit (registro no MAPA) embaixo do item.
@@ -1894,7 +1905,7 @@ private fun ItensExtrasSection(
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                         Text("Item ${i + 2}", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                         IconButton(onClick = { viewModel.copiarItemExtra(i) }, modifier = Modifier.size(36.dp)) {
-                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
                         }
                         IconButton(onClick = { viewModel.removeItemExtra(i) }, modifier = Modifier.size(36.dp)) {
                             Icon(Icons.Outlined.Delete, contentDescription = "Remover item", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(20.dp))
