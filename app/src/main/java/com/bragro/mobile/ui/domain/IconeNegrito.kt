@@ -211,7 +211,8 @@ val NovoLancamentoVetor: androidx.compose.ui.graphics.vector.ImageVector by lazy
 fun NovoLancamentoIcone(modifier: Modifier = Modifier) {
     // v279 (mockup v338) -- ícone, tracinho e o título.
     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = modifier) {
-        Icon(NovoLancamentoVetor, contentDescription = "Novo lançamento", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
-        androidx.compose.material3.Text(" - ", color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
+        // v284 (mockup v356 itens 3/4) -- ícone e hífen em negrito, como o título.
+        IconeNegrito(NovoLancamentoVetor, contentDescription = "Novo lançamento", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp)
+        androidx.compose.material3.Text(" - ", color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
     }
 }

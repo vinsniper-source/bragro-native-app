@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.login
 
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.KeyboardDoubleArrowRight
@@ -172,7 +174,9 @@ fun LoginScreen(onLoggedIn: () -> Unit, onLoggedInFazendas: () -> Unit = onLogge
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("E-mail") },
+            // v284 (mockup v356) -- igual à plataforma: ícone ✉ no lugar do rótulo.
+            placeholder = { Text("E-mail") },
+            leadingIcon = { com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Email, contentDescription = "E-mail", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, size = 20.dp) },
             // autoCorrect = false -- pedido do usuário ("aplique isso também
             // nos campos" da tela de login): e-mail não deve sofrer
             // autocorreção do teclado (evita o teclado reinserir/alterar
@@ -192,14 +196,18 @@ fun LoginScreen(onLoggedIn: () -> Unit, onLoggedInFazendas: () -> Unit = onLogge
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Senha") },
+            // v284 (mockup v356) -- ícone 🔒 no lugar do rótulo.
+            placeholder = { Text("Senha") },
+            leadingIcon = { com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Lock, contentDescription = "Senha", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, size = 20.dp) },
             visualTransformation = if (senhaVisivel) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon = {
                 IconButton(onClick = { senhaVisivel = !senhaVisivel }) {
-                    Icon(
-                        imageVector = if (senhaVisivel) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                    com.bragro.mobile.ui.domain.IconeNegrito(
+                        if (senhaVisivel) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
                         contentDescription = if (senhaVisivel) "Ocultar senha" else "Ver senha",
+                        tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                        size = 22.dp, // v284 -- negrito
                     )
                 }
             },
@@ -259,7 +267,15 @@ fun LoginScreen(onLoggedIn: () -> Unit, onLoggedInFazendas: () -> Unit = onLogge
             else if (viewModel.pendente.value != null) viewModel.verificarCodigo(email, password, codigo2, aoEntrar)
             else viewModel.login(email, password, aoEntrar)
         }
-        androidx.compose.runtime.LaunchedEffect(acionarFazendas) { if (acionarFazendas > 0 && !loading) { irFazendas = true; entrar() } }
+        androidx.compose.runtime.LaunchedEffect(acionarFazendas) {
+            if (acionarFazendas > 0 && !loading) {
+                irFazendas = true
+                // v284 -- como na plataforma: Fazendas entra com o e-mail e a senha
+                // digitados e abre o cadastro de fazendas; sem eles, avisa o que falta.
+                if (email.isBlank() || password.isBlank()) viewModel.errorMessage.value = "Preencha e-mail e senha e toque em Fazendas."
+                else entrar()
+            }
+        }
         // v281 (mockup v343) -- igual à plataforma: esqueci a senha e criar conta como
         // ícones à esquerda; "Entrar" só o duplo chevron à direita.
         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 12.dp))

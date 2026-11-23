@@ -656,7 +656,7 @@ fun DomainListScreen(
                             @Composable
                             fun atalho(img: androidx.compose.ui.graphics.vector.ImageVector, nome: String, acao: () -> Unit) {
                                 IconButton(onClick = acao, modifier = Modifier.size(40.dp)) {
-                                    Icon(img, contentDescription = nome, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                                    IconeNegrito(img, contentDescription = nome, tint = MaterialTheme.colorScheme.onSurface, size = 22.dp) // v284 topo em negrito
                                 }
                             }
                             when (domainId) {

@@ -30,7 +30,7 @@ val AppTypography = Typography(
     headlineLarge = defaultTypography.headlineLarge.copy(fontFamily = GeistFontFamily),
     headlineMedium = defaultTypography.headlineMedium.copy(fontFamily = GeistFontFamily),
     headlineSmall = defaultTypography.headlineSmall.copy(fontFamily = GeistFontFamily),
-    titleLarge = defaultTypography.titleLarge.copy(fontFamily = GeistFontFamily),
+    titleLarge = defaultTypography.titleLarge.copy(fontFamily = GeistFontFamily, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold), // v284 -- título do topo sempre em negrito
     titleMedium = defaultTypography.titleMedium.copy(fontFamily = GeistFontFamily),
     titleSmall = defaultTypography.titleSmall.copy(fontFamily = GeistFontFamily),
     bodyLarge = defaultTypography.bodyLarge.copy(fontFamily = GeistFontFamily),

@@ -846,7 +846,7 @@ fun HomeScreen(
                                 if (!apkUrl.isNullOrBlank()) {
                                     DropdownMenuItem(
                                         text = { Text("Baixar para Android" + (apkVersao?.let { " (v$it)" } ?: "")) },
-                                        leadingIcon = { Icon(Icons.Outlined.Download, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }, // v283 (mockup v355 item 5) -- verde
+                                        leadingIcon = { Icon(Icons.Outlined.Download, contentDescription = null) },
                                         onClick = {
                                             configMenuOpen = false
                                             com.bragro.mobile.ui.util.enqueueApkDownload(logoScreenContext, apkUrl, apkVersao ?: "?")
@@ -1060,10 +1060,11 @@ fun HomeScreen(
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             } else {
                                 // v23 -- sem o círculo; mesmo tamanho dos outros ícones do cabeçalho.
-                                Icon(
+                                com.bragro.mobile.ui.domain.IconeNegrito(
                                     Icons.Outlined.AddPhotoAlternate,
                                     contentDescription = "Adicionar logo da empresa",
-                                    modifier = Modifier.size(24.dp),
+                                    tint = androidx.compose.material3.LocalContentColor.current,
+                                    size = 24.dp, // v284 (mockup v357) -- negrito
                                 )
                             }
                         }
@@ -1230,15 +1231,19 @@ fun HomeScreen(
                 Column(modifier = Modifier.offset(y = 0.dp)) {
                     // v320 (mockup v320b aprovado) -- no lugar do "Olá, bem-vindo de
                     // volta": o slogan com BRAgro no início e a data pequena.
-                    // v283 (mockup v355 item 2) -- a data foi para a direita, na linha do slogan.
-                    Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth()) {
+                    // v284 (mockup v357b) -- slogan sem "BRAgro —", até a margem; o dia
+                    // da semana e a data ficam à direita, na última linha do slogan.
+                    var dataEmBaixo by remember { mutableStateOf(false) }
+                    Box(modifier = Modifier.fillMaxWidth().padding(bottom = if (dataEmBaixo) 16.dp else 0.dp)) {
                     Text(
-                        "BRAgro — Conectando a força da nossa terra, carregando o Brasil no coração.",
+                        "Conectando a força da nossa terra, carregando o Brasil no coração.",
+                        // Se a última linha do slogan ocupar mais da metade, a data desce uma linha (sem sobrepor).
+                        onTextLayout = { l -> dataEmBaixo = l.getLineRight(l.lineCount - 1) > l.size.width * 0.55f },
                         style = MaterialTheme.typography.titleSmall, // v274 (mockup v329) -- fonte menor
                         fontStyle = FontStyle.Italic,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                     )
                     Text(
                         java.time.LocalDate.now(java.time.ZoneId.of("America/Sao_Paulo")).let { d ->
@@ -1246,8 +1251,8 @@ fun HomeScreen(
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
-                        modifier = Modifier.padding(start = 8.dp, top = 2.dp).widthIn(max = 120.dp),
+                        maxLines = 1,
+                        modifier = Modifier.align(Alignment.BottomEnd).offset(y = if (dataEmBaixo) 16.dp else 0.dp),
                     )
                     }
                     if (data != null) androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.domain.LocalIconeNegrito provides true) { // v283 -- ícones em negrito

@@ -465,7 +465,7 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
                         modifier = Modifier.padding(start = 8.dp),
                     ) {
                         if (downloading) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                        else Icon(Icons.Outlined.Download, contentDescription = "Baixar", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                        else com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Download, contentDescription = "Baixar", tint = MaterialTheme.colorScheme.primary, size = 22.dp) // v284 (mockup v356 item 5) -- verde e negrito
                     }
                 }
             }

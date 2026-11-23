@@ -407,13 +407,14 @@ fun DicaInfo(texto: String, nivel: Int = 0) {
         else -> cs.onSurfaceVariant
     }
     Box {
-        androidx.compose.material3.Icon(
+        // v284 (mockup v356 itens 3/4) -- ⓘ em negrito, como o resto do topo.
+        com.bragro.mobile.ui.domain.IconeNegrito(
             androidx.compose.material.icons.Icons.Outlined.Info,
             contentDescription = texto,
             tint = corI,
+            size = 15.dp,
             modifier = Modifier
                 .padding(start = 5.dp)
-                .size(15.dp)
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { aberto = !aberto },
         )
         if (aberto) {

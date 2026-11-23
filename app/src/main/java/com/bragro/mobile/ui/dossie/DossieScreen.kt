@@ -306,10 +306,10 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
                     val dd = dados
                     if (dd != null) {
                         androidx.compose.material3.IconButton(onClick = { HtmlPrinter.printHtml(context, "Dossiê Bancário", buildDossieHtml(dd, ano)) }) {
-                            Icon(Icons.Outlined.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                            com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.onSurface, size = 22.dp) // v284
                         }
                         androidx.compose.material3.IconButton(onClick = { HtmlPrinter.printHtmlComoPdf(context, "Dossiê Bancário", buildDossieHtml(dd, ano)) }) {
-                            Icon(Icons.Outlined.PictureAsPdf, contentDescription = "PDF", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                            com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.PictureAsPdf, contentDescription = "PDF", tint = MaterialTheme.colorScheme.onSurface, size = 22.dp) // v284
                         }
                     }
                 },

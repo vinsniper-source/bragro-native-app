@@ -43,7 +43,7 @@ fun MenuPaisIdiomaMoeda(modifier: Modifier = Modifier) {
     Box(modifier) {
         // v1.6.17 (mockup v120) -- ícone e sigla em preto (claro) / branco (escuro).
         TextButton(onClick = { aberto = true }, colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = androidx.compose.material3.MaterialTheme.colorScheme.onBackground)) {
-            Icon(com.bragro.mobile.ui.domain.IconeMoedas, contentDescription = "País, idioma e moeda", modifier = Modifier.size(18.dp))
+            com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.domain.IconeMoedas, contentDescription = "País, idioma e moeda", tint = androidx.compose.material3.LocalContentColor.current, size = 18.dp) // v284 negrito
             androidx.compose.material3.Text(moeda.sigla, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 4.dp))
         }
         com.bragro.mobile.ui.theme.MenuSuspenso(expanded = aberto, onDismissRequest = { aberto = false }) {

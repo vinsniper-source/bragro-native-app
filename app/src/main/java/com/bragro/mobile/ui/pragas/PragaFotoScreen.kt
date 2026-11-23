@@ -468,7 +468,7 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Diagnóstico foto", color = MaterialTheme.colorScheme.onSurface) // v283 (mockup v355 item 12)
+                        Text("Diagnóstico", color = MaterialTheme.colorScheme.onSurface) // v284 (mockup v356 item 12)
                     }
                 
                     }
