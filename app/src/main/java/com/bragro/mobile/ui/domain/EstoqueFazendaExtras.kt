@@ -329,10 +329,15 @@ private fun TransferirFazendaDialog(farms: List<FazendaOpt>, itens: List<LookupE
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Transferir para fazenda") },
+        title = { TituloJanela("Transferir", onFechar = onDismiss, dica = "Sai da origem e entra no destino.") { SalvarIcone(onClick = {
+                    saving = true
+                    viewModel.transferir(item, unidade, quantidade.toDoubleOrNull() ?: 0.0, fazendaOrigemId.ifBlank { null }, fazendaDestinoId) {
+                        saving = false
+                        onDismiss()
+                    }
+                }, enabled = !saving && item.isNotBlank() && fazendaDestinoId.isNotBlank() && quantidade.toDoubleOrNull() != null, loading = saving) } }, // v285 (mockup v359 itens 12/13) -- botões viraram ✓ e ✕ no topo
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Sai da origem e entra no destino.", style = MaterialTheme.typography.bodySmall)
                 ItemDropdown("Item *", itens, "Selecione", item) { item = it }
                 // v263 (mockup v262) -- um campo por linha, todos com a linha inteira.
                 OutlinedTextField(value = quantidade, onValueChange = { quantidade = it }, label = { Text("Quantidade *") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
@@ -341,21 +346,7 @@ private fun TransferirFazendaDialog(farms: List<FazendaOpt>, itens: List<LookupE
                 FazendaDropdown("Destino *", farms, "Selecione", fazendaDestinoId) { fazendaDestinoId = it }
             }
         },
-        confirmButton = {
-            Button(
-                enabled = !saving && item.isNotBlank() && fazendaDestinoId.isNotBlank() && quantidade.toDoubleOrNull() != null,
-                onClick = {
-                    saving = true
-                    viewModel.transferir(item, unidade, quantidade.toDoubleOrNull() ?: 0.0, fazendaOrigemId.ifBlank { null }, fazendaDestinoId) {
-                        saving = false
-                        onDismiss()
-                    }
-                },
-            ) {
-                if (saving) CircularProgressIndicator(modifier = Modifier.size(18.dp)) else Text("Transferir")
-            }
-        },
-        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancelar") } }, // v263 -- verde só no principal
+        confirmButton = {},
     )
 }
 
@@ -372,10 +363,15 @@ private fun SaidaFazendaDialog(farms: List<FazendaOpt>, itens: List<LookupEntity
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Saída de estoque") },
+        title = { TituloJanela("Saída de estoque", onFechar = onDismiss, dica = "Baixa manual (consumo, perda, quebra).") { SalvarIcone(onClick = {
+                    saving = true
+                    viewModel.saida(item, unidade, quantidade.toDoubleOrNull() ?: 0.0, fazendaId.ifBlank { null }, motivo) {
+                        saving = false
+                        onDismiss()
+                    }
+                }, enabled = !saving && item.isNotBlank() && quantidade.toDoubleOrNull() != null, loading = saving) } }, // v285 (mockup v359 itens 12/13) -- botões viraram ✓ e ✕ no topo
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Baixa manual (consumo, perda, quebra).", style = MaterialTheme.typography.bodySmall)
                 ItemDropdown("Item *", itens, "Selecione", item) { item = it }
                 // v263 (mockup v262) -- um campo por linha, todos com a linha inteira.
                 OutlinedTextField(value = quantidade, onValueChange = { quantidade = it }, label = { Text("Quantidade *") }, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
@@ -388,21 +384,7 @@ private fun SaidaFazendaDialog(farms: List<FazendaOpt>, itens: List<LookupEntity
                 )
             }
         },
-        confirmButton = {
-            Button(
-                enabled = !saving && item.isNotBlank() && quantidade.toDoubleOrNull() != null,
-                onClick = {
-                    saving = true
-                    viewModel.saida(item, unidade, quantidade.toDoubleOrNull() ?: 0.0, fazendaId.ifBlank { null }, motivo) {
-                        saving = false
-                        onDismiss()
-                    }
-                },
-            ) {
-                if (saving) CircularProgressIndicator(modifier = Modifier.size(18.dp)) else Text("Registrar saída")
-            }
-        },
-        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancelar") } }, // v263 -- verde só no principal
+        confirmButton = {},
     )
 }
 
@@ -421,14 +403,16 @@ private fun AjusteManualFazendaDialog(farms: List<FazendaOpt>, itens: List<Looku
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Ajuste manual de estoque") },
+        title = { TituloJanela("Ajuste de estoque", onFechar = onDismiss, dica = "Corrige o saldo (inventário, sobra, quebra). " +
+                        "Motivo obrigatório e registrado.") { SalvarIcone(onClick = {
+                    saving = true
+                    viewModel.ajusteManual(item, unidade, quantidade.toDoubleOrNull() ?: 0.0, fazendaId.ifBlank { null }, tipo, motivo) {
+                        saving = false
+                        onDismiss()
+                    }
+                }, enabled = !saving && item.isNotBlank() && quantidade.toDoubleOrNull() != null && motivo.isNotBlank(), loading = saving) } }, // v285 (mockup v359 itens 12/13) -- botões viraram ✓ e ✕ no topo
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    "Corrige o saldo (inventário, sobra, quebra). " +
-                        "Motivo obrigatório e registrado.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
                 ItemDropdown("Item *", itens, "Selecione", item) { item = it }
                 SearchableDropdownField(
                     value = if (tipo == "ENTRADA") "Entrada (aumenta o saldo)" else "Saída (reduz o saldo)",
@@ -448,21 +432,7 @@ private fun AjusteManualFazendaDialog(farms: List<FazendaOpt>, itens: List<Looku
                 )
             }
         },
-        confirmButton = {
-            Button(
-                enabled = !saving && item.isNotBlank() && quantidade.toDoubleOrNull() != null && motivo.isNotBlank(),
-                onClick = {
-                    saving = true
-                    viewModel.ajusteManual(item, unidade, quantidade.toDoubleOrNull() ?: 0.0, fazendaId.ifBlank { null }, tipo, motivo) {
-                        saving = false
-                        onDismiss()
-                    }
-                },
-            ) {
-                if (saving) CircularProgressIndicator(modifier = Modifier.size(18.dp)) else Text("Registrar ajuste")
-            }
-        },
-        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancelar") } }, // v263 -- verde só no principal
+        confirmButton = {},
     )
 }
 
@@ -472,7 +442,13 @@ private fun DevolverFazendaDialog(transferenciaEntradaId: String, onDismiss: () 
     var saving by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Devolver") },
+        title = { TituloJanela("Devolver", onFechar = onDismiss) { SalvarIcone(onClick = {
+                    saving = true
+                    viewModel.devolver(transferenciaEntradaId, quantidade.toDoubleOrNull() ?: 0.0) {
+                        saving = false
+                        onDismiss()
+                    }
+                }, enabled = !saving && quantidade.toDoubleOrNull() != null, loading = saving) } }, // v285 (mockup v359 itens 12/13) -- botões viraram ✓ e ✕ no topo
         text = {
             OutlinedTextField(
                 value = quantidade, onValueChange = { quantidade = it },
@@ -481,20 +457,6 @@ private fun DevolverFazendaDialog(transferenciaEntradaId: String, onDismiss: () 
                 colors = appFieldColors(),
             )
         },
-        confirmButton = {
-            Button(
-                enabled = !saving && quantidade.toDoubleOrNull() != null,
-                onClick = {
-                    saving = true
-                    viewModel.devolver(transferenciaEntradaId, quantidade.toDoubleOrNull() ?: 0.0) {
-                        saving = false
-                        onDismiss()
-                    }
-                },
-            ) {
-                if (saving) CircularProgressIndicator(modifier = Modifier.size(18.dp)) else Text("Confirmar devolução")
-            }
-        },
-        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancelar") } }, // v263 -- verde só no principal
+        confirmButton = {},
     )
 }

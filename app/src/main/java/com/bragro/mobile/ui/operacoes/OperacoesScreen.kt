@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.operacoes
 
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.outlined.Timeline
 import androidx.compose.material.icons.outlined.Agriculture
 import androidx.compose.material.icons.outlined.ViewList
@@ -302,14 +304,20 @@ private fun FiltroLista(label: String, valor: String, opcoes: List<Pair<String, 
     Column(modifier = modifier) {
         Text(label /* v273 -- sem caixa alta */, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Box {
-            androidx.compose.material3.OutlinedButton(
-                onClick = { aberto = true },
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                shape = RoundedCornerShape(8.dp),
+            // v285 (mockup v359 item 7) -- sem caixa: campo de linha igual aos do app
+            // (valor à direita, linha embaixo com o canto).
+            val corLinha = MaterialTheme.colorScheme.outline
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { aberto = true }
+                    .drawBehind {
+                        val y = size.height - 1.dp.toPx()
+                        drawLine(corLinha, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(size.width, y), 1.dp.toPx())
+                        drawLine(corLinha, androidx.compose.ui.geometry.Offset(size.width - 0.5.dp.toPx(), y), androidx.compose.ui.geometry.Offset(size.width - 0.5.dp.toPx(), y - 5.dp.toPx()), 1.dp.toPx())
+                    }
+                    .padding(top = 6.dp, bottom = 5.dp, end = 4.dp),
+                horizontalArrangement = Arrangement.End,
             ) {
-                Text(opcoes.firstOrNull { it.first == valor }?.second ?: valor, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                Icon(Icons.Outlined.ExpandMore, contentDescription = null, modifier = Modifier.size(16.dp))
+                Text(opcoes.firstOrNull { it.first == valor }?.second ?: valor, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             com.bragro.mobile.ui.theme.MenuSuspenso(expanded = aberto, onDismissRequest = { aberto = false }) {
                 opcoes.forEach { (v, l) ->
@@ -341,6 +349,13 @@ private fun LinhaCampo(l: String, v: String, cor: androidx.compose.ui.graphics.C
     com.bragro.mobile.ui.domain.RotuloValor(rotulo = l, valor = v, corValor = cor ?: MaterialTheme.colorScheme.onSurface)
 }
 
+internal class FiltrosOperacao {
+    var etapa by mutableStateOf("Todas")
+    var atividade by mutableStateOf("Todas")
+    var talhao by mutableStateOf("Todos")
+    var revisao by mutableStateOf("Todas")
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun OperacaoCard(
@@ -351,11 +366,14 @@ private fun OperacaoCard(
     onEditRecord: (String, String) -> Unit = { _, _ -> },
     mostrarFiltros: Boolean = true,
     meio: (@Composable () -> Unit)? = null,
+    // v285 (mockup v359 item 7) -- filtros comuns a todas as fazendas: o bloco
+    // aparece uma vez só (no primeiro cartão) e vale para todos.
+    filtros: FiltrosOperacao = remember(op.chave) { FiltrosOperacao() },
 ) {
-    var etapa by remember(op.chave) { mutableStateOf("Todas") }
-    var atividade by remember(op.chave) { mutableStateOf("Todas") }
-    var talhao by remember(op.chave) { mutableStateOf("Todos") }
-    var revisao by remember(op.chave) { mutableStateOf("Todas") }
+    var etapa by filtros::etapa
+    var atividade by filtros::atividade
+    var talhao by filtros::talhao
+    var revisao by filtros::revisao
     val cardsFechados = remember(op.chave) { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
     val osAbertas = remember(op.chave) { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
     var blocoAberto by remember(op.chave) { mutableStateOf(true) }
@@ -406,34 +424,35 @@ private fun OperacaoCard(
                 // v40 -- "Limpar filtros" virou a primeira opção das listas.
                 val limpar: () -> Unit = { etapa = "Todas"; atividade = "Todas"; talhao = "Todos"; revisao = "Todas" }
                 // Filtros em listas suspensas
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // v285 (mockup v359 item 7) -- bloco estreito à direita, um filtro por linha.
+                com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.End).width(230.dp)) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     FiltroLista(
                         "Etapa", etapa,
                         listOf(LIMPAR to "Limpar filtros", "Todas" to "Todas as etapas") + etapas.map { g -> g to "$g (${atividades.count { grupoDe(it) == g }})" },
                         { if (it == LIMPAR) limpar() else { etapa = it; atividade = "Todas" } },
-                        Modifier.weight(1f),
+                        Modifier.fillMaxWidth(),
                     )
                     FiltroLista(
                         "Atividade", atividade,
                         listOf(LIMPAR to "Limpar filtros", "Todas" to "Todas as atividades") + atividades.filter { etapa == "Todas" || grupoDe(it) == etapa }
                             .map { a -> a to "${tituloAtividade(a)} (${op.timeline.count { it.operacao == a }})" },
                         { if (it == LIMPAR) limpar() else atividade = it },
-                        Modifier.weight(1f),
+                        Modifier.fillMaxWidth(),
                     )
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FiltroLista(
                         "Talhão", talhao,
                         listOf(LIMPAR to "Limpar filtros", "Todos" to "Todos os talhões") + op.talhoes.map { it.talhao to "Talhão ${it.talhao} · ${fmtNum0(it.hectare)} ha" },
                         { if (it == LIMPAR) limpar() else talhao = it },
-                        Modifier.weight(1f),
+                        Modifier.fillMaxWidth(),
                     )
                     FiltroLista(
                         "Revisão", revisao,
                         listOf(LIMPAR to "Limpar filtros", "Todas" to "Todas as O.S.", "Pendentes" to "Pendentes de revisão", "Revisadas" to "Revisadas"),
                         { if (it == LIMPAR) limpar() else revisao = it },
-                        Modifier.weight(1f),
+                        Modifier.fillMaxWidth(),
                     )
+                }
                 }
                 }
                 // v40 -- "Limpar filtros", "Abrir todas" e "Recolher tudo" saíram:
@@ -523,12 +542,12 @@ private fun OperacaoCard(
                                 val pendente = ev.id in pendingIds && !revisado
                                 val dominio = if (ev.tipo == "colheita") "colheita" else "safra"
                                 if (ev.tipo == "colheita") androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                                com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().clickable { osAbertas[ev.id] = !osAberta }.padding(horizontal = 10.dp, vertical = if (ev.tipo == "colheita") 8.dp else 4.dp)) {
+                                com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().clickable { osAbertas[ev.id] = !osAberta }.padding(horizontal = 10.dp, vertical = if (ev.tipo == "colheita") 8.dp else 4.dp), border = androidx.compose.foundation.BorderStroke(0.dp, androidx.compose.ui.graphics.Color.Transparent), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.Transparent)) { // v285 (mockup v359 item 6) -- sem moldura em cada linha
                                     Row(verticalAlignment = Alignment.Top) {
                                         Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
                                             Text(
                                                 if (ev.tipo == "colheita") "Colheita · " + (ev.talhao?.let { "Talhão $it" } ?: "Sem talhão")
-                                                else "${ev.item ?: "—"}${ev.qtd?.let { q -> " · ${fmtNum1(q)} ${ev.unidade ?: ""}" } ?: ""}",
+                                                else "${ev.item?.let { com.bragro.mobile.ui.domain.exibirTexto(it) } ?: "—"}${ev.qtd?.let { q -> " · ${fmtNum1(q)} ${ev.unidade?.lowercase() ?: ""}" } ?: ""}", // v285 (mockup v359 item 6) -- sem caixa alta
                                                 style = MaterialTheme.typography.labelLarge,
                                                 fontWeight = FontWeight.Bold,
                                             )
@@ -738,6 +757,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
     // showActions).
     var tableView by remember { mutableStateOf(false) }
     var filtrosVisiveis by remember { mutableStateOf(false) }
+    val filtrosOperacaoComuns = remember { FiltrosOperacao() } // v285
     var atividadesVisiveis by remember { mutableStateOf(false) }
     val tableHScroll = remember { androidx.compose.foundation.ScrollState(0) }
     // Setinha de recolher removida do cabeçalho -- pedido do usuário
@@ -856,9 +876,11 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                     item { Text("Toque em Atividades para exibir as operações.", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 12.dp)) }
                 } else {
                     items(operacoes, key = { it.chave }) { op ->
+                        val filtrosComuns = filtrosOperacaoComuns
                         OperacaoCard(
                             op,
-                            mostrarFiltros = filtrosVisiveis,
+                            mostrarFiltros = filtrosVisiveis && op.chave == operacoes.first().chave, // v285 -- bloco de filtros uma vez só
+                            filtros = filtrosComuns,
                             meio = if (op.chave == operacoes.first().chave) ({ acoesEProgresso(op.progressoPct, "${op.osConcluidas}/${op.osTotal}") }) else null,
                             pendingIds = pendingIds,
                             revisados = revisados,

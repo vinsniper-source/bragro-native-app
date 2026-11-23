@@ -883,28 +883,21 @@ private fun LeituraPivoDialog(
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal))
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { com.bragro.mobile.ui.domain.TituloJanela("Lançar leitura", onFechar = onDismiss) { com.bragro.mobile.ui.domain.SalvarIcone(loading = busy, onClick = { onSubmit(dataBr, status, sentido, angulo, lamina, pressao, horas, chuva) }) } },
+        title = { com.bragro.mobile.ui.domain.TituloJanela("Lançar leitura", onFechar = onDismiss, dica = "A lâmina e a chuva entram no Balanço hídrico.") { com.bragro.mobile.ui.domain.SalvarIcone(loading = busy, onClick = { onSubmit(dataBr, status, sentido, angulo, lamina, pressao, horas, chuva) }) } },
         text = {
             Column(Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                com.bragro.mobile.ui.theme.LinhaTextField(dataBr, { dataBr = it }, label = { Text("Data (dd/mm/aaaa)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                Text("Situação", style = MaterialTheme.typography.labelMedium)
-                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    STATUS_OPTIONS.forEach { (v, l) -> androidx.compose.material3.FilterChip(selected = status == v, onClick = { status = v }, label = { Text(l) }) }
-                }
-                Text("Sentido", style = MaterialTheme.typography.labelMedium)
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    SENTIDO_OPTIONS.forEach { (v, l) -> androidx.compose.material3.FilterChip(selected = sentido == v, onClick = { sentido = v }, label = { Text(l) }) }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    campo(angulo, { angulo = it }, "Posição (°)", Modifier.weight(1f))
-                    campo(lamina, { lamina = it }, "Lâmina (mm)", Modifier.weight(1f))
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    campo(pressao, { pressao = it }, "Pressão (psi)", Modifier.weight(1f))
-                    campo(horas, { horas = it }, "Horas ligado", Modifier.weight(1f))
-                }
+                // v285 (mockup v359b item 8) -- um campo por linha; opções sem fundo
+                // colorido (texto com traço verde na escolhida); a frase virou ⓘ.
+                com.bragro.mobile.ui.theme.LinhaTextField(dataBr, { dataBr = it }, label = { Text("Data") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                Text("Situação", style = MaterialTheme.typography.labelMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                com.bragro.mobile.ui.domain.TracoOpcoes(STATUS_OPTIONS, status, { status = it })
+                Text("Sentido", style = MaterialTheme.typography.labelMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                com.bragro.mobile.ui.domain.TracoOpcoes(SENTIDO_OPTIONS, sentido, { sentido = it })
+                campo(angulo, { angulo = it }, "Posição (°)", Modifier.fillMaxWidth())
+                campo(lamina, { lamina = it }, "Lâmina (mm)", Modifier.fillMaxWidth())
+                campo(pressao, { pressao = it }, "Pressão (psi)", Modifier.fillMaxWidth())
+                campo(horas, { horas = it }, "Horas ligado", Modifier.fillMaxWidth())
                 campo(chuva, { chuva = it }, "Chuva no pluviômetro (mm)", Modifier.fillMaxWidth())
-                Text("A lâmina e a chuva entram no Balanço hídrico.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
         confirmButton = {},

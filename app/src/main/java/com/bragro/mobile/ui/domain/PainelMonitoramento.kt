@@ -1335,10 +1335,10 @@ fun LinhasParcelasFinanceiro(rows: List<Map<String, String?>>, onVer: (String) -
             ) {
                 Column(Modifier.weight(1f)) {
                     val parcela = r["parcelaS"]?.takeIf { it.isNotBlank() && it != "1/1" }?.let { " · parcela $it" } ?: ""
-                    Text(listOfNotNull(r["entidade"]?.takeIf { it.isNotBlank() }, r["subcategoria"]?.takeIf { it.isNotBlank() }?.lowercase()?.replaceFirstChar { it.uppercase() }).joinToString(" · ") + parcela, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
+                    Text(exibirTexto(listOfNotNull(r["entidade"]?.takeIf { it.isNotBlank() }, r["subcategoria"]?.takeIf { it.isNotBlank() }?.lowercase()?.replaceFirstChar { it.uppercase() }).joinToString(" · ")) + parcela, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
                     val pago = r["dataPgto"] ?: r["dataReceb"]
                     val d = (pago ?: r["vcto"])?.take(10)?.let { if (it.length == 10) "${it.substring(8, 10)}/${it.substring(5, 7)}/${it.substring(0, 4)}" else it }
-                    Text(listOfNotNull(r["local"]?.takeIf { it.isNotBlank() }, d?.let { if (pago != null) "pago $it" else "vence $it" }).joinToString(" · "), fontSize = 11.5.sp, color = muted)
+                    Text(listOfNotNull(r["local"]?.takeIf { it.isNotBlank() }?.let { exibirTexto(it) }, d?.let { if (pago != null) "pago $it" else "vence $it" }).joinToString(" · "), fontSize = 11.5.sp, color = muted)
                 }
                 val v = painelNum(r["liquido"]?.takeIf { it.isNotBlank() } ?: r["bruto"])
                 Text(fmtMoeda(v), fontSize = 12.5.sp, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"))

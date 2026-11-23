@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.outlined.ViewList
@@ -2630,8 +2631,9 @@ private fun GenericPeriodoDropdown(
     onInterval: (String, String) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var fromText by remember(intervalFrom) { mutableStateOf(intervalFrom) }
-    var toText by remember(intervalTo) { mutableStateOf(intervalTo) }
+    // v285 (mockup v359 item 14) -- datas no formato brasileiro na tela; o filtro segue em AAAA-MM-DD.
+    var fromText by remember(intervalFrom) { mutableStateOf(com.bragro.mobile.ui.domain.isoDateToBr(intervalFrom)) }
+    var toText by remember(intervalTo) { mutableStateOf(com.bragro.mobile.ui.domain.isoDateToBr(intervalTo)) }
     val hasFilter = periodo != null || intervalFrom.isNotBlank() || intervalTo.isNotBlank()
 
     // Ganhou rótulo "Período" -- varredura geral pedida pelo usuário
@@ -2670,14 +2672,14 @@ private fun GenericPeriodoDropdown(
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.weight(1f),
                 )
-                com.bragro.mobile.ui.domain.SalvarIcone(onClick = { onInterval(fromText, toText); expanded = false }, descricao = "Aplicar intervalo")
+                com.bragro.mobile.ui.domain.SalvarIcone(onClick = { onInterval(com.bragro.mobile.ui.domain.brDateToIso(fromText.trim()), com.bragro.mobile.ui.domain.brDateToIso(toText.trim())); expanded = false }, descricao = "Aplicar intervalo")
             }
             Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
                 OutlinedTextField(
                     value = fromText,
                     onValueChange = { fromText = it },
                     label = { Text("De") },
-                    placeholder = { Text("AAAA-MM-DD") },
+                    placeholder = { Text("dd/mm/aaaa") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
                     colors = appFieldColors(),
@@ -2686,7 +2688,7 @@ private fun GenericPeriodoDropdown(
                     value = toText,
                     onValueChange = { toText = it },
                     label = { Text("Até") },
-                    placeholder = { Text("AAAA-MM-DD") },
+                    placeholder = { Text("dd/mm/aaaa") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = appFieldColors(),
@@ -2746,22 +2748,22 @@ private fun PrioridadeCotacaoDialog(onDismiss: () -> Unit, onSalvo: () -> Unit) 
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     var atual by remember { mutableStateOf<String?>(null) }
     var salvando by remember { mutableStateOf<String?>(null) }
+    val primaria = MaterialTheme.colorScheme.primary
     LaunchedEffect(Unit) {
         val r = com.bragro.mobile.data.repo.ModuleActionsRepository(context).run("cotacao-prioridade")
         atual = (r?.get("prioridade") as? kotlinx.serialization.json.JsonPrimitive)?.content ?: "preco60"
     }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Prioridade das cotações") },
+        // v285 (mockup v359 item 15) -- "Fechar" virou ✕ no topo; frase no ⓘ; a atual sem fundo, com traço verde.
+        title = { TituloJanela("Prioridade", onFechar = onDismiss, dica = "Escolha o que pesa mais na melhor proposta.") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Escolha o que pesa mais na melhor proposta.", style = MaterialTheme.typography.bodySmall)
                 PRIORIDADES_COTACAO.forEach { (v, l, d) ->
                     val sel = atual == v
                     Column(
                         Modifier.fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(if (sel) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                            .then(if (sel) Modifier.drawBehind { drawRect(primaria, size = androidx.compose.ui.geometry.Size(3.dp.toPx(), size.height)) } else Modifier)
                             .clickable(enabled = salvando == null) {
                                 salvando = v
                                 scope.launch {
@@ -2774,15 +2776,15 @@ private fun PrioridadeCotacaoDialog(onDismiss: () -> Unit, onSalvo: () -> Unit) 
                                     }
                                 }
                             }
-                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                            .padding(start = 12.dp, end = 10.dp, top = 6.dp, bottom = 6.dp),
                     ) {
-                        Text(l + if (sel) "  · ATUAL" else if (salvando == v) "  · salvando…" else "", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                        Text(l + if (sel) "  · atual" else if (salvando == v) "  · salvando…" else "", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
                         Text(d, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar") } },
+        confirmButton = {},
     )
 }
 

@@ -464,7 +464,11 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Romaneio rápido", color = MaterialTheme.colorScheme.onSurface)
+                        // v285 (mockup v359 item 11) -- a frase virou ⓘ ao lado do título.
+                        androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            Text("Romaneio rápido", color = MaterialTheme.colorScheme.onSurface)
+                            com.bragro.mobile.ui.theme.DicaInfo("Data e cálculos saem sozinhos.")
+                        }
                     }
                 
                     }
@@ -474,6 +478,20 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
                 // aplicado em Cotações/Pedidos (ver preencherComUltimo
                 // acima no ViewModel).
                 actions = {
+                    // v285 (mockup v359 item 11) -- câmera e copiar subiram para a linha do topo.
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            androidx.compose.material3.IconButton(onClick = { if (!uploadingFoto) launchCameraComPermissao() }, modifier = Modifier.size(40.dp)) {
+                                if (uploadingFoto) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                                else com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoTicketUrl != null) "Trocar foto do ticket" else "Tirar foto do ticket (opcional)", tint = MaterialTheme.colorScheme.onSurface, size = 24.dp)
+                            }
+                            androidx.compose.material3.IconButton(onClick = { if (!copiando) viewModel.preencherComUltimo() }, modifier = Modifier.size(40.dp)) {
+                                if (copiando) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                                else com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.ContentCopy, contentDescription = "Copiar último", tint = MaterialTheme.colorScheme.onSurface, size = 24.dp)
+                            }
+                        }
+                    }
                     com.bragro.mobile.ui.domain.SalvarTopo(onClick = { viewModel.submit() }, enabled = !savedOk, loading = saving, descricao = "Lançar")
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -485,11 +503,6 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
     ) { padding0 ->
         // v19 -- ícones do cabeçalho movidos para a faixa Ações.
         Column(Modifier.fillMaxSize().padding(padding0)) {
-            com.bragro.mobile.ui.domain.AcoesIcones {
-                // v219 (mockup aprovado) -- foto do ticket ao lado do Copiar.
-                com.bragro.mobile.ui.domain.LabeledIconButton(icon = com.bragro.mobile.ui.domain.IconeFotoIA, label = if (fotoTicketUrl != null) "Trocar foto do ticket" else "Tirar foto do ticket (opcional)", loading = uploadingFoto, onClick = { if (!uploadingFoto) launchCameraComPermissao() })
-                com.bragro.mobile.ui.domain.LabeledIconButton(icon = Icons.Outlined.ContentCopy, label = "Copiar último", loading = copiando, onClick = { if (!copiando) viewModel.preencherComUltimo() })
-            }
             val padding = PaddingValues(0.dp)
             Box(Modifier.fillMaxWidth().weight(1f)) {
         LazyColumn(
@@ -497,12 +510,6 @@ fun RomaneioQuickScreen(onBack: () -> Unit, viewModel: RomaneioQuickViewModel = 
             contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp), // v219 -- margens nas janelas
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item {
-                Text(
-                    "Data e cálculos saem sozinhos.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (ocrMensagem != null) {

@@ -378,8 +378,9 @@ private val PERIODO_RAPIDO = listOf(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PeriodoDialog(from: String, to: String, onDismiss: () -> Unit, onAplicar: (String, String) -> Unit) {
-    var deInput by remember { mutableStateOf(from) }
-    var ateInput by remember { mutableStateOf(to) }
+    // v285 (mockup v359 item 14) -- datas no formato brasileiro na tela.
+    var deInput by remember { mutableStateOf(com.bragro.mobile.ui.domain.isoDateToBr(from)) }
+    var ateInput by remember { mutableStateOf(com.bragro.mobile.ui.domain.isoDateToBr(to)) }
     var escolhido by remember { mutableStateOf<PeriodoCategoria?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -392,7 +393,7 @@ private fun PeriodoDialog(from: String, to: String, onDismiss: () -> Unit, onApl
                 androidx.compose.material3.IconButton(onClick = { onAplicar("", "") }) {
                     com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.FilterAltOff, contentDescription = "Limpar filtro", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp) // v280 (mockup v339) -- sem dois X na linha
                 }
-                com.bragro.mobile.ui.domain.SalvarIcone(onClick = { onAplicar(deInput.trim(), ateInput.trim()) }, descricao = "Aplicar")
+                com.bragro.mobile.ui.domain.SalvarIcone(onClick = { onAplicar(com.bragro.mobile.ui.domain.brDateToIso(deInput.trim()), com.bragro.mobile.ui.domain.brDateToIso(ateInput.trim())) }, descricao = "Aplicar")
             }
         },
         text = {
@@ -402,8 +403,8 @@ private fun PeriodoDialog(from: String, to: String, onDismiss: () -> Unit, onApl
                         Column(
                             modifier = Modifier.width(androidx.compose.foundation.layout.IntrinsicSize.Max).clickable {
                                 val (f, t) = genericPeriodoRange(categoria)
-                                deInput = f
-                                ateInput = t
+                                deInput = com.bragro.mobile.ui.domain.isoDateToBr(f)
+                                ateInput = com.bragro.mobile.ui.domain.isoDateToBr(t)
                                 escolhido = categoria
                             },
                         ) {
@@ -416,7 +417,7 @@ private fun PeriodoDialog(from: String, to: String, onDismiss: () -> Unit, onApl
                     value = deInput,
                     onValueChange = { deInput = it },
                     label = { Text("De") },
-                    placeholder = { Text("AAAA-MM-DD") },
+                    placeholder = { Text("dd/mm/aaaa") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = appFieldColors(),
                 )
@@ -424,7 +425,7 @@ private fun PeriodoDialog(from: String, to: String, onDismiss: () -> Unit, onApl
                     value = ateInput,
                     onValueChange = { ateInput = it },
                     label = { Text("Até") },
-                    placeholder = { Text("AAAA-MM-DD") },
+                    placeholder = { Text("dd/mm/aaaa") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = appFieldColors(),
                 )

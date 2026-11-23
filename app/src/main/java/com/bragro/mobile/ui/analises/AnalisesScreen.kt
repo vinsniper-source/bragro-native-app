@@ -243,7 +243,7 @@ private fun tituloSecao(chave: String): String {
 private val CAMPOS_MOEDA = setOf(
     "valor", "custo", "gasto", "receita", "despesa", "bruto", "liquido",
     "preco", "pago", "orcado", "rateado", "saldo", "folhamensal", "base",
-    "margem", "conciliado",
+    "margem", "conciliado", "realizado", // v285 -- Realizado safra em R$
     // Custo por hectare de CustoHaFonteItem (bloco "Custo Ha Por Fonte") --
     // pedido do usuário ("ainda falta moeda"): esses 5 campos SÃO valores em
     // R$/ha, mas o nome não carrega nenhuma das palavras-chave acima
@@ -299,7 +299,8 @@ private fun valorParaTexto(campo: String, el: JsonElement): String = when (el) {
                 numero != null && (campoMin.contains("percentual") || campoMin.contains("pct")) ->
                     "${String.format(java.util.Locale("pt", "BR"), "%.1f", numero)}%"
                 numero != null && CAMPOS_MOEDA.any { campoMin.contains(it) } -> formatarMoedaBr(numero)
-                else -> texto
+                numero != null -> texto
+                else -> com.bragro.mobile.ui.domain.exibirTexto(texto) // v285 (mockup v359 item 3) -- sem caixa alta
             }
         }
     }

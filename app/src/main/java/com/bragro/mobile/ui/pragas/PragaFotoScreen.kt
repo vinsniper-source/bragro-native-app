@@ -468,7 +468,10 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Diagnóstico", color = MaterialTheme.colorScheme.onSurface) // v284 (mockup v356 item 12)
+                        androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            Text("Diagnóstico", color = MaterialTheme.colorScheme.onSurface) // v284 (mockup v356 item 12)
+                            com.bragro.mobile.ui.theme.DicaInfo("Fotografe e confirme o Alvo.") // v285 (mockup v359 item 10) -- ⓘ ao lado do título
+                        }
                     }
                 
                     }
@@ -480,7 +483,6 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                            com.bragro.mobile.ui.theme.DicaInfo("Fotografe e confirme o Alvo.")
                             androidx.compose.material3.IconButton(onClick = { launchCameraComPermissao() }, enabled = !enviandoFoto, modifier = Modifier.size(40.dp)) {
                                 if (enviandoFoto) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                                 else com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoUrl != null) "Trocar foto" else "Tirar foto da praga/doença", tint = MaterialTheme.colorScheme.onSurface, size = 24.dp)

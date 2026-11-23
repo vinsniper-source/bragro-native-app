@@ -613,10 +613,10 @@ private fun FazendaDreCard(f: DossieDreFazendaData) {
 private fun ContratoCard(c: DossieContratoData) {
     com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(c.descricao, style = MaterialTheme.typography.bodyLarge)
+            Text(com.bragro.mobile.ui.domain.exibirTexto(c.descricao), style = MaterialTheme.typography.bodyLarge) /* v285 -- sem caixa alta */
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(c.tipo ?: "—", style = MaterialTheme.typography.labelSmall)
-                Text(c.contraparte ?: "—", style = MaterialTheme.typography.labelSmall)
+                Text(c.tipo?.let { com.bragro.mobile.ui.domain.exibirTexto(it) } ?: "—", style = MaterialTheme.typography.labelSmall)
+                Text(c.contraparte?.let { com.bragro.mobile.ui.domain.exibirTexto(it) } ?: "—", style = MaterialTheme.typography.labelSmall)
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(formatMoneyBrl(c.valorR), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
@@ -633,8 +633,8 @@ private fun ContratoCard(c: DossieContratoData) {
 private fun PatrimonioItemLinha(p: DossiePatrimonioItemData) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text(p.descricao, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-            if (!p.categoria.isNullOrBlank()) Text(p.categoria, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(com.bragro.mobile.ui.domain.exibirTexto(p.descricao), style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            if (!p.categoria.isNullOrBlank()) Text(com.bragro.mobile.ui.domain.exibirTexto(p.categoria), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Text(formatMoneyBrl(p.valorContabil), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
     }
@@ -645,8 +645,8 @@ private fun PatrimonioItemCard(p: DossiePatrimonioItemData) {
     com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column {
-                Text(p.descricao, style = MaterialTheme.typography.bodyMedium)
-                if (!p.categoria.isNullOrBlank()) Text(p.categoria, style = MaterialTheme.typography.labelSmall)
+                Text(com.bragro.mobile.ui.domain.exibirTexto(p.descricao), style = MaterialTheme.typography.bodyMedium)
+                if (!p.categoria.isNullOrBlank()) Text(com.bragro.mobile.ui.domain.exibirTexto(p.categoria), style = MaterialTheme.typography.labelSmall)
             }
             Text(formatMoneyBrl(p.valorContabil), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
         }

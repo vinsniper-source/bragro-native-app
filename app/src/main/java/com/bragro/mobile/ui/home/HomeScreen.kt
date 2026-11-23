@@ -2680,44 +2680,44 @@ private fun ClimaResumo(clima: com.bragro.mobile.data.model.WeatherData, onClick
     val laranja = androidx.compose.ui.graphics.Color(0xFFD97706)
     val br = java.util.Locale("pt", "BR")
     androidx.compose.material3.Card(onClick = onClick, modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.Transparent), border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) { // v275 (mockup v330) -- bloco recolhido com borda
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // v285 (mockup v359b) -- Clima minimalista: título e aviso numa linha, temperatura
+        // e resumo noutra, 4 dias sem ícones e pulverização.
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(iconeClima(clima.currentIcon), contentDescription = null, modifier = Modifier.size(32.dp))
-                Spacer(Modifier.width(10.dp))
-                Text("${Math.round(clima.currentTempC)}°C", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text("Clima", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                clima.agro?.alertas?.firstOrNull()?.let { a ->
+                    Icon(Icons.Outlined.WarningAmber, contentDescription = null, tint = laranja, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("${a.titulo.lowercase(br)} até ${a.fim.substringAfter(' ', a.fim)}", color = laranja, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text("${Math.round(clima.currentTempC)}°", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.width(10.dp))
                 Text(
                     listOfNotNull(
                         clima.condicao,
-                        "Máx ${Math.round(clima.todayMaxC)}° · Mín ${Math.round(clima.todayMinC)}°",
-                        "${String.format(br, "%.1f", clima.todayPrecipMm)} mm hoje" + (clima.todayPrecipProb?.let { " (${Math.round(it)}%)" } ?: ""),
+                        "${Math.round(clima.todayMaxC)}°/${Math.round(clima.todayMinC)}°",
+                        "${String.format(br, "%.1f", clima.todayPrecipMm)} mm",
                     ).joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
-                    color = cs.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).padding(bottom = 4.dp),
                 )
             }
-            clima.agro?.alertas?.firstOrNull()?.let { a ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.WarningAmber, contentDescription = null, tint = laranja, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("${a.titulo} até ${a.fim.substringAfter(' ', a.fim)}", color = laranja, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            HorizontalDivider(color = cs.outlineVariant.copy(alpha = 0.6f))
+            Row(modifier = Modifier.fillMaxWidth()) {
                 clima.forecast.drop(1).take(4).forEach { d ->
                     val dia = runCatching { java.time.LocalDate.parse(d.date).format(java.time.format.DateTimeFormatter.ofPattern("EEE", br)).replace(".", "") }.getOrDefault("")
-                    Text(buildAnnotatedString {
-                        append("$dia ")
-                        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append("${Math.round(d.maxC)}/${Math.round(d.minC)}°") }
-                    }, style = MaterialTheme.typography.bodySmall)
+                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(dia, style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
+                        Text("${Math.round(d.maxC)}/${Math.round(d.minC)}°", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
             clima.spray?.let { sp ->
                 Text(buildAnnotatedString {
                     append("Pulverização ")
                     withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = if (sp.favoravelAgora) cs.primary else laranja)) { append(if (sp.favoravelAgora) "favorável" else "desfavorável") }
-                    if (!sp.favoravelAgora) sp.proximaJanela?.let { j -> append(" · janela "); withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append("${j.inicio}–${j.fim}") } }
                 }, style = MaterialTheme.typography.bodySmall)
             }
         }

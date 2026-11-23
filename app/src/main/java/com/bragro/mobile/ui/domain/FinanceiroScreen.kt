@@ -1267,8 +1267,9 @@ private fun PeriodoDropdown(
     onInterval: (String, String) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var fromText by remember(intervalFrom) { mutableStateOf(intervalFrom) }
-    var toText by remember(intervalTo) { mutableStateOf(intervalTo) }
+    // v285 (mockup v359 item 14) -- datas no formato brasileiro na tela; o filtro segue em AAAA-MM-DD.
+    var fromText by remember(intervalFrom) { mutableStateOf(com.bragro.mobile.ui.domain.isoDateToBr(intervalFrom)) }
+    var toText by remember(intervalTo) { mutableStateOf(com.bragro.mobile.ui.domain.isoDateToBr(intervalTo)) }
     val hasFilter = periodo != null || intervalFrom.isNotBlank() || intervalTo.isNotBlank()
 
     // Ganhou rótulo "Período" -- varredura geral pedida pelo usuário
@@ -1309,14 +1310,14 @@ private fun PeriodoDropdown(
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.weight(1f),
                 )
-                com.bragro.mobile.ui.domain.SalvarIcone(onClick = { onInterval(fromText, toText); expanded = false }, descricao = "Aplicar intervalo")
+                com.bragro.mobile.ui.domain.SalvarIcone(onClick = { onInterval(com.bragro.mobile.ui.domain.brDateToIso(fromText.trim()), com.bragro.mobile.ui.domain.brDateToIso(toText.trim())); expanded = false }, descricao = "Aplicar intervalo")
             }
             Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
                 OutlinedTextField(
                     value = fromText,
                     onValueChange = { fromText = it },
                     label = { Text("De") },
-                    placeholder = { Text("AAAA-MM-DD") },
+                    placeholder = { Text("dd/mm/aaaa") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
                     colors = appFieldColors(),
@@ -1325,7 +1326,7 @@ private fun PeriodoDropdown(
                     value = toText,
                     onValueChange = { toText = it },
                     label = { Text("Até") },
-                    placeholder = { Text("AAAA-MM-DD") },
+                    placeholder = { Text("dd/mm/aaaa") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = appFieldColors(),

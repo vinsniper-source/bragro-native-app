@@ -517,13 +517,13 @@ private fun NovoDroneRegistroDialog(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // v275 (mockup v330) -- título numa linha; anexo, ✓ e ✕ na primeira linha.
                 com.bragro.mobile.ui.domain.NovoLancamentoIcone() // v281 -- "Novo" vira o ícone
-                Text("Voo", modifier = Modifier.weight(1f), maxLines = 1)
+                Text("Voo", modifier = Modifier.weight(1f), maxLines = 1, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
                 IconButton(onClick = { filePicker.launch(arrayOf("image/*", "video/*")) }) {
-                    Icon(
+                    com.bragro.mobile.ui.domain.IconeNegrito( // v285 (mockup v359 item 9) -- negrito
                         Icons.Outlined.AttachFile,
                         contentDescription = pickedName ?: "Selecionar arquivo *",
                         tint = if (pickedUri != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp),
+                        size = 22.dp,
                     )
                 }
                 // "Copiar último registro" -- pedido do usuário. Copia só
