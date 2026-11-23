@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.seguranca
 
+import androidx.compose.material.icons.outlined.Key
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.outlined.Lock
 import android.app.Application
@@ -558,6 +559,10 @@ private fun EquipeCard(
                         // self-service, edita só os widgets "inicio.*" do
                         // próprio usuário, sem passar pelo form genérico de
                         // papel/módulos (que nem se aplica ao próprio OWNER).
+                        // v283 (mockup v353) -- 🔑 trocar a própria senha.
+                        IconButton(onClick = { senhaPara = id to email }, enabled = !busy) {
+                            Icon(Icons.Outlined.Key, contentDescription = "Trocar minha senha", tint = MaterialTheme.colorScheme.onSurface)
+                        }
                         IconButton(onClick = { showPersonalizarInicio = true }) {
                             Icon(Icons.Outlined.Settings, contentDescription = "Personalizar Início", tint = MaterialTheme.colorScheme.primary)
                         }

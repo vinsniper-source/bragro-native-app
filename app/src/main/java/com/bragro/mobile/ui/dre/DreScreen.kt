@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.dre
 
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.outlined.RequestQuote
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.outlined.Assessment
@@ -663,9 +664,11 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
             if (filtrosOpen) {
                 item {
                     // v281 (mockup v343) -- um filtro por linha.
-                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    androidx.compose.material3.Card(modifier = Modifier.fillMaxWidth().wrapContentWidth(androidx.compose.ui.Alignment.End).width(250.dp).padding(end = 10.dp, bottom = 8.dp)) { // v283 (mockup v355) -- bloco estreito à direita
+                    Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterDropdown("Safra", safra, data?.safrasDisponiveis.orEmpty()) { viewModel.setSafra(it) }
                         FilterDropdown("Cultura", cultura, data?.culturasDisponiveis.orEmpty()) { viewModel.setCultura(it) }
+                    }
                     }
                 }
             }

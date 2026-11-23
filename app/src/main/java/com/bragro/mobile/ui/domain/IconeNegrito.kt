@@ -82,11 +82,13 @@ fun TituloJanela(titulo: String, onFechar: (() -> Unit)? = null, fecharEnabled: 
             val novo = Regex("^Nov[oa] ", RegexOption.IGNORE_CASE).containsMatchIn(titulo)
             val tituloExib = if (novo) titulo.substring(5).replaceFirstChar { it.uppercase() } else titulo
             if (novo) NovoLancamentoIcone()
-            androidx.compose.material3.Text(tituloExib, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+            androidx.compose.material3.Text(tituloExib, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, maxLines = 1, /* v283 (mockup v355 item 3) -- negrito */ overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
             if (!dica.isNullOrBlank()) com.bragro.mobile.ui.theme.DicaInfo(dica)
         }
-        acoes()
-        if (onFechar != null) FecharIcone(onFechar, fecharEnabled)
+        androidx.compose.runtime.CompositionLocalProvider(LocalIconeNegrito provides true) {
+            acoes()
+            if (onFechar != null) FecharIcone(onFechar, fecharEnabled)
+        }
     }
 }
 

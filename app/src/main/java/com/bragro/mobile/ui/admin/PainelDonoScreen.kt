@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.admin
 
+import kotlinx.serialization.json.doubleOrNull
 import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -67,6 +68,23 @@ class PainelDonoViewModel(app: Application) : AndroidViewModel(app) {
 }
 
 private val Laranja = Color(0xFFD9822B)
+private val Amarelo = Color(0xFFC9A000)
+
+/** v283 -- ok = verde, warn = amarelo, bad = laranja (sem vermelho). */
+@Composable
+private fun corTom(tom: String): Color = when (tom.lowercase()) {
+    "ok", "green", "verde" -> MaterialTheme.colorScheme.primary
+    "warn", "warning", "yellow", "amarelo" -> Amarelo
+    "bad", "over", "danger", "red", "erro", "critical" -> Laranja
+    else -> MaterialTheme.colorScheme.onSurfaceVariant
+}
+
+private fun tamanho(b: Double): String = when {
+    b >= 1024.0 * 1024 * 1024 -> "%.1f GB".format(b / (1024.0 * 1024 * 1024))
+    b >= 1024.0 * 1024 -> "%.0f MB".format(b / (1024.0 * 1024))
+    b >= 1024.0 -> "%.0f KB".format(b / 1024.0)
+    else -> "%.0f B".format(b)
+}
 
 @Composable
 private fun Selo(texto: String, ligado: Boolean) {
@@ -150,6 +168,60 @@ fun PainelDonoScreen(onBack: () -> Unit, viewModel: PainelDonoViewModel = viewMo
                     Row { Numero("Clientes pagantes", n("clientesPagantes").toString(), Modifier.weight(1f)); Numero("Em teste", n("clientesEmTeste").toString(), Modifier.weight(1f)); Numero("Faturas em aberto", n("faturasEmAberto").toString(), Modifier.weight(1f)) }
                     HorizontalDivider()
                     Row { Numero("Banco", if (bancoNoAr) "no ar" else "fora", Modifier.weight(1f)); Numero("Último backup", backup, Modifier.weight(1f)); Numero("Robôs (7 dias)", n("robos7Dias").toString(), Modifier.weight(1f)) }
+                    // v283 (mockup v355 item 8) -- tamanho do banco, backups guardados e pendências.
+                    HorizontalDivider()
+                    val bytes = dados["bancoBytes"]?.jsonPrimitive?.doubleOrNull
+                    Row { Numero("Tamanho do banco", bytes?.let { tamanho(it) } ?: "—", Modifier.weight(1f)); Numero("Backups guardados", n("backupsGuardados").toString(), Modifier.weight(1f)); Numero("Pendências", n("pendencias").toString(), Modifier.weight(1f)) }
+                    }
+                }
+            }
+            fun lista(k: String) = (dados[k] as? kotlinx.serialization.json.JsonArray) ?: kotlinx.serialization.json.JsonArray(emptyList())
+            fun JsonObject.t(k: String) = this[k]?.jsonPrimitive?.contentOrNull ?: ""
+            val verificacoes = lista("verificacoes")
+            if (verificacoes.isNotEmpty()) item {
+                val ok = verificacoes.count { it.jsonObject.t("tom") == "ok" }
+                Bloco("Verificações automáticas", direita = { Selo("$ok/${verificacoes.size}", ok == verificacoes.size) }) {
+                    verificacoes.forEachIndexed { i, el ->
+                        val o = el.jsonObject
+                        if (i > 0) HorizontalDivider()
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(o.t("nome"), style = MaterialTheme.typography.bodyMedium)
+                                if (o.t("detalhe").isNotBlank()) Text(o.t("detalhe"), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            }
+                            Text(o.t("rotulo"), color = corTom(o.t("tom")), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            }
+            val limites = lista("limites")
+            if (limites.isNotEmpty()) item {
+                Bloco("Limites de uso") {
+                    limites.forEachIndexed { i, el ->
+                        val o = el.jsonObject
+                        if (i > 0) HorizontalDivider()
+                        val usado = o["usado"]?.jsonPrimitive?.doubleOrNull
+                        val limite = o["limite"]?.jsonPrimitive?.doubleOrNull
+                        val un = o.t("unidade").let { if (it == "count") "" else it }
+                        fun fmt(v: Double?) = when {
+                            v == null -> "—"
+                            un.equals("bytes", true) || un.equals("B", true) -> tamanho(v)
+                            v == Math.floor(v) -> "%,.0f".format(java.util.Locale("pt", "BR"), v) + if (un.isNotBlank()) " $un" else ""
+                            else -> "%,.1f".format(java.util.Locale("pt", "BR"), v) + if (un.isNotBlank()) " $un" else ""
+                        }
+                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(o.t("rotulo"), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text("${fmt(usado)} / ${fmt(limite)}", style = MaterialTheme.typography.labelSmall, color = corTom(o.t("nivel")))
+                            }
+                            if (usado != null && limite != null && limite > 0) {
+                                androidx.compose.material3.LinearProgressIndicator(
+                                    progress = { (usado / limite).toFloat().coerceIn(0f, 1f) },
+                                    color = corTom(o.t("nivel")),
+                                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -167,6 +239,53 @@ fun PainelDonoScreen(onBack: () -> Unit, viewModel: PainelDonoViewModel = viewMo
                             }
                             Selo(o["status"]?.jsonPrimitive?.contentOrNull ?: "", o["ligado"]?.jsonPrimitive?.booleanOrNull == true)
                         }
+                    }
+                }
+            }
+            val eventos = lista("eventos")
+            item {
+                Bloco("Eventos de segurança (${eventos.size})") {
+                    if (eventos.isEmpty()) Text("Nenhum evento.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    eventos.forEachIndexed { i, el ->
+                        val o = el.jsonObject
+                        if (i > 0) HorizontalDivider()
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(o.t("tipo"), style = MaterialTheme.typography.bodyMedium)
+                                if (o.t("detalhe").isNotBlank()) Text(o.t("detalhe"), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            }
+                            Text(com.bragro.mobile.ui.seguranca.formatIsoPublico(o.t("quando")), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+            val erros = lista("erros")
+            item {
+                Bloco("Ocorrências / erros (${erros.size})", direita = { if (erros.isEmpty()) Selo("nenhum", true) }) {
+                    erros.forEachIndexed { i, el ->
+                        val o = el.jsonObject
+                        if (i > 0) HorizontalDivider()
+                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                            Text(o.t("mensagem"), style = MaterialTheme.typography.bodyMedium, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                            val vezes = o["n"]?.jsonPrimitive?.intOrNull ?: 1
+                            Text(
+                                listOf(o.t("origem"), o.t("local"), "${vezes}×", com.bragro.mobile.ui.seguranca.formatIsoPublico(o.t("ultimo"))).filter { it.isNotBlank() }.joinToString(" · "),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Laranja,
+                                maxLines = 2, overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+            }
+            val app = dados["appAndroid"] as? JsonObject
+            item {
+                Bloco("App Android") {
+                    if (app == null) Text("Nenhuma versão publicada.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    else Row {
+                        Numero("Versão", app.t("versao").ifBlank { "—" }, Modifier.weight(1f))
+                        Numero("Publicado", com.bragro.mobile.ui.seguranca.formatIsoPublico(app.t("publicadoEm")), Modifier.weight(1f))
+                        Numero("Tamanho", app["tamanhoBytes"]?.jsonPrimitive?.doubleOrNull?.let { tamanho(it) } ?: "—", Modifier.weight(1f))
                     }
                 }
             }

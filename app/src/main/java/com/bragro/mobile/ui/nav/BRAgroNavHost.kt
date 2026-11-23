@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.nav
 
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -264,8 +265,17 @@ fun BRAgroNavHost() {
             LaunchedEffect(papel) {
                 if (papel != null && papel != "OWNER" && papel != "ADMIN") irInicio()
             }
+            // v283 (mockup v353) -- ← em Fazendas sai da sessão e volta ao Login
+            // (antes voltava para o Início e entrava sem login).
+            val escopoSair = androidx.compose.runtime.rememberCoroutineScope()
+            val sairParaLogin: () -> Unit = {
+                escopoSair.launch {
+                    runCatching { AuthRepository(context).logout() }
+                    navController.navigate(Routes.LOGIN) { popUpTo(0) { inclusive = true } }
+                }
+            }
             BaseDeDadosScreen(
-                onBack = irInicio,
+                onBack = sairParaLogin,
                 modoFazendas = true,
                 onHome = irInicio,
             )

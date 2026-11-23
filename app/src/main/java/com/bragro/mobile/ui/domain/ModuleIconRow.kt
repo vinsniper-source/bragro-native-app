@@ -569,7 +569,7 @@ fun BalaoNomeIcone(texto: String, visivel: Boolean, onFechar: () -> Unit) {
 fun NovoIconeTopo(icon: ImageVector, descricao: String, onClick: () -> Unit, mais: Boolean = true) {
     androidx.compose.material3.IconButton(onClick = onClick) {
         Box {
-            Icon(icon, contentDescription = descricao, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+            com.bragro.mobile.ui.domain.IconeNegrito(icon, contentDescription = descricao, tint = MaterialTheme.colorScheme.onSurface, size = 24.dp) // v283 -- negrito
             if (mais && icon != Icons.Outlined.Add) Text(
                 "+",
                 fontSize = 13.sp,

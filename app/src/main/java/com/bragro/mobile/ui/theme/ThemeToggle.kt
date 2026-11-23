@@ -28,6 +28,6 @@ fun ThemeToggle() {
         ThemeMode.DARK -> Icons.Outlined.DarkMode to "Escuro"
     }
     IconButton(onClick = { ThemeController.cycle(context) }) {
-        Icon(icon, contentDescription = "Tema: $label", modifier = androidx.compose.ui.Modifier.size(22.dp)) // v275
+        com.bragro.mobile.ui.domain.IconeNegrito(icon, contentDescription = "Tema: $label", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp) // v283 negrito; v275
     }
 }

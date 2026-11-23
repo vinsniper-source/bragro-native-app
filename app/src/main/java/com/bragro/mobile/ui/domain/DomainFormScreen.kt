@@ -877,6 +877,7 @@ fun DomainFormScreen(
                                 config?.label?.let { tituloCurto(com.bragro.mobile.ui.domain.exibirTexto(it)) } ?: if (recordId == null) "Novo registro" else "Editar registro",
                                 maxLines = 1,
                                 softWrap = false, // v275 (mockup v330) -- palavra relevante, sem cortar nem "…"
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, // v283 (mockup v355 item 10)
                                 color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f, fill = false),
                             )
@@ -2039,5 +2040,7 @@ internal fun tituloCurto(t: String): String {
     val semPrefixo = Regex("^(controle|monitoramento|gestão|cadastro|registro|lançamento)s? de ", RegexOption.IGNORE_CASE).replace(t, "")
         .replaceFirstChar { it.titlecase() }
     if (semPrefixo.length <= 14) return semPrefixo
+    // v283 (mockup v355 item 4) -- "Mão" sozinho não diz nada: fica "Mão de obra".
+    if (semPrefixo.startsWith("Mão de obra", ignoreCase = true)) return "Mão de obra"
     return semPrefixo.split(" ", " / ", "/").first().trim()
 }

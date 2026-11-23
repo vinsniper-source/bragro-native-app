@@ -1386,8 +1386,8 @@ fun DomainListScreen(
                 item(key = "filtros") {
                     // v279 (mockup v338 item 12) -- menos margem por fora e por dentro.
                     // v281 (mockup v343) -- largura da lista "Colunas", encostado à direita.
-                    Card(modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.End).width(230.dp).padding(bottom = 8.dp)) {
-                        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+                    Card(modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.End).width(250.dp).padding(end = 10.dp, bottom = 8.dp)) { // v283 -- mais margem
+                        Column(modifier = Modifier.padding(18.dp)) {
                             // 3 colunas por linha -- pedido do usuário
                             // ("os filtros coloquem em tres colunas dentro
                             // do mesmo bloco"); quebra pra linha de baixo

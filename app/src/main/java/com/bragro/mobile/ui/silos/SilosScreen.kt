@@ -594,7 +594,7 @@ private fun SiloCard(
                 @Composable
                 fun icone(img: androidx.compose.ui.graphics.vector.ImageVector, nome: String, cor: androidx.compose.ui.graphics.Color, habilitado: Boolean = !busy, acao: () -> Unit) {
                     androidx.compose.material3.IconButton(onClick = acao, enabled = habilitado, modifier = Modifier.size(32.dp)) {
-                        Icon(img, contentDescription = nome, tint = if (habilitado) cor else cor.copy(alpha = 0.35f), modifier = Modifier.size(16.dp))
+                        com.bragro.mobile.ui.domain.IconeNegrito(img, contentDescription = nome, tint = if (habilitado) cor else cor.copy(alpha = 0.35f), size = 18.dp) // v283 (mockup v355 item 13)
                     }
                 }
                 if (dirty || silo.leituraAtrasada || estimado) icone(Icons.Outlined.Check, if (estimado && !dirty) "Confirmar" else "Salvar", cs.primary) { onSalvarRapido(pct.toDouble()) }

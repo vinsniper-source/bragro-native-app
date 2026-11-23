@@ -327,7 +327,7 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
                 // altura do título nesses módulos"), mesmo padrão dos demais
                 // módulos (ver DomainListScreen.kt).
                 actions = {
-                    androidx.compose.foundation.layout.Column { androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(16.dp)); com.bragro.mobile.ui.domain.NovoIconeTopo(Icons.Outlined.Add, "Nova prescrição", onClick = onNovo) }
+                    androidx.compose.foundation.layout.Column { androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(16.dp)); com.bragro.mobile.ui.domain.NovoIconeTopo(Icons.Outlined.Map, "Nova prescrição", onClick = onNovo) } /* v283 (mockup v355) -- ícone de prescrição com + elevado */
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         /* v275 (mockup v331) -- sem casinha na página inicial do módulo */

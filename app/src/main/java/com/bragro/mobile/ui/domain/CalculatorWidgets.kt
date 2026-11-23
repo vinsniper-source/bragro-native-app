@@ -121,11 +121,11 @@ fun CalcCard(icon: androidx.compose.ui.graphics.vector.ImageVector, title: Strin
     // v237 (mockup v236 aprovado) -- volta ao padrão: campos empilhados e
     // sempre visíveis (sem recolher), com mais margem e espaço entre campos.
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 4.dp), // v283 (mockup v355) -- ~24 dp por fora
         colors = CardDefaults.cardColors(containerColor = com.bragro.mobile.ui.theme.formBlockColor()),
     ) {
         Column(
-            modifier = Modifier.padding(8.dp), // v281 (mockup v343) -- 8 dp por dentro
+            modifier = Modifier.padding(18.dp), // v283 (mockup v355) -- 18 dp por dentro
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             // v239 (mockup aprovado) -- ícone e título em verde, com mais espaço até os campos.

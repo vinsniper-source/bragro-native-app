@@ -966,6 +966,7 @@ private fun SectorMenuItem(item: SectorTarget, tabIcon: ImageVector, onClick: ()
         text = {
             Text(
                 label,
+                style = MaterialTheme.typography.bodyLarge, // v283 (mockup v355 item 9) -- mesma fonte da lista do Estoque
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

@@ -468,7 +468,7 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Diagnóstico por Foto", color = MaterialTheme.colorScheme.onSurface)
+                        Text("Diagnóstico foto", color = MaterialTheme.colorScheme.onSurface) // v283 (mockup v355 item 12)
                     }
                 
                     }
@@ -476,6 +476,21 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
                 // Ícone Copiar no canto superior direito -- gap encontrado em
                 // auditoria de paridade, mesmo padrão de RomaneioQuickScreen.kt.
                 actions = {
+                    // v283 (mockup v355 item 12) -- ⓘ, câmera e copiar na linha do título.
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            com.bragro.mobile.ui.theme.DicaInfo("Fotografe e confirme o Alvo.")
+                            androidx.compose.material3.IconButton(onClick = { launchCameraComPermissao() }, enabled = !enviandoFoto, modifier = Modifier.size(40.dp)) {
+                                if (enviandoFoto) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                                else com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoUrl != null) "Trocar foto" else "Tirar foto da praga/doença", tint = MaterialTheme.colorScheme.onSurface, size = 24.dp)
+                            }
+                            androidx.compose.material3.IconButton(onClick = { if (!copiando) viewModel.preencherComUltimo() }, modifier = Modifier.size(40.dp)) {
+                                if (copiando) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                                else com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.ContentCopy, contentDescription = "Copiar último", tint = MaterialTheme.colorScheme.onSurface, size = 24.dp)
+                            }
+                        }
+                    }
                     com.bragro.mobile.ui.domain.SalvarTopo(onClick = { viewModel.submit() }, enabled = !savedOk, loading = saving, descricao = "Lançar")
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -494,19 +509,6 @@ fun PragaFotoScreen(onBack: () -> Unit, viewModel: PragaFotoViewModel = viewMode
             contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp), // v219 -- margens nas janelas
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item {
-                // v260 (mockups v255/v259) -- foto e Copiar na linha do aviso.
-                com.bragro.mobile.ui.domain.AvisoComIcones("Fotografe e confirme o Alvo.") {
-                    androidx.compose.material3.IconButton(onClick = { launchCameraComPermissao() }, enabled = !enviandoFoto, modifier = Modifier.size(40.dp)) {
-                        if (enviandoFoto) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                        else Icon(com.bragro.mobile.ui.domain.IconeFotoIA, contentDescription = if (fotoUrl != null) "Trocar foto" else "Tirar foto da praga/doença", modifier = Modifier.size(24.dp))
-                    }
-                    androidx.compose.material3.IconButton(onClick = { if (!copiando) viewModel.preencherComUltimo() }, modifier = Modifier.size(40.dp)) {
-                        if (copiando) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                        else Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último", modifier = Modifier.size(24.dp))
-                    }
-                }
-            }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (mensagemFoto != null) {

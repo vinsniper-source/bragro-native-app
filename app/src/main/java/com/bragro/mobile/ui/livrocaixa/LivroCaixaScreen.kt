@@ -484,9 +484,9 @@ private fun ProdutorRuralCard(
     var certValidade by remember(config) { mutableStateOf(isoDateToBr(config?.certificadoDigitalValidade ?: "")) }
     var contaIrpf by remember(config) { mutableStateOf(config?.contaIrpfPadrao ?: "") }
 
-    com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
+    com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)) { // v283 -- mais margem por fora
         var aberto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-        Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { // v280 (mockup v339 item 18) -- margem menor dentro do bloco
+        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { // v283 18 dp dentro; v280 (mockup v339 item 18) -- margem menor dentro do bloco
             // v1.6.59 -- Salvar virou ✓ na linha do título.
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 androidx.compose.foundation.layout.Box(Modifier.weight(1f)) {

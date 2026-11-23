@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.analises
 
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.automirrored.outlined.ViewList
 import android.app.Application
@@ -984,13 +986,11 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
                     // pedido do usuário ("análises coloque filtro cultura,
                     // dividindo a mesma linha com o filtro safra, blocos
                     // separados"), mesmo padrão do DRE (DreScreen.kt).
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            FilterDropdown("Safra", safra, safrasDisponiveis) { viewModel.setSafra(it) }
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            FilterDropdown("Cultura", cultura, culturasDisponiveis) { viewModel.setCultura(it) }
-                        }
+                    androidx.compose.material3.Card(modifier = Modifier.fillMaxWidth().wrapContentWidth(androidx.compose.ui.Alignment.End).width(250.dp).padding(end = 10.dp, bottom = 8.dp)) { // v283 (mockup v355) -- bloco estreito à direita
+                    Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterDropdown("Safra", safra, safrasDisponiveis) { viewModel.setSafra(it) }
+                        FilterDropdown("Cultura", cultura, culturasDisponiveis) { viewModel.setCultura(it) }
+                    }
                     }
                 }
             }

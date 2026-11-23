@@ -846,7 +846,7 @@ fun HomeScreen(
                                 if (!apkUrl.isNullOrBlank()) {
                                     DropdownMenuItem(
                                         text = { Text("Baixar para Android" + (apkVersao?.let { " (v$it)" } ?: "")) },
-                                        leadingIcon = { Icon(Icons.Outlined.Download, contentDescription = null) },
+                                        leadingIcon = { Icon(Icons.Outlined.Download, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }, // v283 (mockup v355 item 5) -- verde
                                         onClick = {
                                             configMenuOpen = false
                                             com.bragro.mobile.ui.util.enqueueApkDownload(logoScreenContext, apkUrl, apkVersao ?: "?")
@@ -1230,12 +1230,15 @@ fun HomeScreen(
                 Column(modifier = Modifier.offset(y = 0.dp)) {
                     // v320 (mockup v320b aprovado) -- no lugar do "Olá, bem-vindo de
                     // volta": o slogan com BRAgro no início e a data pequena.
+                    // v283 (mockup v355 item 2) -- a data foi para a direita, na linha do slogan.
+                    Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth()) {
                     Text(
                         "BRAgro — Conectando a força da nossa terra, carregando o Brasil no coração.",
                         style = MaterialTheme.typography.titleSmall, // v274 (mockup v329) -- fonte menor
                         fontStyle = FontStyle.Italic,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f),
                     )
                     Text(
                         java.time.LocalDate.now(java.time.ZoneId.of("America/Sao_Paulo")).let { d ->
@@ -1243,9 +1246,11 @@ fun HomeScreen(
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 2.dp),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                        modifier = Modifier.padding(start = 8.dp, top = 2.dp).widthIn(max = 120.dp),
                     )
-                    if (data != null) {
+                    }
+                    if (data != null) androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.domain.LocalIconeNegrito provides true) { // v283 -- ícones em negrito
                         HomeShortcutsRow(
                             data = data,
                             showDestaques = showDestaques,

@@ -627,7 +627,7 @@ private fun PivoCard(
                         @Composable
                         fun icone(img: androidx.compose.ui.graphics.vector.ImageVector, nome: String, cor: androidx.compose.ui.graphics.Color, acao: () -> Unit) {
                             IconButton(onClick = acao, enabled = !busy, modifier = Modifier.size(32.dp)) {
-                                Icon(img, contentDescription = nome, tint = cor, modifier = Modifier.size(16.dp))
+                                com.bragro.mobile.ui.domain.IconeNegrito(img, contentDescription = nome, tint = cor, size = 18.dp) // v283 (mockup v355 item 13)
                             }
                         }
                         if (ligado) icone(com.bragro.mobile.ui.domain.IconesVazados.StopCircle, "Desligar", cs.onSurface, onDesligar)
