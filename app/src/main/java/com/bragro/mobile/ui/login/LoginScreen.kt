@@ -1,5 +1,9 @@
 package com.bragro.mobile.ui.login
 
+import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowRight
+import androidx.compose.material.icons.outlined.Grass
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -122,6 +126,8 @@ class LoginViewModel(app: Application) : AndroidViewModel(app) {
 fun LoginScreen(onLoggedIn: () -> Unit, onLoggedInFazendas: () -> Unit = onLoggedIn, viewModel: LoginViewModel = viewModel()) {
     // v279 (mockup v338 item 10) -- atalho "Fazendas": entra e abre o cadastro.
     var irFazendas by remember { mutableStateOf(false) }
+    // v281 (mockup v343) -- o ícone Fazendas fica no canto superior direito (fora do formulário).
+    var acionarFazendas by remember { mutableStateOf(0) }
     val aoEntrar: () -> Unit = { if (irFazendas) onLoggedInFazendas() else onLoggedIn() }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -253,39 +259,24 @@ fun LoginScreen(onLoggedIn: () -> Unit, onLoggedInFazendas: () -> Unit = onLogge
             else if (viewModel.pendente.value != null) viewModel.verificarCodigo(email, password, codigo2, aoEntrar)
             else viewModel.login(email, password, aoEntrar)
         }
+        androidx.compose.runtime.LaunchedEffect(acionarFazendas) { if (acionarFazendas > 0 && !loading) { irFazendas = true; entrar() } }
+        // v281 (mockup v343) -- igual à plataforma: esqueci a senha e criar conta como
+        // ícones à esquerda; "Entrar" só o duplo chevron à direita.
         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 12.dp))
-        androidx.compose.foundation.layout.Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            androidx.compose.material3.TextButton(onClick = { irFazendas = false; entrar() }, enabled = !loading) {
-                if (loading) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                } else {
-                    Text(if (trocar != null) "Salvar e entrar" else "Entrar", fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, color = androidx.compose.material3.MaterialTheme.colorScheme.primary)
-                    Icon(Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 6.dp).size(18.dp))
-                }
+        androidx.compose.foundation.layout.Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { openInCustomTab(context, "${BuildConfig.API_BASE_URL}/esqueci-senha") }) {
+                com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Key, contentDescription = "Esqueci a senha", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, size = 22.dp)
+            }
+            IconButton(onClick = { openInCustomTab(context, "${BuildConfig.API_BASE_URL}/cadastro") }) {
+                com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.PersonAdd, contentDescription = "Criar conta", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, size = 22.dp)
+            }
+            androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+            IconButton(onClick = { irFazendas = false; entrar() }, enabled = !loading) {
+                if (loading) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                else com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.KeyboardDoubleArrowRight, contentDescription = if (trocar != null) "Salvar e entrar" else "Entrar", tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, size = 30.dp)
             }
         }
 
-        // "Esqueci minha senha" -- embaixo, depois dos campos e do botão
-        // Entrar, pedido do usuário ("coloque embaixo depois dos campos
-        // esqueceu a senha"), mesma posição do login do site (login-form.tsx:
-        // logo após o botão de submit). O app nativo não tem tela própria de
-        // recuperação de senha -- abre a mesma página do site.
-        // v319 -- os dois links numa linha só.
-        androidx.compose.foundation.layout.Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            androidx.compose.material3.TextButton(onClick = { openInCustomTab(context, "${BuildConfig.API_BASE_URL}/esqueci-senha") }, contentPadding = PaddingValues(horizontal = 4.dp)) {
-                Text("Esqueci a senha", style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = androidx.compose.material3.MaterialTheme.colorScheme.primary)
-            }
-            androidx.compose.material3.TextButton(onClick = { openInCustomTab(context, "${BuildConfig.API_BASE_URL}/cadastro") }, contentPadding = PaddingValues(horizontal = 4.dp)) {
-                Text("Criar conta", style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = androidx.compose.material3.MaterialTheme.colorScheme.primary)
-            }
-            androidx.compose.material3.TextButton(onClick = { irFazendas = true; entrar() }, enabled = !loading, contentPadding = PaddingValues(horizontal = 4.dp)) {
-                Text("Fazendas", style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = androidx.compose.material3.MaterialTheme.colorScheme.primary)
-            }
-        }
         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 4.dp))
         Text(
             "Internet só no primeiro acesso.",
@@ -303,6 +294,10 @@ fun LoginScreen(onLoggedIn: () -> Unit, onLoggedInFazendas: () -> Unit = onLogge
             .padding(top = 8.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // v281 (mockup v343) -- Fazendas só com o ícone, na cor do texto: entra e abre o cadastro.
+        IconButton(onClick = { acionarFazendas++ }) {
+            com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Grass, contentDescription = "Fazendas", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp)
+        }
         LoginIdiomaMenu()
         com.bragro.mobile.ui.theme.ThemeToggle()
     }

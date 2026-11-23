@@ -294,7 +294,7 @@ fun PixConfigDialog(onDismiss: () -> Unit) {
                         }
                         // v280 (mockup v339 itens 7 e 8) -- "Trocar" vira ⇄ na linha do nome do campo.
                         androidx.compose.material3.IconButton(onClick = { tipoAberto = true }, modifier = Modifier.align(Alignment.TopEnd).size(32.dp)) {
-                            androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.SwapHoriz, contentDescription = "Trocar tipo da chave", modifier = Modifier.size(20.dp))
+                            com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.SwapHoriz, contentDescription = "Trocar tipo da chave", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp)
                         }
                         com.bragro.mobile.ui.theme.MenuSuspenso(expanded = tipoAberto, onDismissRequest = { tipoAberto = false }) {
                             TIPOS_PIX.forEach { t -> androidx.compose.material3.DropdownMenuItem(text = { Text(t) }, onClick = { tipo = t; tipoAberto = false }) }

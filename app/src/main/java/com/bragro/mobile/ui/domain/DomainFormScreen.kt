@@ -868,7 +868,7 @@ fun DomainFormScreen(
                 // "+" elevado, ✓ verde e ✕.
                 title = { androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
                     // v274 (mockup v329) -- título alinhado com a margem dos campos.
-                    Column(Modifier.padding(start = 20.dp + RECUO_CAMPOS - 16.dp)) {
+                    Column(Modifier.padding(start = 4.dp)) { // v281 (mockup v343) -- título mais à esquerda
                         Spacer(modifier = Modifier.height(16.dp))
                         androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                             // v278 (mockup v336) -- ícone "novo" antes do título.
@@ -898,13 +898,13 @@ fun DomainFormScreen(
                                 val climaHojeBusy by viewModel.climaHojeBusy
                                 IconButton(onClick = { if (!climaHojeBusy) viewModel.preencherClimaHoje() }) {
                                     if (climaHojeBusy) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                                    else Icon(Icons.Outlined.WaterDrop, contentDescription = "Preencher com clima de hoje", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                                    else com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.WaterDrop, contentDescription = "Preencher com clima de hoje", tint = MaterialTheme.colorScheme.onSurface, size = 24.dp)
                                 }
                             }
                             // v280 (mockup v339 itens 11-20) -- câmera na linha do título.
                             if (domainId in OCR_FOTO_DOMAINS) OcrFotoButton(somenteIcone = true) { url -> viewModel.aplicarOcrFoto(url) }
                             IconButton(onClick = { if (lastRecord != null) viewModel.copyFromLastRecord() }) {
-                                Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último lançamento", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(24.dp))
+                                com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.ContentCopy, contentDescription = "Copiar último lançamento", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), size = 24.dp)
                             }
                         }
                     }
@@ -960,14 +960,14 @@ fun DomainFormScreen(
                     val climaHojeBusy by viewModel.climaHojeBusy
                     IconButton(onClick = { if (!climaHojeBusy) viewModel.preencherClimaHoje() }, modifier = Modifier.size(32.dp)) {
                         if (climaHojeBusy) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                        else Icon(Icons.Outlined.WaterDrop, contentDescription = "Preencher com clima de hoje", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                        else com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.WaterDrop, contentDescription = "Preencher com clima de hoje", tint = MaterialTheme.colorScheme.onSurface, size = 24.dp)
                     }
                 }
                 if (domainId in OCR_FOTO_DOMAINS) {
                     OcrFotoButton(somenteIcone = true) { url -> viewModel.aplicarOcrFoto(url) }
                 }
                 if (domainId !in MULTI_ITEM_FORM) IconButton(onClick = { if (lastRecord != null) viewModel.copyFromLastRecord() }, modifier = Modifier.size(40.dp)) {
-                    Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último registro", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(24.dp))
+                    com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.ContentCopy, contentDescription = "Copiar último registro", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), size = 24.dp)
                 }
             }
             val temAcoesTopo = recordId == null && (domainId == "clima" || domainId in OCR_FOTO_DOMAINS || domainId !in MULTI_ITEM_FORM)
@@ -1101,12 +1101,12 @@ fun DomainFormScreen(
                             val climaHojeBusy by viewModel.climaHojeBusy
                             IconButton(onClick = { if (!climaHojeBusy) viewModel.preencherClimaHoje() }, modifier = Modifier.size(32.dp)) {
                                 if (climaHojeBusy) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                                else Icon(Icons.Outlined.WaterDrop, contentDescription = "Preencher com clima de hoje", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                                else com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.WaterDrop, contentDescription = "Preencher com clima de hoje", tint = MaterialTheme.colorScheme.onSurface, size = 24.dp)
                             }
                         }
                         // v196 -- sem copiar último registro nos módulos com vários itens (já há o copiar item).
                         if (domainId !in MULTI_ITEM_FORM) IconButton(onClick = { if (lastRecord != null) viewModel.copyFromLastRecord() }, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último registro", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
+                            com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.ContentCopy, contentDescription = "Copiar último registro", tint = if (lastRecord != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), size = 24.dp)
                         }
                     }
                 }
@@ -1164,15 +1164,16 @@ fun DomainFormScreen(
                     // recuam o mesmo tanto, para todas as linhas terminarem no mesmo ponto.
                     // v197/v198 (mockups aprovados) -- recuo igual dos quatro lados (26 dp)
                     // e o copiar item só como ícone no canto superior direito do bloco.
-                    com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
+                    // v281 (mockup v343) -- bloco 30 dp por fora e 14 dp por dentro: campos alinhados com os de fora.
+                    com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
                         Box(Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(start = 26.dp, end = 26.dp, top = if (ehSafra || multi != null) 16.dp else 30.dp)) {
+                            Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 14.dp)) {
                                 if (ehSafra || multi != null) {
                                     // v278 (mockup v335) -- ⧉ copiar item à direita do título do bloco.
                                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                                         Text("Item 1", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                                         if (multi != null) IconButton(onClick = { viewModel.copiarItemPrincipal(chavesItem) }, modifier = Modifier.size(36.dp)) {
-                                            Icon(Icons.Outlined.Add, contentDescription = "Adicionar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp)) /* v280 (mockup v339 item 17) */
+                                            com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Add, contentDescription = "Adicionar item", tint = MaterialTheme.colorScheme.onSurface, size = 24.dp) /* v280 (mockup v339 item 17) */
                                         }
                                     }
                                     androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
@@ -1189,7 +1190,7 @@ fun DomainFormScreen(
                         if (g.first == "itens" && multi != null) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                             Text("Item 1", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                             IconButton(onClick = { viewModel.copiarItemPrincipal(chavesItem) }, modifier = Modifier.size(36.dp)) {
-                                Icon(Icons.Outlined.Add, contentDescription = "Adicionar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp)) /* v280 (mockup v339 item 17) */
+                                com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Add, contentDescription = "Adicionar item", tint = MaterialTheme.colorScheme.onSurface, size = 24.dp) /* v280 (mockup v339 item 17) */
                             }
                         }
                         camposDaSecao()
@@ -1385,7 +1386,7 @@ private fun groupThousands(digits: String): String =
 private val ESPACO_CAMPOS = 28.dp
 
 /** v197 -- recuo dos campos fora do bloco Itens (26 dp do bloco + 1 dp da borda). */
-private val RECUO_CAMPOS = 27.dp
+private val RECUO_CAMPOS = 24.dp // v281 (mockup v343) -- formulário com 44 dp de margem lateral
 
 private fun fieldLabel(col: ColumnConfig): String = col.label + if (col.required) " *" else ""
 
@@ -1453,7 +1454,9 @@ private fun ComputedFieldDisplay(col: ColumnConfig, raw: String, optionLabels: M
     // v143 (mockup aprovado, opção B) -- "nome ......... AUTO": nome em
     // cinza, linha pontilhada e AUTO na ponta, sem caixa.
     Column(modifier = Modifier.fillMaxWidth()) {
-        com.bragro.mobile.ui.theme.CampoAutoLinha(com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), computedDisplayValue(col, raw, optionLabels))
+        // v281 (mockup v343 item K) -- automáticos sem maiúsculas (ex.: "REPOR" -> "Repor").
+        val valorAuto = computedDisplayValue(col, raw, optionLabels).let { v -> if (v.any { it.isLetter() } && v == v.uppercase()) com.bragro.mobile.ui.domain.exibirTexto(v) else v }
+        com.bragro.mobile.ui.theme.CampoAutoLinha(com.bragro.mobile.ui.i18n.Idioma.tr(col.label).replace(Regex("\\s*\\(R\\$\\)"), ""), valorAuto)
         // Dica útil da prévia (ex.: "saldo anterior R$ 9.680,00").
         if (!dica.isNullOrBlank()) {
             Text(dica, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
@@ -1899,18 +1902,18 @@ private fun ItensExtrasSection(
         // direito); aqui só sobra quando o módulo não tem o bloco.
         // v274 (mockup v329) -- copiar item fica na linha do título.
         viewModel.itensExtras.forEachIndexed { i, x ->
-            com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
+            com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)) { // v281 -- 30 dp por fora
                 // v199 (mockup aprovado) -- itens repetidos no mesmo padrão do
                 // primeiro: um campo por linha, nome em cima, listas com o
                 // cantinho, traço do automático no centro e recuo de 26 dp.
-                Column(modifier = Modifier.fillMaxWidth().padding(start = 26.dp, end = 26.dp, top = 8.dp)) {
+                Column(modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 8.dp)) { // v281 -- 14 dp por dentro
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                         Text("Item ${i + 2}", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                         IconButton(onClick = { viewModel.copiarItemExtra(i) }, modifier = Modifier.size(36.dp)) {
-                            Icon(Icons.Outlined.Add, contentDescription = "Adicionar item", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp)) /* v280 (mockup v339 item 17) */
+                            com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Add, contentDescription = "Adicionar item", tint = MaterialTheme.colorScheme.onSurface, size = 24.dp) /* v280 (mockup v339 item 17) */
                         }
                         IconButton(onClick = { viewModel.removeItemExtra(i) }, modifier = Modifier.size(36.dp)) {
-                            Icon(Icons.Outlined.Delete, contentDescription = "Remover item", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(20.dp))
+                            com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Delete, contentDescription = "Remover item", tint = com.bragro.mobile.ui.domain.corAtencao(), size = 24.dp)
                         }
                     }
                     androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))

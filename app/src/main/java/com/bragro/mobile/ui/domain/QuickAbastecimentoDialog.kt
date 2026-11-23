@@ -393,14 +393,14 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
             ) {
                 androidx.compose.material3.IconButton(onClick = { launchQrExterno() }, enabled = !lendoQr) {
                     if (lendoQr) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                    else androidx.compose.material3.Icon(Icons.Outlined.CenterFocusWeak, contentDescription = "Ler QR Code da máquina")
+                    else com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.CenterFocusWeak, contentDescription = "Ler QR Code da máquina", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp)
                 }
                 androidx.compose.material3.IconButton(onClick = {
                     viewModel.copyFromLastAbastecimento { found ->
                         copyMessage = if (found) "Preenchido com o último abastecimento. Confira." else "Nenhum abastecimento lançado ainda para copiar."
                     }
                 }) {
-                    androidx.compose.material3.Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último abastecimento")
+                    com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.ContentCopy, contentDescription = "Copiar último abastecimento", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp)
                 }
                 com.bragro.mobile.ui.domain.SalvarIcone(
                     onClick = { viewModel.submit { onSaved() } },
@@ -424,7 +424,7 @@ fun QuickAbastecimentoDialog(onDismiss: () -> Unit, onSaved: () -> Unit, viewMod
                             modifier = Modifier.weight(1f),
                         )
                         androidx.compose.material3.IconButton(onClick = { openAppSettings(context) }) {
-                            androidx.compose.material3.Icon(Icons.Outlined.Settings, contentDescription = "Abrir configurações do app")
+                            com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Settings, contentDescription = "Abrir configurações do app", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp)
                         }
                     }
                 }

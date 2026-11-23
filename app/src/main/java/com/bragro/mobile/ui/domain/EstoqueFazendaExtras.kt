@@ -262,10 +262,10 @@ fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel(), 
                         com.bragro.mobile.ui.theme.DicaInfo("Transferências, devoluções, ajustes e saldo por fazenda.")
                         androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
                         androidx.compose.material3.IconButton(onClick = { transferOpen = true }) {
-                            Icon(Icons.Outlined.CompareArrows, contentDescription = "Transferir", modifier = Modifier.size(24.dp))
+                            com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.CompareArrows, contentDescription = "Transferir", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp)
                         }
                         androidx.compose.material3.IconButton(onClick = { ajusteOpen = true }) {
-                            Icon(Icons.Outlined.Edit, contentDescription = "Ajuste manual", modifier = Modifier.size(24.dp))
+                            com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Edit, contentDescription = "Ajuste manual", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp)
                         }
                     }
                     if (saldos.isEmpty()) {
@@ -292,7 +292,7 @@ fun TransferenciasFazendaCard(viewModel: EstoqueFazendaViewModel = viewModel(), 
                                 )
                                 if (disponivel > 0) {
                                     IconButton(onClick = { devolverAlvo = t.id }) {
-                                        Icon(Icons.Outlined.Undo, contentDescription = "Devolver")
+                                        com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Undo, contentDescription = "Devolver", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp)
                                     }
                                 }
                             }

@@ -25,7 +25,7 @@ import com.bragro.mobile.ui.i18n.Text
  */
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-fun TracoOpcoes(opcoes: List<Pair<String, String>>, selecionado: String, onSelect: (String) -> Unit, modifier: Modifier = Modifier) {
+fun TracoOpcoes(opcoes: List<Pair<String, String>>, selecionado: String, onSelect: (String) -> Unit, modifier: Modifier = Modifier, estilo: androidx.compose.ui.text.TextStyle? = null) {
     val cs = MaterialTheme.colorScheme
     androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(22.dp), verticalArrangement = Arrangement.spacedBy(6.dp), modifier = modifier) {
         opcoes.forEach { (valor, rotulo) ->
@@ -35,7 +35,7 @@ fun TracoOpcoes(opcoes: List<Pair<String, String>>, selecionado: String, onSelec
                     rotulo,
                     color = cs.onSurface, // v276 (mockup v333) -- fonte branca/preta; só o traço é verde
                     fontWeight = if (ativo) FontWeight.SemiBold else FontWeight.Normal,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = estilo ?: MaterialTheme.typography.bodySmall, // v281 -- no topo usa o tamanho do título
                     modifier = Modifier.padding(bottom = 4.dp),
                 )
                 Box(modifier = Modifier.fillMaxWidth().height(if (ativo) 2.dp else 1.dp).background(if (ativo) cs.primary else cs.outlineVariant))

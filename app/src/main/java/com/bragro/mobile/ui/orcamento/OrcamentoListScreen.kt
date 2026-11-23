@@ -390,7 +390,7 @@ private fun PeriodoDialog(from: String, to: String, onDismiss: () -> Unit, onApl
         title = {
             com.bragro.mobile.ui.domain.TituloJanela("Período", onFechar = onDismiss, dica = "Filtra pela data do orçamento.") {
                 androidx.compose.material3.IconButton(onClick = { onAplicar("", "") }) {
-                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.FilterAltOff, contentDescription = "Limpar filtro") // v280 (mockup v339) -- sem dois X na linha
+                    com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.FilterAltOff, contentDescription = "Limpar filtro", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp) // v280 (mockup v339) -- sem dois X na linha
                 }
                 com.bragro.mobile.ui.domain.SalvarIcone(onClick = { onAplicar(deInput.trim(), ateInput.trim()) }, descricao = "Aplicar")
             }

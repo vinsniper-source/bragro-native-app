@@ -775,7 +775,7 @@ fun HomeScreen(
                                 android.widget.Toast.makeText(logoScreenContext, msg, android.widget.Toast.LENGTH_SHORT).show()
                             }
                         }) {
-                            Icon(Icons.Outlined.Backup, contentDescription = "Backup completo", modifier = Modifier.size(24.dp)) /* v279 -- tamanho padrão 24 dp */
+                            com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Backup, contentDescription = "Backup completo", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp) /* v281 -- negrito */
                         }
                     }
                     // Ícone "Módulos" -- consolida Configurações + Base de
@@ -794,7 +794,7 @@ fun HomeScreen(
                         var modulosMenuOpen by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { modulosMenuOpen = true }) {
-                                Icon(Icons.Outlined.GridView, contentDescription = "Módulos", modifier = Modifier.size(24.dp)) /* v279 -- tamanho padrão 24 dp */
+                                com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.GridView, contentDescription = "Módulos", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp) /* v281 -- negrito */
                             }
                             com.bragro.mobile.ui.theme.MenuSuspenso(expanded = modulosMenuOpen, onDismissRequest = { modulosMenuOpen = false }, corFixa = com.bragro.mobile.ui.theme.corMenuBarra()) {
                                 DropdownMenuItem(
@@ -838,7 +838,7 @@ fun HomeScreen(
                         var iosStepsOpen by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { configMenuOpen = true }) {
-                                Icon(Icons.Outlined.Settings, contentDescription = "Configurações", modifier = Modifier.size(24.dp)) /* v279 -- tamanho padrão 24 dp */
+                                com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Settings, contentDescription = "Configurações", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp) /* v281 -- negrito */
                             }
                             com.bragro.mobile.ui.theme.MenuSuspenso(expanded = configMenuOpen, onDismissRequest = { configMenuOpen = false }, corFixa = com.bragro.mobile.ui.theme.corMenuBarra()) {
                                 val apkUrl = home?.apkUrl
@@ -914,7 +914,7 @@ fun HomeScreen(
                         var dbMenuOpen by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { dbMenuOpen = true }) {
-                                Icon(IconesVazados.Storage, contentDescription = "Base de Dados", modifier = Modifier.size(24.dp)) /* v279 -- tamanho padrão 24 dp */
+                                com.bragro.mobile.ui.domain.IconeNegrito(IconesVazados.Storage, contentDescription = "Base de Dados", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp) /* v281 -- negrito */
                             }
                             com.bragro.mobile.ui.theme.MenuSuspenso(expanded = dbMenuOpen, onDismissRequest = { dbMenuOpen = false }, corFixa = com.bragro.mobile.ui.theme.corMenuBarra()) {
                                 val grupos = home?.baseDeDadosCategorias.orEmpty()
@@ -953,10 +953,11 @@ fun HomeScreen(
                     }
                     IconButton(onClick = { notificationsOpen = true; viewModel.loadNotifications() }) {
                         BadgedBox(badge = { if (unreadCount > 0) Badge(containerColor = BrYellow, contentColor = Color(0xFF412402)) { Text(unreadCount.toString()) } }) {
-                            Icon(
+                            com.bragro.mobile.ui.domain.IconeNegrito(
                                 if (unreadCount > 0) Icons.Outlined.NotificationsActive else Icons.Outlined.NotificationsNone,
                                 contentDescription = "Notificações",
-                                modifier = Modifier.size(24.dp),
+                                tint = androidx.compose.material3.LocalContentColor.current,
+                                size = 24.dp, // v281 -- negrito
                             )
                         }
                     }
@@ -978,7 +979,7 @@ fun HomeScreen(
                                     modifier = Modifier.size(28.dp).clip(CircleShape),
                                 )
                             } else {
-                                Icon(Icons.Outlined.AccountCircle, contentDescription = "Conta", modifier = Modifier.size(24.dp)) /* v279 -- tamanho padrão 24 dp */
+                                com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.AccountCircle, contentDescription = "Conta", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp) /* v281 -- negrito */
                             }
                         }
                         com.bragro.mobile.ui.theme.MenuSuspenso(expanded = userMenuOpen, onDismissRequest = { userMenuOpen = false }, corFixa = com.bragro.mobile.ui.theme.corMenuBarra()) {
@@ -1159,21 +1160,8 @@ fun HomeScreen(
                 // de 150dp pra 80dp acima, eliminando o vão morto) -- aqui
                 // ficam os dois respiros de "uma linha" (16dp, igual à altura
                 // de uma linha de texto comum) antes e depois do filete.
-                Spacer(Modifier.height(16.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(3.dp)
-                        .drawWithCache {
-                            val brush = Brush.horizontalGradient(
-                                colors = listOf(BrGreen, BrYellow, BrBlue),
-                                startX = 0f,
-                                endX = size.width,
-                            )
-                            onDrawBehind { drawRect(brush) }
-                        },
-                )
-                Spacer(Modifier.height(16.dp))
+                // v281 (mockup v343) -- sem a linha abaixo do cabeçalho; o Início sobe.
+                Spacer(Modifier.height(4.dp))
             }
         },
     ) { padding ->
@@ -1913,7 +1901,15 @@ private fun AddNoticeDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (tipo == "lembrete") "Novo lembrete" else "Novo aviso") },
+        title = {
+            // v281 (mockup v343) -- ícone novo no título; Salvar/Cancelar viram ✓ e ✕ na linha do título.
+            com.bragro.mobile.ui.domain.TituloJanela(if (tipo == "lembrete") "Novo lembrete" else "Novo aviso", onFechar = onDismiss) {
+                com.bragro.mobile.ui.domain.SalvarIcone(
+                    enabled = titulo.isNotBlank() && mensagem.isNotBlank(),
+                    onClick = { onSave(titulo.trim(), mensagem.trim(), expiraEm.trim().ifBlank { null }, fixado, moduloId, tipo) },
+                )
+            }
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(value = titulo, onValueChange = { titulo = it }, label = { Text("Título") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = appFieldColors())
@@ -1948,13 +1944,7 @@ private fun AddNoticeDialog(
                 }
             }
         },
-        confirmButton = {
-            TextButton(
-                enabled = titulo.isNotBlank() && mensagem.isNotBlank(),
-                onClick = { onSave(titulo.trim(), mensagem.trim(), expiraEm.trim().ifBlank { null }, fixado, moduloId, tipo) },
-            ) { Text("Salvar") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+        confirmButton = {},
     )
 }
 

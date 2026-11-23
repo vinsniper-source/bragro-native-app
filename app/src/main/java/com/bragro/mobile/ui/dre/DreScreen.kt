@@ -662,13 +662,10 @@ fun DreScreen(onBack: () -> Unit, viewModel: DreViewModel = viewModel()) {
             } } }
             if (filtrosOpen) {
                 item {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            FilterDropdown("Safra", safra, data?.safrasDisponiveis.orEmpty()) { viewModel.setSafra(it) }
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            FilterDropdown("Cultura", cultura, data?.culturasDisponiveis.orEmpty()) { viewModel.setCultura(it) }
-                        }
+                    // v281 (mockup v343) -- um filtro por linha.
+                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterDropdown("Safra", safra, data?.safrasDisponiveis.orEmpty()) { viewModel.setSafra(it) }
+                        FilterDropdown("Cultura", cultura, data?.culturasDisponiveis.orEmpty()) { viewModel.setCultura(it) }
                     }
                 }
             }

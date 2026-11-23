@@ -345,7 +345,7 @@ private fun ConteudoJanelaIntegracao(
             onClick = { if (digitado) { onSave(provedor, apiKey.trim()); apiKey = "" } else onSync() },
         ) {
             if (busy == IntegrationBusy.SINCRONIZANDO) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-            else Icon(Icons.Outlined.Sync, contentDescription = "Testar conexão")
+            else com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Sync, contentDescription = "Testar conexão", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp)
         }
         com.bragro.mobile.ui.domain.SalvarIcone(
             onClick = { onSave(provedor, apiKey.trim()); apiKey = "" },

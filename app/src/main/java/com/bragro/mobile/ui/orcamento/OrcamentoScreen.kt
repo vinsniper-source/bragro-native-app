@@ -669,7 +669,7 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                         Spacer(modifier = Modifier.height(16.dp))
                         androidx.compose.material3.IconButton(onClick = { if (!copiando) viewModel.preencherComUltimo() }) {
                             if (copiando) androidx.compose.material3.CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                            else androidx.compose.material3.Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                            else com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.ContentCopy, contentDescription = "Copiar último", tint = MaterialTheme.colorScheme.onSurface, size = 24.dp)
                         }
                     }
                     // v276 (mockup v333) -- sem o ícone com "+" no formulário.
@@ -817,7 +817,7 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
                     Text("Itens *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     // v280 (mockup v339 itens 6 e 17) -- sem câmera/⧉ repetidos: só o ＋ (adiciona item a partir do último).
                     androidx.compose.material3.IconButton(onClick = { viewModel.copiarLinha() }) {
-                        Icon(Icons.Outlined.Add, contentDescription = "Adicionar item", modifier = Modifier.size(24.dp))
+                        com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Add, contentDescription = "Adicionar item", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp)
                     }
                 }
             }

@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.outlined.ViewList
 import android.app.Application
@@ -626,6 +627,7 @@ fun DomainListScreen(
                             opcoes = linkedDomains,
                             selecionado = domainId,
                             onSelect = { if (it != domainId) onSwitchDomain(it) },
+                            estilo = MaterialTheme.typography.titleLarge, // v281 (mockup v343 item J)
                         ) else com.bragro.mobile.ui.domain.ValorUmaLinha(config?.label ?: domainId, MaterialTheme.colorScheme.onSurface, maxSp = 22f, minSp = 14f)
                     }
                 
@@ -1383,7 +1385,8 @@ fun DomainListScreen(
             if (showFiltros && filtrosExpanded) {
                 item(key = "filtros") {
                     // v279 (mockup v338 item 12) -- menos margem por fora e por dentro.
-                    Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                    // v281 (mockup v343) -- largura da lista "Colunas", encostado à direita.
+                    Card(modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.End).width(230.dp).padding(bottom = 8.dp)) {
                         Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
                             // 3 colunas por linha -- pedido do usuário
                             // ("os filtros coloquem em tres colunas dentro

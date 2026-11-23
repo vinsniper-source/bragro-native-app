@@ -105,14 +105,14 @@ fun FarmSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onCh
                 .padding(horizontal = 4.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // v281 (mockup v343) -- só "Fazendas", sem setinha.
             Text(
-                selected ?: "Todas as fazendas",
+                selected ?: "Fazendas",
                 style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Clip,
                 modifier = Modifier.weight(1f, fill = false).basicMarquee(),
             )
-            Icon(Icons.Outlined.ExpandMore, contentDescription = null, modifier = Modifier.size(18.dp).padding(start = 3.dp))
         }
     } else if (showLabel) {
         Column(

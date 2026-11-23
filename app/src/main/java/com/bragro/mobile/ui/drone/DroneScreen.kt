@@ -516,7 +516,8 @@ private fun NovoDroneRegistroDialog(
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // v275 (mockup v330) -- título numa linha; anexo, ✓ e ✕ na primeira linha.
-                Text("Novo voo", modifier = Modifier.weight(1f), maxLines = 1)
+                com.bragro.mobile.ui.domain.NovoLancamentoIcone() // v281 -- "Novo" vira o ícone
+                Text("Voo", modifier = Modifier.weight(1f), maxLines = 1)
                 IconButton(onClick = { filePicker.launch(arrayOf("image/*", "video/*")) }) {
                     Icon(
                         Icons.Outlined.AttachFile,

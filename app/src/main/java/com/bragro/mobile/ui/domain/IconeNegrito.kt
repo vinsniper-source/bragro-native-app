@@ -78,7 +78,11 @@ fun TituloJanela(titulo: String, onFechar: (() -> Unit)? = null, fecharEnabled: 
     // ícones na mesma linha, à direita.
     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
         androidx.compose.foundation.layout.Row(modifier = Modifier.weight(1f), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            androidx.compose.material3.Text(titulo, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+            // v281 (mockup v343) -- nas janelas, "Novo"/"Nova" vira o ícone novo + hífen.
+            val novo = Regex("^Nov[oa] ", RegexOption.IGNORE_CASE).containsMatchIn(titulo)
+            val tituloExib = if (novo) titulo.substring(5).replaceFirstChar { it.uppercase() } else titulo
+            if (novo) NovoLancamentoIcone()
+            androidx.compose.material3.Text(tituloExib, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
             if (!dica.isNullOrBlank()) com.bragro.mobile.ui.theme.DicaInfo(dica)
         }
         acoes()
@@ -197,8 +201,7 @@ val NovoLancamentoVetor: androidx.compose.ui.graphics.vector.ImageVector by lazy
         // v279 (mockup v338) -- folha com a dobra no canto e o traço (imagem 8).
         traco { moveTo(4f, 3f); lineTo(15f, 3f); lineTo(20f, 8f); lineTo(20f, 21f); lineTo(4f, 21f); close() }
         traco { moveTo(15f, 3f); lineTo(15f, 8f); lineTo(20f, 8f) }
-        traco { moveTo(15f, 8f); lineTo(17.5f, 5.5f) }
-        traco { moveTo(6.5f, 18.5f); lineTo(15f, 8f) }
+        // v281 (mockup v343) -- sem o traço diagonal: folha com dobra, como o do Word.
     }.build()
 }
 
@@ -207,6 +210,6 @@ fun NovoLancamentoIcone(modifier: Modifier = Modifier) {
     // v279 (mockup v338) -- ícone, tracinho e o título.
     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = modifier) {
         Icon(NovoLancamentoVetor, contentDescription = "Novo lançamento", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
-        androidx.compose.material3.Text(" – ", color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
+        androidx.compose.material3.Text(" - ", color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

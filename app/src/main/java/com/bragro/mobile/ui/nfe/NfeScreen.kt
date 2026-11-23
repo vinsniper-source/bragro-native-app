@@ -426,7 +426,7 @@ private fun NovaNotaDialog(
                         dica = if (initial != null) "Copiada da última nota. Confira os dados." else "Lançamento manual. Preencha os dados da nota.",
                     ) {
                         androidx.compose.material3.IconButton(onClick = { copiarUltima() }, enabled = ultima != null) {
-                            Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar última nota")
+                            com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.ContentCopy, contentDescription = "Copiar última nota", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp)
                         }
                         com.bragro.mobile.ui.domain.SalvarIcone(
                             onClick = { onConfirm(numero, serie.ifBlank { null }, tipo, emitenteNome, parseValor(valorTotal), dataEmissao.ifBlank { null }) },

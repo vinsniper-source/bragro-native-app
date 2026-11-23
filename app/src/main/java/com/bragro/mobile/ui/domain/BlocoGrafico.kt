@@ -48,16 +48,12 @@ fun BlocoGrafico(
         Column(Modifier.fillMaxWidth().padding(start = 12.dp, top = 6.dp, bottom = 10.dp, end = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             if (onPrint != null || onPdf != null) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                    // v46 -- Imprimir e PDF num bloco só, com divisória no meio.
-                    if (onPrint != null && onPdf != null) {
-                        com.bragro.mobile.ui.domain.PrintPdfSegmentedButton(onPrint = onPrint, onPdf = onPdf, rotulos = false, compacto = true)
-                    } else {
-                        if (onPrint != null) IconButton(onClick = onPrint, modifier = Modifier.size(32.dp)) {
-                            Icon(com.bragro.mobile.ui.domain.IconesVazados.Print, contentDescription = "Imprimir gráfico", modifier = Modifier.size(18.dp))
-                        }
-                        if (onPdf != null) IconButton(onClick = onPdf, modifier = Modifier.size(32.dp)) {
-                            Icon(com.bragro.mobile.ui.domain.IconesVazados.PictureAsPdf, contentDescription = "PDF do gráfico", modifier = Modifier.size(18.dp))
-                        }
+                    // v281 (mockup v343) -- imprimir e PDF sem borda em volta, em negrito.
+                    if (onPrint != null) IconButton(onClick = onPrint, modifier = Modifier.size(36.dp)) {
+                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.domain.IconesVazados.Print, contentDescription = "Imprimir gráfico", tint = androidx.compose.material3.LocalContentColor.current, size = 22.dp)
+                    }
+                    if (onPdf != null) IconButton(onClick = onPdf, modifier = Modifier.size(36.dp)) {
+                        com.bragro.mobile.ui.domain.IconeNegrito(com.bragro.mobile.ui.domain.IconesVazados.PictureAsPdf, contentDescription = "PDF do gráfico", tint = androidx.compose.material3.LocalContentColor.current, size = 22.dp)
                     }
                 }
             }

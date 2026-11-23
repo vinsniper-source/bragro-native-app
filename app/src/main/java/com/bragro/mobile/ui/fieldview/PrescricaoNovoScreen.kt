@@ -317,11 +317,11 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             IconButton(onClick = { isoXmlPicker.launch(arrayOf("text/xml", "application/xml", "*/*")) }, modifier = Modifier.size(40.dp)) {
-                                Icon(Icons.Outlined.UploadFile, contentDescription = "Importar ISO-XML (.xml)")
+                                com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.UploadFile, contentDescription = "Importar ISO-XML (.xml)", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp)
                             }
                             IconButton(onClick = { if (!copiando) viewModel.copiarUltimoLancamento() }, modifier = Modifier.size(40.dp)) {
                                 if (copiando) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                                else Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar último lançamento")
+                                else com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.ContentCopy, contentDescription = "Copiar último lançamento", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp)
                             }
                             com.bragro.mobile.ui.domain.SalvarIcone(onClick = { viewModel.salvar() }, enabled = successId == null, loading = busy, descricao = "Salvar prescrição")
                             com.bragro.mobile.ui.domain.FecharIcone(onClick = onBack)

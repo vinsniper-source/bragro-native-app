@@ -101,14 +101,14 @@ fun GlobalFieldSelectorButton(
                 .padding(horizontal = 4.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // v281 (mockup v343) -- só "Safras"/"Culturas", sem setinha.
             Text(
-                selected ?: "Todas as $labelPlural",
+                selected ?: labelPlural.replaceFirstChar { it.uppercase() },
                 style = MaterialTheme.typography.labelSmall,
                 maxLines = 1,
                 overflow = TextOverflow.Clip,
                 modifier = Modifier.weight(1f, fill = false).basicMarquee(),
             )
-            Icon(Icons.Outlined.ExpandMore, contentDescription = null, modifier = Modifier.size(14.dp).padding(start = 2.dp))
         }
     } else if (showLabel) {
         Column(

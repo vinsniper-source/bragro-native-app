@@ -349,21 +349,24 @@ private fun CertificadoTipoDropdown(tipo: String, onSelect: (String) -> Unit) {
 @Composable
 private fun SaldoInicialField(saldoInicial: Double, onApply: (Double) -> Unit) {
     var texto by remember(saldoInicial) { mutableStateOf(if (saldoInicial != 0.0) saldoInicial.toString() else "") }
-    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    // v281 (mockup v343) -- o ✓ sobe para a linha do nome e o campo vai até o fim, igual aos outros.
+    androidx.compose.foundation.layout.Column {
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Text("Saldo inicial (R$)", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            com.bragro.mobile.ui.domain.SalvarIcone(onClick = {
+                val normalizado = texto.trim().replace(",", ".")
+                onApply(normalizado.toDoubleOrNull() ?: 0.0)
+            }, descricao = "Aplicar")
+        }
         OutlinedTextField(
             value = texto,
             onValueChange = { texto = it },
-            label = { Text("Saldo inicial (R$)") },
+            label = null,
             singleLine = true,
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.fillMaxWidth(),
             colors = appFieldColors(),
         )
-        // v275 (mockup v330) -- "Aplicar" vira ✓ verde.
-        androidx.compose.material3.IconButton(onClick = {
-            val normalizado = texto.trim().replace(",", ".")
-            onApply(normalizado.toDoubleOrNull() ?: 0.0)
-        }) { androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Check, contentDescription = "Aplicar", tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp)) }
     }
 }
 
