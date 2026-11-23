@@ -94,7 +94,7 @@ import androidx.compose.material.icons.outlined.TrendingDown
 import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material.icons.outlined.WbSunny
-import androidx.compose.material3.AlertDialog
+import com.bragro.mobile.ui.theme.JanelaApp as AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import com.bragro.mobile.ui.theme.Card

@@ -243,7 +243,7 @@ fun ConferenciaCard(
         if (problemas.size > 60) Text("60 de ${problemas.size}. Corrija e a lista atualiza.", fontSize = 11.sp, color = cs.onSurfaceVariant, modifier = M.padding(12.dp))
     }
     if (confirmar) {
-        androidx.compose.material3.AlertDialog(
+        com.bragro.mobile.ui.theme.JanelaApp(
             onDismissRequest = { confirmar = false },
             title = { Text("Corrigir ${corrigiveis.size} campo(s)?") },
             text = {

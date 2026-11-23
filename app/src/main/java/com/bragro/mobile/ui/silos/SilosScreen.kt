@@ -45,7 +45,7 @@ import androidx.compose.material.icons.outlined.Thermostat
 import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.History
-import androidx.compose.material3.AlertDialog
+import com.bragro.mobile.ui.theme.JanelaApp as AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -458,7 +458,7 @@ fun SilosScreen(onBack: () -> Unit, onAbrirRomaneio: (String) -> Unit = {}, view
     }
 
     if (prestadoraAberta) {
-        androidx.compose.material3.AlertDialog(
+        com.bragro.mobile.ui.theme.JanelaApp(
             onDismissRequest = { prestadoraAberta = false },
             modifier = Modifier.fillMaxWidth(0.88f),
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),

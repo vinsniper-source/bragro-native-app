@@ -64,7 +64,7 @@ import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.Upload
 import androidx.compose.material.icons.outlined.ViewAgenda
 import androidx.compose.material.icons.outlined.ViewList
-import androidx.compose.material3.AlertDialog
+import com.bragro.mobile.ui.theme.JanelaApp as AlertDialog
 import androidx.compose.material3.Button
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.appFieldColors

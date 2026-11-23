@@ -454,7 +454,7 @@ private fun OrcamentoLinhaCard(
     // Mesmo fundo dos outros campos (v9): cartão branco com borda fina, sem o
     // fundo cinza mais escuro do bloco de itens.
     com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) { // v281 (mockup v342) -- 14 dp dentro do bloco
             ItemFieldBlock {
                 OutlinedTextField(
                     value = linha.item,
@@ -717,7 +717,7 @@ fun OrcamentoScreen(onBack: () -> Unit, viewModel: OrcamentoViewModel = viewMode
 
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(horizontal = 40.dp, vertical = 12.dp), // v280 (mockup v339) -- margem dos formulários
+            contentPadding = PaddingValues(horizontal = 44.dp, vertical = 12.dp), // v281 (mockup v342) -- margem dos formulários
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (errorMessage != null) {

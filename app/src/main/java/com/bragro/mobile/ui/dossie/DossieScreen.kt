@@ -347,7 +347,7 @@ fun DossieScreen(onBack: () -> Unit, viewModel: DossieViewModel = viewModel()) {
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(horizontal = 36.dp, vertical = 12.dp), // v278 (mockup v335) -- largura dos formulários
+            contentPadding = PaddingValues(horizontal = 44.dp, vertical = 12.dp), // v281 (mockup v342) // v278 (mockup v335) -- largura dos formulários
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             var n = 0 // v275 -- a frase do topo foi para o ⓘ do título

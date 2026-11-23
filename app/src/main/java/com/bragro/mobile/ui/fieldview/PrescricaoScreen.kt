@@ -430,7 +430,7 @@ fun PrescricaoScreen(onBack: () -> Unit, onNovo: () -> Unit = {}, viewModel: Pre
     }
 
     if (erroExportacao != null) {
-        androidx.compose.material3.AlertDialog(
+        com.bragro.mobile.ui.theme.JanelaApp(
             onDismissRequest = { erroExportacao = null },
             title = { Text("Não foi possível exportar") },
             text = { Text(erroExportacao ?: "") },

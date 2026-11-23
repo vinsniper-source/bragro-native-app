@@ -17,7 +17,7 @@ import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material.icons.outlined.Undo
 import androidx.compose.material3.Button
-import androidx.compose.material3.AlertDialog
+import com.bragro.mobile.ui.theme.JanelaApp as AlertDialog
 import com.bragro.mobile.ui.theme.Card
 import com.bragro.mobile.ui.theme.SearchableDropdownField
 import com.bragro.mobile.ui.theme.appFieldColors

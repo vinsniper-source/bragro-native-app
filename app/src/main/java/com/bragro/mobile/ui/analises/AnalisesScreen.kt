@@ -1029,7 +1029,7 @@ fun AnalisesScreen(onBack: () -> Unit, viewModel: AnalisesViewModel = viewModel(
             }
         }
         if (graficosOpen && data != null) {
-            androidx.compose.material3.AlertDialog(
+            com.bragro.mobile.ui.theme.JanelaApp(
                 onDismissRequest = { graficosOpen = false },
                 modifier = Modifier.fillMaxWidth(0.96f),
                 properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),

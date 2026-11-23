@@ -560,7 +560,7 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
         }
     }
     if (controleInternoAberto && data?.arvoreControleInterno?.isNotEmpty() == true) {
-        androidx.compose.material3.AlertDialog(
+        com.bragro.mobile.ui.theme.JanelaApp(
             onDismissRequest = { controleInternoAberto = false },
             modifier = Modifier.fillMaxWidth(0.88f),
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),

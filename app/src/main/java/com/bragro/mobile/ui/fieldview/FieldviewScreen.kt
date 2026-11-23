@@ -48,7 +48,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.outlined.Pentagon
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.UploadFile
-import androidx.compose.material3.AlertDialog
+import com.bragro.mobile.ui.theme.JanelaApp as AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import com.bragro.mobile.ui.theme.Card
@@ -630,7 +630,7 @@ fun FieldviewScreen(onBack: () -> Unit, onNavigateToFrota: () -> Unit = {}, onOp
     }
 
     if (prestadoraAberta != 0) {
-        androidx.compose.material3.AlertDialog(
+        com.bragro.mobile.ui.theme.JanelaApp(
             onDismissRequest = { prestadoraAberta = 0 },
             modifier = Modifier.fillMaxWidth(0.88f),
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),

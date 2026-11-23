@@ -353,7 +353,7 @@ fun PrescricaoNovoScreen(onBack: () -> Unit, viewModel: PrescricaoNovoViewModel 
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             // v219 -- margem dos dois lados.
-            contentPadding = PaddingValues(horizontal = 40.dp, vertical = 12.dp),
+            contentPadding = PaddingValues(horizontal = 44.dp, vertical = 12.dp), // v281 (mockup v342)
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (errorMessage != null) {

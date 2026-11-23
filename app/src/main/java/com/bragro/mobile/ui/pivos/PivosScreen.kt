@@ -45,7 +45,7 @@ import androidx.compose.material.icons.outlined.Power
 import androidx.compose.material.icons.outlined.RotateRight
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.WaterDrop
-import androidx.compose.material3.AlertDialog
+import com.bragro.mobile.ui.theme.JanelaApp as AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -492,7 +492,7 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
     }
 
     if (graficosOpen) {
-        androidx.compose.material3.AlertDialog(
+        com.bragro.mobile.ui.theme.JanelaApp(
             onDismissRequest = { graficosOpen = false },
             modifier = Modifier.fillMaxWidth(0.96f),
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
@@ -502,7 +502,7 @@ fun PivosScreen(onBack: () -> Unit, viewModel: PivosViewModel = viewModel()) {
         )
     }
     if (prestadoraAberta) {
-        androidx.compose.material3.AlertDialog(
+        com.bragro.mobile.ui.theme.JanelaApp(
             onDismissRequest = { prestadoraAberta = false },
             modifier = Modifier.fillMaxWidth(0.88f),
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
