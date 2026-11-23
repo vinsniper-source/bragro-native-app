@@ -171,21 +171,23 @@ fun LoginScreen(onLoggedIn: () -> Unit, onLoggedInFazendas: () -> Unit = onLogge
         MarcaBRAgro(modifier = Modifier.height(52.dp))
         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 28.dp))
 
+        // v284b (mockup v356) -- igual à plataforma: ícone ✉ à esquerda do campo.
+        androidx.compose.foundation.layout.Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Email, contentDescription = "E-mail", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, size = 20.dp, modifier = Modifier.padding(end = 10.dp))
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            // v284 (mockup v356) -- igual à plataforma: ícone ✉ no lugar do rótulo.
-            placeholder = { Text("E-mail") },
-            leadingIcon = { com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Email, contentDescription = "E-mail", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, size = 20.dp) },
+            label = { Text("E-mail") },
             // autoCorrect = false -- pedido do usuário ("aplique isso também
             // nos campos" da tela de login): e-mail não deve sofrer
             // autocorreção do teclado (evita o teclado reinserir/alterar
             // caracteres já apagados/editados pelo usuário).
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, autoCorrect = false),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.weight(1f),
             singleLine = true,
             colors = appFieldColors(),
         )
+        }
         androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 12.dp))
         // Ícone "ver" (olho) no campo de senha -- pedido do usuário ("em
         // login coloque no campo senha o icone ver"), paridade com o site
@@ -193,12 +195,13 @@ fun LoginScreen(onLoggedIn: () -> Unit, onLoggedInFazendas: () -> Unit = onLogge
         // do lucide-react). Aqui alterna PasswordVisualTransformation() <->
         // VisualTransformation.None, mesmo efeito visual.
         var senhaVisivel by remember { mutableStateOf(false) }
+        // v284b (mockup v356) -- ícone 🔒 à esquerda do campo.
+        androidx.compose.foundation.layout.Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Lock, contentDescription = "Senha", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, size = 20.dp, modifier = Modifier.padding(end = 10.dp))
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            // v284 (mockup v356) -- ícone 🔒 no lugar do rótulo.
-            placeholder = { Text("Senha") },
-            leadingIcon = { com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Lock, contentDescription = "Senha", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, size = 20.dp) },
+            label = { Text("Senha") },
             visualTransformation = if (senhaVisivel) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon = {
@@ -211,10 +214,11 @@ fun LoginScreen(onLoggedIn: () -> Unit, onLoggedInFazendas: () -> Unit = onLogge
                     )
                 }
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.weight(1f),
             singleLine = true,
             colors = appFieldColors(),
         )
+        }
 
         // v72b -- verificação em 2 etapas.
         val pendente by viewModel.pendente
