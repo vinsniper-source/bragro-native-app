@@ -1449,6 +1449,11 @@ fun HomeScreen(
             // native"). Cada card só aparece quando o widget está liberado E o
             // backend retornou dados pro setor (não null -- setor sem nenhum
             // registro na janela de 30 dias).
+            // v288 (mockup v369 aprovado) -- os KPIs marcados em "Personalizar
+            // Início" voltam pro Início (o KpiGrid existia mas não era chamado).
+            if (data.allowedWidgets?.any { it.startsWith("inicio.kpi.") } ?: true) {
+                item(key = "kpis") { KpiGrid(data) }
+            }
             data.breakdowns?.financeiro?.let { b ->
                 if (data.hasWidget("inicio.breakdown.financeiro")) {
                     item(key = "breakdown-financeiro") { CategoryBreakdownCard(titulo = "Financeiro", data = b) }
@@ -2509,7 +2514,7 @@ private fun KpiGrid(data: HomeData) {
                 modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                row.forEach { kpi -> KpiCard(kpi, modifier = Modifier.weight(1f).fillMaxHeight(), fillHeight = true) }
+                row.forEach { kpi -> KpiMini(kpi, modifier = Modifier.weight(1f).fillMaxHeight()) }
                 // Linha com 1 KPI só (rótulo longo, ou último da lista sem
                 // par): o card sozinho (já com weight(1f), único filho da
                 // Row) ocupa a largura inteira, sem vão vazio do lado
@@ -2564,6 +2569,40 @@ private fun fazendasKpi(data: HomeData): Kpi = Kpi(
 // garantida por nenhum vizinho) continua com `fillHeight = false` (padrão) --
 // aplicar `fillMaxHeight()` ali, sem um Row pai com IntrinsicSize.Min pra
 // dar uma altura de verdade, quebraria o layout (altura infinita).
+// v288 (mockup v369) -- KPI minimalista: nome à esquerda, número à direita,
+// borda fina, fundo da tela.
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun KpiMini(kpi: Kpi, modifier: Modifier = Modifier) {
+    androidx.compose.material3.Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.background,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                com.bragro.mobile.ui.domain.exibirTexto(kpi.label),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                kpi.value,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                modifier = Modifier.widthIn(max = 110.dp).basicMarquee(),
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun KpiCard(kpi: Kpi, modifier: Modifier = Modifier, fillHeight: Boolean = false) {

@@ -1209,13 +1209,13 @@ private fun SectorCard(
                         emptyOptionLabel = null,
                     )
                     Spacer(Modifier.width(8.dp))
-                    Button(onClick = { if (newValue.isNotBlank()) { onAddValue(category, newValue.trim()); newValue = "" } }, enabled = !busy && newValue.isNotBlank()) { Text("+") }
+                    IconButton(onClick = { if (newValue.isNotBlank()) { onAddValue(category, newValue.trim()); newValue = "" } }, enabled = !busy && newValue.isNotBlank()) { Icon(Icons.Outlined.Add, contentDescription = "Incluir", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp)) } // v288 (mockup v370) -- "+" virou ícone verde
                 }
             } else {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)) {
                     OutlinedTextField(value = newValue, onValueChange = { newValue = it }, label = { Text("Novo valor") }, modifier = Modifier.weight(1f), singleLine = true, colors = appFieldColors())
                     Spacer(Modifier.width(8.dp))
-                    Button(onClick = { if (newValue.isNotBlank()) { onAddValue(category, newValue.trim()); newValue = "" } }, enabled = !busy) { Text("+") }
+                    IconButton(onClick = { if (newValue.isNotBlank()) { onAddValue(category, newValue.trim()); newValue = "" } }, enabled = !busy && newValue.isNotBlank()) { Icon(Icons.Outlined.Add, contentDescription = "Incluir", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp)) } // v288 (mockup v370) -- "+" virou ícone verde
                 }
             }
         }
