@@ -277,20 +277,29 @@ private fun livroCaixaExportRecords(lancamentos: List<LivroCaixaLancamentoData>)
 @Composable
 private fun CampoListaSuspensa(label: String, valorTexto: String, opcoes: List<Pair<String, String>>, onSelect: (String) -> Unit) {
     var aberto by remember { mutableStateOf(false) }
-    androidx.compose.material3.ExposedDropdownMenuBox(expanded = aberto, onExpandedChange = { aberto = it }) {
-        com.bragro.mobile.ui.theme.LinhaTextField(
-            value = valorTexto,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(label) },
-            singleLine = true,
-            trailingIcon = { androidx.compose.material3.ExposedDropdownMenuDefaults.TrailingIcon(expanded = aberto) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
-            colors = appFieldColors(),
-        )
-        com.bragro.mobile.ui.theme.MenuSuspenso(expanded = aberto, onDismissRequest = { aberto = false }) {
-            opcoes.forEach { (v, l) ->
-                androidx.compose.material3.DropdownMenuItem(text = { Text(l) }, onClick = { onSelect(v); aberto = false })
+    // v289 (mockup v378) -- padrão do app: sem setinha, linha com o tracinho
+    // vertical na ponta e a lista abrindo do lado direito, alinhada com o valor.
+    androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth()) {
+        androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.theme.LocalCampoLista provides true) {
+            com.bragro.mobile.ui.theme.LinhaTextField(
+                value = valorTexto,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text(label) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = appFieldColors(),
+            )
+        }
+        androidx.compose.foundation.layout.Box(Modifier.matchParentSize().clickable { aberto = true })
+        androidx.compose.foundation.layout.Box(Modifier.align(androidx.compose.ui.Alignment.BottomEnd)) {
+            com.bragro.mobile.ui.theme.MenuSuspenso(expanded = aberto, onDismissRequest = { aberto = false }) {
+                opcoes.forEach { (v, l) ->
+                    androidx.compose.material3.DropdownMenuItem(
+                        text = { Text(l, textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.fillMaxWidth()) },
+                        onClick = { onSelect(v); aberto = false },
+                    )
+                }
             }
         }
     }

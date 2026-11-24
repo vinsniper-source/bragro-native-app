@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,6 +27,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -97,13 +100,19 @@ private fun Selo(texto: String, ligado: Boolean) {
 private fun Bloco(titulo: String, direita: (@Composable () -> Unit)? = null, conteudo: @Composable () -> Unit) {
     com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth()) {
         // v275 (mockup v330) -- margem interna: nada encostado na borda.
+        // v289 (mockup v377) -- todo bloco começa recolhido: título e resumo à direita; tocar abre/fecha.
+        var aberto by androidx.compose.runtime.saveable.rememberSaveable(titulo.substringBefore(" (")) { androidx.compose.runtime.mutableStateOf(false) }
         androidx.compose.foundation.layout.Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { aberto = !aberto }.padding(vertical = 2.dp)) {
                 Text(titulo, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 direita?.invoke()
+                Spacer(Modifier.width(8.dp))
+                com.bragro.mobile.ui.domain.CantoL(aberto)
             }
-            Spacer(Modifier.height(6.dp))
-            conteudo()
+            if (aberto) {
+                Spacer(Modifier.height(6.dp))
+                conteudo()
+            }
         }
     }
 }
@@ -162,8 +171,8 @@ fun PainelDonoScreen(onBack: () -> Unit, viewModel: PainelDonoViewModel = viewMo
                 }
             }
             item {
-                com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth()) {
-                    androidx.compose.foundation.layout.Column(Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) { // v275 -- margem interna
+                Bloco("Resumo", direita = { Text("${n("clientesEmTeste")} em teste", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }) {
+                    androidx.compose.foundation.layout.Column { // v289 (mockup v377) -- virou bloco recolhível
                     val backup = s("ultimoBackup")?.let { com.bragro.mobile.ui.seguranca.formatIsoPublico(it) } ?: "—"
                     Row { Numero("Clientes pagantes", n("clientesPagantes").toString(), Modifier.weight(1f)); Numero("Em teste", n("clientesEmTeste").toString(), Modifier.weight(1f)); Numero("Faturas em aberto", n("faturasEmAberto").toString(), Modifier.weight(1f)) }
                     HorizontalDivider()
@@ -280,7 +289,7 @@ fun PainelDonoScreen(onBack: () -> Unit, viewModel: PainelDonoViewModel = viewMo
             }
             val app = dados["appAndroid"] as? JsonObject
             item {
-                Bloco("App Android") {
+                Bloco("App Android", direita = { Text(app?.t("versao")?.ifBlank { null } ?: "—", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }) {
                     if (app == null) Text("Nenhuma versão publicada.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     else Row {
                         Numero("Versão", app.t("versao").ifBlank { "—" }, Modifier.weight(1f))

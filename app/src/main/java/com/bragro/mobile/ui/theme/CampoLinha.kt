@@ -345,7 +345,7 @@ private fun DecoracaoLinha(
             ) {
                 if (leadingIcon != null) Icone(leadingIcon)
                 if (prefix != null) prefix()
-                Box(Modifier.weight(1f).heightIn(min = 22.dp), contentAlignment = Alignment.CenterEnd) {
+                Box(Modifier.weight(1f).heightIn(min = 22.dp), contentAlignment = if (LocalValorEsquerda.current) Alignment.CenterStart else Alignment.CenterEnd) { // v289 (mockup v375) -- Configurações: valor à esquerda
                     if (vazio && placeholder != null) {
                         CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides cs.onSurfaceVariant.copy(alpha = 0.7f)) {
                             androidx.compose.material3.ProvideTextStyle(TextStyle(fontSize = 15.sp, color = cs.onSurfaceVariant.copy(alpha = 0.7f))) { placeholder() }

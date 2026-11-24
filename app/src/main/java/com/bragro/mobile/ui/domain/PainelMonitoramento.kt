@@ -734,7 +734,7 @@ fun CartaoGrupo(
             Text(titulo, fontWeight = FontWeight.Bold, fontSize = 14.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
             if (pendentes > 0 && onPendentes != null) {
                 Text(
-                    "$pendentes PENDENTE${if (pendentes > 1) "S" else ""}",
+                    "$pendentes pendente${if (pendentes > 1) "s" else ""}", // v289 (mockup v378) -- sem maiúsculas
                     fontSize = 9.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = corAtencao(),
@@ -749,7 +749,7 @@ fun CartaoGrupo(
             } else if (selo != null) {
                 val cor = when (selo.second) { "ok" -> primary; "pend" -> corAtencao(); else -> MaterialTheme.colorScheme.onSurfaceVariant }
                 Text(
-                    selo.first,
+                    exibirTexto(selo.first), // v289 (mockup v378)
                     fontSize = 9.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = cor,
@@ -1176,21 +1176,21 @@ fun CartaoResumoPedido(res: ResumoPedido, onEdit: (String) -> Unit, onDelete: (L
             val itensVis = if (daFase != null) res.itens.filter { it.item in daFase } else res.itens
             if (faseAberta != null) {
                 Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)).padding(horizontal = 6.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Mostrando: $faseAberta · ${itensVis.size} de ${res.itens.size} itens", fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Text("Mostrando: ${exibirTexto(faseAberta.orEmpty())} · ${itensVis.size} de ${res.itens.size} itens", fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     Text("ver todos", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickable { faseAberta = null })
                 }
             }
             Row(Modifier.fillMaxWidth()) {
-                listOf("ITEM" to 2.2f, "PEDIDA" to 1.2f, "ENTREGUE" to 1f, "SALDO" to 0.9f).forEach { (t, w) ->
+                listOf("Item" to 2.2f, "Pedida" to 1.2f, "Entregue" to 1f, "Saldo" to 0.9f).forEach { (t, w) ->
                     Text(t, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = muted, modifier = Modifier.weight(w))
                 }
             }
             itensVis.forEach { it ->
                 Row(Modifier.fillMaxWidth().padding(top = 3.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(2.2f)) {
-                        Text(it.item, fontSize = 11.5.sp)
+                        Text(exibirTexto(it.item, true), fontSize = 11.5.sp)
                         val cor = if (it.status == "ATENDIDO") MaterialTheme.colorScheme.primary else corAtencao()
-                        Text(it.status, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = cor)
+                        Text(exibirTexto(it.status), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = cor)
                     }
                     Text("${nf.format(it.pedida)} ${it.unidade}", fontSize = 11.5.sp, modifier = Modifier.weight(1.2f))
                     Text(nf.format(it.entregue), fontSize = 11.5.sp, modifier = Modifier.weight(1f))
@@ -1201,8 +1201,8 @@ fun CartaoResumoPedido(res: ResumoPedido, onEdit: (String) -> Unit, onDelete: (L
             fun linhaLanc(l: LancPedido, comItens: Boolean) {
                 Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f).clickable { l.linhas.firstOrNull()?.get("id")?.let(onVer) }) {
-                        Text(l.titulo, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                        Text(l.sub, fontSize = 11.sp, color = muted)
+                        Text(exibirTexto(l.titulo), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text(exibirTexto(l.sub), fontSize = 11.sp, color = muted)
                     }
                     androidx.compose.material3.IconButton(onClick = { l.linhas.firstOrNull()?.get("id")?.let(onEdit) }, modifier = Modifier.size(30.dp)) {
                         androidx.compose.material3.Icon(Icons.Outlined.Edit, contentDescription = "Editar", modifier = Modifier.size(16.dp))
@@ -1229,14 +1229,14 @@ fun CartaoResumoPedido(res: ResumoPedido, onEdit: (String) -> Unit, onDelete: (L
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             androidx.compose.ui.text.buildAnnotatedString {
-                                pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold)); append(f.fase); pop()
+                                pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold)); append(exibirTexto(f.fase)); pop()
                                 append(" · ${f.entregas.size} ${if (f.entregas.size == 1) "entrega" else "entregas"}${if (f.periodo.isNotBlank()) " · ${f.periodo}" else ""}")
                             },
                             fontSize = 12.sp, modifier = Modifier.weight(1f),
                         )
                         // v1.6.24 -- sem setinha na fase.
                     }
-                    Text("Total da fase: ${f.total}", fontSize = 11.sp, color = muted)
+                    Text("Total da fase: ${exibirTexto(f.total, true)}", fontSize = 11.sp, color = muted)
                 }
                 if (aberta) Column(Modifier.padding(start = 10.dp)) { f.entregas.forEach { linhaLanc(it, true) } }
             }

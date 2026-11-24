@@ -1160,7 +1160,11 @@ fun DomainFormScreen(
                     }
                 }
                 }
-                if (g.first == "itens" && domainId in ITENS_INVERTIDOS) {
+                // v289 (mockup v375) -- formulário de um item só (Contratos, Inventário,
+                // Financeiro, Clima...): sem a caixa em volta; a caixa fica só nos
+                // módulos com vários itens (Item 1 + itens extras).
+                val comCaixa = multi != null || ehSafra
+                if (g.first == "itens" && comCaixa && domainId in ITENS_INVERTIDOS) {
                     // v194 -- bloco Itens com mais recuo (16 dp); os campos de fora
                     // recuam o mesmo tanto, para todas as linhas terminarem no mesmo ponto.
                     // v197/v198 (mockups aprovados) -- recuo igual dos quatro lados (26 dp)
@@ -1185,7 +1189,7 @@ fun DomainFormScreen(
                         }
                     }
                     androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
-                } else if (g.first == "itens") {
+                } else if (g.first == "itens" && comCaixa) {
                     // v286 (mockup v362 item 4) -- bloco com borda em volta de tudo do Item.
                     com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
                         Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 14.dp, bottom = 6.dp)) {

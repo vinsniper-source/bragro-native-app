@@ -375,15 +375,15 @@ fun BaseDeDadosScreen(
                             val faltamTopo = data?.get("missingCount")?.jsonPrimitive?.contentOrNull?.toIntOrNull() ?: 0
                             if (faltamTopo > 0 && !modoFazendas) {
                                 androidx.compose.material3.IconButton(onClick = { showImportConfirm = true }, enabled = !busy) {
-                                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Download, contentDescription = "Importar padrões", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                    com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Download, contentDescription = "Importar padrões", tint = MaterialTheme.colorScheme.primary, size = 22.dp) /* v289 (mockup v377) -- negrito */
                                 }
                                 androidx.compose.material3.IconButton(onClick = { showDeclineConfirm = true }, enabled = !busy) {
-                                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Close, contentDescription = "Recusar", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(20.dp))
+                                    com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Close, contentDescription = "Recusar", tint = com.bragro.mobile.ui.domain.corAtencao(), size = 22.dp) /* v289 (mockup v377) -- negrito */
                                 }
                             }
                             if (onOpenCsvImport != null && !modoFazendas) {
                                 androidx.compose.material3.IconButton(onClick = onOpenCsvImport, enabled = !busy) {
-                                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.UploadFile, contentDescription = "Migrar dados de outra plataforma (CSV)", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+                                    com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.UploadFile, contentDescription = "Migrar dados de outra plataforma (CSV)", tint = MaterialTheme.colorScheme.onSurface, size = 22.dp) /* v289 (mockup v377) -- negrito */
                                 }
                             }
                         }

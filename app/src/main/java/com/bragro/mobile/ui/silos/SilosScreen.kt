@@ -590,18 +590,9 @@ private fun SiloCard(
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
+                    fontWeight = FontWeight.Bold,
                 )
-                @Composable
-                fun icone(img: androidx.compose.ui.graphics.vector.ImageVector, nome: String, cor: androidx.compose.ui.graphics.Color, habilitado: Boolean = !busy, acao: () -> Unit) {
-                    androidx.compose.material3.IconButton(onClick = acao, enabled = habilitado, modifier = Modifier.size(32.dp)) {
-                        com.bragro.mobile.ui.domain.IconeNegrito(img, contentDescription = nome, tint = if (habilitado) cor else cor.copy(alpha = 0.35f), size = 18.dp) // v283 (mockup v355 item 13)
-                    }
-                }
-                if (dirty || silo.leituraAtrasada || estimado) icone(Icons.Outlined.Check, if (estimado && !dirty) "Confirmar" else "Salvar", cs.primary) { onSalvarRapido(pct.toDouble()) }
-                icone(Icons.Outlined.Thermostat, "Lançar leitura", cs.onSurface, acao = onLeitura)
-                icone(Icons.Outlined.History, "Histórico", cs.onSurface, acao = onHistorico)
-                icone(Icons.Outlined.Edit, "Editar", cs.onSurface, acao = onEdit)
-                icone(Icons.Outlined.Delete, "Arquivar", laranja, acao = onArchive)
+                // v289 (mockup v376b) -- os botões desceram para baixo de 25/50/75/Cheio.
             }
             // v275 (mockup v330) -- bloco igual à plataforma: fazenda embaixo do
             // nome, anel com o % e as toneladas ao lado.
@@ -609,6 +600,9 @@ private fun SiloCard(
             Text(
                 buildAnnotatedString {
                     append(farmNome?.let { com.bragro.mobile.ui.domain.exibirTexto(it, true) } ?: "Sem fazenda vinculada")
+                    // v289 (mockup v376b) -- fazenda, marca e capacidade numa linha só.
+                    silo.fabricante?.takeIf { it.isNotBlank() }?.let { append(" · " + com.bragro.mobile.ui.domain.exibirTexto(it, true)) }
+                    silo.capacidadeT?.let { append(" · ${it.toInt()} t") }
                     if (silo.leituraAtrasada) {
                         append(" · ")
                         withStyle(SpanStyle(color = laranja)) { append("leitura pendente") }
@@ -628,24 +622,29 @@ private fun SiloCard(
                     )
                     Text("${pct.toInt()}%", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                 }
-                Column {
-                    silo.produto?.takeIf { it.isNotBlank() }?.let { Text(com.bragro.mobile.ui.domain.exibirTexto(it), style = MaterialTheme.typography.bodyMedium) }
-                    if (toneladas != null) Text(buildAnnotatedString {
-                        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append("%.1f t".format(Locale("pt", "BR"), toneladas)) }
-                        append(" de ${silo.capacidadeT!!.toInt()} t")
-                    }, style = MaterialTheme.typography.bodyMedium)
-                    val rodape = listOfNotNull(
-                        if (estimado) "estimado" else if (silo.status == "CRITICO") "crítico" else null,
-                        silo.ultimaLeituraEm?.let { com.bragro.mobile.ui.domain.diaMesBr(it) },
-                    ).joinToString(" · ")
-                    if (rodape.isNotBlank()) Text(rodape, style = MaterialTheme.typography.bodySmall, color = if (silo.status == "CRITICO") laranja else cs.onSurfaceVariant)
+                // v289 (mockup v376b) -- dados em duas colunas: nome à esquerda, valor à direita.
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    @Composable
+                    fun linha(nome: String, valor: String, negrito: Boolean = true, cor: androidx.compose.ui.graphics.Color = cs.onSurface) {
+                        Row(Modifier.fillMaxWidth()) {
+                            Text(nome, style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant, modifier = Modifier.weight(1f))
+                            Text(valor, style = MaterialTheme.typography.bodySmall, fontWeight = if (negrito) FontWeight.Bold else null, color = cor)
+                        }
+                    }
+                    silo.produto?.takeIf { it.isNotBlank() }?.let { linha("Grão", com.bragro.mobile.ui.domain.exibirTexto(it)) }
+                    if (toneladas != null) linha("Estoque", "%.1f t".format(Locale("pt", "BR"), toneladas))
+                    silo.capacidadeT?.let { linha("Capacidade", "${it.toInt()} t") }
+                    silo.ultimaLeituraEm?.let {
+                        linha(
+                            if (estimado) "Estimado em" else if (silo.status == "CRITICO") "Crítico em" else "Leitura em",
+                            com.bragro.mobile.ui.domain.diaMesBr(it),
+                            negrito = false,
+                            cor = if (silo.status == "CRITICO") laranja else cs.onSurface,
+                        )
+                    }
                 }
             }
             if (aberto) {
-            Text(
-                listOfNotNull(silo.produto, silo.fabricante, silo.capacidadeT?.let { "${it.toInt()} t" }).joinToString(" · ").ifBlank { "—" },
-                style = MaterialTheme.typography.bodySmall,
-            )
             Slider(
                 value = pct,
                 onValueChange = { pct = it.toInt().toFloat() },
@@ -654,24 +653,44 @@ private fun SiloCard(
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 listOf(25f to "25%", 50f to "50%", 75f to "75%", 100f to "Cheio").forEach { (v, label) ->
-                    OutlinedButton(onClick = { pct = v }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) {
+                    OutlinedButton(onClick = { pct = v }, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp), modifier = Modifier.weight(1f)) {
                         Text(label, style = MaterialTheme.typography.labelSmall)
                     }
                 }
-                // v273 -- Salvar/Confirmar virou o ✓ na linha do título.
+            }
+            // v289 (mockup v376b) -- botões abaixo das porcentagens, espalhados por igual.
+            androidx.compose.material3.HorizontalDivider(Modifier.padding(top = 10.dp), color = cs.outlineVariant.copy(alpha = 0.5f))
+            Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                @Composable
+                fun icone(img: androidx.compose.ui.graphics.vector.ImageVector, nome: String, cor: androidx.compose.ui.graphics.Color, habilitado: Boolean = !busy, acao: () -> Unit) {
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        androidx.compose.material3.IconButton(onClick = acao, enabled = habilitado, modifier = Modifier.size(40.dp)) {
+                            com.bragro.mobile.ui.domain.IconeNegrito(img, contentDescription = nome, tint = if (habilitado) cor else cor.copy(alpha = 0.35f), size = 22.dp)
+                        }
+                    }
+                }
+                icone(Icons.Outlined.Check, if (estimado && !dirty) "Confirmar" else "Salvar", cs.primary, habilitado = !busy && (dirty || silo.leituraAtrasada || estimado)) { onSalvarRapido(pct.toDouble()) }
+                icone(Icons.Outlined.Thermostat, "Lançar leitura", cs.onSurface, acao = onLeitura)
+                icone(Icons.Outlined.History, "Histórico", cs.onSurface, acao = onHistorico)
+                icone(Icons.Outlined.Edit, "Editar", cs.onSurface, acao = onEdit)
+                icone(Icons.Outlined.Delete, "Arquivar", laranja, acao = onArchive)
             }
             if (estimado && silo.movimentos.isNotEmpty()) {
                 Text(
-                    "Base + ${"%.1f".format(Locale("pt", "BR"), silo.movimentos.sumOf { it.toneladas })} t em romaneios (entradas − saídas):",
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.padding(top = 6.dp),
+                    buildAnnotatedString {
+                        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append("Romaneios") }
+                        withStyle(SpanStyle(color = cs.onSurfaceVariant)) { append(" · base + ${"%.1f".format(Locale("pt", "BR"), silo.movimentos.sumOf { it.toneladas })} t (entradas − saídas)") }
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
                 )
+                var verTodos by androidx.compose.runtime.saveable.rememberSaveable(silo.id) { androidx.compose.runtime.mutableStateOf(false) }
                 // v1.6.23 (mockup v128c, item 1) -- colunas alinhadas; tocar abre o romaneio.
                 val nf1 = java.text.NumberFormat.getNumberInstance(Locale("pt", "BR")).apply { minimumFractionDigits = 1; maximumFractionDigits = 1 }
                 // v1.6.24 (mockup v129, item 3) -- setinha no título Data; desempate pelo número.
                 var romAsc by androidx.compose.runtime.saveable.rememberSaveable(silo.id) { androidx.compose.runtime.mutableStateOf(false) }
                 Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
-                    listOf("Romaneio" to 1.1f, "Tipo" to 1f, "Toneladas" to 1.2f, "Data" to 0.9f).forEachIndexed { i, (t, w) ->
+                    listOf("Nº" to 1.1f, "Tipo" to 1f, "Toneladas" to 1.2f, "Data" to 0.9f).forEachIndexed { i, (t, w) ->
                         Text(
                             if (i == 3) "$t ${if (romAsc) "↑" else "↓"}" else t,
                             style = MaterialTheme.typography.labelSmall,
@@ -684,7 +703,8 @@ private fun SiloCard(
                     Spacer(Modifier.width(16.dp))
                 }
                 val cmpRom = compareBy<com.bragro.mobile.data.model.SiloMovimentoData> { it.data.take(10) }
-                (if (romAsc) silo.movimentos.sortedWith(cmpRom) else silo.movimentos.sortedWith(cmpRom.reversed())).forEach { m ->
+                val ordenados = if (romAsc) silo.movimentos.sortedWith(cmpRom) else silo.movimentos.sortedWith(cmpRom.reversed())
+                (if (verTodos) ordenados else ordenados.take(5)).forEach { m ->
                     val estilo = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum")
                     Row(Modifier.fillMaxWidth().clickable { onAbrirRomaneio(m.romaneioId) }.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(m.noRomaneio, style = estilo, modifier = Modifier.weight(1.1f))
@@ -692,7 +712,7 @@ private fun SiloCard(
                         Text(
                             (if (m.toneladas < 0) "−" else "+") + nf1.format(kotlin.math.abs(m.toneladas)) + " t",
                             style = estilo,
-                            color = if (m.toneladas < 0) com.bragro.mobile.ui.domain.corAtencao() else MaterialTheme.colorScheme.onSurface,
+                            color = if (m.toneladas < 0) com.bragro.mobile.ui.domain.corAtencao() else MaterialTheme.colorScheme.primary,
                             textAlign = androidx.compose.ui.text.style.TextAlign.End,
                             modifier = Modifier.weight(1.2f),
                         )
@@ -700,6 +720,13 @@ private fun SiloCard(
                         Text("›", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.width(16.dp))
                     }
                 }
+                if (ordenados.size > 5) Text(
+                    if (verTodos) "Ver menos ‹" else "Ver todos (${ordenados.size}) ›",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.clickable { verTodos = !verTodos }.padding(vertical = 6.dp),
+                )
             }
             Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
