@@ -2915,7 +2915,7 @@ private fun CotacoesResumo(com: com.bragro.mobile.data.model.CommodityQuotesData
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             // v292 (mockup v385) -- padrão da plataforma: ícone + título, fonte à direita, dados uma linha abaixo.
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
-                com.bragro.mobile.ui.domain.IconeNegrito(IconesVazados.Trigo, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, size = 20.dp)
+                IconeNegrito(IconesVazados.Trigo, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, size = 20.dp)
                 Spacer(Modifier.width(10.dp))
                 Text("Cotações Grãos", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 Text("Grão Direto · semanal", style = MaterialTheme.typography.labelSmall, fontSize = 10.sp, color = cs.onSurfaceVariant, maxLines = 1)
