@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -91,9 +94,26 @@ private fun tamanho(b: Double): String = when {
 
 @Composable
 private fun Selo(texto: String, ligado: Boolean) {
-    val cor = if (ligado) MaterialTheme.colorScheme.primary else Laranja
-    // v275 (mockup v330) -- só o texto colorido, sem fundo.
-    Text(texto, color = cor, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+    SeloIcone(texto, if (ligado) MaterialTheme.colorScheme.primary else Laranja, ligado)
+}
+
+/** v292 (mockup v386) -- rótulos viram ícones: ✔ verde = tudo certo, ⚠ laranja/amarelo =
+ * precisa atenção. Contagens (9/9, 2/5) ficam ao lado; o texto vai na descrição do ícone. */
+@Composable
+private fun SeloIcone(texto: String, cor: Color, ok: Boolean) {
+    val num = Regex("\\d+\\s*/\\s*\\d+").find(texto)?.value?.replace(" ", "")
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        androidx.compose.material3.Icon(
+            if (ok) Icons.Outlined.CheckCircle else Icons.Outlined.WarningAmber,
+            contentDescription = texto,
+            tint = cor,
+            modifier = Modifier.size(18.dp),
+        )
+        if (num != null) {
+            Spacer(Modifier.width(4.dp))
+            Text(num, color = cor, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+        }
+    }
 }
 
 @Composable
@@ -198,7 +218,7 @@ fun PainelDonoScreen(onBack: () -> Unit, viewModel: PainelDonoViewModel = viewMo
                                 Text(o.t("nome"), style = MaterialTheme.typography.bodyMedium)
                                 if (o.t("detalhe").isNotBlank()) Text(o.t("detalhe"), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
                             }
-                            Text(o.t("rotulo"), color = corTom(o.t("tom")), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                            SeloIcone(o.t("rotulo"), corTom(o.t("tom")), o.t("tom").lowercase() in setOf("ok", "green", "verde")) // v292
                         }
                     }
                 }

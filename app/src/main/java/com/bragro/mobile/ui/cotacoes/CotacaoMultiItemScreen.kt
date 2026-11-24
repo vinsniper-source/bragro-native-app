@@ -241,6 +241,23 @@ class CotacaoMultiItemViewModel(app: Application) : AndroidViewModel(app) {
         grupos[gi].propostas.add(PropostaLinha())
     }
 
+    // v292 (mockup v384c) -- ⧉ copiar item (com as propostas) e ⧉ copiar proposta.
+    private fun PropostaLinha.copia() = PropostaLinha().also {
+        it.fornecedor = fornecedor; it.precoUnitario = precoUnitario; it.prazoEntregaDias = prazoEntregaDias
+        it.condicaoPagamento = condicaoPagamento; it.validadeProposta = validadeProposta
+    }
+    fun copiarGrupo(gi: Int) {
+        val o = grupos[gi]
+        val n = GrupoLinha().also { it.categoria = o.categoria; it.item = o.item; it.quantidade = o.quantidade; it.unidade = o.unidade }
+        n.propostas.clear()
+        o.propostas.forEach { n.propostas.add(it.copia()) }
+        grupos.add(gi + 1, n)
+    }
+    fun copiarProposta(gi: Int, pi: Int) {
+        val ps = grupos[gi].propostas
+        ps.add(pi + 1, ps[pi].copia())
+    }
+
     /** "Preencher com foto": lê a proposta do fornecedor e preenche o
      * primeiro item/proposta (ou o primeiro ainda vazio). Só pré-preenche. */
     suspend fun aplicarOcrFoto(fotoUrl: String): String? {
@@ -400,114 +417,107 @@ private fun historicoTexto(hist: CotacaoPrecoMedioResponse?): String {
     return "Preço médio histórico: R$ ${"%.2f".format(media)} (${hist.amostras} cotação${if (plural) "ões" else ""} anterior${if (plural) "es" else ""}$dataTxt)"
 }
 
-// Card de UMA proposta de fornecedor dentro de um grupo (item).
+// v292 (mockup v384c aprovado) -- mesma estrutura da plataforma
+// (cotacao-multi-item-button.tsx): bloco do Item com Categoria, Item,
+// Quantidade, Unidade e preço médio histórico; dentro dele um bloco por
+// Proposta (fornecedor). Os ícones + ficam na linha do título de cada bloco
+// interno: no Item, + adiciona outro item; na Proposta, + adiciona outro
+// fornecedor (ao lado de ⧉ copiar e 🗑 excluir).
+@Composable
+private fun AcoesBloco(nomeMais: String, onMais: () -> Unit, nomeCopiar: String, onCopiar: () -> Unit, nomeExcluir: String, onExcluir: (() -> Unit)?) {
+    IconButton(onClick = onMais, modifier = Modifier.size(34.dp)) {
+        com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Add, contentDescription = nomeMais, tint = MaterialTheme.colorScheme.onSurface, size = 22.dp)
+    }
+    IconButton(onClick = onCopiar, modifier = Modifier.size(34.dp)) {
+        com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.ContentCopy, contentDescription = nomeCopiar, tint = MaterialTheme.colorScheme.onSurface, size = 20.dp)
+    }
+    if (onExcluir != null) IconButton(onClick = onExcluir, modifier = Modifier.size(34.dp)) {
+        com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Delete, contentDescription = nomeExcluir, tint = com.bragro.mobile.ui.domain.corAtencao(), size = 20.dp)
+    }
+}
+
 @Composable
 private fun PropostaCard(
+    numero: Int,
     proposta: PropostaLinha,
+    quantidade: String,
     entidadesOptions: List<LookupEntity>,
     formasPgtoOptions: List<LookupEntity>,
     mediaHistorica: Double?,
     viewModel: CotacaoMultiItemViewModel,
-    showRemove: Boolean,
-    onRemove: () -> Unit,
-    showAdd: Boolean,
     onAdd: () -> Unit,
+    onCopy: () -> Unit,
+    onRemove: (() -> Unit)?,
 ) {
     com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth(), invertido = false) {
-        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            ItemFieldBlock {
+        Column(modifier = Modifier.padding(start = 12.dp, end = 6.dp, top = 6.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Text("Proposta $numero", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                AcoesBloco("Adicionar fornecedor", onAdd, "Copiar proposta", onCopy, "Remover proposta", onRemove)
+            }
+            Column(Modifier.padding(end = 6.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 StringDropdown(
                     label = "Fornecedor *",
                     value = entidadesOptions.firstOrNull { it.value == proposta.fornecedor }?.label ?: proposta.fornecedor.ifBlank { null },
                     options = entidadesOptions.map { it.label },
-                    placeholder = "Selecione o fornecedor",
+                    placeholder = "",
                     onSelect = { picked -> proposta.fornecedor = entidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
                     onCreate = { raw -> viewModel.quickCreateLookupOption("entidades_financeiro", raw) { value -> value?.let { proposta.fornecedor = it } } },
                 )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                ItemFieldBlock(modifier = Modifier.weight(1f)) {
-                    Column {
-                        OutlinedTextField(
-                            value = proposta.precoUnitario,
-                            onValueChange = { proposta.precoUnitario = it },
-                            label = { Text("Preço unit. (R$) *") },
-                        textStyle = androidx.compose.material3.LocalTextStyle.current.copy(textAlign = androidx.compose.ui.text.style.TextAlign.End),
-                            placeholder = { Text("0,00") },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = appFieldColors(),
+                Column {
+                    OutlinedTextField(
+                        value = proposta.precoUnitario,
+                        onValueChange = { proposta.precoUnitario = it },
+                        label = { Text("Preço unit. (R$) *") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = appFieldColors(),
+                    )
+                    val preco = proposta.precoUnitario.let { if (it.isBlank()) null else parseDecimal(it) }
+                    if (mediaHistorica != null && mediaHistorica > 0 && preco != null && preco > 0) {
+                        val diffPct = ((preco - mediaHistorica) / mediaHistorica) * 100
+                        Text(
+                            (if (diffPct <= 0) "▼ " else "▲ ") + "${"%.0f".format(kotlin.math.abs(diffPct))}% vs. média histórica",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (diffPct <= 0) MaterialTheme.colorScheme.primary else com.bragro.mobile.ui.domain.corAtencao(),
                         )
-                        // Indicador vs. média histórica (task #472) -- mesmo
-                        // cálculo do site: preço abaixo/igual à média em
-                        // verde (▼), acima em vermelho (▲).
-                        val preco = proposta.precoUnitario.let { if (it.isBlank()) null else parseDecimal(it) }
-                        if (mediaHistorica != null && mediaHistorica > 0 && preco != null && preco > 0) {
-                            val diffPct = ((preco - mediaHistorica) / mediaHistorica) * 100
-                            Text(
-                                (if (diffPct <= 0) "▼ " else "▲ ") + "${"%.0f".format(kotlin.math.abs(diffPct))}% vs. média histórica",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (diffPct <= 0) androidx.compose.ui.graphics.Color(0xFF059669) else MaterialTheme.colorScheme.error,
-                            )
-                        }
                     }
                 }
-                ItemFieldBlock(modifier = Modifier.weight(1f)) {
-                    OutlinedTextField(
-                        value = proposta.prazoEntregaDias,
-                        onValueChange = { proposta.prazoEntregaDias = it },
-                        label = { Text("Prazo (dias)") },
-                        placeholder = { Text("Opcional") },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = appFieldColors(),
-                    )
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                ItemFieldBlock(modifier = Modifier.weight(1f)) {
-                    StringDropdown(
-                        label = "Condição pgto.",
-                        value = formasPgtoOptions.firstOrNull { it.value == proposta.condicaoPagamento }?.label ?: proposta.condicaoPagamento,
-                        options = formasPgtoOptions.map { it.label },
-                        placeholder = "Opcional",
-                        allowEmpty = true,
-                        onSelect = { picked -> proposta.condicaoPagamento = formasPgtoOptions.firstOrNull { it.label == picked }?.value ?: picked },
-                        onCreate = { raw -> viewModel.quickCreateLookupOption("formas_pgto", raw) { value -> value?.let { proposta.condicaoPagamento = it } } },
-                    )
-                }
-                ItemFieldBlock(modifier = Modifier.weight(1f)) {
-                    OutlinedTextField(
-                        value = proposta.validadeProposta,
-                        onValueChange = { proposta.validadeProposta = it },
-                        label = { Text("Validade") },
-                        /* v201 -- sem DD/MM/AAAA */
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = appFieldColors(),
-                    )
-                }
-                // "+" no fim da última linha da última proposta (mockup aprovado)
-                // -- adiciona outro fornecedor sem botão largo embaixo.
-                if (showAdd) {
-                    OutlinedButton(
-                        onClick = onAdd,
-                        modifier = Modifier.size(52.dp),
-                        contentPadding = PaddingValues(0.dp),
-                    ) {
-                        Icon(Icons.Outlined.Add, contentDescription = "Adicionar fornecedor")
-                    }
-                }
-            }
-            if (showRemove) {
-                IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Outlined.Delete, contentDescription = "Remover proposta", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(18.dp))
-                }
+                val total = parseDecimal(quantidade) * parseDecimal(proposta.precoUnitario)
+                com.bragro.mobile.ui.theme.CampoAutoLinha(
+                    "Total",
+                    if (total > 0) java.text.NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(total) else "",
+                )
+                OutlinedTextField(
+                    value = proposta.prazoEntregaDias,
+                    onValueChange = { proposta.prazoEntregaDias = it },
+                    label = { Text("Prazo (dias)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
+                )
+                StringDropdown(
+                    label = "Pagamento",
+                    value = formasPgtoOptions.firstOrNull { it.value == proposta.condicaoPagamento }?.label ?: proposta.condicaoPagamento,
+                    options = formasPgtoOptions.map { it.label },
+                    placeholder = "",
+                    allowEmpty = true,
+                    onSelect = { picked -> proposta.condicaoPagamento = formasPgtoOptions.firstOrNull { it.label == picked }?.value ?: picked },
+                    onCreate = { raw -> viewModel.quickCreateLookupOption("formas_pgto", raw) { value -> value?.let { proposta.condicaoPagamento = it } } },
+                )
+                OutlinedTextField(
+                    value = proposta.validadeProposta,
+                    onValueChange = { proposta.validadeProposta = it },
+                    label = { Text("Validade") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
+                )
             }
         }
     }
 }
 
-// Card de UM grupo (item cotado + suas propostas de fornecedor) -- task #472.
 @Composable
 private fun GrupoCard(
+    numero: Int,
     grupo: GrupoLinha,
     categoriasOptions: List<LookupEntity>,
     itensOptions: List<LookupEntity>,
@@ -517,12 +527,12 @@ private fun GrupoCard(
     historico: Map<String, CotacaoPrecoMedioResponse?>,
     onBuscarHistorico: (String, String) -> Unit,
     viewModel: CotacaoMultiItemViewModel,
-    showRemoveGrupo: Boolean,
-    onRemoveGrupo: () -> Unit,
-    onAddProposta: () -> Unit,
-    onRemoveProposta: (Int) -> Unit,
-    showAddGrupo: Boolean,
     onAddGrupo: () -> Unit,
+    onCopyGrupo: () -> Unit,
+    onRemoveGrupo: (() -> Unit)?,
+    onAddProposta: () -> Unit,
+    onCopyProposta: (Int) -> Unit,
+    onRemoveProposta: (Int) -> Unit,
 ) {
     LaunchedEffect(grupo.categoria, grupo.item) {
         onBuscarHistorico(grupo.categoria, grupo.item)
@@ -531,99 +541,61 @@ private fun GrupoCard(
     val hist = if (temItem) historico[historicoKey(grupo.categoria, grupo.item)] else null
     val mediaHistorica = if (hist?.ok == true) hist.mediaPreco else null
 
-    // Ordem invertida (pedido do usuário, com uma imagem anotada mostrando
-    // "fornecedores primeiro, abaixo o botão de adicionar fornecedor,
-    // abaixo itens, abaixo o botão de adicionar"): Propostas dos
-    // fornecedores agora vem ANTES de Categoria/Item/Unidade/Quantidade,
-    // com "Adicionar fornecedor" logo abaixo da lista. Nenhuma mudança de
-    // dado/validação, só a ordem visual dos dois blocos dentro do card.
     com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth(), invertido = false) {
-        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Propostas dos fornecedores *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            // Preço médio histórico (task #472) -- movido pro topo, junto do
-            // bloco de propostas, pra não ficar "descolado" da ação de
-            // digitar o preço (antes ficava só depois de Categoria/Item/
-            // Quantidade, longe de onde o usuário está olhando). O texto
-            // é reativo: atualiza sozinho assim que Categoria+Item forem
-            // preenchidos mais abaixo no mesmo card.
-            if (temItem) {
-                Text(
-                    historicoTexto(hist),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+        Column(modifier = Modifier.padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Text("Item $numero", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                AcoesBloco("Adicionar item", onAddGrupo, "Copiar item", onCopyGrupo, "Remover item", onRemoveGrupo)
             }
-            grupo.propostas.forEachIndexed { pi, proposta ->
-                PropostaCard(
-                    proposta = proposta,
-                    entidadesOptions = entidadesOptions,
-                    formasPgtoOptions = formasPgtoOptions,
-                    mediaHistorica = mediaHistorica,
-                    viewModel = viewModel,
-                    showRemove = grupo.propostas.size > 1,
-                    onRemove = { onRemoveProposta(pi) },
-                    showAdd = pi == grupo.propostas.lastIndex,
-                    onAdd = onAddProposta,
-                )
-            }
-            HorizontalDivider()
-            ItemFieldBlock {
+            Column(Modifier.padding(end = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 StringDropdown(
                     label = "Categoria *",
                     value = categoriasOptions.firstOrNull { it.value == grupo.categoria }?.label ?: grupo.categoria.ifBlank { null },
                     options = categoriasOptions.map { it.label },
-                    placeholder = "Categoria",
+                    placeholder = "",
                     onSelect = { picked -> grupo.categoria = categoriasOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
                     onCreate = { raw -> viewModel.quickCreateLookupOption("categorias_cotacao", raw) { value -> value?.let { grupo.categoria = it } } },
                 )
-            }
-            ItemFieldBlock {
                 StringDropdown(
                     label = "Item *",
                     value = itensOptions.firstOrNull { it.value == grupo.item }?.label ?: grupo.item.ifBlank { null },
                     options = itensOptions.map { it.label },
-                    placeholder = "Selecione o item",
+                    placeholder = "",
                     onSelect = { picked -> grupo.item = itensOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
                     onCreate = { raw -> viewModel.quickCreateLookupOption("itens_estoque", raw) { value -> value?.let { grupo.item = it } } },
                 )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
-                ItemFieldBlock(modifier = Modifier.weight(1f)) {
-                    StringDropdown(
-                        label = "Unidade",
-                        value = unidadesOptions.firstOrNull { it.value == grupo.unidade }?.label ?: grupo.unidade.ifBlank { null },
-                        options = unidadesOptions.map { it.label },
-                        placeholder = "Opcional",
-                        allowEmpty = true,
-                        onSelect = { picked -> grupo.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
-                        onCreate = { raw -> viewModel.quickCreateLookupOption("unidades", raw) { value -> value?.let { grupo.unidade = it } } },
+                OutlinedTextField(
+                    value = grupo.quantidade,
+                    onValueChange = { grupo.quantidade = it },
+                    label = { Text("Quantidade") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
+                )
+                StringDropdown(
+                    label = "Unidade",
+                    value = unidadesOptions.firstOrNull { it.value == grupo.unidade }?.label ?: grupo.unidade.ifBlank { null },
+                    options = unidadesOptions.map { it.label },
+                    placeholder = "",
+                    allowEmpty = true,
+                    onSelect = { picked -> grupo.unidade = unidadesOptions.firstOrNull { it.label == picked }?.value ?: picked.orEmpty() },
+                    onCreate = { raw -> viewModel.quickCreateLookupOption("unidades", raw) { value -> value?.let { grupo.unidade = it } } },
+                )
+                if (temItem) {
+                    Text(historicoTexto(hist), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                grupo.propostas.forEachIndexed { pi, proposta ->
+                    PropostaCard(
+                        numero = pi + 1,
+                        proposta = proposta,
+                        quantidade = grupo.quantidade,
+                        entidadesOptions = entidadesOptions,
+                        formasPgtoOptions = formasPgtoOptions,
+                        mediaHistorica = mediaHistorica,
+                        viewModel = viewModel,
+                        onAdd = onAddProposta,
+                        onCopy = { onCopyProposta(pi) },
+                        onRemove = if (grupo.propostas.size > 1) ({ onRemoveProposta(pi) }) else null,
                     )
-                }
-                ItemFieldBlock(modifier = Modifier.weight(1f)) {
-                    OutlinedTextField(
-                        value = grupo.quantidade,
-                        onValueChange = { grupo.quantidade = it },
-                        label = { Text("Quantidade") },
-                        textStyle = androidx.compose.material3.LocalTextStyle.current.copy(textAlign = androidx.compose.ui.text.style.TextAlign.Center),
-                        placeholder = { Text("Opcional") },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = appFieldColors(),
-                    )
-                }
-                // "+" no fim da linha do último item (mockup aprovado).
-                if (showAddGrupo) {
-                    OutlinedButton(
-                        onClick = onAddGrupo,
-                        modifier = Modifier.size(52.dp),
-                        contentPadding = PaddingValues(0.dp),
-                    ) {
-                        Icon(Icons.Outlined.Add, contentDescription = "Adicionar item")
-                    }
-                }
-            }
-            if (showRemoveGrupo) {
-                IconButton(onClick = onRemoveGrupo, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Outlined.Delete, contentDescription = "Remover item", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -697,12 +669,6 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item {
-                Text(
-                    "Um item por linha, um preço por fornecedor.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            item {
                 com.bragro.mobile.ui.domain.OcrFotoButton(label = "Preencher com foto da proposta") { url -> viewModel.aplicarOcrFoto(url) }
             }
             if (errorMessage != null) {
@@ -742,10 +708,19 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                     }
                 }
             }
-            item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
-            item { Text("Itens cotados (cada um com suas propostas) *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold) }
+            // v292 (mockup v384c) -- Observações logo abaixo da Data (vale para todos os itens).
+            item {
+                OutlinedTextField(
+                    value = viewModel.observacoes,
+                    onValueChange = { viewModel.observacoes = it },
+                    label = { Text("Observações (vale para todos os itens)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
+                )
+            }
             items(viewModel.grupos.size) { gi ->
                 GrupoCard(
+                    numero = gi + 1,
                     grupo = viewModel.grupos[gi],
                     categoriasOptions = categoriasOptions,
                     itensOptions = itensOptions,
@@ -755,22 +730,12 @@ fun CotacaoMultiItemScreen(onBack: () -> Unit, viewModel: CotacaoMultiItemViewMo
                     historico = viewModel.historico,
                     onBuscarHistorico = { cat, it -> viewModel.buscarHistoricoSeNecessario(cat, it) },
                     viewModel = viewModel,
-                    showRemoveGrupo = viewModel.grupos.size > 1,
-                    onRemoveGrupo = { viewModel.removeGrupo(gi) },
-                    onAddProposta = { viewModel.addProposta(gi) },
-                    onRemoveProposta = { pi -> viewModel.removeProposta(gi, pi) },
-                    showAddGrupo = gi == viewModel.grupos.lastIndex,
                     onAddGrupo = { viewModel.addGrupo() },
-                )
-            }
-            item {
-                OutlinedTextField(
-                    value = viewModel.observacoes,
-                    onValueChange = { viewModel.observacoes = it },
-                    label = { Text("Observações (opcional, para todos)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 2,
-                    colors = appFieldColors(),
+                    onCopyGrupo = { viewModel.copiarGrupo(gi) },
+                    onRemoveGrupo = if (viewModel.grupos.size > 1) ({ viewModel.removeGrupo(gi) }) else null,
+                    onAddProposta = { viewModel.addProposta(gi) },
+                    onCopyProposta = { pi -> viewModel.copiarProposta(gi, pi) },
+                    onRemoveProposta = { pi -> viewModel.removeProposta(gi, pi) },
                 )
             }
             // v1.6.59 -- botão do final virou ✓ na linha do título.

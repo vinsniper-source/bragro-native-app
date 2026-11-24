@@ -416,11 +416,10 @@ private fun PersonalizarInicioDialog(
 private fun ModuleToggleRow(id: String, label: String, selected: List<String>, onChange: (List<String>) -> Unit) {
     val checked = selected.contains(id)
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 1.dp)) {
-        Switch(
+        com.bragro.mobile.ui.domain.VistoCheck(
             checked = checked,
             onCheckedChange = { on -> onChange(if (on) selected + id else selected - id) },
-            colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
-        )
+        ) // v292 -- visto no lugar da chavinha
         Spacer(Modifier.width(6.dp))
         Text(label, style = MaterialTheme.typography.bodySmall)
     }
@@ -537,35 +536,14 @@ private fun EquipeCard(
                     // claro que o habilitado) resolvem -- o OWNER continua
                     // vendo claramente "isto está ativo", só não pode
                     // desativar a si mesmo.
-                    Switch(
+                    // v292 (mockup v386) -- a chavinha virou visto: ✓ verde = ativo, ✓ cinza = desativado.
+                    com.bragro.mobile.ui.domain.VistoCheck(
                         checked = ativo,
                         onCheckedChange = { onToggle(id, it) },
                         enabled = !busy && role != "OWNER",
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = MaterialTheme.colorScheme.primary,
-                            checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                            disabledCheckedThumbColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                            disabledCheckedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
-                            disabledCheckedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
-                            disabledUncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            disabledUncheckedTrackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f),
-                            disabledUncheckedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
-                        ),
                     )
                     if (isOwnOwnerRow) {
-                        // Réplica do ícone "Personalizar Início" que no site
-                        // fica na própria linha do OWNER em Segurança (ver
-                        // PersonalizarInicioMenu em seguranca-client.tsx) --
-                        // self-service, edita só os widgets "inicio.*" do
-                        // próprio usuário, sem passar pelo form genérico de
-                        // papel/módulos (que nem se aplica ao próprio OWNER).
-                        // v283 (mockup v353) -- 🔑 trocar a própria senha.
-                        IconButton(onClick = { senhaPara = id to email }, enabled = !busy) {
-                            Icon(Icons.Outlined.Key, contentDescription = "Trocar minha senha", tint = MaterialTheme.colorScheme.onSurface)
-                        }
-                        IconButton(onClick = { showPersonalizarInicio = true }) {
-                            Icon(Icons.Outlined.Settings, contentDescription = "Personalizar Início", tint = MaterialTheme.colorScheme.primary)
-                        }
+                        // v292 (mockup v386) -- chave e engrenagem saíram da linha do dono.
                     } else {
                         com.bragro.mobile.ui.domain.CantoL(expanded, onClick = { expanded = !expanded })
                     }

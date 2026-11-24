@@ -39,6 +39,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material.icons.outlined.Height
@@ -1419,19 +1420,8 @@ fun HomeScreen(
                         onSelect = { id -> selecionadaFazendaId = id },
                         safra = SafraSelection.selected.value,
                         cultura = CulturaSelection.selected.value,
-                        onAbrirMapa = { mapaCanvasAberto = !mapaCanvasAberto },
+                        onAbrirMapa = {}, // v292 (mockup v385) -- sem mapa dos talhões no Início (fica no cadastro de fazendas)
                     )
-                    if (!mapaCanvasAberto && canvas.fazendas.size > 1) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                            androidx.compose.material3.TextButton(onClick = { mapaCanvasAberto = true }) { Text("Mapa dos talhões") }
-                        }
-                    }
-                    if (mapaCanvasAberto) {
-                        com.bragro.mobile.ui.fieldview.MapaTalhoesEmbutido(
-                            fazendaPadraoId = canvas.fazendas.singleOrNull()?.id ?: selecionadaFazendaId,
-                            onFechar = { mapaCanvasAberto = false },
-                        )
-                    }
                     val fazendaSelecionada = canvas.fazendas.find { it.id == selecionadaFazendaId }
                     if (fazendaSelecionada != null) {
                         androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
@@ -2447,8 +2437,8 @@ private fun KpiGrid(data: HomeData) {
         // Cores dos ícones Safra/Financeiro invertidas -- pedido do usuário
         // ("inverta as cores dos ícones dos kpis safra e financeiro").
         "inicio.kpi.financeiro" to Kpi(
-            "Financeiro",
-            formatMoneyBrl(data.saldoFinanceiroAberto),
+            "Em aberto (financeiro)", // v292 (mockup v385) -- igual à plataforma, valor curto
+            valorCurtoBrl(data.saldoFinanceiroAberto),
             Icons.Outlined.AccountBalanceWallet,
             // BrBlue (fixo) -> colorScheme.tertiary (adapta por tema) --
             // pedido do usuário ("coloque as cores das fontes preto/branco
@@ -2685,6 +2675,17 @@ private fun fazendasKpi(data: HomeData): Kpi = Kpi(
 // dar uma altura de verdade, quebraria o layout (altura infinita).
 // v288 (mockup v369) -- KPI minimalista: nome à esquerda, número à direita,
 // borda fina, fundo da tela.
+/** v292 (mockup v385) -- valor curto como na plataforma: R$ 3,46 mi / R$ 12,5 mil. */
+private fun valorCurtoBrl(v: Double): String {
+    val br = java.util.Locale("pt", "BR")
+    val a = kotlin.math.abs(v)
+    return when {
+        a >= 1_000_000 -> "R$ " + String.format(br, "%.2f", v / 1_000_000) + " mi"
+        a >= 10_000 -> "R$ " + String.format(br, "%.1f", v / 1_000) + " mil"
+        else -> formatMoneyBrl(v)
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun KpiMini(kpi: Kpi, modifier: Modifier = Modifier) {
@@ -2699,6 +2700,8 @@ private fun KpiMini(kpi: Kpi, modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            // v292 (mockup v385) -- ícone do módulo antes do título.
+            com.bragro.mobile.ui.domain.IconeNegrito(kpi.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, size = 18.dp)
             Text(
                 com.bragro.mobile.ui.domain.exibirTexto(kpi.label),
                 style = MaterialTheme.typography.bodySmall,
@@ -2818,6 +2821,7 @@ private fun MiniCardHeaderWithRefresh(
     titleStyle: androidx.compose.ui.text.TextStyle,
     onRefresh: () -> Unit,
     acoes: (@Composable () -> Unit)? = null,
+    fonte: String? = null, // v292 (mockup v385) -- fonte/atualização pequena à direita, como na plataforma
 ) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         // v275 (mockup v330) -- ícone na cor do texto; ações do bloco como
@@ -2825,6 +2829,7 @@ private fun MiniCardHeaderWithRefresh(
         com.bragro.mobile.ui.domain.IconeNegrito(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, size = 20.dp) // v286 -- negrito
         Spacer(Modifier.width(10.dp))
         Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f).basicMarquee())
+        if (fonte != null) Text(fonte, style = MaterialTheme.typography.labelSmall, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, modifier = Modifier.padding(start = 6.dp))
         acoes?.invoke()
     }
 }
@@ -2841,6 +2846,8 @@ private fun ClimaResumo(clima: com.bragro.mobile.data.model.WeatherData, onClick
         // e resumo noutra, 4 dias sem ícones e pulverização.
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Cloud, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, size = 20.dp) // v292 (mockup v385)
+                Spacer(Modifier.width(10.dp))
                 Text("Clima", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 clima.agro?.alertas?.firstOrNull()?.let { a ->
                     Icon(Icons.Outlined.WarningAmber, contentDescription = null, tint = laranja, modifier = Modifier.size(14.dp))
@@ -2906,7 +2913,13 @@ private fun CotacoesResumo(com: com.bragro.mobile.data.model.CommodityQuotesData
     val br = java.util.Locale("pt", "BR")
     androidx.compose.material3.Card(onClick = onClick, modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.Transparent), border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) { // v275 (mockup v330) -- bloco recolhido com borda
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Cotações Grãos", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            // v292 (mockup v385) -- padrão da plataforma: ícone + título, fonte à direita, dados uma linha abaixo.
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
+                com.bragro.mobile.ui.domain.IconeNegrito(IconesVazados.Trigo, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, size = 20.dp)
+                Spacer(Modifier.width(10.dp))
+                Text("Cotações Grãos", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text("Grão Direto · semanal", style = MaterialTheme.typography.labelSmall, fontSize = 10.sp, color = cs.onSurfaceVariant, maxLines = 1)
+            }
             Row(modifier = Modifier.fillMaxWidth()) {
                 listOf("Soja" to com.soja, "Milho" to com.milho, "Sorgo" to com.sorgo).forEach { (rot, d) ->
                     Column(modifier = Modifier.weight(1f)) {
@@ -3231,7 +3244,7 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: 
     var conversorAberto by remember { mutableStateOf(false) }
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            MiniCardHeaderWithRefresh("Câmbio", Icons.Outlined.CurrencyExchange, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh, acoes = {
+            MiniCardHeaderWithRefresh("Câmbio", Icons.Outlined.CurrencyExchange, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh, fonte = "Tempo real", acoes = {
                 // v275 (mockup v330) -- "Conversor" vira ícone na linha do título.
                 IconButton(onClick = { conversorAberto = !conversorAberto }, modifier = Modifier.size(32.dp)) {
                     Icon(if (conversorAberto) Icons.Outlined.Close else Icons.Outlined.SwapHoriz, contentDescription = if (conversorAberto) "Fechar conversor" else "Conversor BRL / US\$ / ARS", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
@@ -3302,11 +3315,7 @@ private fun CambioCard(fx: com.bragro.mobile.data.model.FxRatesData, onRefresh: 
             // AwesomeAPI (com fallback pra exchangerate-api.com só se a
             // AwesomeAPI falhar).
             // v83 -- desde a v80 o dólar e o euro vêm da PTAX do Banco Central.
-            Text(
-                "Cotação oficial · Fonte: Banco Central (PTAX)",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            // v292 (mockup v385) -- a fonte foi para a linha do título.
         }
     }
 }
@@ -3732,7 +3741,8 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
 private fun CotacoesPecuariaCard(livestock: com.bragro.mobile.data.model.LivestockQuotesData, onRefresh: () -> Unit = {}, modifier: Modifier = Modifier.fillMaxWidth()) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            MiniCardHeaderWithRefresh("Cotações Pecuária", com.bragro.mobile.ui.domain.IconePecuaria, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
+            MiniCardHeaderWithRefresh("Cotações Pecuária", com.bragro.mobile.ui.domain.IconePecuaria, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh, fonte = "CEPEA/ESALQ")
+            Spacer(Modifier.height(6.dp)) // v292 -- dados uma linha abaixo do título
             val itens = listOfNotNull(livestock.boiGordo, livestock.bezerro, livestock.leite)
             // Estado vazio -- bug relatado pelo usuario ("cotacoes pecuaria
             // esta incompleto"): se os 3 indicadores vierem null (scraping
@@ -3824,11 +3834,7 @@ private fun CotacoesPecuariaCard(livestock: com.bragro.mobile.data.model.Livesto
                     }
                 }
             }
-            Text(
-                "Fonte: CEPEA/ESALQ",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            // v292 (mockup v385) -- a fonte foi para a linha do título.
         }
     }
 }

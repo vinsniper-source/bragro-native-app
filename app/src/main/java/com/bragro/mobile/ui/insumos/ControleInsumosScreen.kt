@@ -220,20 +220,30 @@ private fun InsumoItemRow(i: InsumoItemSituacaoData) {
             )
             StatusPill(i.status)
         }
-        FlowRow(modifier = Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Pedida: ${fmtNum(i.qtdPedida)}${i.unidade?.let { " $it" } ?: ""}", style = MaterialTheme.typography.labelSmall)
-            Text("Entregue: ${fmtNum(i.entregue)}", style = MaterialTheme.typography.labelSmall)
-            Text("A receber: ${fmtNum(i.aReceber)}", style = MaterialTheme.typography.labelSmall)
-            Text(
-                "Em estoque: ${fmtNum(i.emEstoque)}",
-                style = MaterialTheme.typography.labelSmall,
-                color = if (i.emEstoque < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-            )
-            Text("Aplicado: ${fmtNum(i.totalAplicado)}", style = MaterialTheme.typography.labelSmall)
-            Text(
-                "% Aplicado: ${i.percentualAplicado?.let { "${fmtNum(it)}%" } ?: "—"}",
-                style = MaterialTheme.typography.labelSmall,
-            )
+        // v292 (mockup v386) -- números centralizados em 3 colunas (nome em cima, valor embaixo).
+        val celulas = listOf(
+            Triple("Pedida", "${fmtNum(i.qtdPedida)}${i.unidade?.let { " $it" } ?: ""}", false),
+            Triple("Entregue", fmtNum(i.entregue), false),
+            Triple("A receber", fmtNum(i.aReceber), false),
+            Triple("Em estoque", fmtNum(i.emEstoque), i.emEstoque < 0),
+            Triple("Aplicado", fmtNum(i.totalAplicado), false),
+            Triple("% Aplicado", i.percentualAplicado?.let { "${fmtNum(it)}%" } ?: "—", false),
+        )
+        celulas.chunked(3).forEach { linha ->
+            Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                linha.forEach { (nome, valor, alerta) ->
+                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(nome, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                        Text(
+                            valor,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (alerta) com.bragro.mobile.ui.domain.corAtencao() else MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                        )
+                    }
+                }
+            }
         }
     }
 }
