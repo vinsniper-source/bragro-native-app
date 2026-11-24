@@ -39,6 +39,9 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.material.icons.outlined.Height
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Check
@@ -625,6 +628,12 @@ fun HomeScreen(
     val prefsOrdem = androidx.compose.ui.platform.LocalContext.current.getSharedPreferences("bragro_inicio", android.content.Context.MODE_PRIVATE)
     var reorganizando by remember { mutableStateOf(false) }
     var ordemInicio by remember { mutableStateOf(prefsOrdem.getString("ordem", "").orEmpty().split(",").filter { it.isNotBlank() }) }
+    // v290 (mockup v379) -- seleção (toque longo), largura (meia/inteira) e altura de cada bloco.
+    var selecionados by remember { mutableStateOf(setOf<String>()) }
+    var meiaLargura by remember { mutableStateOf(prefsOrdem.getString("meia", "").orEmpty().split(",").filter { it.isNotBlank() }.toSet()) }
+    var alturas by remember {
+        mutableStateOf(prefsOrdem.getString("alturas", "").orEmpty().split(";").mapNotNull { p -> p.split(":").takeIf { it.size == 2 }?.let { it[0] to (it[1].toIntOrNull() ?: 0) } }.toMap())
+    }
     val home by viewModel.home
     val weather by viewModel.weather
     // v1.6.13 (mockup v114) -- guarda a cotação do dia para "Exibir valores em" (U$D/ARS).
@@ -1266,7 +1275,7 @@ fun HomeScreen(
                         if (reorganizando) Icons.Outlined.Check else Icons.Outlined.DragIndicator,
                         contentDescription = if (reorganizando) "Concluir" else "Reorganizar blocos",
                         tint = if (reorganizando) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp).clickable { reorganizando = !reorganizando },
+                        modifier = Modifier.size(20.dp).clickable { reorganizando = !reorganizando; selecionados = emptySet() },
                     )
                     }
                     Text(
@@ -1385,15 +1394,13 @@ fun HomeScreen(
             // ordem escolhida pelo usuário (modo reorganizar, ícone ⠿ na linha da data).
             val blocos = mutableListOf<Pair<String, @Composable androidx.compose.foundation.lazy.LazyItemScope.() -> Unit>>()
             fun bloco(key: String, conteudo: @Composable androidx.compose.foundation.lazy.LazyItemScope.() -> Unit) { blocos += key to conteudo }
-            if (data.hasWidget("inicio.filtros")) {
-            bloco("filtros-canvas") {
-                // Duas linhas em vez de uma só -- pedido do usuário ("os
-                // filtros e o importar kml estão ultrapassando o limite da
-                // tela, distribua de forma limpa abaixo"): com os 3 pills +
-                // botão KML todos numa única Row com horizontalScroll, o
-                // botão ficava colado na borda direita ao rolar (sem
-                // padding/respiro), parecendo cortado. O botão "Importar
-                // KML" agora ocupa uma linha própria abaixo dos pills.
+            // v290 (mockup v379) -- filtros, canvas e custos num bloco só.
+            if (data.hasWidget("inicio.filtros") || data.hasWidget("inicio.canvas")) {
+            bloco("canvas") {
+                com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth()) {
+                androidx.compose.runtime.CompositionLocalProvider(LocalCanvasSemBorda provides true) {
+                Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (data.hasWidget("inicio.filtros")) {
                     Row(
                         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(18.dp),
@@ -1403,16 +1410,9 @@ fun HomeScreen(
                         SafraSelectorButton(asPill = true, onChanged = { viewModel.onFiltroGlobalChanged(logoScreenContext) })
                         CulturaSelectorButton(asPill = true, onChanged = { viewModel.onFiltroGlobalChanged(logoScreenContext) })
                     }
-                    // "Importar KML" saiu daqui -- pedido do usuário ("dentro
-                    // do bloco de fazendas coloque o botão importar kml
-                    // dentro do bloco"): agora mora dentro do card de
-                    // círculos das fazendas (CanvasCirclesRow, ver
-                    // CanvasSection.kt), logo abaixo neste mesmo item.
-            }
-            }
-            if (data.hasWidget("inicio.canvas")) {
-            data.canvas?.let { canvas ->
-                bloco("canvas-circles") {
+                }
+                val canvas = if (data.hasWidget("inicio.canvas")) data.canvas else null
+                if (canvas != null) {
                     CanvasCirclesRow(
                         fazendas = canvas.fazendas,
                         selectedId = selecionadaFazendaId,
@@ -1421,27 +1421,25 @@ fun HomeScreen(
                         cultura = CulturaSelection.selected.value,
                         onAbrirMapa = { mapaCanvasAberto = !mapaCanvasAberto },
                     )
-                }
-                if (!mapaCanvasAberto && canvas.fazendas.size > 1) {
-                    bloco("canvas-mapa-botao") {
+                    if (!mapaCanvasAberto && canvas.fazendas.size > 1) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                             androidx.compose.material3.TextButton(onClick = { mapaCanvasAberto = true }) { Text("Mapa dos talhões") }
                         }
                     }
-                }
-                if (mapaCanvasAberto) {
-                    bloco("canvas-mapa") {
-                        com.bragro.mobile.ui.theme.Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                            com.bragro.mobile.ui.fieldview.MapaTalhoesEmbutido(
-                                fazendaPadraoId = canvas.fazendas.singleOrNull()?.id ?: selecionadaFazendaId,
-                                onFechar = { mapaCanvasAberto = false },
-                            )
-                        }
+                    if (mapaCanvasAberto) {
+                        com.bragro.mobile.ui.fieldview.MapaTalhoesEmbutido(
+                            fazendaPadraoId = canvas.fazendas.singleOrNull()?.id ?: selecionadaFazendaId,
+                            onFechar = { mapaCanvasAberto = false },
+                        )
+                    }
+                    val fazendaSelecionada = canvas.fazendas.find { it.id == selecionadaFazendaId }
+                    if (fazendaSelecionada != null) {
+                        androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                        CanvasDetailCard(fazendaSelecionada)
                     }
                 }
-                val fazendaSelecionada = canvas.fazendas.find { it.id == selecionadaFazendaId }
-                if (fazendaSelecionada != null) {
-                    bloco("canvas-detail") { CanvasDetailCard(fazendaSelecionada) }
+                }
+                }
                 }
             }
             }
@@ -1608,32 +1606,95 @@ fun HomeScreen(
             }
             val chaves = blocos.map { it.first }
             val ordenadas = ordemInicio.filter { it in chaves } + chaves.filter { it !in ordemInicio }
-            ordenadas.forEachIndexed { idx, k ->
-                val conteudo = blocos.first { it.first == k }.second
-                item(key = k) {
+            // v290 (mockup v379) -- barra de ações da seleção (fica presa no topo enquanto rola).
+            if (reorganizando && selecionados.isNotEmpty()) {
+                stickyHeader(key = "acoes-selecao") {
+                    fun gravarOrdem(nova: List<String>) {
+                        ordemInicio = nova
+                        prefsOrdem.edit().putString("ordem", nova.joinToString(",")).apply()
+                    }
+                    fun mover(d: Int) {
+                        val nova = ordenadas.toMutableList()
+                        val idxs = nova.indices.filter { nova[it] in selecionados }.let { if (d > 0) it.reversed() else it }
+                        for (i in idxs) {
+                            val alvo = i + d
+                            if (alvo !in nova.indices || nova[alvo] in selecionados) continue
+                            val tmp = nova[alvo]; nova[alvo] = nova[i]; nova[i] = tmp
+                        }
+                        gravarOrdem(nova)
+                    }
+                    androidx.compose.material3.Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxWidth()) {
+                        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceAround, verticalAlignment = Alignment.CenterVertically) {
+                            @Composable
+                            fun acao(img: androidx.compose.ui.graphics.vector.ImageVector, nome: String, onClick: () -> Unit) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 2.dp)) {
+                                    com.bragro.mobile.ui.domain.IconeNegrito(img, contentDescription = nome, tint = MaterialTheme.colorScheme.onSurface, size = 22.dp)
+                                    Text(nome, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            acao(Icons.Outlined.KeyboardArrowUp, "subir") { mover(-1) }
+                            acao(Icons.Outlined.KeyboardArrowDown, "descer") { mover(1) }
+                            acao(Icons.Outlined.SwapHoriz, "½ / inteira") {
+                                val todasMeias = selecionados.all { it in meiaLargura }
+                                meiaLargura = if (todasMeias) meiaLargura - selecionados else meiaLargura + selecionados
+                                prefsOrdem.edit().putString("meia", meiaLargura.joinToString(",")).apply()
+                            }
+                            acao(Icons.Outlined.Height, "altura") {
+                                // automática → baixa → média → alta → automática
+                                val prox = ((selecionados.maxOf { alturas[it] ?: 0 }) + 1) % 4
+                                alturas = alturas + selecionados.associateWith { prox }
+                                prefsOrdem.edit().putString("alturas", alturas.entries.joinToString(";") { "${it.key}:${it.value}" }).apply()
+                            }
+                        }
+                    }
+                }
+            }
+            // Blocos de meia largura seguidos dividem a linha (2 por linha).
+            val linhas = mutableListOf<List<String>>()
+            run {
+                var i = 0
+                while (i < ordenadas.size) {
+                    val k = ordenadas[i]
+                    val prox = ordenadas.getOrNull(i + 1)
+                    if (k in meiaLargura && prox != null && prox in meiaLargura) { linhas += listOf(k, prox); i += 2 } else { linhas += listOf(k); i++ }
+                }
+            }
+            linhas.forEach { linha ->
+                item(key = linha.joinToString("+")) {
                     val escopo = this
-                    Column {
-                        if (reorganizando) {
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                                Icon(Icons.Outlined.DragIndicator, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.weight(1f))
-                                fun mover(d: Int) {
-                                    val nova = ordenadas.toMutableList()
-                                    val alvo = idx + d
-                                    if (alvo !in nova.indices) return
-                                    nova[idx] = nova[alvo]; nova[alvo] = k
-                                    ordemInicio = nova
-                                    prefsOrdem.edit().putString("ordem", nova.joinToString(",")).apply()
-                                }
-                                androidx.compose.material3.IconButton(onClick = { mover(-1) }, enabled = idx > 0, modifier = Modifier.size(32.dp)) {
-                                    Icon(Icons.Outlined.KeyboardArrowUp, contentDescription = "Subir", tint = MaterialTheme.colorScheme.primary)
-                                }
-                                androidx.compose.material3.IconButton(onClick = { mover(1) }, enabled = idx < ordenadas.lastIndex, modifier = Modifier.size(32.dp)) {
-                                    Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Descer", tint = MaterialTheme.colorScheme.primary)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        linha.forEach { k ->
+                            val conteudo = blocos.first { it.first == k }.second
+                            val sel = k in selecionados
+                            val alturaDp = when (alturas[k] ?: 0) { 1 -> 90.dp; 2 -> 170.dp; 3 -> 260.dp; else -> null }
+                            val meia = linha.size > 1 || k in meiaLargura
+                            Box(
+                                Modifier
+                                    .then(if (meia && linha.size > 1) Modifier.weight(1f) else if (meia) Modifier.fillMaxWidth(0.5f) else Modifier.fillMaxWidth())
+                                    .then(if (alturaDp != null) Modifier.height(alturaDp).clip(MaterialTheme.shapes.medium) else Modifier)
+                                    .then(if (sel) Modifier.border(2.5.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.medium) else Modifier),
+                            ) {
+                                Box(if (alturaDp != null) Modifier.fillMaxSize().verticalScroll(rememberScrollState()) else Modifier) { conteudo(escopo) }
+                                if (reorganizando) {
+                                    // No modo reorganizar o bloco não reage a toques: toque longo seleciona,
+                                    // toque soma/tira da seleção (ou seleciona só ele quando nada está selecionado).
+                                    Box(
+                                        Modifier.matchParentSize().pointerInput(k) {
+                                            detectTapGestures(
+                                                onLongPress = { selecionados = if (k in selecionados) selecionados - k else selecionados + k },
+                                                onTap = { selecionados = if (selecionados.isEmpty()) setOf(k) else if (k in selecionados) selecionados - k else selecionados + k },
+                                            )
+                                        },
+                                    )
+                                    if (sel) Icon(
+                                        Icons.Outlined.Check,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(18.dp),
+                                    )
                                 }
                             }
                         }
-                        conteudo(escopo)
                     }
                 }
             }

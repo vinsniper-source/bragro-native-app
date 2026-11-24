@@ -206,6 +206,9 @@ private fun labelFiltro(safra: String?, cultura: String?): String = when {
  * melhor que quebrar linha (círculos ficariam pequenos demais). Tocar num
  * círculo seleciona a fazenda (mesmo clique do site, abre o card de detalhe
  * logo abaixo). */
+/** v290 (mockup v379) -- dentro do bloco único da Início (filtros + canvas + custos) os cartões perdem a borda própria. */
+val LocalCanvasSemBorda = androidx.compose.runtime.compositionLocalOf { false }
+
 @Composable
 fun CanvasCirclesRow(
     fazendas: List<CanvasFazendaCardData>,
@@ -236,7 +239,7 @@ fun CanvasCirclesRow(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent, contentColor = corTextoCanvas),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), // v279 (mockup v338) -- borda no canvas das fazendas
+        border = BorderStroke(1.dp, if (LocalCanvasSemBorda.current) Color.Transparent else MaterialTheme.colorScheme.outlineVariant), // v279 (mockup v338) -- borda no canvas das fazendas
     ) {
         Column(Modifier.padding(vertical = 8.dp)) {
         if (fazendas.isEmpty()) {
@@ -555,7 +558,7 @@ fun CanvasDetailCard(fazenda: CanvasFazendaCardData) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), // v275 (mockup v330) -- barra de custo com borda
+        border = BorderStroke(1.dp, if (LocalCanvasSemBorda.current) Color.Transparent else MaterialTheme.colorScheme.outlineVariant), // v275 (mockup v330) -- barra de custo com borda
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
