@@ -1,5 +1,6 @@
 package com.bragro.mobile
 
+import androidx.compose.ui.graphics.toArgb
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -75,6 +76,13 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch { com.bragro.mobile.ui.seguranca.AppLock.aoAbrir(this@MainActivity, sessaoAtiva()) }
         setContent {
             BRAgroTheme {
+                // v287 (mockup v365 item 2) -- fundo da janela na cor do tema: quando a barra
+                // do sistema aparece (lista suspensa, teclado), não fica mais a faixa branca em cima.
+                val fundoJanela = androidx.compose.material3.MaterialTheme.colorScheme.background
+                androidx.compose.runtime.SideEffect {
+                    window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(fundoJanela.toArgb()))
+                    window.decorView.setBackgroundColor(fundoJanela.toArgb())
+                }
                 Surface(modifier = Modifier.fillMaxSize()) {
                     androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
                         BRAgroNavHost()

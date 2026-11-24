@@ -108,7 +108,8 @@ fun formBlockColor(): Color {
     val bg = MaterialTheme.colorScheme.background
     val dark = bg.luminance() < 0.5f
     // v194 -- no claro, bloco interno na mesma cor (branco gelo); a borda separa.
-    return if (dark) androidx.compose.ui.graphics.lerp(bg, Color.Black, 0.35f) else bg
+    // v287 (mockup v365) -- blocos com o fundo da tela (preto/branco), sem tom próprio.
+    return bg
 }
 
 /** true dentro do bloco de itens / bloco de campos (v15): o bloco fica com
@@ -151,7 +152,7 @@ fun Card(
     // Card dentro de Card (bloco interno) = tom mais escuro, pra campos e
     // blocos de dentro se destacarem (padrão claro/escuro aprovado).
     val inside = LocalInsideCard.current
-    val resolved = colors ?: if (inside) CardDefaults.cardColors(containerColor = formBlockColor()) else CardDefaults.cardColors()
+    val resolved = colors ?: if (inside) CardDefaults.cardColors(containerColor = formBlockColor()) else CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background) // v287 -- fundo da tela
     val cantoHost = androidx.compose.runtime.remember { com.bragro.mobile.ui.domain.CantoHost() }
     androidx.compose.material3.Card(
         modifier = greenShadow(shape).then(modifier).cantoBorda(cantoHost),
@@ -182,7 +183,7 @@ fun Card(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val inside = LocalInsideCard.current
-    val resolved = colors ?: if (inside) CardDefaults.cardColors(containerColor = formBlockColor()) else CardDefaults.cardColors()
+    val resolved = colors ?: if (inside) CardDefaults.cardColors(containerColor = formBlockColor()) else CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background) // v287 -- fundo da tela
     val cantoHost = androidx.compose.runtime.remember { com.bragro.mobile.ui.domain.CantoHost() }
     androidx.compose.material3.Card(
         onClick = onClick,

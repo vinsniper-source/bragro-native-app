@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.background
@@ -106,12 +107,13 @@ fun FarmSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onCh
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // v281 (mockup v343) -- só "Fazendas", sem setinha.
+            val corTracoFiltro = MaterialTheme.colorScheme.primary
             Text(
                 selected ?: "Fazendas",
                 style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Clip,
-                modifier = Modifier.weight(1f, fill = false).basicMarquee(),
+                modifier = Modifier.weight(1f, fill = false).drawBehind { val y = size.height + 3.dp.toPx(); drawLine(corTracoFiltro, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(size.width, y), 2.dp.toPx()) } /* v287 (mockup v365) -- traço verde */.basicMarquee(),
             )
         }
     } else if (showLabel) {

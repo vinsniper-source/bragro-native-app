@@ -361,7 +361,7 @@ fun EqualWidthBlockRow(modifier: Modifier = Modifier, drawBackground: Boolean = 
     // Dentro do bloco Ações (v10 "abas encaixadas") os ícones ficam soltos,
     // sem fundo, borda nem divisórias -- só centralizados em células iguais.
     val solto = LocalAcoesEncaixadas.current
-    val blockBg = MaterialTheme.colorScheme.surface
+    val blockBg = MaterialTheme.colorScheme.background // v287 (mockup v365) -- fundo da tela, sem cinza
     // v69 -- no tema escuro escurecer um fundo quase preto deixava a linha
     // invisível: clareia em vez de escurecer quando o fundo é escuro.
     val dividerColor = if (blockBg.luminance() < 0.5f) androidx.compose.ui.graphics.lerp(blockBg, Color.White, 0.28f) else darkerBorderColor(blockBg)

@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.home
 
+import androidx.compose.ui.graphics.graphicsLayer
 import com.bragro.mobile.ui.domain.IconeNegrito
 import androidx.compose.material.icons.outlined.History
 import kotlin.math.roundToInt
@@ -700,7 +701,7 @@ fun HomeScreen(
             Column(modifier = Modifier.statusBarsPadding()) {
                 // v273 (mockup v328) -- cabeçalho uma linha mais baixo.
                 androidx.compose.foundation.layout.Spacer(Modifier.height(16.dp))
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                // v287 (mockup v365) -- sem a linha do topo.
                 BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                     // Item (c) do usuário ("suba uma linha se colapsar a logo e
                     // os ícones do cabeçalho"): setores/papéis com mais ícones
@@ -1109,7 +1110,8 @@ fun HomeScreen(
                             // e legível no cabeçalho. Alinhada à esquerda por
                             // design (pedido antigo do usuário -- "logo no
                             // limite esquerdo"), sem offset de centralização.
-                            com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.height(36.dp).widthIn(max = 124.dp)) // v275 -- logo na altura dos ícones
+                            // v287 (mockup v365) -- logo um pouquinho mais larga, na mesma linha, sem apertar os ícones.
+                            com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.padding(end = 14.dp).height(36.dp).widthIn(max = 124.dp).graphicsLayer(scaleX = 1.12f, transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0.5f)))
                             Box(modifier = Modifier.weight(1f)) {
                                 androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement provides false) { headerTrailingContent() }
                             }
@@ -1528,7 +1530,7 @@ fun HomeScreen(
                 }
                 item(key = "clima") {
                     // v286 (mockup v362 item 5) -- Clima sempre minimalista, como na plataforma.
-                    ClimaResumo(clima!!, onClick = { blocosAbertos = !blocosAbertos })
+                    ClimaResumo(clima!!, onClick = { blocosAbertos = !blocosAbertos }, aberto = blocosAbertos)
                 }
             }
             // v1.6.59 (site v295) -- Grãos logo depois do Clima; Câmbio e Pecuária em seguida.
@@ -2677,7 +2679,7 @@ private fun MiniCardHeaderWithRefresh(
 // v318 (mockup v318) -- Clima recolhido: agora, alerta, 4 dias e pulverização.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ClimaResumo(clima: com.bragro.mobile.data.model.WeatherData, onClick: () -> Unit) {
+private fun ClimaResumo(clima: com.bragro.mobile.data.model.WeatherData, onClick: () -> Unit, aberto: Boolean = false) {
     val cs = MaterialTheme.colorScheme
     val laranja = androidx.compose.ui.graphics.Color(0xFFD97706)
     val br = java.util.Locale("pt", "BR")
@@ -2706,13 +2708,29 @@ private fun ClimaResumo(clima: com.bragro.mobile.data.model.WeatherData, onClick
                     modifier = Modifier.weight(1f).padding(bottom = 4.dp),
                 )
             }
+            // v287 (mockup v365) -- aberto: indicadores principais e 6 dias com a chuva.
+            if (aberto) {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    listOf(
+                        "Umidade" to (clima.umidade?.let { "${Math.round(it)}%" } ?: "—"),
+                        "Vento" to (clima.ventoKmH?.let { "${Math.round(it)} km/h" } ?: "—"),
+                        "Delta T" to (clima.agro?.deltaT?.let { String.format(br, "%.1f", it) } ?: "—"),
+                    ).forEach { (rot, v) ->
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(rot, style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
+                            Text(v, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
             HorizontalDivider(color = cs.outlineVariant.copy(alpha = 0.6f))
             Row(modifier = Modifier.fillMaxWidth()) {
-                clima.forecast.drop(1).take(4).forEach { d ->
+                clima.forecast.drop(1).take(if (aberto) 6 else 4).forEach { d ->
                     val dia = runCatching { java.time.LocalDate.parse(d.date).format(java.time.format.DateTimeFormatter.ofPattern("EEE", br)).replace(".", "") }.getOrDefault("")
                     Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(dia, style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
-                        Text("${Math.round(d.maxC)}/${Math.round(d.minC)}°", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                        Text("${Math.round(d.maxC)}/${Math.round(d.minC)}°", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, maxLines = 1)
+                        if (aberto) Text("${Math.round(d.precipMm)} mm", style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
                     }
                 }
             }

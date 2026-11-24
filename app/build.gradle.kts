@@ -45,8 +45,8 @@ android {
         // ja estava em 1.3.83, entao qualquer envio seria recusado pelo Play.
         // Salto deliberado para ficar acima de tudo que ja foi publicado.
         // v48 -- 1.3.88 (201): primeira versao publicada pelo GitHub Releases.
-        versionCode = 308
-        versionName = "1.6.77"
+        versionCode = 309
+        versionName = "1.6.78"
 
         // URLs do backend (o MESMO backend do site publicado -- ver
         // native-app/README.md). Trocaveis por variante/ambiente sem
