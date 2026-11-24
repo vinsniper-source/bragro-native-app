@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.home
 
+import androidx.compose.material.icons.outlined.History
 import kotlin.math.roundToInt
 import com.bragro.mobile.ui.domain.IconesVazados
 
@@ -1166,7 +1167,7 @@ fun HomeScreen(
             }
         },
     ) { padding ->
-    androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.domain.LocalIconeNegrito provides false) {
+    androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.domain.LocalIconeNegrito provides true) { // v286 (mockup v362 item 5) -- ícones dos blocos em negrito
         val data = home
 
         if (notificationsOpen) {
@@ -1525,8 +1526,8 @@ fun HomeScreen(
                     }
                 }
                 item(key = "clima") {
-                    if (blocosAbertos) ClimaCard(clima!!, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth().clickable { blocosAbertos = false })
-                    else ClimaResumo(clima!!, onClick = { blocosAbertos = true })
+                    // v286 (mockup v362 item 5) -- Clima sempre minimalista, como na plataforma.
+                    ClimaResumo(clima!!, onClick = { blocosAbertos = !blocosAbertos })
                 }
             }
             // v1.6.59 (site v295) -- Grãos logo depois do Clima; Câmbio e Pecuária em seguida.
@@ -2665,7 +2666,7 @@ private fun MiniCardHeaderWithRefresh(
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         // v275 (mockup v330) -- ícone na cor do texto; ações do bloco como
         // ícones na mesma linha do título, à direita.
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+        com.bragro.mobile.ui.domain.IconeNegrito(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, size = 20.dp) // v286 -- negrito
         Spacer(Modifier.width(10.dp))
         Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f).basicMarquee())
         acoes?.invoke()
@@ -3382,7 +3383,12 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             // Renomeado -- pedido do usuário ("altere o kpi cotações
             // agrícolas para cotações grãos").
-            MiniCardHeaderWithRefresh("Cotações Grãos", IconesVazados.Trigo, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh)
+            // v286 (mockup v362 item 5) -- o histórico virou ícone ↺ no topo do bloco.
+            MiniCardHeaderWithRefresh("Cotações Grãos", IconesVazados.Trigo, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh, acoes = {
+                if (historico != null) IconButton(onClick = { serieAberta = "soja" }, modifier = Modifier.size(32.dp)) {
+                    com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.History, contentDescription = "Ver histórico", tint = MaterialTheme.colorScheme.onSurface, size = 20.dp)
+                }
+            })
             val itens = listOfNotNull(com.soja, com.milho, com.sorgo)
             // v85 -- chave de cada coluna para achar a "Sua média" do grão.
             val chaves = listOfNotNull(com.soja?.let { "soja" }, com.milho?.let { "milho" }, com.sorgo?.let { "sorgo" })
@@ -3512,7 +3518,7 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
                         }
                         // v1.6.14 (mockup v115, item 2) -- a praça saiu daqui (ficava cortada) e foi para o rodapé.
                         // v87 -- linha dos últimos 12 meses (toque abre o histórico).
-                        MiniHistoricoGrao(historico?.get(chaves.getOrNull(index) ?: "") as? kotlinx.serialization.json.JsonObject) { serieAberta = chaves.getOrNull(index) ?: "soja" }
+                        // v286 (mockup v362 item 5) -- sem o gráfico pequeno (minimalista); o histórico abre pelo ↺.
                         if (mostrarSuaMedia) SuaMediaGrao(suaMedia?.get(chaves.getOrNull(index) ?: "") as? kotlinx.serialization.json.JsonObject, q.valor)
                         // v97 -- ponto de equilíbrio (custo por saca do DRE x cotação).
                         CustoGrao(custoSaca?.get(chaves.getOrNull(index) ?: "") as? kotlinx.serialization.json.JsonObject, q.valor)
@@ -3533,15 +3539,6 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
             // conteudo interno que sobrava). Com a legenda cabendo numa
             // linha so, os dois cards voltam a ficar com a mesma altura de
             // conteudo.
-            if (historico != null) {
-                Text(
-                    "Ver histórico ›",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.clickable { serieAberta = "soja" }.padding(vertical = 2.dp),
-                )
-            }
             val dataFonte = itens.firstNotNullOfOrNull { it.atualizadoEm }
             Text(
                 listOfNotNull("Fonte: Grão Direto", itens.map { it.praca }.firstOrNull { it.isNotBlank() }).joinToString(" · ") + (if (dataFonte != null) " ($dataFonte)" else ""),

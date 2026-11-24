@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.ui.unit.sp
@@ -670,7 +671,15 @@ fun DomainListScreen(
                                     atalho(Icons.Outlined.MonitorWeight, "Romaneio rápido (balança)", onOpenRomaneioQuick)
                                     atalho(com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, "Acesso automático (balança)") { showIntegracaoDialog = true }
                                 }
-                                "pragas" -> if (onOpenPragaFoto != null) atalho(com.bragro.mobile.ui.domain.IconesVazados.BugReport, "Diagnóstico por foto", onOpenPragaFoto)
+                                "pragas" -> if (onOpenPragaFoto != null) {
+                                    // v286 (mockup v362b) -- inseto com a estrela de 4 pontas elevada (IA).
+                                    IconButton(onClick = onOpenPragaFoto, modifier = Modifier.size(40.dp)) {
+                                        Box {
+                                            IconeNegrito(com.bragro.mobile.ui.domain.IconesVazados.BugReport, contentDescription = "Diagnóstico por foto (IA)", tint = MaterialTheme.colorScheme.onSurface, size = 22.dp)
+                                            EstrelaIA(Modifier.align(Alignment.TopEnd).offset(x = 7.dp, y = (-7).dp))
+                                        }
+                                    }
+                                }
                                 "pecuaria" -> atalho(com.bragro.mobile.ui.domain.IconesVazados.OfflineBolt, "Acesso automático (balança/RFID Bluetooth)") { showIntegracaoDialog = true }
                                 "colheita" -> if (onOpenColheitaQr != null) atalho(com.bragro.mobile.ui.domain.IconesVazados.QrCode, "QR Code de Rastreabilidade", onOpenColheitaQr)
                                 "estoque" -> if (onOpenReconciliacaoEstoque != null) {
@@ -2493,7 +2502,7 @@ private fun GrausDiaCard(dados: kotlinx.serialization.json.JsonObject?) {
                 val plantio = l.txt("plantio")
                 Row(verticalAlignment = Alignment.Top) {
                     Column(Modifier.weight(1f)) {
-                        Text("Talhão ${l.txt("talhao").orEmpty()} · $cultura", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                        Text("Talhão ${exibirTexto(l.txt("talhao").orEmpty())} · ${exibirTexto(cultura)}", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
                         Text("plantio ${dm(plantio)} · ${l.txt("diasDesdePlantio") ?: "—"} dias · base ${l.txt("tBase") ?: "—"} °C", style = MaterialTheme.typography.labelSmall, color = muted)
                     }
                     Column(horizontalAlignment = Alignment.End) {

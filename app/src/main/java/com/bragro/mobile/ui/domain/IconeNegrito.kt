@@ -34,7 +34,7 @@ fun IconeNegrito(icon: ImageVector, contentDescription: String?, tint: Color, si
         Icon(icon, contentDescription = contentDescription, tint = tint, modifier = modifier.size(size))
         return
     }
-    val d = 0.45.dp
+    val d = 0.55.dp // v286 (mockup v362 item 9) -- traço um pouco mais grosso
     Box(modifier.size(size)) {
         listOf(0.dp to 0.dp, d to 0.dp, -d to 0.dp, 0.dp to d, 0.dp to -d).forEachIndexed { i, (x, y) ->
             Icon(icon, contentDescription = if (i == 0) contentDescription else null, tint = tint, modifier = Modifier.size(size).offset(x, y))
@@ -214,5 +214,22 @@ fun NovoLancamentoIcone(modifier: Modifier = Modifier) {
         // v284 (mockup v356 itens 3/4) -- ícone e hífen em negrito, como o título.
         IconeNegrito(NovoLancamentoVetor, contentDescription = "Novo lançamento", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp)
         androidx.compose.material3.Text(" - ", color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+    }
+}
+
+/** v286 (mockup v362b) -- estrela de 4 pontas (marca de IA), elevada sobre um ícone. */
+@Composable
+fun EstrelaIA(modifier: Modifier = Modifier, tamanho: Dp = 10.dp, cor: Color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface) {
+    androidx.compose.foundation.Canvas(modifier = modifier.size(tamanho)) {
+        val w = size.width; val h = size.height; val cx = w / 2f; val cy = h / 2f; val k = 0.16f
+        val p = androidx.compose.ui.graphics.Path().apply {
+            moveTo(cx, 0f)
+            quadraticBezierTo(cx + w * k, cy - h * k, w, cy)
+            quadraticBezierTo(cx + w * k, cy + h * k, cx, h)
+            quadraticBezierTo(cx - w * k, cy + h * k, 0f, cy)
+            quadraticBezierTo(cx - w * k, cy - h * k, cx, 0f)
+            close()
+        }
+        drawPath(p, cor)
     }
 }

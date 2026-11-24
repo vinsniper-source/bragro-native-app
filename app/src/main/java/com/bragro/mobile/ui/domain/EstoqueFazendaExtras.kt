@@ -403,7 +403,7 @@ private fun AjusteManualFazendaDialog(farms: List<FazendaOpt>, itens: List<Looku
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { TituloJanela("Ajuste de estoque", onFechar = onDismiss, dica = "Corrige o saldo (inventário, sobra, quebra). " +
+        title = { TituloJanela("Ajuste", onFechar = onDismiss, dica = "Corrige o saldo (inventário, sobra, quebra). " +
                         "Motivo obrigatório e registrado.") { SalvarIcone(onClick = {
                     saving = true
                     viewModel.ajusteManual(item, unidade, quantidade.toDoubleOrNull() ?: 0.0, fazendaId.ifBlank { null }, tipo, motivo) {

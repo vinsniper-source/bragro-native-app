@@ -173,11 +173,11 @@ fun LoginScreen(onLoggedIn: () -> Unit, onLoggedInFazendas: () -> Unit = onLogge
 
         // v284b (mockup v356) -- igual à plataforma: ícone ✉ à esquerda do campo.
         androidx.compose.foundation.layout.Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Email, contentDescription = "E-mail", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, size = 20.dp, modifier = Modifier.padding(end = 10.dp))
+        // v286 (mockup v362 item 1) -- o ícone ✉ fica na linha de cima do campo, no lugar do nome.
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("E-mail") },
+            label = { com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Email, contentDescription = "E-mail", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, size = 20.dp) },
             // autoCorrect = false -- pedido do usuário ("aplique isso também
             // nos campos" da tela de login): e-mail não deve sofrer
             // autocorreção do teclado (evita o teclado reinserir/alterar
@@ -197,11 +197,11 @@ fun LoginScreen(onLoggedIn: () -> Unit, onLoggedInFazendas: () -> Unit = onLogge
         var senhaVisivel by remember { mutableStateOf(false) }
         // v284b (mockup v356) -- ícone 🔒 à esquerda do campo.
         androidx.compose.foundation.layout.Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Lock, contentDescription = "Senha", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, size = 20.dp, modifier = Modifier.padding(end = 10.dp))
+        // v286 (mockup v362 item 1) -- o ícone 🔒 fica na linha de cima do campo.
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Senha") },
+            label = { com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Lock, contentDescription = "Senha", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, size = 20.dp) },
             visualTransformation = if (senhaVisivel) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon = {

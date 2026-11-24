@@ -572,7 +572,7 @@ private fun HistoricoTelemetriaDialog(pivoNome: String, logs: List<PivoTelemetri
                                 modifier = Modifier.weight(1f),
                             )
                             IconButton(onClick = { onExcluir(l.id) }) {
-                                Icon(Icons.Outlined.Delete, contentDescription = "Excluir leitura", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(18.dp))
+                                com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Delete, contentDescription = "Excluir leitura", tint = com.bragro.mobile.ui.domain.corAtencao(), size = 18.dp)
                             }
                         }
                     }

@@ -341,12 +341,12 @@ private fun InvoiceRow(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                "Nº ${inv.numero}${inv.serie?.takeIf { it.isNotBlank() }?.let { " / $it" } ?: ""}",
+                "Nº ${com.bragro.mobile.ui.domain.exibirTexto(inv.numero)}${inv.serie?.takeIf { it.isNotBlank() }?.let { " / $it" } ?: ""}",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                inv.emitenteNome ?: inv.destinatarioNome ?: "-",
+                (inv.emitenteNome ?: inv.destinatarioNome)?.let { com.bragro.mobile.ui.domain.exibirTexto(it) } ?: "-", // v286 -- sem caixa alta
                 style = MaterialTheme.typography.labelSmall,
             )
         }

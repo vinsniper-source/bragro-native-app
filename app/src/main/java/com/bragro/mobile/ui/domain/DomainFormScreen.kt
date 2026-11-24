@@ -1185,15 +1185,23 @@ fun DomainFormScreen(
                         }
                     }
                     androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
+                } else if (g.first == "itens") {
+                    // v286 (mockup v362 item 4) -- bloco com borda em volta de tudo do Item.
+                    com.bragro.mobile.ui.theme.FormBlockCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
+                        Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 14.dp, bottom = 6.dp)) {
+                            // v278 (mockup v335) -- bloco do item com ⧉ copiar item à direita.
+                            if (multi != null) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                Text("Item 1", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                                IconButton(onClick = { viewModel.copiarItemPrincipal(chavesItem) }, modifier = Modifier.size(36.dp)) {
+                                    com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Add, contentDescription = "Adicionar item", tint = MaterialTheme.colorScheme.onSurface, size = 24.dp) /* v280 (mockup v339 item 17) */
+                                }
+                            }
+                            camposDaSecao()
+                        }
+                    }
+                    androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
                 } else {
                     Column(Modifier.padding(horizontal = RECUO_CAMPOS)) {
-                        // v278 (mockup v335) -- bloco do item com ⧉ copiar item à direita.
-                        if (g.first == "itens" && multi != null) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                            Text("Item 1", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                            IconButton(onClick = { viewModel.copiarItemPrincipal(chavesItem) }, modifier = Modifier.size(36.dp)) {
-                                com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Add, contentDescription = "Adicionar item", tint = MaterialTheme.colorScheme.onSurface, size = 24.dp) /* v280 (mockup v339 item 17) */
-                            }
-                        }
                         camposDaSecao()
                     }
                 }

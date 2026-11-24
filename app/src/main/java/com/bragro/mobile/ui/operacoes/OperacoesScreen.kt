@@ -633,7 +633,7 @@ private fun OperacaoCard(
                 }
                 if (op.estoqueConsumido.isNotEmpty()) {
                     Text(
-                        "Estoque baixado: " + op.estoqueConsumido.take(4).joinToString(", ") { "${it.item} (${fmtNum(it.qtd)}${it.unidade?.let { u -> " $u" } ?: ""})" } +
+                        "Estoque baixado: " + op.estoqueConsumido.take(4).joinToString(", ") { "${com.bragro.mobile.ui.domain.exibirTexto(it.item)} (${fmtNum(it.qtd)}${it.unidade?.let { u -> " ${u.lowercase()}" } ?: ""})" } /* v286 -- sem caixa alta */ +
                             if (op.estoqueConsumido.size > 4) " +${op.estoqueConsumido.size - 4}" else "",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -796,6 +796,16 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         /* v275 (mockup v331) -- sem casinha na página inicial do módulo */
+                        // v286 (mockup v362 item 2) -- período (safra, 30d...) na linha do topo, à direita.
+                        Row(horizontalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.padding(end = 10.dp)) {
+                            JANELAS.forEach { d ->
+                                val ativo = d == janela
+                                Column(modifier = Modifier.width(androidx.compose.foundation.layout.IntrinsicSize.Max).clickable { viewModel.setJanela(d) }) {
+                                    Text(if (d == 0) "safra" else "${d}d", style = MaterialTheme.typography.labelMedium, fontWeight = if (ativo) FontWeight.Bold else FontWeight.Normal, color = MaterialTheme.colorScheme.onSurface)
+                                    Box(Modifier.fillMaxWidth().height(2.dp).background(if (ativo) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent))
+                                }
+                            }
+                        }
                     }
                 },
             )
@@ -832,11 +842,7 @@ fun OperacoesScreen(onBack: () -> Unit, onEditRecord: (String, String) -> Unit, 
                     // expande sozinha até o limite da tela.
                     // v276 (mockup v333) -- sem o rótulo "Progresso" (minimalista).
                     // v275 (mockup v330) -- seletor sem fundo: traço verde.
-                    com.bragro.mobile.ui.domain.TracoOpcoes(
-                        opcoes = JANELAS.map { d -> d.toString() to (if (d == 0) "safra" else "${d}d") },
-                        selecionado = janela.toString(),
-                        onSelect = { v -> v.toIntOrNull()?.let { viewModel.setJanela(it) } },
-                    )
+                    // v286 (mockup v362 item 2) -- o período subiu para a linha do topo, à direita.
                     if (pct != null) {
                         androidx.compose.material3.LinearProgressIndicator(
                             progress = { (pct / 100f).coerceIn(0f, 1f) },
