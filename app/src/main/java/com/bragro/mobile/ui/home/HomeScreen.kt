@@ -597,7 +597,7 @@ private fun isAdminRole(role: String?): Boolean = role == "OWNER" || role == "AD
 @Composable
 private fun noticeTones() = listOf(MaterialTheme.colorScheme.primary, BrYellow, MaterialTheme.colorScheme.tertiary)
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     onOpenDomain: (String) -> Unit,
@@ -1608,7 +1608,7 @@ fun HomeScreen(
             val ordenadas = ordemInicio.filter { it in chaves } + chaves.filter { it !in ordemInicio }
             // v290 (mockup v379) -- barra de ações da seleção (fica presa no topo enquanto rola).
             if (reorganizando && selecionados.isNotEmpty()) {
-                stickyHeader(key = "acoes-selecao") {
+                item(key = "acoes-selecao") { // v291b -- item comum (stickyHeader é API experimental)
                     fun gravarOrdem(nova: List<String>) {
                         ordemInicio = nova
                         prefsOrdem.edit().putString("ordem", nova.joinToString(",")).apply()
