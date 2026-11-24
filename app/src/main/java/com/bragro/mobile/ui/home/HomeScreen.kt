@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.home
 
+import com.bragro.mobile.ui.domain.IconeNegrito
 import androidx.compose.material.icons.outlined.History
 import kotlin.math.roundToInt
 import com.bragro.mobile.ui.domain.IconesVazados
@@ -3386,7 +3387,7 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
             // v286 (mockup v362 item 5) -- o histórico virou ícone ↺ no topo do bloco.
             MiniCardHeaderWithRefresh("Cotações Grãos", IconesVazados.Trigo, MaterialTheme.colorScheme.primary, MaterialTheme.typography.titleMedium, onRefresh, acoes = {
                 if (historico != null) IconButton(onClick = { serieAberta = "soja" }, modifier = Modifier.size(32.dp)) {
-                    com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.History, contentDescription = "Ver histórico", tint = MaterialTheme.colorScheme.onSurface, size = 20.dp)
+                    IconeNegrito(Icons.Outlined.History, contentDescription = "Ver histórico", tint = MaterialTheme.colorScheme.onSurface, size = 20.dp)
                 }
             })
             val itens = listOfNotNull(com.soja, com.milho, com.sorgo)
