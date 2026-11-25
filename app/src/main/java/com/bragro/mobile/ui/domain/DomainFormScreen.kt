@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -497,6 +498,8 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
     fun opBanco(): Boolean = domainId == "financeiro" &&
         Regex("EMPR[ÉE]STIMO|FINANCIAMENTO|APLICA[ÇC][ÃA]O|RESGATE|JUROS|TARIFA").containsMatchIn((fields["operacao"] ?: "").uppercase())
     var jurosSeparado by mutableStateOf(false)
+    // v404 (mockup aprovado) -- plano das parcelas (vencimento, fazenda e juros de cada uma), em JSON.
+    var planoParcelas by mutableStateOf<String?>(null)
 
     fun isVisible(col: ColumnConfig): Boolean {
         if (col.key == "entidade" && opBanco() && camposOriginais["entidade"].isNullOrBlank()) return false
@@ -701,7 +704,8 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             val jurosTxt = snapshot["ajuste"].orEmpty()
             val jurosNum = jurosTxt.let { t -> (if (t.contains(",")) t.replace(".", "").replace(",", ".") else t).toDoubleOrNull() } ?: 0.0
             val separarJuros = recordId == null && opBanco() && jurosSeparado && jurosNum > 0
-            val principal = if (separarJuros) snapshot + ("ajuste" to "0") else snapshot
+            val principal0 = if (separarJuros) snapshot + ("ajuste" to "0") else snapshot
+            val principal = planoParcelas?.takeIf { recordId == null && domainId == "financeiro" }?.let { principal0 + ("planoParcelas" to it) } ?: principal0
             var result = if (recordId == null) recordRepository.createRecord(domainId, principal) else recordRepository.updateRecord(domainId, recordId, snapshot)
             if (separarJuros && result !is SaveResult.Failure) {
                 val juros = (snapshot - setOf("subcategoria", "periodo")) + mapOf("categoria" to "JUROS E ENCARGOS", "operacao" to "DESPESA", "bruto" to jurosTxt, "ajuste" to "0")
@@ -1140,6 +1144,11 @@ fun DomainFormScreen(
                             VistoCheck(checked = viewModel.jurosSeparado, onCheckedChange = { viewModel.jurosSeparado = it })
                             Text("Lançar os juros em separado", style = MaterialTheme.typography.bodySmall)
                         }
+                    }
+                    // v404 (mockup aprovado) -- bloco Parcelas logo depois de Juros / ajuste.
+                    if (recordId == null && domainId == "financeiro" && col.key == "ajuste") {
+                        val colLocal = viewModel.config.value?.columns.orEmpty().firstOrNull { it.key == "local" }
+                        PlanoParcelasSecao(viewModel, colLocal?.let { viewModel.optionsFor(it, lookups) }.orEmpty().map { it.value })
                     }
                     if (recordId == null && domainId == "financeiro" && col.key == "docNf") {
                         FinanceiroItensInlineSection(
@@ -2056,3 +2065,156 @@ internal fun tituloCurto(t: String): String {
     if (semPrefixo.startsWith("Mão de obra", ignoreCase = true)) return "Mão de obra"
     return semPrefixo.split(" ", " / ", "/").first().trim()
 }
+
+
+// v404 (mockup aprovado) -- Financeiro: bloco "Parcelas" (Período com 2+ parcelas).
+// Juros / ajuste: Igual, Proporcional, Só na 1ª, Só na última (negativo = desconto).
+// Fazenda: mesma em todas ou por parcela. Vencimento editável por parcela.
+private val MESES_PERIODO = mapOf("MENSAL" to 1, "BIMESTRAL" to 2, "TRIMESTRAL" to 3, "QUADRIMESTRAL" to 4, "SEMESTRAL" to 6, "ANUAL" to 12)
+
+private fun periodoParcelas(p: String): Pair<Int, Int> {
+    val s = java.text.Normalizer.normalize(p, java.text.Normalizer.Form.NFD).replace(Regex("\\p{M}"), "").uppercase().trim()
+    if (s.isEmpty() || s.startsWith("A VISTA")) return 0 to 1
+    val meses = MESES_PERIODO.entries.firstOrNull { s.startsWith(it.key) }?.value ?: 1
+    val n = Regex("(\\d+)\\s*X\\b").find(s)?.groupValues?.get(1)?.toIntOrNull()?.coerceAtLeast(1) ?: 1
+    return meses to n
+}
+
+private fun numeroBr(t: String?): Double {
+    val s = t.orEmpty().trim()
+    if (s.isEmpty()) return 0.0
+    val limpo = if (s.contains(",")) s.replace(Regex("[^\\d,-]"), "").replace(",", ".") else s.replace(Regex("[^\\d.-]"), "")
+    return limpo.toDoubleOrNull() ?: 0.0
+}
+
+private fun r2(v: Double) = Math.round(v * 100.0) / 100.0
+
+private fun distribuirAjusteApp(total: Double, n: Int, modo: String): List<Double> {
+    val out = MutableList(n) { 0.0 }
+    if (total == 0.0 || n < 1) return out
+    when (modo) {
+        "primeira" -> out[0] = total
+        "ultima" -> out[n - 1] = total
+        else -> { val cada = r2(total / n); for (i in 0 until n) out[i] = cada; out[n - 1] = r2(total - cada * (n - 1)) }
+    }
+    return out
+}
+
+@Composable
+private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<String>) {
+    val (meses, n) = periodoParcelas(viewModel.fields["periodo"].orEmpty())
+    if (n < 2) {
+        androidx.compose.runtime.SideEffect { viewModel.planoParcelas = null }
+        return
+    }
+    val semJuros = viewModel.opBanco() && viewModel.jurosSeparado
+    val bruto = numeroBr(viewModel.fields["bruto"])
+    val ajusteTotal = if (semJuros) 0.0 else numeroBr(viewModel.fields["ajuste"])
+    val fmt = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
+    val base = runCatching { java.time.LocalDate.parse(viewModel.fields["data"].orEmpty(), fmt) }.getOrNull() ?: java.time.LocalDate.now()
+    val localPadrao = viewModel.fields["local"].orEmpty()
+    var modo by remember { mutableStateOf("primeira") }
+    var porParcela by remember { mutableStateOf(false) }
+    val vctos = remember { mutableStateMapOf<Int, String>() }
+    val locaisP = remember { mutableStateMapOf<Int, String>() }
+    val ajustes = distribuirAjusteApp(ajusteTotal, n, modo)
+    val valor = r2(bruto / n)
+    val linhas = (0 until n).map { i ->
+        var calc = base.plusMonths(((i + 1) * meses).toLong())
+        if (calc.dayOfWeek == java.time.DayOfWeek.SATURDAY) calc = calc.plusDays(2)
+        if (calc.dayOfWeek == java.time.DayOfWeek.SUNDAY) calc = calc.plusDays(1)
+        Triple(vctos[i] ?: calc.format(fmt), if (porParcela) (locaisP[i] ?: localPadrao) else "", ajustes[i])
+    }
+    val json = org.json.JSONArray().apply {
+        linhas.forEachIndexed { i, (v, l, a) ->
+            put(org.json.JSONObject().apply {
+                if (vctos[i] != null) runCatching { java.time.LocalDate.parse(v, fmt).toString() }.getOrNull()?.let { put("vcto", it) }
+                if (l.isNotBlank()) put("local", l)
+                put("ajuste", a)
+            })
+        }
+    }.toString()
+    androidx.compose.runtime.SideEffect { viewModel.planoParcelas = json }
+    val br = java.util.Locale("pt", "BR")
+    fun brl(v: Double) = java.text.NumberFormat.getCurrencyInstance(br).format(v)
+    val borda = MaterialTheme.colorScheme.outlineVariant
+    val verde = MaterialTheme.colorScheme.primary
+    @Composable
+    fun opcao(rotulo: String, on: Boolean, onClick: () -> Unit) {
+        Text(
+            rotulo,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
+            color = if (on) verde else MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .border(1.dp, if (on) verde else borda, RoundedCornerShape(8.dp))
+                .clickable(onClick = onClick)
+                .padding(horizontal = 8.dp, vertical = 5.dp),
+        )
+    }
+    Column(
+        Modifier.fillMaxWidth().padding(bottom = 12.dp).border(1.dp, borda, RoundedCornerShape(12.dp)).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text("Parcelas ($n)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        if (!semJuros) {
+            Text("Juros / ajuste", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                opcao("Igual", modo == "igual") { modo = "igual" }
+                opcao("Proporcional", modo == "proporcional") { modo = "proporcional" }
+                opcao("Só na 1ª", modo == "primeira") { modo = "primeira" }
+                opcao("Só na última", modo == "ultima") { modo = "ultima" }
+            }
+        }
+        Text("Fazenda", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            opcao("Mesma em todas", !porParcela) { porParcela = false }
+            opcao("Por parcela", porParcela) { porParcela = true }
+        }
+        linhas.forEachIndexed { i, (v, l, a) ->
+            Column(Modifier.fillMaxWidth().border(1.dp, borda, RoundedCornerShape(10.dp)).padding(horizontal = 10.dp, vertical = 8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("${i + 1}/$n", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, modifier = Modifier.width(40.dp))
+                    androidx.compose.foundation.text.BasicTextField(
+                        value = v,
+                        onValueChange = { novo -> vctos[i] = novo },
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface),
+                        modifier = Modifier.width(96.dp).drawBehindLinha(borda),
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Text(brl(r2(valor + a)), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                }
+                if (!semJuros && a != 0.0) Text("Juros / ajuste: ${brl(a)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (porParcela) {
+                    var aberto by remember { mutableStateOf(false) }
+                    Box(Modifier.padding(top = 4.dp)) {
+                        Text(
+                            if (l.isBlank()) "Fazenda —" else com.bragro.mobile.ui.domain.exibirTexto(l, true),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (l.isNotBlank() && l != localPadrao) com.bragro.mobile.ui.domain.corAtencao() else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.clickable { aberto = true }.drawBehindLinha(borda).padding(end = 18.dp),
+                        )
+                        DropdownMenu(expanded = aberto, onDismissRequest = { aberto = false }) {
+                            locais.forEach { f ->
+                                androidx.compose.material3.DropdownMenuItem(text = { Text(com.bragro.mobile.ui.domain.exibirTexto(f, true)) }, onClick = { locaisP[i] = f; aberto = false })
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Row(Modifier.fillMaxWidth()) {
+            Text("Total", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.weight(1f))
+            Text(brl(r2(bruto + ajusteTotal)), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+private fun Modifier.drawBehindLinha(cor: androidx.compose.ui.graphics.Color): Modifier = this.then(
+    Modifier.drawBehind {
+        val y = size.height
+        drawLine(cor, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(size.width, y), 1.5.dp.toPx())
+    },
+)
