@@ -453,7 +453,7 @@ fun ControleInsumosScreen(onBack: () -> Unit, onPedidoRapido: (String) -> Unit, 
                         com.bragro.mobile.ui.theme.MenuSuspenso(expanded = menuAberto == chave, onDismissRequest = { menuAberto = null }) {
                             androidx.compose.material3.DropdownMenuItem(text = { Text("Todos") }, onClick = { set(null); menuAberto = null })
                             opcoes.forEach { (v, l) ->
-                                androidx.compose.material3.DropdownMenuItem(text = { Text((if (v == valor) "✓ " else "") + l) }, onClick = { set(v); menuAberto = null; listaAberta = true })
+                                androidx.compose.material3.DropdownMenuItem(text = { Text((if (v == valor) "✓ " else "") + com.bragro.mobile.ui.domain.exibirTexto(l)) }, onClick = { set(v); menuAberto = null; listaAberta = true })
                             }
                         }
                     }

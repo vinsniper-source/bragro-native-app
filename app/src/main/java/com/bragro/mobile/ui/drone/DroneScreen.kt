@@ -336,7 +336,7 @@ fun DroneScreen(onBack: () -> Unit, viewModel: DroneViewModel = viewModel()) {
                             com.bragro.mobile.ui.theme.MenuSuspenso(expanded = tipoMenu, onDismissRequest = { tipoMenu = false }) {
                                 androidx.compose.material3.DropdownMenuItem(text = { Text("Todos os tipos") }, onClick = { tipoFiltro = null; tipoMenu = false })
                                 TIPOS_CAPTURA.forEach { (v, rotulo) ->
-                                    androidx.compose.material3.DropdownMenuItem(text = { Text(rotulo) }, onClick = { tipoFiltro = v; tipoMenu = false; lancAberto = true })
+                                    androidx.compose.material3.DropdownMenuItem(text = { Text(com.bragro.mobile.ui.domain.exibirTexto(rotulo)) }, onClick = { tipoFiltro = v; tipoMenu = false; lancAberto = true })
                                 }
                             }
                         }

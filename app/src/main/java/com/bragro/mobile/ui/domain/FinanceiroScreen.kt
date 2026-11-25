@@ -1128,7 +1128,7 @@ private fun FinanceiroGestaoDropdownButton(view: FinanceiroView, onSelect: (Fina
             Column(modifier = Modifier.background(com.bragro.mobile.ui.theme.BrGreen)) {
                 FINANCEIRO_VIEW_GESTAO.forEach { v ->
                     DropdownMenuItem(
-                        text = { Text(v.label, maxLines = 1, overflow = TextOverflow.Ellipsis, color = Color.White) },
+                        text = { Text(com.bragro.mobile.ui.domain.exibirTexto(v.label), maxLines = 1, overflow = TextOverflow.Ellipsis, color = Color.White) },
                         leadingIcon = { Icon(financeiroViewIcon(v), contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White) },
                         modifier = if (v == view) Modifier.background(Color.Black.copy(alpha = 0.15f)) else Modifier,
                         onClick = { onSelect(v); expanded = false },
@@ -1298,7 +1298,7 @@ private fun PeriodoDropdown(
             )
             PeriodoCategoria.values().forEach { cat ->
                 DropdownMenuItem(
-                    text = { Text(cat.label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    text = { Text(com.bragro.mobile.ui.domain.exibirTexto(cat.label), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     onClick = { onPeriodo(cat); expanded = false },
                 )
             }
@@ -1366,7 +1366,7 @@ private fun BancoDropdown(banco: String?, options: List<LookupEntity>, onSelect:
                 // cadastrado pelo usuário pode ser mais longo que "Todos os
                 // bancos".
                 DropdownMenuItem(
-                    text = { Text(opt.label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    text = { Text(com.bragro.mobile.ui.domain.exibirTexto(opt.label), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     onClick = { onSelect(opt.value); expanded = false },
                 )
             }

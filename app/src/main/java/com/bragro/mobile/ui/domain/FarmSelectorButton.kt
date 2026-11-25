@@ -109,7 +109,7 @@ fun FarmSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onCh
             // v281 (mockup v343) -- só "Fazendas", sem setinha.
             val corTracoFiltro = MaterialTheme.colorScheme.primary
             Text(
-                selected ?: "Fazendas",
+                selected?.let { com.bragro.mobile.ui.domain.exibirTexto(it, true) } ?: "Fazendas", // v399
                 style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Clip,

@@ -635,6 +635,7 @@ private fun SiloCard(
                     if (toneladas != null) linha("Estoque", "%.1f t".format(Locale("pt", "BR"), toneladas))
                     silo.capacidadeT?.let { linha("Capacidade", "${it.toInt()} t") }
                     silo.ultimaLeituraEm?.let {
+                        Spacer(Modifier.height(6.dp)) // v399 (mockup aprovado) -- "Estimado em" um pouco afastado
                         linha(
                             if (estimado) "Estimado em" else if (silo.status == "CRITICO") "Crítico em" else "Leitura em",
                             com.bragro.mobile.ui.domain.diaMesBr(it),
@@ -646,10 +647,11 @@ private fun SiloCard(
             }
             if (aberto) {
             // v294 (mockup v395) -- 25/50/75/Cheio acima da barra; botões embaixo da barra.
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            // v399 (mockup aprovado) -- botões de % menores, com mais espaço acima.
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp, start = 8.dp, end = 8.dp), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
                 listOf(25f to "25%", 50f to "50%", 75f to "75%", 100f to "Cheio").forEach { (v, label) ->
-                    OutlinedButton(onClick = { pct = v }, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp), modifier = Modifier.weight(1f)) {
-                        Text(label, style = MaterialTheme.typography.labelSmall)
+                    OutlinedButton(onClick = { pct = v }, contentPadding = PaddingValues(horizontal = 2.dp, vertical = 0.dp), modifier = Modifier.weight(1f).height(28.dp)) {
+                        Text(label, style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp))
                     }
                 }
             }

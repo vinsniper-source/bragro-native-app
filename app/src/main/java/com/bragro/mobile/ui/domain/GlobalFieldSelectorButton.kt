@@ -105,7 +105,7 @@ fun GlobalFieldSelectorButton(
             // v281 (mockup v343) -- só "Safras"/"Culturas", sem setinha.
             val corTracoFiltro = MaterialTheme.colorScheme.primary
             Text(
-                selected ?: labelPlural.replaceFirstChar { it.uppercase() },
+                selected?.let { com.bragro.mobile.ui.domain.exibirTexto(it) } ?: labelPlural.replaceFirstChar { it.uppercase() },
                 style = MaterialTheme.typography.labelSmall,
                 maxLines = 1,
                 overflow = TextOverflow.Clip,
@@ -148,7 +148,7 @@ fun GlobalFieldSelectorButton(
                 // de FarmSelectorButton.kt).
                 text = {
                     Text(
-                        opt.label,
+                        com.bragro.mobile.ui.domain.exibirTexto(opt.label), // v399 -- sem caixa alta na lista
                         fontWeight = if (selected == opt.value) FontWeight.Bold else FontWeight.Normal,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

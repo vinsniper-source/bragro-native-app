@@ -238,7 +238,7 @@ fun ReconciliacaoEstoqueScreen(onBack: () -> Unit, viewModel: ReconciliacaoEstoq
                             com.bragro.mobile.ui.theme.MenuSuspenso(expanded = catMenu, onDismissRequest = { catMenu = false }) {
                                 androidx.compose.material3.DropdownMenuItem(text = { Text("Todas") }, onClick = { fCategoria = null; catMenu = false })
                                 categorias.forEach { c ->
-                                    androidx.compose.material3.DropdownMenuItem(text = { Text(c) }, onClick = { fCategoria = c; catMenu = false })
+                                    androidx.compose.material3.DropdownMenuItem(text = { Text(com.bragro.mobile.ui.domain.exibirTexto(c)) }, onClick = { fCategoria = c; catMenu = false })
                                 }
                             }
                         }

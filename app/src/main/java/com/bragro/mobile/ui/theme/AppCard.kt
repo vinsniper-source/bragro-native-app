@@ -361,7 +361,7 @@ fun SearchableDropdownField(
                 DropdownMenuItem(text = { Text("Nenhum resultado", color = MaterialTheme.colorScheme.onSurfaceVariant) }, onClick = {}, enabled = false)
             }
             for ((optValue, optLabel) in filtered) {
-                DropdownMenuItem(text = { Text(optLabel) }, onClick = {
+                DropdownMenuItem(text = { Text(com.bragro.mobile.ui.domain.exibirTexto(optLabel)) }, onClick = {
                     try {
                         onSelect(optValue)
                         query = optLabel

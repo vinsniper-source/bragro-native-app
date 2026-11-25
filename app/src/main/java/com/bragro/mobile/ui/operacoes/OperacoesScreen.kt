@@ -322,7 +322,7 @@ private fun FiltroLista(label: String, valor: String, opcoes: List<Pair<String, 
             com.bragro.mobile.ui.theme.MenuSuspenso(expanded = aberto, onDismissRequest = { aberto = false }) {
                 opcoes.forEach { (v, l) ->
                     androidx.compose.material3.DropdownMenuItem(
-                        text = { Text(l, style = MaterialTheme.typography.bodySmall, fontWeight = if (v == valor) FontWeight.Bold else FontWeight.Normal) },
+                        text = { Text(com.bragro.mobile.ui.domain.exibirTexto(l), style = MaterialTheme.typography.bodySmall, fontWeight = if (v == valor) FontWeight.Bold else FontWeight.Normal) },
                         onClick = { onSelect(v); aberto = false },
                     )
                 }

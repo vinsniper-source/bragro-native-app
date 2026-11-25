@@ -4,6 +4,14 @@ import androidx.compose.ui.graphics.graphicsLayer
 import com.bragro.mobile.ui.domain.IconeNegrito
 import androidx.compose.material.icons.outlined.History
 import kotlin.math.roundToInt
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.zIndex
+import androidx.compose.material.icons.outlined.CalendarToday
 import com.bragro.mobile.ui.domain.IconesVazados
 
 import android.app.Application
@@ -643,14 +651,17 @@ fun HomeScreen(
     var alturas by remember { mutableStateOf(lerMapa("alturas")) }
     var espacos by remember { mutableStateOf(lerMapa("espacos")) }
     var ocultos by remember { mutableStateOf(prefsOrdem.getString("ocultos", "").orEmpty().split(",").filter { it.isNotBlank() }.toSet()) }
-    // v396b -- logo: no cabeçalho enquanto for o 1º bloco; selecionável no modo reorganizar;
-    // "largura" muda o tamanho dela.
-    val logoNoCabecalho = "logo" !in ocultos && ("logo" !in ordemInicio || ordemInicio.firstOrNull { it !in ocultos } == "logo")
-    val alturaLogo = when (larguras["logo"] ?: 0) { 1 -> 28.dp; 2 -> 44.dp; 3 -> 52.dp; 4 -> 60.dp; else -> 36.dp }
-    val selLogo = if (reorganizando) Modifier
-        .then(if ("logo" in selecionados) Modifier.border(2.5.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small) else Modifier)
-        .pointerInput("logo") { detectTapGestures(onTap = { selecionados = if ("logo" in selecionados) selecionados - "logo" else selecionados + "logo" }) }
-    else Modifier
+    // v399 (mockup aprovado) -- logo sozinha na 1ª linha (posição e tamanho pelo dedo), ícones do
+    // cabeçalho na linha de baixo (ordem pelo dedo), Alertas/Avisos/Monitor viram ícones.
+    var logoPos by remember { mutableStateOf(prefsOrdem.getInt("logoPos", 0)) }
+    var logoAlt by remember { mutableStateOf(prefsOrdem.getFloat("logoAlt", 40f)) }
+    var ordemIcones by remember { mutableStateOf(prefsOrdem.getString("icones", "").orEmpty().split(",").filter { it.isNotBlank() }) }
+    var atalhoAberto by remember { mutableStateOf<String?>(null) }
+    val posicoes = remember { HashMap<String, androidx.compose.ui.geometry.Rect>() }
+    var larguraLista by remember { mutableStateOf(1f) }
+    var arrastando by remember { mutableStateOf<String?>(null) }
+    var arrasteOffset by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
+    val densidade = androidx.compose.ui.platform.LocalDensity.current.density
     val home by viewModel.home
     val weather by viewModel.weather
     // v1.6.13 (mockup v114) -- guarda a cotação do dia para "Exibir valores em" (U$D/ARS).
@@ -770,11 +781,9 @@ fun HomeScreen(
                     // logo (cabe numa linha) OU numa 2ª linha própria (não
                     // cabe), sem duplicar nenhum ícone/estado/dropdown.
                     val headerTrailingContent: @Composable () -> Unit = {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
+                        // v399 -- cada ícone é registrado com uma chave e desenhado na ordem salva.
+                        val icones = mutableListOf<Pair<String, @Composable () -> Unit>>()
+                        fun ic(k: String, c: @Composable () -> Unit) { icones += k to c }
                     // Cluster de ícones OPCIONAIS (Backup/Configurações/Base de
                     // Dados/Notificações/Tema) -- rolagem horizontal, mas
                     // agora dentro de weight(1f, fill=false): ocupa só o
@@ -797,15 +806,10 @@ fun HomeScreen(
                     // mantém o mesmo respiro visual de antes (que vinha do
                     // Spacer(weight(1f)) removido daqui) entre a logo BRAgro e
                     // o cluster.
-                    Row(
-                        modifier = Modifier.weight(1f, fill = false).horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
                     // Ícone "Início" removido -- pedido do usuário ("retire a
                     // casinha"), era decorativo (onClick vazio, já estamos
                     // nesta tela).
-                    if (canManage) {
+                    if (canManage) ic("backup") {
                         IconButton(onClick = {
                             viewModel.downloadBackup { saved ->
                                 val msg = if (saved) "Backup salvo em Downloads" else "Não foi possível salvar o backup"
@@ -827,7 +831,7 @@ fun HomeScreen(
                     // pra dono/admin (menuSistemaLinks em BottomNavBar.kt),
                     // abrindo a última vaga da barra pra "Pecuária" no lugar
                     // dele.
-                    if (canManage) {
+                    if (canManage) ic("modulos") {
                         var modulosMenuOpen by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { modulosMenuOpen = true }) {
@@ -870,7 +874,7 @@ fun HomeScreen(
                     // OWNER/ADMIN, que agora acessam a tela completa pelo
                     // ícone "Módulos" logo acima).
                     // Lupa global removida (pedido do usuário, v7).
-                    if (home?.showConfiguracoesIcon == true) {
+                    if (home?.showConfiguracoesIcon == true) ic("config") {
                         var configMenuOpen by remember { mutableStateOf(false) }
                         var iosStepsOpen by remember { mutableStateOf(false) }
                         Box {
@@ -947,7 +951,7 @@ fun HomeScreen(
                     // categoria (diferente do site, que rola até #cat-X) --
                     // simplificação: cada item só abre a tela de Base de
                     // Dados, que já mostra tudo liberado pra essa conta.
-                    if (home?.showBaseDeDadosIcon == true) {
+                    if (home?.showBaseDeDadosIcon == true) ic("db") {
                         var dbMenuOpen by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { dbMenuOpen = true }) {
@@ -988,6 +992,7 @@ fun HomeScreen(
                             }
                         }
                     }
+                    ic("notif") {
                     IconButton(onClick = { notificationsOpen = true; viewModel.loadNotifications() }) {
                         BadgedBox(badge = { if (unreadCount > 0) Badge(containerColor = MaterialTheme.colorScheme.primary, contentColor = Color.White) { Text(unreadCount.toString(), fontSize = 9.sp) } }) { // v293 (mockup v387) -- bolinha verde igual à plataforma
                             com.bragro.mobile.ui.domain.IconeNegrito(
@@ -998,12 +1003,28 @@ fun HomeScreen(
                             )
                         }
                     }
-                    } // fecha Row de rolagem horizontal do cluster de ícones OPCIONAIS
+                    } // fecha ic("notif")
+                    // v399 (mockup aprovado) -- Alertas, Avisos e Monitor saem do corpo e viram ícones; a data vira 📅.
+                    home?.let { h ->
+                        if (h.hasWidget("inicio.alertas")) ic("alertas") { IconeComContagem(Icons.Outlined.WarningAmber, "Alertas", h.alerts.size) { atalhoAberto = "alertas" } }
+                        if (h.hasWidget("inicio.mural")) ic("mural") { IconeComContagem(Icons.Outlined.Campaign, "Avisos", h.notices.size) { atalhoAberto = "mural" } }
+                        if (h.hasWidget("inicio.monitor")) ic("monitor") { IconeComContagem(IconesVazados.OfflineBolt, "Monitor", h.recentActivity.size) { atalhoAberto = "monitor" } }
+                    }
+                    ic("data") {
+                        IconButton(onClick = {
+                            val hoje = java.time.LocalDate.now(java.time.ZoneId.of("America/Sao_Paulo"))
+                                .format(java.time.format.DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy", java.util.Locale("pt", "BR")))
+                            android.widget.Toast.makeText(logoScreenContext, hoje, android.widget.Toast.LENGTH_SHORT).show()
+                        }) {
+                            com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.CalendarToday, contentDescription = "Data de hoje", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp)
+                        }
+                    }
                     // Tema num botão só, sempre visível (fora da rolagem):
                     // cada toque alterna Automático -> Claro -> Escuro.
-                    ThemeToggle()
+                    ic("tema") { ThemeToggle() }
                     // Conta -- SEMPRE visível, fora da área rolável (ver
                     // comentário no Row rolável acima).
+                    ic("conta") {
                     Box {
                         IconButton(onClick = { userMenuOpen = true }, enabled = !uploadingAvatar) {
                             val avatarUrl = session?.avatarUrl
@@ -1040,6 +1061,7 @@ fun HomeScreen(
                             )
                         }
                     }
+                    } // fecha ic("conta")
                     // Lugar reservado pra logo da organização (canto superior
                     // direito) -- SEMPRE visível agora, fora da área rolável
                     // (ver comentário no Row rolável acima). Cada organização
@@ -1051,6 +1073,7 @@ fun HomeScreen(
                     // a logo por lá mesmo"), sem redirecionar pro site. Com
                     // logo já cadastrada, tocar nela também permite trocar
                     // (só pra quem pode gerenciar).
+                    ic("logocliente") {
                     val orgLogoUrl = session?.orgLogoUrl
                     // Modifier de clique extraído (era duplicado nos 2 ramos
                     // abaixo, com ou sem logo cadastrada) -- só quem pode
@@ -1106,68 +1129,122 @@ fun HomeScreen(
                             }
                         }
                     }
-                        } // fecha Row (End) interna do headerTrailingContent
+                    } // fecha ic("logocliente")
+                    // Ordem salva; chave nova entra na posição padrão.
+                    val chavesIc = icones.map { it.first }
+                    val ordemIc = ordemIcones.filter { it in chavesIc }.toMutableList().also { base ->
+                        chavesIc.forEachIndexed { i, k -> if (k !in base) base.add(i.coerceAtMost(base.size), k) }
+                    }.toList()
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        ordemIc.forEach { k ->
+                            androidx.compose.runtime.key(k) {
+                                var dx by remember { mutableStateOf(0f) }
+                                var larg by remember { mutableStateOf(1) }
+                                Box(
+                                    Modifier.weight(1f)
+                                        .onSizeChanged { larg = it.width.coerceAtLeast(1) }
+                                        .zIndex(if (dx != 0f) 1f else 0f)
+                                        .graphicsLayer { translationX = dx }
+                                        .then(if (reorganizando) Modifier.padding(1.dp).border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f), RoundedCornerShape(8.dp)) else Modifier),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    icones.first { it.first == k }.second()
+                                    if (reorganizando) Box(
+                                        Modifier.matchParentSize().pointerInput(k, ordemIc) {
+                                            detectDragGestures(
+                                                onDragEnd = {
+                                                    val passo = (dx / larg).roundToInt()
+                                                    if (passo != 0) {
+                                                        val nova = ordemIc.toMutableList()
+                                                        val i = nova.indexOf(k)
+                                                        nova.removeAt(i)
+                                                        nova.add((i + passo).coerceIn(0, nova.size), k)
+                                                        ordemIcones = nova
+                                                        prefsOrdem.edit().putString("icones", nova.joinToString(",")).apply()
+                                                    }
+                                                    dx = 0f
+                                                },
+                                                onDragCancel = { dx = 0f },
+                                            ) { ch, d -> ch.consume(); dx += d.x }
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                        // ⠿ fixo no fim: toque liga/termina; no modo reorganizar, segurar o ✓ restaura tudo.
+                        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            Box(
+                                Modifier.size(40.dp).combinedClickable(
+                                    onClick = { reorganizando = !reorganizando; selecionados = emptySet() },
+                                    onLongClick = {
+                                        if (reorganizando) {
+                                            ordemInicio = emptyList(); larguras = emptyMap(); alturas = emptyMap(); espacos = emptyMap(); ocultos = emptySet(); selecionados = emptySet()
+                                            ordemIcones = emptyList(); logoPos = 0; logoAlt = 40f
+                                            prefsOrdem.edit().remove("ordem").remove("meia").remove("larguras").remove("alturas").remove("espacos").remove("ocultos").remove("icones").remove("logoPos").remove("logoAlt").apply()
+                                            android.widget.Toast.makeText(logoScreenContext, "Início restaurado", android.widget.Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                com.bragro.mobile.ui.domain.IconeNegrito(
+                                    if (reorganizando) Icons.Outlined.Check else Icons.Outlined.DragIndicator,
+                                    contentDescription = if (reorganizando) "Concluir (segure para restaurar)" else "Reorganizar",
+                                    tint = if (reorganizando) MaterialTheme.colorScheme.primary else androidx.compose.material3.LocalContentColor.current,
+                                    size = 24.dp,
+                                )
+                            }
+                        }
+                    }
                     } // fecha lambda headerTrailingContent
 
-                    if (headerFits) {
-                        // Cabe numa linha só -- mesmo layout de sempre: logo à
-                        // esquerda, ícones/Conta/logo do cliente ocupando o
-                        // resto da largura à direita, na MESMA linha. Causa
-                        // raiz encontrada num bug anterior (confirmado por
-                        // captura de tela do usuário): o Modifier.height(150.dp)
-                        // da logo forçava uma CAIXA de layout de 150dp de
-                        // altura, mas a imagem visível dentro dela sempre foi
-                        // limitada pela LARGURA (widthIn(max=190dp) -- logo tem
-                        // proporção larga/baixa, então o Fit escala pela
-                        // largura primeiro), renderizando de verdade só uns
-                        // 50-57dp -- por isso o default Alignment.Center do
-                        // Image deixava uns ~50dp de vão vazio embaixo da
-                        // logo/ícones, dentro da própria caixa de 150dp (raiz
-                        // real do "espaço grande acima do filete" reportado
-                        // pelo usuário). Fix determinístico (sem offset
-                        // chutado): verticalAlignment = Bottom nesta Row +
-                        // alignment = BottomCenter no Image ancoram o pixel
-                        // VISÍVEL da logo e os ícones na base da caixa de
-                        // 150dp -- a caixa continua com o mesmo tamanho
-                        // (altura/largura da logo intactas), só o conteúdo
-                        // visível dela desce pra base, eliminando o vão sem
-                        // precisar adivinhar nenhum valor de offset.
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(start = 18.dp, end = 10.dp, top = 4.dp, bottom = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
+                    // v399 (mockup aprovado) -- logo sozinha na 1ª linha, ícones na linha de baixo, com espaço.
+                    // No modo reorganizar: arrastar a logo muda a posição (esquerda/centro/direita) e o
+                    // quadradinho verde muda o tamanho.
+                    val larguraCab = with(androidx.compose.ui.platform.LocalDensity.current) { maxWidth.toPx() }
+                    Column(Modifier.fillMaxWidth().padding(start = 18.dp, end = 10.dp, top = 4.dp, bottom = 6.dp)) {
+                        var ldx by remember { mutableStateOf(0f) }
+                        Box(
+                            Modifier.fillMaxWidth(),
+                            contentAlignment = when (logoPos) { 1 -> Alignment.Center; 2 -> Alignment.CenterEnd; else -> Alignment.CenterStart },
                         ) {
-                            // Voltamos pro tamanho de ANTES de toda a saga de
-                            // recorte (v1.2.66 a v1.2.70) -- usuário confirmou
-                            // com print ao vivo que a versão v1.2.64 (150dp de
-                            // altura, widthIn max=190dp, ContentScale.Fit puro,
-                            // sem nenhum recorte) já renderizava a logo grande
-                            // e legível no cabeçalho. Alinhada à esquerda por
-                            // design (pedido antigo do usuário -- "logo no
-                            // limite esquerdo"), sem offset de centralização.
-                            // v287 (mockup v365) -- logo um pouquinho mais larga, na mesma linha, sem apertar os ícones.
-                            if (logoNoCabecalho) com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.padding(end = 14.dp).then(selLogo).height(alturaLogo).widthIn(max = 124.dp * (alturaLogo / 36.dp)).graphicsLayer(scaleX = 1.12f, transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0.5f)))
-                            Box(modifier = Modifier.weight(1f)) {
-                                androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement provides false) { headerTrailingContent() }
-                            }
-                        }
-                    } else {
-                        // Não cabe numa linha só -- logo sozinha em cima,
-                        // ícones/Conta/logo do cliente saltam pra uma 2ª linha
-                        // própria, ainda alinhados à direita (pedido do
-                        // usuário: "suba uma linha se colapsar a logo e os
-                        // ícones do cabeçalho").
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(start = 18.dp, top = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
+                            Box(
+                                Modifier
+                                    .graphicsLayer { translationX = ldx }
+                                    .then(
+                                        if (reorganizando) Modifier
+                                            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f), MaterialTheme.shapes.small)
+                                            .pointerInput(logoPos) {
+                                                detectDragGestures(
+                                                    onDragEnd = {
+                                                        val passo = (ldx / (larguraCab / 3f)).roundToInt()
+                                                        if (passo != 0) {
+                                                            logoPos = (logoPos + passo).coerceIn(0, 2)
+                                                            prefsOrdem.edit().putInt("logoPos", logoPos).apply()
+                                                        }
+                                                        ldx = 0f
+                                                    },
+                                                    onDragCancel = { ldx = 0f },
+                                                ) { ch, d -> ch.consume(); ldx += d.x }
+                                            }
+                                        else Modifier,
+                                    ),
                             ) {
-                                if (logoNoCabecalho) com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.then(selLogo).height(alturaLogo).widthIn(max = 124.dp * (alturaLogo / 36.dp))) // v275 -- logo na altura dos ícones
-                            }
-                            Spacer(Modifier.height(2.dp))
-                            Box(modifier = Modifier.fillMaxWidth().padding(end = 10.dp, bottom = 6.dp)) {
-                                androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement provides false) { headerTrailingContent() }
+                                com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.padding(4.dp).height(logoAlt.dp).widthIn(max = (logoAlt * 3.4f).dp))
+                                if (reorganizando) Box(
+                                    Modifier.align(Alignment.BottomEnd).size(14.dp)
+                                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(3.dp))
+                                        .pointerInput(Unit) {
+                                            detectDragGestures(onDragEnd = { prefsOrdem.edit().putFloat("logoAlt", logoAlt).apply() }) { ch, d ->
+                                                ch.consume()
+                                                logoAlt = (logoAlt + (d.y + d.x / 3f) / density).coerceIn(24f, 80f)
+                                            }
+                                        },
+                                )
                             }
                         }
+                        Spacer(Modifier.height(12.dp))
+                        androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement provides false) { headerTrailingContent() }
                     }
                 } // fecha BoxWithConstraints. Nota histórica: este fechamento
                 // (que antes fechava a "Row externa" logo + cluster num único
@@ -1215,6 +1292,12 @@ fun HomeScreen(
             )
         }
 
+        // v399 -- Alertas, Avisos e Monitor (ícones do cabeçalho) abrem aqui.
+        val atalho = atalhoAberto
+        if (atalho != null && data != null) {
+            HomeAtalhoDialog(data, atalho, onDismiss = { atalhoAberto = null }, canManage = canManage, viewModel = viewModel, onOpenDomain = { id -> atalhoAberto = null; onOpenDomain(id) })
+        }
+
         if (pendingDialogOpen) {
             PendingSyncDialog(items = pendingItems, onDismiss = { pendingDialogOpen = false })
         }
@@ -1232,7 +1315,7 @@ fun HomeScreen(
 
         val kpisLista = data?.let { kpisVisiveis(it) } ?: emptyList()
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize().padding(padding).onSizeChanged { larguraLista = (it.width - 36 * densidade).coerceAtLeast(1f) },
             // Topo reduzido de 6dp pra 2dp -- pedido do usuário ("diminua a
             // distância consideravelmente de 'olá bom dia' para a logo"):
             // "Olá, bem-vindo" sobe bem mais perto da linha divisória/logo
@@ -1276,30 +1359,6 @@ fun HomeScreen(
                     // blocos móveis (ver bloco("saudacao") etc. abaixo). Aqui ficam só os avisos de sincronização,
                     // e o ⠿ quando a data foi tirada do Início.
                     if (data == null) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.End,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                    Text(
-                        java.time.LocalDate.now(java.time.ZoneId.of("America/Sao_Paulo")).let { d ->
-                            d.format(java.time.format.DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy", java.util.Locale("pt", "BR")))
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                    )
-                    // v288 (mockup v372) -- ⠿ liga o modo reorganizar; ✓ verde termina.
-                    if (!reorganizando) { // v396b -- no modo reorganizar o ✓ fica na barra de ações (fixa)
-                    Spacer(Modifier.width(6.dp))
-                    Icon(
-                        if (reorganizando) Icons.Outlined.Check else Icons.Outlined.DragIndicator,
-                        contentDescription = if (reorganizando) "Concluir" else "Reorganizar blocos",
-                        tint = if (reorganizando) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp).clickable { reorganizando = !reorganizando; selecionados = emptySet() },
-                    )
-                    }
-                    }
                     Text(
                         "BRAgro — Conectando a força da nossa terra, carregando o Brasil no coração.",
                         style = MaterialTheme.typography.titleSmall, // v274 (mockup v329) -- fonte menor
@@ -1308,10 +1367,6 @@ fun HomeScreen(
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
                     )
-                    } else if ("saudacao" in ocultos && !reorganizando) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                            Icon(Icons.Outlined.DragIndicator, contentDescription = "Reorganizar blocos", modifier = Modifier.size(20.dp).clickable { reorganizando = true; selecionados = emptySet() })
-                        }
                     }
                     if (pending > 0) {
                         // Virou um banner destacado (ícone + fundo tonal em
@@ -1413,37 +1468,8 @@ fun HomeScreen(
             // v396b (mockup aprovado) -- logo, data+slogan, botões do setor e Alertas/Monitor/Avisos também
             // são blocos (só os ícones do cabeçalho ficam fixos). A logo fica no cabeçalho enquanto for o
             // 1º bloco; ao descer, vira um bloco do Início.
-            bloco("logo") {
-                Box(Modifier.fillMaxWidth()) {
-                    com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.height(alturaLogo).widthIn(max = 124.dp * (alturaLogo / 36.dp)))
-                }
-            }
             bloco("saudacao") {
                 Column(Modifier.fillMaxWidth()) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.End,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                    Text(
-                        java.time.LocalDate.now(java.time.ZoneId.of("America/Sao_Paulo")).let { d ->
-                            d.format(java.time.format.DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy", java.util.Locale("pt", "BR")))
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                    )
-                    // v288 (mockup v372) -- ⠿ liga o modo reorganizar; ✓ verde termina.
-                    if (!reorganizando) { // v396b -- no modo reorganizar o ✓ fica na barra de ações (fixa)
-                    Spacer(Modifier.width(6.dp))
-                    Icon(
-                        if (reorganizando) Icons.Outlined.Check else Icons.Outlined.DragIndicator,
-                        contentDescription = if (reorganizando) "Concluir" else "Reorganizar blocos",
-                        tint = if (reorganizando) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp).clickable { reorganizando = !reorganizando; selecionados = emptySet() },
-                    )
-                    }
-                    }
                     Text(
                         "BRAgro — Conectando a força da nossa terra, carregando o Brasil no coração.",
                         style = MaterialTheme.typography.titleSmall, // v274 (mockup v329) -- fonte menor
@@ -1484,21 +1510,6 @@ fun HomeScreen(
                         }
                     }
             }
-            }
-            bloco("atalhos") {
-                var destaquesAberto by remember { mutableStateOf(false) }
-                val showDestaques = false // v1.6.59 (site v295) -- sem Destaques
-                    androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.domain.LocalIconeNegrito provides true) { // v283 -- ícones em negrito
-                        HomeShortcutsRow(
-                            data = data,
-                            showDestaques = showDestaques,
-                            destaquesAberto = destaquesAberto,
-                            onDestaquesChange = { destaquesAberto = it },
-                            canManage = canManage,
-                            viewModel = viewModel,
-                            onOpenDomain = onOpenDomain,
-                        )
-                    }
             }
             // v290 (mockup v379) -- filtros, canvas e custos num bloco só.
             if (data.hasWidget("inicio.filtros") || data.hasWidget("inicio.canvas")) {
@@ -1708,62 +1719,37 @@ fun HomeScreen(
             fun idxLarg(k: String) = larguras[k] ?: if (k.startsWith("inicio.kpi.")) 1 else 0 // KPI começa em ½
             val fracoes = listOf(1f, 0.5f, 1f / 3f, 0.25f, 2f / 3f) // inteira, ½, ⅓, ¼, ⅔
             fun salvarMapa(chave: String, m: Map<String, Int>) = prefsOrdem.edit().putString(chave, m.entries.joinToString(";") { "${it.key}:${it.value}" }).apply()
-            // v293 (mockup v388) -- barra do modo reorganizar.
-            if (reorganizando) {
-                item(key = "acoes-selecao") {
-                    fun gravarOrdem(nova: List<String>) {
-                        ordemInicio = nova
-                        prefsOrdem.edit().putString("ordem", nova.joinToString(",")).apply()
-                    }
-                    fun mover(d: Int) {
-                        val nova = ordenadas.toMutableList()
-                        val idxs = nova.indices.filter { nova[it] in selecionados }.let { if (d > 0) it.reversed() else it }
-                        for (i in idxs) {
-                            val alvo = i + d
-                            if (alvo !in nova.indices || nova[alvo] in selecionados) continue
-                            val tmp = nova[alvo]; nova[alvo] = nova[i]; nova[i] = tmp
-                        }
-                        gravarOrdem(nova)
-                    }
-                    androidx.compose.material3.Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxWidth()) {
-                        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceAround, verticalAlignment = Alignment.CenterVertically) {
-                            val temSel = selecionados.isNotEmpty()
-                            @Composable
-                            fun acao(img: androidx.compose.ui.graphics.vector.ImageVector, nome: String, ativo: Boolean = temSel, onClick: () -> Unit) {
-                                val cor = if (ativo) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
-                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable(enabled = ativo, onClick = onClick).padding(horizontal = 4.dp, vertical = 2.dp)) {
-                                    com.bragro.mobile.ui.domain.IconeNegrito(img, contentDescription = nome, tint = cor, size = 22.dp)
-                                    Text(nome, style = MaterialTheme.typography.labelSmall, color = cor)
-                                }
-                            }
-                            // v396b -- ✓ verde conclui (a data também se move agora).
-                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable { reorganizando = false; selecionados = emptySet() }.padding(horizontal = 4.dp, vertical = 2.dp)) {
-                                com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Check, contentDescription = "Concluir", tint = MaterialTheme.colorScheme.primary, size = 22.dp)
-                                Text("concluir", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                            }
-                            acao(Icons.Outlined.KeyboardArrowUp, "subir") { mover(-1) }
-                            acao(Icons.Outlined.KeyboardArrowDown, "descer") { mover(1) }
-                            acao(Icons.Outlined.SwapHoriz, "largura") {
-                                val prox = ((selecionados.maxOf { idxLarg(it) }) + 1) % fracoes.size
-                                larguras = larguras + selecionados.associateWith { prox }
-                                salvarMapa("larguras", larguras)
-                            }
-                            acao(Icons.Outlined.Height, "altura") {
-                                val prox = ((selecionados.maxOf { alturas[it] ?: 0 }) + 1) % 5
-                                alturas = alturas + selecionados.associateWith { prox }
-                                salvarMapa("alturas", alturas)
-                            }
-                            acao(Icons.Outlined.VerticalAlignTop, "espaço") {
-                                val prox = ((selecionados.maxOf { espacos[it] ?: 0 }) + 1) % 4
-                                espacos = espacos + selecionados.associateWith { prox }
-                                salvarMapa("espacos", espacos)
-                            }
-                            acao(Icons.Outlined.Restore, "restaurar", ativo = true) {
-                                ordemInicio = emptyList(); larguras = emptyMap(); alturas = emptyMap(); espacos = emptyMap(); ocultos = emptySet(); selecionados = emptySet()
-                                prefsOrdem.edit().remove("ordem").remove("meia").remove("larguras").remove("alturas").remove("espacos").remove("ocultos").apply()
-                            }
-                        }
-                    }
+            // v399 (mockup aprovado) -- sem a barra de setas: tudo pelo dedo (segurar e arrastar move,
+            // quadradinho verde muda largura/altura, ✕ tira, ✓ conclui e segurar o ✓ restaura).
+            fun gravarOrdem(nova: List<String>) {
+                ordemInicio = nova
+                prefsOrdem.edit().putString("ordem", nova.joinToString(",")).apply()
+            }
+            fun soltar(k: String) {
+                val r = posicoes[k] ?: return
+                val c = r.center + arrasteOffset
+                val alvo = posicoes.entries.firstOrNull { it.key != k && it.key in ordenadas && it.value.contains(c) } ?: return
+                val nova = ordenadas.toMutableList()
+                nova.remove(k)
+                val i = nova.indexOf(alvo.key)
+                val depois = c.y > alvo.value.center.y + alvo.value.height / 4 || (kotlin.math.abs(c.y - alvo.value.center.y) <= alvo.value.height / 4 && c.x > alvo.value.center.x)
+                nova.add(if (depois) i + 1 else i, k)
+                gravarOrdem(nova)
+            }
+            fun redimensionar(k: String, d: androidx.compose.ui.geometry.Offset) {
+                val r = posicoes[k] ?: return
+                if (kotlin.math.abs(d.x) > 12f) {
+                    val alvoW = ((r.width + d.x) / larguraLista).coerceIn(0.2f, 1f)
+                    val idx = fracoes.indices.minBy { kotlin.math.abs(fracoes[it] - alvoW) }
+                    larguras = larguras + (k to idx)
+                    salvarMapa("larguras", larguras)
+                }
+                if (kotlin.math.abs(d.y) > 12f) {
+                    val alvoH = (r.height + d.y) / densidade
+                    val opcoes = listOf(70f, 110f, 170f, 260f)
+                    val idx = opcoes.indices.minBy { kotlin.math.abs(opcoes[it] - alvoH) } + 1
+                    alturas = alturas + (k to idx)
+                    salvarMapa("alturas", alturas)
                 }
             }
             // Blocos lado a lado enquanto couberem na largura (soma das frações ≤ 1).
@@ -1772,7 +1758,6 @@ fun HomeScreen(
                 var atual = mutableListOf<String>()
                 var soma = 0f
                 for (k in ordenadas) {
-                    if (k == "logo" && logoNoCabecalho) continue
                     val f = fracoes[idxLarg(k).coerceIn(0, fracoes.lastIndex)]
                     if (atual.isNotEmpty() && soma + f > 1.001f) { linhas += atual; atual = mutableListOf(); soma = 0f }
                     atual += k; soma += f
@@ -1794,6 +1779,11 @@ fun HomeScreen(
                             Box(
                                 Modifier
                                     .weight(fr)
+                                    .onGloballyPositioned { posicoes[k] = it.boundsInRoot() }
+                                    .zIndex(if (arrastando == k) 1f else 0f)
+                                    .graphicsLayer {
+                                        if (arrastando == k) { translationX = arrasteOffset.x; translationY = arrasteOffset.y; alpha = 0.9f }
+                                    }
                                     .then(if (alturaDp != null) Modifier.height(alturaDp).clip(MaterialTheme.shapes.medium) else Modifier)
                                     .then(if (sel) Modifier.border(2.5.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.medium) else Modifier),
                             ) {
@@ -1802,13 +1792,32 @@ fun HomeScreen(
                                     // No modo reorganizar o bloco não reage a toques: toque longo seleciona,
                                     // toque soma/tira da seleção (ou seleciona só ele quando nada está selecionado).
                                     Box(
-                                        Modifier.matchParentSize().pointerInput(k) {
-                                            detectTapGestures(
-                                                onLongPress = { selecionados = if (k in selecionados) selecionados - k else selecionados + k },
-                                                onTap = { selecionados = if (selecionados.isEmpty()) setOf(k) else if (k in selecionados) selecionados - k else selecionados + k },
-                                            )
-                                        },
+                                        Modifier.matchParentSize()
+                                            .pointerInput(k) {
+                                                detectTapGestures(onTap = { selecionados = if (k in selecionados) selecionados - k else setOf(k) })
+                                            }
+                                            .pointerInput(k, ordenadas) {
+                                                detectDragGesturesAfterLongPress(
+                                                    onDragStart = { arrastando = k; arrasteOffset = androidx.compose.ui.geometry.Offset.Zero },
+                                                    onDragEnd = { soltar(k); arrastando = null; arrasteOffset = androidx.compose.ui.geometry.Offset.Zero },
+                                                    onDragCancel = { arrastando = null; arrasteOffset = androidx.compose.ui.geometry.Offset.Zero },
+                                                ) { ch, d -> ch.consume(); arrasteOffset += d }
+                                            },
                                     )
+                                    // Quadradinho verde do canto: puxar muda largura e altura.
+                                    if (sel) {
+                                        var acc by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
+                                        Box(
+                                            Modifier.align(Alignment.BottomEnd).padding(2.dp).size(16.dp)
+                                                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(3.dp))
+                                                .pointerInput(k) {
+                                                    detectDragGestures(
+                                                        onDragStart = { acc = androidx.compose.ui.geometry.Offset.Zero },
+                                                        onDragEnd = { redimensionar(k, acc); acc = androidx.compose.ui.geometry.Offset.Zero },
+                                                    ) { ch, d -> ch.consume(); acc += d }
+                                                },
+                                        )
+                                    }
                                     // v293 (mockup v388) -- ✕ laranja tira o bloco do Início (↺ restaurar traz de volta).
                                     if (sel) androidx.compose.material3.Surface(
                                         onClick = {
@@ -2272,6 +2281,37 @@ private fun HomeShortcutsRow(
             },
         )
     }
+}
+
+/** v399 -- ícone do cabeçalho com o número (bolinha verde), igual ao sino. */
+@Composable
+private fun IconeComContagem(icon: androidx.compose.ui.graphics.vector.ImageVector, nome: String, n: Int, onClick: () -> Unit) {
+    IconButton(onClick = onClick) {
+        BadgedBox(badge = { if (n > 0) Badge(containerColor = MaterialTheme.colorScheme.primary, contentColor = Color.White) { Text(n.toString(), fontSize = 9.sp) } }) {
+            com.bragro.mobile.ui.domain.IconeNegrito(icon, contentDescription = nome, tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp)
+        }
+    }
+}
+
+/** v399 -- janela de Alertas / Avisos / Monitor (antes abria pela faixa de atalhos). */
+@Composable
+private fun HomeAtalhoDialog(data: HomeData, which: String, onDismiss: () -> Unit, canManage: Boolean, viewModel: HomeViewModel, onOpenDomain: (String) -> Unit) {
+    val largo = which == "monitor"
+    AlertDialog(
+        modifier = if (largo) Modifier.fillMaxWidth().padding(horizontal = 12.dp) else Modifier,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = !largo),
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar") } },
+        text = {
+            Column(modifier = Modifier.heightIn(max = if (largo) 620.dp else 480.dp).verticalScroll(rememberScrollState())) {
+                when (which) {
+                    "alertas" -> AlertsCard(data.alerts, onOpenDomain, startExpanded = true)
+                    "monitor" -> ActivityMonitorCard(data.recentActivity, onOpenDomain, startExpanded = true)
+                    "mural" -> BulletinBoardCard(data.notices, canManage, data.allowedModules, viewModel, startExpanded = true)
+                }
+            }
+        },
+    )
 }
 
 @Composable

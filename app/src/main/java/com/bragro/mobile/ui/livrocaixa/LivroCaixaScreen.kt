@@ -296,7 +296,7 @@ private fun CampoListaSuspensa(label: String, valorTexto: String, opcoes: List<P
             com.bragro.mobile.ui.theme.MenuSuspenso(expanded = aberto, onDismissRequest = { aberto = false }) {
                 opcoes.forEach { (v, l) ->
                     androidx.compose.material3.DropdownMenuItem(
-                        text = { Text(l, textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.fillMaxWidth()) },
+                        text = { Text(com.bragro.mobile.ui.domain.exibirTexto(l), textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.fillMaxWidth()) },
                         onClick = { onSelect(v); aberto = false },
                     )
                 }

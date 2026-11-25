@@ -1678,12 +1678,12 @@ private fun FormField(col: ColumnConfig, options: List<LookupEntity>?, viewModel
                     }
                     for ((optValue, optLabel) in filtered) {
                         if (optValue == OPCAO_TODAS) {
-                            DropdownMenuItem(text = { Text(optLabel, fontWeight = FontWeight.Bold) }, onClick = {
+                            DropdownMenuItem(text = { Text(com.bragro.mobile.ui.domain.exibirTexto(optLabel), fontWeight = FontWeight.Bold) }, onClick = {
                                 viewModel.liberarTodas(col.key)
                             })
                             continue
                         }
-                        DropdownMenuItem(text = { Text(optLabel) }, onClick = {
+                        DropdownMenuItem(text = { Text(com.bragro.mobile.ui.domain.exibirTexto(optLabel)) }, onClick = {
                             try {
                                 viewModel.setField(col.key, optValue)
                                 query = optLabel

@@ -2669,7 +2669,7 @@ private fun GenericPeriodoDropdown(
             HorizontalDivider()
             PeriodoCategoria.values().forEach { cat ->
                 DropdownMenuItem(
-                    text = { Text(cat.label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    text = { Text(com.bragro.mobile.ui.domain.exibirTexto(cat.label), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     onClick = { onPeriodo(cat); expanded = false },
                 )
             }
