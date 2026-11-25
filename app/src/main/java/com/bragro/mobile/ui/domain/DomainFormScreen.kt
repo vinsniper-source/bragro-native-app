@@ -2144,12 +2144,13 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
         Text(
             rotulo,
             style = MaterialTheme.typography.labelMedium,
-            fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
-            color = if (on) verde else MaterialTheme.colorScheme.onSurface,
+            fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal,
+            color = MaterialTheme.colorScheme.onSurface,
+            // v405 (mockup aprovado) -- sem fundo/borda: só o traço verde embaixo da escolhida.
             modifier = Modifier
-                .border(1.dp, if (on) verde else borda, RoundedCornerShape(8.dp))
                 .clickable(onClick = onClick)
-                .padding(horizontal = 8.dp, vertical = 5.dp),
+                .padding(horizontal = 2.dp, vertical = 4.dp)
+                .drawBehindLinha(if (on) verde else androidx.compose.ui.graphics.Color.Transparent),
         )
     }
     Column(
@@ -2158,7 +2159,7 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
     ) {
         Text("Parcelas ($n)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
         if (!semJuros) {
-            Text("Juros / ajuste", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+            Text("Juros / desconto", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 opcao("Igual", modo == "igual") { modo = "igual" }
                 opcao("Proporcional", modo == "proporcional") { modo = "proporcional" }
@@ -2185,7 +2186,7 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
                     Spacer(Modifier.weight(1f))
                     Text(brl(r2(valor + a)), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                 }
-                if (!semJuros && a != 0.0) Text("Juros / ajuste: ${brl(a)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (!semJuros && a != 0.0) Text("Juros / desconto: ${brl(a)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (porParcela) {
                     var aberto by remember { mutableStateOf(false) }
                     Box(Modifier.padding(top = 4.dp)) {
