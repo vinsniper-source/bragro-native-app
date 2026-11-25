@@ -8,6 +8,7 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -66,9 +67,19 @@ class MainActivity : ComponentActivity() {
         }
         // v293 (mockup v387) -- quando o teclado abre, alguns aparelhos reexibem a barra de
         // status (era a faixa branca no topo): esconde de novo enquanto o teclado estiver aberto.
+        // v407 -- a faixa branca continuava: em alguns aparelhos (ex.: Motorola) o teclado traz
+        // a barra de status de volta e o "hide" acima não segura. FLAG_FULLSCREEN mantém a barra
+        // escondida mesmo com o teclado aberto (Android 11+, onde o teclado continua avisando o
+        // app pelo WindowInsets.ime -- ver imePadding no setContent abaixo).
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            @Suppress("DEPRECATION")
+            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        }
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { v, insets ->
             if (insets.isVisible(WindowInsetsCompat.Type.ime()) && insets.isVisible(WindowInsetsCompat.Type.statusBars())) {
                 WindowInsetsControllerCompat(window, v).hide(WindowInsetsCompat.Type.statusBars())
+                // reforço: alguns aparelhos só aceitam o "hide" depois que o teclado termina de abrir
+                v.postDelayed({ WindowInsetsControllerCompat(window, v).hide(WindowInsetsCompat.Type.statusBars()) }, 150)
             }
             androidx.core.view.ViewCompat.onApplyWindowInsets(v, insets)
         }
@@ -99,7 +110,9 @@ class MainActivity : ComponentActivity() {
                     WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = !escuro
                 }
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
+                    // v407 -- o conteúdo encolhe acima do teclado (em vez de a tela inteira subir e
+                    // deixar a faixa em cima); o campo tocado rola para ficar à vista.
+                    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().imePadding()) {
                         BRAgroNavHost()
                         if (com.bragro.mobile.ui.seguranca.AppLock.travado.value) {
                             com.bragro.mobile.ui.seguranca.TelaBloqueio(pedirSenhaAntiga = { pedirSenhaDoSistema() })
