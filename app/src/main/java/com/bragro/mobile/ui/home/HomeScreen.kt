@@ -643,6 +643,14 @@ fun HomeScreen(
     var alturas by remember { mutableStateOf(lerMapa("alturas")) }
     var espacos by remember { mutableStateOf(lerMapa("espacos")) }
     var ocultos by remember { mutableStateOf(prefsOrdem.getString("ocultos", "").orEmpty().split(",").filter { it.isNotBlank() }.toSet()) }
+    // v396b -- logo: no cabeçalho enquanto for o 1º bloco; selecionável no modo reorganizar;
+    // "largura" muda o tamanho dela.
+    val logoNoCabecalho = "logo" !in ocultos && ("logo" !in ordemInicio || ordemInicio.firstOrNull { it !in ocultos } == "logo")
+    val alturaLogo = when (larguras["logo"] ?: 0) { 1 -> 28.dp; 2 -> 44.dp; 3 -> 52.dp; 4 -> 60.dp; else -> 36.dp }
+    val selLogo = if (reorganizando) Modifier
+        .then(if ("logo" in selecionados) Modifier.border(2.5.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small) else Modifier)
+        .pointerInput("logo") { detectTapGestures(onTap = { selecionados = if ("logo" in selecionados) selecionados - "logo" else selecionados + "logo" }) }
+    else Modifier
     val home by viewModel.home
     val weather by viewModel.weather
     // v1.6.13 (mockup v114) -- guarda a cotação do dia para "Exibir valores em" (U$D/ARS).
@@ -1137,7 +1145,7 @@ fun HomeScreen(
                             // design (pedido antigo do usuário -- "logo no
                             // limite esquerdo"), sem offset de centralização.
                             // v287 (mockup v365) -- logo um pouquinho mais larga, na mesma linha, sem apertar os ícones.
-                            com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.padding(end = 14.dp).height(36.dp).widthIn(max = 124.dp).graphicsLayer(scaleX = 1.12f, transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0.5f)))
+                            if (logoNoCabecalho) com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.padding(end = 14.dp).then(selLogo).height(alturaLogo).widthIn(max = 124.dp * (alturaLogo / 36.dp)).graphicsLayer(scaleX = 1.12f, transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0.5f)))
                             Box(modifier = Modifier.weight(1f)) {
                                 androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement provides false) { headerTrailingContent() }
                             }
@@ -1153,7 +1161,7 @@ fun HomeScreen(
                                 modifier = Modifier.fillMaxWidth().padding(start = 18.dp, top = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.height(36.dp).widthIn(max = 124.dp)) // v275 -- logo na altura dos ícones
+                                if (logoNoCabecalho) com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.then(selLogo).height(alturaLogo).widthIn(max = 124.dp * (alturaLogo / 36.dp))) // v275 -- logo na altura dos ícones
                             }
                             Spacer(Modifier.height(2.dp))
                             Box(modifier = Modifier.fillMaxWidth().padding(end = 10.dp, bottom = 6.dp)) {
@@ -1222,6 +1230,7 @@ fun HomeScreen(
             )
         }
 
+        val kpisLista = data?.let { kpisVisiveis(it) } ?: emptyList()
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             // Topo reduzido de 6dp pra 2dp -- pedido do usuário ("diminua a
@@ -1256,8 +1265,6 @@ fun HomeScreen(
                 // 0.dp aqui, deixamos o espaçamento natural do LazyColumn
                 // aparecer abaixo do filete, pra ficar parecido com o
                 // respiro deixado acima dele.
-                var destaquesAberto by remember { mutableStateOf(false) }
-                val showDestaques = false // v1.6.59 (site v295) -- sem Destaques
                 Column(modifier = Modifier.offset(y = 0.dp)) {
                     // v320 (mockup v320b aprovado) -- no lugar do "Olá, bem-vindo de
                     // volta": o slogan com BRAgro no início e a data pequena.
@@ -1265,6 +1272,10 @@ fun HomeScreen(
                     // da semana e a data ficam à direita, na última linha do slogan.
                     // v289 (mockup v378) -- data (e o ⠿) à direita, uma linha acima do slogan;
                     // o slogan volta a começar com "BRAgro —".
+                    // v396b (mockup aprovado) -- data+slogan, botões do setor e Alertas/Monitor/Avisos viraram
+                    // blocos móveis (ver bloco("saudacao") etc. abaixo). Aqui ficam só os avisos de sincronização,
+                    // e o ⠿ quando a data foi tirada do Início.
+                    if (data == null) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.End,
@@ -1279,6 +1290,7 @@ fun HomeScreen(
                         maxLines = 1,
                     )
                     // v288 (mockup v372) -- ⠿ liga o modo reorganizar; ✓ verde termina.
+                    if (!reorganizando) { // v396b -- no modo reorganizar o ✓ fica na barra de ações (fixa)
                     Spacer(Modifier.width(6.dp))
                     Icon(
                         if (reorganizando) Icons.Outlined.Check else Icons.Outlined.DragIndicator,
@@ -1286,6 +1298,7 @@ fun HomeScreen(
                         tint = if (reorganizando) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp).clickable { reorganizando = !reorganizando; selecionados = emptySet() },
                     )
+                    }
                     }
                     Text(
                         "BRAgro — Conectando a força da nossa terra, carregando o Brasil no coração.",
@@ -1295,45 +1308,10 @@ fun HomeScreen(
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
                     )
-                    // v293 (mockup v387c) -- setor com poucos módulos: botões com nome abaixo do slogan,
-                    // só com a borda fina padrão (sem fundo verde).
-                    val botoesSetor = com.bragro.mobile.ui.nav.BotoesSetor.itens.value
-                    if (botoesSetor.isNotEmpty()) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                        ) {
-                            botoesSetor.forEach { b ->
-                                androidx.compose.material3.Surface(
-                                    onClick = b.onClick,
-                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
-                                    color = MaterialTheme.colorScheme.background,
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                                    modifier = if (botoesSetor.size == 1) Modifier.width(170.dp) else Modifier.weight(1f),
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        com.bragro.mobile.ui.domain.IconeNegrito(b.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, size = 18.dp)
-                                        Spacer(Modifier.width(6.dp))
-                                        Text(b.label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, maxLines = 1)
-                                    }
-                                }
-                            }
+                    } else if ("saudacao" in ocultos && !reorganizando) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                            Icon(Icons.Outlined.DragIndicator, contentDescription = "Reorganizar blocos", modifier = Modifier.size(20.dp).clickable { reorganizando = true; selecionados = emptySet() })
                         }
-                    }
-                    if (data != null) androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.domain.LocalIconeNegrito provides true) { // v283 -- ícones em negrito
-                        HomeShortcutsRow(
-                            data = data,
-                            showDestaques = showDestaques,
-                            destaquesAberto = destaquesAberto,
-                            onDestaquesChange = { destaquesAberto = it },
-                            canManage = canManage,
-                            viewModel = viewModel,
-                            onOpenDomain = onOpenDomain,
-                        )
                     }
                     if (pending > 0) {
                         // Virou um banner destacado (ícone + fundo tonal em
@@ -1432,6 +1410,96 @@ fun HomeScreen(
             // ordem escolhida pelo usuário (modo reorganizar, ícone ⠿ na linha da data).
             val blocos = mutableListOf<Pair<String, @Composable androidx.compose.foundation.lazy.LazyItemScope.() -> Unit>>()
             fun bloco(key: String, conteudo: @Composable androidx.compose.foundation.lazy.LazyItemScope.() -> Unit) { blocos += key to conteudo }
+            // v396b (mockup aprovado) -- logo, data+slogan, botões do setor e Alertas/Monitor/Avisos também
+            // são blocos (só os ícones do cabeçalho ficam fixos). A logo fica no cabeçalho enquanto for o
+            // 1º bloco; ao descer, vira um bloco do Início.
+            bloco("logo") {
+                Box(Modifier.fillMaxWidth()) {
+                    com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.height(alturaLogo).widthIn(max = 124.dp * (alturaLogo / 36.dp)))
+                }
+            }
+            bloco("saudacao") {
+                Column(Modifier.fillMaxWidth()) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                    Text(
+                        java.time.LocalDate.now(java.time.ZoneId.of("America/Sao_Paulo")).let { d ->
+                            d.format(java.time.format.DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy", java.util.Locale("pt", "BR")))
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                    // v288 (mockup v372) -- ⠿ liga o modo reorganizar; ✓ verde termina.
+                    if (!reorganizando) { // v396b -- no modo reorganizar o ✓ fica na barra de ações (fixa)
+                    Spacer(Modifier.width(6.dp))
+                    Icon(
+                        if (reorganizando) Icons.Outlined.Check else Icons.Outlined.DragIndicator,
+                        contentDescription = if (reorganizando) "Concluir" else "Reorganizar blocos",
+                        tint = if (reorganizando) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp).clickable { reorganizando = !reorganizando; selecionados = emptySet() },
+                    )
+                    }
+                    }
+                    Text(
+                        "BRAgro — Conectando a força da nossa terra, carregando o Brasil no coração.",
+                        style = MaterialTheme.typography.titleSmall, // v274 (mockup v329) -- fonte menor
+                        fontStyle = FontStyle.Italic,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+                    )
+                }
+            }
+            if (com.bragro.mobile.ui.nav.BotoesSetor.itens.value.isNotEmpty()) {
+            bloco("setor") {
+                    val botoesSetor = com.bragro.mobile.ui.nav.BotoesSetor.itens.value
+                    if (botoesSetor.isNotEmpty()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                        ) {
+                            botoesSetor.forEach { b ->
+                                androidx.compose.material3.Surface(
+                                    onClick = b.onClick,
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.background,
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                    modifier = if (botoesSetor.size == 1) Modifier.width(170.dp) else Modifier.weight(1f),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        com.bragro.mobile.ui.domain.IconeNegrito(b.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, size = 18.dp)
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(b.label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, maxLines = 1)
+                                    }
+                                }
+                            }
+                        }
+                    }
+            }
+            }
+            bloco("atalhos") {
+                var destaquesAberto by remember { mutableStateOf(false) }
+                val showDestaques = false // v1.6.59 (site v295) -- sem Destaques
+                    androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.domain.LocalIconeNegrito provides true) { // v283 -- ícones em negrito
+                        HomeShortcutsRow(
+                            data = data,
+                            showDestaques = showDestaques,
+                            destaquesAberto = destaquesAberto,
+                            onDestaquesChange = { destaquesAberto = it },
+                            canManage = canManage,
+                            viewModel = viewModel,
+                            onOpenDomain = onOpenDomain,
+                        )
+                    }
+            }
             // v290 (mockup v379) -- filtros, canvas e custos num bloco só.
             if (data.hasWidget("inicio.filtros") || data.hasWidget("inicio.canvas")) {
             bloco("canvas") {
@@ -1499,7 +1567,8 @@ fun HomeScreen(
             // v288 (mockup v369 aprovado) -- os KPIs marcados em "Personalizar
             // Início" voltam pro Início (o KpiGrid existia mas não era chamado).
             if (data.allowedWidgets?.any { it.startsWith("inicio.kpi.") } ?: true) {
-                bloco("kpis") { KpiGrid(data) }
+                // v396b -- cada KPI é um bloco (selecionável sozinho).
+                kpisLista.forEach { (id, kpi) -> bloco(id) { KpiMini(kpi, modifier = Modifier.fillMaxWidth()) } }
             }
             data.breakdowns?.financeiro?.let { b ->
                 if (data.hasWidget("inicio.breakdown.financeiro")) {
@@ -1632,7 +1701,11 @@ fun HomeScreen(
             }
             }
             val chaves = blocos.map { it.first }.filter { it !in ocultos }
-            val ordenadas = ordemInicio.filter { it in chaves } + chaves.filter { it !in ordemInicio }
+            // v396b -- bloco novo (sem lugar salvo) entra na posição natural, não no fim.
+            val ordenadas = ordemInicio.filter { it in chaves }.toMutableList().also { base ->
+                chaves.forEachIndexed { i, k -> if (k !in base) base.add(i.coerceAtMost(base.size), k) }
+            }.toList()
+            fun idxLarg(k: String) = larguras[k] ?: if (k.startsWith("inicio.kpi.")) 1 else 0 // KPI começa em ½
             val fracoes = listOf(1f, 0.5f, 1f / 3f, 0.25f, 2f / 3f) // inteira, ½, ⅓, ¼, ⅔
             fun salvarMapa(chave: String, m: Map<String, Int>) = prefsOrdem.edit().putString(chave, m.entries.joinToString(";") { "${it.key}:${it.value}" }).apply()
             // v293 (mockup v388) -- barra do modo reorganizar.
@@ -1663,10 +1736,15 @@ fun HomeScreen(
                                     Text(nome, style = MaterialTheme.typography.labelSmall, color = cor)
                                 }
                             }
+                            // v396b -- ✓ verde conclui (a data também se move agora).
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable { reorganizando = false; selecionados = emptySet() }.padding(horizontal = 4.dp, vertical = 2.dp)) {
+                                com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Check, contentDescription = "Concluir", tint = MaterialTheme.colorScheme.primary, size = 22.dp)
+                                Text("concluir", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                            }
                             acao(Icons.Outlined.KeyboardArrowUp, "subir") { mover(-1) }
                             acao(Icons.Outlined.KeyboardArrowDown, "descer") { mover(1) }
                             acao(Icons.Outlined.SwapHoriz, "largura") {
-                                val prox = ((selecionados.maxOf { larguras[it] ?: 0 }) + 1) % fracoes.size
+                                val prox = ((selecionados.maxOf { idxLarg(it) }) + 1) % fracoes.size
                                 larguras = larguras + selecionados.associateWith { prox }
                                 salvarMapa("larguras", larguras)
                             }
@@ -1694,7 +1772,8 @@ fun HomeScreen(
                 var atual = mutableListOf<String>()
                 var soma = 0f
                 for (k in ordenadas) {
-                    val f = fracoes[(larguras[k] ?: 0).coerceIn(0, fracoes.lastIndex)]
+                    if (k == "logo" && logoNoCabecalho) continue
+                    val f = fracoes[idxLarg(k).coerceIn(0, fracoes.lastIndex)]
                     if (atual.isNotEmpty() && soma + f > 1.001f) { linhas += atual; atual = mutableListOf(); soma = 0f }
                     atual += k; soma += f
                 }
@@ -1709,7 +1788,7 @@ fun HomeScreen(
                         linha.forEach { k ->
                             val conteudo = blocos.first { it.first == k }.second
                             val sel = k in selecionados
-                            val fr = fracoes[(larguras[k] ?: 0).coerceIn(0, fracoes.lastIndex)]
+                            val fr = fracoes[idxLarg(k).coerceIn(0, fracoes.lastIndex)]
                             somaLinha += fr
                             val alturaDp = when (alturas[k] ?: 0) { 1 -> 70.dp; 2 -> 110.dp; 3 -> 170.dp; 4 -> 260.dp; else -> null }
                             Box(
@@ -2497,6 +2576,46 @@ private fun KpiGrid(data: HomeData) {
     // item() que chama este composable). Agora cada KPI checa o PRÓPRIO id
     // (`hasWidget`), igual ao `visibleStats` do site -- Frota, que nem
     // aparecia aqui, ganha os 4 dela também.
+    val kpis = kpisVisiveis(data).map { it.second }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Agrupamento adaptativo (1 ou 2 por linha) -- pedido do usuário
+        // ("no app tem que existir um ou dois kpis por linha... quando tiver
+        // muita informação um kpi por linha, pouca informação dois kpis por
+        // linha"): antes SEMPRE agrupava de 2 em 2 (`chunked(2)`), então um
+        // rótulo comprido (ex.: "Colaboradores ativos", "Veículos em
+        // manutenção", "Registros de safra (mês)") saía cortado na metade
+        // da largura do card. `groupKpisAdaptively` reserva a linha INTEIRA
+        // só pro KPI de rótulo longo, e continua parear os de rótulo curto
+        // 2 a 2 -- ver função abaixo.
+        groupKpisAdaptively(kpis).forEach { row ->
+            // IntrinsicSize.Min + fillMaxHeight -- pedido do usuário
+            // ("alinhe qualquer bloco... que não tiver a mesma altura ao
+            // bloco do lado"): sem isso, se um KPI tivesse descrição maior
+            // que o vizinho na mesma fileira, os 2 cards ficavam com
+            // alturas diferentes.
+            Row(
+                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                row.forEach { kpi -> KpiMini(kpi, modifier = Modifier.weight(1f).fillMaxHeight()) }
+                // Linha com 1 KPI só (rótulo longo, ou último da lista sem
+                // par): o card sozinho (já com weight(1f), único filho da
+                // Row) ocupa a largura inteira, sem vão vazio do lado
+                // (pedido anterior do usuário: "distribua os kpis
+                // colapsados").
+            }
+        }
+        // "Fazendas cadastradas" saiu daqui -- pedido do usuário ("desabilite
+        // o kpi total fazendas, deixe habilitado apenas no setor safra"):
+        // agora mora no item "fazendas" (ver HomeScreen abaixo), linha cheia
+        // própria, só renderizada quando "inicio.kpi.safra" está liberado
+        // (proxy do setor Safra), em vez de sempre dentro deste grid.
+    }
+}
+
+/** v396b -- KPIs liberados, cada um com o seu id (vira um bloco próprio no Início). */
+@Composable
+private fun kpisVisiveis(data: HomeData): List<Pair<String, Kpi>> {
     val allKpis = listOf(
         // Cores dos ícones Safra/Financeiro invertidas -- pedido do usuário
         // ("inverta as cores dos ícones dos kpis safra e financeiro").
@@ -2661,41 +2780,7 @@ private fun KpiGrid(data: HomeData) {
             description = "Mortes registradas no mês corrente",
         ),
     )
-    val kpis = allKpis.filter { (id, _) -> data.hasWidget(id) }.map { (_, kpi) -> kpi }
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        // Agrupamento adaptativo (1 ou 2 por linha) -- pedido do usuário
-        // ("no app tem que existir um ou dois kpis por linha... quando tiver
-        // muita informação um kpi por linha, pouca informação dois kpis por
-        // linha"): antes SEMPRE agrupava de 2 em 2 (`chunked(2)`), então um
-        // rótulo comprido (ex.: "Colaboradores ativos", "Veículos em
-        // manutenção", "Registros de safra (mês)") saía cortado na metade
-        // da largura do card. `groupKpisAdaptively` reserva a linha INTEIRA
-        // só pro KPI de rótulo longo, e continua parear os de rótulo curto
-        // 2 a 2 -- ver função abaixo.
-        groupKpisAdaptively(kpis).forEach { row ->
-            // IntrinsicSize.Min + fillMaxHeight -- pedido do usuário
-            // ("alinhe qualquer bloco... que não tiver a mesma altura ao
-            // bloco do lado"): sem isso, se um KPI tivesse descrição maior
-            // que o vizinho na mesma fileira, os 2 cards ficavam com
-            // alturas diferentes.
-            Row(
-                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                row.forEach { kpi -> KpiMini(kpi, modifier = Modifier.weight(1f).fillMaxHeight()) }
-                // Linha com 1 KPI só (rótulo longo, ou último da lista sem
-                // par): o card sozinho (já com weight(1f), único filho da
-                // Row) ocupa a largura inteira, sem vão vazio do lado
-                // (pedido anterior do usuário: "distribua os kpis
-                // colapsados").
-            }
-        }
-        // "Fazendas cadastradas" saiu daqui -- pedido do usuário ("desabilite
-        // o kpi total fazendas, deixe habilitado apenas no setor safra"):
-        // agora mora no item "fazendas" (ver HomeScreen abaixo), linha cheia
-        // própria, só renderizada quando "inicio.kpi.safra" está liberado
-        // (proxy do setor Safra), em vez de sempre dentro deste grid.
-    }
+    return allKpis.filter { (id, _) -> data.hasWidget(id) }
 }
 
 // 5º KPI -- espelha numeroFazendas/areaTotalHa, novos campos de
@@ -2919,7 +3004,7 @@ private fun ClimaResumo(clima: com.bragro.mobile.data.model.WeatherData, onClick
                     Text("${a.titulo.lowercase(br)} até ${a.fim.substringAfter(' ', a.fim)}", color = laranja, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
-            Row(verticalAlignment = Alignment.Bottom) {
+            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) { // v294 (mockup v393)
                 Text("${Math.round(clima.currentTempC)}°", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.width(10.dp))
                 Text(
@@ -2929,7 +3014,7 @@ private fun ClimaResumo(clima: com.bragro.mobile.data.model.WeatherData, onClick
                         "${String.format(br, "%.1f", clima.todayPrecipMm)} mm",
                     ).joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.weight(1f).padding(bottom = 4.dp),
+                    modifier = Modifier.padding(bottom = 4.dp),
                 )
             }
             // v287 (mockup v365) -- aberto: indicadores principais e 6 dias com a chuva.
@@ -2940,7 +3025,7 @@ private fun ClimaResumo(clima: com.bragro.mobile.data.model.WeatherData, onClick
                         "Vento" to (clima.ventoKmH?.let { "${Math.round(it)} km/h" } ?: "—"),
                         "Delta T" to (clima.agro?.deltaT?.let { String.format(br, "%.1f", it) } ?: "—"),
                     ).forEach { (rot, v) ->
-                        Column(modifier = Modifier.weight(1f)) {
+                        Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(rot, style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
                             Text(v, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                         }
@@ -2986,7 +3071,7 @@ private fun CotacoesResumo(com: com.bragro.mobile.data.model.CommodityQuotesData
             }
             Row(modifier = Modifier.fillMaxWidth()) {
                 listOf("Soja" to com.soja, "Milho" to com.milho, "Sorgo" to com.sorgo).forEach { (rot, d) ->
-                    Column(modifier = Modifier.weight(1f)) {
+                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) { // v294 (mockup v393) -- centralizado
                         Text(rot, style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
                         Text(if (d != null) "R$ " + String.format(br, "%.2f", d.valor) else "—", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
                         if (d != null) Text(
@@ -3698,6 +3783,7 @@ private fun CotacoesCard(com: com.bragro.mobile.data.model.CommodityQuotesData, 
                             .weight(1f)
                             .padding(start = if (index > 0) 8.dp else 0.dp),
                         verticalArrangement = Arrangement.spacedBy(1.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally, // v294 (mockup v393)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Icon(
@@ -3835,6 +3921,7 @@ private fun CotacoesPecuariaCard(livestock: com.bragro.mobile.data.model.Livesto
                             .weight(1f)
                             .padding(start = if (index > 0) 8.dp else 0.dp),
                         verticalArrangement = Arrangement.spacedBy(1.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally, // v294 (mockup v393)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Icon(

@@ -263,7 +263,11 @@ fun BRAgroNavHost() {
             // Quem não é dono nem administrador não cadastra fazendas: segue direto.
             val papel = session?.role
             LaunchedEffect(papel) {
-                if (papel != null && papel != "OWNER" && papel != "ADMIN") irInicio()
+                if (papel != null && papel != "OWNER" && papel != "ADMIN") {
+                    // v294 (mockup v392b) -- aviso: o cadastro de fazendas é só do Dono/Admin.
+                    android.widget.Toast.makeText(context, "Cadastro de fazendas: só Dono ou Administrador.", android.widget.Toast.LENGTH_LONG).show()
+                    irInicio()
+                }
             }
             // v283 (mockup v353) -- ← em Fazendas sai da sessão e volta ao Login
             // (antes voltava para o Início e entrava sem login).

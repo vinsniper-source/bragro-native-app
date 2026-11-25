@@ -645,12 +645,7 @@ private fun SiloCard(
                 }
             }
             if (aberto) {
-            Slider(
-                value = pct,
-                onValueChange = { pct = it.toInt().toFloat() },
-                valueRange = 0f..100f,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            // v294 (mockup v395) -- 25/50/75/Cheio acima da barra; botões embaixo da barra.
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 listOf(25f to "25%", 50f to "50%", 75f to "75%", 100f to "Cheio").forEach { (v, label) ->
                     OutlinedButton(onClick = { pct = v }, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp), modifier = Modifier.weight(1f)) {
@@ -658,8 +653,13 @@ private fun SiloCard(
                     }
                 }
             }
-            // v289 (mockup v376b) -- botões abaixo das porcentagens, espalhados por igual.
-            androidx.compose.material3.HorizontalDivider(Modifier.padding(top = 10.dp), color = cs.outlineVariant.copy(alpha = 0.5f))
+            Slider(
+                value = pct,
+                onValueChange = { pct = it.toInt().toFloat() },
+                valueRange = 0f..100f,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            // v289 (mockup v376b) -- botões espalhados por igual (v294: logo abaixo da barra).
             Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                 @Composable
                 fun icone(img: androidx.compose.ui.graphics.vector.ImageVector, nome: String, cor: androidx.compose.ui.graphics.Color, habilitado: Boolean = !busy, acao: () -> Unit) {
@@ -676,14 +676,21 @@ private fun SiloCard(
                 icone(Icons.Outlined.Delete, "Arquivar", laranja, acao = onArchive)
             }
             if (estimado && silo.movimentos.isNotEmpty()) {
-                Text(
-                    buildAnnotatedString {
-                        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append("Romaneios") }
-                        withStyle(SpanStyle(color = cs.onSurfaceVariant)) { append(" · base + ${"%.1f".format(Locale("pt", "BR"), silo.movimentos.sumOf { it.toneladas })} t (entradas − saídas)") }
-                    },
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
-                )
+                // v294 (mockup v395) -- romaneios começam fechados; tocar no título abre/fecha.
+                var romAberto by androidx.compose.runtime.saveable.rememberSaveable(silo.id) { androidx.compose.runtime.mutableStateOf(false) }
+                androidx.compose.material3.HorizontalDivider(Modifier.padding(top = 6.dp), color = cs.outlineVariant.copy(alpha = 0.5f))
+                Row(Modifier.fillMaxWidth().clickable { romAberto = !romAberto }.padding(top = 8.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append("Romaneios (${silo.movimentos.size})") }
+                            withStyle(SpanStyle(color = cs.onSurfaceVariant)) { append(" · base + ${"%.1f".format(Locale("pt", "BR"), silo.movimentos.sumOf { it.toneladas })} t") }
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(if (romAberto) "‹" else "›", color = cs.primary, fontWeight = FontWeight.Bold)
+                }
+                if (romAberto) {
                 var verTodos by androidx.compose.runtime.saveable.rememberSaveable(silo.id) { androidx.compose.runtime.mutableStateOf(false) }
                 // v1.6.23 (mockup v128c, item 1) -- colunas alinhadas; tocar abre o romaneio.
                 val nf1 = java.text.NumberFormat.getNumberInstance(Locale("pt", "BR")).apply { minimumFractionDigits = 1; maximumFractionDigits = 1 }
@@ -727,6 +734,7 @@ private fun SiloCard(
                     style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier.clickable { verTodos = !verTodos }.padding(vertical = 6.dp),
                 )
+                }
             }
             Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {

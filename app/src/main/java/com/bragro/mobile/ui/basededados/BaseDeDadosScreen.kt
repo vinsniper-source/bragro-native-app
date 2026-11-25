@@ -378,7 +378,7 @@ fun BaseDeDadosScreen(
                                     com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Download, contentDescription = "Importar padrões", tint = MaterialTheme.colorScheme.primary, size = 22.dp) /* v289 (mockup v377) -- negrito */
                                 }
                                 androidx.compose.material3.IconButton(onClick = { showDeclineConfirm = true }, enabled = !busy) {
-                                    com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Close, contentDescription = "Recusar", tint = com.bragro.mobile.ui.domain.corAtencao(), size = 22.dp) /* v289 (mockup v377) -- negrito */
+                                    com.bragro.mobile.ui.domain.IconeNegrito(androidx.compose.material.icons.Icons.Outlined.Block, contentDescription = "Recusar padrões", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, size = 22.dp) /* v294 (mockup v394) -- ⊘ no lugar do ✕ */ /* v289 (mockup v377) -- negrito */
                                 }
                             }
                             if (onOpenCsvImport != null && !modoFazendas) {
