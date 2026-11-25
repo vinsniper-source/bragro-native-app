@@ -4,6 +4,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import com.bragro.mobile.ui.domain.IconeNegrito
 import androidx.compose.material.icons.outlined.History
 import kotlin.math.roundToInt
+import androidx.compose.material.icons.outlined.ChevronLeft
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.VerticalAlignBottom
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.combinedClickable
@@ -657,6 +662,16 @@ fun HomeScreen(
     var logoAlt by remember { mutableStateOf(prefsOrdem.getFloat("logoAlt", 40f)) }
     var ordemIcones by remember { mutableStateOf(prefsOrdem.getString("icones", "").orEmpty().split(",").filter { it.isNotBlank() }) }
     var atalhoAberto by remember { mutableStateOf<String?>(null) }
+    // v400 (mockup aprovado) -- ajuste fino de tudo o que se move: largura (fração) e altura (dp) livres,
+    // espaço acima (dp), deslocamento lateral (dp) e tamanho dos ícones do cabeçalho.
+    fun lerMapaF(chave: String): Map<String, Float> =
+        prefsOrdem.getString(chave, "").orEmpty().split(";").mapNotNull { p -> p.split(":").takeIf { it.size == 2 }?.let { a -> a[1].toFloatOrNull()?.let { v -> a[0] to v } } }.toMap()
+    fun salvarMapaF(chave: String, m: Map<String, Float>) = prefsOrdem.edit().putString(chave, m.entries.joinToString(";") { "${it.key}:${it.value}" }).apply()
+    var largF by remember { mutableStateOf(lerMapaF("largF")) }
+    var altDp by remember { mutableStateOf(lerMapaF("altDp")) }
+    var espAcima by remember { mutableStateOf(lerMapaF("espAcima")) }
+    var desloc by remember { mutableStateOf(lerMapaF("desloc")) }
+    var icEsc by remember { mutableStateOf(lerMapaF("icEsc")) }
     val posicoes = remember { HashMap<String, androidx.compose.ui.geometry.Rect>() }
     var larguraLista by remember { mutableStateOf(1f) }
     var arrastando by remember { mutableStateOf<String?>(null) }
@@ -1131,43 +1146,74 @@ fun HomeScreen(
                     }
                     } // fecha ic("logocliente")
                     // Ordem salva; chave nova entra na posição padrão.
-                    val chavesIc = icones.map { it.first }
+                    val chavesIc = icones.map { it.first }.filter { "ic.$it" !in ocultos }
                     val ordemIc = ordemIcones.filter { it in chavesIc }.toMutableList().also { base ->
                         chavesIc.forEachIndexed { i, k -> if (k !in base) base.add(i.coerceAtMost(base.size), k) }
                     }.toList()
+                    // v400 -- ícone selecionado (toque no modo ⠿): barrinha ◀ ▶ ⤒ ⤓ ✕ embaixo e alça de tamanho.
+                    val selIc = if (reorganizando) selecionados.firstOrNull { it.startsWith("ic.") }?.removePrefix("ic.") else null
+                    fun moverIcone(k: String, d: Int) {
+                        val nova = ordemIc.toMutableList()
+                        val i = nova.indexOf(k)
+                        val j = i + d
+                        if (i < 0 || j !in nova.indices) return
+                        nova[i] = nova[j]; nova[j] = k
+                        ordemIcones = nova
+                        prefsOrdem.edit().putString("icones", nova.joinToString(",")).apply()
+                    }
+                    Column(Modifier.fillMaxWidth().padding(top = (espAcima["icones"] ?: 0f).coerceAtLeast(0f).dp)) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         ordemIc.forEach { k ->
                             androidx.compose.runtime.key(k) {
                                 var dx by remember { mutableStateOf(0f) }
                                 var larg by remember { mutableStateOf(1) }
+                                val selEste = selIc == k
+                                val esc = icEsc[k] ?: 1f
                                 Box(
                                     Modifier.weight(1f)
                                         .onSizeChanged { larg = it.width.coerceAtLeast(1) }
                                         .zIndex(if (dx != 0f) 1f else 0f)
                                         .graphicsLayer { translationX = dx }
-                                        .then(if (reorganizando) Modifier.padding(1.dp).border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f), RoundedCornerShape(8.dp)) else Modifier),
+                                        .then(if (reorganizando) Modifier.padding(1.dp).border(if (selEste) 2.dp else 1.dp, MaterialTheme.colorScheme.primary.copy(alpha = if (selEste) 1f else 0.45f), RoundedCornerShape(8.dp)) else Modifier),
                                     contentAlignment = Alignment.Center,
                                 ) {
-                                    icones.first { it.first == k }.second()
-                                    if (reorganizando) Box(
-                                        Modifier.matchParentSize().pointerInput(k, ordemIc) {
-                                            detectDragGestures(
-                                                onDragEnd = {
-                                                    val passo = (dx / larg).roundToInt()
-                                                    if (passo != 0) {
-                                                        val nova = ordemIc.toMutableList()
-                                                        val i = nova.indexOf(k)
-                                                        nova.removeAt(i)
-                                                        nova.add((i + passo).coerceIn(0, nova.size), k)
-                                                        ordemIcones = nova
-                                                        prefsOrdem.edit().putString("icones", nova.joinToString(",")).apply()
-                                                    }
-                                                    dx = 0f
+                                    Box(Modifier.graphicsLayer(scaleX = esc, scaleY = esc)) { icones.first { it.first == k }.second() }
+                                    if (reorganizando) {
+                                        Box(
+                                            Modifier.matchParentSize()
+                                                .pointerInput(k) {
+                                                    detectTapGestures(onTap = { selecionados = if ("ic.$k" in selecionados) emptySet() else setOf("ic.$k") })
+                                                }
+                                                .pointerInput(k, ordemIc) {
+                                                    detectDragGestures(
+                                                        onDragEnd = {
+                                                            val passo = (dx / larg).roundToInt()
+                                                            if (passo != 0) {
+                                                                val nova = ordemIc.toMutableList()
+                                                                val i = nova.indexOf(k)
+                                                                nova.removeAt(i)
+                                                                nova.add((i + passo).coerceIn(0, nova.size), k)
+                                                                ordemIcones = nova
+                                                                prefsOrdem.edit().putString("icones", nova.joinToString(",")).apply()
+                                                            }
+                                                            dx = 0f
+                                                        },
+                                                        onDragCancel = { dx = 0f },
+                                                    ) { ch, d -> ch.consume(); dx += d.x }
                                                 },
-                                                onDragCancel = { dx = 0f },
-                                            ) { ch, d -> ch.consume(); dx += d.x }
-                                        },
-                                    )
+                                        )
+                                        if (selEste) Box(
+                                            Modifier.align(Alignment.BottomEnd).size(10.dp)
+                                                .background(MaterialTheme.colorScheme.background, RoundedCornerShape(2.dp))
+                                                .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp))
+                                                .pointerInput(k) {
+                                                    detectDragGestures(onDragEnd = { salvarMapaF("icEsc", icEsc) }) { ch, d ->
+                                                        ch.consume()
+                                                        icEsc = icEsc + (k to ((icEsc[k] ?: 1f) + (d.x + d.y) / (80f * density)).coerceIn(0.6f, 1.6f))
+                                                    }
+                                                },
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1180,7 +1226,9 @@ fun HomeScreen(
                                         if (reorganizando) {
                                             ordemInicio = emptyList(); larguras = emptyMap(); alturas = emptyMap(); espacos = emptyMap(); ocultos = emptySet(); selecionados = emptySet()
                                             ordemIcones = emptyList(); logoPos = 0; logoAlt = 40f
-                                            prefsOrdem.edit().remove("ordem").remove("meia").remove("larguras").remove("alturas").remove("espacos").remove("ocultos").remove("icones").remove("logoPos").remove("logoAlt").apply()
+                                            largF = emptyMap(); altDp = emptyMap(); espAcima = emptyMap(); desloc = emptyMap(); icEsc = emptyMap()
+                                            prefsOrdem.edit().remove("ordem").remove("meia").remove("larguras").remove("alturas").remove("espacos").remove("ocultos").remove("icones").remove("logoPos").remove("logoAlt")
+                                                .remove("largF").remove("altDp").remove("espAcima").remove("desloc").remove("icEsc").apply()
                                             android.widget.Toast.makeText(logoScreenContext, "Início restaurado", android.widget.Toast.LENGTH_SHORT).show()
                                         }
                                     },
@@ -1196,24 +1244,44 @@ fun HomeScreen(
                             }
                         }
                     }
+                    if (selIc != null) {
+                        Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.Center) {
+                            BarraAjuste(
+                                listOf(
+                                    Triple(Icons.Outlined.ChevronLeft, "Para a esquerda", { moverIcone(selIc, -1) }),
+                                    Triple(Icons.Outlined.ChevronRight, "Para a direita", { moverIcone(selIc, 1) }),
+                                    Triple(Icons.Outlined.VerticalAlignTop, "Menos espaço acima", { espAcima = espAcima + ("icones" to ((espAcima["icones"] ?: 0f) - 2f).coerceAtLeast(0f)); salvarMapaF("espAcima", espAcima) }),
+                                    Triple(Icons.Outlined.VerticalAlignBottom, "Mais espaço acima", { espAcima = espAcima + ("icones" to (espAcima["icones"] ?: 0f) + 2f); salvarMapaF("espAcima", espAcima) }),
+                                    Triple(Icons.Outlined.Close, "Tirar", {
+                                        ocultos = ocultos + "ic.$selIc"; selecionados = emptySet()
+                                        prefsOrdem.edit().putString("ocultos", ocultos.joinToString(",")).apply()
+                                    }),
+                                ),
+                            )
+                        }
+                    }
+                    } // fecha Column dos ícones
                     } // fecha lambda headerTrailingContent
 
                     // v399 (mockup aprovado) -- logo sozinha na 1ª linha, ícones na linha de baixo, com espaço.
-                    // No modo reorganizar: arrastar a logo muda a posição (esquerda/centro/direita) e o
-                    // quadradinho verde muda o tamanho.
+                    // v400 (mockup aprovado) -- tocar na logo (modo ⠿) mostra as alças de tamanho e a barrinha
+                    // ▲▼ (espaço acima) ◀▶ (2 dp para o lado) ⤒⤓ (espaço até os ícones).
                     val larguraCab = with(androidx.compose.ui.platform.LocalDensity.current) { maxWidth.toPx() }
-                    Column(Modifier.fillMaxWidth().padding(start = 18.dp, end = 10.dp, top = 4.dp, bottom = 6.dp)) {
+                    Column(Modifier.fillMaxWidth().padding(start = 18.dp, end = 10.dp, top = (4f + (espAcima["logo"] ?: 0f)).coerceAtLeast(0f).dp, bottom = 6.dp)) {
                         var ldx by remember { mutableStateOf(0f) }
+                        val selLogo = reorganizando && "logo" in selecionados
                         Box(
                             Modifier.fillMaxWidth(),
                             contentAlignment = when (logoPos) { 1 -> Alignment.Center; 2 -> Alignment.CenterEnd; else -> Alignment.CenterStart },
                         ) {
                             Box(
                                 Modifier
+                                    .offset(x = (desloc["logo.x"] ?: 0f).dp)
                                     .graphicsLayer { translationX = ldx }
                                     .then(
                                         if (reorganizando) Modifier
-                                            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f), MaterialTheme.shapes.small)
+                                            .border(if (selLogo) 2.dp else 1.dp, MaterialTheme.colorScheme.primary.copy(alpha = if (selLogo) 1f else 0.45f), MaterialTheme.shapes.small)
+                                            .pointerInput("logo") { detectTapGestures(onTap = { selecionados = if ("logo" in selecionados) emptySet() else setOf("logo") }) }
                                             .pointerInput(logoPos) {
                                                 detectDragGestures(
                                                     onDragEnd = {
@@ -1230,20 +1298,32 @@ fun HomeScreen(
                                         else Modifier,
                                     ),
                             ) {
-                                com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.padding(4.dp).height(logoAlt.dp).widthIn(max = (logoAlt * 3.4f).dp))
-                                if (reorganizando) Box(
-                                    Modifier.align(Alignment.BottomEnd).size(14.dp)
-                                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(3.dp))
-                                        .pointerInput(Unit) {
-                                            detectDragGestures(onDragEnd = { prefsOrdem.edit().putFloat("logoAlt", logoAlt).apply() }) { ch, d ->
-                                                ch.consume()
-                                                logoAlt = (logoAlt + (d.y + d.x / 3f) / density).coerceIn(24f, 80f)
-                                            }
-                                        },
+                                com.bragro.mobile.ui.login.MarcaBRAgro(modifier = Modifier.padding(6.dp).height(logoAlt.dp).widthIn(max = (logoAlt * 3.4f).dp))
+                                if (selLogo) AlcasAjuste(
+                                    onDelta = { dw, dh -> logoAlt = (logoAlt + (dh + dw / 3.4f) / densidade).coerceIn(20f, 96f) },
+                                    onFim = { prefsOrdem.edit().putFloat("logoAlt", logoAlt).apply() },
                                 )
                             }
                         }
-                        Spacer(Modifier.height(12.dp))
+                        if (selLogo) {
+                            fun somar(chave: String, d: Float, min: Float) {
+                                espAcima = espAcima + (chave to ((espAcima[chave] ?: 0f) + d).coerceAtLeast(min))
+                                salvarMapaF("espAcima", espAcima)
+                            }
+                            Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.Center) {
+                                BarraAjuste(
+                                    listOf(
+                                        Triple(Icons.Outlined.KeyboardArrowUp, "Subir", { somar("logo", -2f, -4f) }),
+                                        Triple(Icons.Outlined.KeyboardArrowDown, "Descer", { somar("logo", 2f, -4f) }),
+                                        Triple(Icons.Outlined.ChevronLeft, "Para a esquerda", { desloc = desloc + ("logo.x" to (desloc["logo.x"] ?: 0f) - 2f); salvarMapaF("desloc", desloc) }),
+                                        Triple(Icons.Outlined.ChevronRight, "Para a direita", { desloc = desloc + ("logo.x" to (desloc["logo.x"] ?: 0f) + 2f); salvarMapaF("desloc", desloc) }),
+                                        Triple(Icons.Outlined.VerticalAlignTop, "Menos espaço até os ícones", { somar("logo.abaixo", -2f, -12f) }),
+                                        Triple(Icons.Outlined.VerticalAlignBottom, "Mais espaço até os ícones", { somar("logo.abaixo", 2f, -12f) }),
+                                    ),
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height((12f + (espAcima["logo.abaixo"] ?: 0f)).coerceAtLeast(0f).dp))
                         androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement provides false) { headerTrailingContent() }
                     }
                 } // fecha BoxWithConstraints. Nota histórica: este fechamento
@@ -1736,21 +1816,23 @@ fun HomeScreen(
                 nova.add(if (depois) i + 1 else i, k)
                 gravarOrdem(nova)
             }
-            fun redimensionar(k: String, d: androidx.compose.ui.geometry.Offset) {
+            // v400 (mockup aprovado) -- largura (fração) e altura (dp) livres, espaço acima (dp) e
+            // deslocamento lateral fino (dp).
+            fun fracDe(k: String) = largF[k] ?: fracoes[idxLarg(k).coerceIn(0, fracoes.lastIndex)]
+            fun altDe(k: String): Float? = altDp[k] ?: when (alturas[k] ?: 0) { 1 -> 70f; 2 -> 110f; 3 -> 170f; 4 -> 260f; else -> null }
+            fun espDe(k: String) = espAcima[k] ?: when (espacos[k] ?: 0) { 1 -> 8f; 2 -> 16f; 3 -> 32f; else -> 0f }
+            fun ajustar(k: String, dw: Float, dh: Float) {
                 val r = posicoes[k] ?: return
-                if (kotlin.math.abs(d.x) > 12f) {
-                    val alvoW = ((r.width + d.x) / larguraLista).coerceIn(0.2f, 1f)
-                    val idx = fracoes.indices.minBy { kotlin.math.abs(fracoes[it] - alvoW) }
-                    larguras = larguras + (k to idx)
-                    salvarMapa("larguras", larguras)
-                }
-                if (kotlin.math.abs(d.y) > 12f) {
-                    val alvoH = (r.height + d.y) / densidade
-                    val opcoes = listOf(70f, 110f, 170f, 260f)
-                    val idx = opcoes.indices.minBy { kotlin.math.abs(opcoes[it] - alvoH) } + 1
-                    alturas = alturas + (k to idx)
-                    salvarMapa("alturas", alturas)
-                }
+                if (dw != 0f) largF = largF + (k to (fracDe(k) + dw / larguraLista).coerceIn(0.15f, 1f))
+                if (dh != 0f) altDp = altDp + (k to ((altDe(k) ?: (r.height / densidade)) + dh / densidade).coerceIn(36f, 640f))
+            }
+            fun moverOrdem(k: String, d: Int) {
+                val nova = ordenadas.toMutableList()
+                val i = nova.indexOf(k)
+                val j = i + d
+                if (i < 0 || j !in nova.indices) return
+                nova[i] = nova[j]; nova[j] = k
+                gravarOrdem(nova)
             }
             // Blocos lado a lado enquanto couberem na largura (soma das frações ≤ 1).
             val linhas = mutableListOf<List<String>>()
@@ -1758,7 +1840,7 @@ fun HomeScreen(
                 var atual = mutableListOf<String>()
                 var soma = 0f
                 for (k in ordenadas) {
-                    val f = fracoes[idxLarg(k).coerceIn(0, fracoes.lastIndex)]
+                    val f = fracDe(k)
                     if (atual.isNotEmpty() && soma + f > 1.001f) { linhas += atual; atual = mutableListOf(); soma = 0f }
                     atual += k; soma += f
                 }
@@ -1767,18 +1849,21 @@ fun HomeScreen(
             linhas.forEach { linha ->
                 item(key = linha.joinToString("+")) {
                     val escopo = this
-                    val espacoDp = when (linha.maxOf { espacos[it] ?: 0 }) { 1 -> 8.dp; 2 -> 16.dp; 3 -> 32.dp; else -> 0.dp }
+                    val espacoDp = linha.maxOf { espDe(it) }.dp
+                    val selAqui = if (reorganizando) linha.firstOrNull { it in selecionados } else null
+                    Column(Modifier.fillMaxWidth()) {
                     Row(Modifier.fillMaxWidth().padding(top = espacoDp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         var somaLinha = 0f
                         linha.forEach { k ->
                             val conteudo = blocos.first { it.first == k }.second
                             val sel = k in selecionados
-                            val fr = fracoes[idxLarg(k).coerceIn(0, fracoes.lastIndex)]
+                            val fr = fracDe(k)
                             somaLinha += fr
-                            val alturaDp = when (alturas[k] ?: 0) { 1 -> 70.dp; 2 -> 110.dp; 3 -> 170.dp; 4 -> 260.dp; else -> null }
+                            val alturaDp = altDe(k)?.dp
                             Box(
                                 Modifier
                                     .weight(fr)
+                                    .offset(x = (desloc["$k.x"] ?: 0f).dp)
                                     .onGloballyPositioned { posicoes[k] = it.boundsInRoot() }
                                     .zIndex(if (arrastando == k) 1f else 0f)
                                     .graphicsLayer {
@@ -1804,20 +1889,11 @@ fun HomeScreen(
                                                 ) { ch, d -> ch.consume(); arrasteOffset += d }
                                             },
                                     )
-                                    // Quadradinho verde do canto: puxar muda largura e altura.
-                                    if (sel) {
-                                        var acc by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
-                                        Box(
-                                            Modifier.align(Alignment.BottomEnd).padding(2.dp).size(16.dp)
-                                                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(3.dp))
-                                                .pointerInput(k) {
-                                                    detectDragGestures(
-                                                        onDragStart = { acc = androidx.compose.ui.geometry.Offset.Zero },
-                                                        onDragEnd = { redimensionar(k, acc); acc = androidx.compose.ui.geometry.Offset.Zero },
-                                                    ) { ch, d -> ch.consume(); acc += d }
-                                                },
-                                        )
-                                    }
+                                    // v400 -- alças em todos os lados e cantos: tamanho contínuo (1 dp).
+                                    if (sel) AlcasAjuste(
+                                        onDelta = { dw, dh -> ajustar(k, dw, dh) },
+                                        onFim = { salvarMapaF("largF", largF); salvarMapaF("altDp", altDp) },
+                                    )
                                     // v293 (mockup v388) -- ✕ laranja tira o bloco do Início (↺ restaurar traz de volta).
                                     if (sel) androidx.compose.material3.Surface(
                                         onClick = {
@@ -1827,7 +1903,7 @@ fun HomeScreen(
                                         },
                                         shape = androidx.compose.foundation.shape.CircleShape,
                                         color = com.bragro.mobile.ui.domain.corAtencao(),
-                                        modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(22.dp),
+                                        modifier = Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 20.dp).size(22.dp),
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
                                             Icon(Icons.Outlined.Close, contentDescription = "Tirar do Início", tint = Color.White, modifier = Modifier.size(14.dp))
@@ -1838,6 +1914,22 @@ fun HomeScreen(
                         }
                         if (somaLinha < 0.999f) Spacer(Modifier.weight(1f - somaLinha))
                     }
+                    // v400 (mockup aprovado) -- barrinha só embaixo do bloco tocado.
+                    if (selAqui != null) {
+                        Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.Center) {
+                            BarraAjuste(
+                                listOf(
+                                    Triple(Icons.Outlined.KeyboardArrowUp, "Subir (troca com o de cima)", { moverOrdem(selAqui, -1) }),
+                                    Triple(Icons.Outlined.KeyboardArrowDown, "Descer (troca com o de baixo)", { moverOrdem(selAqui, 1) }),
+                                    Triple(Icons.Outlined.ChevronLeft, "2 dp para a esquerda", { desloc = desloc + ("$selAqui.x" to (desloc["$selAqui.x"] ?: 0f) - 2f); salvarMapaF("desloc", desloc) }),
+                                    Triple(Icons.Outlined.ChevronRight, "2 dp para a direita", { desloc = desloc + ("$selAqui.x" to (desloc["$selAqui.x"] ?: 0f) + 2f); salvarMapaF("desloc", desloc) }),
+                                    Triple(Icons.Outlined.VerticalAlignTop, "Menos espaço acima", { espAcima = espAcima + (selAqui to (espDe(selAqui) - 2f).coerceAtLeast(0f)); salvarMapaF("espAcima", espAcima) }),
+                                    Triple(Icons.Outlined.VerticalAlignBottom, "Mais espaço acima", { espAcima = espAcima + (selAqui to espDe(selAqui) + 2f); salvarMapaF("espAcima", espAcima) }),
+                                ),
+                            )
+                        }
+                    }
+                    } // fecha Column da linha
                 }
             }
         }
@@ -2279,6 +2371,74 @@ private fun HomeShortcutsRow(
                     }
                 }
             },
+        )
+    }
+}
+
+/** v400 (mockup aprovado) -- barrinha de ajuste fino; segurar o botão repete a ação. */
+@Composable
+private fun BarraAjuste(itens: List<Triple<androidx.compose.ui.graphics.vector.ImageVector, String, () -> Unit>>) {
+    val escopo = rememberCoroutineScope()
+    Row(
+        Modifier
+            .background(MaterialTheme.colorScheme.background, RoundedCornerShape(10.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(10.dp))
+            .padding(3.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        itens.forEach { (icone, nome, acao) ->
+            val atual by rememberUpdatedState(acao)
+            val tirar = nome == "Tirar"
+            Box(
+                Modifier.size(32.dp)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                    .pointerInput(nome) {
+                        detectTapGestures(onPress = {
+                            val job = escopo.launch {
+                                atual()
+                                if (!tirar) {
+                                    kotlinx.coroutines.delay(400)
+                                    while (true) { atual(); kotlinx.coroutines.delay(70) }
+                                }
+                            }
+                            tryAwaitRelease()
+                            job.cancel()
+                        })
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icone, contentDescription = nome, tint = if (tirar) com.bragro.mobile.ui.domain.corAtencao() else MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+            }
+        }
+    }
+}
+
+/** v400 -- 8 alças (cantos e meio dos lados): puxar muda largura/altura por aquele lado. */
+@Composable
+private fun androidx.compose.foundation.layout.BoxScope.AlcasAjuste(onDelta: (Float, Float) -> Unit, onFim: () -> Unit) {
+    val cor = MaterialTheme.colorScheme.primary
+    val fundo = MaterialTheme.colorScheme.background
+    val delta by rememberUpdatedState(onDelta)
+    val fim by rememberUpdatedState(onFim)
+    for (ax in -1..1) for (ay in -1..1) {
+        if (ax == 0 && ay == 0) continue
+        val al = when {
+            ax < 0 && ay < 0 -> Alignment.TopStart
+            ax == 0 && ay < 0 -> Alignment.TopCenter
+            ax > 0 && ay < 0 -> Alignment.TopEnd
+            ax < 0 && ay == 0 -> Alignment.CenterStart
+            ax > 0 && ay == 0 -> Alignment.CenterEnd
+            ax < 0 -> Alignment.BottomStart
+            ax == 0 -> Alignment.BottomCenter
+            else -> Alignment.BottomEnd
+        }
+        Box(
+            Modifier.align(al).size(14.dp)
+                .background(fundo, RoundedCornerShape(2.dp))
+                .border(2.dp, cor, RoundedCornerShape(2.dp))
+                .pointerInput(ax, ay) {
+                    detectDragGestures(onDragEnd = { fim() }, onDragCancel = { fim() }) { ch, d -> ch.consume(); delta(ax * d.x, ay * d.y) }
+                },
         )
     }
 }
