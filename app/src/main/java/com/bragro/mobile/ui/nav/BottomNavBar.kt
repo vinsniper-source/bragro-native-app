@@ -505,6 +505,12 @@ private sealed class RenderTab {
     data class Group(val tab: BottomTab) : RenderTab()
 }
 
+/** v293 (mockup v387c) -- setor com poucos módulos (até 3, ex.: Frota; Pecuária + Pastagem):
+ * a barra de baixo some e os módulos viram botões com nome logo abaixo do slogan
+ * (HomeScreen lê esta lista). */
+data class BotaoSetor(val label: String, val icon: ImageVector, val domainId: String?, val onClick: () -> Unit)
+object BotoesSetor { val itens = androidx.compose.runtime.mutableStateOf<List<BotaoSetor>>(emptyList()) }
+
 @Composable
 fun BRAgroBottomBar(
     currentDomainId: String?,
@@ -667,6 +673,18 @@ fun BRAgroBottomBar(
     // padrão de antes), continua ícone-em-cima-do-rótulo via NavigationBarItem
     // normal -- layout compacto de sempre, sem essa mudança.
     val totalButtons = renderTabs.size
+    // v293 (mockup v387c) -- poucos módulos: botões com nome abaixo do slogan, sem barra embaixo.
+    val planos = renderTabs.flatMap { rt ->
+        when (rt) {
+            is RenderTab.Direct -> listOf(BotaoSetor(rt.label, rt.icon, rt.domainId, rt.onClick))
+            is RenderTab.Group -> rt.tab.items.map { item ->
+                BotaoSetor(sectorItemLabel(item), sectorItemIcon(item, rt.tab.icon), (item as? SectorTarget.Domain)?.domainId) { openSector(item) }
+            }
+        }
+    }
+    val poucos = !isOwner && planos.isNotEmpty() && planos.size <= 3
+    androidx.compose.runtime.SideEffect { BotoesSetor.itens.value = if (poucos) planos else emptyList() }
+    if (poucos) return
 
     // containerColor = "background" (não mais "surface") -- pedido do
     // usuário ("a cor da barra inferior seja verde também"). "surface"

@@ -344,53 +344,55 @@ fun FinanceiroItensInlineSection(
     val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val sectionBg = MaterialTheme.colorScheme.surface
     androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.theme.LocalBlocoItens provides true) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(sectionBg, sectionShape)
-            .border(com.bragro.mobile.ui.theme.thinGreenBorder(), sectionShape)
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        // Aviso encurtado + tira label:valor (pedido do usuário: "seja mais
-        // direto, TEXTO LONGO") -- mesmo texto/formato já usado no site
-        // (nota-multi-item-button.tsx, "Sétima rodada"): o parágrafo cru foi
-        // reduzido e a frase corrida "Usa Doc/NF X, Data Y..." virou uma
-        // tira curta "Doc/NF: X · Data: Y · Local: Z · Entidade: W", mais
-        // rápida de ler igual num resumo de pedido.
-        // v278 (mockup v335 item 16) -- "Adicionar item" vira ＋ e "Lançar
-        // itens" vira ✓ verde na linha do título do bloco; textos no ⓘ.
-        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            Text("Itens da nota *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            com.bragro.mobile.ui.theme.DicaInfo(
-                "Itens entram no Estoque; o total, no Financeiro.\n" +
-                    "Doc/NF: ${docNf.ifBlank { "—" }} · Data: ${data.ifBlank { "—" }} · Local: ${local.ifBlank { "—" }} · Entidade: ${entidade.ifBlank { "—" }}\n" +
-                    "Total da nota = campo Bruto (R$).",
-            )
-            androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
-            IconButton(onClick = { viewModel.addLinha() }) {
-                Icon(Icons.Outlined.Add, contentDescription = "Adicionar item")
-            }
-            val n = viewModel.linhasValidas().size
-            com.bragro.mobile.ui.domain.SalvarIcone(
-                onClick = { viewModel.submit(docNf, data, local, entidade, safra, cultura, setor, banco, formaPgto, periodo, bruto, onDone) },
-                enabled = podeSalvar,
-                loading = pending,
-                descricao = if (n > 0) "Lançar $n item(ns)" else "Lançar itens",
-            )
-        }
+    // v293 (mockup v390 aprovado) -- cada item da nota é um bloco próprio, com +
+    // na linha do título de todos; ✓ verde (lançar) no 1º e 🗑 a partir do 2º.
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         if (errorMessage != null) {
             Text(errorMessage ?: "", color = com.bragro.mobile.ui.domain.corAtencao(), style = MaterialTheme.typography.bodySmall)
         }
         viewModel.linhas.forEachIndexed { i, linha ->
-            ItemNotaLinhaRow(
-                linha = linha,
-                itensOptions = itensOptions,
-                unidadesOptions = unidadesOptions,
-                viewModel = viewModel,
-                showRemove = viewModel.linhas.size > 1,
-                onRemove = { viewModel.removeLinha(i) },
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(sectionBg, sectionShape)
+                    .border(com.bragro.mobile.ui.theme.thinGreenBorder(), sectionShape)
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Text("Item ${i + 1}" + if (i == 0) " *" else "", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    if (i == 0) com.bragro.mobile.ui.theme.DicaInfo(
+                        "Itens entram no Estoque; o total, no Financeiro.\n" +
+                            "Doc/NF: ${docNf.ifBlank { "—" }} · Data: ${data.ifBlank { "—" }} · Local: ${local.ifBlank { "—" }} · Entidade: ${entidade.ifBlank { "—" }}\n" +
+                            "Total da nota = campo Bruto (R$).",
+                    )
+                    androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                    IconButton(onClick = { viewModel.addLinha() }) {
+                        Icon(Icons.Outlined.Add, contentDescription = "Adicionar item")
+                    }
+                    if (i == 0) {
+                        val n = viewModel.linhasValidas().size
+                        com.bragro.mobile.ui.domain.SalvarIcone(
+                            onClick = { viewModel.submit(docNf, data, local, entidade, safra, cultura, setor, banco, formaPgto, periodo, bruto, onDone) },
+                            enabled = podeSalvar,
+                            loading = pending,
+                            descricao = if (n > 0) "Lançar $n item(ns)" else "Lançar itens",
+                        )
+                    } else {
+                        IconButton(onClick = { viewModel.removeLinha(i) }) {
+                            Icon(Icons.Outlined.Delete, contentDescription = "Remover item", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(20.dp))
+                        }
+                    }
+                }
+                ItemNotaLinhaRow(
+                    linha = linha,
+                    itensOptions = itensOptions,
+                    unidadesOptions = unidadesOptions,
+                    viewModel = viewModel,
+                    showRemove = false,
+                    onRemove = { viewModel.removeLinha(i) },
+                )
+            }
         }
         Text("Total da nota: ${formatMoneyBrlLocal(brutoNum)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }

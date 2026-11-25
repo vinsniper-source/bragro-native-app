@@ -39,6 +39,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.outlined.Restore
+import androidx.compose.material.icons.outlined.VerticalAlignTop
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -631,10 +633,16 @@ fun HomeScreen(
     var ordemInicio by remember { mutableStateOf(prefsOrdem.getString("ordem", "").orEmpty().split(",").filter { it.isNotBlank() }) }
     // v290 (mockup v379) -- seleção (toque longo), largura (meia/inteira) e altura de cada bloco.
     var selecionados by remember { mutableStateOf(setOf<String>()) }
-    var meiaLargura by remember { mutableStateOf(prefsOrdem.getString("meia", "").orEmpty().split(",").filter { it.isNotBlank() }.toSet()) }
-    var alturas by remember {
-        mutableStateOf(prefsOrdem.getString("alturas", "").orEmpty().split(";").mapNotNull { p -> p.split(":").takeIf { it.size == 2 }?.let { it[0] to (it[1].toIntOrNull() ?: 0) } }.toMap())
+    // v293 (mockup v388) -- Início livre: largura (inteira, ½, ⅓, ¼, ⅔), altura, espaço acima e
+    // blocos tirados (✕). Tudo salvo no aparelho.
+    fun lerMapa(chave: String): Map<String, Int> =
+        prefsOrdem.getString(chave, "").orEmpty().split(";").mapNotNull { p -> p.split(":").takeIf { it.size == 2 }?.let { it[0] to (it[1].toIntOrNull() ?: 0) } }.toMap()
+    var larguras by remember {
+        mutableStateOf(lerMapa("larguras").ifEmpty { prefsOrdem.getString("meia", "").orEmpty().split(",").filter { it.isNotBlank() }.associateWith { 1 } })
     }
+    var alturas by remember { mutableStateOf(lerMapa("alturas")) }
+    var espacos by remember { mutableStateOf(lerMapa("espacos")) }
+    var ocultos by remember { mutableStateOf(prefsOrdem.getString("ocultos", "").orEmpty().split(",").filter { it.isNotBlank() }.toSet()) }
     val home by viewModel.home
     val weather by viewModel.weather
     // v1.6.13 (mockup v114) -- guarda a cotação do dia para "Exibir valores em" (U$D/ARS).
@@ -973,7 +981,7 @@ fun HomeScreen(
                         }
                     }
                     IconButton(onClick = { notificationsOpen = true; viewModel.loadNotifications() }) {
-                        BadgedBox(badge = { if (unreadCount > 0) Badge(containerColor = BrYellow, contentColor = Color(0xFF412402)) { Text(unreadCount.toString()) } }) {
+                        BadgedBox(badge = { if (unreadCount > 0) Badge(containerColor = MaterialTheme.colorScheme.primary, contentColor = Color.White) { Text(unreadCount.toString(), fontSize = 9.sp) } }) { // v293 (mockup v387) -- bolinha verde igual à plataforma
                             com.bragro.mobile.ui.domain.IconeNegrito(
                                 if (unreadCount > 0) Icons.Outlined.NotificationsActive else Icons.Outlined.NotificationsNone,
                                 contentDescription = "Notificações",
@@ -1287,6 +1295,35 @@ fun HomeScreen(
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
                     )
+                    // v293 (mockup v387c) -- setor com poucos módulos: botões com nome abaixo do slogan,
+                    // só com a borda fina padrão (sem fundo verde).
+                    val botoesSetor = com.bragro.mobile.ui.nav.BotoesSetor.itens.value
+                    if (botoesSetor.isNotEmpty()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                        ) {
+                            botoesSetor.forEach { b ->
+                                androidx.compose.material3.Surface(
+                                    onClick = b.onClick,
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.background,
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                    modifier = if (botoesSetor.size == 1) Modifier.width(170.dp) else Modifier.weight(1f),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        com.bragro.mobile.ui.domain.IconeNegrito(b.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, size = 18.dp)
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(b.label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, maxLines = 1)
+                                    }
+                                }
+                            }
+                        }
+                    }
                     if (data != null) androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.domain.LocalIconeNegrito provides true) { // v283 -- ícones em negrito
                         HomeShortcutsRow(
                             data = data,
@@ -1594,11 +1631,13 @@ fun HomeScreen(
                 weather?.livestock?.let { CotacoesPecuariaCard(it, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxWidth()) }
             }
             }
-            val chaves = blocos.map { it.first }
+            val chaves = blocos.map { it.first }.filter { it !in ocultos }
             val ordenadas = ordemInicio.filter { it in chaves } + chaves.filter { it !in ordemInicio }
-            // v290 (mockup v379) -- barra de ações da seleção (fica presa no topo enquanto rola).
-            if (reorganizando && selecionados.isNotEmpty()) {
-                item(key = "acoes-selecao") { // v291b -- item comum (stickyHeader é API experimental)
+            val fracoes = listOf(1f, 0.5f, 1f / 3f, 0.25f, 2f / 3f) // inteira, ½, ⅓, ¼, ⅔
+            fun salvarMapa(chave: String, m: Map<String, Int>) = prefsOrdem.edit().putString(chave, m.entries.joinToString(";") { "${it.key}:${it.value}" }).apply()
+            // v293 (mockup v388) -- barra do modo reorganizar.
+            if (reorganizando) {
+                item(key = "acoes-selecao") {
                     fun gravarOrdem(nova: List<String>) {
                         ordemInicio = nova
                         prefsOrdem.edit().putString("ordem", nova.joinToString(",")).apply()
@@ -1615,52 +1654,67 @@ fun HomeScreen(
                     }
                     androidx.compose.material3.Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxWidth()) {
                         Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceAround, verticalAlignment = Alignment.CenterVertically) {
+                            val temSel = selecionados.isNotEmpty()
                             @Composable
-                            fun acao(img: androidx.compose.ui.graphics.vector.ImageVector, nome: String, onClick: () -> Unit) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 2.dp)) {
-                                    com.bragro.mobile.ui.domain.IconeNegrito(img, contentDescription = nome, tint = MaterialTheme.colorScheme.onSurface, size = 22.dp)
-                                    Text(nome, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            fun acao(img: androidx.compose.ui.graphics.vector.ImageVector, nome: String, ativo: Boolean = temSel, onClick: () -> Unit) {
+                                val cor = if (ativo) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
+                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable(enabled = ativo, onClick = onClick).padding(horizontal = 4.dp, vertical = 2.dp)) {
+                                    com.bragro.mobile.ui.domain.IconeNegrito(img, contentDescription = nome, tint = cor, size = 22.dp)
+                                    Text(nome, style = MaterialTheme.typography.labelSmall, color = cor)
                                 }
                             }
                             acao(Icons.Outlined.KeyboardArrowUp, "subir") { mover(-1) }
                             acao(Icons.Outlined.KeyboardArrowDown, "descer") { mover(1) }
-                            acao(Icons.Outlined.SwapHoriz, "½ / inteira") {
-                                val todasMeias = selecionados.all { it in meiaLargura }
-                                meiaLargura = if (todasMeias) meiaLargura - selecionados else meiaLargura + selecionados
-                                prefsOrdem.edit().putString("meia", meiaLargura.joinToString(",")).apply()
+                            acao(Icons.Outlined.SwapHoriz, "largura") {
+                                val prox = ((selecionados.maxOf { larguras[it] ?: 0 }) + 1) % fracoes.size
+                                larguras = larguras + selecionados.associateWith { prox }
+                                salvarMapa("larguras", larguras)
                             }
                             acao(Icons.Outlined.Height, "altura") {
-                                // automática → baixa → média → alta → automática
-                                val prox = ((selecionados.maxOf { alturas[it] ?: 0 }) + 1) % 4
+                                val prox = ((selecionados.maxOf { alturas[it] ?: 0 }) + 1) % 5
                                 alturas = alturas + selecionados.associateWith { prox }
-                                prefsOrdem.edit().putString("alturas", alturas.entries.joinToString(";") { "${it.key}:${it.value}" }).apply()
+                                salvarMapa("alturas", alturas)
+                            }
+                            acao(Icons.Outlined.VerticalAlignTop, "espaço") {
+                                val prox = ((selecionados.maxOf { espacos[it] ?: 0 }) + 1) % 4
+                                espacos = espacos + selecionados.associateWith { prox }
+                                salvarMapa("espacos", espacos)
+                            }
+                            acao(Icons.Outlined.Restore, "restaurar", ativo = true) {
+                                ordemInicio = emptyList(); larguras = emptyMap(); alturas = emptyMap(); espacos = emptyMap(); ocultos = emptySet(); selecionados = emptySet()
+                                prefsOrdem.edit().remove("ordem").remove("meia").remove("larguras").remove("alturas").remove("espacos").remove("ocultos").apply()
                             }
                         }
                     }
                 }
             }
-            // Blocos de meia largura seguidos dividem a linha (2 por linha).
+            // Blocos lado a lado enquanto couberem na largura (soma das frações ≤ 1).
             val linhas = mutableListOf<List<String>>()
             run {
-                var i = 0
-                while (i < ordenadas.size) {
-                    val k = ordenadas[i]
-                    val prox = ordenadas.getOrNull(i + 1)
-                    if (k in meiaLargura && prox != null && prox in meiaLargura) { linhas += listOf(k, prox); i += 2 } else { linhas += listOf(k); i++ }
+                var atual = mutableListOf<String>()
+                var soma = 0f
+                for (k in ordenadas) {
+                    val f = fracoes[(larguras[k] ?: 0).coerceIn(0, fracoes.lastIndex)]
+                    if (atual.isNotEmpty() && soma + f > 1.001f) { linhas += atual; atual = mutableListOf(); soma = 0f }
+                    atual += k; soma += f
                 }
+                if (atual.isNotEmpty()) linhas += atual
             }
             linhas.forEach { linha ->
                 item(key = linha.joinToString("+")) {
                     val escopo = this
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val espacoDp = when (linha.maxOf { espacos[it] ?: 0 }) { 1 -> 8.dp; 2 -> 16.dp; 3 -> 32.dp; else -> 0.dp }
+                    Row(Modifier.fillMaxWidth().padding(top = espacoDp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        var somaLinha = 0f
                         linha.forEach { k ->
                             val conteudo = blocos.first { it.first == k }.second
                             val sel = k in selecionados
-                            val alturaDp = when (alturas[k] ?: 0) { 1 -> 90.dp; 2 -> 170.dp; 3 -> 260.dp; else -> null }
-                            val meia = linha.size > 1 || k in meiaLargura
+                            val fr = fracoes[(larguras[k] ?: 0).coerceIn(0, fracoes.lastIndex)]
+                            somaLinha += fr
+                            val alturaDp = when (alturas[k] ?: 0) { 1 -> 70.dp; 2 -> 110.dp; 3 -> 170.dp; 4 -> 260.dp; else -> null }
                             Box(
                                 Modifier
-                                    .then(if (meia && linha.size > 1) Modifier.weight(1f) else if (meia) Modifier.fillMaxWidth(0.5f) else Modifier.fillMaxWidth())
+                                    .weight(fr)
                                     .then(if (alturaDp != null) Modifier.height(alturaDp).clip(MaterialTheme.shapes.medium) else Modifier)
                                     .then(if (sel) Modifier.border(2.5.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.medium) else Modifier),
                             ) {
@@ -1676,15 +1730,25 @@ fun HomeScreen(
                                             )
                                         },
                                     )
-                                    if (sel) Icon(
-                                        Icons.Outlined.Check,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(18.dp),
-                                    )
+                                    // v293 (mockup v388) -- ✕ laranja tira o bloco do Início (↺ restaurar traz de volta).
+                                    if (sel) androidx.compose.material3.Surface(
+                                        onClick = {
+                                            ocultos = ocultos + k
+                                            selecionados = selecionados - k
+                                            prefsOrdem.edit().putString("ocultos", ocultos.joinToString(",")).apply()
+                                        },
+                                        shape = androidx.compose.foundation.shape.CircleShape,
+                                        color = com.bragro.mobile.ui.domain.corAtencao(),
+                                        modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(22.dp),
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(Icons.Outlined.Close, contentDescription = "Tirar do Início", tint = Color.White, modifier = Modifier.size(14.dp))
+                                        }
+                                    }
                                 }
                             }
                         }
+                        if (somaLinha < 0.999f) Spacer(Modifier.weight(1f - somaLinha))
                     }
                 }
             }

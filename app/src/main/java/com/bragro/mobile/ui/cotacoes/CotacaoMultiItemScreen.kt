@@ -428,9 +428,7 @@ private fun AcoesBloco(nomeMais: String, onMais: () -> Unit, nomeCopiar: String,
     IconButton(onClick = onMais, modifier = Modifier.size(34.dp)) {
         com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Add, contentDescription = nomeMais, tint = MaterialTheme.colorScheme.onSurface, size = 22.dp)
     }
-    IconButton(onClick = onCopiar, modifier = Modifier.size(34.dp)) {
-        com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.ContentCopy, contentDescription = nomeCopiar, tint = MaterialTheme.colorScheme.onSurface, size = 20.dp)
-    }
+    // v293 (mockup v390) -- sem o ⧉ copiar (ficava duplicado com o +).
     if (onExcluir != null) IconButton(onClick = onExcluir, modifier = Modifier.size(34.dp)) {
         com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.Delete, contentDescription = nomeExcluir, tint = com.bragro.mobile.ui.domain.corAtencao(), size = 20.dp)
     }

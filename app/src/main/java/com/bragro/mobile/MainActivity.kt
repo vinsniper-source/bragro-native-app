@@ -64,6 +64,14 @@ class MainActivity : ComponentActivity() {
             controller.hide(WindowInsetsCompat.Type.statusBars())
             controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
+        // v293 (mockup v387) -- quando o teclado abre, alguns aparelhos reexibem a barra de
+        // status (era a faixa branca no topo): esconde de novo enquanto o teclado estiver aberto.
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { v, insets ->
+            if (insets.isVisible(WindowInsetsCompat.Type.ime()) && insets.isVisible(WindowInsetsCompat.Type.statusBars())) {
+                WindowInsetsControllerCompat(window, v).hide(WindowInsetsCompat.Type.statusBars())
+            }
+            androidx.core.view.ViewCompat.onApplyWindowInsets(v, insets)
+        }
         // v55 -- Android 13+: pede uma vez a permissão de notificação, para
         // os alertas da fazenda aparecerem com o app fechado.
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
@@ -82,6 +90,13 @@ class MainActivity : ComponentActivity() {
                 androidx.compose.runtime.SideEffect {
                     window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(fundoJanela.toArgb()))
                     window.decorView.setBackgroundColor(fundoJanela.toArgb())
+                    // v293 (mockup v387) -- ao abrir o teclado o Android pode mostrar a barra de
+                    // status: ela passa a ter a cor do tema (sem faixa branca) e é escondida de novo.
+                    window.statusBarColor = fundoJanela.toArgb()
+                    window.navigationBarColor = fundoJanela.toArgb()
+                    val escuro = androidx.core.graphics.ColorUtils.calculateLuminance(fundoJanela.toArgb()) < 0.5
+                    WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = !escuro
+                    WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = !escuro
                 }
                 Surface(modifier = Modifier.fillMaxSize()) {
                     androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
