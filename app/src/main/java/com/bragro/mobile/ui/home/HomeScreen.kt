@@ -1031,7 +1031,7 @@ fun HomeScreen(
                                 .format(java.time.format.DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy", java.util.Locale("pt", "BR")))
                             android.widget.Toast.makeText(logoScreenContext, hoje, android.widget.Toast.LENGTH_SHORT).show()
                         }) {
-                            com.bragro.mobile.ui.domain.IconeNegrito(Icons.Outlined.CalendarToday, contentDescription = "Data de hoje", tint = androidx.compose.material3.LocalContentColor.current, size = 24.dp)
+                            FolhaData(androidx.compose.material3.LocalContentColor.current) // v402 (mockup aprovado)
                         }
                     }
                     // Tema num botão só, sempre visível (fora da rolagem):
@@ -2372,6 +2372,32 @@ private fun HomeShortcutsRow(
                 }
             },
         )
+    }
+}
+
+/** v402 (mockup aprovado) -- folhinha de calendário: dia da semana em cima, número embaixo.
+ * Muda sozinha à meia-noite (confere a cada minuto). */
+@Composable
+private fun FolhaData(cor: Color) {
+    var hoje by remember { mutableStateOf(java.time.LocalDate.now(java.time.ZoneId.of("America/Sao_Paulo"))) }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(60_000)
+            hoje = java.time.LocalDate.now(java.time.ZoneId.of("America/Sao_Paulo"))
+        }
+    }
+    val dia = hoje.format(java.time.format.DateTimeFormatter.ofPattern("EEE", java.util.Locale("pt", "BR"))).replace(".", "").take(3).uppercase()
+    val fundo = MaterialTheme.colorScheme.background
+    Column(
+        Modifier.size(width = 22.dp, height = 24.dp).border(2.dp, cor, RoundedCornerShape(4.dp)).clip(RoundedCornerShape(4.dp)),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(Modifier.fillMaxWidth().height(8.dp).background(cor), contentAlignment = Alignment.Center) {
+            Text(dia, color = fundo, fontSize = 6.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 6.sp, maxLines = 1)
+        }
+        Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+            Text(hoje.dayOfMonth.toString(), color = cor, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 11.sp, maxLines = 1)
+        }
     }
 }
 
