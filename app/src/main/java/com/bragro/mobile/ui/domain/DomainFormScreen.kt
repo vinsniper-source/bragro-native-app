@@ -1145,28 +1145,7 @@ fun DomainFormScreen(
                             Text("Lançar os juros em separado", style = MaterialTheme.typography.bodySmall)
                         }
                     }
-                    // v404 (mockup aprovado) -- bloco Parcelas logo depois de Juros / ajuste.
-                    if (recordId == null && domainId == "financeiro" && col.key == "ajuste") {
-                        val colLocal = viewModel.config.value?.columns.orEmpty().firstOrNull { it.key == "local" }
-                        PlanoParcelasSecao(viewModel, colLocal?.let { viewModel.optionsFor(it, lookups) }.orEmpty().map { it.value })
-                    }
-                    if (recordId == null && domainId == "financeiro" && col.key == "docNf") {
-                        FinanceiroItensInlineSection(
-                            docNf = viewModel.fields["docNf"] ?: "",
-                            data = viewModel.fields["data"] ?: "",
-                            local = viewModel.fields["local"] ?: "",
-                            entidade = viewModel.fields["entidade"] ?: "",
-                            safra = viewModel.fields["safra"] ?: "",
-                            cultura = viewModel.fields["cultura"] ?: "",
-                            setor = viewModel.fields["setor"] ?: "",
-                            banco = viewModel.fields["banco"] ?: "",
-                            formaPgto = viewModel.fields["formaPgto"] ?: "",
-                            periodo = viewModel.fields["periodo"] ?: "",
-                            bruto = viewModel.fields["bruto"] ?: "",
-                            onDone = onSaved,
-                        )
-                        androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
-                    }
+                    // v410 -- o bloco "Lançar nota com itens e parcelas" foi para o fim do formulário.
                 }
                 }
                 // v289 (mockup v375) -- formulário de um item só (Contratos, Inventário,
@@ -1304,6 +1283,35 @@ fun DomainFormScreen(
                         )
                         Text("›", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
+                }
+            }
+
+            // v410 (mockup v405 aprovado) -- itens e parcelas num bloco só, no FIM do
+            // formulário (regra: blocos internos ficam no final).
+            if (recordId == null && domainId == "financeiro") {
+                val colLocal = viewModel.config.value?.columns.orEmpty().firstOrNull { it.key == "local" }
+                val locais = colLocal?.let { viewModel.optionsFor(it, lookups) }.orEmpty().map { it.value }
+                val notaVm: FinanceiroItensInlineViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+                androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
+                FinanceiroItensInlineSection(
+                    docNf = viewModel.fields["docNf"] ?: "",
+                    data = viewModel.fields["data"] ?: "",
+                    local = viewModel.fields["local"] ?: "",
+                    entidade = viewModel.fields["entidade"] ?: "",
+                    safra = viewModel.fields["safra"] ?: "",
+                    cultura = viewModel.fields["cultura"] ?: "",
+                    setor = viewModel.fields["setor"] ?: "",
+                    banco = viewModel.fields["banco"] ?: "",
+                    formaPgto = viewModel.fields["formaPgto"] ?: "",
+                    periodo = viewModel.fields["periodo"] ?: "",
+                    bruto = viewModel.fields["bruto"] ?: "",
+                    onDone = onSaved,
+                    viewModel = notaVm,
+                    locais = locais,
+                    plano = viewModel.planoParcelas,
+                ) {
+                    val comItens = notaVm.linhasValidas().isNotEmpty()
+                    PlanoParcelasSecao(viewModel, locais, comItens = comItens, totalItens = if (comItens && notaVm.comValor()) notaVm.total(viewModel.fields["bruto"] ?: "") else null)
                 }
             }
 
@@ -2101,14 +2109,15 @@ private fun distribuirAjusteApp(total: Double, n: Int, modo: String): List<Doubl
 }
 
 @Composable
-private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<String>) {
+private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<String>, comItens: Boolean = false, totalItens: Double? = null) {
     val (meses, n) = periodoParcelas(viewModel.fields["periodo"].orEmpty())
     if (n < 2) {
         androidx.compose.runtime.SideEffect { viewModel.planoParcelas = null }
         return
     }
     val semJuros = viewModel.opBanco() && viewModel.jurosSeparado
-    val bruto = numeroBr(viewModel.fields["bruto"])
+    // v410 -- com itens: total = soma dos itens; fazenda vem dos itens.
+    val bruto = totalItens ?: numeroBr(viewModel.fields["bruto"])
     val ajusteTotal = if (semJuros) 0.0 else numeroBr(viewModel.fields["ajuste"])
     val fmt = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
     val base = runCatching { java.time.LocalDate.parse(viewModel.fields["data"].orEmpty(), fmt) }.getOrNull() ?: java.time.LocalDate.now()
@@ -2123,7 +2132,7 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
         var calc = base.plusMonths(((i + 1) * meses).toLong())
         if (calc.dayOfWeek == java.time.DayOfWeek.SATURDAY) calc = calc.plusDays(2)
         if (calc.dayOfWeek == java.time.DayOfWeek.SUNDAY) calc = calc.plusDays(1)
-        Triple(vctos[i] ?: calc.format(fmt), if (porParcela) (locaisP[i] ?: localPadrao) else "", ajustes[i])
+        Triple(vctos[i] ?: calc.format(fmt), if (porParcela && !comItens) (locaisP[i] ?: localPadrao) else "", ajustes[i])
     }
     val json = org.json.JSONArray().apply {
         linhas.forEachIndexed { i, (v, l, a) ->
@@ -2153,8 +2162,10 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
                 .drawBehindLinha(if (on) verde else androidx.compose.ui.graphics.Color.Transparent),
         )
     }
+    // v410 -- dentro do bloco da nota: sem caixa própria, uma linha fina separando.
+    androidx.compose.material3.HorizontalDivider(color = borda)
     Column(
-        Modifier.fillMaxWidth().padding(bottom = 12.dp).border(1.dp, borda, RoundedCornerShape(12.dp)).padding(12.dp),
+        Modifier.fillMaxWidth().padding(top = 4.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text("Parcelas ($n)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -2167,10 +2178,12 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
                 opcao("Só na última", modo == "ultima") { modo = "ultima" }
             }
         }
-        Text("Fazenda", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            opcao("Mesma em todas", !porParcela) { porParcela = false }
-            opcao("Por parcela", porParcela) { porParcela = true }
+        if (!comItens) {
+            Text("Fazenda", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                opcao("Mesma em todas", !porParcela) { porParcela = false }
+                opcao("Por parcela", porParcela) { porParcela = true }
+            }
         }
         linhas.forEachIndexed { i, (v, l, a) ->
             Column(Modifier.fillMaxWidth().border(1.dp, borda, RoundedCornerShape(10.dp)).padding(horizontal = 10.dp, vertical = 8.dp)) {
@@ -2187,7 +2200,7 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
                     Text(brl(r2(valor + a)), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                 }
                 if (!semJuros && a != 0.0) Text("Juros / desconto: ${brl(a)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (porParcela) {
+                if (porParcela && !comItens) {
                     var aberto by remember { mutableStateOf(false) }
                     Box(Modifier.padding(top = 4.dp)) {
                         Text(

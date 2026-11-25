@@ -1094,6 +1094,17 @@ data class NotaMultiItemItemData(
     val descricao: String = "",
     val quantidade: Double = 0.0,
     val unidade: String? = null,
+    // v410 (mockup v405) -- fazenda e valor de cada item.
+    val fazenda: String? = null,
+    val valor: Double? = null,
+)
+
+/** v410 -- uma parcela do bloco unificado (vencimento ISO, fazenda, juros/desconto). */
+@Serializable
+data class PlanoParcelaData(
+    val vcto: String? = null,
+    val local: String? = null,
+    val ajuste: Double? = null,
 )
 
 @Serializable
@@ -1119,6 +1130,7 @@ data class NotaMultiItemRequest(
     // comentário acima de NotaMultiItemItemData).
     val bruto: Double,
     val itens: List<NotaMultiItemItemData>,
+    val plano: List<PlanoParcelaData>? = null,
     // Chave de idempotencia (UUID gerado no app, igual em todo reenvio da
     // fila offline) -- o servidor devolve o resultado ja guardado em vez de
     // lancar de novo. Ver MultiItemOutbox.kt / lib/idempotency.ts.

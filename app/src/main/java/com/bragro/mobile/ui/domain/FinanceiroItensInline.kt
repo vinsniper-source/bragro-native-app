@@ -3,6 +3,8 @@ package com.bragro.mobile.ui.domain
 import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -84,6 +86,15 @@ class ItemNotaLinha {
     var descricao by mutableStateOf("")
     var unidade by mutableStateOf("")
     var quantidade by mutableStateOf("")
+    // v410 (mockup v405) -- valor e fazenda do item.
+    var valor by mutableStateOf("")
+    var fazenda by mutableStateOf("")
+}
+
+/** "1.200,50" ou "1200.50" -> 1200.5 */
+private fun valorBr(s: String): Double {
+    val t = s.trim().replace("R$", "").trim()
+    return (if (t.contains(',')) t.replace(".", "").replace(",", ".") else t).toDoubleOrNull() ?: 0.0
 }
 
 class FinanceiroItensInlineViewModel(app: Application) : AndroidViewModel(app) {
@@ -96,6 +107,8 @@ class FinanceiroItensInlineViewModel(app: Application) : AndroidViewModel(app) {
         private set
 
     val linhas = mutableStateListOf(ItemNotaLinha())
+    // v410 (mockup v405) -- fazenda: a mesma em todos (Local) ou uma por item.
+    var porItem by mutableStateOf(false)
 
     var pending = mutableStateOf(false)
         private set
@@ -143,9 +156,31 @@ class FinanceiroItensInlineViewModel(app: Application) : AndroidViewModel(app) {
 
     fun linhasValidas() = linhas.filter { it.descricao.isNotBlank() && it.quantidade.isNotBlank() }
 
+    fun comValor(): Boolean = linhasValidas().let { v -> v.isNotEmpty() && v.all { valorBr(it.valor) > 0 } }
+
+    /** Total da nota: soma dos valores dos itens; sem valor nos itens, o campo Bruto (R$). */
+    fun total(bruto: String): Double =
+        if (comValor()) Math.round(linhasValidas().sumOf { valorBr(it.valor) } * 100) / 100.0 else (bruto.toDoubleOrNull() ?: valorBr(bruto))
+
+    fun fazDe(l: ItemNotaLinha, local: String): String = if (porItem && l.fazenda.isNotBlank()) l.fazenda else local
+
+    fun porFazenda(local: String, bruto: String): Map<String, Double> {
+        val v = linhasValidas()
+        val tot = total(bruto)
+        val qtd = v.sumOf { parseDecimalLocal(it.quantidade) }
+        val out = linkedMapOf<String, Double>()
+        v.forEach { l ->
+            val f = fazDe(l, local)
+            if (f.isBlank()) return@forEach
+            val parte = if (comValor()) valorBr(l.valor) else if (qtd > 0) tot * parseDecimalLocal(l.quantidade) / qtd else 0.0
+            out[f] = (out[f] ?: 0.0) + parte
+        }
+        return out
+    }
+
     fun podeSalvar(docNf: String, data: String, local: String, entidade: String, bruto: String): Boolean =
-        docNf.isNotBlank() && data.isNotBlank() && local.isNotBlank() && entidade.isNotBlank() &&
-            (bruto.toDoubleOrNull() ?: 0.0) > 0 && linhasValidas().isNotEmpty()
+        docNf.isNotBlank() && data.isNotBlank() && entidade.isNotBlank() &&
+            total(bruto) > 0 && linhasValidas().isNotEmpty() && linhasValidas().all { fazDe(it, local).isNotBlank() }
 
     fun submit(
         docNf: String,
@@ -159,12 +194,28 @@ class FinanceiroItensInlineViewModel(app: Application) : AndroidViewModel(app) {
         formaPgto: String,
         periodo: String,
         bruto: String,
+        plano: String?,
         onDone: () -> Unit,
     ) {
         val validas = linhasValidas()
-        val brutoNum = bruto.toDoubleOrNull() ?: 0.0
+        val brutoNum = total(bruto)
+        val comV = comValor()
+        // v410 -- parcelas do bloco unificado (mesmo JSON do formulário).
+        val planoLista = plano?.let { p ->
+            runCatching {
+                val arr = org.json.JSONArray(p)
+                (0 until arr.length()).map { k ->
+                    val o = arr.getJSONObject(k)
+                    com.bragro.mobile.data.model.PlanoParcelaData(
+                        vcto = o.optString("vcto").takeIf { it.isNotBlank() },
+                        local = o.optString("local").takeIf { it.isNotBlank() },
+                        ajuste = if (o.has("ajuste")) o.optDouble("ajuste") else null,
+                    )
+                }
+            }.getOrNull()
+        }
         if (!podeSalvar(docNf, data, local, entidade, bruto)) {
-            errorMessage.value = "Preencha Doc/NF, Data, Local, Entidade e Bruto (R$) acima, e adicione ao menos 1 item com Quantidade."
+            errorMessage.value = "Preencha Doc/NF, Data, Local (ou a fazenda de cada item), Entidade e o valor, e adicione ao menos 1 item com Quantidade."
             return
         }
         pending.value = true
@@ -178,7 +229,7 @@ class FinanceiroItensInlineViewModel(app: Application) : AndroidViewModel(app) {
                 // "date" do formulário genérico, ver DomainFormScreen.kt) --
                 // só vira ISO aqui, na hora de montar o corpo pro servidor.
                 dataEmissao = brDateToIso(data),
-                fazendaDestino = local,
+                fazendaDestino = local.ifBlank { validas.firstOrNull()?.let { fazDe(it, local) } ?: "" },
                 periodo = periodo.ifBlank { "À VISTA" },
                 safra = safra.ifBlank { null },
                 cultura = cultura.ifBlank { null },
@@ -191,8 +242,11 @@ class FinanceiroItensInlineViewModel(app: Application) : AndroidViewModel(app) {
                         descricao = it.descricao,
                         quantidade = parseDecimalLocal(it.quantidade),
                         unidade = it.unidade.ifBlank { null },
+                        fazenda = if (porItem) it.fazenda.ifBlank { null } else null,
+                        valor = if (comV) valorBr(it.valor) else null,
                     )
                 },
+                plano = planoLista,
             )
             pending.value = false
             if (resultado == null || !resultado.ok) {
@@ -255,6 +309,8 @@ private fun ItemNotaLinhaRow(
     viewModel: FinanceiroItensInlineViewModel,
     showRemove: Boolean,
     onRemove: () -> Unit,
+    locais: List<String> = emptyList(),
+    localPadrao: String = "",
 ) {
     // Sem fundo/borda próprios: os campos já são blocos padrão dentro do
     // bloco externo (mesmo fundo nos dois, sem faixa de tom diferente).
@@ -300,6 +356,28 @@ private fun ItemNotaLinhaRow(
                     colors = appFieldColors(),
                 )
             }
+            // v410 (mockup v405) -- Valor do item (o total da nota é a soma).
+            ItemFieldBlock(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = linha.valor,
+                    onValueChange = { linha.valor = it.filter { c -> c.isDigit() || c == ',' || c == '.' } },
+                    label = { Text("Valor") },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = appFieldColors(),
+                )
+            }
+            if (viewModel.porItem) {
+                ItemFieldBlock(modifier = Modifier.fillMaxWidth()) {
+                    ItemStringDropdown(
+                        label = "Fazenda *",
+                        value = linha.fazenda.ifBlank { localPadrao }.ifBlank { null }?.let { com.bragro.mobile.ui.domain.exibirTexto(it, true) },
+                        options = locais.map { com.bragro.mobile.ui.domain.exibirTexto(it, true) },
+                        placeholder = "",
+                        onSelect = { picked -> linha.fazenda = locais.firstOrNull { com.bragro.mobile.ui.domain.exibirTexto(it, true) == picked } ?: picked },
+                    )
+                }
+            }
             if (showRemove) {
                 IconButton(onClick = onRemove, modifier = Modifier.size(30.dp).align(androidx.compose.ui.Alignment.End)) {
                     Icon(Icons.Outlined.Delete, contentDescription = "Remover item", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(18.dp))
@@ -309,12 +387,11 @@ private fun ItemNotaLinhaRow(
     }
 }
 
-/** Seção embutida "Lançar nota com itens" -- só chamada pelo
- * DomainFormScreen.kt, logo após o campo Doc/NF, quando domainId ==
- * "financeiro" e recordId == null (criando, não editando). Todos os
- * parâmetros de texto vêm AO VIVO do mesmo DomainFormViewModel.fields do
- * formulário genérico (mesmo critério do site, ver comentário no topo do
- * arquivo). */
+/** v410 (mockup v405 aprovado) -- bloco único "Lançar nota com itens e
+ * parcelas", no FIM do formulário de Financeiro (regra: blocos internos ficam
+ * no final). Itens em cima (cada um com Valor e, se "Por item", Fazenda) e
+ * as Parcelas embaixo (slot [parcelas]). Campos do cabeçalho vêm AO VIVO do
+ * formulário genérico. */
 @Composable
 fun FinanceiroItensInlineSection(
     docNf: String,
@@ -330,55 +407,80 @@ fun FinanceiroItensInlineSection(
     bruto: String,
     onDone: () -> Unit,
     viewModel: FinanceiroItensInlineViewModel = viewModel(),
+    locais: List<String> = emptyList(),
+    plano: String? = null,
+    parcelas: @Composable () -> Unit = {},
 ) {
     val itensOptions by viewModel.itensOptions
     val unidadesOptions by viewModel.unidadesOptions
     val pending by viewModel.pending
     val errorMessage by viewModel.errorMessage
-    val brutoNum = bruto.toDoubleOrNull() ?: 0.0
+    val total = viewModel.total(bruto)
     val podeSalvar = viewModel.podeSalvar(docNf, data, local, entidade, bruto)
-
-    // Mesmo padrão dos demais blocos (borda fina verde + fundo claro) -- os
-    // blocos de fora e de dentro ficam com o mesmo fundo.
-    val sectionShape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp)
-    val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp)
     val sectionBg = MaterialTheme.colorScheme.surface
+    val verde = MaterialTheme.colorScheme.primary
+    @Composable
+    fun opcao(rotulo: String, on: Boolean, onClick: () -> Unit) {
+        Text(
+            rotulo,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal,
+            modifier = Modifier
+                .clickable(onClick = onClick)
+                .padding(horizontal = 2.dp, vertical = 4.dp)
+                .linhaEmbaixo(if (on) verde else androidx.compose.ui.graphics.Color.Transparent),
+        )
+    }
     androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.theme.LocalBlocoItens provides true) {
-    // v293 (mockup v390 aprovado) -- cada item da nota é um bloco próprio, com +
-    // na linha do título de todos; ✓ verde (lançar) no 1º e 🗑 a partir do 2º.
-    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(sectionBg, shape)
+            .border(com.bragro.mobile.ui.theme.thinGreenBorder(), shape)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Text("Lançar nota com itens e parcelas", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            com.bragro.mobile.ui.theme.DicaInfo(
+                "Itens entram no Estoque (cada um na sua fazenda); o total, no Financeiro, um lançamento por parcela.\n" +
+                    "Doc/NF: ${docNf.ifBlank { "—" }} · Data: ${data.ifBlank { "—" }} · Fornecedor: ${entidade.ifBlank { "—" }}",
+            )
+            androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+            val n = viewModel.linhasValidas().size
+            com.bragro.mobile.ui.domain.SalvarIcone(
+                onClick = { viewModel.submit(docNf, data, local, entidade, safra, cultura, setor, banco, formaPgto, periodo, bruto, plano, onDone) },
+                enabled = podeSalvar,
+                loading = pending,
+                descricao = if (n > 0) "Lançar $n item(ns)" else "Lançar itens",
+            )
+        }
         if (errorMessage != null) {
             Text(errorMessage ?: "", color = com.bragro.mobile.ui.domain.corAtencao(), style = MaterialTheme.typography.bodySmall)
+        }
+        if (locais.isNotEmpty()) {
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Fazenda:", style = MaterialTheme.typography.labelMedium)
+                opcao("Mesma em todos", !viewModel.porItem) { viewModel.porItem = false }
+                opcao("Por item", viewModel.porItem) { viewModel.porItem = true }
+            }
         }
         viewModel.linhas.forEachIndexed { i, linha ->
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(sectionBg, sectionShape)
-                    .border(com.bragro.mobile.ui.theme.thinGreenBorder(), sectionShape)
+                    .border(com.bragro.mobile.ui.theme.thinGreenBorder(), shape)
                     .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                    Text("Item ${i + 1}" + if (i == 0) " *" else "", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    if (i == 0) com.bragro.mobile.ui.theme.DicaInfo(
-                        "Itens entram no Estoque; o total, no Financeiro.\n" +
-                            "Doc/NF: ${docNf.ifBlank { "—" }} · Data: ${data.ifBlank { "—" }} · Local: ${local.ifBlank { "—" }} · Entidade: ${entidade.ifBlank { "—" }}\n" +
-                            "Total da nota = campo Bruto (R$).",
-                    )
+                    Text("Item ${i + 1}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                     androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
                     IconButton(onClick = { viewModel.addLinha() }) {
                         Icon(Icons.Outlined.Add, contentDescription = "Adicionar item")
                     }
-                    if (i == 0) {
-                        val n = viewModel.linhasValidas().size
-                        com.bragro.mobile.ui.domain.SalvarIcone(
-                            onClick = { viewModel.submit(docNf, data, local, entidade, safra, cultura, setor, banco, formaPgto, periodo, bruto, onDone) },
-                            enabled = podeSalvar,
-                            loading = pending,
-                            descricao = if (n > 0) "Lançar $n item(ns)" else "Lançar itens",
-                        )
-                    } else {
+                    if (viewModel.linhas.size > 1) {
                         IconButton(onClick = { viewModel.removeLinha(i) }) {
                             Icon(Icons.Outlined.Delete, contentDescription = "Remover item", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(20.dp))
                         }
@@ -391,10 +493,25 @@ fun FinanceiroItensInlineSection(
                     viewModel = viewModel,
                     showRemove = false,
                     onRemove = { viewModel.removeLinha(i) },
+                    locais = locais,
+                    localPadrao = local,
                 )
             }
         }
-        Text("Total da nota: ${formatMoneyBrlLocal(brutoNum)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        val porFaz = viewModel.porFazenda(local, bruto)
+        Text(
+            "Total da nota: ${formatMoneyBrlLocal(total)}" +
+                if (viewModel.porItem && porFaz.size > 1) " (" + porFaz.entries.joinToString(" · ") { "${com.bragro.mobile.ui.domain.exibirTexto(it.key, true)} ${formatMoneyBrlLocal(it.value)}" } + ")" else "",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        parcelas()
     }
     }
 }
+
+private fun Modifier.linhaEmbaixo(cor: androidx.compose.ui.graphics.Color): Modifier = this.then(
+    Modifier.drawBehind {
+        drawLine(cor, androidx.compose.ui.geometry.Offset(0f, size.height), androidx.compose.ui.geometry.Offset(size.width, size.height), 1.5.dp.toPx())
+    },
+)
