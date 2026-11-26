@@ -1,0 +1,27 @@
+{
+  "_sobre": "v418 -- MESMOS casos testados na plataforma (src/lib/services/__tests__/casos-compartilhados.test.ts) e no app (ParcelasCasosTest.kt). Ao mudar uma conta, mude aqui e rode scripts/sincronizar-casos.ps1 para copiar para o app.",
+  "periodo": [
+    { "entrada": "ANUAL 4X", "meses": 12, "parcelas": 4 },
+    { "entrada": "MENSAL 10X", "meses": 1, "parcelas": 10 },
+    { "entrada": "SEMESTRAL 2X", "meses": 6, "parcelas": 2 },
+    { "entrada": "À VISTA", "meses": 0, "parcelas": 1 },
+    { "entrada": "", "meses": 0, "parcelas": 1 }
+  ],
+  "ajuste": [
+    { "total": 40, "parcelas": 4, "modo": "igual", "esperado": [10, 10, 10, 10] },
+    { "total": 40, "parcelas": 4, "modo": "prazo", "esperado": [4, 8, 12, 16] },
+    { "total": -40, "parcelas": 4, "modo": "prazo", "esperado": [-4, -8, -12, -16] },
+    { "total": 100, "parcelas": 3, "modo": "igual", "esperado": [33.33, 33.33, 33.34] },
+    { "total": 100, "parcelas": 3, "modo": "prazo", "esperado": [16.67, 33.33, 50] },
+    { "total": 0, "parcelas": 3, "modo": "igual", "esperado": [0, 0, 0] }
+  ],
+  "vencimentos": [
+    { "base": "2026-11-26", "meses": 12, "parcelas": 4, "esperado": ["2027-11-26", "2028-11-27", "2029-11-26", "2030-11-26"] },
+    { "base": "2026-01-31", "meses": 1, "parcelas": 3, "esperado": ["2026-03-02", "2026-03-31", "2026-04-30"] },
+    { "base": "2026-11-28", "meses": 0, "parcelas": 1, "esperado": ["2026-11-28"] }
+  ],
+  "previa": [
+    { "liquido": 429, "fazendas": { "FAZENDA TESTE": 1200, "FAZENDA TESTE 1": 500 }, "esperado": { "FAZENDA TESTE": 302.82, "FAZENDA TESTE 1": 126.18 } },
+    { "liquido": 441, "fazendas": { "FAZENDA TESTE": 1200, "FAZENDA TESTE 1": 500 }, "esperado": { "FAZENDA TESTE": 311.29, "FAZENDA TESTE 1": 129.71 } }
+  ]
+}

@@ -771,7 +771,8 @@ data class MultiItemCfg(
 
 /** v16 -- módulos com a seção Itens inteira invertida (espelho de
  * ITENS_INVERTIDOS em record-form.tsx). */
-val ITENS_INVERTIDOS = setOf("pedidos", "cotacoes", "safra", "orcamentos", "frota", "controleinterno", "financeiro")
+// v416 -- sem "financeiro": lá Categoria/Subcategoria/Doc-NF são campos comuns, na sequência (igual à plataforma).
+val ITENS_INVERTIDOS = OrdemCampos.ITENS_COMO_BLOCO
 
 val MULTI_ITEM_FORM: Map<String, MultiItemCfg> = mapOf(
     "safra" to MultiItemCfg(
@@ -1047,24 +1048,13 @@ fun DomainFormScreen(
             // v411 -- no lançamento novo do Financeiro, Juros / desconto fica só no bloco Parcelas.
             val camposForm = visiveis.filter { it.type != "textarea" && !(domainId == "financeiro" && recordId == null && it.key == "ajuste") }
             val textos = visiveis.filter { !it.computed && it.type == "textarea" }
-            fun secaoDe(c: ColumnConfig): String {
-                if (!c.computed) return secaoDoCampo(c.key, domainId)
-                val i = cfg.columns.indexOf(c)
-                val ant = cfg.columns.subList(0, maxOf(i, 0)).lastOrNull { !it.computed && it.type != "textarea" }
-                val dep = cfg.columns.drop(i + 1).firstOrNull { !it.computed && it.type != "textarea" }
-                return (ant ?: dep)?.let { secaoDoCampo(it.key, domainId) } ?: "outros"
-            }
+            // v416 -- regra em OrdemCampos.kt (testada em OrdemCamposTest.kt).
+            fun secaoDe(c: ColumnConfig): String = OrdemCampos.secaoDe(cfg.columns, c, domainId)
             // v412 -- mesma regra da plataforma (record-form.tsx): os candidatos ao
             // "Ver mais" saem da ordem do cadastro; num registro novo nada conta como
             // preenchido (os automáticos já vêm com valor e não podem segurar o campo).
-            val ocultosBase: Set<String> = run {
-                if (visiveis.size <= 10) return@run emptySet()
-                fun temValor(c: ColumnConfig): Boolean =
-                    if (recordId == null) false
-                    else if (c.computed) !computedValues[c.key].isNullOrBlank() else !viewModel.fields[c.key].isNullOrBlank()
-                val cand = visiveis.filterIndexed { i, c -> i >= 8 && !c.required && secaoDoCampo(c.key, domainId) != "itens" }
-                if (recordId != null && cand.any { temValor(it) }) return@run emptySet()
-                cand.filter { !temValor(it) }.map { it.key }.toSet()
+            val ocultosBase: Set<String> = OrdemCampos.ocultosBase(visiveis, domainId, registroNovo = recordId == null) { c ->
+                if (c.computed) !computedValues[c.key].isNullOrBlank() else !viewModel.fields[c.key].isNullOrBlank()
             }
             // v205 (mockup aprovado) -- Atividades: o Item 1 fica com os mesmos campos
             // e a mesma ordem do Item 2; Custo/ha, Status, Produtividade e Custo/sc-ton
@@ -1084,6 +1074,8 @@ fun DomainFormScreen(
                 }
                 .filter { it.second.isNotEmpty() }
             val multi = if (recordId == null || domainId in OS_EDITA_ITENS) MULTI_ITEM_FORM[domainId] else null
+            val itensBloco = OrdemCampos.itensSaoBloco(domainId, multi != null)
+            fun ehBloco(id: String) = id == "itens" && itensBloco
             // v210 (mockup aprovado) -- regra geral dos módulos com vários itens
             // (Pedidos, Frota, Controle Interno...): o Item 1 fica só com os campos
             // do item (os mesmos do Item 2, na mesma ordem); os demais campos da
@@ -1096,19 +1088,19 @@ fun DomainFormScreen(
                     resumoGeral += cs.filter { it !in doItem }
                     g to doItem.sortedBy { c -> chavesItem.indexOf(c.key).let { if (it < 0) 99 else it } }
                 }
-            } else grupos).sortedBy { if (it.first.first == "itens") 1 else 0 } // v273 (mockup v328) -- bloco Item por último
+            } else grupos).let { gs ->
+                // v273 (mockup v328) -- bloco Item por último; v416 -- só quando os itens
+                // são um bloco (módulos com vários itens), igual à plataforma.
+                if (itensBloco) gs.sortedBy { if (it.first.first == "itens") 1 else 0 } else gs
+            }
             // v412 -- igual à plataforma: a grade tem 5 campos por linha e a última
             // linha é completada, na ordem da tela, com os primeiros campos do "Ver
             // mais" (assim Período fica junto de Parcela/Vencimento/Mês-Ano, sem cortar
             // as referências). Mesma sequência que aparece no computador.
-            val ocultosVerMais: Set<String> = run {
-                if (ocultosBase.isEmpty()) return@run ocultosBase
-                val ordemTela = gruposAjust.filter { it.first.first != "itens" }.flatMap { it.second }.map { it.key }
-                val vistos = ordemTela.count { it !in ocultosBase }
-                val falta = (5 - vistos % 5) % 5
-                val completa = ordemTela.filter { it in ocultosBase }.take(falta).toSet()
-                ocultosBase - completa
-            }
+            val ocultosVerMais: Set<String> = OrdemCampos.completarLinha(
+                ocultosBase,
+                gruposAjust.filter { !ehBloco(it.first.first) }.flatMap { it.second }.map { it.key },
+            )
             // v221 (mockup aprovado) -- Clima de hoje, foto e Copiar último ficam na
             // linha do nome do primeiro campo, à direita (o formulário sobe).
             val primeiroCampoKey = if (recordId == null) gruposAjust.firstOrNull()?.second?.firstOrNull { !it.computed && it.type != "checkbox" }?.key else null
@@ -1219,7 +1211,7 @@ fun DomainFormScreen(
                     // v274 -- resumo geral sobe para antes do bloco Item.
                 }
             }
-            gruposAjust.filter { it.first.first != "itens" }.forEach { (g, campos) -> desenharGrupo(g, campos) }
+            gruposAjust.filter { !ehBloco(it.first.first) }.forEach { (g, campos) -> desenharGrupo(g, campos) }
             if (multi != null && !ehSafra) {
                     if (resumoGeral.isNotEmpty()) {
                     Column(Modifier.padding(horizontal = RECUO_CAMPOS).padding(top = 18.dp)) {
@@ -1303,7 +1295,7 @@ fun DomainFormScreen(
                     }
                 }
             }
-            gruposAjust.filter { it.first.first == "itens" }.forEach { (g, campos) -> desenharGrupo(g, campos) }
+            gruposAjust.filter { ehBloco(it.first.first) }.forEach { (g, campos) -> desenharGrupo(g, campos) }
 
             // v410 (mockup v405 aprovado) -- itens e parcelas num bloco só, no FIM do
             // formulário (regra: blocos internos ficam no final).

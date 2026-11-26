@@ -222,6 +222,16 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = viewModel(
             // (src/app/(app)/configuracoes/configuracoes-client.tsx),
             // replicados aqui de verdade (não é redirecionamento), mesmo
             // padrão das outras seções desta tela.
+            // v417 (mockup aprovado) -- Ajuda: abre o guia da plataforma (precisa estar logado no navegador).
+            item(key = "ajuda") {
+                androidx.compose.foundation.layout.Row(
+                    modifier = Modifier.fillMaxWidth().clickable { openInCustomTab(context, com.bragro.mobile.BuildConfig.API_BASE_URL.trimEnd('/') + "/ajuda") }.padding(horizontal = 4.dp, vertical = 10.dp),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                ) {
+                    Text("Ajuda", style = MaterialTheme.typography.titleSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Text("Guia de uso ›", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
             item(key = "seguranca-app") { SegurancaAppCard() }
             item(key = "app-android") { AppMobileAndroidCard(data?.get("appRelease")?.jsonObject) }
             item(key = "app-ios") { AppMobileIosCard() }
