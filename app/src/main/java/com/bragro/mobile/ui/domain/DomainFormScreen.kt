@@ -1054,11 +1054,15 @@ fun DomainFormScreen(
                 val dep = cfg.columns.drop(i + 1).firstOrNull { !it.computed && it.type != "textarea" }
                 return (ant ?: dep)?.let { secaoDoCampo(it.key, domainId) } ?: "outros"
             }
-            val ocultosVerMais: Set<String> = run {
+            // v412 -- mesma regra da plataforma (record-form.tsx): os candidatos ao
+            // "Ver mais" saem da ordem do cadastro; num registro novo nada conta como
+            // preenchido (os automáticos já vêm com valor e não podem segurar o campo).
+            val ocultosBase: Set<String> = run {
                 if (visiveis.size <= 10) return@run emptySet()
                 fun temValor(c: ColumnConfig): Boolean =
-                    if (c.computed) !computedValues[c.key].isNullOrBlank() else !viewModel.fields[c.key].isNullOrBlank()
-                val cand = visiveis.filterIndexed { i, c -> i >= 8 && !c.required && secaoDe(c) != "itens" }
+                    if (recordId == null) false
+                    else if (c.computed) !computedValues[c.key].isNullOrBlank() else !viewModel.fields[c.key].isNullOrBlank()
+                val cand = visiveis.filterIndexed { i, c -> i >= 8 && !c.required && secaoDoCampo(c.key, domainId) != "itens" }
                 if (recordId != null && cand.any { temValor(it) }) return@run emptySet()
                 cand.filter { !temValor(it) }.map { it.key }.toSet()
             }
@@ -1093,6 +1097,18 @@ fun DomainFormScreen(
                     g to doItem.sortedBy { c -> chavesItem.indexOf(c.key).let { if (it < 0) 99 else it } }
                 }
             } else grupos).sortedBy { if (it.first.first == "itens") 1 else 0 } // v273 (mockup v328) -- bloco Item por último
+            // v412 -- igual à plataforma: a grade tem 5 campos por linha e a última
+            // linha é completada, na ordem da tela, com os primeiros campos do "Ver
+            // mais" (assim Período fica junto de Parcela/Vencimento/Mês-Ano, sem cortar
+            // as referências). Mesma sequência que aparece no computador.
+            val ocultosVerMais: Set<String> = run {
+                if (ocultosBase.isEmpty()) return@run ocultosBase
+                val ordemTela = gruposAjust.filter { it.first.first != "itens" }.flatMap { it.second }.map { it.key }
+                val vistos = ordemTela.count { it !in ocultosBase }
+                val falta = (5 - vistos % 5) % 5
+                val completa = ordemTela.filter { it in ocultosBase }.take(falta).toSet()
+                ocultosBase - completa
+            }
             // v221 (mockup aprovado) -- Clima de hoje, foto e Copiar último ficam na
             // linha do nome do primeiro campo, à direita (o formulário sobe).
             val primeiroCampoKey = if (recordId == null) gruposAjust.firstOrNull()?.second?.firstOrNull { !it.computed && it.type != "checkbox" }?.key else null
