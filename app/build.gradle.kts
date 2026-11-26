@@ -45,8 +45,8 @@ android {
         // ja estava em 1.3.83, entao qualquer envio seria recusado pelo Play.
         // Salto deliberado para ficar acima de tudo que ja foi publicado.
         // v48 -- 1.3.88 (201): primeira versao publicada pelo GitHub Releases.
-        versionCode = 325
-        versionName = "1.6.94"
+        versionCode = 326
+        versionName = "1.6.95"
 
         // URLs do backend (o MESMO backend do site publicado -- ver
         // native-app/README.md). Trocaveis por variante/ambiente sem
@@ -319,4 +319,10 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+}
+
+// v414 -- testes das contas (app/src/test) rodam antes de gerar o APK de release:
+// se alguma conta quebrar, o assembleRelease para e o APK não é gerado.
+tasks.matching { it.name == "assembleRelease" }.configureEach {
+    dependsOn("testReleaseUnitTest")
 }

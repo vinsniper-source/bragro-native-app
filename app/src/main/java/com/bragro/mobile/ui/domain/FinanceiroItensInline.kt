@@ -159,24 +159,16 @@ class FinanceiroItensInlineViewModel(app: Application) : AndroidViewModel(app) {
     fun comValor(): Boolean = linhasValidas().let { v -> v.isNotEmpty() && v.all { valorBr(it.valor) > 0 } }
 
     /** Total da nota: soma dos valores dos itens; sem valor nos itens, o campo Bruto (R$). */
+    // v414 -- contas em ParcelasCalc (testadas em ParcelasCalcTest.kt).
+    private fun itensCalc(local: String) = linhasValidas().map { ParcelasCalc.ItemCalc(fazDe(it, local), parseDecimalLocal(it.quantidade), valorBr(it.valor)) }
+
     fun total(bruto: String): Double =
-        if (comValor()) Math.round(linhasValidas().sumOf { valorBr(it.valor) } * 100) / 100.0 else (bruto.toDoubleOrNull() ?: valorBr(bruto))
+        ParcelasCalc.totalNota(itensCalc(""), bruto.toDoubleOrNull() ?: valorBr(bruto))
 
     fun fazDe(l: ItemNotaLinha, local: String): String = if (porItem && l.fazenda.isNotBlank()) l.fazenda else local
 
-    fun porFazenda(local: String, bruto: String): Map<String, Double> {
-        val v = linhasValidas()
-        val tot = total(bruto)
-        val qtd = v.sumOf { parseDecimalLocal(it.quantidade) }
-        val out = linkedMapOf<String, Double>()
-        v.forEach { l ->
-            val f = fazDe(l, local)
-            if (f.isBlank()) return@forEach
-            val parte = if (comValor()) valorBr(l.valor) else if (qtd > 0) tot * parseDecimalLocal(l.quantidade) / qtd else 0.0
-            out[f] = (out[f] ?: 0.0) + parte
-        }
-        return out
-    }
+    fun porFazenda(local: String, bruto: String): Map<String, Double> =
+        ParcelasCalc.porFazenda(itensCalc(local), bruto.toDoubleOrNull() ?: valorBr(bruto))
 
     fun podeSalvar(docNf: String, data: String, local: String, entidade: String, bruto: String): Boolean =
         docNf.isNotBlank() && data.isNotBlank() && entidade.isNotBlank() &&

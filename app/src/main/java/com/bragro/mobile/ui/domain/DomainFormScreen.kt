@@ -2098,39 +2098,12 @@ internal fun tituloCurto(t: String): String {
 // v404 (mockup aprovado) -- Financeiro: bloco "Parcelas" (Período com 2+ parcelas).
 // Juros / ajuste: Igual, Proporcional, Só na 1ª, Só na última (negativo = desconto).
 // Fazenda: mesma em todas ou por parcela. Vencimento editável por parcela.
-private val MESES_PERIODO = mapOf("MENSAL" to 1, "BIMESTRAL" to 2, "TRIMESTRAL" to 3, "QUADRIMESTRAL" to 4, "SEMESTRAL" to 6, "ANUAL" to 12)
-
-private fun periodoParcelas(p: String): Pair<Int, Int> {
-    val s = java.text.Normalizer.normalize(p, java.text.Normalizer.Form.NFD).replace(Regex("\\p{M}"), "").uppercase().trim()
-    if (s.isEmpty() || s.startsWith("A VISTA")) return 0 to 1
-    val meses = MESES_PERIODO.entries.firstOrNull { s.startsWith(it.key) }?.value ?: 1
-    val n = Regex("(\\d+)\\s*X\\b").find(s)?.groupValues?.get(1)?.toIntOrNull()?.coerceAtLeast(1) ?: 1
-    return meses to n
-}
-
-private fun numeroBr(t: String?): Double {
-    val s = t.orEmpty().trim()
-    if (s.isEmpty()) return 0.0
-    val limpo = if (s.contains(",")) s.replace(Regex("[^\\d,-]"), "").replace(",", ".") else s.replace(Regex("[^\\d.-]"), "")
-    return limpo.toDoubleOrNull() ?: 0.0
-}
-
-private fun r2(v: Double) = Math.round(v * 100.0) / 100.0
-
-private fun distribuirAjusteApp(total: Double, n: Int, modo: String): List<Double> {
-    // v411 -- Igual = o mesmo em cada parcela; "prazo" = peso 1, 2, 3… (a mais distante paga mais).
-    val out = MutableList(n) { 0.0 }
-    if (total == 0.0 || n < 1) return out
-    val pesos = (1..n).map { if (modo == "prazo") it.toDouble() else 1.0 }
-    val soma = pesos.sum()
-    var acc = 0.0
-    for (i in 0 until n - 1) { out[i] = r2(total * pesos[i] / soma); acc += out[i] }
-    out[n - 1] = r2(total - acc)
-    return out
-}
-
-private val FAZENDA_RE_APP = Regex("^(FAZ\\.?|S[ÍI]TIO|RANCHO|CH[ÁA]CARA|GLEBA|EST[ÂA]NCIA|HARAS|GRANJA)", RegexOption.IGNORE_CASE)
-private fun ehFazendaApp(l: String) = l.isNotBlank() && !Regex("ENERGIA EL[ÉE]TRICA", RegexOption.IGNORE_CASE).containsMatchIn(l) && FAZENDA_RE_APP.containsMatchIn(l.trim())
+// v414 -- as contas ficam em ParcelasCalc.kt (testadas em ParcelasCalcTest.kt).
+private fun periodoParcelas(p: String): Pair<Int, Int> = ParcelasCalc.periodoParcelas(p)
+private fun numeroBr(t: String?): Double = ParcelasCalc.numeroBr(t)
+private fun r2(v: Double) = ParcelasCalc.r2(v)
+private fun distribuirAjusteApp(total: Double, n: Int, modo: String): List<Double> = ParcelasCalc.distribuirAjuste(total, n, modo)
+private fun ehFazendaApp(l: String) = ParcelasCalc.ehFazenda(l)
 
 /** v404/v405/v411 (mockups aprovados) -- Parcelas no fim do formulário, dentro de
  * "Itens e parcelas". O Juros / desconto mora só aqui (+ Juros / − Desconto e o
@@ -2154,10 +2127,9 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
     val locaisP = remember { mutableStateMapOf<Int, String>() }
     val ajustes = distribuirAjusteApp(ajusteParcelas, n, modo)
     val valor = r2(bruto / n)
+    val vencCalc = ParcelasCalc.vencimentos(base, meses, n)
     val linhas = (0 until n).map { i ->
-        var calc = if (meses == 0) base else base.plusMonths(((i + 1) * meses).toLong())
-        if (meses != 0 && calc.dayOfWeek == java.time.DayOfWeek.SATURDAY) calc = calc.plusDays(2)
-        if (meses != 0 && calc.dayOfWeek == java.time.DayOfWeek.SUNDAY) calc = calc.plusDays(1)
+        val calc = vencCalc[i]
         Triple(vctos[i] ?: calc.format(fmt), if (porParcela && !comItens) (locaisP[i] ?: localPadrao) else "", ajustes[i])
     }
     val json = if (n < 2) null else org.json.JSONArray().apply {
@@ -2255,14 +2227,13 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
                 }
                 if (a != 0.0) Text("${brl(valor)} ${if (a > 0) "+" else "−"} ${brl(kotlin.math.abs(a))}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (mostrarFaz) {
-                    fazendasItens.forEach { (faz, vf) ->
-                        val parte = vf / totalFaz
+                    ParcelasCalc.previaPorFazenda(valor + a, fazendasItens).forEach { (faz, liqFaz) ->
                         val direto = ehFazendaApp(faz)
                         Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text("↳ ${com.bragro.mobile.ui.domain.exibirTexto(faz, true)} ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(if (direto) "direto" else "indireto", style = MaterialTheme.typography.labelSmall, color = if (direto) verde else com.bragro.mobile.ui.domain.corAtencao())
                             Spacer(Modifier.weight(1f))
-                            Text(brl(r2((valor + a) * parte)), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(brl(liqFaz), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
