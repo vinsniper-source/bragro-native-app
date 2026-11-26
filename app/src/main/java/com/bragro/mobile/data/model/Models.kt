@@ -1131,6 +1131,7 @@ data class NotaMultiItemRequest(
     val bruto: Double,
     val itens: List<NotaMultiItemItemData>,
     val plano: List<PlanoParcelaData>? = null,
+    val ajuste: Double? = null, // v411 -- juros (+) / desconto (−) da operação
     // Chave de idempotencia (UUID gerado no app, igual em todo reenvio da
     // fila offline) -- o servidor devolve o resultado ja guardado em vez de
     // lancar de novo. Ver MultiItemOutbox.kt / lib/idempotency.ts.

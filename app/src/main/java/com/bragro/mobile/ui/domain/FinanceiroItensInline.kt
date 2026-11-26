@@ -196,6 +196,7 @@ class FinanceiroItensInlineViewModel(app: Application) : AndroidViewModel(app) {
         bruto: String,
         plano: String?,
         onDone: () -> Unit,
+        ajuste: String = "",
     ) {
         val validas = linhasValidas()
         val brutoNum = total(bruto)
@@ -247,6 +248,7 @@ class FinanceiroItensInlineViewModel(app: Application) : AndroidViewModel(app) {
                     )
                 },
                 plano = planoLista,
+                ajuste = ajuste.toDoubleOrNull()?.takeIf { it != 0.0 },
             )
             pending.value = false
             if (resultado == null || !resultado.ok) {
@@ -409,6 +411,7 @@ fun FinanceiroItensInlineSection(
     viewModel: FinanceiroItensInlineViewModel = viewModel(),
     locais: List<String> = emptyList(),
     plano: String? = null,
+    ajuste: String = "",
     parcelas: @Composable () -> Unit = {},
 ) {
     val itensOptions by viewModel.itensOptions
@@ -442,7 +445,7 @@ fun FinanceiroItensInlineSection(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            Text("Lançar nota com itens e parcelas", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text("Itens e parcelas", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             com.bragro.mobile.ui.theme.DicaInfo(
                 "Itens entram no Estoque (cada um na sua fazenda); o total, no Financeiro, um lançamento por parcela.\n" +
                     "Doc/NF: ${docNf.ifBlank { "—" }} · Data: ${data.ifBlank { "—" }} · Fornecedor: ${entidade.ifBlank { "—" }}",
@@ -450,7 +453,7 @@ fun FinanceiroItensInlineSection(
             androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
             val n = viewModel.linhasValidas().size
             com.bragro.mobile.ui.domain.SalvarIcone(
-                onClick = { viewModel.submit(docNf, data, local, entidade, safra, cultura, setor, banco, formaPgto, periodo, bruto, plano, onDone) },
+                onClick = { viewModel.submit(docNf, data, local, entidade, safra, cultura, setor, banco, formaPgto, periodo, bruto, plano, onDone, ajuste) },
                 enabled = podeSalvar,
                 loading = pending,
                 descricao = if (n > 0) "Lançar $n item(ns)" else "Lançar itens",

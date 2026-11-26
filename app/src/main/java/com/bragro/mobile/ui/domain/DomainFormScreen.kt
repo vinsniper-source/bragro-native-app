@@ -1044,7 +1044,8 @@ fun DomainFormScreen(
             // v57 -- automáticos na seção do campo de onde vêm (o campo
             // editável anterior na ordem do módulo), logo depois dele; sem
             // bloco "Calculado" separado. Mesma regra da plataforma.
-            val camposForm = visiveis.filter { it.type != "textarea" }
+            // v411 -- no lançamento novo do Financeiro, Juros / desconto fica só no bloco Parcelas.
+            val camposForm = visiveis.filter { it.type != "textarea" && !(domainId == "financeiro" && recordId == null && it.key == "ajuste") }
             val textos = visiveis.filter { !it.computed && it.type == "textarea" }
             fun secaoDe(c: ColumnConfig): String {
                 if (!c.computed) return secaoDoCampo(c.key, domainId)
@@ -1265,7 +1266,8 @@ fun DomainFormScreen(
                 FormField(col = col, options = viewModel.optionsFor(col, lookups), viewModel = viewModel, isMissing = col.key in missingFields)
                 androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp))
             }
-            gruposAjust.filter { it.first.first == "itens" }.forEach { (g, campos) -> desenharGrupo(g, campos) }
+            // v411 -- regra da plataforma: primeiro todos os campos (com o "Ver mais"),
+            // e só no final os blocos internos (itens, Itens e parcelas).
             if (ocultosVerMais.isNotEmpty()) {
                 Row(
                     modifier = Modifier.clickable { verMais = !verMais }.padding(vertical = 6.dp),
@@ -1285,6 +1287,7 @@ fun DomainFormScreen(
                     }
                 }
             }
+            gruposAjust.filter { it.first.first == "itens" }.forEach { (g, campos) -> desenharGrupo(g, campos) }
 
             // v410 (mockup v405 aprovado) -- itens e parcelas num bloco só, no FIM do
             // formulário (regra: blocos internos ficam no final).
@@ -1309,9 +1312,10 @@ fun DomainFormScreen(
                     viewModel = notaVm,
                     locais = locais,
                     plano = viewModel.planoParcelas,
+                    ajuste = viewModel.fields["ajuste"] ?: "",
                 ) {
                     val comItens = notaVm.linhasValidas().isNotEmpty()
-                    PlanoParcelasSecao(viewModel, locais, comItens = comItens, totalItens = if (comItens && notaVm.comValor()) notaVm.total(viewModel.fields["bruto"] ?: "") else null)
+                    PlanoParcelasSecao(viewModel, locais, comItens = comItens, totalItens = if (comItens && notaVm.comValor()) notaVm.total(viewModel.fields["bruto"] ?: "") else null, fazendasItens = if (comItens) notaVm.porFazenda(viewModel.fields["local"] ?: "", viewModel.fields["bruto"] ?: "") else emptyMap())
                 }
             }
 
@@ -2098,43 +2102,49 @@ private fun numeroBr(t: String?): Double {
 private fun r2(v: Double) = Math.round(v * 100.0) / 100.0
 
 private fun distribuirAjusteApp(total: Double, n: Int, modo: String): List<Double> {
+    // v411 -- Igual = o mesmo em cada parcela; "prazo" = peso 1, 2, 3… (a mais distante paga mais).
     val out = MutableList(n) { 0.0 }
     if (total == 0.0 || n < 1) return out
-    when (modo) {
-        "primeira" -> out[0] = total
-        "ultima" -> out[n - 1] = total
-        else -> { val cada = r2(total / n); for (i in 0 until n) out[i] = cada; out[n - 1] = r2(total - cada * (n - 1)) }
-    }
+    val pesos = (1..n).map { if (modo == "prazo") it.toDouble() else 1.0 }
+    val soma = pesos.sum()
+    var acc = 0.0
+    for (i in 0 until n - 1) { out[i] = r2(total * pesos[i] / soma); acc += out[i] }
+    out[n - 1] = r2(total - acc)
     return out
 }
 
+private val FAZENDA_RE_APP = Regex("^(FAZ\\.?|S[ÍI]TIO|RANCHO|CH[ÁA]CARA|GLEBA|EST[ÂA]NCIA|HARAS|GRANJA)", RegexOption.IGNORE_CASE)
+private fun ehFazendaApp(l: String) = l.isNotBlank() && !Regex("ENERGIA EL[ÉE]TRICA", RegexOption.IGNORE_CASE).containsMatchIn(l) && FAZENDA_RE_APP.containsMatchIn(l.trim())
+
+/** v404/v405/v411 (mockups aprovados) -- Parcelas no fim do formulário, dentro de
+ * "Itens e parcelas". O Juros / desconto mora só aqui (+ Juros / − Desconto e o
+ * valor, sem sinal) e alimenta toda a operação (grava em fields["ajuste"]). */
 @Composable
-private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<String>, comItens: Boolean = false, totalItens: Double? = null) {
+private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<String>, comItens: Boolean = false, totalItens: Double? = null, fazendasItens: Map<String, Double> = emptyMap()) {
     val (meses, n) = periodoParcelas(viewModel.fields["periodo"].orEmpty())
-    if (n < 2) {
-        androidx.compose.runtime.SideEffect { viewModel.planoParcelas = null }
-        return
-    }
     val semJuros = viewModel.opBanco() && viewModel.jurosSeparado
-    // v410 -- com itens: total = soma dos itens; fazenda vem dos itens.
+    var sinal by remember { mutableStateOf(1) }
+    var jurosTxt by remember { mutableStateOf(numeroBr(viewModel.fields["ajuste"]).let { if (it == 0.0) "" else java.text.NumberFormat.getNumberInstance(java.util.Locale("pt", "BR")).apply { minimumFractionDigits = 2; maximumFractionDigits = 2 }.format(kotlin.math.abs(it)) }) }
+    val jurosTotal = r2(sinal * kotlin.math.abs(numeroBr(jurosTxt)))
+    androidx.compose.runtime.SideEffect { viewModel.fields["ajuste"] = if (jurosTotal == 0.0) "" else String.format(java.util.Locale.US, "%.2f", jurosTotal) }
     val bruto = totalItens ?: numeroBr(viewModel.fields["bruto"])
-    val ajusteTotal = if (semJuros) 0.0 else numeroBr(viewModel.fields["ajuste"])
+    val ajusteParcelas = if (semJuros) 0.0 else jurosTotal
     val fmt = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
     val base = runCatching { java.time.LocalDate.parse(viewModel.fields["data"].orEmpty(), fmt) }.getOrNull() ?: java.time.LocalDate.now()
     val localPadrao = viewModel.fields["local"].orEmpty()
-    var modo by remember { mutableStateOf("primeira") }
+    var modo by remember { mutableStateOf("igual") }
     var porParcela by remember { mutableStateOf(false) }
     val vctos = remember { mutableStateMapOf<Int, String>() }
     val locaisP = remember { mutableStateMapOf<Int, String>() }
-    val ajustes = distribuirAjusteApp(ajusteTotal, n, modo)
+    val ajustes = distribuirAjusteApp(ajusteParcelas, n, modo)
     val valor = r2(bruto / n)
     val linhas = (0 until n).map { i ->
-        var calc = base.plusMonths(((i + 1) * meses).toLong())
-        if (calc.dayOfWeek == java.time.DayOfWeek.SATURDAY) calc = calc.plusDays(2)
-        if (calc.dayOfWeek == java.time.DayOfWeek.SUNDAY) calc = calc.plusDays(1)
+        var calc = if (meses == 0) base else base.plusMonths(((i + 1) * meses).toLong())
+        if (meses != 0 && calc.dayOfWeek == java.time.DayOfWeek.SATURDAY) calc = calc.plusDays(2)
+        if (meses != 0 && calc.dayOfWeek == java.time.DayOfWeek.SUNDAY) calc = calc.plusDays(1)
         Triple(vctos[i] ?: calc.format(fmt), if (porParcela && !comItens) (locaisP[i] ?: localPadrao) else "", ajustes[i])
     }
-    val json = org.json.JSONArray().apply {
+    val json = if (n < 2) null else org.json.JSONArray().apply {
         linhas.forEachIndexed { i, (v, l, a) ->
             put(org.json.JSONObject().apply {
                 if (vctos[i] != null) runCatching { java.time.LocalDate.parse(v, fmt).toString() }.getOrNull()?.let { put("vcto", it) }
@@ -2144,6 +2154,8 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
         }
     }.toString()
     androidx.compose.runtime.SideEffect { viewModel.planoParcelas = json }
+    val totalFaz = fazendasItens.values.sum()
+    val mostrarFaz = comItens && totalFaz > 0 && (fazendasItens.size > 1 || fazendasItens.keys.any { !ehFazendaApp(it) })
     val br = java.util.Locale("pt", "BR")
     fun brl(v: Double) = java.text.NumberFormat.getCurrencyInstance(br).format(v)
     val borda = MaterialTheme.colorScheme.outlineVariant
@@ -2155,32 +2167,54 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
             style = MaterialTheme.typography.labelMedium,
             fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal,
             color = MaterialTheme.colorScheme.onSurface,
-            // v405 (mockup aprovado) -- sem fundo/borda: só o traço verde embaixo da escolhida.
             modifier = Modifier
                 .clickable(onClick = onClick)
                 .padding(horizontal = 2.dp, vertical = 4.dp)
                 .drawBehindLinha(if (on) verde else androidx.compose.ui.graphics.Color.Transparent),
         )
     }
-    // v410 -- dentro do bloco da nota: sem caixa própria, uma linha fina separando.
+    @Composable
+    fun rotulo(t: String, dica: String) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(t, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+            com.bragro.mobile.ui.theme.DicaInfo(dica)
+        }
+    }
+    // Dentro do bloco "Itens e parcelas": sem caixa própria, uma linha fina separando.
     androidx.compose.material3.HorizontalDivider(color = borda)
-    Column(
-        Modifier.fillMaxWidth().padding(top = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text("Parcelas ($n)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-        if (!semJuros) {
-            Text("Juros / desconto", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                opcao("Igual", modo == "igual") { modo = "igual" }
-                opcao("Proporcional", modo == "proporcional") { modo = "proporcional" }
-                opcao("Só na 1ª", modo == "primeira") { modo = "primeira" }
-                opcao("Só na última", modo == "ultima") { modo = "ultima" }
+    Column(Modifier.fillMaxWidth().padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(if (n > 1) "Parcelas ($n)" else "À vista", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        rotulo("Juros / desconto", "Escolha + Juros (soma) ou − Desconto (abate) e digite só o valor. Vale para a operação inteira e é dividido entre as parcelas.")
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            opcao("+ Juros", sinal == 1) { sinal = 1 }
+            opcao("− Desconto", sinal == -1) { sinal = -1 }
+            androidx.compose.foundation.text.BasicTextField(
+                value = jurosTxt,
+                onValueChange = { novo -> jurosTxt = novo.filter { it.isDigit() || it == ',' || it == '.' } },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface, textAlign = androidx.compose.ui.text.style.TextAlign.End),
+                modifier = Modifier.width(110.dp).drawBehindLinha(borda),
+                decorationBox = { inner -> Row(verticalAlignment = Alignment.CenterVertically) { Text("R$ ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant); Box(Modifier.weight(1f)) { inner() } } },
+            )
+        }
+        if (viewModel.opBanco()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                VistoCheck(checked = viewModel.jurosSeparado, onCheckedChange = { viewModel.jurosSeparado = it })
+                Text("Lançar os juros em separado", style = MaterialTheme.typography.bodySmall)
+                com.bragro.mobile.ui.theme.DicaInfo("Cria um lançamento à parte na categoria \"Juros e encargos\" com o valor dos juros (mesma data, fazenda, banco e documento). As parcelas ficam só com o valor principal.")
             }
         }
-        if (!comItens) {
-            Text("Fazenda", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (n > 1) {
+            rotulo("Distribuir", "Igual: o mesmo valor em cada parcela (compra parcelada). Proporcional ao prazo: a parcela mais distante paga mais (custeio, Finame, financiamentos).")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                opcao("Igual", modo == "igual") { modo = "igual" }
+                opcao("Proporcional ao prazo", modo == "prazo") { modo = "prazo" }
+            }
+        }
+        if (!comItens && n > 1) {
+            rotulo("Fazenda", "Mesma em todas: usa o Local do lançamento. Por parcela: cada parcela escolhe a sua fazenda.")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 opcao("Mesma em todas", !porParcela) { porParcela = false }
                 opcao("Por parcela", porParcela) { porParcela = true }
             }
@@ -2189,17 +2223,33 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
             Column(Modifier.fillMaxWidth().border(1.dp, borda, RoundedCornerShape(10.dp)).padding(horizontal = 10.dp, vertical = 8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("${i + 1}/$n", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, modifier = Modifier.width(40.dp))
-                    androidx.compose.foundation.text.BasicTextField(
-                        value = v,
-                        onValueChange = { novo -> vctos[i] = novo },
-                        singleLine = true,
-                        textStyle = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface),
-                        modifier = Modifier.width(96.dp).drawBehindLinha(borda),
-                    )
+                    if (n > 1) {
+                        androidx.compose.foundation.text.BasicTextField(
+                            value = v,
+                            onValueChange = { novo -> vctos[i] = novo },
+                            singleLine = true,
+                            textStyle = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface),
+                            modifier = Modifier.width(96.dp).drawBehindLinha(borda),
+                        )
+                    } else {
+                        Text(v, style = MaterialTheme.typography.bodySmall)
+                    }
                     Spacer(Modifier.weight(1f))
                     Text(brl(r2(valor + a)), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                 }
-                if (!semJuros && a != 0.0) Text("Juros / desconto: ${brl(a)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (a != 0.0) Text("${brl(valor)} ${if (a > 0) "+" else "−"} ${brl(kotlin.math.abs(a))}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (mostrarFaz) {
+                    fazendasItens.forEach { (faz, vf) ->
+                        val parte = vf / totalFaz
+                        val direto = ehFazendaApp(faz)
+                        Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("↳ ${com.bragro.mobile.ui.domain.exibirTexto(faz, true)} ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(if (direto) "direto" else "indireto", style = MaterialTheme.typography.labelSmall, color = if (direto) verde else com.bragro.mobile.ui.domain.corAtencao())
+                            Spacer(Modifier.weight(1f))
+                            Text(brl(r2((valor + a) * parte)), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
                 if (porParcela && !comItens) {
                     var aberto by remember { mutableStateOf(false) }
                     Box(Modifier.padding(top = 4.dp)) {
@@ -2218,10 +2268,16 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
                 }
             }
         }
-        Row(Modifier.fillMaxWidth()) {
+        if (n > 1) Row(Modifier.fillMaxWidth()) {
             Text("Total", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
             Spacer(Modifier.weight(1f))
-            Text(brl(r2(bruto + ajusteTotal)), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+            Text(brl(r2(bruto + ajusteParcelas)), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+        }
+        if (mostrarFaz && fazendasItens.keys.any { !ehFazendaApp(it) }) {
+            Text("Indireto: o valor é dividido entre todas as fazendas ativas pela área (ha).", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (semJuros && jurosTotal != 0.0) {
+            Text("+ lançamento à parte em Juros e encargos: ${brl(jurosTotal)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

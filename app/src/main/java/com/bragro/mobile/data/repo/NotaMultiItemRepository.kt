@@ -38,6 +38,7 @@ class NotaMultiItemRepository(context: Context) {
         bruto: Double,
         itens: List<NotaMultiItemItemData>,
         plano: List<com.bragro.mobile.data.model.PlanoParcelaData>? = null,
+        ajuste: Double? = null,
     ): NotaMultiItemResponse? {
         val tokens = tokenStore.current() ?: return null
         var (accessToken, refreshToken) = tokens
@@ -50,7 +51,7 @@ class NotaMultiItemRepository(context: Context) {
                     accessToken = "", refreshToken = "", numero = numero, serie = serie,
                     emitenteNome = emitenteNome, dataEmissao = dataEmissao, fazendaDestino = fazendaDestino,
                     periodo = periodo, safra = safra, cultura = cultura, setor = setor, banco = banco,
-                    formaPgto = formaPgto, bruto = bruto, itens = itens, plano = plano, clientRequestId = reqId,
+                    formaPgto = formaPgto, bruto = bruto, itens = itens, plano = plano, ajuste = ajuste, clientRequestId = reqId,
                 )
             )
             return NotaMultiItemResponse(ok = true, itensCount = itens.size, valorTotal = bruto, savedOffline = true)
@@ -74,6 +75,7 @@ class NotaMultiItemRepository(context: Context) {
                 bruto = bruto,
                 itens = itens,
                 plano = plano,
+                ajuste = ajuste,
                 clientRequestId = reqId,
             )
             var response = NetworkModule.mobileApi.notaMultiItem(buildRequest())
