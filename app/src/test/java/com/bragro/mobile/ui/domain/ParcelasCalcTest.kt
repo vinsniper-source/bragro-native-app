@@ -68,7 +68,7 @@ class ParcelasCalcTest {
 
     @Test fun fazendaDiretaOuIndireta() {
         assertTrue(ParcelasCalc.ehFazenda("FAZENDA TESTE"))
-        assertTrue(ParcelasCalc.ehFazenda("FAZ. SANTA FÉ"))
+        assertTrue(ParcelasCalc.ehFazenda("FAZ. EXEMPLO"))
         assertTrue(ParcelasCalc.ehFazenda("Sítio Boa Vista"))
         assertFalse(ParcelasCalc.ehFazenda("OFICINA"))
         assertFalse(ParcelasCalc.ehFazenda("ADMINISTRATIVO"))
