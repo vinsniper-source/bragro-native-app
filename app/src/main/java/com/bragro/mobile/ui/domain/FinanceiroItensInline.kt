@@ -203,6 +203,7 @@ class FinanceiroItensInlineViewModel(app: Application) : AndroidViewModel(app) {
                         vcto = o.optString("vcto").takeIf { it.isNotBlank() },
                         local = o.optString("local").takeIf { it.isNotBlank() },
                         ajuste = if (o.has("ajuste")) o.optDouble("ajuste") else null,
+                        valor = if (o.has("valor")) o.optDouble("valor") else null, // v420
                     )
                 }
             }.getOrNull()

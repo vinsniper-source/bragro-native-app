@@ -25,5 +25,17 @@
   "previa": [
     { "liquido": 429, "fazendas": { "FAZENDA TESTE": 1200, "FAZENDA TESTE 1": 500 }, "esperado": { "FAZENDA TESTE": 302.82, "FAZENDA TESTE 1": 126.18 } },
     { "liquido": 441, "fazendas": { "FAZENDA TESTE": 1200, "FAZENDA TESTE 1": 500 }, "esperado": { "FAZENDA TESTE": 311.29, "FAZENDA TESTE 1": 129.71 } }
+  ],
+  "contrato": [
+    { "bruto": 100000, "valores": [25000, 25000, 30000, 20000], "diferenca": 0 },
+    { "bruto": 100000, "valores": [25000, 25000, 30000, 15000], "diferenca": -5000 },
+    { "bruto": 1000, "valores": [333.33, 333.33, 400], "diferenca": 66.66 }
+  ],
+  "baixa": [
+    { "vcto": "2027-01-10", "pago": "2027-01-22", "valorParcela": 28000, "valorPago": 28120, "dias": 12, "ajuste": 120, "situacao": "pago com 12 dias de atraso" },
+    { "vcto": "2027-07-10", "pago": "2027-07-05", "valorParcela": 27500, "valorPago": 27400, "dias": -5, "ajuste": -100, "situacao": "pago 5 dias antes" },
+    { "vcto": "2027-03-01", "pago": "2027-03-01", "valorParcela": 500, "valorPago": 500, "dias": 0, "ajuste": 0, "situacao": "pago no dia" },
+    { "vcto": "2026-12-31", "pago": "2027-01-01", "valorParcela": 99.9, "valorPago": 101.15, "dias": 1, "ajuste": 1.25, "situacao": "pago com 1 dia de atraso" },
+    { "vcto": "2027-01-10", "pago": "", "valorParcela": 100, "valorPago": 100, "dias": 0, "ajuste": 0, "situacao": "em aberto" }
   ]
 }

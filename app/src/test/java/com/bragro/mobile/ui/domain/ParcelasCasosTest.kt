@@ -54,4 +54,25 @@ class ParcelasCasosTest {
             o["esperado"]!!.jsonObject.forEach { (faz, v) -> assertEquals("prévia $faz", v.jsonPrimitive.double, r[faz]!!, 0.001) }
         }
     }
+
+    // v420
+    @Test fun valoresDoContrato() {
+        casos["contrato"]!!.jsonArray.forEach { c ->
+            val o = c.jsonObject
+            val r = ParcelasCalc.diferencaContrato(o["bruto"]!!.jsonPrimitive.double, o["valores"]!!.jsonArray.map { it.jsonPrimitive.double })
+            assertEquals("contrato ${o["valores"]}", o["diferenca"]!!.jsonPrimitive.double, r, 0.001)
+        }
+    }
+
+    @Test fun baixaComValorPago() {
+        casos["baixa"]!!.jsonArray.forEach { c ->
+            val o = c.jsonObject
+            val vcto = LocalDate.parse(o["vcto"]!!.jsonPrimitive.content)
+            val pagoTxt = o["pago"]!!.jsonPrimitive.content
+            val pago = if (pagoTxt.isBlank()) null else LocalDate.parse(pagoTxt)
+            if (pago != null) assertEquals("dias $vcto → $pago", o["dias"]!!.jsonPrimitive.int, ParcelasCalc.diasDoPagamento(vcto, pago))
+            assertEquals("ajuste", o["ajuste"]!!.jsonPrimitive.double, ParcelasCalc.ajusteDaBaixa(o["valorParcela"]!!.jsonPrimitive.double, o["valorPago"]!!.jsonPrimitive.double), 0.001)
+            assertEquals("situação", o["situacao"]!!.jsonPrimitive.content, ParcelasCalc.situacaoParcela(vcto, pago))
+        }
+    }
 }

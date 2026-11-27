@@ -1105,6 +1105,7 @@ data class PlanoParcelaData(
     val vcto: String? = null,
     val local: String? = null,
     val ajuste: Double? = null,
+    val valor: Double? = null, // v420 -- valor da parcela como no contrato do banco
 )
 
 @Serializable

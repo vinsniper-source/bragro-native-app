@@ -416,9 +416,10 @@ private fun AppMobileAndroidCard(appRelease: JsonObject?) {
         )
         if (!versaoServidor.isNullOrBlank() && versaoServidor != instalada) {
             Text(
-                "Versão $versaoServidor disponível. Desinstale a antiga e instale abaixo.",
+                // v420 -- instalar POR CIMA (mesma assinatura): desinstalar apagaria os lançamentos ainda não enviados.
+                "Versão $versaoServidor disponível. Baixe abaixo e instale por cima — não precisa desinstalar, seus dados continuam.",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.error,
+                color = com.bragro.mobile.ui.domain.corAtencao(),
                 modifier = Modifier.padding(top = 2.dp),
             )
         }

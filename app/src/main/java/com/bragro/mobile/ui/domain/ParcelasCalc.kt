@@ -83,4 +83,27 @@ object ParcelasCalc {
         if (total <= 0) return emptyMap()
         return fazendas.mapValues { (_, v) -> r2(liquidoParcela * v / total) }
     }
+
+    // ------------------------------------------------------------ v420
+    /** "Valores do contrato": quanto a soma das parcelas difere do Bruto (+ sobra, − falta). */
+    fun diferencaContrato(bruto: Double, valores: List<Double>): Double = r2(valores.sum() - bruto)
+
+    /** Dias entre o vencimento e o pagamento: > 0 = atraso, < 0 = antes, 0 = no dia. */
+    fun diasDoPagamento(vcto: LocalDate, pago: LocalDate): Int = java.time.temporal.ChronoUnit.DAYS.between(vcto, pago).toInt()
+
+    /** Baixa com "Valor pago": a mais = excedente (juros/multa, +); a menos = desconto (−). */
+    fun ajusteDaBaixa(valorParcela: Double, valorPago: Double): Double = r2(valorPago - valorParcela)
+
+    /** Texto da Situação: "em aberto", "pago no dia", "pago com 12 dias de atraso", "pago 5 dias antes". */
+    fun situacaoParcela(vcto: LocalDate?, pago: LocalDate?, verbo: String = "pago"): String {
+        if (pago == null) return "em aberto"
+        if (vcto == null) return verbo
+        val n = diasDoPagamento(vcto, pago)
+        fun dias(k: Int) = "$k ${if (k == 1) "dia" else "dias"}"
+        return when {
+            n == 0 -> "$verbo no dia"
+            n > 0 -> "$verbo com ${dias(n)} de atraso"
+            else -> "$verbo ${dias(-n)} antes"
+        }
+    }
 }
