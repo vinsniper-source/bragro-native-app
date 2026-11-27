@@ -672,6 +672,35 @@ fun HomeScreen(
     var espAcima by remember { mutableStateOf(lerMapaF("espAcima")) }
     var desloc by remember { mutableStateOf(lerMapaF("desloc")) }
     var icEsc by remember { mutableStateOf(lerMapaF("icEsc")) }
+    // v423 (mockup aprovado) -- layout salvo na CONTA: outro celular ou novo login trazem o mesmo layout.
+    val ctxLayout = androidx.compose.ui.platform.LocalContext.current
+    val layoutConta = remember { com.bragro.mobile.data.repo.LayoutContaRepository(ctxLayout.applicationContext) }
+    val escopoLayout = androidx.compose.runtime.rememberCoroutineScope()
+    var confirmarRestaurar by remember { mutableStateOf(false) }
+    fun recarregarDasPrefs() {
+        ordemInicio = prefsOrdem.getString("ordem", "").orEmpty().split(",").filter { it.isNotBlank() }
+        larguras = lerMapa("larguras").ifEmpty { prefsOrdem.getString("meia", "").orEmpty().split(",").filter { it.isNotBlank() }.associateWith { 1 } }
+        alturas = lerMapa("alturas"); espacos = lerMapa("espacos")
+        ocultos = prefsOrdem.getString("ocultos", "").orEmpty().split(",").filter { it.isNotBlank() }.toSet()
+        logoPos = prefsOrdem.getInt("logoPos", 0); logoAlt = prefsOrdem.getFloat("logoAlt", 40f)
+        ordemIcones = prefsOrdem.getString("icones", "").orEmpty().split(",").filter { it.isNotBlank() }
+        largF = lerMapaF("largF"); altDp = lerMapaF("altDp"); espAcima = lerMapaF("espAcima"); desloc = lerMapaF("desloc"); icEsc = lerMapaF("icEsc")
+    }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        val daConta = layoutConta.baixar()
+        val local = layoutConta.local()
+        if (daConta != null && daConta.isNotEmpty()) {
+            if (daConta != local) { layoutConta.aplicarLocal(daConta); recarregarDasPrefs() }
+        } else if (daConta != null && local.isNotEmpty()) {
+            layoutConta.enviar(local) // primeira vez: sobe o layout que já estava neste celular
+        }
+    }
+    fun salvarNaConta() {
+        escopoLayout.launch {
+            val ok = layoutConta.enviar(layoutConta.local())
+            android.widget.Toast.makeText(ctxLayout, if (ok) "Layout salvo na sua conta" else "Salvo só neste celular (sem conexão)", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
     val posicoes = remember { HashMap<String, androidx.compose.ui.geometry.Rect>() }
     var larguraLista by remember { mutableStateOf(1f) }
     var arrastando by remember { mutableStateOf<String?>(null) }
@@ -1221,28 +1250,58 @@ fun HomeScreen(
                         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                             Box(
                                 Modifier.size(40.dp).combinedClickable(
-                                    onClick = { reorganizando = !reorganizando; selecionados = emptySet() },
+                                    onClick = { if (reorganizando) salvarNaConta(); reorganizando = !reorganizando; selecionados = emptySet() },
                                     onLongClick = {
-                                        if (reorganizando) {
-                                            ordemInicio = emptyList(); larguras = emptyMap(); alturas = emptyMap(); espacos = emptyMap(); ocultos = emptySet(); selecionados = emptySet()
-                                            ordemIcones = emptyList(); logoPos = 0; logoAlt = 40f
-                                            largF = emptyMap(); altDp = emptyMap(); espAcima = emptyMap(); desloc = emptyMap(); icEsc = emptyMap()
-                                            prefsOrdem.edit().remove("ordem").remove("meia").remove("larguras").remove("alturas").remove("espacos").remove("ocultos").remove("icones").remove("logoPos").remove("logoAlt")
-                                                .remove("largF").remove("altDp").remove("espAcima").remove("desloc").remove("icEsc").apply()
-                                            android.widget.Toast.makeText(logoScreenContext, "Início restaurado", android.widget.Toast.LENGTH_SHORT).show()
-                                        }
+                                        if (reorganizando) confirmarRestaurar = true
                                     },
                                 ),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 com.bragro.mobile.ui.domain.IconeNegrito(
                                     if (reorganizando) Icons.Outlined.Check else Icons.Outlined.DragIndicator,
-                                    contentDescription = if (reorganizando) "Concluir (segure para restaurar)" else "Reorganizar",
+                                    contentDescription = if (reorganizando) "Salvar" else "Reorganizar",
                                     tint = if (reorganizando) MaterialTheme.colorScheme.primary else androidx.compose.material3.LocalContentColor.current,
                                     size = 24.dp,
                                 )
                             }
                         }
+                    }
+                    // v423 (mockup aprovado) -- ↺ Restaurar padrão (com confirmação) e ✓ Salvar, com nome.
+                    if (reorganizando) {
+                        Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                            Row(Modifier.clickable { confirmarRestaurar = true }.padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Outlined.Restore, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Text(" Restaurar padrão", style = MaterialTheme.typography.bodyMedium)
+                            }
+                            Row(Modifier.clickable { salvarNaConta(); reorganizando = false; selecionados = emptySet() }.padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Outlined.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                Text(" Salvar", style = MaterialTheme.typography.bodyMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
+                    if (confirmarRestaurar) {
+                        AlertDialog(
+                            onDismissRequest = { confirmarRestaurar = false },
+                            title = { Text("Voltar ao layout padrão?") },
+                            text = { Text("Blocos, espaços e ícones do cabeçalho voltam como vieram. Vale para esta conta em qualquer celular.", style = MaterialTheme.typography.bodySmall) },
+                            dismissButton = { androidx.compose.material3.TextButton(onClick = { confirmarRestaurar = false }) { Text("Cancelar") } },
+                            confirmButton = {
+                                androidx.compose.material3.TextButton(onClick = {
+                                    confirmarRestaurar = false
+                                    run {
+                                        run {
+                                            ordemInicio = emptyList(); larguras = emptyMap(); alturas = emptyMap(); espacos = emptyMap(); ocultos = emptySet(); selecionados = emptySet()
+                                            ordemIcones = emptyList(); logoPos = 0; logoAlt = 40f
+                                            largF = emptyMap(); altDp = emptyMap(); espAcima = emptyMap(); desloc = emptyMap(); icEsc = emptyMap()
+                                            prefsOrdem.edit().remove("ordem").remove("meia").remove("larguras").remove("alturas").remove("espacos").remove("ocultos").remove("icones").remove("logoPos").remove("logoAlt")
+                                                .remove("largF").remove("altDp").remove("espAcima").remove("desloc").remove("icEsc").apply()
+                                            android.widget.Toast.makeText(logoScreenContext, "Início restaurado", android.widget.Toast.LENGTH_SHORT).show()
+                                            escopoLayout.launch { layoutConta.enviar(null) } // v423 -- volta ao padrão na conta também
+                                        }
+                                    }
+                                }) { Text("Restaurar", color = com.bragro.mobile.ui.domain.corAtencao(), fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) }
+                            },
+                        )
                     }
                     if (selIc != null) {
                         Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.Center) {

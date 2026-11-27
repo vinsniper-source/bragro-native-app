@@ -554,6 +554,10 @@ interface MobileApi {
     @POST("api/mobile/settings")
     suspend fun settings(@Body body: SettingsRequest): Response<SettingsResponse>
 
+    // v423 -- layout do Início salvo na conta (action "get" / "save").
+    @POST("api/mobile/layout")
+    suspend fun layoutConta(@Body body: kotlinx.serialization.json.JsonObject): Response<kotlinx.serialization.json.JsonObject>
+
     @POST("api/mobile/base-de-dados")
     suspend fun baseDeDados(@Body body: BaseDeDadosRequest): Response<BaseDeDadosResponse>
 
