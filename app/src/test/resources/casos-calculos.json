@@ -5,7 +5,9 @@
     { "entrada": "MENSAL 10X", "meses": 1, "parcelas": 10 },
     { "entrada": "SEMESTRAL 2X", "meses": 6, "parcelas": 2 },
     { "entrada": "À VISTA", "meses": 0, "parcelas": 1 },
-    { "entrada": "", "meses": 0, "parcelas": 1 }
+    { "entrada": "", "meses": 0, "parcelas": 1 },
+    { "entrada": "__vazio__", "meses": 0, "parcelas": 1 },
+    { "entrada": "SAFRA 2X", "meses": 1, "parcelas": 2 }
   ],
   "ajuste": [
     { "total": 40, "parcelas": 4, "modo": "igual", "esperado": [10, 10, 10, 10] },

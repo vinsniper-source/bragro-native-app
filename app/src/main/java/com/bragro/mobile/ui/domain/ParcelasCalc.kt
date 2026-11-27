@@ -17,7 +17,7 @@ object ParcelasCalc {
     /** "ANUAL 4X" -> (12, 4); vazio / "À VISTA" -> (0, 1). Primeiro = meses entre parcelas, segundo = quantidade. */
     fun periodoParcelas(p: String): Pair<Int, Int> {
         val s = java.text.Normalizer.normalize(p, java.text.Normalizer.Form.NFD).replace(Regex("\\p{M}"), "").uppercase().trim()
-        if (s.isEmpty() || s.startsWith("A VISTA")) return 0 to 1
+        if (s.isEmpty() || s.startsWith("A VISTA") || s.startsWith("__")) return 0 to 1 // v419 -- "__vazio__" = à vista
         val meses = MESES_PERIODO.entries.firstOrNull { s.startsWith(it.key) }?.value ?: 1
         val n = Regex("(\\d+)\\s*X\\b").find(s)?.groupValues?.get(1)?.toIntOrNull()?.coerceAtLeast(1) ?: 1
         return meses to n

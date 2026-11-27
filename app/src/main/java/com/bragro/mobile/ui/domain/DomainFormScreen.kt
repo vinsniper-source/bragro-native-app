@@ -257,7 +257,8 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
 
             // Só busca se o domínio realmente tem um campo "fazenda" (Pragas/
             // Clima) -- evita a query à toa nos outros 14 módulos.
-            if (cfg.columns.any { it.key == "fazenda" }) {
+            // v419 -- Financeiro também (Várias fazendas, rateio pela área).
+            if (cfg.columns.any { it.key == "fazenda" } || domainId == "financeiro") {
                 farms.value = configRepository.farms()
             }
 
@@ -500,6 +501,8 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
     var jurosSeparado by mutableStateOf(false)
     // v404 (mockup aprovado) -- plano das parcelas (vencimento, fazenda e juros de cada uma), em JSON.
     var planoParcelas by mutableStateOf<String?>(null)
+    // v419 -- "Várias fazendas" sem itens: nomes das fazendas do rateio pela área (JSON).
+    var rateioFazendas by mutableStateOf<String?>(null)
 
     fun isVisible(col: ColumnConfig): Boolean {
         if (col.key == "entidade" && opBanco() && camposOriginais["entidade"].isNullOrBlank()) return false
@@ -705,7 +708,8 @@ class DomainFormViewModel(app: Application) : AndroidViewModel(app) {
             val jurosNum = jurosTxt.let { t -> (if (t.contains(",")) t.replace(".", "").replace(",", ".") else t).toDoubleOrNull() } ?: 0.0
             val separarJuros = recordId == null && opBanco() && jurosSeparado && jurosNum > 0
             val principal0 = if (separarJuros) snapshot + ("ajuste" to "0") else snapshot
-            val principal = planoParcelas?.takeIf { recordId == null && domainId == "financeiro" }?.let { principal0 + ("planoParcelas" to it) } ?: principal0
+            val principal1 = planoParcelas?.takeIf { recordId == null && domainId == "financeiro" }?.let { principal0 + ("planoParcelas" to it) } ?: principal0
+            val principal = rateioFazendas?.takeIf { recordId == null && domainId == "financeiro" }?.let { principal1 + ("rateioFazendas" to it) } ?: principal1
             var result = if (recordId == null) recordRepository.createRecord(domainId, principal) else recordRepository.updateRecord(domainId, recordId, snapshot)
             if (separarJuros && result !is SaveResult.Failure) {
                 val juros = (snapshot - setOf("subcategoria", "periodo")) + mapOf("categoria" to "JUROS E ENCARGOS", "operacao" to "DESPESA", "bruto" to jurosTxt, "ajuste" to "0")
@@ -2114,7 +2118,20 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
     val base = runCatching { java.time.LocalDate.parse(viewModel.fields["data"].orEmpty(), fmt) }.getOrNull() ?: java.time.LocalDate.now()
     val localPadrao = viewModel.fields["local"].orEmpty()
     var modo by remember { mutableStateOf("igual") }
-    var porParcela by remember { mutableStateOf(false) }
+    // v419 (mockup aprovado) -- Fazenda: Mesma em todas / Por parcela / Várias fazendas (pela área).
+    var fazModo by remember { mutableStateOf("mesma") }
+    val porParcela = fazModo == "parcela"
+    val farmsArea = viewModel.farms.value.filter { it.areaHa > 0 }
+    val escolhidas = remember { androidx.compose.runtime.mutableStateListOf<String>() }
+    var escolhidasIniciadas by remember { mutableStateOf(false) }
+    if (fazModo == "varias" && !escolhidasIniciadas && farmsArea.isNotEmpty()) {
+        escolhidas.clear(); escolhidas.addAll(farmsArea.map { it.name }); escolhidasIniciadas = true
+    }
+    val varias = !comItens && fazModo == "varias"
+    val rateio = if (varias) escolhidas.mapNotNull { n -> farmsArea.firstOrNull { it.name == n } } else emptyList()
+    androidx.compose.runtime.SideEffect {
+        viewModel.rateioFazendas = if (varias && rateio.isNotEmpty()) org.json.JSONArray(rateio.map { it.name }).toString() else null
+    }
     val vctos = remember { mutableStateMapOf<Int, String>() }
     val locaisP = remember { mutableStateMapOf<Int, String>() }
     val ajustes = distribuirAjusteApp(ajusteParcelas, n, modo)
@@ -2134,8 +2151,11 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
         }
     }.toString()
     androidx.compose.runtime.SideEffect { viewModel.planoParcelas = json }
-    val totalFaz = fazendasItens.values.sum()
-    val mostrarFaz = comItens && totalFaz > 0 && (fazendasItens.size > 1 || fazendasItens.keys.any { !ehFazendaApp(it) })
+    // Divisão por fazenda: itens (valor de cada fazenda) ou Várias fazendas (área).
+    val fazPrevia: Map<String, Double> = if (comItens) fazendasItens else rateio.associate { it.name to it.areaHa }
+    val totalFaz = fazPrevia.values.sum()
+    val mostrarFaz = totalFaz > 0 && (if (comItens) fazendasItens.size > 1 || fazendasItens.keys.any { !ehFazendaApp(it) } else varias)
+    fun pct(v: Double) = String.format(java.util.Locale("pt", "BR"), "%.2f%%", v / (if (totalFaz > 0) totalFaz else 1.0) * 100)
     val br = java.util.Locale("pt", "BR")
     fun brl(v: Double) = java.text.NumberFormat.getCurrencyInstance(br).format(v)
     val borda = MaterialTheme.colorScheme.outlineVariant
@@ -2192,11 +2212,44 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
                 opcao("Proporcional ao prazo", modo == "prazo") { modo = "prazo" }
             }
         }
-        if (!comItens && n > 1) {
-            rotulo("Fazenda", "Mesma em todas: usa o Local do lançamento. Por parcela: cada parcela escolhe a sua fazenda.")
+        if (!comItens) {
+            rotulo("Fazenda", "Mesma em todas: usa o Local do lançamento. Por parcela: cada parcela escolhe a sua fazenda. Várias fazendas: o valor é dividido entre as fazendas escolhidas pela área (ha); entra no DRE como custo direto delas.")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                opcao("Mesma em todas", !porParcela) { porParcela = false }
-                opcao("Por parcela", porParcela) { porParcela = true }
+                opcao("Mesma em todas", fazModo == "mesma") { fazModo = "mesma" }
+                if (n > 1) opcao("Por parcela", fazModo == "parcela") { fazModo = "parcela" }
+                opcao("Várias fazendas", fazModo == "varias") { fazModo = "varias" }
+            }
+        }
+        if (varias) {
+            Column(Modifier.fillMaxWidth().border(1.dp, borda, RoundedCornerShape(10.dp)).padding(horizontal = 10.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Fazendas do rateio", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                    com.bragro.mobile.ui.theme.DicaInfo("Já vêm todas as fazendas ativas; tire as que não entram. O % é calculado sozinho pela área (ha) do cadastro.")
+                    Spacer(Modifier.weight(1f))
+                    Text("pela área (ha)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (farmsArea.isEmpty()) Text("Nenhuma fazenda com área cadastrada em Base de Dados.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                rateio.forEach { f ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(com.bragro.mobile.ui.domain.exibirTexto(f.name, true), style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                        Text("${pct(f.areaHa)} · ${brl(r2(bruto * f.areaHa / (if (totalFaz > 0) totalFaz else 1.0)))}", style = MaterialTheme.typography.bodySmall)
+                        IconButton(onClick = { escolhidas.remove(f.name) }, modifier = Modifier.size(28.dp)) {
+                            Icon(Icons.Outlined.Delete, contentDescription = "Tirar do rateio", tint = com.bragro.mobile.ui.domain.corAtencao(), modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+                val fora = farmsArea.filter { it.name !in escolhidas }
+                if (fora.isNotEmpty()) {
+                    var abrir by remember { mutableStateOf(false) }
+                    Box {
+                        Text("+ fazenda", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.clickable { abrir = true }.padding(vertical = 4.dp))
+                        DropdownMenu(expanded = abrir, onDismissRequest = { abrir = false }) {
+                            fora.forEach { f ->
+                                androidx.compose.material3.DropdownMenuItem(text = { Text(com.bragro.mobile.ui.domain.exibirTexto(f.name, true)) }, onClick = { escolhidas.add(f.name); abrir = false })
+                            }
+                        }
+                    }
+                }
             }
         }
         linhas.forEachIndexed { i, (v, l, a) ->
@@ -2218,8 +2271,10 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
                     Text(brl(r2(valor + a)), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                 }
                 if (a != 0.0) Text("${brl(valor)} ${if (a > 0) "+" else "−"} ${brl(kotlin.math.abs(a))}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (mostrarFaz) {
-                    ParcelasCalc.previaPorFazenda(valor + a, fazendasItens).forEach { (faz, liqFaz) ->
+                if (mostrarFaz && varias && i > 0) {
+                    Text("↳ mesma divisão (${fazPrevia.values.joinToString(" · ") { pct(it) }})", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else if (mostrarFaz) {
+                    ParcelasCalc.previaPorFazenda(valor + a, fazPrevia).forEach { (faz, liqFaz) ->
                         val direto = ehFazendaApp(faz)
                         Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text("↳ ${com.bragro.mobile.ui.domain.exibirTexto(faz, true)} ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
