@@ -1,5 +1,7 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -1429,6 +1431,38 @@ private fun moneyRawToDisplay(raw: String): String {
     return "${if (negative) "-" else ""}${groupThousands(intPart)},$decPart"
 }
 
+/** v422 -- máscara de dinheiro para outros arquivos (itens da nota). */
+internal fun mascaraReais(t: String): String = formatMoneyMask(t)
+internal fun fecharReais(t: String): String = finalizeMoneyMask(t)
+
+/** v422 -- campo de dinheiro dos blocos internos: "R$" na frente, milhar enquanto digita
+ * e ",00" ao sair do campo (mesma máscara dos campos do formulário). */
+@Composable
+internal fun CampoReais(valor: String, onChange: (String) -> Unit, modifier: Modifier = Modifier, negativo: Boolean = false, rotuloAcess: String = "Valor em reais") {
+    val borda = MaterialTheme.colorScheme.outlineVariant
+    androidx.compose.foundation.text.BasicTextField(
+        value = valor,
+        onValueChange = { t -> onChange(formatMoneyMask(if (negativo) t else t.replace("-", ""))) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface, textAlign = androidx.compose.ui.text.style.TextAlign.End),
+        modifier = modifier
+            .semantics { contentDescription = rotuloAcess }
+            .onFocusChanged { if (!it.isFocused && valor.isNotEmpty()) onChange(finalizeMoneyMask(valor)) }
+            .drawBehindLinha(borda)
+            .padding(vertical = 4.dp),
+        decorationBox = { inner ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("R$ ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+                    if (valor.isEmpty()) Text("0,00", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                    inner()
+                }
+            }
+        },
+    )
+}
+
 private fun groupThousands(digits: String): String =
     digits.reversed().chunked(3).joinToString(".").reversed()
 
@@ -2204,15 +2238,8 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
         if (!contrato) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             opcao("+ Juros", sinal == 1) { sinal = 1 }
             opcao("− Desconto", sinal == -1) { sinal = -1 }
-            androidx.compose.foundation.text.BasicTextField(
-                value = jurosTxt,
-                onValueChange = { novo -> jurosTxt = novo.filter { it.isDigit() || it == ',' || it == '.' } },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
-                textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface, textAlign = androidx.compose.ui.text.style.TextAlign.End),
-                modifier = Modifier.width(110.dp).drawBehindLinha(borda),
-                decorationBox = { inner -> Row(verticalAlignment = Alignment.CenterVertically) { Text("R$ ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant); Box(Modifier.weight(1f)) { inner() } } },
-            )
+            // v422 -- R$ e ,00 com a mesma máscara; ocupa o resto da linha (não espreme mais o valor).
+            CampoReais(jurosTxt, { jurosTxt = it }, Modifier.weight(1f), rotuloAcess = "Valor do juros ou desconto")
         }
         if (viewModel.opBanco()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -2288,25 +2315,13 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
                     Text(brl(r2(valores[i] + a)), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                 }
                 if (contrato) {
-                    Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Valor", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        androidx.compose.foundation.text.BasicTextField(
-                            value = valoresTxt[i] ?: java.text.NumberFormat.getNumberInstance(br).apply { minimumFractionDigits = 2; maximumFractionDigits = 2 }.format(valorPadrao),
-                            onValueChange = { novo -> valoresTxt[i] = novo.filter { it.isDigit() || it == ',' || it == '.' } },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
-                            textStyle = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface, textAlign = androidx.compose.ui.text.style.TextAlign.End),
-                            modifier = Modifier.width(100.dp).drawBehindLinha(borda),
-                        )
-                        Text("Juros", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        androidx.compose.foundation.text.BasicTextField(
-                            value = jurosP[i] ?: "",
-                            onValueChange = { novo -> jurosP[i] = novo.filter { it.isDigit() || it == ',' || it == '.' || it == '-' } },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
-                            textStyle = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface, textAlign = androidx.compose.ui.text.style.TextAlign.End),
-                            modifier = Modifier.width(80.dp).drawBehindLinha(borda),
-                        )
+                    Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Valor", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(56.dp))
+                        CampoReais(valoresTxt[i] ?: java.text.NumberFormat.getNumberInstance(br).apply { minimumFractionDigits = 2; maximumFractionDigits = 2 }.format(valorPadrao), { valoresTxt[i] = it }, Modifier.weight(1f), rotuloAcess = "Valor da parcela ${i + 1}")
+                    }
+                    Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Juros", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(56.dp))
+                        CampoReais(jurosP[i] ?: "", { jurosP[i] = it }, Modifier.weight(1f), negativo = true, rotuloAcess = "Juros (+) ou desconto (−) da parcela ${i + 1}")
                     }
                 } else if (a != 0.0) Text("${brl(valores[i])} ${if (a > 0) "+" else "−"} ${brl(kotlin.math.abs(a))}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (mostrarFaz && varias && i > 0) {
@@ -2332,7 +2347,8 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
                             modifier = Modifier.clickable { aberto = true }.drawBehindLinha(borda).padding(end = 18.dp),
                         )
                         DropdownMenu(expanded = aberto, onDismissRequest = { aberto = false }) {
-                            locais.forEach { f ->
+                            // v422 -- por parcela só entram fazendas (sítio, rancho...): rateio direto.
+                            locais.filter { ehFazendaApp(it) }.forEach { f ->
                                 androidx.compose.material3.DropdownMenuItem(text = { Text(com.bragro.mobile.ui.domain.exibirTexto(f, true)) }, onClick = { locaisP[i] = f; aberto = false })
                             }
                         }
@@ -2344,6 +2360,14 @@ private fun PlanoParcelasSecao(viewModel: DomainFormViewModel, locais: List<Stri
             Text(if (contrato) "Total do contrato" else "Total", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
             Spacer(Modifier.weight(1f))
             Text(brl(r2((if (contrato) valores.sum() else bruto) + ajusteParcelas)), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+        }
+        // v422 -- itens x Bruto: aponta a diferença (pode ser erro de digitação).
+        val brutoDigitado = numeroBr(viewModel.fields["bruto"])
+        if (comItens && totalItens != null && brutoDigitado > 0 && kotlin.math.abs(totalItens - brutoDigitado) >= 0.01) {
+            Text(
+                "Os itens somam ${brl(totalItens)} e o Bruto está ${brl(brutoDigitado)}: diferença de ${brl(r2(kotlin.math.abs(totalItens - brutoDigitado)))}. Confira a digitação.",
+                style = MaterialTheme.typography.labelSmall, color = com.bragro.mobile.ui.domain.corAtencao(),
+            )
         }
         if (contrato && difContrato != 0.0) {
             Text(
@@ -2371,7 +2395,6 @@ private fun BaixaValorPagoApp(viewModel: DomainFormViewModel, campoData: String,
     var txt by remember { mutableStateOf("") }
     val br = java.util.Locale("pt", "BR")
     fun brl(v: Double) = java.text.NumberFormat.getCurrencyInstance(br).format(v)
-    val borda = MaterialTheme.colorScheme.outlineVariant
     val vcto = runCatching { java.time.LocalDate.parse(vctoIso) }.getOrNull()
     val pago = runCatching { java.time.LocalDate.parse(brDateToIso(viewModel.fields[campoData].orEmpty())) }.getOrNull()
     val dias = if (vcto != null && pago != null) ParcelasCalc.diasDoPagamento(vcto, pago) else null
@@ -2381,18 +2404,10 @@ private fun BaixaValorPagoApp(viewModel: DomainFormViewModel, campoData: String,
             Text("Valor pago", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
             com.bragro.mobile.ui.theme.DicaInfo("Digite o valor realmente pago. Se passou do vencimento e pagou a mais, a diferença é o excedente (juros/multa); se pagou antes e a menos, é desconto. Vai sozinha para o Juros / desconto desta parcela.")
             Spacer(Modifier.weight(1f))
-            androidx.compose.foundation.text.BasicTextField(
-                value = txt,
-                onValueChange = { novo ->
-                    txt = novo.filter { it.isDigit() || it == ',' || it == '.' }
-                    if (txt.isNotBlank()) viewModel.fields["ajuste"] = String.format(java.util.Locale.US, "%.2f", ParcelasCalc.ajusteDaBaixa(valorParcela, numeroBr(txt)))
-                },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
-                textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface, textAlign = androidx.compose.ui.text.style.TextAlign.End),
-                modifier = Modifier.width(130.dp).drawBehindLinha(borda),
-                decorationBox = { inner -> Row(verticalAlignment = Alignment.CenterVertically) { Text("R$ ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant); Box(Modifier.weight(1f)) { inner() } } },
-            )
+            CampoReais(txt, { novo ->
+                txt = novo
+                if (txt.isNotBlank()) viewModel.fields["ajuste"] = String.format(java.util.Locale.US, "%.2f", ParcelasCalc.ajusteDaBaixa(valorParcela, numeroBr(txt)))
+            }, Modifier.width(150.dp), rotuloAcess = "Valor pago")
         }
         Text("Valor da parcela: ${brl(valorParcela)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         val partes = buildList {

@@ -1,5 +1,6 @@
 package com.bragro.mobile.ui.domain
 
+import androidx.compose.ui.focus.onFocusChanged
 import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -353,12 +354,14 @@ private fun ItemNotaLinhaRow(
             }
             // v410 (mockup v405) -- Valor do item (o total da nota é a soma).
             ItemFieldBlock(modifier = Modifier.fillMaxWidth()) {
+                // v422 -- R$ na frente, milhar enquanto digita e ,00 ao sair.
                 OutlinedTextField(
                     value = linha.valor,
-                    onValueChange = { linha.valor = it.filter { c -> c.isDigit() || c == ',' || c == '.' } },
+                    onValueChange = { linha.valor = mascaraReais(it.replace("-", "")) },
                     label = { Text("Valor") },
+                    leadingIcon = { Text("R$", style = androidx.compose.material3.MaterialTheme.typography.labelSmall) },
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().onFocusChanged { if (!it.isFocused && linha.valor.isNotEmpty()) linha.valor = fecharReais(linha.valor) },
                     colors = appFieldColors(),
                 )
             }
