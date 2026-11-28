@@ -1329,9 +1329,11 @@ fun HomeScreen(
                     Column(Modifier.fillMaxWidth().padding(start = 18.dp, end = 10.dp, top = (4f + (espAcima["logo"] ?: 0f)).coerceAtLeast(0f).dp, bottom = 6.dp)) {
                         var ldx by remember { mutableStateOf(0f) }
                         val selLogo = reorganizando && "logo" in selecionados
-                        Box(
+                        // v435 (mockup aprovado) -- slogan ao lado da logo, em até 2 linhas (a letra diminui
+                        // sozinha até caber), sem "BRAgro —"; a linha do slogan embaixo dos ícones saiu.
+                        Row(
                             Modifier.fillMaxWidth(),
-                            contentAlignment = when (logoPos) { 1 -> Alignment.Center; 2 -> Alignment.CenterEnd; else -> Alignment.CenterStart },
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Box(
                                 Modifier
@@ -1363,6 +1365,18 @@ fun HomeScreen(
                                     onFim = { prefsOrdem.edit().putFloat("logoAlt", logoAlt).apply() },
                                 )
                             }
+                            var tamSlogan by remember { mutableStateOf(15f) }
+                            Text(
+                                "Conectando a força da nossa terra, carregando o Brasil no coração.",
+                                fontSize = tamSlogan.sp,
+                                lineHeight = (tamSlogan * 1.25f).sp,
+                                fontStyle = FontStyle.Italic,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 2,
+                                onTextLayout = { r -> if (r.hasVisualOverflow && tamSlogan > 9f) tamSlogan -= 0.5f },
+                                modifier = Modifier.weight(1f).padding(start = 8.dp),
+                            )
                         }
                         if (selLogo) {
                             fun somar(chave: String, d: Float, min: Float) {
@@ -1607,18 +1621,7 @@ fun HomeScreen(
             // v396b (mockup aprovado) -- logo, data+slogan, botões do setor e Alertas/Monitor/Avisos também
             // são blocos (só os ícones do cabeçalho ficam fixos). A logo fica no cabeçalho enquanto for o
             // 1º bloco; ao descer, vira um bloco do Início.
-            bloco("saudacao") {
-                Column(Modifier.fillMaxWidth()) {
-                    Text(
-                        "BRAgro — Conectando a força da nossa terra, carregando o Brasil no coração.",
-                        style = MaterialTheme.typography.titleSmall, // v274 (mockup v329) -- fonte menor
-                        fontStyle = FontStyle.Italic,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
-                    )
-                }
-            }
+            // v435 -- bloco "saudacao" (slogan) removido: o slogan está ao lado da logo.
             if (com.bragro.mobile.ui.nav.BotoesSetor.itens.value.isNotEmpty()) {
             bloco("setor") {
                     val botoesSetor = com.bragro.mobile.ui.nav.BotoesSetor.itens.value
