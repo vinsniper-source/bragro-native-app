@@ -1665,6 +1665,8 @@ fun HomeScreen(
                         FarmSelectorButton(asPill = true, onChanged = { viewModel.onFiltroGlobalChanged(logoScreenContext) })
                         SafraSelectorButton(asPill = true, onChanged = { viewModel.onFiltroGlobalChanged(logoScreenContext) })
                         CulturaSelectorButton(asPill = true, onChanged = { viewModel.onFiltroGlobalChanged(logoScreenContext) })
+                        // v428 (mockup aprovado) -- aviso dos filtros no ⓘ.
+                        com.bragro.mobile.ui.theme.DicaInfo("Escolha Fazenda, Safra e Cultura para ver o detalhe de uma fazenda. Sem isso, a barra mostra o total do que está filtrado.")
                     }
                 }
                 val canvas = if (data.hasWidget("inicio.canvas")) data.canvas else null
@@ -1687,25 +1689,33 @@ fun HomeScreen(
                         onAbrirMapa = {}, // v292 (mockup v385) -- sem mapa dos talhões no Início (fica no cadastro de fazendas)
                     )
                     val fazendaSelecionada = canvas.fazendas.find { it.id == selecionadaFazendaId }
-                    // v427 (mockup aprovado) -- o detalhe só aparece com Fazenda, Safra e Cultura escolhidas.
-                    val faltam = listOfNotNull(
-                        "Fazenda".takeIf { FarmSelection.selected.value == null },
-                        "Safra".takeIf { SafraSelection.selected.value == null },
-                        "Cultura".takeIf { CulturaSelection.selected.value == null },
-                    )
-                    if (faltam.isNotEmpty()) {
-                        Text(
-                            if (faltam.size == 3) "Escolha Fazenda, Safra e Cultura para ver o detalhe da fazenda."
-                            else "Falta escolher " + (if (faltam.size == 2) faltam.joinToString(" e ") else faltam.first()) + ".",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth(),
+                    // v428 (mockup aprovado) -- barra de custos sempre no bloco: com Fazenda, Safra e
+                    // Cultura escolhidas mostra a fazenda; sem isso, o total do que está filtrado.
+                    val fazSel = FarmSelection.selected.value
+                    val safSel = SafraSelection.selected.value
+                    val culSel = CulturaSelection.selected.value
+                    val resumoCusto = if (fazSel != null && safSel != null && culSel != null && fazendaSelecionada != null) fazendaSelecionada
+                    else canvas.fazendas.firstOrNull()?.let { primeira ->
+                        val porCat = linkedMapOf<String, Double>()
+                        var soma = 0.0
+                        var area = 0.0
+                        canvas.fazendas.forEach { f ->
+                            f.breakdown.forEach { b -> porCat[b.categoria] = (porCat[b.categoria] ?: 0.0) + b.valor }
+                            val a = f.areaFiltroHa ?: f.areaHa
+                            if (f.custoHaMedio != null && a > 0) { soma += f.custoHaMedio * a; area += a }
+                        }
+                        primeira.copy(
+                            nome = fazSel ?: "Todas as fazendas",
+                            culturaAtual = if (safSel == null && culSel == null) "todas as safras e culturas" else (culSel ?: "todas as culturas"),
+                            safraAtual = if (safSel == null && culSel == null) null else (safSel ?: "todas as safras"),
+                            custoHaMedio = if (area > 0) soma / area else null,
+                            breakdown = porCat.map { (c, v) -> com.bragro.mobile.data.model.CanvasBreakdownItemData(c, v) },
+                            tendencia = null,
                         )
                     }
-                    if (fazendaSelecionada != null && faltam.isEmpty()) {
+                    if (resumoCusto != null) {
                         androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
-                        CanvasDetailCard(fazendaSelecionada)
+                        CanvasDetailCard(resumoCusto)
                     }
                 }
                 }
