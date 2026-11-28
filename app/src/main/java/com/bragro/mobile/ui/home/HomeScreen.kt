@@ -1055,12 +1055,25 @@ fun HomeScreen(
                         if (h.hasWidget("inicio.monitor")) ic("monitor") { IconeComContagem(IconesVazados.OfflineBolt, "Monitor", h.recentActivity.size) { atalhoAberto = "monitor" } }
                     }
                     ic("data") {
-                        IconButton(onClick = {
-                            val hoje = java.time.LocalDate.now(java.time.ZoneId.of("America/Sao_Paulo"))
-                                .format(java.time.format.DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy", java.util.Locale("pt", "BR")))
-                            android.widget.Toast.makeText(logoScreenContext, hoje, android.widget.Toast.LENGTH_SHORT).show()
-                        }) {
+                        // v437 (mockup aprovado) -- abre o mesmo calendário dos campos de data dos
+                        // formulários (verde do app), em hoje, só para consultar.
+                        var calendarioAberto by remember { mutableStateOf(false) }
+                        IconButton(onClick = { calendarioAberto = true }) {
                             FolhaData(androidx.compose.material3.LocalContentColor.current) // v402 (mockup aprovado)
+                        }
+                        if (calendarioAberto) {
+                            val hojeMs = java.time.LocalDate.now(java.time.ZoneId.of("America/Sao_Paulo")).atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+                            val estado = androidx.compose.material3.rememberDatePickerState(initialSelectedDateMillis = hojeMs)
+                            androidx.compose.material3.DatePickerDialog(
+                                onDismissRequest = { calendarioAberto = false },
+                                confirmButton = { androidx.compose.material3.TextButton(onClick = { calendarioAberto = false }) { Text("Fechar") } },
+                            ) {
+                                androidx.compose.material3.DatePicker(
+                                    state = estado,
+                                    title = { Text("Hoje", modifier = Modifier.padding(start = 24.dp, top = 16.dp)) },
+                                    colors = com.bragro.mobile.ui.theme.appDatePickerColors(),
+                                )
+                            }
                         }
                     }
                     // Tema num botão só, sempre visível (fora da rolagem):

@@ -103,8 +103,15 @@ class MainActivity : ComponentActivity() {
                     window.decorView.setBackgroundColor(fundoJanela.toArgb())
                     // v293 (mockup v387) -- ao abrir o teclado o Android pode mostrar a barra de
                     // status: ela passa a ter a cor do tema (sem faixa branca) e é escondida de novo.
-                    window.statusBarColor = fundoJanela.toArgb()
+                    // v437 -- barra de status TRANSPARENTE (a cor que aparece atrás dela é o fundo do app,
+                    // ver background + statusBarsPadding abaixo) e sem o "véu" claro que o Android põe
+                    // sozinho para dar contraste -- era a faixa branca quando o teclado trazia a barra.
+                    window.statusBarColor = android.graphics.Color.TRANSPARENT
                     window.navigationBarColor = fundoJanela.toArgb()
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                        window.isStatusBarContrastEnforced = false
+                        window.isNavigationBarContrastEnforced = false
+                    }
                     val escuro = androidx.core.graphics.ColorUtils.calculateLuminance(fundoJanela.toArgb()) < 0.5
                     WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = !escuro
                     WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = !escuro
