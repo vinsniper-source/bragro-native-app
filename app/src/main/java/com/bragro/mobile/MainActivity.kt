@@ -9,10 +9,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.background
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.bragro.mobile.sync.SyncWorker
 import androidx.lifecycle.lifecycleScope
@@ -61,28 +62,12 @@ class MainActivity : ComponentActivity() {
         // topo pra ver a hora/notificações rapidamente, sem precisar sair
         // do modo imersivo pra isso. A barra de navegação (botões de
         // voltar/início do Android) continua igual -- só a de status muda.
-        WindowInsetsControllerCompat(window, window.decorView).let { controller ->
-            controller.hide(WindowInsetsCompat.Type.statusBars())
-            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
-        // v293 (mockup v387) -- quando o teclado abre, alguns aparelhos reexibem a barra de
-        // status (era a faixa branca no topo): esconde de novo enquanto o teclado estiver aberto.
-        // v407 -- a faixa branca continuava: em alguns aparelhos (ex.: Motorola) o teclado traz
-        // a barra de status de volta e o "hide" acima não segura. FLAG_FULLSCREEN mantém a barra
-        // escondida mesmo com o teclado aberto (Android 11+, onde o teclado continua avisando o
-        // app pelo WindowInsets.ime -- ver imePadding no setContent abaixo).
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-            @Suppress("DEPRECATION")
-            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN)
-        }
-        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { v, insets ->
-            if (insets.isVisible(WindowInsetsCompat.Type.ime()) && insets.isVisible(WindowInsetsCompat.Type.statusBars())) {
-                WindowInsetsControllerCompat(window, v).hide(WindowInsetsCompat.Type.statusBars())
-                // reforço: alguns aparelhos só aceitam o "hide" depois que o teclado termina de abrir
-                v.postDelayed({ WindowInsetsControllerCompat(window, v).hide(WindowInsetsCompat.Type.statusBars()) }, 150)
-            }
-            androidx.core.view.ViewCompat.onApplyWindowInsets(v, insets)
-        }
+        // v426 -- solução alternativa para a faixa branca: em vez de esconder a barra de
+        // status (o teclado a trazia de volta em alguns aparelhos e aparecia a faixa
+        // branca em cima, mesmo com FLAG_FULLSCREEN e o "hide" repetido -- v293/v407),
+        // a barra fica sempre visível e TRANSPARENTE, com o fundo do app por baixo
+        // (ver statusBarsPadding no setContent). Como ela não some nem volta, não há
+        // mais o que deixar faixa: relógio e ícones aparecem sobre a cor do app.
         // v55 -- Android 13+: pede uma vez a permissão de notificação, para
         // os alertas da fazenda aparecerem com o app fechado.
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
@@ -109,10 +94,17 @@ class MainActivity : ComponentActivity() {
                     WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = !escuro
                     WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = !escuro
                 }
-                Surface(modifier = Modifier.fillMaxSize()) {
+                Surface(modifier = Modifier.fillMaxSize(), color = fundoJanela) {
                     // v407 -- o conteúdo encolhe acima do teclado (em vez de a tela inteira subir e
                     // deixar a faixa em cima); o campo tocado rola para ficar à vista.
-                    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().imePadding()) {
+                    // v426 -- fundo do app atrás da barra de status (sempre visível) e o
+                    // conteúdo começa logo abaixo dela; nenhuma área fica com outra cor.
+                    androidx.compose.foundation.layout.Box(
+                        Modifier.fillMaxSize()
+                            .background(fundoJanela)
+                            .statusBarsPadding()
+                            .imePadding(),
+                    ) {
                         BRAgroNavHost()
                         if (com.bragro.mobile.ui.seguranca.AppLock.travado.value) {
                             com.bragro.mobile.ui.seguranca.TelaBloqueio(pedirSenhaAntiga = { pedirSenhaDoSistema() })
@@ -146,13 +138,5 @@ class MainActivity : ComponentActivity() {
         com.bragro.mobile.ui.seguranca.AppLock.aoSair(this)
     }
 
-    // O Android às vezes devolve a barra de status sozinho (ex.: usuário
-    // trocou de app e voltou) -- reaplica o "hide" quando a janela recupera
-    // o foco, senão a barra reaparece de vez sem precisar de gesto nenhum.
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) {
-            WindowInsetsControllerCompat(window, window.decorView).hide(WindowInsetsCompat.Type.statusBars())
-        }
-    }
+    // v426 -- sem onWindowFocusChanged: a barra de status não é mais escondida (ver onCreate).
 }
