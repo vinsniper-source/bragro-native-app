@@ -113,7 +113,7 @@ fun FarmSelectorButton(showLabel: Boolean = false, asPill: Boolean = false, onCh
                 style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Clip,
-                modifier = Modifier.weight(1f, fill = false).drawBehind { val y = size.height + 3.dp.toPx(); drawLine(corTracoFiltro, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(size.width, y), 2.dp.toPx()) } /* v287 (mockup v365) -- traço verde */.basicMarquee(),
+                modifier = Modifier.weight(1f, fill = false).drawBehind { if (selected != null) { val y = size.height + 3.dp.toPx(); drawLine(corTracoFiltro, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(size.width, y), 2.dp.toPx()) } } /* v287 (mockup v365) -- traço verde; v427 -- só com escolha */.basicMarquee(),
             )
         }
     } else if (showLabel) {

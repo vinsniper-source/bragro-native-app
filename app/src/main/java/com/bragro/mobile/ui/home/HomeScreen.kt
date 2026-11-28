@@ -1672,13 +1672,38 @@ fun HomeScreen(
                     CanvasCirclesRow(
                         fazendas = canvas.fazendas,
                         selectedId = selecionadaFazendaId,
-                        onSelect = { id -> selecionadaFazendaId = id },
+                        onSelect = { id ->
+                            selecionadaFazendaId = id
+                            // v427 (mockup aprovado) -- tocar no círculo escolhe a fazenda no filtro.
+                            canvas.fazendas.find { it.id == id }?.let { f ->
+                                if (FarmSelection.selected.value != f.nome) {
+                                    FarmSelection.choose(logoScreenContext, f.nome)
+                                    viewModel.onFiltroGlobalChanged(logoScreenContext)
+                                }
+                            }
+                        },
                         safra = SafraSelection.selected.value,
                         cultura = CulturaSelection.selected.value,
                         onAbrirMapa = {}, // v292 (mockup v385) -- sem mapa dos talhões no Início (fica no cadastro de fazendas)
                     )
                     val fazendaSelecionada = canvas.fazendas.find { it.id == selecionadaFazendaId }
-                    if (fazendaSelecionada != null) {
+                    // v427 (mockup aprovado) -- o detalhe só aparece com Fazenda, Safra e Cultura escolhidas.
+                    val faltam = listOfNotNull(
+                        "Fazenda".takeIf { FarmSelection.selected.value == null },
+                        "Safra".takeIf { SafraSelection.selected.value == null },
+                        "Cultura".takeIf { CulturaSelection.selected.value == null },
+                    )
+                    if (faltam.isNotEmpty()) {
+                        Text(
+                            if (faltam.size == 3) "Escolha Fazenda, Safra e Cultura para ver o detalhe da fazenda."
+                            else "Falta escolher " + (if (faltam.size == 2) faltam.joinToString(" e ") else faltam.first()) + ".",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    if (fazendaSelecionada != null && faltam.isEmpty()) {
                         androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
                         CanvasDetailCard(fazendaSelecionada)
                     }
@@ -3129,26 +3154,30 @@ private fun KpiMini(kpi: Kpi, modifier: Modifier = Modifier) {
         color = MaterialTheme.colorScheme.background,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        // v427 (mockup aprovado) -- todos os KPIs com a MESMA altura: nome (até 2 linhas)
+        // em cima, com o ícone em negrito, e o número embaixo à direita, numa linha própria.
+        Column(
+            modifier = Modifier.height(80.dp).padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            // v292 (mockup v385) -- ícone do módulo antes do título.
-            com.bragro.mobile.ui.domain.IconeNegrito(kpi.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, size = 18.dp)
-            Text(
-                com.bragro.mobile.ui.domain.exibirTexto(kpi.label),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                modifier = Modifier.weight(1f),
-            )
+            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                com.bragro.mobile.ui.domain.IconeNegrito(kpi.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, size = 18.dp)
+                Text(
+                    com.bragro.mobile.ui.domain.exibirTexto(kpi.label),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    modifier = Modifier.weight(1f),
+                )
+            }
             Text(
                 kpi.value,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
-                modifier = Modifier.widthIn(max = 110.dp).basicMarquee(),
+                softWrap = false,
+                textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }
