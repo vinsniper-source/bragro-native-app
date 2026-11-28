@@ -1326,7 +1326,7 @@ fun HomeScreen(
                     // v400 (mockup aprovado) -- tocar na logo (modo ⠿) mostra as alças de tamanho e a barrinha
                     // ▲▼ (espaço acima) ◀▶ (2 dp para o lado) ⤒⤓ (espaço até os ícones).
                     val larguraCab = with(androidx.compose.ui.platform.LocalDensity.current) { maxWidth.toPx() }
-                    Column(Modifier.fillMaxWidth().padding(start = 18.dp, end = 10.dp, top = (4f + (espAcima["logo"] ?: 0f)).coerceAtLeast(0f).dp, bottom = 6.dp)) {
+                    Column(Modifier.fillMaxWidth().padding(start = 18.dp, end = 10.dp, top = (4f + (espAcima["logo"] ?: 0f)).coerceAtLeast(0f).dp, bottom = 0.dp)) { // v436 -- bottom 6 → 0
                         var ldx by remember { mutableStateOf(0f) }
                         val selLogo = reorganizando && "logo" in selecionados
                         // v435 (mockup aprovado) -- slogan ao lado da logo, em até 2 linhas (a letra diminui
@@ -1430,7 +1430,7 @@ fun HomeScreen(
                 // ficam os dois respiros de "uma linha" (16dp, igual à altura
                 // de uma linha de texto comum) antes e depois do filete.
                 // v281 (mockup v343) -- sem a linha abaixo do cabeçalho; o Início sobe.
-                Spacer(Modifier.height(4.dp))
+                // v436 (mockup aprovado) -- Início sobe uma linha: sem o espaço extra abaixo do cabeçalho.
             }
         },
     ) { padding ->
@@ -1479,7 +1479,9 @@ fun HomeScreen(
             contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 0.dp, bottom = 12.dp), // v274 (mockup v329) -- margem um pouco maior
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            item(key = "greeting") {
+            // v436 -- o item "greeting" só existe quando tem algo a mostrar (carregando ou pendências);
+            // vazio ele ainda somava o espaçamento da lista e empurrava o Início para baixo.
+            if (data == null || pending > 0) item(key = "greeting") {
                 // Desloca só este bloco (saudação + linhas abaixo) um pouco
                 // pra cima, mais perto do cabeçalho -- pedido do usuário
                 // ("aproxime a saudação da logo/cabeçalho, sem alterar
@@ -2203,7 +2205,7 @@ private fun BulletinBoardCard(notices: List<NoticeData>, canManage: Boolean, all
                 // Ícone estilo KPI (badge circular colorido) no cabeçalho --
                 // pedido do usuário ("coloque um ícone como nos kpis abaixo
                 // nos blocos mural de avisos central de alertas").
-                SectionBadgeIcon(Icons.Outlined.Campaign, MaterialTheme.colorScheme.tertiary)
+                IconeJanela(Icons.Outlined.Campaign) // v436 (mockup aprovado)
                 Spacer(Modifier.width(8.dp))
                 Box(modifier = Modifier.weight(1f)) {
                     CollapsibleHeader("Mural de Avisos (${notices.size})", expanded) { expanded = !expanded }
@@ -2672,6 +2674,15 @@ private fun SectionBadgeIcon(icon: androidx.compose.ui.graphics.vector.ImageVect
     }
 }
 
+/** v436 (mockup aprovado) -- ícone do título das janelas Alertas/Avisos/Monitor: o mesmo do
+ * cabeçalho, sem círculo de fundo, 24 dp, em negrito e na cor do texto. */
+@Composable
+private fun IconeJanela(icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    androidx.compose.runtime.CompositionLocalProvider(com.bragro.mobile.ui.domain.LocalIconeNegrito provides true) {
+        com.bragro.mobile.ui.domain.IconeNegrito(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, size = 24.dp)
+    }
+}
+
 @Composable
 private fun AlertsCard(alerts: List<AlertData>, onOpenDomain: (String) -> Unit, startExpanded: Boolean = false) {
     // Fechado por padrão -- pedido do usuário ("os blocos mural, alertas e
@@ -2680,7 +2691,7 @@ private fun AlertsCard(alerts: List<AlertData>, onOpenDomain: (String) -> Unit, 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                SectionBadgeIcon(Icons.Outlined.WarningAmber, BrOrange)
+                IconeJanela(Icons.Outlined.WarningAmber) // v436 (mockup aprovado)
                 Spacer(Modifier.width(8.dp))
                 Box(modifier = Modifier.weight(1f)) {
                     CollapsibleHeader("Central de Alertas (${alerts.size})", expanded) { expanded = !expanded }
@@ -2752,8 +2763,8 @@ private fun ActivityMonitorCard(events: List<ActivityEventData>, onOpenDomain: (
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(IconesVazados.OfflineBolt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
+                IconeJanela(IconesVazados.OfflineBolt) // v436 (mockup aprovado)
+                Spacer(Modifier.width(8.dp))
                 Box(modifier = Modifier.weight(1f)) {
                     // Contagem no título -- mesmo padrão da Central de
                     // Alertas ("(N)"), pedido do usuário ("coloque a
